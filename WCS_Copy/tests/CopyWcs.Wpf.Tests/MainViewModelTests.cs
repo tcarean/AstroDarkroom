@@ -286,6 +286,35 @@ public class MainViewModelTests
         Assert.Equal("dest.fit, out.fit, source.fit", string.Join(", ", Directory.GetFiles(f.Dir).Select(Path.GetFileName).Order()));
     }
 
+    /// <summary>
+    /// A path pasted from File Explorer's "Copy as path" comes in double quotes (R-030): the box
+    /// still names the file, its facts show and the commands come on, and the core gets the path
+    /// without the quotes, so the file written has none in its name (R-032).
+    /// </summary>
+    [Fact]
+    public async Task R030_APathInDoubleQuotesNamesTheFile_AndReachesTheCoreWithoutThem()
+    {
+        using WindowFixture f = new();
+        MainViewModel vm = new() { Source = "\"" + f.Source + "\"", Dest = " \"" + f.Dest + "\" " };
+
+        Assert.True(vm.CanPreview);
+        Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
+        Assert.Equal("Destinatia: 100 x 80", vm.DestFacts);
+
+        string outFile = f.FilePath("out.fit");
+        vm.WriteInPlace = false;
+        vm.Output = "\"" + outFile + "\"";
+        await vm.Copy();
+
+        Assert.False(vm.HasError);
+        Assert.True(File.Exists(outFile));
+        Assert.Equal("dest.fit, out.fit, source.fit", string.Join(", ", Directory.GetFiles(f.Dir).Select(Path.GetFileName).Order()));
+
+        // one pair only, and only around the whole path: a quote left inside is not the file
+        vm.Source = "\"\"" + f.Source + "\"\"";
+        Assert.False(vm.CanPreview);
+    }
+
     [Fact]
     public async Task R033_AMismatchIsRefusedInTheCoresWordsAndNothingIsWritten()
     {

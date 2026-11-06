@@ -51,6 +51,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- In the window, a path pasted in double quotes, as File Explorer's "Copy as path" gives it,
+  now names its file: the quotes are taken off, so its facts show and Preview and Copy come on.
+- The copy's closing line counts as each language does: `Copied 1 key`, `Copiata 1 cheie`, and
+  `Copiate 72 de chei` from 20 keys on, where it read `Copied 1 keys` and `Copiate 72 chei`
+  (ADR 0013).
+
 - A copy drops the destination's own plate-solve keys that the source does not have, such as
   a `CD` matrix left beside Siril's `PC` and `CDELT` by an earlier plate solve of the same
   image. Siril 1.4.4 reads the `CD` matrix first, so such a leftover would have hidden the copied

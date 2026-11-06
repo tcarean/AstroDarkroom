@@ -89,7 +89,8 @@ it was.
 `CopyWcs.Wpf.exe [--lang en|ro] [<solved.fit> [<destination.fit>]]` opens the same tool as a
 window: dark, one page. Pick the plate-solved source and the destination (or pass them on the
 command line: the first two arguments that are existing files fill the boxes, so a shortcut
-or "Send to" works), choose whether to write into the destination or into a new file, keep or
+or "Send to" works; a path pasted in double quotes, as File Explorer's "Copy as path" gives
+it, is taken without them), choose whether to write into the destination or into a new file, keep or
 drop the optical metadata, allow or refuse different dimensions or a mirrored image, then
 **Preview** or **Copy**.
 Under each file box the window shows what it read from the header (`Source: 5601 x 3692,

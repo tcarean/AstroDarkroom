@@ -259,9 +259,12 @@ internal static class WcsCopy
 
         clock.Lap("write");
         clock.Done("copied " + LogText.Int(cards.Count) + " keys into " + target + " " + counts);
+        // The count follows each language's grammar, as the drop line's (R-012, ADR 0013).
         return new WcsCopyOutcome(WcsCopyKind.Copied, null, warnings, cards, target,
         [
-            T($"Copied {cards.Count} keys into {target}.", $"Copiate {cards.Count} chei in {target}."),
+            cards.Count == 1
+                ? T($"Copied 1 key into {target}.", $"Copiata 1 cheie in {target}.")
+                : T($"Copied {cards.Count} keys into {target}.", $"Copiate {RoCount(cards.Count)} chei in {target}."),
             T("Check the annotation by eye: if the image was mirrored or flipped during processing, " +
               "the copied WCS will be wrong without any error.",
               "Verifica vizual adnotarea: daca imaginea a fost oglindita/flip-uita " +
@@ -273,7 +276,7 @@ internal static class WcsCopy
     /// <summary>
     /// The one line naming the destination's old plate-solve keys a run drops (R-016), in the
     /// run's language: a preview's with the count in brackets, a copy's as a sentence, in the
-    /// singular for one key and, in Romanian, with "de" from 20 keys on.
+    /// singular for one key and, in Romanian, with "de" from 20 keys on (<see cref="Ui.RoCount"/>).
     /// </summary>
     /// <param name="drop">The keys dropped, in the destination's order; empty when none.</param>
     /// <param name="preview">True for a dry run's line, false for a copy's.</param>
@@ -299,11 +302,8 @@ internal static class WcsCopy
                 $"Eliminata 1 cheie veche de plate solve a destinatiei: {names}.");
         }
 
-        // Romanian puts "de" after a number from 20 on, unless its last two digits are 01 to 19.
-        string count = n.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        string ro = n % 100 is 0 or >= 20 ? count + " de" : count;
         return T($"Dropped {n} old plate-solve keys of the destination: {names}.",
-            $"Eliminate {ro} chei vechi de plate solve ale destinatiei: {names}.");
+            $"Eliminate {RoCount(n)} chei vechi de plate solve ale destinatiei: {names}.");
     }
 
     /// <summary>

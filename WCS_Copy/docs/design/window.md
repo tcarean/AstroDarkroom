@@ -50,7 +50,10 @@ proposed), the About window (`ShowAbout`, the Help command's handler), and
 - **Build a request.** `Source`, `Dest`, `Output`, `WriteInPlace` (its mirror `WritesNewFile`
   serves the second radio button and the output row), `IncludeOptical` and `Force` become a
   `WcsCopyRequest` in `Request(dryRun)`, the three paths through `Clean` (trimmed: a box is
-  typed into, and a name with a space in front is not the file meant); `Preview()` runs it
+  typed into, and a name with a space in front is not the file meant; then one pair of double
+  quotes around the whole path taken off, the form File Explorer's "Copy as path" pastes, which
+  no Windows file name holds; a quote left inside is kept, and the path then names no file,
+  R-030); `Preview()` runs it
   with the dry run, `Copy()` without. Both go through `RunAsync`: the request is built on the
   caller's thread, the core runs in a `Task.Run` (an in-place copy streams the whole data
   area through a temp file, seconds on a large stack, and the window must stay live), and the
