@@ -61,7 +61,7 @@ public class ValidationTests
         JsonElement c = doc.RootElement.GetProperty("cases").EnumerateArray()
             .Single(e => e.GetProperty("id").GetString() == id);
         string kind = c.GetProperty("kind").GetString()!;
-        Assert.Contains(kind, new[] { "analysis", "icc", "curves", "proof" });
+        Assert.Contains(kind, new[] { "analysis", "icc", "curves", "proof", "gamutfit" });
 
         string name = c.GetProperty("image").GetString()!;
         string? image = TestData.Large(name);
@@ -78,6 +78,7 @@ public class ValidationTests
             "icc" => IccFigures(IccPaperBlack.Read(image)),
             "curves" => CurveFigures(image, c.GetProperty("parameters")),
             "proof" => ProofFigures(image, c.GetProperty("parameters")),
+            "gamutfit" => GamutFitFigures(image, c.GetProperty("parameters")),
             _ => Figures(AnalysisRun.Execute(image, ParametersOf(c.GetProperty("parameters")))),
         };
 
@@ -251,6 +252,59 @@ public class ValidationTests
                 float[] L = RasterOps.LstarPlane(r.Image, 1);
                 f[k + "meanLstar"] = R(L.Average());
             }
+        return f;
+    }
+
+    /// <summary>
+    /// The paper fit through a profile (R-175 to R-177): the three variants' shares and losses
+    /// on the tonal subsample, the recipe, and the two files written to a temporary folder,
+    /// read back.
+    /// </summary>
+    static Dictionary<string, object> GamutFitFigures(string image, JsonElement parameters)
+    {
+        Parameters p = ParametersOf(parameters);
+        string profile = TestData.Large(parameters.GetProperty("icc").GetString()!) ?? throw new FileNotFoundException("the case's profile is absent: " + parameters.GetProperty("icc").GetString());
+        p = p.WithDmaxFromProfile(profile, out string error) ?? throw new Exception(error);
+        AnalysisResult a = AnalysisRun.Execute(image, p);
+        GamutFitSet set = GamutFitRun.Execute(a, Thresholds.CurvePreviewDefaultWidth, Thresholds.CurvePreviewDefaultHeight);
+        var f = new Dictionary<string, object>(StringComparer.Ordinal)
+        {
+            ["gamutfit.problem"] = set.Problem ?? "none",
+        };
+        if (set.Problem != null) return f;
+        f["gamutfit.description"] = set.ProfileDescription;
+        f["gamutfit.names"] = string.Join(",", set.Variants.Select(v => v.Name));
+        foreach (GamutFitVariant v in set.Variants)
+        {
+            string k = "gamutfit." + v.Name.Replace(' ', '-') + ".";
+            GamutFitEvidence e = v.Evidence;
+            f[k + "before"] = R(e.PctOutsideBefore);
+            f[k + "after"] = R(e.PctOutsideAfter);
+            f[k + "touched"] = R(e.PctTouched);
+            f[k + "unreachable"] = R(e.PctUnreachable);
+            f[k + "lostMedian"] = R(e.ChromaLostMedian);
+            f[k + "lostP99"] = R(e.ChromaLostP99);
+            f[k + "dark"] = R(e.PctOutsideUnderLowSeparation);
+        }
+        f["gamutfit.recipe.lstar"] = R(set.Recipe.LstarCeiling);
+        f["gamutfit.recipe.factor"] = R(set.Recipe.Factor);
+        f["gamutfit.recipe.left"] = R(set.Recipe.PctLeft);
+        f["gamutfit.recipe.inBand"] = R(set.Recipe.PctInBand);
+        using var ws = new TempWorkspace();
+        GamutFitVariant exact = set.Variants[0];
+        string fits = ws.PathTo("fit.fit"), tiff = ws.PathTo("fit.tif");
+        GamutFitExport.Save(a, set, exact, fits);
+        GamutFitExport.Save(a, set, exact, tiff);
+        Raster fromFits = ImageLoader.Load(fits), fromTiff = ImageLoader.Load(tiff);
+        f["gamutfit.fits.bytes"] = new FileInfo(fits).Length;
+        f["gamutfit.tiff.bytes"] = new FileInfo(tiff).Length;
+        f["gamutfit.tiff.bitDepth"] = fromTiff.Source.BitDepth;
+        f["gamutfit.tiff.icc"] = fromTiff.Source.IccDescription ?? "none";
+        double maxDiff = 0;
+        for (int pl = 0; pl < 3; pl++)
+            for (int i = 0; i < fromFits.W * fromFits.H; i += 97)
+                maxDiff = Math.Max(maxDiff, Math.Abs(fromFits.Planes[pl][i] - fromTiff.Planes[pl][i]) * 65535);
+        f["gamutfit.tiffVsFits.maxLevels16"] = R(maxDiff);
         return f;
     }
 

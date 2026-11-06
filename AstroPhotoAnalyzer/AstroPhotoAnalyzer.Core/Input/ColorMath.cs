@@ -154,5 +154,66 @@ namespace AstroPhotoAnalyzer
         /// <returns>The L* of the paper's black, 0..100.</returns>
         internal static double PaperBlackLstar(double dmax)
             => LstarOfY(Math.Pow(10, -dmax));
+
+        // Linear sRGB <-> XYZ D50: the sRGB matrix adapted to D50 with Bradford, the one the ICC
+        // world uses for an sRGB working space (the soft proof's display step and the paper fit
+        // share it, so a colour proofed and a colour fitted are the same colour). The second is
+        // the inverse of the first.
+        const double A00 = 0.4360747, A01 = 0.3850649, A02 = 0.1430804;
+        const double A10 = 0.2225045, A11 = 0.7168786, A12 = 0.0606169;
+        const double A20 = 0.0139322, A21 = 0.0971045, A22 = 0.7141733;
+        const double M00 = 3.1338561, M01 = -1.6168667, M02 = -0.4906146;
+        const double M10 = -0.9787684, M11 = 1.9161415, M12 = 0.0334540;
+        const double M20 = 0.0719453, M21 = -0.2289914, M22 = 1.4052427;
+
+        /// <summary>The D50 white, the ICC profile connection space's, as X, Y, Z.</summary>
+        internal const double D50X = 0.9642, D50Y = 1.0, D50Z = 0.8249;
+
+        /// <summary>XYZ D50 -> linear sRGB, the Bradford-adapted matrix; not clamped.</summary>
+        /// <param name="x">X, relative to the D50 white (Y of white 1).</param>
+        /// <param name="y">Y.</param>
+        /// <param name="z">Z.</param>
+        /// <returns>The linear red, green and blue, outside 0..1 for a colour the screen cannot show.</returns>
+        internal static (double R, double G, double B) LinearSrgbOfXyzD50(double x, double y, double z)
+            => (M00 * x + M01 * y + M02 * z, M10 * x + M11 * y + M12 * z, M20 * x + M21 * y + M22 * z);
+
+        /// <summary>
+        /// Encoded sRGB -> CIE L*a*b* under the D50 white, through the Bradford-adapted matrix:
+        /// the Lab of the ICC world, the one the round trip through a printer profile measures
+        /// in. <see cref="LabOfSrgb"/> is the same colour under D65, for the Culoare tab.
+        /// </summary>
+        /// <param name="r">The encoded red, 0..1.</param>
+        /// <param name="g">The encoded green, 0..1.</param>
+        /// <param name="b">The encoded blue, 0..1.</param>
+        /// <returns>L* (0..100), a*, b*.</returns>
+        internal static (double L, double A, double B) LabD50OfSrgb(double r, double g, double b)
+        {
+            double rl = SrgbToLinear(r), gl = SrgbToLinear(g), bl = SrgbToLinear(b);
+            double x = A00 * rl + A01 * gl + A02 * bl;
+            double y = A10 * rl + A11 * gl + A12 * bl;
+            double z = A20 * rl + A21 * gl + A22 * bl;
+            return LabOfXyz(x, y, z, D50X, D50Y, D50Z);
+        }
+
+        /// <summary>
+        /// CIE L*a*b* under D50 -> encoded sRGB, the inverse of <see cref="LabD50OfSrgb"/>, each
+        /// channel clamped to 0..1: a colour the screen cannot show is clipped.
+        /// </summary>
+        /// <param name="l">L*, 0..100.</param>
+        /// <param name="a">a*.</param>
+        /// <param name="b">b*.</param>
+        /// <returns>The encoded red, green and blue, each 0..1.</returns>
+        internal static (double R, double G, double B) SrgbOfLabD50(double l, double a, double b)
+        {
+            double fy = (l + 16) / 116, fx = fy + a / 500, fz = fy - b / 200;
+            double x = D50X * LabFInverse(fx), y = D50Y * LabFInverse(fy), z = D50Z * LabFInverse(fz);
+            var (rl, gl, bl) = LinearSrgbOfXyzD50(x, y, z);
+            return (LinearToSrgb(Math.Clamp(rl, 0, 1)), LinearToSrgb(Math.Clamp(gl, 0, 1)), LinearToSrgb(Math.Clamp(bl, 0, 1)));
+        }
+
+        /// <summary>The inverse of <see cref="LabF"/>, branch for branch.</summary>
+        /// <param name="f">The value LabF gave.</param>
+        /// <returns>The ratio to the white it came from.</returns>
+        static double LabFInverse(double f) => f > 0.206893 ? f * f * f : (f - 16.0 / 116) / 7.787;
     }
 }

@@ -480,6 +480,14 @@ Not a measurement of the image but of the paper's effect on it, viewing only: th
 the profile's tables, the table per intent, the display step and the two warnings are in
 `soft-proof.md`; the decision is ADR 0066.
 
+### F3 - `GamutFit` - the paper fit (R-175, R-176, ADR 0082)
+
+The one analyzer that makes a new raster rather than a figure: the colours the F2 rule marks
+have their chroma lowered along their hue at their L\* to the largest the paper holds there,
+from a table over L\* and hue built by the same rule (`GamutAnalyzer.DeltaEOfLab`); the three
+knees, the recipe and the measurements behind them are in `paper-fit.md`, the figures on the
+reference image in V-016.
+
 ## Notes from phase 2
 
 - **Two different tile criteria, on purpose.** The noise sigma (B3) uses tiles with a

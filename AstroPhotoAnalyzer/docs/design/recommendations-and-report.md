@@ -110,3 +110,13 @@ paper checks as `Recommendation`s with a `Because` (`PaperChecks`: the backgroun
 paper, which sends to the stretch; the noise after the gain over `NoisePrintHiLsb`), where the
 anchors came from, why nothing is suggested, the proposed file name and the `HISTORY` text of
 the saved FITS (one piece per card, at most 70 characters, the points as `x y` pairs).
+
+### The Culori pentru hartie tab's sentences (`Report/GamutFitTexts.cs`, ADR 0082)
+
+Not part of the report either. The names and the one-line helps of the three variants, the
+evidence rows of a variant (the shares before and after, the pixels changed and what they lose,
+the dark share, the tone out of reach as a warning, the recipe for a hand-made mask), the
+proposed file name (the input's kind), the `HISTORY` cards of the saved FITS and the
+description tag of the saved TIFF, the note under the gallery; the figures come from
+`paper-fit.md`'s records. The words median, percentile, chroma and knee never appear in them
+(`GamutFitTabTests` checks three).

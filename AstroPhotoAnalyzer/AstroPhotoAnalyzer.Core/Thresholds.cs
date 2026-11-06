@@ -757,5 +757,88 @@ namespace AstroPhotoAnalyzer
         /// about the screen, not a measurement; a 23 MP image reduces to 2.7 MP.
         /// </summary>
         internal const int ProofMaxSide = 2400;
+
+        /// <summary>
+        /// The nodes of the paper fit's table over L* (R-175, ADR 0082): the largest chroma the
+        /// paper holds, searched exactly at each node (ten bisections through the profile) and
+        /// read bilinearly between them. 101 nodes, one per unit of L*: with 121 hue nodes the
+        /// table builds in 1.3 s with the rows in parallel (measured 2026-11-06 on the lab's
+        /// baryta profile) and differs from the exact per-pixel search by 0.004 in the chroma
+        /// factor at the median, 0.025 at most, on the two baryta profiles.
+        /// </summary>
+        internal const int GamutFitLstarNodes = 101;
+
+        /// <summary>
+        /// The nodes of the paper fit's table over the hue, 0 to 360 degrees inclusive: 121, one
+        /// per 3 degrees (R-175, ADR 0082; the measurement of GamutFitLstarNodes).
+        /// </summary>
+        internal const int GamutFitHueNodes = 121;
+
+        /// <summary>
+        /// The band of chroma, in units, around the table's largest chroma within which the exact
+        /// rule through the profile is searched for a pixel that would land near the edge (R-175,
+        /// ADR 0082): every pixel whose chroma reaches within this of the table's edge, or passes
+        /// it, gets the search along its own hue at its own L*; the others keep the table's
+        /// answer, which is within 0.025 of the exact search in the chroma factor on the baryta
+        /// profiles and 0.28 at most on the canvas (measured 2026-11-06), so a band of 0.6 holds
+        /// the true edge on every measured pair. The table alone, fitting onto its own edge,
+        /// leaves 0.19 % of the plate-solved FITS outside on baryta, 0.59 % on canvas and 0.36 %
+        /// of the Smida TIFF on the WhiteWall baryta; with the search, 0.001 %, 0.003 % and
+        /// 0.000 % (the table in docs/design/paper-fit.md).
+        /// </summary>
+        internal const double GamutFitEdgeMargin = 0.6;
+
+        /// <summary>
+        /// The knee of the Exacta variant (R-176): 1, a hard fit, only the pixels outside moved,
+        /// onto the edge. Measured 2026-11-06 on the plate-solved FITS through the lab's baryta:
+        /// touches 1.88 % of the pixels, the chroma given up 0.70 at the median, 4.2 at the 99 %
+        /// mark; on the Smida TIFF through the WhiteWall baryta 1.37 %, 1.85 and 14.1.
+        /// </summary>
+        internal const double GamutFitKneeExact = 1.0;
+
+        /// <summary>
+        /// The knee of the Lina variant (R-176): the chroma is compressed smoothly from this share
+        /// of the edge, so that a gradient of growing saturation keeps its steps instead of
+        /// flattening on the edge. Measured 2026-11-06: touches 4.06 % of the FITS's pixels
+        /// (2.26 % of the TIFF's), the chroma given up 0.47 (0.74) at the median.
+        /// </summary>
+        internal const double GamutFitKneeSoft = 0.9;
+
+        /// <summary>
+        /// The knee of the Foarte lina variant (R-176): from this share of the edge. Measured
+        /// 2026-11-06: touches 6.11 % of the FITS's pixels (3.50 % of the TIFF's), the chroma
+        /// given up 0.65 (0.53) at the median; from 0.7 it would touch 8.54 % (5.34 %) for no
+        /// further gain in the fit, which is why the gentlest variant stops here.
+        /// </summary>
+        internal const double GamutFitKneeSofter = 0.8;
+
+        /// <summary>
+        /// A pixel whose chroma is under this is grey for the paper fit: never touched, never
+        /// outside by the chroma (R-175). A quarter of an 8-bit step's chroma near black.
+        /// </summary>
+        internal const double GamutFitMinChroma = 0.05;
+
+        /// <summary>
+        /// The share of the pixels outside that the recipe's tone band must hold (R-176): the band
+        /// is "under L* x" with x the smallest whole L* holding this share of them. 90 %: the
+        /// outside pixels of the measured images are the dark dust, 97 to 99 % under L* 15, and
+        /// a band that holds all of them would reach the few saturated bright ones.
+        /// </summary>
+        internal const double GamutFitBandShare = 0.90;
+
+        /// <summary>
+        /// The share of the band's pixels outside that the recipe's uniform saturation factor must
+        /// bring in (R-176); the pixels outside above the band are out of the mask's reach and are
+        /// counted in what is left. 99 %: the last pixels are the most saturated, whose factor would
+        /// desaturate the whole band for nothing (measured 2026-11-06 on the Smida TIFF: a factor
+        /// of 0.6 under L* 15 leaves 12 % of them, 0.75 everywhere 33 %).
+        /// </summary>
+        internal const double GamutFitRecipeShare = 0.99;
+
+        /// <summary>
+        /// The step of the recipe's saturation factor (R-176): 5 %, the resolution of a
+        /// saturation slider a person sets by hand.
+        /// </summary>
+        internal const double GamutFitRecipeStep = 0.05;
     }
 }

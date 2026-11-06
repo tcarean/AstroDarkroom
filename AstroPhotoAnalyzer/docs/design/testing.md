@@ -68,6 +68,23 @@ striped frame without a WCS, and the saved FITS against hand-built FITS and PNG 
 for print (with the parameter `icc`, a profile beside the image, for the gamut figure) and a
 save of the last suggestion into a temporary folder, with the input hashed before and after.
 
+## The paper fit in the tests (ADR 0082)
+
+`GamutFitTests` injects the rule as a function of L\*, a\*, b\* (a paper that holds a chroma of
+10 from L\* 30 up and 5 under it, with the tones under L\* 8 out of reach; a paper whose edge
+grows with the hue and the tone, for the table's reading between its nodes and the exact rule at
+the edge), so that the largest chroma is known and the fit's answer is checked pixel by pixel:
+tone and hue kept, the chroma on the edge, the out-of-reach tone untouched and counted, the three
+knees touching more as they come down and keeping a run's steps just past the edge, the recipe's
+band and factor. The TIFF writer is checked by the tool's reader and by a hand-written tag reader
+in the test, and the two exports on a FITS input through the hand-built printer profile. `GamutFitTabTests`
+drives the tab through `Compute(w, h)`, the synchronous body, on a frame with a saturated patch
+that the hand-built profile prints as grey: the gallery, the box and its layer, the save of both
+kinds and the refusal over the input, the sentence without a profile, the render. `ValidationTests`
+has a fifth kind of case, `gamutfit` (V-016): the run on the plate-solved FITS through the lab's
+baryta profile, the three variants' figures, the recipe, and the two files written into a
+temporary folder and read back against each other.
+
 ## The soft proof in the tests (ADR 0066)
 
 `SoftProofTests` runs the chain on the hand-built printer profile of `IccPrinterTestData`, which

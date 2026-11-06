@@ -82,9 +82,11 @@ purpose is print and the Dmax came from a profile (`GamutAnalyzer.Build`, once),
 curve its evidence on the curved subsample and its preview. The purpose changes the evidence
 only: the paper checks and the gamut figure are added for print, and `CurveRun.ForScreen`
 derives the screen set from a print set by dropping them, which is how the window changes the
-purpose without computing anything. `CurveExport.Save` is the one
-place that writes an image: it refuses the input's own path, then hands the raster, the curve
-and the `HISTORY` text to `FitsWriter` (`input.md`). The run is timed by a `RunClock`
+purpose without computing anything. `CurveExport.Save` writes the curve's image under
+`CurveExport.Guarded`, the guards every export of the tool shares (the input gone, its own path
+refused, the input held open without sharing while the write lasts): it hands the raster, the
+curve and the `HISTORY` text to `FitsWriter` (`input.md`); the paper fit's export is the other
+caller (`paper-fit.md`). The run is timed by a `RunClock`
 (`anchors`, `gamut`, `suggestions`); a gamut table that cannot be built is logged with
 `GamutTable.Cause`, the exception behind its `Problem`.
 
@@ -97,6 +99,17 @@ Dmax came from, reduces the image to `ProofMaxSide` and marks the pixels outside
 gamut once (the rule of R-144); Render proofs the reduction through the intent's table, built on
 its first use and kept on the profile. The chain itself is in `soft-proof.md`. Prepare is timed
 by a `RunClock` (`profile`, `gamut`, `mask`), Render writes one Debug line per render.
+
+### The fourth run (`Runs/GamutFitRun.cs`, ADR 0082)
+
+`GamutFitRun.Execute(AnalysisResult, maxWidth, maxHeight)` is the paper fit's run, started by the
+window beside the other two once the tabs are filled and again on `Calculeaza`; the console
+never calls it. It builds the gamut table of the profile the Dmax came from, the fit's table of
+the largest chroma over L\* and hue from it, then the three variants on the gallery's reduction
+(their previews and masks) and on the tonal subsample (their evidence), and the recipe. The save
+of a variant, `GamutFitExport.Save`, fits the whole image and writes a FITS or a 16-bit TIFF
+under `CurveExport.Guarded`. The chain itself is in `paper-fit.md`. The run is timed by a
+`RunClock` (`profile`, `table`, `original`, each variant, `recipe`).
 
 Timing (Release, 2026-10-05): the two validation cases V-008 and V-009, each an analysis of a
 23 MP image, a curve run and a save of the full image, take 85 s together.

@@ -140,3 +140,12 @@
   dialog asks before replacing any existing file.
 - `Salveaza ca...` writes on the UI thread, with a wait cursor: about a second for a 24 MP float
   FITS on an SSD.
+- The paper fit never moves a tone: a pixel whose tone itself is out of the paper's reach (its
+  grey fails the rule, which happens under the paper's black of a canvas) stays as it is and is
+  counted in the evidence; the Tonuri tab's lift is the remedy (ADR 0082). Far past the paper's
+  edge every variant ends flat: the knees keep the steps of a saturation run only near the edge.
+- The fit's 16-bit TIFF is uncompressed: 135 MB for a 22.6 MP image, the size Siril writes the
+  inputs at (ADR 0082). The fit of a whole image for the save runs on the UI thread with a wait
+  cursor, as the curves' save does, and takes 11 to 27 s for a 22.6 MP image (measured
+  2026-11-06 on the three pairs of `paper-fit.md`): every pixel that lands on the paper's edge
+  is searched exactly through the profile.

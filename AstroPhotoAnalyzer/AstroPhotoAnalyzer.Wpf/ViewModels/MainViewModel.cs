@@ -86,6 +86,7 @@ namespace AstroPhotoAnalyzer.Wpf
             Background = new BackgroundTabViewModel();
             Curves = new CurvesTabViewModel();
             SoftProof = new SoftProofTabViewModel();
+            GamutFit = new GamutFitTabViewModel();
 
             if (_settings.IccProfilePath != null)
             {
@@ -111,6 +112,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public BackgroundTabViewModel Background { get; }
         public CurvesTabViewModel Curves { get; }
         public SoftProofTabViewModel SoftProof { get; }
+        public GamutFitTabViewModel GamutFit { get; }
 
         public string Banner => VersionInfo.Banner;
         public string Copyright => VersionInfo.Copyright;
@@ -176,6 +178,12 @@ namespace AstroPhotoAnalyzer.Wpf
         /// completed before the first run and after one that failed.
         /// </summary>
         internal Task ProofComputation { get; private set; } = Task.CompletedTask;
+
+        /// <summary>
+        /// The paper fit's computation the last run started (R-178), started beside the other
+        /// two; completed before the first run and after one that failed.
+        /// </summary>
+        internal Task GamutFitComputation { get; private set; } = Task.CompletedTask;
 
         /// <summary>
         /// Report.txt (Raport.txt in Romanian) beside the image - the default name in the save
@@ -301,6 +309,8 @@ namespace AstroPhotoAnalyzer.Wpf
                 CurvesComputation = Curves.ComputeAsync();
                 // The soft proof too (R-163, ADR 0066): its own run, independent of the curves'.
                 ProofComputation = SoftProof.ComputeAsync();
+                // And the paper fit (R-178, ADR 0082): its own run as well.
+                GamutFitComputation = GamutFit.ComputeAsync();
             }
             catch (RefusedImageException e)
             {
@@ -360,12 +370,13 @@ namespace AstroPhotoAnalyzer.Wpf
             Background.Populate(r);
             Curves.Populate(r);
             SoftProof.Populate(r);
+            GamutFit.Populate(r);
         }
 
         /// <summary>Empties the seven tabs.</summary>
         void ClearTabs()
         {
-            Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Curves.Clear(); SoftProof.Clear();
+            Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Curves.Clear(); SoftProof.Clear(); GamutFit.Clear();
         }
 
         /// <summary>

@@ -218,6 +218,13 @@ public class WindowSmokeTests
             vm.Curves.CurveRequested += c => curve = c;
             vm.Curves.OpenCurve.Execute(null);
             Render((FrameworkElement)new CurveWindow { DataContext = curve }.Content, 1280, 760, "fereastra-curba");
+            // R-178: the Culori pentru hartie tab, computed on its own; without a profile it
+            // shows the core's sentence and nothing else (the gallery with a profile is rendered
+            // by GamutFitTabTests).
+            await vm.GamutFitComputation;
+            Assert.False(vm.GamutFit.HasGallery);
+            Assert.True(vm.GamutFit.IsProblem, vm.GamutFit.Message);
+            Render(new GamutFitView { DataContext = vm.GamutFit }, name: "tab-culori-hartie-fara-profil");
 
             // R-130, R-131: the two windows of the Tonuri tab, built from the same result.
             MapViewModel map = vm.Tones.BuildMap();

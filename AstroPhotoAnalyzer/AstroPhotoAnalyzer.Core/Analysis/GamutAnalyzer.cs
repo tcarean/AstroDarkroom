@@ -81,6 +81,13 @@ namespace AstroPhotoAnalyzer
         internal Func<double, double, double, (double Dl, double Da, double Db)> Exact;
 
         /// <summary>
+        /// The same rule from a Lab colour: L*, a*, b* in, the whole colour difference after the
+        /// compensated trip out; what the paper fit's table is built from (R-175). Null on a
+        /// table without a profile behind it.
+        /// </summary>
+        internal Func<double, double, double, double> ExactLab;
+
+        /// <summary>
         /// The trips already made, by 8-bit colour (r &lt;&lt; 16 | g &lt;&lt; 8 | b): whether the
         /// colour is outside. Shared by every Measure on this table and by the rows measured in
         /// parallel; a colour two threads reach at once is tripped twice, to the same answer.
@@ -140,6 +147,7 @@ namespace AstroPhotoAnalyzer
                         }
                 foreach (float v in t.Da) if (float.IsNaN(v)) return new GamutTable { Problem = Tr.Pick("the profile lacks the part that prepares the colours for the printer (the B2A table)", "profilului ii lipseste partea care pregateste culorile pentru imprimanta (tabela B2A)") };
                 t.Exact = (r, g, b) => RoundTrip(config, black, r, g, b);
+                t.ExactLab = (l, a, b) => DeltaEOfLab(config, black, l, a, b);
                 return t;
             }
             catch (Exception e)
@@ -159,6 +167,29 @@ namespace AstroPhotoAnalyzer
         /// <param name="g">The encoded sRGB green, 0..1.</param>
         /// <param name="b">The encoded sRGB blue, 0..1.</param>
         /// <returns>The L*, a* and b* of the colour back minus the colour's own.</returns>
+        /// <summary>
+        /// The whole colour difference of a Lab colour after the compensated trip to the paper
+        /// and back: the trip of <see cref="RoundTrip"/> from Lab instead of sRGB, for the paper
+        /// fit's table (R-175), whose nodes are colours no sRGB value need hold.
+        /// </summary>
+        /// <param name="config">The package's configuration with the profile's tables.</param>
+        /// <param name="black">The paper's black, XYZ, as <see cref="ProofProfile.NeutralBlack"/> gives it.</param>
+        /// <param name="l">L*, 0..100.</param>
+        /// <param name="a">a*.</param>
+        /// <param name="b">b*.</param>
+        /// <returns>Delta E76 between the colour back and the colour itself.</returns>
+        internal static double DeltaEOfLab(Configuration config, double[] black, double l, double a, double b)
+        {
+            var colour = new Unicolour(config, ColourSpace.Lab, l, a, b);
+            var xyz = colour.Xyz;
+            var (x, y, z) = ProofProfile.Compensate(xyz.X, xyz.Y, xyz.Z, black);
+            var paper = new Unicolour(config, new Unicolour(config, ColourSpace.Xyz, x, y, z).Icc).Xyz;
+            var (bx, by, bz) = ProofProfile.Uncompensate(paper.X, paper.Y, paper.Z, black);
+            var back = new Unicolour(config, ColourSpace.Xyz, bx, by, bz);
+            double dl = back.Lab.L - l, da = back.Lab.A - a, db = back.Lab.B - b;
+            return Math.Sqrt(dl * dl + da * da + db * db);
+        }
+
         static (double Dl, double Da, double Db) RoundTrip(Configuration config, double[] black, double r, double g, double b)
         {
             var colour = new Unicolour(config, ColourSpace.Rgb, r, g, b);

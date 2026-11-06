@@ -1,0 +1,137 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- GamutFitView - the Culori pentru hartie tab (R-178): the box for the red layer,
+     "Calculeaza", the gallery with the original and the three variants of the paper fit, the
+     evidence of the variant shown and its save button. The grid of CurvesView: the image takes
+     all the remaining room. No figure is computed here. -->
+
+<UserControl x:Class="AstroPhotoAnalyzer.Wpf.GamutFitView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:AstroPhotoAnalyzer.Wpf">
+  <Grid Margin="20,12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+      <TextBlock Text="{local:T En='Colours fitted to the paper:', Ro='Culori potrivite pentru hartie:'}" VerticalAlignment="Center" Margin="0,0,12,0" />
+      <CheckBox Content="{local:T En='show what does not fit', Ro='arata ce nu intra'}" IsChecked="{Binding ShowOutside}" Foreground="{StaticResource TextBr}"
+                VerticalAlignment="Center" Margin="0,0,20,0"
+                ToolTip="{local:T En='Paints in red the pixels whose colour the paper still cannot reproduce on the image shown; on the original, the same warning as in the Soft proof tab', Ro='Coloreaza in rosu pixelii a caror culoare hartia tot nu o poate reda pe imaginea aratata; pe original, acelasi avertisment ca in tabul Soft proof'}" />
+      <Button Content="{local:T En='Calculate', Ro='Calculeaza'}" Command="{Binding Calculate}" Padding="14,3"
+              ToolTip="{local:T En='Computes the gallery again, at the size the tab has now; after an analysis it is computed on its own', Ro='Calculeaza galeria din nou, la marimea de acum a tabului; dupa o analiza se calculeaza singura'}" />
+      <TextBlock Text="{Binding Message}" VerticalAlignment="Center" Margin="16,0,0,0" TextWrapping="Wrap" MaxWidth="900">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsProblem}" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource BadBr}" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
+    </StackPanel>
+
+    <Border Grid.Row="1" x:Name="GalleryArea" Background="{StaticResource PanelBg2}" CornerRadius="4" SizeChanged="GallerySizeChanged">
+      <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}">
+        <!-- The image and, over it, the red layer of what the paper cannot hold, the same size. -->
+        <Grid Width="{Binding Current.Width}" Height="{Binding Current.Height}">
+          <Image Source="{Binding Current.Image}" Stretch="None" />
+          <Image Source="{Binding Current.Overlay}" Stretch="None" />
+        </Grid>
+      </Viewbox>
+    </Border>
+
+    <Grid Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <Button Grid.Column="0" Content="{local:T En='&lt; Back', Ro='&lt; Inapoi'}" Command="{Binding Previous}" Padding="12,3" ToolTip="{local:T En='Left arrow', Ro='Sageata stanga'}" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0" MinWidth="170">
+        <TextBlock Text="{Binding Current.Name}" FontWeight="SemiBold" />
+        <TextBlock Style="{StaticResource Muted}" Text="{Binding Position}" Margin="10,0,0,0" />
+      </StackPanel>
+      <Button Grid.Column="2" Content="{local:T En='Next &gt;', Ro='Inainte &gt;'}" Command="{Binding Next}" Padding="12,3" ToolTip="{local:T En='Right arrow', Ro='Sageata dreapta'}" />
+      <Button Grid.Column="4" Content="{local:T En='Save as...', Ro='Salveaza ca...'}" Command="{Binding SaveAs}" Padding="12,3" Margin="10,0,0,0"
+              ToolTip="{local:T En='A new file with the colours fitted, a FITS or a 16-bit TIFF; the input image is not changed', Ro='Un fisier nou cu culorile potrivite, FITS sau TIFF pe 16 biti; imaginea de intrare nu se modifica'}" />
+    </Grid>
+
+    <StackPanel Grid.Row="3" Margin="0,8,0,0" Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}">
+      <!-- The evidence of all the images, stacked; only the current one's shows (Hidden, not
+           Collapsed), so the area has the height of the longest and the image above does
+           not move while browsing. -->
+      <ItemsControl ItemsSource="{Binding Items}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <Grid />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <ItemsControl ItemsSource="{Binding EvidenceRows}">
+              <ItemsControl.Style>
+                <Style TargetType="ItemsControl">
+                  <Setter Property="Visibility" Value="Hidden" />
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                      <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </ItemsControl.Style>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="12" Margin="0,1">
+                    <TextBlock.Style>
+                      <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource BadBr}" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </TextBlock.Style>
+                  </TextBlock>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock Style="{StaticResource Faint}" Text="{Binding Note}" TextWrapping="Wrap" Margin="0,6,0,0" />
+      <!-- A fixed place, two lines high, for the save message: its appearance does not
+           move the image. -->
+      <Grid Height="34" Margin="0,4,0,0">
+        <TextBlock Text="{Binding SaveMessage}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SaveMessage}" />
+        <TextBlock Text="{Binding SaveError}" Foreground="{StaticResource BadBr}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
+                   ToolTip="{Binding SaveError}" />
+      </Grid>
+    </StackPanel>
+  </Grid>
+</UserControl>

@@ -19,7 +19,7 @@ with its "Scoate" button (R-155: `ParameterFields.ProfileText`, red through a st
 `SaveMessage` / `SaveError`, as the Editare Curbe tab has for its own save); left column `ParameterFields` card with
 "Analizeaza" (the WCS field, R-027, under the target background); right: a placeholder when nothing is loaded, an error card when the run
 failed, otherwise a `TabControl` with Raport, Tonuri, Export, Rezolutie, Culoare,
-Editare Curbe, Soft proof (the Preview tab was removed on 2026-10-30, ADR 0067);
+Editare Curbe, Culori pentru hartie, Soft proof (the Preview tab was removed on 2026-10-30, ADR 0067);
 `BusyOverlay` over the right side while running. "Fundal" names one thing, the
 sky; Tonuri measures its *level* (`BackgroundMedian`, "Nivelul fundalului") and Culoare
 its *colour* (`BackgroundResult.Levels`, "Culoarea fundalului"), and every label, row
@@ -76,6 +76,7 @@ set and readable, no text comparison left: the setter keeps the two in step.
 | `ResolutionTabViewModel` | `Rows` (count, FWHM, effective detail, the five regions as "Latimea stelelor (FWHM) in <region>", corner/centre; each with a `Description` - what it measures, thresholds interpolated from `Thresholds` - except the four corner rows, which the centre row's description covers), `SizeRows` (mono strings from `ReportWriter.SizeTableRow`/`SizeTableFooter`: "*" on the recommended row, or the note on why there is none); a static note under the table states the star rule and the pixel-grid rule (180 dpi in bold); `DpiRows` (mono strings, the dpi - distance reference scale from `DpiLadder`, window only) |
 | `BackgroundTabViewModel` (the Culoare tab) | `Rows` (the background colour per channel, cast metrics; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `RegionRows` (mono strings as in the report, a region measured on every pixel carrying `EdgeRegion.PixelsNote`, except that a flagged region ends in "! colorat" or "! neutru" - "!" alone on mono), `Guide` (`GuideParagraph`s under the table: the zones, the difference from the sky, the "!" mark, coloured vs neutral with the reference image's two corners, black and white) |
 | `SoftProofTabViewModel` (the Soft proof tab, R-163; its full-screen window, R-164) | the intent, the two boxes, the margin, the proof and its warning layer, the core's lines and legend, `FullScreen` (raises `ProofRequested` with the same view-model); filled by the third run `MainViewModel` starts beside the curves' (`ProofComputation`); the whole area in `soft-proof.md` |
+| `GamutFitTabViewModel` (the Culori pentru hartie tab, R-178) | the gallery of the original and the three variants of the paper fit (`GamutFitGalleryItem`: the bitmap, the red layer of what is still outside, the evidence rows), `ShowOutside` (the box, pushed to every item), `Next`/`Previous`/`SaveAs`/`Calculate`, the core's sentences; filled by the fourth run `MainViewModel` starts beside the curves' and the proof's (`GamutFitComputation`); the whole area in `paper-fit.md` |
 
 Tables are pre-aligned mono strings, the same the report writes, rendered with
 `MonoRowTemplate`; the alternative was a template per table for the same text.
@@ -166,6 +167,12 @@ window show the save dialog with the core's proposed name, then `Save(path)` cal
 `Views/SoftProofControls.xaml`, `Views/SoftProofWindow.xaml`; R-163, ADR 0066): the last tab,
 filled like the Editare Curbe tab by a run after the analysis, `ProofRun`; the tab, the window over
 the same view-model and their keys are described in `soft-proof.md`.
+
+**The Culori pentru hartie tab** (`ViewModels/GamutFitTab.cs`, `Views/GamutFitView.xaml`; R-178,
+ADR 0082): between the two, filled like the Editare Curbe tab by a run after the analysis,
+`GamutFitRun`, with the same gallery pattern (the run number, the stacked evidence, the save
+through `SaveRequested`) plus the box of the red layer; described in `paper-fit.md`. The arrow
+keys of `MainWindow.GalleryKeys` serve whichever of the two gallery tabs is selected.
 
 **The curve window** (`Views/CurveWindow.xaml`, `CurveWindowViewModel`; R-147): the table of
 control points (label, input, output at three decimals, the class's L\* before and after) and

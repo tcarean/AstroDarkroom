@@ -99,8 +99,9 @@ Every logger is a `Logger` named `Log`, taken from `LogManager.GetLogger` with `
 `static readonly` field everywhere but in `LogSetup` and `App`, where it is a property fetched on
 use. Loggers are named, not taken from the stack: the class name in the core (`ImageLoader`,
 `FitsReader`, `ImageSharpReader`, `IccPaperBlack`, `AnalysisRun`, `CurveRun`, `CurveExport`,
-`ProofRun`), `Process` for the first and last lines and the crashes, `Cli` for the console, and
-the window's four from `Loggers`: `App`, `Window`, `Window.Curves`, `Window.SoftProof`.
+`ProofRun`, `GamutFitRun`, `GamutFitExport`), `Process` for the first and last lines and the
+crashes, `Cli` for the console, and the window's five from `Loggers`: `App`, `Window`,
+`Window.Curves`, `Window.SoftProof`, `Window.GamutFit`.
 
 ## A run's lines
 
@@ -134,6 +135,7 @@ as done lines too, as the tab shows them.
 | `AnalysisRun` | Info, Debug, Warn | the clock `analysis`, inputs the path and every parameter, stages `load`, `wcs`, `file`, `tones`, `simulation`, `noise`, `background`, `stars`, `size`, `quantization`, `jpeg`, `recommendations`, `report`, done `verdict=... recommendations=N <W>x<H> workingSet=...`; at Debug the WCS when there is one, every result's figures as soon as it is measured, one line per recommendation with its text and because as shown; a `--wcs` file that cannot be read, with the reader's exception |
 | `CurveRun`, `CurveExport` | Info, Debug, Warn | the clock `curves`, stages `anchors`, `gamut`, `suggestions`; the anchors with the method and the class levels, every suggestion's points and evidence; a gamut table that cannot be built, with `GamutTable.Cause`; every FITS written with its size; a save over the input the system refuses, with the system's exception |
 | `ProofRun` | Info, Debug, Warn | the clock `proof`, stages `profile`, `gamut`, `mask`, done with the share outside the paper's gamut and the profile's figures; a profile or a table that cannot be used, with `ProofProfile.Cause` or `GamutTable.Cause`; each render at Debug with its intent and time |
+| `GamutFitRun`, `GamutFitExport` | Info, Debug, Warn | the clock `gamutfit`, stages `profile`, `table`, `original`, each variant's name, `recipe`, done with the share outside, the recipe and the profile's name; each variant's figures at Debug; a gamut table that cannot be built, with `GamutTable.Cause`; every file written with its size and kind (FITS or 16-bit TIFF) and where its ICC profile came from; a save over the input the system refuses, through `CurveExport.Guarded` |
 | `App` | Info, Warn | the language and the file from the command line; a `--lang` refused |
 | `MainViewModel` (`Window`) | Info, Warn, Error | `run N started`, `done in` with the verdict, `refused after` (a linear image), `failed after` with the exception; a field refused; an exception that leaves the run (`LogUnhandled`, an exception filter, marked with `LogSetup.Wrote`); the profile restored, in use, cleared; the report written, or not with the exception |
 | `MainWindow`, `IccPickerWindow` (`Window`) | Info | each dialog's answer, the buttons, the secondary windows opened |

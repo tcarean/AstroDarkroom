@@ -57,6 +57,8 @@ namespace AstroPhotoAnalyzer.Wpf
             // The Editare Curbe tab (R-146, R-147): the curve window, the save dialog and the arrow keys.
             _vm.Curves.CurveRequested += c => Open("a curve window", new CurveWindow { Owner = this, DataContext = c });
             _vm.Curves.SaveRequested += SaveCurve;
+            // The Culori pentru hartie tab (R-178): the save dialog; the arrow keys are shared.
+            _vm.GamutFit.SaveRequested += SaveGamutFit;
             // The Soft proof tab (R-163): its full-screen window (R-164), over the tab's own view-model.
             _vm.SoftProof.ProofRequested += p => Open("the soft proof full screen", new SoftProofWindow { Owner = this, DataContext = p });
             PreviewKeyDown += GalleryKeys;
@@ -166,9 +168,14 @@ namespace AstroPhotoAnalyzer.Wpf
         void GalleryKeys(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key != System.Windows.Input.Key.Left && e.Key != System.Windows.Input.Key.Right) return;
-            if (!_vm.HasResult || !CurvesTabItem.IsSelected || !_vm.Curves.HasGallery) return;
+            if (!_vm.HasResult) return;
+            // Whichever gallery tab is selected takes the arrows: the curves' or the paper fit's.
+            System.Windows.Input.ICommand previous, next;
+            if (CurvesTabItem.IsSelected && _vm.Curves.HasGallery) { previous = _vm.Curves.Previous; next = _vm.Curves.Next; }
+            else if (GamutFitTabItem.IsSelected && _vm.GamutFit.HasGallery) { previous = _vm.GamutFit.Previous; next = _vm.GamutFit.Next; }
+            else return;
             if (System.Windows.Input.Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase) return;
-            System.Windows.Input.ICommand move = e.Key == System.Windows.Input.Key.Left ? _vm.Curves.Previous : _vm.Curves.Next;
+            System.Windows.Input.ICommand move = e.Key == System.Windows.Input.Key.Left ? previous : next;
             if (move.CanExecute(null)) move.Execute(null);
             e.Handled = true;
         }
@@ -196,6 +203,33 @@ namespace AstroPhotoAnalyzer.Wpf
             Log.Info("curve save dialog: chose " + dlg.FileName);
             System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
             try { _vm.Curves.Save(dlg.FileName); }
+            finally { System.Windows.Input.Mouse.OverrideCursor = null; }
+        }
+
+        /// <summary>
+        /// Asks where the fitted image shown is saved (R-177), as a FITS or a 16-bit TIFF, the
+        /// proposed name's kind first; the core does the writing, under a wait cursor.
+        /// </summary>
+        /// <param name="proposedName">The file name the core proposes, shown in the dialog.</param>
+        void SaveGamutFit(string proposedName)
+        {
+            bool tiff = GamutFitTexts.IsTiff(proposedName);
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = Tr.Pick("Save the image with the colours fitted to the paper", "Salveaza imaginea cu culorile potrivite pentru hartie"),
+                FileName = proposedName,
+                InitialDirectory = _vm.GamutFit.InputFolder,
+                Filter = tiff ? "TIFF|*.tif|FITS|*.fit" : "FITS|*.fit|TIFF|*.tif",
+                DefaultExt = tiff ? ".tif" : ".fit",
+            };
+            if (dlg.ShowDialog(this) != true)
+            {
+                Log.Info("paper fit save dialog: cancelled");
+                return;
+            }
+            Log.Info("paper fit save dialog: chose " + dlg.FileName);
+            System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            try { _vm.GamutFit.Save(dlg.FileName); }
             finally { System.Windows.Input.Mouse.OverrideCursor = null; }
         }
 
