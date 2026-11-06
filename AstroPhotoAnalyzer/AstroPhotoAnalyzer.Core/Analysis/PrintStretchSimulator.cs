@@ -247,8 +247,8 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// How the dust class is defined on the map's path, in plain words (ADR 0072): "dalele cu
-        /// 5 L* mai intunecate decat banda din jur sau decat cerul" or "dalele cu 3.8 L* mai
-        /// intunecate decat cerul (de 4 ori zgomotul lui)"; the same sentence in the map's legend.
+        /// 5 L* mai intunecate decat banda din jur sau decat cerul" or "dalele cu 3.2 L* mai
+        /// intunecate decat cerul (de 3 ori zgomotul lui)"; the same sentence in the map's legend.
         /// </summary>
         internal string DustClassDefinition => Map.Method == DustMethod.Band
             ? Tr.Pick($"the patches {Fmt.F0(Thresholds.DustDepthLstar)} L* darker than the band around them or than the sky",
@@ -315,9 +315,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// "praf 9.3 %, cer 65.1 %, banda 22.4 %, nori luminosi 3.0 %, varfuri 0.1 %"; on the sky
-        /// path, with the image's thresholds in plain words (ADR 0073): "nebuloasa 12.3 % (cu peste
-        /// 3.8 L* peste cer, de 4 ori zgomotul cerului), nebuloasa stralucitoare 5.2 % (cu peste
-        /// 16.0 L* peste cer: partea cea mai luminoasa a nebuloasei)".
+        /// path, with the image's thresholds in plain words (ADR 0073): "nebuloasa 8.8 % (cu peste
+        /// 3.2 L* peste cer, de 3 ori zgomotul cerului), nebuloasa stralucitoare 3.6 % (cu peste
+        /// 13.7 L* peste cer: partea cea mai luminoasa a nebuloasei)".
         /// </summary>
         internal string ClassFractions
         {

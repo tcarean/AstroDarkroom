@@ -53,17 +53,26 @@
   Milky Way landscape at a long focal length (85 mm spans about 16° held horizontal, 28° on the
   diagonal) falls on either side of that gate by its orientation. A horizon corner darker than
   the modelled sky counts as dust on either path.
-- On the sky path the Great Rift is not found: without geometry the band is the sky's level and
-  only its darkest knots fall under the model, so on `de_printat.png` the dust is the darkest sky
-  (L\* 4.2), not the Rift's 25 % percentile (7.9 with the band). A plate-solved FITS, or `--wcs`
-  with the stack's header, is the way to the band classes.
+- On the sky path the Great Rift is found to within a few tenths of an L\* of the band path,
+  not exactly (ADR 0085): without geometry the dust is what lies 3 sigmas under the median of
+  its cell, which takes 73 % of the band path's dust patches and some sky and band patches at
+  the Rift's edges (the Smida frame with stars: L\* 4.90 against 4.85; the same frame starless:
+  4.92 against 4.03, the class 13 % of the frame against 9 %, since without stars the sky's
+  sigma is a third lower). On `de_printat.png` the class's 25 % percentile (6.1) is lighter
+  than the darkest 1 % of the sky (4.4), so the sky still decides there. A plate-solved FITS, or
+  `--wcs` with the stack's header, is the way to the band classes and the clouds' names.
 - On the sky path a 32 px patch holding a bright star reads as nebula or bright nebula, so a
   frame with stars has speckles on the map; the anchors move by under 1 L\* (Rosetta with and
-  without stars: 32.0 against 32.2). A 3 x 3 median on the patches was measured and rejected
+  without stars: 34.2 against 34.8 since ADR 0085; 32.0 against 32.2 before). A 3 x 3 median on the patches was measured and rejected
   (ADR 0033).
 - An object that fills the frame becomes the modelled sky: on a 1.3 degree field on LDN 42 the
   cloud is the sky class and the plain sky around it the bright nebula, and the verdict's "sky"
-  is the cloud's own level. The report still says what it measured.
+  is the cloud's own level. The report still says what it measured. Since ADR 0085 the model
+  is the median of each cell, so on a frame no wider than one cell (640 px) whose object's halo
+  covers most of it, the halo lifts the model and the lower half of the plain sky falls under
+  it by more than the sky's own noise: the synthetic `dark-sky` golden scene (512 px) classes
+  30 % of its frame as dust and reports the dust 2 L\* over its dark blob. A print file is
+  never that small; a real frame has tens of cells.
 - The dark globules inside a nebula are not dust on the sky path: they are under the nebula,
   not under the modelled sky; that would need the band path's local level over the whole frame.
 - Without a WCS, a foreground or a silhouette darker than the modelled sky by the sky's noise and

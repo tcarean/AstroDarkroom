@@ -104,7 +104,7 @@ cannot move it (`PatchLstars(sub)`). Three parts:
   minimum of `GalacticLatitude`, set in `Build` before the classes; `NarrowField`, tested
   after the two fractions so that a frame far from the plane still says `NoBand`),
   `ClassifyBySky` makes the classes instead (ADR 0033, ADR 0037, `Method` `Sky`): the sky
-  model from all patches at `SkyModelLowPercentile` per cell;
+  model from all patches at `SkyModelPercentile` per cell;
   the residual patch minus model, with `Stats.RobustSigma` (1.4826 x MAD about the median),
   one clipping pass at `SkyNoiseClipK` sigmas and sigma taken again on what is kept; `Dust`
   under the model by `SkyNoiseK` sigmas (`NoiseThreshold`), `Band` (nebula) over it by as

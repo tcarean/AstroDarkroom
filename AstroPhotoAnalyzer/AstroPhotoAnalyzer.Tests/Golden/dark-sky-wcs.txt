@@ -16,14 +16,14 @@ VERDICT: PROBLEMA
      fiindca: la 26 dpi, zonele plate, fara nicio trecere de ton, mai late de 1.0 mm acopera 8.38 % din cadru (prag 0.10 %); in cele 419 zone mici de cer neted (8.4 % din cadru), o zona plata are de obicei 2.2 px = 2.13 mm, iar zgomotul ramas acolo e de 0.30 niveluri
 
 2. Fundalul si hartia  [PROBLEMA]
-   !! Cerul e mai intunecat decat negrul hartiei: cerul si praful ar iesi cu ACELASI negru. Refa stretch-ul din datele liniare pana la fundalul 0.16 (in simulare: praful la L* 11.7, cerul la L* 15.9; praful ajunge exact pe negru la 0.135).
-     fiindca: praful la L* 4.8 (cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e 5.5 % din cadru, dalele cu 0.5 L* mai intunecate decat cerul (de 4 ori zgomotul lui)); cadrul e in intregime in banda); norii cei mai intunecati: LDN 1776 L* 3.2, LDN 1764 L* 6.7, LDN 34 L* 7.1, LDN 1769 (B275, B278) L* 7.1, LDN 1741 L* 7.1, LDN 142 (B279) L* 7.2, LDN 69 (B77, B269) L* 7.3, LDN 1793 L* 7.6, LDN 42 (B78) L* 38.5; negrul hartiei e L* 9.0 la Dmax 2.0; cerul la L* 7.2 (valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)); nivelul fundalului 0.089; asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.28 in sus; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* 15, si singurul remediu e sa ridici fundalul cand refaci stretch-ul; 83.9 % din pixeli sunt sub L* 15, unde ochiul abia mai deosebeste tonurile
+   !! Cerul e mai intunecat decat negrul hartiei: cerul si praful ar iesi cu ACELASI negru. Refa stretch-ul din datele liniare pana la fundalul 0.16 (in simulare: praful la L* 15.5, cerul la L* 16.1; praful ajunge exact pe negru la 0.106).
+     fiindca: praful la L* 7.0 (cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e 30.5 % din cadru, dalele cu 0.4 L* mai intunecate decat cerul (de 3 ori zgomotul lui)); cadrul e in intregime in banda); norii cei mai intunecati: LDN 1776 L* 3.2, LDN 1764 L* 6.7, LDN 34 L* 7.1, LDN 1769 (B275, B278) L* 7.1, LDN 1741 L* 7.1, LDN 142 (B279) L* 7.2, LDN 69 (B77, B269) L* 7.3, LDN 1793 L* 7.6, LDN 42 (B78) L* 38.5; negrul hartiei e L* 9.0 la Dmax 2.0; cerul la L* 7.3 (valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)); nivelul fundalului 0.089; asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.11 in sus; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* 15, si singurul remediu e sa ridici fundalul cand refaci stretch-ul; 83.9 % din pixeli sunt sub L* 15, unde ochiul abia mai deosebeste tonurile
 
 3. Culoarea fundalului si marginile cadrului  [ATENTIE]
    - Fundalul e neutru.
-     fiindca: fundalul are R 20.4, G 22.4, B 20.4; cat de departe e de un gri (croma): 1.7, prag 3.0 (a* -1.4, b* +1.0); verdele iese peste rosu si albastru cu +2.0 niveluri, rosul peste albastru cu 0.0
+     fiindca: fundalul are R 20.7, G 22.6, B 20.7; cat de departe e de un gri (croma): 1.7, prag 3.0 (a* -1.4, b* +1.0); verdele iese peste rosu si albastru cu +2.0 niveluri, rosul peste albastru cu 0.0
    ! Colt dreapta-jos: mai cald decat restul cerului (lumina de la orizont sau poluare luminoasa). Corecteaz-o pe datele liniare (GraXpert) sau las-o ca parte a compozitiei; nu o corecta cu o curba locala pe imaginea deja intinsa.
-     fiindca: fata de restul cerului, masurat pe toti pixelii zonei (doar 14 % din ei sunt cer): R +9.9, G 0.0, B -8.0 niveluri (prag 3.0); canalele nu se schimba la fel, deci e o culoare
+     fiindca: fata de restul cerului, masurat pe toti pixelii zonei (doar 14 % din ei sunt cer): R +9.7, G -0.2, B -8.2 niveluri (prag 3.0); canalele nu se schimba la fel, deci e o culoare
 
 4. Marimea printului  [ATENTIE]
    ! Privite de la distanta obisnuita pentru marimea lor, stelele se vad ca mici discuri la orice marime: imaginea e moale fata de cati pixeli are. Cea mai mica marime (50 x 50 cm) le face cel mai putin vizibile. Da distanta de privire, ca judecata sa se faca pe ea.
@@ -45,28 +45,28 @@ Anexa A. Tonuri
 
 Anexa B. Simularea fundalului: ce se intampla daca muti fundalul, acum la nivelul 0.089
   fundal-tinta         gamma   L* praf   L* cer   negru pur   sub L*15   peste L*50
-  0.05                 1.240       2.3      3.4      84.8 %     90.1 %        0.0 %
-  0.06                 1.165       2.8      4.2      81.6 %     88.6 %        0.0 %
-  0.07                 1.101       3.4      5.1      80.9 %     87.2 %        0.0 %
-  0.08                 1.046       4.1      6.1      76.2 %     85.5 %        0.1 %
-  0.089 asa cum e      1.000       4.8      7.2      70.7 %     83.9 %        0.4 %
-  0.09                 0.997       4.8      7.3      69.5 %     83.8 %        0.5 %
-  0.10                 0.953       5.6      8.5      50.8 %     82.0 %        0.9 %
-  0.11                 0.914       6.5      9.8       5.1 %     80.0 %        1.2 %
-  0.12                 0.878       7.5     11.0       2.7 %     77.6 %        1.6 %
-  0.13                 0.845       8.5     12.3       2.3 %     74.3 %        2.0 %
-  0.135 (dat)          0.829       9.0     12.9       1.6 %     72.2 %        2.2 %   cer sub L* 15
-  0.14                 0.814       9.6     13.5       1.2 %     69.5 %        2.3 %   cer sub L* 15
-  0.15                 0.785      10.6     14.7       0.8 %     53.3 %        2.7 %   cer sub L* 15
-  0.16 *               0.759      11.7     15.9       0.8 %      5.4 %        3.1 %   print-safe
-  0.17                 0.734      12.7     17.1       0.0 %      3.6 %        3.5 %   print-safe
-  0.18                 0.710      13.8     18.3       0.0 %      2.7 %        3.9 %   print-safe
-  0.19                 0.687      14.8     19.5       0.0 %      2.0 %        4.3 %   print-safe
-  0.20                 0.666      15.9     20.6       0.0 %      1.5 %        4.7 %   print-safe
+  0.05                 1.240       3.3      3.4      84.8 %     90.1 %        0.0 %
+  0.06                 1.165       4.1      4.2      81.6 %     88.6 %        0.0 %
+  0.07                 1.101       5.0      5.2      80.9 %     87.2 %        0.0 %
+  0.08                 1.046       6.0      6.2      76.2 %     85.5 %        0.1 %
+  0.089 asa cum e      1.000       7.0      7.3      70.7 %     83.9 %        0.4 %
+  0.09                 0.997       7.0      7.4      69.5 %     83.8 %        0.5 %
+  0.10                 0.953       8.2      8.7      50.8 %     82.0 %        0.9 %
+  0.11                 0.914       9.5      9.9       5.1 %     80.0 %        1.2 %   cer sub L* 15
+  0.12                 0.878      10.7     11.2       2.7 %     77.6 %        1.6 %   cer sub L* 15
+  0.13                 0.845      11.9     12.4       2.3 %     74.3 %        2.0 %   cer sub L* 15
+  0.135 (dat)          0.829      12.5     13.0       1.6 %     72.2 %        2.2 %   cer sub L* 15
+  0.14                 0.814      13.1     13.7       1.2 %     69.5 %        2.3 %   cer sub L* 15
+  0.15                 0.785      14.3     14.9       0.8 %     53.3 %        2.7 %   cer sub L* 15
+  0.16 *               0.759      15.5     16.1       0.8 %      5.4 %        3.1 %   print-safe
+  0.17                 0.734      16.7     17.3       0.0 %      3.6 %        3.5 %   print-safe
+  0.18                 0.710      17.9     18.5       0.0 %      2.7 %        3.9 %   print-safe
+  0.19                 0.687      19.0     19.6       0.0 %      2.0 %        4.3 %   print-safe
+  0.20                 0.666      20.2     20.8       0.0 %      1.5 %        4.7 %   print-safe
   * = recomandat: cea mai mica tinta print-safe (praful nu cade sub negrul hartiei si cerul e la L* 15 sau peste)
-  praful = cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e 5.5 % din cadru, dalele cu 0.5 L* mai intunecate decat cerul (de 4 ori zgomotul lui)) (cadrul e in intregime in banda); cerul = valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul); negru pur = dale de 32 px mai intunecate decat negrul hartiei (L* 9.0 la Dmax 2.0)
-  felurile de dale: praf 5.5 %, cer 46.5 %, nebuloasa 36.7 % (cu peste 0.5 L* peste cer, de 4 ori zgomotul cerului), nebuloasa stralucitoare 10.9 % (cu peste 14.0 L* peste cer: partea cea mai luminoasa a nebuloasei), varfuri 0.4 %
-  fundalul la care praful ajunge exact pe negrul hartiei: 0.135 la Dmax 2.0 (0.154 daca Dmax e 1.9, 0.117 daca e 2.1); asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.28 in sus; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* 15, si singurul remediu e sa ridici fundalul cand refaci stretch-ul; cerul ajunge la L* 15 cand fundalul e 0.152
+  praful = cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e 30.5 % din cadru, dalele cu 0.4 L* mai intunecate decat cerul (de 3 ori zgomotul lui)) (cadrul e in intregime in banda); cerul = valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul); negru pur = dale de 32 px mai intunecate decat negrul hartiei (L* 9.0 la Dmax 2.0)
+  felurile de dale: praf 30.5 %, cer 28.1 %, nebuloasa 31.3 % (cu peste 0.4 L* peste cer, de 3 ori zgomotul cerului), nebuloasa stralucitoare 9.8 % (cu peste 14.8 L* peste cer: partea cea mai luminoasa a nebuloasei), varfuri 0.4 %
+  fundalul la care praful ajunge exact pe negrul hartiei: 0.106 la Dmax 2.0 (0.122 daca Dmax e 1.9, 0.091 daca e 2.1); asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.11 in sus; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* 15, si singurul remediu e sa ridici fundalul cand refaci stretch-ul; cerul ajunge la L* 15 cand fundalul e 0.151
   norii din catalog cu cel putin 9 dale (9 nori), de la cel mai intunecat; L* = pragul sub care stau 10 % din dalele norului; tinta = fundalul la care norul ajunge pe negrul hartiei:
   nor                          dale   L*     tinta
   LDN 1776                       10    3.2   0.164
@@ -104,15 +104,15 @@ Anexa D. Rezolutie si marime
     marimea o alege peretele; da o distanta de privire ca programul sa poata alege una
 
 Anexa E. Culoarea fundalului
-  culoarea fundalului, R / G / B (0..255): 20.4 / 22.4 / 20.4; verdele peste rosu si albastru +2.0; rosul peste albastru 0.0; L* 7.2, a* -1.4, b* +1.0, cat de departe e de un gri (croma) 1.7; masurat pe dalele de cer de deasupra benzii de jos
-  colt stanga-sus    20.4 / 22.4 / 20.4     fata de cer 0.0 / 0.0 / 0.0
-  colt dreapta-sus   20.4 / 22.3 / 20.4     fata de cer 0.0 / -0.1 / 0.0
-  colt stanga-jos    20.4 / 22.4 / 20.4     fata de cer 0.0 / 0.0 / 0.0
-  colt dreapta-jos   30.4 / 22.4 / 12.4     fata de cer +9.9 / 0.0 / -8.0  (doar 14 % cer: masurat pe toti pixelii)  !
-  latura de sus      20.2 / 22.1 / 20.1     fata de cer -0.3 / -0.3 / -0.3
-  latura de jos      20.5 / 22.5 / 20.5     fata de cer +0.1 / +0.1 / +0.1
-  latura stanga      20.5 / 22.5 / 20.5     fata de cer 0.0 / +0.1 / +0.1
-  latura dreapta     20.5 / 22.5 / 20.5     fata de cer +0.1 / +0.1 / +0.1
+  culoarea fundalului, R / G / B (0..255): 20.7 / 22.6 / 20.7; verdele peste rosu si albastru +2.0; rosul peste albastru 0.0; L* 7.3, a* -1.4, b* +1.0, cat de departe e de un gri (croma) 1.7; masurat pe dalele de cer de deasupra benzii de jos
+  colt stanga-sus    20.4 / 22.4 / 20.4     fata de cer -0.3 / -0.2 / -0.2  (doar 19 % cer: masurat pe toti pixelii)
+  colt dreapta-sus   20.4 / 22.4 / 20.4     fata de cer -0.2 / -0.3 / -0.3  (doar 6 % cer: masurat pe toti pixelii)
+  colt stanga-jos    20.4 / 22.4 / 20.4     fata de cer -0.2 / -0.3 / -0.3  (doar 6 % cer: masurat pe toti pixelii)
+  colt dreapta-jos   30.4 / 22.4 / 12.4     fata de cer +9.7 / -0.2 / -8.2  (doar 14 % cer: masurat pe toti pixelii)  !
+  latura de sus      19.9 / 21.9 / 19.9     fata de cer -0.7 / -0.7 / -0.8  (doar 11 % cer: masurat pe toti pixelii)
+  latura de jos      20.5 / 22.6 / 20.6     fata de cer -0.1 / -0.1 / -0.1
+  latura stanga      20.7 / 22.7 / 20.7     fata de cer 0.0 / 0.0 / 0.0
+  latura dreapta     20.6 / 22.6 / 20.6     fata de cer -0.1 / -0.1 / -0.1
 
 Anexa F. Parametri
   printat pe baryta, Dmax 2.0 (dat); latimile incercate 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, rama 3 cm

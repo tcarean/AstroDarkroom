@@ -279,10 +279,11 @@ namespace AstroPhotoAnalyzer
                               $"nicio tinta din grila nu aduce praful pe negrul hartiei, nici {Fmt.Level(Thresholds.ExactTargetHi)}");
 
         /// <summary>
-        /// "dust = the 25 % percentile of the dust patches (0.5 L* below the modelled sky (4 sigma
-        /// of the sky); 5.5 % of the frame) (no WCS); sky = the median of the sky patches (classes
-        /// relative to the modelled sky); pure black = 32 px patches under paper black (L* 9.0 at
-        /// Dmax 2.0)"; in Romanian "praful = percentila 25 % a dalelor de praf ...".
+        /// "dust = the darkest extended areas of the dust clouds (the threshold under which 25 % of
+        /// the dust patches lie; the dust is 30.1 % of the frame, the patches 0.4 L* darker than the
+        /// sky (3 times its noise)) (no WCS); sky = the middle value of the sky patches (the patches
+        /// sorted by comparison with the sky); pure black = 32 px patches darker than paper black
+        /// (L* 9.0 at Dmax 2.0)"; in Romanian "praful = cele mai intunecate zone intinse ...".
         /// </summary>
         /// <param name="s">The simulation.</param>
         /// <returns>

@@ -134,11 +134,17 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Without the band, the sky is modelled from ALL the patches, with this percentile of
-        /// each cell instead of the median: an object covering half a cell would lift the median
-        /// into itself, while the 25th percentile stays on the sky. Chosen on 2026-10-06 on
-        /// Rosetta, Orion, Andromeda and the two reference images.
+        /// each cell: the median. ADR 0033 took the 25th percentile so that an object covering
+        /// half a cell would not lift the model into itself, but on a Milky Way frame without a
+        /// WCS the 25th percentile sinks into the Great Rift, which is then never under the sky:
+        /// on the owner's Smida frame of 2026-08-12 the dust class was 0.9 % of the patches
+        /// against 9.5 % with the WCS. With the median, and SkyNoiseK 3, the two paths agree on
+        /// that frame (dust 9.8 % against 9.5 %, L* 4.90 against 4.85) and on the reference
+        /// FITS run without its WCS (8.2 against 7.9); on the deep-sky frames the verdict's dust
+        /// does not move and the nebula class shrinks by about a third. Measured on 2026-11-06
+        /// (ADR 0085).
         /// </summary>
-        internal const double SkyModelLowPercentile = 25;
+        internal const double SkyModelPercentile = 50;
 
         /// <summary>
         /// The sky's noise over the patches: the robust sigma (1.4826 x MAD) of the difference
@@ -150,12 +156,17 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// A patch is nebula when it is over the modelled sky by more than this many sigma of the
-        /// sky, and dust when it is under it by as much. Between 3 and 5 the nebula fraction moves
-        /// by 2 % (Rosetta: 14.1 / 12.3 / 10.8 %) and the anchors by under 1.5 L*; 4 is the
-        /// middle. The bright-nebula threshold has no constant: it is the Otsu threshold of the
-        /// tail above. Measured on 2026-10-06 (ADR 0033).
+        /// sky, and dust when it is under it by as much. The sigma is measured on the 32 px
+        /// patches, where pixel noise is averaged away (0 to 10 levels of added noise move it
+        /// from 1.17 to 1.33 L* on a denoised frame), so it follows the stretch and the stars,
+        /// not the denoising. ADR 0033 took 4 with the 25th-percentile model; with the median
+        /// model (SkyModelPercentile), 3 puts the dust class of the Smida Milky Way frame on
+        /// the band path's (9.8 % of the patches, L* 4.90, against 9.5 % and 4.85; with 4, 7.2 %
+        /// and 4.20), finding 73 % of the band path's dust patches. The bright-nebula threshold
+        /// has no constant: it is the Otsu threshold of the tail above. Measured on 2026-11-06
+        /// (ADR 0085).
         /// </summary>
-        internal const double SkyNoiseK = 4;
+        internal const double SkyNoiseK = 3;
 
         /// <summary>
         /// The bright nebula's Otsu threshold leaves at least this share of the nebula patches

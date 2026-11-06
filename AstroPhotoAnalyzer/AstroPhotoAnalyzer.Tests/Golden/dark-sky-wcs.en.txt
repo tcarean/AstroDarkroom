@@ -16,14 +16,14 @@ VERDICT: PROBLEM
      because: at 26 dpi, flat areas, with no change of tone, wider than 1.0 mm cover 8.38 % of the frame (threshold 0.10 %); in the 419 small areas of smooth sky (8.4 % of the frame) a flat area is usually 2.2 px = 2.13 mm, and the noise left there is 0.30 levels
 
 2. The background and the paper  [PROBLEM]
-   !! The sky is darker than paper black: the sky and the dust would come out as the SAME black. Redo the stretch from the linear data up to a background of 0.16 (in the simulation: the dust at L* 11.7, the sky at L* 15.9; the dust reaches black exactly at 0.135).
-     because: the dust at L* 4.8 (the darkest extended areas of the dust clouds (the threshold under which 25 % of the dust patches lie; the dust is 5.5 % of the frame, the patches 0.5 L* darker than the sky (4 times its noise)); the frame lies entirely in the band); the darkest clouds: LDN 1776 L* 3.2, LDN 1764 L* 6.7, LDN 34 L* 7.1, LDN 1769 (B275, B278) L* 7.1, LDN 1741 L* 7.1, LDN 142 (B279) L* 7.2, LDN 69 (B77, B269) L* 7.3, LDN 1793 L* 7.6, LDN 42 (B78) L* 38.5; paper black is L* 9.0 at Dmax 2.0; the sky at L* 7.2 (the middle value of the sky patches (the patches sorted by comparison with the sky)); the background level 0.089; as the image is, the dust stays above black from Dmax 2.28 up; but no paper saves the print as it is: the sky is under L* 15, and the only remedy is to lift the background when you redo the stretch; 83.9 % of the pixels are under L* 15, where the eye barely tells the tones apart
+   !! The sky is darker than paper black: the sky and the dust would come out as the SAME black. Redo the stretch from the linear data up to a background of 0.16 (in the simulation: the dust at L* 15.5, the sky at L* 16.1; the dust reaches black exactly at 0.106).
+     because: the dust at L* 7.0 (the darkest extended areas of the dust clouds (the threshold under which 25 % of the dust patches lie; the dust is 30.5 % of the frame, the patches 0.4 L* darker than the sky (3 times its noise)); the frame lies entirely in the band); the darkest clouds: LDN 1776 L* 3.2, LDN 1764 L* 6.7, LDN 34 L* 7.1, LDN 1769 (B275, B278) L* 7.1, LDN 1741 L* 7.1, LDN 142 (B279) L* 7.2, LDN 69 (B77, B269) L* 7.3, LDN 1793 L* 7.6, LDN 42 (B78) L* 38.5; paper black is L* 9.0 at Dmax 2.0; the sky at L* 7.3 (the middle value of the sky patches (the patches sorted by comparison with the sky)); the background level 0.089; as the image is, the dust stays above black from Dmax 2.11 up; but no paper saves the print as it is: the sky is under L* 15, and the only remedy is to lift the background when you redo the stretch; 83.9 % of the pixels are under L* 15, where the eye barely tells the tones apart
 
 3. The background colour and the frame's edges  [CAUTION]
    - The background is neutral.
-     because: the background is R 20.4, G 22.4, B 20.4; how far it is from a grey (chroma): 1.7, threshold 3.0 (a* -1.4, b* +1.0); green stands over red and blue by +2.0 levels, red over blue by 0.0
+     because: the background is R 20.7, G 22.6, B 20.7; how far it is from a grey (chroma): 1.7, threshold 3.0 (a* -1.4, b* +1.0); green stands over red and blue by +2.0 levels, red over blue by 0.0
    ! Lower-right corner: warmer than the rest of the sky (glow from the horizon or light pollution). Correct it on the linear data (GraXpert) or keep it as part of the composition; do not correct it with a local curve on the image already stretched.
-     because: against the rest of the sky, measured on every pixel of the zone (only 14 % of them are sky): R +9.9, G 0.0, B -8.0 levels (threshold 3.0); the channels do not change alike, so it is a colour
+     because: against the rest of the sky, measured on every pixel of the zone (only 14 % of them are sky): R +9.7, G -0.2, B -8.2 levels (threshold 3.0); the channels do not change alike, so it is a colour
 
 4. The size of the print  [CAUTION]
    ! Seen from the usual distance for their size, the stars look like small discs at every size: the image is soft for the pixels it has. The smallest size (50 x 50 cm) makes them least visible. Give the viewing distance, so that it is judged on that.
@@ -45,28 +45,28 @@ Appendix A. Tones
 
 Appendix B. Background simulation: what happens if you move the background, now at level 0.089
   target background    gamma   L* dust   L* sky  pure black    L* < 15      L* > 50
-  0.05                 1.240       2.3      3.4      84.8 %     90.1 %        0.0 %
-  0.06                 1.165       2.8      4.2      81.6 %     88.6 %        0.0 %
-  0.07                 1.101       3.4      5.1      80.9 %     87.2 %        0.0 %
-  0.08                 1.046       4.1      6.1      76.2 %     85.5 %        0.1 %
-  0.089 as is          1.000       4.8      7.2      70.7 %     83.9 %        0.4 %
-  0.09                 0.997       4.8      7.3      69.5 %     83.8 %        0.5 %
-  0.10                 0.953       5.6      8.5      50.8 %     82.0 %        0.9 %
-  0.11                 0.914       6.5      9.8       5.1 %     80.0 %        1.2 %
-  0.12                 0.878       7.5     11.0       2.7 %     77.6 %        1.6 %
-  0.13                 0.845       8.5     12.3       2.3 %     74.3 %        2.0 %
-  0.135 (given)        0.829       9.0     12.9       1.6 %     72.2 %        2.2 %   sky under L* 15
-  0.14                 0.814       9.6     13.5       1.2 %     69.5 %        2.3 %   sky under L* 15
-  0.15                 0.785      10.6     14.7       0.8 %     53.3 %        2.7 %   sky under L* 15
-  0.16 *               0.759      11.7     15.9       0.8 %      5.4 %        3.1 %   print-safe
-  0.17                 0.734      12.7     17.1       0.0 %      3.6 %        3.5 %   print-safe
-  0.18                 0.710      13.8     18.3       0.0 %      2.7 %        3.9 %   print-safe
-  0.19                 0.687      14.8     19.5       0.0 %      2.0 %        4.3 %   print-safe
-  0.20                 0.666      15.9     20.6       0.0 %      1.5 %        4.7 %   print-safe
+  0.05                 1.240       3.3      3.4      84.8 %     90.1 %        0.0 %
+  0.06                 1.165       4.1      4.2      81.6 %     88.6 %        0.0 %
+  0.07                 1.101       5.0      5.2      80.9 %     87.2 %        0.0 %
+  0.08                 1.046       6.0      6.2      76.2 %     85.5 %        0.1 %
+  0.089 as is          1.000       7.0      7.3      70.7 %     83.9 %        0.4 %
+  0.09                 0.997       7.0      7.4      69.5 %     83.8 %        0.5 %
+  0.10                 0.953       8.2      8.7      50.8 %     82.0 %        0.9 %
+  0.11                 0.914       9.5      9.9       5.1 %     80.0 %        1.2 %   sky under L* 15
+  0.12                 0.878      10.7     11.2       2.7 %     77.6 %        1.6 %   sky under L* 15
+  0.13                 0.845      11.9     12.4       2.3 %     74.3 %        2.0 %   sky under L* 15
+  0.135 (given)        0.829      12.5     13.0       1.6 %     72.2 %        2.2 %   sky under L* 15
+  0.14                 0.814      13.1     13.7       1.2 %     69.5 %        2.3 %   sky under L* 15
+  0.15                 0.785      14.3     14.9       0.8 %     53.3 %        2.7 %   sky under L* 15
+  0.16 *               0.759      15.5     16.1       0.8 %      5.4 %        3.1 %   print-safe
+  0.17                 0.734      16.7     17.3       0.0 %      3.6 %        3.5 %   print-safe
+  0.18                 0.710      17.9     18.5       0.0 %      2.7 %        3.9 %   print-safe
+  0.19                 0.687      19.0     19.6       0.0 %      2.0 %        4.3 %   print-safe
+  0.20                 0.666      20.2     20.8       0.0 %      1.5 %        4.7 %   print-safe
   * = recommended: the lowest print-safe target (the dust does not fall under paper black and the sky is at L* 15 or above)
-  dust = the darkest extended areas of the dust clouds (the threshold under which 25 % of the dust patches lie; the dust is 5.5 % of the frame, the patches 0.5 L* darker than the sky (4 times its noise)) (the frame lies entirely in the band); sky = the middle value of the sky patches (the patches sorted by comparison with the sky); pure black = 32 px patches darker than paper black (L* 9.0 at Dmax 2.0)
-  kinds of patches: dust 5.5 %, sky 46.5 %, nebula 36.7 % (over 0.5 L* above the sky, 4 times the sky's noise), bright nebula 10.9 % (over 14.0 L* above the sky: the brightest part of the nebula), peaks 0.4 %
-  the background at which the dust reaches exactly paper black: 0.135 at Dmax 2.0 (0.154 if the Dmax is 1.9, 0.117 if it is 2.1); as the image is, the dust stays above black from Dmax 2.28 up; but no paper saves the print as it is: the sky is under L* 15, and the only remedy is to lift the background when you redo the stretch; the sky reaches L* 15 when the background is 0.152
+  dust = the darkest extended areas of the dust clouds (the threshold under which 25 % of the dust patches lie; the dust is 30.5 % of the frame, the patches 0.4 L* darker than the sky (3 times its noise)) (the frame lies entirely in the band); sky = the middle value of the sky patches (the patches sorted by comparison with the sky); pure black = 32 px patches darker than paper black (L* 9.0 at Dmax 2.0)
+  kinds of patches: dust 30.5 %, sky 28.1 %, nebula 31.3 % (over 0.4 L* above the sky, 3 times the sky's noise), bright nebula 9.8 % (over 14.8 L* above the sky: the brightest part of the nebula), peaks 0.4 %
+  the background at which the dust reaches exactly paper black: 0.106 at Dmax 2.0 (0.122 if the Dmax is 1.9, 0.091 if it is 2.1); as the image is, the dust stays above black from Dmax 2.11 up; but no paper saves the print as it is: the sky is under L* 15, and the only remedy is to lift the background when you redo the stretch; the sky reaches L* 15 when the background is 0.151
   the clouds from the catalogue with at least 9 patches (9 clouds), darkest first; L* = the threshold under which 10 % of the cloud's patches lie; target = the background at which the cloud reaches paper black:
   cloud                     patches   L*     target
   LDN 1776                       10    3.2   0.164
@@ -104,15 +104,15 @@ Appendix D. Resolution and size
     the wall chooses the size; give a viewing distance so that the program can choose one
 
 Appendix E. Background colour
-  background colour, R / G / B (0..255): 20.4 / 22.4 / 20.4; green over red and blue +2.0; red over blue 0.0; L* 7.2, a* -1.4, b* +1.0, how far from a grey (chroma) 1.7; measured on the sky patches above the bottom band
-  upper-left corner  20.4 / 22.4 / 20.4     against the sky 0.0 / 0.0 / 0.0
-  upper-right corner 20.4 / 22.3 / 20.4     against the sky 0.0 / -0.1 / 0.0
-  lower-left corner  20.4 / 22.4 / 20.4     against the sky 0.0 / 0.0 / 0.0
-  lower-right corner 30.4 / 22.4 / 12.4     against the sky +9.9 / 0.0 / -8.0  (only 14 % sky: measured on every pixel)  !
-  top edge           20.2 / 22.1 / 20.1     against the sky -0.3 / -0.3 / -0.3
-  bottom edge        20.5 / 22.5 / 20.5     against the sky +0.1 / +0.1 / +0.1
-  left edge          20.5 / 22.5 / 20.5     against the sky 0.0 / +0.1 / +0.1
-  right edge         20.5 / 22.5 / 20.5     against the sky +0.1 / +0.1 / +0.1
+  background colour, R / G / B (0..255): 20.7 / 22.6 / 20.7; green over red and blue +2.0; red over blue 0.0; L* 7.3, a* -1.4, b* +1.0, how far from a grey (chroma) 1.7; measured on the sky patches above the bottom band
+  upper-left corner  20.4 / 22.4 / 20.4     against the sky -0.3 / -0.2 / -0.2  (only 19 % sky: measured on every pixel)
+  upper-right corner 20.4 / 22.4 / 20.4     against the sky -0.2 / -0.3 / -0.3  (only 6 % sky: measured on every pixel)
+  lower-left corner  20.4 / 22.4 / 20.4     against the sky -0.2 / -0.3 / -0.3  (only 6 % sky: measured on every pixel)
+  lower-right corner 30.4 / 22.4 / 12.4     against the sky +9.7 / -0.2 / -8.2  (only 14 % sky: measured on every pixel)  !
+  top edge           19.9 / 21.9 / 19.9     against the sky -0.7 / -0.7 / -0.8  (only 11 % sky: measured on every pixel)
+  bottom edge        20.5 / 22.6 / 20.6     against the sky -0.1 / -0.1 / -0.1
+  left edge          20.7 / 22.7 / 20.7     against the sky 0.0 / 0.0 / 0.0
+  right edge         20.6 / 22.6 / 20.6     against the sky -0.1 / -0.1 / -0.1
 
 Appendix F. Parameters
   printed on baryta, Dmax 2.0 (given); widths tried 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, frame 3 cm
