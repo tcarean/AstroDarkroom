@@ -99,14 +99,12 @@ internal static class WindowTexts
         "Eticheta e in clipboard; redenumeste folderul cu ea daca vrei.");
 
     internal static string IndexLead => T(
-        "The index is a number for how warm the sensor ran: the median amplitude of the master's pixels at ranks "
-        + $"{RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)} per megapixel, normalised to "
-        + $"ISO {RunReport.F(Th.NormIso, 0)} and {RunReport.F(Th.NormExposureSeconds, 0)} s. The label is the folder's name plus idx<NN>: you copy it "
-        + "and rename the folder yourself; the program writes and renames nothing in the photo folders.",
-        "Indexul e un numar pentru cat de cald a rulat senzorul: mediana amplitudinii pixelilor de pe rangurile "
-        + $"{RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)} pe megapixel ai masterului, normalizata la "
-        + $"ISO {RunReport.F(Th.NormIso, 0)} si {RunReport.F(Th.NormExposureSeconds, 0)} s. Eticheta e numele folderului plus idx<NN>: o copiezi "
-        + "si redenumesti folderul tu; programul nu scrie si nu redenumeste nimic in folderele cu poze.");
+        $"The index is a number for how warm the sensor was: the average value of the master's hot pixels at places {RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)} "
+        + $"per megapixel, counting from the hottest, worked out for ISO {RunReport.F(Th.NormIso, 0)} and {RunReport.F(Th.NormExposureSeconds, 0)} s. The warmer the sensor, the higher the index. "
+        + "The label is the folder's name plus idx and the rounded index: you copy it and rename the folder yourself; the program writes and renames nothing in the photo folders.",
+        $"Indexul e un numar pentru cat de cald a fost senzorul: valoarea medie a pixelilor fierbinti din master de pe locurile {RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)} "
+        + $"pe fiecare megapixel, numarand de la cel mai fierbinte, socotita pentru ISO {RunReport.F(Th.NormIso, 0)} si {RunReport.F(Th.NormExposureSeconds, 0)} s. Cu cat senzorul a fost mai cald, cu atat indexul e mai mare. "
+        + "Eticheta e numele folderului plus idx si indexul rotunjit: o copiezi si redenumesti tu folderul; programul nu scrie si nu redenumeste nimic in folderele cu poze.");
 
     internal static string NoDarkMap => T(
         $"No map: the frames are smaller than {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px.",
