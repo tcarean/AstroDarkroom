@@ -38,5 +38,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>The Soft proof tab: its computations, its renders and its controls.</summary>
         internal const string SoftProof = "Window.SoftProof";
+
+        /// <summary>The Culori pentru hartie tab: its computations, its box and its saves.</summary>
+        internal const string GamutFit = "Window.GamutFit";
     }
 }

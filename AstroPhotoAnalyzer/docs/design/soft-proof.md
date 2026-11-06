@@ -52,7 +52,8 @@ each pixel the paper colour read trilinearly from the table (`Trilinear.Corners`
 `XYZ x wtpt / W`, so the paper's white and black show as they are; with it false, kept in the
 core for the figures (V-015), BPC towards the screen, `(XYZ - K) x W / (W - K)`, so the paper's
 black is the screen's black and its white the screen's white; then the Bradford-adapted
-sRGB matrix (XYZ D50 to linear sRGB) and the encoding, clamped. A mono image goes through as
+sRGB matrix (XYZ D50 to linear sRGB, `ColorMath.LinearSrgbOfXyzD50`, the one matrix the proof
+and the paper fit share) and the encoding, clamped. A mono image goes through as
 grey; the result always has three planes. The rows run in parallel. Why the table holds XYZ and not the
 display colour: the display step is a per-pixel scaling, so one table per intent serves both
 states of `simulate`.

@@ -240,6 +240,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TabItem x:Name="CurvesTabItem" Header="{local:T En='Curves Editing', Ro='Editare Curbe'}">
             <local:CurvesView DataContext="{Binding Curves}" />
           </TabItem>
+          <TabItem x:Name="GamutFitTabItem" Header="{local:T En='Colours for paper', Ro='Culori pentru hartie'}">
+            <local:GamutFitView DataContext="{Binding GamutFit}" />
+          </TabItem>
           <TabItem Header="Soft proof">
             <local:SoftProofView DataContext="{Binding SoftProof}" />
           </TabItem>

@@ -8,9 +8,10 @@ distance it will be seen at, and how much denoise the print version needs. Every
 comes with the figure it measured and the threshold it judged it by.
 
 It measures and recommends; the export itself is made cleanly from Siril. Besides its report and
-its log (see "Logs") it writes one file, and only when you ask for it: from the window's
-**Curves Editing** tab, a new FITS with a suggested contrast curve applied. The image you open is
-never modified.
+its log (see "Logs") it writes a file only when you ask for it: from the window's **Curves
+Editing** tab, a new FITS with a suggested contrast curve applied; from its **Colours for paper**
+tab, a new FITS or 16-bit TIFF with the colours the paper cannot reproduce fitted to it. The
+image you open is never modified.
 
 There are two applications over one core, so both give the same figures: the window,
 `AstroPhotoAnalyzer.Wpf.exe`, with a dark theme, and the console, `AstroPhotoAnalyzer.exe`, which
@@ -105,6 +106,7 @@ what each tab shows, not only the tabs' names.
 | **Resolution** | The stars' FWHM, in the centre and in the four corners, and the real detail it leaves; the table of print sizes; the scale of dpi against viewing distance. |
 | **Colour** | The background colour, R / G / B, taken on the sky patches, with its chroma in L\*a\*b\*, which decides the cast, and the two level figures that name its direction; the four corners and the four edges against it, each on its own sky pixels, a flagged one marked "! coloured" or "! neutral"; how to read them. |
 | **Curves Editing** | Suggested contrast curves, computed with the analysis: see below. |
+| **Colours for paper** | The image with the colours the paper cannot reproduce fitted to it, in three variants, to save as a new FITS or 16-bit TIFF: see below. |
 | **Soft proof** | What the paper would do to the image, through its ICC profile, the way Lightroom soft-proofs: see below. |
 
 **Save the report...** writes `Report.txt` beside the image by default (`Raport.txt` in
@@ -173,6 +175,36 @@ Two buttons under the image:
   `ROWORDER` says; the new FITS keeps a FITS input's own row order, and from a PNG, TIFF or JPEG it
   is written from the bottom up with `ROWORDER = 'BOTTOM-UP'`, so that Siril shows the new file
   exactly as it was analysed. The input image is never modified, and saving over it is refused.
+
+### Colours for paper
+
+The **Colours for paper** tab needs the ICC printer profile chosen for the Dmax (**From ICC
+profile...**); without one it shows only a sentence saying so. It takes the pixels the **Soft
+proof** tab paints in red, the colours the paper cannot reproduce, and lowers their saturation,
+each along its own hue and at its own tone, to the most the paper holds there: the tone and the
+hue of every pixel stay what they were. It is computed right after the analysis, like the curves.
+
+- The gallery shows **The original** and three variants: **Exact** changes only the colours the
+  paper cannot hold, each losing just enough saturation to fit; **Soft** and **Softer** ease the
+  colours near the paper's limit too, from 90 % and 80 % of it, so that a run of growing
+  saturation keeps its steps instead of ending flat. **Back**, **Next** and the arrow keys move
+  between them.
+- **Show what does not fit** paints in red, on the image shown, the pixels whose colour the
+  paper still cannot reproduce; on the original it is the Soft proof tab's warning.
+- Under each variant: the share of colours the paper cannot reproduce before and after, how many
+  pixels changed and how much saturation they lose, how many of the colours outside are dark
+  tones, and the recipe for doing it by hand in another program (a mask on the tones under a
+  given L\* with the saturation at a given percentage, and what it would leave). A tone too dark
+  for the paper, which no loss of saturation can bring in, stays as it is and is counted: lift
+  the background when you redo the stretch (the **Tones** tab).
+- **Save as...** writes a new file with the variant applied to the whole image, a FITS or a
+  16-bit TIFF, chosen in the dialog with the input's kind proposed. The FITS is written as the
+  curves' is (a FITS input's header and encoding kept, `HISTORY` lines added, a 32-bit float
+  FITS from any other input). The TIFF is 16-bit, uncompressed (about 135 MB for a 23 MP image),
+  with the input's ICC profile embedded, or the standard sRGB profile when the input had none,
+  and the variant named in its description. The save takes 10 to 30 s for a 23 MP image, under a
+  wait cursor: every colour that lands on the paper's limit is checked through the profile. The
+  input image is never modified, and saving over it is refused.
 
 ### Soft proofing
 

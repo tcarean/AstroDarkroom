@@ -246,16 +246,38 @@ namespace AstroPhotoAnalyzer
         /// </param>
         internal static void Save(AnalysisResult a, CurveSuggestion s, string targetPath)
         {
-            Raster r = a.Raster;
+            IReadOnlyList<string> history = CurveTexts.History(s.Name, s.Curve);
+            Guarded(a, targetPath, Log, (target, sourceFits) =>
+            {
+                FitsWriter.Save(a.Raster, s.Curve, sourceFits, history, target);
+                Log.Info("wrote " + target + " (" + LogText.FileMiB(target) + ") curve=" + s.Name + " header from=" + (sourceFits == null ? "none" : LogText.Str(sourceFits)));
+            });
+        }
+
+        /// <summary>
+        /// Runs a write of the analysed image to a new file under the guards of R-145, for every
+        /// export of the tool: the input must still be where it was read from, the target may not
+        /// be the input by its path, and, for any other spelling of the same file, the input is
+        /// held open for reading without sharing for write or delete while the write lasts, so
+        /// that moving the temporary file over it fails; such a failure is reported as a save
+        /// over the input. A raster from memory (no FullPath) is written with no check.
+        /// </summary>
+        /// <param name="a">The analysis; its FullPath names the input, null for a raster from memory.</param>
+        /// <param name="targetPath">The file to write, relative or full.</param>
+        /// <param name="log">The caller's logger, for the system's exception of a refused move.</param>
+        /// <param name="write">
+        /// The write: the target's full path and the FITS the raster was read from (null when the
+        /// source is not a FITS, or has no file).
+        /// </param>
+        internal static void Guarded(AnalysisResult a, string targetPath, Logger log, Action<string, string> write)
+        {
             string input = a.FullPath;
             string target = Path.GetFullPath(targetPath);
-            IReadOnlyList<string> history = CurveTexts.History(s.Name, s.Curve);
             if (input == null)
             {
                 // A raster from memory (the tests): it has no file to protect and no header to
                 // keep.
-                FitsWriter.Save(r, s.Curve, null, history, target);
-                Log.Info("wrote " + target + " (" + LogText.FileMiB(target) + ") curve=" + s.Name + " header from=none");
+                write(target, null);
                 return;
             }
             if (!File.Exists(input)) throw new Exception(CurveTexts.InputGone(input));
@@ -264,9 +286,8 @@ namespace AstroPhotoAnalyzer
             using var hold = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.Read, 1);
             try
             {
-                string sourceFits = r.Source?.Format == "FITS" ? input : null;
-                FitsWriter.Save(r, s.Curve, sourceFits, history, target);
-                Log.Info("wrote " + target + " (" + LogText.FileMiB(target) + ") curve=" + s.Name + " header from=" + LogText.Str(sourceFits));
+                string sourceFits = a.Raster.Source?.Format == "FITS" ? input : null;
+                write(target, sourceFits);
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
@@ -277,7 +298,7 @@ namespace AstroPhotoAnalyzer
                 // quotes it (the review of 2026-10-31).
                 if (File.Exists(target) && SameLength(target, hold.Length))
                 {
-                    Log.Warn(e, "the save to " + target + " was refused while the input was held open: the target is probably the input by another spelling");
+                    log.Warn(e, "the save to " + target + " was refused while the input was held open: the target is probably the input by another spelling");
                     throw new Exception(CurveTexts.SaveOverInput + " (" + e.Message + ")");
                 }
                 throw;

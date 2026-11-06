@@ -92,10 +92,11 @@ line in `WindowSmokeTests.R110_EveryTabRenders...`; **its row in `../requirement
 A tab whose content is a second run after the analysis, like Editare Curbe, also gets its own run in
 `Core/Runs/` beside `AnalysisRun` (**`pipeline.md`**), never a computation in the view-model.
 
-**A new output**: the tool writes one image, the FITS of `Core/Input/FitsWriter.cs` (ADR 0032).
-Another format, or another thing written, is a decision first (the owner chose FITS for every
-input); then a writer in `Core/Input/`, called from `Core/Runs/`, that never opens the input
-for writing; **`input.md`**.
+**A new output**: the tool writes two kinds of image, the FITS of `Core/Input/FitsWriter.cs`
+(ADR 0032) and the 16-bit TIFF of `Core/Input/TiffWriter.cs` (ADR 0083). Another format, or
+another thing written, is a decision first; then a writer in `Core/Input/`, called from
+`Core/Runs/` under `CurveExport.Guarded`, so that it never opens the input for writing;
+**`input.md`** or **`paper-fit.md`**.
 
 **A new run, a file read or written, a dialog or a quiet catch**: its line in the diagnostic
 log, from `LogText`, never through `Tr.Pick`, a run with a `RunClock`; nothing in `Analysis/` or

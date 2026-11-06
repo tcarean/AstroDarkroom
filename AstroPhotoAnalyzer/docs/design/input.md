@@ -49,7 +49,10 @@ stack, before the user's exception, which carries no inner one, is thrown (`logg
 
 ### The writer (`Input/FitsWriter.cs`, R-145, ADR 0032)
 
-The one image the tool writes: a new FITS with a curve applied, hand-written like the reader.
+The first of the two images the tool writes (the second, the 16-bit TIFF of the paper fit, and
+the sRGB profile it embeds are `Input/TiffWriter.cs` and `Input/IccProfiles.cs`, described in
+`paper-fit.md`; this writer serves the fit too, with an identity curve): a new FITS with a curve
+applied, hand-written like the reader.
 From a FITS source the file is re-opened for reading only and copied as it is, byte for byte,
 except two places of the image HDU: the header gets `HISTORY` cards before `END` (every other
 card stays, in order; a full last block grows by one), and the data are written from the
@@ -72,7 +75,7 @@ matters. An integer sample that falls outside its type by more than a
 rounding (a signed 16-bit source without `BZERO` holds 0..32767) is counted, and one such
 sample refuses the save: clipped silently the file would not be the curve's.
 
-The input is protected in `CurveExport.Save`, not here, and twice. The path the image was read
+The input is protected in `CurveExport.Guarded`, not here, and twice. The path the image was read
 from is kept in full on the result (`AnalysisResult.FullPath`), so a later change of the
 working directory cannot lose it; a target equal to it is refused by name. A string compare
 cannot see every spelling of one file (the review of 2026-10-05 overwrote the input through

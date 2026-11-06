@@ -8,6 +8,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A Colours for paper tab in the window (R-175 to R-178, ADR 0083): the colours the paper cannot
+  reproduce, the ones the Soft proof tab paints in red, have their saturation lowered, each along
+  its own hue and at its own tone, to the most the paper holds there, in three variants (Exact,
+  Soft, Softer), with the share outside before and after, the pixels changed and what they lose,
+  and the recipe for doing it by hand in another program. Save as... writes the variant applied
+  to the whole image as a new FITS, or as a 16-bit uncompressed TIFF with the input's ICC profile
+  (the standard sRGB when it had none), written by the tool's own writer; the input is never
+  modified.
+
 - A diagnostic log, for bug reports (R-170 to R-173, ADR 0069): each application writes
   `log\AstroPhotoAnalyzer.log` or `log\AstroPhotoAnalyzer.Wpf.log` beside its executable (or
   under `%LOCALAPPDATA%\AstroPhotoAnalyzer\log` when that folder cannot be written), at most 5

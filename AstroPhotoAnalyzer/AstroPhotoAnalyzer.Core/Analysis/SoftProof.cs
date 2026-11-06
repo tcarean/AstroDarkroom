@@ -370,12 +370,6 @@ namespace AstroPhotoAnalyzer
     /// <summary>The soft proof of an image through a profile's table (R-160).</summary>
     internal static class SoftProof
     {
-        // XYZ D50 to linear sRGB: the sRGB matrix adapted to D50 with Bradford, the one the ICC
-        // world uses for an sRGB working space.
-        const double M00 = 3.1338561, M01 = -1.6168667, M02 = -0.4906146;
-        const double M10 = -0.9787684, M11 = 1.9161415, M12 = 0.0334540;
-        const double M20 = 0.0719453, M21 = -0.2289914, M22 = 1.4052427;
-
         /// <summary>
         /// The display step of one paper colour: the scaling the simulation decides (the paper's
         /// black and white to the screen's, or the absolute scaling by the media white), then the
@@ -398,9 +392,8 @@ namespace AstroPhotoAnalyzer
                 x *= m[0] / w[0]; y *= m[1] / w[1]; z *= m[2] / w[2];
             }
             else (x, y, z) = ProofProfile.Uncompensate(x, y, z, k);
-            double rl = M00 * x + M01 * y + M02 * z;
-            double gl = M10 * x + M11 * y + M12 * z;
-            double bl = M20 * x + M21 * y + M22 * z;
+            // XYZ D50 to linear sRGB: the Bradford-adapted matrix ColorMath holds for the ICC world.
+            var (rl, gl, bl) = ColorMath.LinearSrgbOfXyzD50(x, y, z);
             return ((float)ColorMath.LinearToSrgb(Math.Clamp(rl, 0, 1)), (float)ColorMath.LinearToSrgb(Math.Clamp(gl, 0, 1)), (float)ColorMath.LinearToSrgb(Math.Clamp(bl, 0, 1)));
         }
 
