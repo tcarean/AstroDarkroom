@@ -92,7 +92,7 @@ peak-to-peak amplitude over the frame. The vertex comes from `M = [[2d, f], [f, 
 the geometric centre with `vertexValid = false` and the `NaN` tilt on a singular system are
 ADR 0014; that the tilt is a ratio like every other metric is ADR 0012.
 
-**`RadialModel(img, cx, cy, nbins = 80, pct = 50)`** - bins pixels by radius into
+**`RadialModel(img, cx, cy, nbins = 80)`** - bins pixels by radius into
 80 equal-width bins out to `rmax`, takes the median per bin (bins with < 8 pixels
 are dropped), then rebuilds a 2-D model by linear interpolation of that profile.
 `Interp` clamps at both ends, matching `np.interp`.
@@ -114,13 +114,16 @@ falloff steeper along one axis than the other (`x² - y²`), which is what a twi
 in a 70° field and what a 180° rotation cannot cancel - goes through it untouched, and the
 median on the left/right arcs beyond the inscribed circle absorbed it into the profile; on a
 master built from four orientations the same arcs read a 4θ term as 2θ. The correction,
-`Metrics.RingFit` on the partial rings (the 2θ + 4θ basis, the sector medians, the three
-MAD-clipped rounds, the identifiability gate `RingFitMinDet`, one `q` per `r²` anchored on the
-full rings from `RingQFrom` = 0.75 of the inscribed radius), the measurements on the Tokina sky
-and tablet masters and on the synthetics, and the designs rejected on the way are ADR 0017.
-The full specification with every measurement is `radial-model-even-term.md` (§7 for the 4θ
-face), and the header comment of `RadialModel` lists the rejected designs beside the code; read
-both before changing the method. Two measurements the ADR does not record:
+`Metrics.RingFit` (the 2θ + 4θ basis, the sector medians, the three MAD-clipped rounds, the
+identifiability gate `RingFitMinDet`, one `q` per `r²` anchored on the full rings from
+`RingQFrom` = 0.75 of the inscribed radius), the measurements on the Tokina sky and tablet
+masters and on the synthetics, and the designs rejected on the way are ADR 0017; the `q` is
+divided out of every ring before its median since 2026-11-06 (R-014, ADR 0091), the partial
+rings only before that, because the plain median of a whole ring is biased when the ring
+mixes 2θ and 4θ. The full specification with every measurement is `radial-model-even-term.md`
+(§7 for the 4θ face, §8 for the whole rings), and the header comment of `RadialModel` lists
+the rejected designs beside the code; read both before changing the method. Two measurements
+the ADR does not record:
 
 - The saddle face was proved to be the model's by reproducing the arcs, arc for arc, on a
   smooth synthetic with the fitted coefficients. On the sky master the sharpest step between

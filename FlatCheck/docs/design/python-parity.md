@@ -57,7 +57,8 @@ ADR 0038 lists them (no 4-panel figure, no `suggest_shutter`, `Percentile` on an
 `libraw` against `rawpy` in two lines, no console histograms, `--sat=4095` against
 `--sat=4095.0`, the capitalised `--light` diagnosis, and the modes that exist only in C#);
 ADR 0047 and CLAUDE.md ("Layout") make the prototype prior art, not a reference, so nothing is
-"fixed" on either side. ADR 0014 and ADR 0038 hold the one numeric divergence: on a perfectly
+"fixed" on either side. ADR 0014 and ADR 0038 hold the first numeric divergence (the second,
+the whole rings' median, is the 2026-11-06 bullet below): on a perfectly
 constant frame the C# guard `|det| < 1e-15` in `FitCenter` prints `nedeterminat` where Python
 placed the illumination peak at (136, 136) with a 6.35 % offset; the C# is the correct one and
 stays (pinned by `FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre` and
@@ -102,6 +103,14 @@ stays (pinned by `FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre` and
   refusal of a processed file. `parity_expo_25`, `parity_expo_25_sky`, `parity_expo_30` and
   `parity_expo_debayered` were recaptured, with the owner's yes, for one or two text lines each;
   every figure is unchanged. A C#-only call, like the rest.
+- On 2026-11-06 the even-harmonic correction of the radial model was extended to the whole
+  rings (R-014, ADR 0091): a figure changed, for the first time since the freeze. The residual
+  after the radial model moved by 0.01 on four structure scenarios, one line each:
+  `parity_structure_clean` and `parity_structure_int32` 0.29 -> 0.28, `parity_structure_heavy_vign`
+  0.54 -> 0.53, `parity_structure_band_refa` 52.02 -> 52.01. On these fixtures, which carry no
+  even non-radial term, the estimated `q` is the fit's noise, now divided out of the whole
+  rings too. Recaptured with the owner's yes; the prototype keeps the old median on its whole
+  rings. A C#-only call, like the rest.
 - The goldens run in Romanian, the language the prototype spoke; the console's default is
   English since the same date, and `EnglishOutputTests` checks that each parity scenario prints
   the same numbers in English.

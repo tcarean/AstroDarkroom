@@ -25,7 +25,7 @@ Copyright (C) 2026 Tudor Carean
         bottom-left   : 100.00 % of the corners' mean
         bottom-right  : 100.28 % of the corners' mean
     max azimuthal asymmetry :  0.29 %   [PERFECT]
-    residual (radial model) :  0.29 %   [PERFECT]  <- THE MOST IMPORTANT
+    residual (radial model) :  0.28 %   [PERFECT]  <- THE MOST IMPORTANT
     tilt (gradient)         :  0.41 %   [PERFECT]
     worst spot (one tile)   :  0.40 %   [PERFECT]
 

@@ -19,7 +19,7 @@ longer describes is worse than no note.
 | --- | --- | --- |
 | Any file: what it is for and why it is shaped that way | `code-map.md` | any file you have not opened before; it is long, search it for the file name |
 | The core idea, input contract, mode dispatch, shared algorithms (`Prepare`, `FitCenter`, `RadialModel`, `LargeScalePtp`, `MaxTileDeviation`, `LocalSpots`, verdict ladder) | `pipeline.md` | `Img.cs`, `Stats.cs`, `Metrics.cs`, anything in `Analysis/` |
-| The radial model on partial rings: the even 2θ + 4θ correction, every design measured and rejected | `radial-model-even-term.md` | `Metrics.RadialModel`, `Metrics.RingFit`, `radial_model` in `flatcheck.py` |
+| The radial model's even 2θ + 4θ correction (every ring since 2026-11-06, the partial rings before), every design measured and rejected | `radial-model-even-term.md` | `Metrics.RadialModel`, `Metrics.RingFit`, `radial_model` in `flatcheck.py` |
 | Mode 1, structure: the five deviation tests, the local spot, the sixth test against the lens profiles | `modes-structure.md` | `StructureAnalyzer`, `VignettingComparison`, `StructureReport`, `StructureRun`, `LensIdentification` |
 | Mode 3, `--light`: the plane/radial fit, the validity limit (field of view), series mode | `modes-light.md` | `LightAnalyzer`, `LightSuitability`, `LightSeriesAnalyzer`, `LightRun`, `LightSeriesRun`, `SeriesFinder` |
 | Mode 4, `--expo`: the central window, the CFA order (`BAYERPAT`, `ROWORDER`, libraw's index-3 trap), the histograms, the camera preview | `modes-expo.md` | `ExposureAnalyzer`, `ExposureBands`, `CfaPattern`, `Mosaic`, `RawReader`, `PreviewReader`, `ExposureReport` |
