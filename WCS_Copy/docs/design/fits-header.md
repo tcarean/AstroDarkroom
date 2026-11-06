@@ -4,9 +4,10 @@
 `src/CopyWcs.Core/WcsMetadataKeys.cs`.
 
 How the header is read, changed and written back by hand, how the one card the tool composes is
-kept ASCII, and which keys a copy takes. What the tool does with them is in
-`run-and-console.md`; why there is no FITS library is ADR 0001; why the bytes are kept as they
-are and the HISTORY card is ASCII is ADR 0010.
+kept ASCII, and which keys a copy takes and which of the destination's it drops. What the tool
+does with them is in `run-and-console.md`; why there is no FITS library is ADR 0001; why the
+bytes are kept as they are and the HISTORY card is ASCII is ADR 0010; why a copy drops the
+destination's old plate-solve cards is ADR 0011.
 
 ## The card and block model
 
@@ -38,6 +39,12 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
 - `SetCard(key, raw)` replaces the first card of that keyword in place, keeping its position,
   or appends when there is none; the raw text is padded to 80 or cut at 80 by `Pad`. This is
   the verbatim copy of R-010: the caller passes the source's card, and nothing is reparsed.
+  A second card of the same keyword, which a header may hold though the standard says it
+  should not, is left as it is.
+- `CardsOf(key)` lists every card of a keyword in the header's order; `RemoveCards(key)` takes
+  them all out, the other cards keeping their order, and returns them (R-016). The run logs a
+  dropped key's cards through `CardsOf` before anything changes, and drops them through
+  `RemoveCards` before the first `SetCard`.
 - `AddHistory(text)` appends `HISTORY ` plus at most 72 characters of `AsciiText.Of(text)`
   (R-011): the text is made ASCII first, then cut, so the cut counts the characters written.
 
@@ -115,3 +122,11 @@ no length.
 coefficients in the source's own order between the WCS keys and the optical ones, drops
 duplicates and keeps only the keys the source has (R-007). V-001 in `docs/validation.md`
 shows what this yields on a real Siril header: 61 WCS and SIP keys, 11 optical ones.
+
+`SelectKeysToDrop(source, dest)` walks the destination's `Keywords` in order and keeps each one
+that is in `WcsKeys` or matches `SipCoefficient` and that the source does not have, each once
+(R-016). It is the same two lists that decide what a plate solve is, read from the other side, so
+the target holds the source's plate solve and no other; `OpticalKeys` never take part, so a
+destination's own `OBJECT` or `SITELAT` stays when the source lacks it. The selector itself does
+not look at `CTYPE1`: the run asks for it only when the source has one (ADR 0011). V-002 shows it
+on a real destination: the 4 `CD` keys the SyQon CLI wrote beside Siril's `PC`.

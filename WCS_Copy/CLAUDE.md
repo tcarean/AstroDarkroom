@@ -46,11 +46,11 @@ exports.
   rendering in both languages, the command line, the icon, the window's log lines in
   `WindowLoggingTests`), a project of their own since they need `net8.0-windows`.
 - `tests/CopyWcs.Tests/` - unit, acceptance on `CopyWcsCli.Run`, the language
-  (`LanguageTests`), the one validation case (`ValidationTests`), the log (`LoggingTests`, over
+  (`LanguageTests`), the two validation cases (`ValidationTests`), the log (`LoggingTests`, over
   the capture `LogCapture` every test runs its log lines into), repo rules
   (`RepoInvariantTests`, `LicenseHeaderTests`, `LicenseNoticeTests`, `VersionTests`,
   `ThirdPartyTests`). Every FITS the tests build comes from `FitsTestData`;
-  `tests/testdata/fixtures/` holds the one real header, with the manifest.
+  `tests/testdata/fixtures/` holds the two real headers, with the manifest.
 - `THIRD-PARTY-NOTICES.md` - the licence of each component the tool links (NLog) and why it is
   compatible with the GPLv3.
 - `prototype/copy_wcs.py` - the Python/astropy prototype the tool was ported from, frozen:

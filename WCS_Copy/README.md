@@ -23,6 +23,15 @@ It is free software under the GNU General Public License v3 or later; see `LICEN
 Only the keys present in the source are copied. On a Siril 1.4.4 solve of a DSLR stack that
 is 72 cards: 21 WCS keys, 40 SIP coefficients and 11 optical keys (`docs/validation.md`).
 
+**The destination's old plate solve is dropped.** When the destination already holds a plate
+solve, one another program made for example, its plate-solve keys that the source does not have
+are removed before the copy: a `CD` matrix beside Siril's `PC` and `CDELT`, a `CROTA`, a SIP
+coefficient of a higher degree. Siril 1.4.4 reads a `CD` matrix in place of `PC` and `CDELT`
+when a file holds both, so a `CD` left behind would hide the copied solution from the very
+program the copy is checked in (ADR 0011). The optical keys are never removed, and nothing is
+removed when the source has no `CTYPE1`. `--dry-run` and the window's Preview name the keys
+that would be dropped under the cards, and a copy names them before its closing lines.
+
 The two images must have the same pixel grid: the tool compares `NAXIS1` and `NAXIS2` and
 refuses to copy when they differ, because the solution would point at the wrong pixels.
 `--force` copies anyway, for the case you know is right.

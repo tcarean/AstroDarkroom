@@ -116,4 +116,59 @@ public class WcsMetadataKeysTests
 
         Assert.Equal(selected.Count, selected.Distinct().Count());
     }
+
+    private static FitsHeader Read(List<string> cards) => FitsHeader.ReadFrom(new MemoryStream(FitsTestData.HeaderBlock(cards)));
+
+    [Fact]
+    public void R016_SelectKeysToDrop_TheDestinationsWcsAndSipKeysTheSourceLacks_InTheDestinationsOrder()
+    {
+        var source = Read(FitsTestData.PlateSolvedCards());
+        var dest = Read(FitsTestData.OldSolveCards());
+
+        var drop = WcsMetadataKeys.SelectKeysToDrop(source, dest);
+
+        Assert.Equal(FitsTestData.OldSolveKeysToDrop, drop);
+    }
+
+    [Fact]
+    public void R016_SelectKeysToDrop_NeverAnOpticalKey_AKeyTheSourceHas_OrAnUnrelatedKey()
+    {
+        // SITELAT is optical and absent from the source; CRVAL1, A_0_2 and OBJECT are in both;
+        // ABC_1_2 only looks like a SIP coefficient.
+        var source = Read(FitsTestData.PlateSolvedCards());
+        List<string> destCards = FitsTestData.OldSolveCards();
+        destCards.Add(FitsTestData.Card("ABC_1_2", "1.0"));
+        var dest = Read(destCards);
+
+        var drop = WcsMetadataKeys.SelectKeysToDrop(source, dest);
+
+        Assert.DoesNotContain("SITELAT", drop);
+        Assert.DoesNotContain("CRVAL1", drop);
+        Assert.DoesNotContain("A_0_2", drop);
+        Assert.DoesNotContain("OBJECT", drop);
+        Assert.DoesNotContain("ABC_1_2", drop);
+    }
+
+    [Fact]
+    public void R016_SelectKeysToDrop_AKeywordTwiceInTheDestination_IsNamedOnce()
+    {
+        var source = Read(FitsTestData.PlateSolvedCards());
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards.Add(FitsTestData.Card("CD1_1", "-0.000264"));
+        destCards.Add(FitsTestData.Card("CD1_1", "-0.000265"));
+        var dest = Read(destCards);
+
+        var drop = WcsMetadataKeys.SelectKeysToDrop(source, dest);
+
+        Assert.Equal(["CD1_1"], drop);
+    }
+
+    [Fact]
+    public void R016_SelectKeysToDrop_ADestinationWithoutAPlateSolve_DropsNothing()
+    {
+        var source = Read(FitsTestData.PlateSolvedCards());
+        var dest = Read(FitsTestData.ProcessedCards());
+
+        Assert.Empty(WcsMetadataKeys.SelectKeysToDrop(source, dest));
+    }
 }

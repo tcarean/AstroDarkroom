@@ -136,4 +136,40 @@ internal static class FitsTestData
         Card("NAXIS2", naxis2.ToString()),
         Card("OBJECT", "'M42'"),
     };
+
+    /// <summary>
+    /// The keys of <see cref="OldSolveCards"/> that the default source lacks and a copy drops
+    /// (R-016), in the order the destination holds them.
+    /// </summary>
+    public static readonly string[] OldSolveKeysToDrop = ["CD1_1", "CD1_2", "CD2_1", "CD2_2", "CROTA2", "A_3_0"];
+
+    /// <summary>
+    /// A processed image's header that still holds an old plate solve in another program's
+    /// form (R-016): a CD matrix, CROTA2 and a SIP term the default source lacks, beside WCS
+    /// cards the source has with other values, OBJECT as the source has it, and SITELAT, an
+    /// optical key the source lacks. The same dimensions as the default source.
+    /// </summary>
+    public static List<string> OldSolveCards(int naxis1 = 100, int naxis2 = 80) => new()
+    {
+        Card("SIMPLE", "T"),
+        Card("BITPIX", "16"),
+        Card("NAXIS", "2"),
+        Card("NAXIS1", naxis1.ToString()),
+        Card("NAXIS2", naxis2.ToString()),
+        Card("OBJECT", "'M42'"),
+        Card("CTYPE1", "'RA---TAN'"),
+        Card("CTYPE2", "'DEC--TAN'"),
+        Card("CRPIX1", "51.0"),
+        Card("CRPIX2", "41.0"),
+        Card("CRVAL1", "83.6"),
+        Card("CRVAL2", "22.0"),
+        Card("CD1_1", "-0.000264"),
+        Card("CD1_2", "0.000152"),
+        Card("CD2_1", "0.000152"),
+        Card("CD2_2", "0.000264"),
+        Card("CROTA2", "30.0"),
+        Card("A_0_2", "9.9e-07"),
+        Card("A_3_0", "5.0e-10"),
+        Card("SITELAT", "46.77"),
+    };
 }

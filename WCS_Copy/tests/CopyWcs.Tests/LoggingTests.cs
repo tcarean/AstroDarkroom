@@ -342,7 +342,7 @@ public class LoggingTests
         Assert.Contains("appended HISTORY WCS copied from source.fit", messages);
         Assert.Contains("write " + dst + " in place through " + dst + ".tmp, the data from byte 2880 of " + dst, messages);
         Assert.Contains("wrote " + dst + " (3.2 KiB) bytes=3280 cards=21 blocks=1 data=400", messages);
-        Assert.Matches("^copy done copied 15 keys into " + Regex.Escape(dst) + @" \(new 14, replaced 1, identical 0\) in \d+ ms"
+        Assert.Matches("^copy done copied 15 keys into " + Regex.Escape(dst) + @" \(new 14, replaced 1, identical 0, dropped 0\) in \d+ ms"
                        + @" \(source \d+ ms, dest \d+ ms, select \d+ ms, write \d+ ms\)$", DoneLine(capture));
         Assert.Contains(capture.Events, e => e.Logger == "FitsHeader" && e.Message.StartsWith("read " + src, StringComparison.Ordinal));
         Assert.Contains(capture.Events, e => e.Logger == "WcsCopy" && e.Message.StartsWith("card OBJECT:", StringComparison.Ordinal));
@@ -360,7 +360,32 @@ public class LoggingTests
 
         Assert.Contains("card OBJECT: OBJECT  = 'M42' | dest: same", capture.Messages);
         Assert.DoesNotContain(capture.Messages, m => m.StartsWith("write ", StringComparison.Ordinal) || m.StartsWith("wrote ", StringComparison.Ordinal));
-        Assert.Matches(@"^copy done previewed 15 keys \(new 14, replaced 0, identical 1\) in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)$",
+        Assert.Matches(@"^copy done previewed 15 keys \(new 14, replaced 0, identical 1, dropped 0\) in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)$",
+                       DoneLine(capture));
+    }
+
+    [Fact]
+    public void R042_ADroppedCardIsLoggedWithTheDestinationsCard_InACopyAndInADryRun()
+    {
+        using var ws = new TempWorkspace();
+        var (src, dst) = Pair(ws, dest: FitsTestData.OldSolveCards());
+
+        using (var preview = LogCapture.Start())
+        {
+            Assert.Equal(0, Cli(src, dst, "--dry-run").Code);
+
+            string[] dropLines = preview.Messages.Where(m => m.StartsWith("drop ", StringComparison.Ordinal)).ToArray();
+            Assert.Equal(FitsTestData.OldSolveKeysToDrop, dropLines.Select(m => m[5..m.IndexOf(':', StringComparison.Ordinal)]));
+            Assert.Contains("drop CD1_1: CD1_1   = -0.000264", dropLines);
+            Assert.Contains("drop A_3_0: A_3_0   = 5.0e-10", dropLines);
+            Assert.Matches(@"^copy done previewed 15 keys \(new 7, replaced 7, identical 1, dropped 6\) in \d+ ms",
+                           DoneLine(preview));
+        }
+
+        using var capture = LogCapture.Start();
+        Assert.Equal(0, Cli(src, dst).Code);
+        Assert.Equal(6, capture.Messages.Count(m => m.StartsWith("drop ", StringComparison.Ordinal)));
+        Assert.Matches("^copy done copied 15 keys into " + Regex.Escape(dst) + @" \(new 7, replaced 7, identical 1, dropped 6\) in \d+ ms",
                        DoneLine(capture));
     }
 

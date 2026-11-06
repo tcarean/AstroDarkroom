@@ -73,8 +73,10 @@ proposed), the About window (`ShowAbout`, the Help command's handler), and
   property: `Error`, `Warnings`, `Heading` (the outcome's notes when the kind is `Previewed`:
   the core's one heading line), `Cards` (each card with its trailing spaces trimmed, a 0xA0
   kept and a byte above 0x7F shown as the character of its Latin-1 code, ADR 0010, as the console
-  prints it without the indent) and `Notes` (the notes when the kind is `Copied`: the count
-  and the reminder). The `Has...` flags are derived, never stored.
+  prints it without the indent) and `Notes`, the lines under the cards in the console's order:
+  the outcome's `Dropped` line when there is one (R-016), then, when the kind is `Copied`, its
+  notes, the count and the reminder; a preview's `Notes` is the drop line alone, or empty. The
+  `Has...` flags are derived, never stored.
 
 Beside the three, `Banner` and `Copyright` hand the band the core's `VersionInfo.Banner` and
 `LicenseInfo.Copyright`, the console's lines 1 and 2, as `AboutViewModel` does: passed

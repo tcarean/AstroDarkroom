@@ -182,6 +182,29 @@ public class FitsHeaderTests
     }
 
     [Fact]
+    public void R016_RemoveCards_RemovesEveryCardOfTheKeyword_AndReturnsThemInOrder()
+    {
+        string first = FitsTestData.Card("CD1_1", "-0.000264");
+        string second = FitsTestData.Card("CD1_1", "-0.000265");
+        var header = ReadHeader(FitsTestData.Card("A", "1"), first, FitsTestData.Card("B", "2"), second);
+
+        IReadOnlyList<string> removed = header.RemoveCards("CD1_1");
+
+        Assert.Equal([first, second], removed);
+        Assert.False(header.Contains("CD1_1"));
+        Assert.Equal(["SIMPLE", "A", "B"], header.Keywords);
+    }
+
+    [Fact]
+    public void R016_RemoveCards_AKeywordTheHeaderLacks_RemovesNothing()
+    {
+        var header = ReadHeader(FitsTestData.Card("A", "1"));
+
+        Assert.Empty(header.RemoveCards("CD1_1"));
+        Assert.Equal(["SIMPLE", "A"], header.Keywords);
+    }
+
+    [Fact]
     public void SetCard_ShortCard_PadsTo80Chars()
     {
         var header = ReadHeader();

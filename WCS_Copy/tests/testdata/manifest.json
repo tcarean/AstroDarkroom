@@ -1,5 +1,5 @@
 {
-  "$comment": "Every test data file, in repo or outside it. 'location' is 'repo' (under fixtures/) or 'large' (under the folder COPYWCS_TESTDATA_LARGE names, git-ignored). scripts/check-testdata.ps1 verifies presence and SHA-256 of every entry; a 'large' entry that is missing is a warning locally and an error in CI only when 'requiredInCi' is true. Every FITS the tests build themselves comes from FitsTestData; the one fixture is the header of a real Siril plate solve (ADR 0005).",
+  "$comment": "Every test data file, in repo or outside it. 'location' is 'repo' (under fixtures/) or 'large' (under the folder COPYWCS_TESTDATA_LARGE names, git-ignored). scripts/check-testdata.ps1 verifies presence and SHA-256 of every entry; a 'large' entry that is missing is a warning locally and an error in CI only when 'requiredInCi' is true. Every FITS the tests build themselves comes from FitsTestData; the two fixtures are real headers: a Siril plate solve (ADR 0005) and the same stack after the SyQon CLI, with a CD matrix beside Siril's PC (ADR 0011).",
   "files": [
     {
       "name": "veil-2026-10-06-siril-1.4.4-solve.fit",
@@ -7,6 +7,13 @@
       "sha256": "0e08c495848853f25963da93dc900192f69efe24d280cda7d5e325b08b7415bb",
       "source": "the three header blocks (8640 bytes, no image) of E:\\Photografie\\Astro\\Veil\\2026-10-06-3h\\result_final.fit, the owner's Siril 1.4.4 stack of the Veil session of 2026-10-06, plate-solved with SIP; cut on 2026-10-26",
       "demonstrates": "V-001 (R-007, R-024): the keys the tool selects from a real Siril solve"
+    },
+    {
+      "name": "veil-2026-10-06-syqon-cli-1.1.8-denoised.fit",
+      "location": "repo",
+      "sha256": "b6dc39a32849bb974c2bc09d00ecb7ecc0859421ae0c9456023655087f571553",
+      "source": "the four header blocks (11520 bytes, no image) of E:\\Photografie\\Astro\\Veil\\2026-10-06-3h\\procesate\\bge-cc\\denoised_syqon_studio_in.fit, the same Veil stack denoised by the SyQon CLI 1.1.8 (prism-max), whose header holds a CD matrix beside Siril's PC and CDELT; cut on 2026-11-06",
+      "demonstrates": "V-002 (R-016): the old plate-solve keys a copy of V-001's solve drops from a real destination"
     }
   ]
 }

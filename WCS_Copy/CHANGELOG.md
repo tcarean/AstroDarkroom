@@ -41,6 +41,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The `HISTORY` card written into the destination reads `WCS copied from <file>` in both
   languages, where it read `WCS copiat din <file>` (ADR 0004).
 
+### Fixed
+
+- A copy drops the destination's own plate-solve keys that the source does not have, such as
+  a `CD` matrix another program wrote beside Siril's `PC` and `CDELT`. Siril 1.4.4 reads the
+  `CD` matrix first, so it went on showing the old solution instead of the copied one. The
+  optical keys are never dropped; the preview and the copy name the keys dropped (ADR 0011).
+
 ### Internal
 
 - NLog 6.2.2 and NLog.Targets.AtomicFile 6.2.2, the tool's first package, at FlatCheck's

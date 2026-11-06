@@ -23,16 +23,21 @@ place, optical keys or not, force, dry run. The outcome is a record of lines alr
 | `Cards` | the raw 80-character cards selected, in the source's order | the preview, indented, trailing spaces trimmed (a 0xA0 stays); a byte above 0x7F shows as the character of its Latin-1 code, which the log alone escapes (ADR 0010) |
 | `Target` | the file written, else null | nothing; the window reads the destination's facts again after a copy |
 | `Notes` | the preview's heading, or the count copied and the flip reminder | stdout, last |
+| `Dropped` | the one line naming the destination's old plate-solve keys dropped, or a preview would drop (R-016), else null | stdout: a preview's after its cards, a copy's before its notes, so the count and the reminder stay the last two lines (R-012) |
 
 The sequence: read the source, read the destination (each read failure is a refusal naming
 which file and why, R-004; the reader's own messages of R-015 travel in it); compare
 `NAXIS1`/`NAXIS2` (a refusal, or a warning under force, R-005); warn on a missing `CTYPE1`
-(R-006); select the keys (R-007; none is a refusal, R-008); on a dry run return the cards and
-the heading (R-009); else set each card verbatim, append the HISTORY card, write through the
-header engine (a write failure is a refusal, R-014) and return the count and the reminder
-(R-012). The warnings raised before a refusal stay in the outcome, so the console prints
-them before the error, as it did before the split. The core composes every sentence about
-the copy; an application adds nothing to them. Beside the outcome, the run writes its own lines
+(R-006); select the keys (R-007; none is a refusal, R-008) and, when the source has `CTYPE1`,
+the destination's keys to drop (`WcsMetadataKeys.SelectKeysToDrop`, R-016, ADR 0011); on a dry
+run return the cards, the heading and the drop line (R-009); else remove the dropped keys' cards,
+set each selected card verbatim, append the HISTORY card, write through the header engine (a
+write failure is a refusal, R-014) and return the count, the reminder and the drop line (R-012).
+The keys dropped and the keys set never overlap: a dropped key is one the source lacks. A
+refusal drops nothing and carries no drop line, the write error's included, since the header in
+memory is thrown away. The warnings raised before a refusal stay in the outcome, so the console
+prints them before the error, as it did before the split. The core composes every sentence
+about the copy; an application adds nothing to them. Beside the outcome, the run writes its own lines
 to the diagnostic log, in English (`logging.md`, "A copy's lines").
 
 ## The console (`CopyWcsCli`, `Options`, `Program`)

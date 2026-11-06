@@ -265,6 +265,77 @@ public class CopyWcsCliTests
         Assert.Equal(destBytesOriginal, File.ReadAllBytes(destPath));
     }
 
+    private static string[] Lines(string stdout) => stdout.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
+
+    [Fact]
+    public void R016_Run_DryRun_PrintsTheDropLineAfterTheCards()
+    {
+        using var ws = new TempWorkspace();
+        var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards());
+        var destPath = ws.WriteFile("dest.fit", destBytes);
+
+        var result = Run(sourcePath, destPath, "--dry-run");
+
+        Assert.Equal(0, result.ExitCode);
+        string[] lines = Lines(result.Stdout);
+        Assert.Equal("Chei care ar fi copiate (15):", lines[2]);
+        Assert.All(lines[3..^1], l => Assert.StartsWith("  ", l, StringComparison.Ordinal));
+        Assert.Equal(15, lines[3..^1].Length);
+        Assert.Equal("Chei vechi de plate solve ale destinatiei care ar fi eliminate (6): CD1_1, CD1_2, CD2_1, CD2_2, CROTA2, A_3_0", lines[^1]);
+        Assert.Equal(destBytes, File.ReadAllBytes(destPath));
+    }
+
+    [Fact]
+    public void R016_Run_Copy_PrintsTheDropLineBeforeTheLastTwoLines()
+    {
+        using var ws = new TempWorkspace();
+        var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destPath = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards()));
+
+        var result = Run(sourcePath, destPath);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("", result.Stderr);
+        string[] lines = Lines(result.Stdout);
+        Assert.Equal(5, lines.Length);
+        Assert.Equal("Eliminate 6 chei vechi de plate solve ale destinatiei: CD1_1, CD1_2, CD2_1, CD2_2, CROTA2, A_3_0.", lines[2]);
+        Assert.Equal($"Copiate 15 chei in {destPath}.", lines[3]);
+        Assert.StartsWith("Verifica vizual", lines[4], StringComparison.Ordinal);
+        Assert.False(FitsHeader.ReadPrimary(destPath).Contains("CD1_1"));
+    }
+
+    [Fact]
+    public void R016_Run_InEnglish_TheDropLinesReadAsTheRequirementSays()
+    {
+        using var ws = new TempWorkspace();
+        var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destPath = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards()));
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            string[] preview = Lines(Run(sourcePath, destPath, "--dry-run").Stdout);
+            string[] copy = Lines(Run(sourcePath, destPath, "-o", ws.FilePath("out.fit")).Stdout);
+
+            Assert.Equal("Old plate-solve keys of the destination that would be dropped (6): CD1_1, CD1_2, CD2_1, CD2_2, CROTA2, A_3_0", preview[^1]);
+            Assert.Equal("Dropped 6 old plate-solve keys of the destination: CD1_1, CD1_2, CD2_1, CD2_2, CROTA2, A_3_0.", copy[^3]);
+        }
+    }
+
+    [Fact]
+    public void R016_Run_NothingToDrop_PrintsNoDropLine()
+    {
+        using var ws = new TempWorkspace();
+        var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destPath = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        string[] preview = Lines(Run(sourcePath, destPath, "--dry-run").Stdout);
+        string[] copy = Lines(Run(sourcePath, destPath).Stdout);
+
+        Assert.StartsWith("  ", preview[^1], StringComparison.Ordinal);
+        Assert.Equal(4, copy.Length);
+    }
+
     [Fact]
     public void R007_Run_NoOpticalFlag_OmitsOpticalKeysKeepsWcsKeys()
     {

@@ -275,6 +275,29 @@ internal sealed class FitsHeader
     }
 
     /// <summary>
+    /// Removes every card of a keyword, wherever it sits, the other cards keeping their order:
+    /// how a copy drops the destination's old plate-solve cards (R-016).
+    /// </summary>
+    /// <param name="key">The keyword, case-sensitive, as <see cref="Contains"/> takes it.</param>
+    /// <returns>The cards removed, raw, in the order the header held them; empty when no card had the keyword.</returns>
+    public IReadOnlyList<string> RemoveCards(string key)
+    {
+        var removed = CardsOf(key);
+        if (removed.Count > 0)
+        {
+            _cards.RemoveAll(c => string.Equals(KeywordOf(c), key, StringComparison.Ordinal));
+        }
+
+        return removed;
+    }
+
+    /// <summary>Every card of a keyword, raw, in the order the header holds them; a header may hold a keyword more than once.</summary>
+    /// <param name="key">The keyword, case-sensitive.</param>
+    /// <returns>The cards; empty when no card has the keyword.</returns>
+    public IReadOnlyList<string> CardsOf(string key) =>
+        _cards.Where(c => string.Equals(KeywordOf(c), key, StringComparison.Ordinal)).ToList();
+
+    /// <summary>
     /// Appends a HISTORY card, ASCII whatever the text holds (<see cref="AsciiText.Of"/>), so the
     /// copy never puts a byte above 0x7F in a header itself, and writes it to the diagnostic log
     /// at Debug as it was stored (R-011, R-042, ADR 0010).

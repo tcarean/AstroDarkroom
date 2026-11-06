@@ -71,4 +71,24 @@ internal static class WcsMetadataKeys
 
         return wanted.Distinct().Where(source.Contains).ToList();
     }
+
+    /// <summary>
+    /// The destination's old plate-solve keys a copy drops (R-016): every keyword of the
+    /// destination that is one of <see cref="WcsKeys"/> or a SIP coefficient and that the source
+    /// does not have, each once, in the order the destination holds them. Never an optical key.
+    /// Whether to drop at all, only when the source has <c>CTYPE1</c>, is the run's rule.
+    /// </summary>
+    /// <param name="source">The header the plate solve comes from; not null.</param>
+    /// <param name="dest">The header that receives it; not null.</param>
+    /// <returns>The keys to drop; empty when the destination holds no plate-solve key the source lacks.</returns>
+    internal static List<string> SelectKeysToDrop(FitsHeader source, FitsHeader dest)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(dest);
+
+        return dest.Keywords
+            .Where(k => (WcsKeys.Contains(k) || SipCoefficient.IsMatch(k)) && !source.Contains(k))
+            .Distinct()
+            .ToList();
+    }
 }
