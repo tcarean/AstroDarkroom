@@ -21,14 +21,18 @@ owner approved the list of the three, original and proposal side by side, with "
 2. **The text under the label says the index in the INDEX row's words**: `valoarea medie a
    pixelilor fierbinti din master de pe locurile 5-20 pe fiecare megapixel, numarand de la cel mai
    fierbinte, socotita pentru ISO 400 si 120 s`, then which way it goes (`Cu cat senzorul a fost
-   mai cald, cu atat indexul e mai mare`), and the label as `idx si indexul rotunjit`.
+   mai cald, cu atat indexul e mai mare`), and the label as `idx si indexul rotunjit (idx- cand
+   indexul nu se poate masura)`.
 3. **The partner's explanation says what is compared and what comes out**: the session's darks
    against the partner's master on the pixels hot in both, by how many degrees they are warmer or
-   colder, the lights through the session's darks, the partner's darks taken when the session has
-   none (R-054), and that the choice is kept after the program closes.
+   colder, the lights through the session's darks, or directly against the partner's darks when
+   the session has none (R-054), and that the choice is kept after the program closes. The list's
+   first wording left out the `idx-` of an index that cannot be measured and said the partner's
+   darks are used without saying what for; the review found both and the owner approved the two
+   fixes.
 4. **`Analizeaza din nou` says it analyses**: `Analizeaza din nou folderul deschis, cu partenerul
    si setarile de acum`.
-5. **R-087 guards it**: `R087_...` renders the tab with a partner in both languages, with the word
+5. **R-087 guards it**: `R087_...` renders the tab with and without a partner in both languages, with the word
    list of R-083 to R-086, which now also holds `rang` / `rank` and `echivalent` / `equivalent`.
 
 ## Consequences

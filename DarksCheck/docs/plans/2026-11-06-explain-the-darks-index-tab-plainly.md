@@ -32,3 +32,11 @@ The English says the same, with the same figures, and without apostrophes in the
 3. Code: `WindowTexts.cs`, `IndexView.xaml`; window texts only, so no golden changes and no
    `/validate`.
 4. Gate, ADR 0036, CHANGELOG, the design note, commit, the review offer, the merge proposal.
+
+## What deviated
+
+- The review (high effort, inline) found two texts wrong in rare cases: the label of an index that
+  cannot be measured ends in `idx-`, and the lights of a session without darks are compared
+  directly with the partner's darks. The owner approved `(idx- cand indexul nu se poate masura)`
+  and `daca sesiunea nu are dark-uri, se compara direct cu dark-urile partenerului` ("Da,
+  aplica-le"). R087 also renders the tab without a partner and takes its places from `Th`.
