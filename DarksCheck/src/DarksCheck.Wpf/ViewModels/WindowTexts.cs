@@ -127,12 +127,12 @@ internal static class WindowTexts
         + "de la un cadru la altul (RTS). Doar de informare: verificarea asta nu da niciodata avertizare.");
 
     internal static string CandidatesTip => T(
-        $"pixels above {RunReport.F(Th.LightHotSigmas, 0)} local sigma, below saturation",
-        $"pixeli peste {RunReport.F(Th.LightHotSigmas, 0)} sigma locale, sub saturatie");
+        $"how many pixels are brighter than their neighbours by more than {RunReport.F(Th.LightHotSigmas, 0)} times the noise, without being saturated: stars and hot pixels",
+        $"cati pixeli sunt mai luminosi decat vecinii lor cu peste {RoCount(RunReport.F(Th.LightHotSigmas, 0))}ori zgomotul, fara sa fie saturati: stele si pixeli fierbinti");
 
     internal static string IsolatedTip => T(
-        $"candidates with no neighbour above {RunReport.F(Th.LightIsolationSigmas, 0)} sigma: hot pixels, not stars",
-        $"candidati fara niciun vecin peste {RunReport.F(Th.LightIsolationSigmas, 0)} sigma: pixeli fierbinti, nu stele");
+        $"how many of them have no neighbour that also stands out by more than {RunReport.F(Th.LightIsolationSigmas, 0)} times the noise: hot pixels, not stars",
+        $"cati dintre ei nu au niciun vecin care sa iasa si el peste {RoCount(RunReport.F(Th.LightIsolationSigmas, 0))}ori zgomotul: pixeli fierbinti, nu stele");
 
     internal static string MaxFramesTip => T(
         $"How many frames are held in memory (48 MB each at 24 MP) and how many lights are measured; above that, one in k is taken. Default {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.",
@@ -157,12 +157,14 @@ internal static class WindowTexts
         + "e lumina intrata in aparat sau glow; unul care apare si in bias vine din citirea senzorului, nu e lumina.");
 
     internal static string LightsChartLead => T(
-        "The amplitude of the master's hot pixels in each light, against the master, normalised for ISO and exposure. "
-        + $"Green between {RunReport.F(Th.MatchDirectLow, 1)} and {RunReport.F(Th.MatchDirectHigh, 1)} (direct subtraction), yellow out to "
-        + $"{RunReport.F(Th.MatchOptLow, 1)} and {RunReport.F(Th.MatchOptHigh, 1)} (-opt) and down to {RunReport.F(Th.MatchCosmeticLow, 1)} (cosmetic correction only), "
-        + "red beyond; the first lights of a night are cold.",
-        "Amplitudinea pixelilor fierbinti ai masterului in fiecare light, fata de master, normalizata la ISO si expunere. "
-        + $"Verde intre {RunReport.F(Th.MatchDirectLow, 1)} si {RunReport.F(Th.MatchDirectHigh, 1)} (scadere directa), galben pana la "
-        + $"{RunReport.F(Th.MatchOptLow, 1)} si {RunReport.F(Th.MatchOptHigh, 1)} (-opt) si pana la {RunReport.F(Th.MatchCosmeticLow, 1)} (doar corectie cosmetica), "
-        + "rosu dincolo; primele lights ale unei nopti sunt reci.");
+        "Each point is a light: how hot the master's hot pixels are in it, against the master (1 = the same), once ISO and exposure are taken into account. "
+        + $"Green between {RunReport.F(Th.MatchDirectLow, 1)} and {RunReport.F(Th.MatchDirectHigh, 1)}: the dark can be subtracted as it is. "
+        + $"Yellow between {RunReport.F(Th.MatchOptLow, 1)} and {RunReport.F(Th.MatchOptHigh, 1)}: subtract the dark with -opt (Siril multiplies it so that it matches the lights); "
+        + $"yellow too between {RunReport.F(Th.MatchCosmeticLow, 1)} and {RunReport.F(Th.MatchOptLow, 1)}: use the dark for the cosmetic correction only. "
+        + "Red beyond: they do not match. The first lights of the night usually sit lower, because the camera is still cold.",
+        "Fiecare punct e un light: cat de fierbinti sunt in el pixelii fierbinti ai masterului, fata de master (1 = la fel), dupa ce se tine cont de ISO si de expunere. "
+        + $"Verde intre {RunReport.F(Th.MatchDirectLow, 1)} si {RunReport.F(Th.MatchDirectHigh, 1)}: dark-ul se poate scadea asa cum e. "
+        + $"Galben intre {RunReport.F(Th.MatchOptLow, 1)} si {RunReport.F(Th.MatchOptHigh, 1)}: scade dark-ul cu -opt (Siril il inmulteste cat sa se potriveasca cu lights-urile); "
+        + $"tot galben intre {RunReport.F(Th.MatchCosmeticLow, 1)} si {RunReport.F(Th.MatchOptLow, 1)}: foloseste dark-ul doar pentru corectia cosmetica. "
+        + "Rosu mai departe: nu se potrivesc. Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.");
 }

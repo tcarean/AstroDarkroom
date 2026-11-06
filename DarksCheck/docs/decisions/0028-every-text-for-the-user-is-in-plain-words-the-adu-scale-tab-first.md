@@ -1,7 +1,7 @@
 # 0028. Every text for the user is in plain words, the ADU scale tab first
 
 Date: 2026-11-02
-Status: accepted 2026-11-02
+Status: accepted 2026-11-02; the word obisnuit of the dark current superseded by 0035
 Supersedes: 0015 in part (the words of the provenance and the row name gasit); 0016 in part (the words of the ratio to the stack and the row name gasit); 0023 in part (the words for frames that name no camera)
 
 ## Context

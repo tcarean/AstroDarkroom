@@ -152,7 +152,7 @@ The start of the report on Smida:
     master dark        : centre -0.55, corners -0.44 / -0.49 / -0.10 / -0.31 (top-left / top-right / bottom-left / bottom-right), edges top -0.48 bottom -0.18 left -0.41 right -0.50  [the green pixels G1, ADU-eq above the black, mean of 20 frames, in squares of 32 px]
     master bias        : centre -0.68, ...
     dark - bias        : centre 0.13, corners 0.22 / 0.17 / 0.15 / 0.13 (top-left / top-right / bottom-left / bottom-right), ...
-    light per frame    : no frame is brighter than its warming explains (threshold: above 0.1 ADU-eq and more than 5 times the usual spread of the frames, 0.10 ADU-eq)
+    light per frame    : no frame is brighter than its warming explains (threshold: above 0.1 ADU-eq and more than 5 times the average spread of the frames, 0.10 ADU-eq)
     glow / constant    : at the top-left: glow +0.05 (grows as the sensor warms), constant +0.05, of which +0.02 comes from the bias, leaving +0.04 ADU-eq (in the file: glow +0.05, constant +0.05 ADU)
     constant light     : against the centre, once the bias is taken off: top +0.04 (+/-0.05), bottom -0.01 (+/-0.02), left -0.03 (+/-0.02), right +0.08 (+/-0.03) ADU-eq; no side goes over 0.15 and over 3 times what the measurement can be off by; ...
     verdict            : OK: no edge and no corner differs from the centre by more than 1.0 ADU-eq (the most +0.09, at the top-left, on dark minus bias); no frame has more light; no side has constant light above 0.15 ADU-eq
@@ -316,7 +316,7 @@ The end of the report's sections on Smida:
     verdict            : OK: the dark can be subtracted as it is; in the lights the hot pixels are 1.00 times what they are in the dark, between 0.9 and 1.1: the dark is at the same temperature
 
   INDEX
-    darks              : idx25 (25.2 ADU-eq: the usual value of the hot pixels at places 122 .. 483, counting from the hottest, that is 5-20 per Mpx of 24.2 Mpx; worked out for ISO 400 and 120 s)
+    darks              : idx25 (25.2 ADU-eq: the average value of the hot pixels at places 122 .. 483, counting from the hottest, that is 5-20 per Mpx of 24.2 Mpx; worked out for ISO 400 and 120 s)
     label              : 2026-08-12-Smida-idx25
     lights             : like a dark of idx25 (1.00 times the dark, that is at the same temperature)
 ```
@@ -332,9 +332,11 @@ The end of the report's sections on Smida:
   in ADU-eq; the note names the side, and only its constant part is light), and the pixels above
   20 ADU-eq. A frame the cap skipped reads `skipped (...)`, one that could not be read
   `error: ...`.
-- **LIGHTS TABLE**, one row per light, on G1: the time, the sky above the black, the local sigma
-  (the scale of the detector), the candidates, the isolated pixels, and the amplitude against
-  the master with its quartiles.
+- **LIGHTS TABLE**, one row per light, on G1: the time, `sky` (how bright the sky is above the
+  black), `noise` (how much a pixel differs from its neighbours), `bright` (the pixels brighter
+  than their neighbours by more than 6 times the noise: stars and hot pixels), `single` (those with
+  no bright neighbour: hot pixels), `hot` (the master's hot pixels against the master, 1 = the
+  same) and `low` / `high` (half of the master's hot pixels lie between the two).
 
 ```
   FRAMES TABLE
@@ -479,7 +481,7 @@ tabs:
 - **Frames**: the frames table, every column header with an explanation under the mouse, and
   beside it three charts, frame by frame: the hot pixels against the master (the warming, with
   the plateau and the two bounds of check 3), how much each frame differs from the master (with
-  the line at 1.5 times the usual noise) and the random banding (with the line at 1, no banding).
+  the line at 1.5 times the average noise) and the random banding (with the line at 1, no banding).
   A frame to discard shows its `plateau` value in bold and its reason on a second line, in
   yellow.
 - **Maps**: the three maps of check 2 (master dark, master bias, dark minus bias), the same as the
@@ -487,8 +489,9 @@ tabs:
 - **Hot pixels**: the rows of check 5 and the chart of check 8: how much noise is left after the
   mean of more and more frames, against a dotted line of what a random noise would leave (4 times
   the frames, half the noise); hold the mouse over a point to see its figures.
-- **Lights**: the rows of check 9, the lights / dark ratio of every light with the thresholds
-  as lines (0.9 and 1.1 green, 0.7 and 1.4 amber, 0.4 red), and the lights table.
+- **Lights**: the rows of check 9, the chart of every light against the dark (how hot the
+  master's hot pixels are in it) with the bounds as lines (0.9 and 1.1 green, as it is; 0.7 and
+  1.4 amber, with -opt; 0.4 red, cosmetic only), and the lights table.
 - **Index**: the label in large type with **Copy label** (it goes to the clipboard, and you
   rename the folder yourself), the INDEX rows, and the partner: **Choose partner...** (a library
   or another session), **No partner** and **Analyse again**. A partner chosen after a run

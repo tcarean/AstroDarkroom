@@ -260,7 +260,8 @@ amp_ratio_q75`. How the two analyzers work is in `lights-and-index.md`.
 line, `HeaderRows` the rows under it (`1 ADU-eq`, `pasul valorilor`, the biases' warnings),
 `Sections` the nine `ReportSection(Title, Rows)` of checks 2 to 9 and INDEX, `FrameRows` and
 `LightRows` the two tables as `DarkTableRow` / `LightTableRow` of formatted cells, with
-`FrameTableHeader` and `LightTableHeader` as the header lines. `Write` prints exactly those:
+`FrameTableHeader` and `LightTableHeader` as the header lines, each column name ending where its
+figures end (the file and the time, left-aligned, start where theirs start). `Write` prints exactly those:
 a row as `    {label,-19}: {value}`, a table row with the console's column widths
 (`FrameLine` for a dark: the cells, then the row's `Note` after the last column when the frame
 is off the plateau, `Plateau` being its degrees from the plateau or `-` without a fit), a file
