@@ -133,4 +133,4 @@ the inner profile is the plain median within noise. Nothing else in the model mo
   residual line and was brought from 0.29 to 0.28 with the goldens.
 - The code review (one round) found twelve points, all in documents and comments; the code
   was confirmed. The parity recapture and the validation re-record were put to the owner in
-  one question and answered with one yes ("Da, ambele").
+  one question and answered with one yes ("Da, ambele": yes, both).

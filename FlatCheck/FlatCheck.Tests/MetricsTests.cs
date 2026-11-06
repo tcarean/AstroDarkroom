@@ -808,8 +808,9 @@ public class MetricsTests
     /// that a whole ring needs none: the median of a sinusoid over a full turn is its mean.
     /// True for one harmonic, false for a mix. The Rosette master (Canon 40D) carries 2-theta
     /// and 4-theta together, +1.4 / -0.6 % at the inscribed radius, and the median of
-    /// 1.43 cos 2t - 0.60 cos 4t is +0.60 % above its mean: the whole rings' profile sat up
-    /// to 0.6 % above the level, the first partial ring - corrected - fell back to it, and
+    /// 1.43 cos 2t - 0.60 cos 4t is +0.60 % above its mean: the whole rings' profile sat
+    /// above the level by up to 0.44 % (the last whole ring; 0.6 % analytically at the
+    /// inscribed radius), the first partial ring - corrected - fell back to it, and
     /// the map drew a hard circle on the inscribed radius. With the correction on every ring
     /// the profile is continuous. Measured on this scene, worst model / truth error:
     /// 0.513 % with the plain median on the whole rings, 0.039 % with the correction

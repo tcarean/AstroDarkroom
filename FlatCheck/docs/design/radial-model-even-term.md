@@ -414,7 +414,11 @@ console snapshots and four parity goldens, 0.01 on one line each: `structure_cle
 that line, says 0.28 too) and the validation drift are in ADR 0091 and `docs/validation.md`.
 
 The change is one condition in `RadialModel`: the corrected median no longer skips the rings
-inside the inscribed circle. `q` is estimated as before. The regression test is
+inside the inscribed circle. `q` is estimated as before, so the rings inside 0.75·rIns, which
+never feed it, take a `q` measured further out: constant for 2θ (section 8.2), growing
+outward by ten for 4θ, so the single q4 over-divides the inner rings' 4θ by about 0.15 % at
+0.5·rIns, a smooth misfit of the kind ADR 0017 accepted, inside the ring-step figure above.
+The regression test is
 `R014_RadialModel_OnASaddleWithAFourfoldTerm_RecoversTheRadialPartOnTheFullRingsToo` (bound
 0.2 %: five times the measured 0.039 %, two and a half times under the old 0.513 %); the
 end-to-end guard is

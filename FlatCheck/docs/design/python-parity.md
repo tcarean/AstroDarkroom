@@ -57,7 +57,8 @@ ADR 0038 lists them (no 4-panel figure, no `suggest_shutter`, `Percentile` on an
 `libraw` against `rawpy` in two lines, no console histograms, `--sat=4095` against
 `--sat=4095.0`, the capitalised `--light` diagnosis, and the modes that exist only in C#);
 ADR 0047 and CLAUDE.md ("Layout") make the prototype prior art, not a reference, so nothing is
-"fixed" on either side. ADR 0014 and ADR 0038 hold the one numeric divergence: on a perfectly
+"fixed" on either side. ADR 0014 and ADR 0038 hold the first numeric divergence (the second,
+the whole rings' median, is the 2026-11-06 bullet below): on a perfectly
 constant frame the C# guard `|det| < 1e-15` in `FitCenter` prints `nedeterminat` where Python
 placed the illumination peak at (136, 136) with a 6.35 % offset; the C# is the correct one and
 stays (pinned by `FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre` and

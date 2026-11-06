@@ -23,8 +23,9 @@ Measured that day with a Python replica of `Metrics.RadialModel` on the 2x2-binn
   a4 = -0.60 % of the level, a broad hump on the sides and two narrow notches at the top and
   bottom, not a sinusoid. The median of `1.43 cos 2θ - 0.60 cos 4θ` over a full turn is +0.60 %
   above its mean (numerically, 200 000 samples; a pure 2θ or a pure 4θ gives 0.000).
-- On the whole rings the plain median therefore sat 0.2 to 0.6 % above the level, growing with
-  r (fit a0 0.13714 against median 0.13775 on the last whole ring); on the first partial ring
+- On the whole rings the plain median therefore sat 0.23 to 0.44 % above the level, growing
+  with r (fit a0 0.13714 against median 0.13775 on the last whole ring, at 0.98 of the
+  inscribed radius, where a4 is -0.54 %); on the first partial ring
   the corrected median is the level (0.13684). The profile fell 0.66 % there against 0.17 and
   0.22 % on its neighbours. That step is the circle.
 - The Tokina sky master is a pure 2θ (a4 ≈ 0) and the rotated paper masters a pure 4θ, which
@@ -34,10 +35,15 @@ Measured that day with a Python replica of `Metrics.RadialModel` on the 2x2-binn
 
 The profile is the median of `v / (1 + r² Σ q·harmonic)` on every ring once `q` exists, whole
 and partial; `q` is estimated as before (ADR 0017: one median over the identifiable rings from
-0.75 of the inscribed radius outward). Near the centre `q r²` is negligible, so the inner
-profile is the plain median within noise. Without an identifiable ring there is no correction
-and every ring takes the plain median, as before. The owner chose it on 2026-11-06 after the
-measurement ("Da, fă-o aici": yes, do it here); R-014 states it and `R014_RadialModel_OnASaddleWithAFourfoldTerm_RecoversTheRadialPartOnTheFullRingsToo`
+0.75 of the inscribed radius outward). The rings inside 0.75 of that radius, which never feed
+`q`, take the same constant `q`: measured constant for 2θ from 0.15 of the inscribed radius
+outward, while the 4θ amplitude per r² grows outward by a factor of ten, so on the inner rings
+the single q4 over-divides the 4θ by about 0.15 % at half the inscribed radius (q4 -0.014e-6
+times 325²); the misfit is smooth in r (the accepted cost of ADR 0017, a constant `q` where the
+true one varies) and sits inside the ring-step figure (0.361 -> 0.254 %). Near the centre
+`q r²` is negligible, so the inner profile is the plain median within noise. Without an
+identifiable ring there is no correction and every ring takes the plain median, as before. The
+owner chose it on 2026-11-06 after the measurement ("Da, fă-o aici": yes, do it here); R-014 states it and `R014_RadialModel_OnASaddleWithAFourfoldTerm_RecoversTheRadialPartOnTheFullRingsToo`
 pins it.
 
 ## Alternatives rejected
@@ -64,7 +70,7 @@ pins it.
   both ways.
 - On the Rosette master (the console of this branch): residual 3.76 -> 3.65 %, the other four
   tests and the verdict unchanged (1.26 / 3.00 / 0.90 / 3.72, GOOD); the map has no circle.
-- On five library masters the replica predicted moves under 0.1 points. Measured on
+- On five library masters the replica predicted moves of 0.1 points or less. Measured on
   the 44 validation cases (`docs/validation.md`, History, 2026-11-06): 38 unchanged within
   tolerance, the residual down by 0.04 to 0.08 on V-008, V-010, V-015, V-036 and V-037, and two
   figures beyond the prediction: V-015's worst tile 3.93 -> 4.07 (the same panel blotch at 0.8
@@ -83,4 +89,4 @@ pins it.
   line each, recaptured only with the owner's yes and recorded in
   `docs/design/python-parity.md` (the rule "Golden files").
 - Guards: the R-014 test above, `OnASaddleWithAFourfoldTerm_TheResidualHasNoRingsAndReadsTheInjectedStructure`
-  in `StructureAnalyzerTests`, the four radial-model tests of ADR 0017 unchanged.
+  in `StructureAnalyzerTests`, the six tests ADR 0017 pins unchanged.

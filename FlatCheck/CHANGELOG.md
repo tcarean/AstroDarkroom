@@ -218,7 +218,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The structure map no longer draws a circle on the inscribed radius of a master whose azimuthal
   profile mixes 2θ and 4θ (the Rosette master of a Canon 40D: +1.4 / -0.6 % at that radius): the
   even-harmonic correction of the radial model now applies on every ring, the whole rings
-  included, where the plain median of such a mix sat up to 0.6 % above the level (R-014, ADR
+  included, where the plain median of such a mix sat up to 0.44 % above the level (R-014, ADR
   0091). The residual of that master reads 3.65 % instead of 3.76; on a fixture with no even
   term the figure moves by 0.01.
 - A lensfun lens is a candidate for the raw's camera only on a mount the camera takes, by lensfun's

@@ -75,8 +75,8 @@ a kit rule names it.
   `FLATCHECK_UPDATE_GOLDEN=1` and `--filter "GoldenOutputTests|EnglishOutputTests"` (the second
   writes the English `en_*.txt`), which leaves the parity goldens alone. The 39
   `Golden/parity_*.txt` captured on 2026-09-26 carry the figures the Python
-  prototype confirmed before it froze (`docs/design/python-parity.md` lists them and the one
-  divergence): they are the goldens with confirmed figures. Any line that changes there is a
+  prototype confirmed before it froze (`docs/design/python-parity.md` lists them and the
+  divergences): they are the goldens with confirmed figures. Any line that changes there is a
   finding; only after the owner's yes are they recaptured, with `--filter ParityGoldenTests`,
   and the change recorded with the divergences in `python-parity.md`, a C#-only call (ADR 0047,
   R-098). A parity scenario added later carries no such confirmation and is judged like any

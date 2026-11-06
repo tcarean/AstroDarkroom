@@ -145,8 +145,9 @@ namespace FlatCheck
         // turn is its mean. True for one harmonic, false for a mix. The Rosette master (Canon
         // 40D, 17 flats) carries 2t and 4t together, +1.43 / -0.60 % at the inscribed radius,
         // and the median of 1.43 cos 2t - 0.60 cos 4t is +0.60 % above its mean: the whole
-        // rings' profile sat up to 0.6 % above the level, the first partial ring - corrected -
-        // fell back to it (a step of -0.66 % against -0.17 / -0.22 % on its neighbours), and the
+        // rings' profile sat above the level by up to 0.44 % (the last whole ring; 0.6 %
+        // analytically at the inscribed radius), the first partial ring - corrected - fell back
+        // to it (a step of -0.66 % against -0.17 / -0.22 % on its neighbours), and the
         // map drew a hard circle on the inscribed radius. Divided out everywhere, the same q
         // makes the profile continuous (-0.24 %); near the centre q r^2 is negligible and the
         // inner profile is the plain median within noise. Measured on synthetics, worst model /

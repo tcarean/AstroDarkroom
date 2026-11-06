@@ -92,7 +92,7 @@ peak-to-peak amplitude over the frame. The vertex comes from `M = [[2d, f], [f, 
 the geometric centre with `vertexValid = false` and the `NaN` tilt on a singular system are
 ADR 0014; that the tilt is a ratio like every other metric is ADR 0012.
 
-**`RadialModel(img, cx, cy, nbins = 80, pct = 50)`** - bins pixels by radius into
+**`RadialModel(img, cx, cy, nbins = 80)`** - bins pixels by radius into
 80 equal-width bins out to `rmax`, takes the median per bin (bins with < 8 pixels
 are dropped), then rebuilds a 2-D model by linear interpolation of that profile.
 `Interp` clamps at both ends, matching `np.interp`.
