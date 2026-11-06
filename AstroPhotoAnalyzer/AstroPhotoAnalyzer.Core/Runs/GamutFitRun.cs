@@ -91,6 +91,12 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>The recipe for a hand-made mask, the same under every variant.</summary>
         internal GamutFitRecipe Recipe { get; init; }
+
+        /// <summary>
+        /// Whether the previews are smaller than the view shows them, held under the cap of
+        /// Thresholds.CurvePreviewMaxPixels, so the view must enlarge them (ADR 0084).
+        /// </summary>
+        internal bool PreviewCapped { get; init; }
     }
 
     /// <summary>Computes the paper fit of an analysed image, after the analysis (ADR 0083, ADR 0051).</summary>
@@ -107,11 +113,12 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The fit of the analysed image <paramref name="a"/> through the profile its Dmax came
-        /// from, in the three variants, with previews that fit in the given rectangle.
+        /// from, in the three variants, with previews at least as large as the view shows them
+        /// in the given area (<see cref="CurveRun.PreviewStride"/>).
         /// </summary>
         /// <param name="a">The analysis, with its raster and parameters.</param>
-        /// <param name="maxWidth">The previews' largest width, in screen pixels.</param>
-        /// <param name="maxHeight">The previews' largest height, in screen pixels.</param>
+        /// <param name="maxWidth">The gallery area's width, in screen pixels.</param>
+        /// <param name="maxHeight">The gallery area's height, in screen pixels.</param>
         /// <param name="progress">Told each stage as it starts; null for none.</param>
         /// <returns>The set; with Problem set and nothing else when there is no profile or it cannot be used.</returns>
         internal static GamutFitSet Execute(AnalysisResult a, int maxWidth, int maxHeight, IProgress<string> progress = null)
@@ -184,6 +191,7 @@ namespace AstroPhotoAnalyzer
                 OriginalOutside = originalOutside,
                 Variants = variants,
                 Recipe = recipe,
+                PreviewCapped = CurveRun.PreviewCapped(r, maxWidth, maxHeight),
             };
         }
     }

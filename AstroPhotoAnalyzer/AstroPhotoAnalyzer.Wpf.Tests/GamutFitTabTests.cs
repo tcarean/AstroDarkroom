@@ -68,7 +68,7 @@ public class GamutFitTabTests
         using var ws = new TempWorkspace();
         var tab = new GamutFitTabViewModel();
         Assert.False(tab.HasGallery);
-        Assert.False(tab.ShowOutside);
+        Assert.True(tab.ShowOutside);   // on by default (R-178)
         tab.Populate(Result(ws, withProfile: true));
         Assert.False(tab.HasGallery);   // filled by the computation MainViewModel starts, not by Populate
 
@@ -78,11 +78,18 @@ public class GamutFitTabTests
         Assert.Equal("1 / 4", tab.Position);
         Assert.Equal("Originalul", tab.Current!.Name);
         Assert.False(tab.SaveAs.CanExecute(null));
-        Assert.Null(tab.Current.Overlay);   // the box is off
-
-        tab.ShowOutside = true;
-        Assert.NotNull(tab.Current.Overlay);   // the original: the warning of R-161 over the patch
+        Assert.NotNull(tab.Current.Overlay);   // the box is on: the original's warning of R-161 over the patch
         Assert.Equal(tab.Current.Image.PixelWidth, tab.Current.Overlay!.PixelWidth);
+        // The original carries the figures of the image as it is: the share outside, the dark
+        // share and the recipe, in plain words.
+        Assert.Contains(tab.Current.EvidenceRows, r => r.Text.StartsWith("culori pe care hartia nu le poate reda:") && r.Text.Contains("%"));
+        Assert.Contains(tab.Current.EvidenceRows, r => r.Text.Contains("tonuri inchise"));
+        Assert.Contains(tab.Current.EvidenceRows, r => r.Text.StartsWith("de mana"));
+        Assert.DoesNotContain(tab.Current.EvidenceRows, r => r.Text.Contains("dupa"));
+
+        tab.ShowOutside = false;
+        Assert.Null(tab.Current.Overlay);   // the box off: no layer
+        tab.ShowOutside = true;
 
         tab.Next.Execute(null);
         Assert.Equal("Exacta", tab.Current.Name);
@@ -99,10 +106,40 @@ public class GamutFitTabTests
         tab.Previous.Execute(null);
         Assert.Equal("Lina", tab.Current.Name);
 
-        // Another image empties the gallery; the box keeps nothing.
+        // Another image empties the gallery; the box goes back to its default, on.
+        tab.ShowOutside = false;
         tab.Populate(Result(ws, withProfile: true));
         Assert.False(tab.HasGallery);
-        Assert.False(tab.ShowOutside);
+        Assert.True(tab.ShowOutside);
+    }
+
+    [Fact]
+    public async Task R178_ALargerAreaRecomputesTheGalleryByItselfAndTheImageCoversIt()
+    {
+        using var ws = new TempWorkspace();
+        var tab = new GamutFitTabViewModel();
+        AnalysisResult result = Result(ws, withProfile: true);
+        int w = result.Raster.W, h = result.Raster.H;
+        tab.Populate(result);
+        tab.Compute(w / 4, h / 4);
+        Assert.True(tab.HasGallery, tab.Message);
+        Assert.True(tab.Current!.Width >= w / 4 && tab.Current.Height >= h / 4);
+        int before = tab.Current.Width;
+
+        tab.SetGallerySize(w / 4, h / 4);
+        tab.SetGallerySize(w / 6, h / 6);
+        Assert.False(tab.IsBusy);
+        Assert.Equal(before, tab.Current.Width);
+
+        tab.ShowOutside = true;
+        tab.SetGallerySize(w, h);
+        Assert.True(tab.IsBusy);
+        Assert.True(tab.HasGallery);
+        await tab.Computation;
+        Assert.False(tab.IsBusy);
+        Assert.Equal(w, tab.Current!.Width);
+        Assert.True(tab.ShowOutside);                 // the box survives the recompute
+        Assert.NotNull(tab.Current.Overlay);           // and its layer is on the new original
     }
 
     [Fact]
@@ -154,6 +191,15 @@ public class GamutFitTabTests
         Assert.True(tab.IsProblem);
         Assert.Equal(ProofTexts.NoProfile, tab.Message);
         Assert.Contains("Din profil ICC...", tab.Message);
+
+        // A larger area does not run the computation again: nothing to refine (ADR 0084). The
+        // refusal is computed at a size whose step is 4 on the 256 px frame, and the area then
+        // allows a step of 1: without the rule a computation would start here.
+        tab.Compute(64, 48);
+        Assert.True(tab.IsProblem);
+        tab.SetGallerySize(256, 192);
+        Assert.False(tab.IsBusy);
+        Assert.True(tab.IsProblem);
     }
 
     [Fact]

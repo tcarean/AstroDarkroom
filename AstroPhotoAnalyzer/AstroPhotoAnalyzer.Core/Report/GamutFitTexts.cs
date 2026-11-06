@@ -50,6 +50,22 @@ namespace AstroPhotoAnalyzer
                           $"se indulcesc si culorile de langa limita hartiei, de la {Fmt.F0(100 * knee)} % din ea, ca o trecere cu saturatie crescatoare sa-si pastreze treptele in loc sa se termine plat; tonul si nuanta raman");
 
         /// <summary>
+        /// The evidence under the original (R-178): what the paper cannot reproduce as the image
+        /// is, the dark share of it and the recipe, from the first variant's figures before its fit.
+        /// </summary>
+        /// <param name="e">The evidence of any variant; its figures before the fit are read.</param>
+        /// <param name="recipe">The recipe of the image.</param>
+        /// <returns>The rows, none a warning.</returns>
+        internal static IReadOnlyList<(string Text, bool Warning)> OriginalRows(GamutFitEvidence e, GamutFitRecipe recipe)
+            => new[]
+            {
+                (Tr.Pick($"colours the paper cannot reproduce: {Fmt.Pct(e.PctOutsideBefore)} of the pixels (the same rule and figure as in the Soft proof tab)", $"culori pe care hartia nu le poate reda: {Fmt.Pct(e.PctOutsideBefore)} din pixeli (aceeasi regula si cifra ca in tabul Soft proof)"), false),
+                (Tr.Pick($"of them, {Fmt.Pct(e.PctOutsideUnderLowSeparation)} are dark tones, under L* {Fmt.F0(Thresholds.LowSeparationLstar)}",
+                         $"din ele, {Fmt.Pct(e.PctOutsideUnderLowSeparation)} sunt tonuri inchise, sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}"), false),
+                (RecipeLine(recipe), false),
+            };
+
+        /// <summary>
         /// The evidence of a variant, line by line, the warnings marked (a tone out of reach):
         /// the shares before and after, the pixels changed and how much they lose, the dark
         /// share, the recipe for a hand-made mask.

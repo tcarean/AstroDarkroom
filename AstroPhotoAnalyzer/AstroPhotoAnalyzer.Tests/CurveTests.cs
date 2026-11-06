@@ -377,6 +377,27 @@ public class CurveTests
     }
 
     [Fact]
+    public void R146_ThePreviewStrideCoversTheFittedSizeAndStaysUnderTheCap()
+    {
+        // 5837 x 3867, the reference image's size, as a one-plane raster (ADR 0084).
+        var r = new Raster(3867, 5837, 1);
+        // The presumed area: the height limits the fit (4.30 against 3.65), so the stride is 4
+        // and the preview, 1460 x 967, covers the fitted 1359 x 900.
+        Assert.Equal(4, CurveRun.PreviewStride(r, 1600, 900));
+        // A wide, short area: the height still limits; covering both dimensions would take 4.
+        Assert.Equal(5, CurveRun.PreviewStride(r, 1340, 650));
+        // A 4K area: the whole image would cover it, but the cap of CurvePreviewMaxPixels holds
+        // the stride at 2 (5.6 MP), and the core says so, the one case the view enlarges.
+        Assert.Equal(2, CurveRun.PreviewStride(r, 3840, 2160));
+        Assert.True(CurveRun.PreviewCapped(r, 3840, 2160));
+        Assert.False(CurveRun.PreviewCapped(r, 1600, 900));
+        Assert.False(CurveRun.PreviewCapped(new Raster(400, 600, 1), 1600, 900));
+        // An image smaller than the area: 1; one larger than a tiny area: the step that covers it.
+        Assert.Equal(1, CurveRun.PreviewStride(new Raster(400, 600, 1), 1600, 900));
+        Assert.Equal(8, CurveRun.PreviewStride(new Raster(400, 600, 1), 100, 50));
+    }
+
+    [Fact]
     public void R145_AFitsInputKeepsEveryCardAndItsBitpixAndGetsTheCurve()
     {
         using var ws = new TempWorkspace();
