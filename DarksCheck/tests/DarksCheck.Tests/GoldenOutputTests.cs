@@ -44,7 +44,7 @@ public class GoldenOutputTests
         using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel, HotFactor = 0.9 + 0.2 * i / 3 }, biases: 3);
         (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
         // The progress lines on stderr arrive in the order the threads finish: not golden material.
-        Assert.Contains("masurare dark-uri: 4 / 4", stderr, StringComparison.Ordinal);
+        Assert.Contains("Se masoara dark-urile: 4 / 4", stderr, StringComparison.Ordinal);
         Compare("darks.txt", Scrub(stdout, s.Root) + "--- stderr ---\n(progresul, omis)\n--- exit " + code + " ---\n");
     }
 
@@ -57,7 +57,7 @@ public class GoldenOutputTests
             .WithLights(5, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.3, Stars = SyntheticLight.ThreeStars });
         using SessionFixture p = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 2 }, inSubfolder: false);
         (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2", "--against", p.Root);
-        Assert.Contains("masurare lights: 5 / 5", stderr, StringComparison.Ordinal);
+        Assert.Contains("Se masoara lights-urile: 5 / 5", stderr, StringComparison.Ordinal);
         string actual = Scrub(stdout, s.Root).Replace(p.Root, "<partener>", StringComparison.Ordinal).Replace(Path.GetFileName(p.Root), "<partener>", StringComparison.Ordinal);
         Compare("lights.txt", actual + "--- stderr ---\n(progresul, omis)\n--- exit " + code + " ---\n");
     }
@@ -71,7 +71,7 @@ public class GoldenOutputTests
             .WithBiases(2);
         using SessionFixture p = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 2 }, inSubfolder: false);
         (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2", "--against", p.Root);
-        Assert.Contains("decodare dark-uri (partener): 4 / 4", stderr, StringComparison.Ordinal);
+        Assert.Contains("Se citesc dark-urile partenerului: 4 / 4", stderr, StringComparison.Ordinal);
         string actual = Scrub(stdout, s.Root).Replace(p.Root, "<partener>", StringComparison.Ordinal).Replace(Path.GetFileName(p.Root), "<partener>", StringComparison.Ordinal);
         Compare("lights-only.txt", actual + "--- stderr ---\n(progresul, omis)\n--- exit " + code + " ---\n");
     }

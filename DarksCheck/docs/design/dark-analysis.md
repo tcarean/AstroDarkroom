@@ -224,7 +224,7 @@ camera), records the partner's root in `Inventory.DarksFromPartner` and
 like the session), labels the master with the partner's folder and skips `MatchPartner` (the
 darks are the partner's); a partner that does not open fails the run with its own message
 prefixed `partenerul: `, so the window's problem card names the right folder. The progress phase then reads
-`decodare dark-uri (partener)`. After the verdicts, `DarkSeriesRun` computes the index and the label of the darks' master
+`Se citesc dark-urile partenerului`. After the verdicts, `DarkSeriesRun` computes the index and the label of the darks' master
 (`IndexAnalyzer.RankIndex`, `Label`), then, when the session has lights, hands their paths and
 the darks' analysis to `LightsAnalyzer.Analyze` (the lights are decoded one at a time and
 dropped), and, with `--against`, opens the partner folder, loads its darks into a `FrameStack`,
@@ -260,7 +260,8 @@ amp_ratio_q75`. How the two analyzers work is in `lights-and-index.md`.
 line, `HeaderRows` the rows under it (`1 ADU-eq`, `pasul valorilor`, the biases' warnings),
 `Sections` the nine `ReportSection(Title, Rows)` of checks 2 to 9 and INDEX, `FrameRows` and
 `LightRows` the two tables as `DarkTableRow` / `LightTableRow` of formatted cells, with
-`FrameTableHeader` and `LightTableHeader` as the header lines. `Write` prints exactly those:
+`FrameTableHeader` and `LightTableHeader` as the header lines, each column name ending where its
+figures end (the file and the time, left-aligned, start where theirs start). `Write` prints exactly those:
 a row as `    {label,-19}: {value}`, a table row with the console's column widths
 (`FrameLine` for a dark: the cells, then the row's `Note` after the last column when the frame
 is off the plateau, `Plateau` being its degrees from the plateau or `-` without a fit), a file

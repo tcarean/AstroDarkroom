@@ -341,6 +341,28 @@ public class StructureAnalyzerTests
         Assert.InRange(r.ResidualPtpPct, 2.5, 3.6);   // the injected 3 %, not the model's error
     }
 
+    /// <summary>
+    /// The fourth face, end to end (2026-11-06): a 2-theta + 4-theta mix with the Rosette
+    /// master's amplitudes must leave a map without a circle on the inscribed radius, and the
+    /// residual must read the injected structure. Measured on this scene: ring step 0.463 %
+    /// and residual 3.60 % with the plain median on the whole rings, 0.232 % and 3.31 % with
+    /// the correction everywhere (the worst tile 2.90 % both ways). The step passed the bound
+    /// before the fix too, so this is the guard; the regression test proper is the
+    /// model-against-truth one in MetricsTests, whose error this scene drove from 0.51 to 0.04 %.
+    /// </summary>
+    [Fact]
+    public void OnASaddleWithAFourfoldTerm_TheResidualHasNoRingsAndReadsTheInjectedStructure()
+    {
+        var r = StructureAnalyzer.Analyze(TestImages.From(2400, 1600,
+            FitsTestData.WithEvenHarmonics(FitsTestData.Radial(2400, 1600), 2400, 1600, 0.046, -0.019)));
+
+        double worst = WorstRingStep(r.Residual);
+
+        Assert.True(worst < 0.5,
+            $"harta nu ar trebui sa aiba inele, dar cel mai mare salt a fost {worst:F3} %");
+        Assert.InRange(r.ResidualPtpPct, 3.0, 5.0);   // the injected mix, not the model's error
+    }
+
     /// <summary>The largest jump between the means of two consecutive rings, in
     /// percent.</summary>
     static double WorstRingStep(Img resid)

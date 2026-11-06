@@ -188,7 +188,7 @@ internal static class DarkSeriesRun
         {
             try
             {
-                FrameStack bstack = FrameStack.Load(inv.Session.Biases, threads, options.MaxFrames, Phase(T("decoding biases", "decodare bias-uri"), progress), normalisation: nz, cancel: cancel);
+                FrameStack bstack = FrameStack.Load(inv.Session.Biases, threads, options.MaxFrames, Phase(T("Reading the biases", "Se citesc bias-urile"), progress), normalisation: nz, cancel: cancel);
                 biases = BiasAnalyzer.Analyze(bstack, threads);
                 biasBlack = bstack.BlackEstimated ? bstack.Black : null;
             }
@@ -216,9 +216,9 @@ internal static class DarkSeriesRun
         DarkSeriesAnalysis darks;
         int refPlane;
         {
-            FrameStack stack = FrameStack.Load(darkPaths, threads, options.MaxFrames, Phase(darksFromPartner is null ? T("decoding darks", "decodare dark-uri") : T("decoding darks (partner)", "decodare dark-uri (partener)"), progress), biasBlack, nz, cancel);
+            FrameStack stack = FrameStack.Load(darkPaths, threads, options.MaxFrames, Phase(darksFromPartner is null ? T("Reading the darks", "Se citesc dark-urile") : T("Reading the partner's darks", "Se citesc dark-urile partenerului"), progress), biasBlack, nz, cancel);
             clock.Lap("darks");
-            darks = DarkSeriesAnalyzer.Analyze(stack, threads, Phase(T("measuring darks", "masurare dark-uri"), progress));
+            darks = DarkSeriesAnalyzer.Analyze(stack, threads, Phase(T("Measuring the darks", "Se masoara dark-urile"), progress));
             refPlane = stack.ReferencePlane;
             clock.Lap("measure");
         }
@@ -270,7 +270,7 @@ internal static class DarkSeriesRun
         {
             try
             {
-                lights = LightsAnalyzer.Analyze(inv.Session.Lights, darks, threads, options.MaxFrames, Phase(T("measuring lights", "masurare lights"), progress), cancel);
+                lights = LightsAnalyzer.Analyze(inv.Session.Lights, darks, threads, options.MaxFrames, Phase(T("Measuring the lights", "Se masoara lights-urile"), progress), cancel);
             }
             catch (InvalidOperationException e)
             {
@@ -293,7 +293,7 @@ internal static class DarkSeriesRun
         {
             try
             {
-                partner = MatchPartner(options.Against, darks, lights, threads, options.MaxFrames, Phase(T("decoding the partner", "decodare partener"), progress), cancel);
+                partner = MatchPartner(options.Against, darks, lights, threads, options.MaxFrames, Phase(T("Reading the partner", "Se citeste partenerul"), progress), cancel);
             }
             catch (Exception e) when (e is IOException or InvalidDataException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
             {

@@ -7,12 +7,15 @@
 > re-check procedure. **Covers:** `Metrics.RadialModel` and `Metrics.RingFit` in
 > `FlatCheck.Core/Metrics.cs`, their constants (`RingFitMinDet`, `RingSectors`,
 > `RingMinSectors`, `RingFitRounds`, `RingQFrom`, `RingFitTie`), their mirror `radial_model` /
-> `_ring_fit` in the frozen `flatcheck.py`, and the tests
+> `_ring_fit` in the frozen `flatcheck.py`, the fixture `FitsTestData.WithEvenHarmonics`, and the
+> tests
 > `RadialModel_OnASaddle_RecoversTheRadialPartOutToTheCorner`,
 > `RadialModel_OnAFourfoldTerm_RecoversTheRadialPartOutToTheCorner`,
+> `R014_RadialModel_OnASaddleWithAFourfoldTerm_RecoversTheRadialPartOnTheFullRingsToo`,
 > `RadialModel_OnAGradient_TheProfileJumpsUnlessTheRasterIsSymmetrised`,
 > `OnAGradient_TheResidualHasNoRingsOutToTheCorner`,
 > `OnAFourfoldTerm_TheResidualHasNoRingsAndReadsTheInjectedStructure`,
+> `OnASaddleWithAFourfoldTerm_TheResidualHasNoRingsAndReadsTheInjectedStructure`,
 > `ACompactBlotchInACorner_IsNoLongerReportedAsPerfect`.
 
 Sections 1-5 were measured 2026-09-17 on the six real masters under
@@ -20,9 +23,11 @@ Sections 1-5 were measured 2026-09-17 on the six real masters under
 `Tokina\ISO400\f2.8-sky-no-difuser`, the two Tokina monitor masters, the two Nikkor 35 DX sky
 masters, the Samyang LCD master) and on synthetics at the analysis size; section 7, which
 replaced the 2θ-only ring fit of sections 3-5 with the 2θ+4θ fit now in the code, was measured
-2026-09-23 on all fifteen masters of the library. Section 4 is the current specification;
-sections 3 and 5 are kept as the record of the 2θ-only design and its figures. If the ring
-model changes, re-run section 6 and update the tables.
+2026-09-23 on all fifteen masters of the library; section 8, which extended the correction
+of section 4 to the whole rings, was measured 2026-11-06 on the Rosette master and on
+synthetics. Section 4 is the current specification; sections 3 and 5 are kept as the record of
+the 2θ-only design and its figures. If the ring model changes, re-run section 6 and update the
+tables.
 
 ## 1. The problem, as it was found
 
@@ -52,7 +57,8 @@ masters of the same lens (−0.24, +0.04).
 `RadialModel` takes per-ring medians on `Img.Symmetrise(img)`. Symmetrising removes the odd
 part exactly, which is what cured the first face of the artefact (a gradient). An even
 non-radial term passes through it. Inside the inscribed circle every ring is complete and
-the median of `1 + a·cos(2θ − φ)` over a full ring is 1: no bias. Beyond it a ring is only
+the median of `1 + a·cos(2θ − φ)` over a full ring is 1: no bias from one harmonic (a mix of
+2θ and 4θ does bias it, which is section 8, found on 2026-11-06). Beyond it a ring is only
 the arcs near θ = 0 and π (left and right), where `cos 2θ ≈ +1`: the median is pulled to the
 value of those arcs. On the sky master the model's slope kinked from 0.21 to 0.71 % per bin
 exactly on the inscribed circle (r = 502 px at 1504×1004), and the residual - smooth to
@@ -109,7 +115,8 @@ For every pixel: `r = hypot(x − cx, y − cy)`, `θ = atan2(y − cy, x − cx
 with `RingSectors = 24`. A bin with fewer than 8 pixels is skipped (unchanged rule).
 `rIns = min(cx, cy)`; a ring is **full** when its centre `(i + 0.5)/nbins · rmax < rIns`.
 
-1. **Full rings**: profile = median of the ring's pixels. Unchanged from before.
+1. **Full rings**: until 2026-11-06, profile = median of the ring's pixels; since then the
+   corrected median of step 4, like the partial rings (section 8).
 2. **Ring estimates** (`RingFit`), on every ring with centre `≥ RingQFrom · rIns`
    (`RingQFrom = 0.75`: full rings from three quarters of the inscribed radius outward, and
    every partial ring), of `(a0, a2, b2, a4, b4)` in
@@ -134,11 +141,12 @@ with `RingSectors = 24`. A bin with fewer than 8 pixels is skipped (unchanged ru
    from arcs alone the split between 2θ and 4θ is ill-conditioned and extrapolates into the
    unobserved azimuths (section 7). In the corners, where nothing is identifiable, the same
    `q` applies.
-4. **Partial rings, profile**: median over the ring's pixels of
+4. **Every ring, profile** (the partial rings until 2026-11-06, every ring since): median
+   over the ring's pixels of
    `v / (1 + r² (q2c·cos 2θ + q2s·sin 2θ + q4c·cos 4θ + q4s·sin 4θ))`, with `r` the ring's
    centre. Relative (a ratio, like every figure in the tool: a sky term multiplies), and a
    pixel median, so robustness and noise are those of the old profile. Without any estimate
-   (a tiny frame) the partial rings fall back to the plain median.
+   (a tiny frame) every ring falls back to the plain median.
 5. The model is the linear interpolation of the profile over `r`, as before; the residual
    is `img / model` (the un-symmetrised raster), as before.
 
@@ -189,14 +197,18 @@ flatcheck "E:\Photografie\Astro\Flats and Darks\Tokina\ISO400\f2.8-sky-no-difuse
 dotnet test FlatCheck.sln --filter ParityGoldenTests   # the 39 parity goldens, in the gate
 ```
 
-Expected on the sky master: corners 10.28 %, azimuthal 7.25 %, residual 10.06 %, tilt 0.49 %,
-worst tile 8.81 %, and a map with two smooth lobes and no arcs (9.31 / 7.87 with the 2θ-only
-design). The synthetic saddle fixture (`FitsTestData.WithSaddle`, 11 % at 1200×800) and the
-four-fold fixture (`FitsTestData.WithFourfold`, 3 % at the corner) must stay under 1 % of
-model error against the same scene without the term; the corner-blotch fixture must keep its
-residual under 2 %. The whole-library check of section 7 is the loop over every
-`pp_flat_stacked.fit` under `E:\Photografie\Astro\Flats and Darks\`, with `--raw` on the
-first NEF of each `flats/`.
+Expected on the sky master: corners 10.28 %, azimuthal 7.25 %, residual 9.99 % (10.06 until
+2026-11-06, section 8), tilt 0.49 %, worst tile 8.81 %, and a map with two smooth lobes and no
+arcs (9.31 / 7.87 with the 2θ-only design). On the Rosette master of section 8
+(`E:\Photografie\Astro\online\RosetteNebula\masters\pp_flat_stacked.fit`): residual 3.65 %
+(3.76 before) and a map with no circle on the inscribed radius. The synthetic saddle fixture
+(`FitsTestData.WithSaddle`, 11 % at 1200×800) and the four-fold fixture
+(`FitsTestData.WithFourfold`, 3 % at the corner) must stay under 1 % of model error against
+the same scene without the term, and the 2θ + 4θ mix (`FitsTestData.WithEvenHarmonics`,
++4.6 / −1.9 % at the corner) under 0.2 %; the corner-blotch fixture must keep its residual
+under 2 %. The whole-library check of section 7 is the loop over every `pp_flat_stacked.fit`
+under `E:\Photografie\Astro\Flats and Darks\`, with `--raw` on the first NEF of each
+`flats/`.
 
 ### 6.1 The ring-step metric, and why it is not in the report
 
@@ -311,3 +323,106 @@ master's accepted cost and the golden drift are in ADR 0017; on the fixtures,
 `structure_clean` reads 0.29 % again and its worst tile 0.57 % (0.37 before, the correction's
 cost on a 256-px square fixture where only the corner arcs are partial), and the k = 0.6
 profile fixture's worst tile crossed from 2.03 BUN to 1.90 PERFECT.
+
+## 8. The fourth face: the median of a 2θ + 4θ mix on a whole ring (2026-11-06)
+
+### 8.1 As it was found
+
+The Rosette master (`E:\Photografie\Astro\online\RosetteNebula\masters\pp_flat_stacked.fit`,
+Canon 40D, 17 flats, 3908×2602, analysed at 1954×1301) read GOOD on every test (1.26 / 3.00 /
+3.76 / 0.90 / 3.72) and printed a map with a hard circle on the inscribed radius: bright left
+and right of it, dark above and below, the inside almost flat. The owner asked why the fix of
+section 7 had cured the circles of the Tokina masters and not this one, and whether the model
+was too particular to be generic.
+
+### 8.2 The mechanism
+
+Measured with a Python replica of the algorithm on the 2×2-binned, symmetrised raster
+(the scratch script of that day; the arithmetic of section 4, not the C#):
+
+- The ring fit is right. Per ring, `a2 / a0 / r²` reads 0.034-0.042e-6 from bin 6 to bin 60
+  (0.15 to 1.36 of the inscribed radius), and `a4 / a0 / r²` −0.002 to −0.021e-6 growing
+  outward; the median `q` over the 24 rings the code uses is (0.035, 0.002, −0.014, −0.001)e-6.
+  The 2θ term is a real saddle of the illumination, ∝ r², the model's own form.
+- The azimuthal profile is a mix. On the last whole ring (bin 43, 0.98·rIns) the sector
+  medians against the fit's `a0` run +0.85, +1.10, +0.83, +0.23, −0.70, −1.72, −1.86, −0.83,
+  −0.01, +0.68, +0.92, +0.89 % over half a turn: fourteen sectors above the level by 0.2 to
+  1.1 %, ten below, four of them by 1.7 to 1.9 %. A broad hump on the sides and two narrow
+  notches at the top and bottom, which is `a2 cos 2θ + a4 cos 4θ` with a4 of the opposite sign
+  (+1.39 / −0.54 % on that ring, +1.43 / −0.60 at the inscribed radius).
+- The median of such a profile is not its mean. Numerically, over 200 000 samples of θ:
+
+  | a2 | a4 | mean | median |
+  |---|---|---|---|
+  | +1.43 | 0 | 0.000 | 0.000 |
+  | +1.43 | −0.60 | 0.000 | **+0.600** |
+  | +1.00 | −0.50 | 0.000 | +0.500 |
+  | +3.00 | 0 | 0.000 | 0.000 |
+  | +2.00 | −1.00 | 0.000 | +1.000 |
+
+  A sinusoid's median is its mean, which is the reading section 2 took and section 4 step 1
+  relied on. With the 4θ term of the opposite sign the median sits above the mean by about
+  |a4|.
+- The two halves of the profile did not meet. On the whole rings the plain median sat above
+  the level by that bias, 0.23 % at bin 40, 0.36 at 42, 0.44 at 43 (median 0.13775 against
+  the fit's a0 0.13714); on the first partial ring (bin 44) the corrected median, 0.13684, is
+  the level (a0 0.13688). The profile stepped −0.661 % there against −0.169 before and −0.219
+  after; the residual's ring mean stepped 0.361 % on the same bin, and the map drew the
+  circle: inside it the residual is the saddle plus the growing bias (+0.7 / −1.3 % on the
+  axes at 0.9·rIns), outside it the saddle alone (+1.1 / +1.4 %).
+
+Why the library never showed it: the Tokina sky master is a pure 2θ (a4 ≈ 0, section 1); the
+rotated paper masters are a pure 4θ (section 7); on one harmonic the median is the mean. The
+mix needs a 4θ of the opposite sign to the 2θ, which this illumination has and none of the
+fifteen has to the same degree.
+
+### 8.3 What was measured, and the change
+
+Dividing the harmonics out on every ring with the same `q` (section 4, steps 1 and 4), in the
+replica, on the Rosette master and five library masters (step at the first partial ring in
+the profile, %; the worst ring step of the residual's mean; p95−p5 of the residual; the worst
+32-px tile):
+
+| master | step before -> after (neighbours) | ring step | p95−p5 | worst tile |
+|---|---|---|---|---|
+| Rosette | −0.661 -> −0.237 (−0.17 / −0.22) | 0.361 -> 0.254 | 3.90 -> 3.78 | 3.74 -> 3.51 |
+| Tokina sky | 0.000 -> −0.200 (−0.23 / −0.18) | 0.363 -> 0.338 | 10.32 -> 10.22 | 8.10 -> 8.08 |
+| Nikkor 35 DX ISO400 | −0.680 -> −0.609 (−0.59 / −0.67) | 0.137 -> 0.137 | 4.14 -> 4.11 | 3.10 -> 3.08 |
+| Samyang LCD | −0.632 -> −0.589 (−0.59 / −0.59) | 0.106 -> 0.106 | 3.16 -> 3.17 | 2.56 -> 2.58 |
+| Tokina paper, rotated | −0.980 -> −0.856 (−0.82 / −0.91) | 0.182 -> 0.182 | 2.90 -> 2.89 | 2.66 -> 2.66 |
+| Tokina on the monitor | −0.753 -> −0.706 (−0.81 / −1.01) | 0.791 -> 0.791 | 12.81 -> 12.81 | 12.66 -> 12.66 |
+
+Every first-partial-ring step becomes its neighbours' value (the Tokina sky's 0.000 was a
+kink of the other sign, under the map's scale); the figures move under 0.1 points. The maps,
+side by side on the ±2 % scale: the Rosette circle is gone and the saddle stays, smooth.
+
+In C#, on synthetics at the analysis size (`FitsTestData.Radial` times the even mix, 2400×1600
+prepared to 1200×800), the model against the truth (the same scene without the terms), worst
+pixel:
+
+| scene | plain median on the whole rings | corrected on every ring |
+|---|---|---|
+| the Rosette mix, +4.6 / −1.9 % at the corner (`WithEvenHarmonics`) | **0.513 %** | 0.039 % |
+| the 11 % saddle (`WithSaddle`) | 0.070 % (replica) | unchanged |
+| the 3 % four-fold term (`WithFourfold`) | 0.019 % (replica) | unchanged |
+
+End to end on the mix scene, `StructureAnalyzer`: ring step 0.463 -> 0.232 %, residual
+3.60 -> 3.31 %, worst tile 2.90 % both ways. On the Rosette master, the console of the branch:
+residual 3.76 -> 3.65 %, the four other tests and the verdict unchanged. The golden drift (six
+console snapshots and four parity goldens, 0.01 on one line each: `structure_clean` reads
+0.28 % since, and `R012_Structure_PrintsTheScaleAndNamesTheMostImportantMetric`, which quotes
+that line, says 0.28 too) and the validation drift are in ADR 0091 and `docs/validation.md`.
+
+The change is one condition in `RadialModel`: the corrected median no longer skips the rings
+inside the inscribed circle. `q` is estimated as before, so the rings inside 0.75·rIns, which
+never feed it, take a `q` measured further out: constant for 2θ (section 8.2), growing
+outward by ten for 4θ, so the single q4 over-divides the inner rings' 4θ by about 0.15 % at
+0.5·rIns, a smooth misfit of the kind ADR 0017 accepted, inside the ring-step figure above.
+The regression test is
+`R014_RadialModel_OnASaddleWithAFourfoldTerm_RecoversTheRadialPartOnTheFullRingsToo` (bound
+0.2 %: five times the measured 0.039 %, two and a half times under the old 0.513 %); the
+end-to-end guard is
+`OnASaddleWithAFourfoldTerm_TheResidualHasNoRingsAndReadsTheInjectedStructure`, which passed
+the 0.5 % ring-step bound before the change too (0.463), which is why the model-against-truth
+test is the one that decides. Section 6's re-check gains the Rosette master: its map must show
+no circle on the inscribed radius.

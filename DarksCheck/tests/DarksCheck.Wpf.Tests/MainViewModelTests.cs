@@ -201,7 +201,7 @@ public class MainViewModelTests
         Assert.Equal(DarkReport.FrameRows(r)[1].Residual, vm.Frames[1].Residual);
         Assert.Equal(DarkReport.FrameRows(r)[1].Light, vm.Frames[1].Light);
         Assert.StartsWith("[pixelii verzi G1;", vm.FrameTableNote, StringComparison.Ordinal);
-        Assert.StartsWith("[G1;", vm.LightTableNote, StringComparison.Ordinal);
+        Assert.StartsWith("[pixelii verzi G1;", vm.LightTableNote, StringComparison.Ordinal);
 
         // the three maps, with the report's row under each
         Assert.Equal(["MASTER DARK", "MASTER BIAS", "DARK MINUS BIAS"], vm.Maps.Select(m => m.Title));

@@ -532,6 +532,17 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   since the compensation keeps their colour. Exact per pixel the same day: all 1.917, dust 10.956
   (the hybrid within 0.14 points on every class, ADR 0081). The other thirteen cases did not
   move. The fifteen cases (and the eleven star-pair checks) pass.
+
+- 2026-11-06 (ADR 0082, the preview window's layers class the 32 px patches, not the pixels;
+  `docs/plans/2026-11-06-classify-the-preview-by-patch.md`): `Analysis/PrintPreview.cs` classes the
+  simulation's patches at the row's lift instead of the pixels, and `Analysis/DustAnalyzer.cs` makes
+  its grid geometry internal; no formula of the report moved, and the preview has no recorded
+  figure. Re-run on the merged `main` (1f070095), the twelve files of the manifest hard-linked
+  into the worktree, their hashes checked: of the 1290 figures the fifteen cases record, 1288 are
+  identical, and the same two as since 2026-10-23 differ by 0.0001, inside the 0.01 tolerance
+  (V-011 `curves.Maxima.lstar.clouds` 67.1502 -> 67.1503, V-014 `curves.Maxima.lstar.peaks`
+  77.9226 -> 77.9227). The fifteen cases and the eleven star-pair checks pass, in 4.6 min; a run
+  on the branch before its first commit, 2.7 min, had passed the same.
 - 2026-11-06 (ADR 0083, the paper fit): V-016 added, kind `gamutfit`, on the plate-solved FITS
   through the lab's baryta profile (`docs/plans/2026-11-06-fit-the-colours-to-the-paper.md`):
   1.91 % of the pixels outside as is on the tonal subsample; `Exacta` touches those and leaves

@@ -1,7 +1,7 @@
 # 0031. The Cadre tab is in plain words
 
 Date: 2026-11-02
-Status: accepted 2026-11-02
+Status: accepted 2026-11-02; the word obisnuit of the noise guide line superseded by 0035
 Supersedes: 0030 in part (the words of the no-frame messages)
 
 ## Context

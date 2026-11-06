@@ -383,7 +383,7 @@ namespace AstroPhotoAnalyzer
         /// <param name="h">The image's height, in pixels.</param>
         /// <param name="stride">The subsampling step.</param>
         /// <returns>The grid's columns and rows, and a patch's side in samples.</returns>
-        static (int Cols, int Rows, int Side) Grid(int w, int h, int stride)
+        internal static (int Cols, int Rows, int Side) Grid(int w, int h, int stride)
             => SubsampleGrid((w + stride - 1) / stride, (h + stride - 1) / stride);
 
         /// <summary>

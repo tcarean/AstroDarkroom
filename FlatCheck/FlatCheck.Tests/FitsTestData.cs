@@ -261,6 +261,24 @@ internal static class FitsTestData
         };
     }
 
+    /// <summary>
+    /// Multiplies by an even mix <c>1 + rn^2 (a2 cos 2 theta + a4 cos 4 theta)</c> (rn = 1 at the
+    /// corner), both cosines with phase 0 on the x axis: the azimuthal profile of the Rosette master of
+    /// 2026-11-06 (Canon 40D, +1.4 / -0.6 % at the inscribed radius, i.e. +4.6 / -1.9 % at the
+    /// corner), whose median over a whole ring is not its mean - a sinusoid's is - so a plain
+    /// ring median sits above the level and the profile steps on the inscribed circle.
+    /// </summary>
+    internal static Func<int, int, double> WithEvenHarmonics(Func<int, int, double> b, int w, int h, double a2, double a4)
+    {
+        double cx = w / 2.0, cy = h / 2.0, rmax = Math.Sqrt(cx * cx + cy * cy);
+        return (x, y) =>
+        {
+            double dx = x - cx, dy = y - cy;
+            double rn2 = (dx * dx + dy * dy) / (rmax * rmax), t = Math.Atan2(dy, dx);
+            return b(x, y) * (1.0 + rn2 * (a2 * Math.Cos(2 * t) + a4 * Math.Cos(4 * t)));
+        };
+    }
+
     /// <summary>Per-Bayer-position gain, so the four CFA channels separate (RGGB-like).</summary>
     internal static Func<int, int, double> WithBayerMosaic(
         Func<int, int, double> b, double rGain = 0.62, double bGain = 0.48) =>

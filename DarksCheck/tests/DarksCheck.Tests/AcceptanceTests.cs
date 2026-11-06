@@ -70,6 +70,31 @@ public class AcceptanceTests
         Assert.StartsWith("EROARE:", stderr, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The help in plain words (R-088, ADR 0037): no line of <c>--help</c> names a part of the method,
+    /// in either language, and a blank folder's message says that the path is blank.
+    /// </summary>
+    /// <param name="lang">The value of <c>--lang</c>.</param>
+    [Theory]
+    [InlineData("ro")]
+    [InlineData("en")]
+    public void R088_TheHelpIsInPlainWords(string lang)
+    {
+        bool english = lang == "en";
+        (int code, string stdout, _) = Cli.Run("--help", "--lang", lang);
+        Assert.Equal(0, code);
+        Assert.Contains(english ? "reads and measures the biases, the darks and the lights" : "citeste si masoara bias-urile, dark-urile si lights-urile", stdout, StringComparison.Ordinal);
+        Assert.Contains(english ? "the session's darks are warmer or colder than it" : "cate grade sunt dark-urile sesiunii mai calde sau mai reci decat el", stdout, StringComparison.Ordinal);
+        Assert.Contains(english ? "only what the files say, without reading the pixels" : "doar ce scrie in fisiere, fara sa citeasca pixelii", stdout, StringComparison.Ordinal);
+        System.Text.RegularExpressions.Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
+        List<string> left = stdout.Split('\n').Where(l => method.IsMatch(l)).ToList();
+        Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+
+        (int blank, _, string stderr) = Cli.Run("", "--lang", lang);
+        Assert.Equal(1, blank);
+        Assert.Contains(english ? "the folder's path is blank; give the path" : "calea folderului e goala; da calea", stderr, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R002_MissingFolder_NamesIt_Exit1()
     {
@@ -191,7 +216,7 @@ public class AcceptanceTests
         using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel }, biases: 2);
         (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
         Assert.Equal(0, code);
-        Assert.Contains("masurare dark-uri: 4 / 4", stderr, StringComparison.Ordinal);
+        Assert.Contains("Se masoara dark-urile: 4 / 4", stderr, StringComparison.Ordinal);
         Assert.Contains("=== DARK-URI: cadre citite 4 din 4, 256 x 192 px, valori de la 200 (negru) la 65535 ADU (alb) (FITS pe 16 biti, albul dedus din fisier, negrul luat din bias-uri), filtre de culoare RGGB ===", stdout, StringComparison.Ordinal);
         foreach (string section in new[] { "  2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "  3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "  4. ZGOMOTUL FIECARUI CADRU", "  5. PIXELI FIERBINTI", "  6. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "  7. PIXELI MORTI SI SATURATI", "  8. CATE DARK-URI AJUNG", "  TABEL PE CADRE" })
         {

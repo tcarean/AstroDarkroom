@@ -35,7 +35,7 @@ public partial class DarkSeriesTests
         DarkSeriesAnalysis d = r.Darks;
         Assert.Equal(6, d.Used);
         Assert.Equal(200, d.Black, 1.0);
-        Assert.Contains("negrul luat din valoarea obisnuita a cadrului 1", d.ScaleSource, StringComparison.Ordinal);
+        Assert.Contains("negrul luat din valoarea medie a cadrului 1", d.ScaleSource, StringComparison.Ordinal);
         Assert.Equal("RGGB", d.CfaLetters);
         Assert.Equal(["R", "G1", "G2", "B"], d.PlaneNames);
         Assert.Equal(1, d.QuantStep);
@@ -592,7 +592,7 @@ public partial class DarkSeriesTests
         Assert.Equal("la ISO 400, 1 ADU = 2.07 electroni (senzorul transforma lumina in electroni, iar camera ii numara in ADU); 1 ADU-eq = 1.00 ADU = 2.1 electroni; intr-un pixel incap 34446 electroni (full well), iar pixelul prinde 56 % din lumina care cade pe el (QE). Cifre pentru Nikon D3300 de pe photonstophotos.net, scoase din masuratorile DxOMark, citite pe 2026-10-20; la senzorii mici metoda da prea multi electroni pe ADU.", Value("electroni"));
         Assert.Matches(@"^[0-9.]+ ADU pe pixel = [0-9.]+ electroni: zgomotul pe care camera il adauga cand citeste senzorul, masurat pe bias-uri \(pixelii verzi G1\)$", Value("zgomot de citire"));
         Assert.StartsWith($"un dark are {r.Darks.Noise.SigmaFrame:F2} ADU de zgomot pe pixel; ", Value("zgomot pe un dark"), StringComparison.Ordinal);
-        Assert.Contains("; curentul de intuneric (ce aduna un pixel obisnuit din caldura senzorului) e ", Value("zgomot pe un dark"), StringComparison.Ordinal);
+        Assert.Contains("; curentul de intuneric (ce aduna in medie un pixel din caldura senzorului) e ", Value("zgomot pe un dark"), StringComparison.Ordinal);
         Assert.Equal("pixel fierbinte: peste 20 ADU-eq (20 ADU in fisier); scurgere de lumina pe harta: peste 1.0 ADU-eq (1.0 ADU); lumina constanta pe o latura: peste 0.15 ADU-eq (0.15 ADU); lumina pe un singur cadru: peste 0.1 ADU-eq (0.10 ADU)", Value("praguri pe set"));
         Assert.Equal("nimic peste praguri", Value("ce s-a gasit"));
         Assert.Matches(@"^pe un light, cerul e la [0-9.]+ ADU peste negru, cu [0-9.]+ ADU de zgomot pe pixel \(pixelii verzi G1, din 4 lights\)$", Value("cer"));
@@ -729,7 +729,7 @@ public partial class DarkSeriesTests
             Assert.Contains(english ? "Canon EOS 6D is not in the application's table" : "Aparatul Canon EOS 6D nu e in tabelul aplicatiei", all, StringComparison.Ordinal);
             Assert.Contains(english ? "The files do not say which camera took them" : "Fisierele nu spun ce aparat le-a facut", all, StringComparison.Ordinal);
             Assert.Contains(english ? "UNMEASURED: the frames' noise could not be measured" : "NEMASURAT: zgomotul cadrelor nu s-a putut masura", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "the dark current (what a typical pixel gathers from the sensor's heat) is " : "curentul de intuneric (ce aduna un pixel obisnuit din caldura senzorului) e ", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "the dark current (what a pixel gathers on average from the sensor's heat) is " : "curentul de intuneric (ce aduna in medie un pixel din caldura senzorului) e ", all, StringComparison.Ordinal);
             List<string> left = texts.Where(t => method.IsMatch(t)).Select(t => $"'{method.Match(t).Value}' in: {t}").ToList();
             Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
         }
@@ -868,15 +868,17 @@ public partial class DarkSeriesTests
     }
 
     // R-082's words of the method in the summary, every section; the median only where check 8 names how a master is
-    // made; LightsAndIndexTests reads check 9 and INDEX with the same words
-    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|abater\w*|offset\w*|brut\w*|extrapol\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|q25|q75|amplitudin\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|gradient\w*|deriv\w*|rezidual\w*|temporal\w*|glisant\w*|candidat\w*|rms|rang\w*|persistent\w*|izolat\w*|raport\w*|supracorect\w*|scaleaz\w*)\b|(?<!\bcu )\bmedian\w*|x eroarea|zgomot\w* alb|varf la varf|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    // made; LightsAndIndexTests reads check 9 and INDEX with the same words; the Romanian list also holds obisnuit,
+    // whose place medie took (ADR 0035)
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|obisnuit\w*|abater\w*|offset\w*|brut\w*|extrapol\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|q25|q75|amplitudin\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|gradient\w*|deriv\w*|rezidual\w*|temporal\w*|glisant\w*|candidat\w*|rms|rang\w*|persistent\w*|izolat\w*|raport\w*|supracorect\w*|scaleaz\w*)\b|(?<!\bcu )\bmedian\w*|x eroarea|zgomot\w* alb|varf la varf|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     internal static partial System.Text.RegularExpressions.Regex RomanianSummaryWords();
 
     [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|deviation\w*|offset\w*|raw ADU|extrapolat\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|q25|q75|amplitude\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gradient\w*|drift\w*|residual\w*|temporal\w*|candidate\w*|rms|rank\w*|persistent\w*|isolated|ratio\w*|overcorrect\w*|scales)\b|(?<!\bwith the )\bmedian\w*|x the error|white noise|peak to peak|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     internal static partial System.Text.RegularExpressions.Regex EnglishSummaryWords();
 
-    // R-081's words of the method, whole words in any case; the median only where it names how a stack is made
-    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|cuadratur\w*|radacin\w*|cuantiz\w*|normaliz\w*|abater\w*|offset\w*|castig\w*|brut\w*|petic\w*|supraestim\w*)\b|(?<![\w-])e-(?!\w)|(?<!\bcu )\bmedian\w*", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    // R-081's words of the method, whole words in any case; the median only where it names how a stack is made; the
+    // Romanian list also holds obisnuit, whose place medie took (ADR 0035)
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|obisnuit\w*|cuadratur\w*|radacin\w*|cuantiz\w*|normaliz\w*|abater\w*|offset\w*|castig\w*|brut\w*|petic\w*|supraestim\w*)\b|(?<![\w-])e-(?!\w)|(?<!\bcu )\bmedian\w*", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex RomanianMethodWords();
 
     [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|quadrature|square root|quanti[sz]\w*|normali[sz]\w*|deviation\w*|offset\w*|gain\w*|overestimat\w*|raw|patch\w*)\b|(?<![\w-])e-(?!\w)|(?<!\bwith the )\bmedian\w*", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]

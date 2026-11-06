@@ -21,7 +21,7 @@ Copyright (C) 2026 Tudor Carean
   2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU
     master dark        : centru 0.12, colturi -0.01 / -0.04 / -0.11 / 0.00 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus -0.02 jos 0.00 stanga -0.02 dreapta -0.01  [pixelii verzi G1, ADU peste negru, media a 4 cadre, pe patrate de 32 px]
     master bias        : centru -0.11, colturi 0.16 / 0.02 / -0.08 / 0.15 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus 0.06 jos -0.05 stanga -0.02 dreapta 0.06  [pixelii verzi G1, ADU peste negru, media a 2 cadre]
-    dark - bias        : centru 0.23, colturi -0.17 / -0.05 / -0.04 / -0.14 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus -0.08 jos 0.05 stanga -0.01 dreapta -0.07; pixelul obisnuit -0.03, aproape toti (98 %) intre -0.31 si 0.23
+    dark - bias        : centru 0.23, colturi -0.17 / -0.05 / -0.04 / -0.14 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus -0.08 jos 0.05 stanga -0.01 dreapta -0.07; pixelul mediu -0.03, aproape toti (98 %) intre -0.31 si 0.23
     lumina pe cadre    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
     glow / constant    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
     lumina constanta   : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
@@ -69,7 +69,7 @@ Copyright (C) 2026 Tudor Carean
     verdict            : ATENTIE: foloseste dark-ul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.50 ori cat in dark: dark-ul e mai cald cu 5.9 grade, ii vede pe toti, dar scazut ar scoate prea mult si ar lasa puncte negre
 
   INDEX
-    dark-uri (partener): idx241 (240.5 ADU-eq: valoarea obisnuita a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)
+    dark-uri (partener): idx241 (240.5 ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)
     eticheta           : <partener>-idx241
     lights             : ca un dark cu idx121 (de 0.50 ori cat dark-ul, adica cu 5.9 grade mai reci decat el)
 
@@ -81,7 +81,7 @@ Copyright (C) 2026 Tudor Carean
       4  DSC_0004.fit          00:54:53    0.08    3.01    2.68     1.0    1.002       -       -       -     0
 
   TABEL PE LIGHTS
-     nr  fisier                ora         cer   sigma  candidati  izolati  amplit.    q25    q75   [G1; cer = ADU peste negru; sigma = a excesului local, scara detectorului; amplit. = lights / dark la pixelii fierbinti ai masterului]
+     nr  fisier                ora          cer  zgomot   luminosi  singuri   fierb.    jos    sus   [pixelii verzi G1; cer = cat de luminos e cerul, ADU; zgomot = cat difera un pixel de vecinii lui, ADU; luminosi = mai luminosi decat vecinii cu peste 6 ori zgomotul; singuri = fara vecini luminosi, adica pixeli fierbinti; fierb. = pixelii fierbinti ai masterului fata de master (1 = la fel); jos, sus = jumatate dintre ei sunt intre aceste doua valori]
       1  light_0001.fit        23:41:23   500.0    6.79        239       20    0.507  0.492  0.521
       2  light_0002.fit        23:43:53   500.0    6.70        240       20    0.497  0.484  0.517
       3  light_0003.fit        23:46:23   500.0    6.41        245       20    0.504  0.484  0.528
@@ -92,7 +92,7 @@ Copyright (C) 2026 Tudor Carean
     pasul valorilor    : langa negru, valorile din fisier cresc din 1 in 1 ADU
     electroni          : la ISO 400, 1 ADU = 2.07 electroni (senzorul transforma lumina in electroni, iar camera ii numara in ADU); 1 ADU-eq = 1.00 ADU = 2.1 electroni; intr-un pixel incap 34446 electroni (full well), iar pixelul prinde 56 % din lumina care cade pe el (QE). Cifre pentru Nikon D3300 de pe photonstophotos.net, scoase din masuratorile DxOMark, citite pe 2026-10-20; la senzorii mici metoda da prea multi electroni pe ADU.
     zgomot de citire   : 2.03 ADU pe pixel = 4.2 electroni: zgomotul pe care camera il adauga cand citeste senzorul, masurat pe bias-uri (pixelii verzi G1)
-    zgomot pe un dark  : un dark are 3.01 ADU de zgomot pe pixel; curentul de intuneric (ce aduna un pixel obisnuit din caldura senzorului) e -0.03 ADU la ISO 400, 120.0 s
+    zgomot pe un dark  : un dark are 3.01 ADU de zgomot pe pixel; curentul de intuneric (ce aduna in medie un pixel din caldura senzorului) e -0.03 ADU la ISO 400, 120.0 s
     zgomot in master   : masterul dark, facut din 4 cadre, mai are 1.89 ADU de zgomot pe pixel; stack-ul celor 3 lights are 4.2 ADU pe pixel daca il faci cu media si 5.0 daca il faci cu mediana (cu zgomotul masterului dark inclus)
     praguri pe set     : pixel fierbinte: peste 20 ADU-eq (20 ADU in fisier); scurgere de lumina pe harta: peste 1.0 ADU-eq (1.0 ADU); lumina constanta pe o latura: peste 0.15 ADU-eq (0.15 ADU); lumina pe un singur cadru: peste 0.1 ADU-eq (0.10 ADU)
     ce s-a gasit       : nimic peste praguri

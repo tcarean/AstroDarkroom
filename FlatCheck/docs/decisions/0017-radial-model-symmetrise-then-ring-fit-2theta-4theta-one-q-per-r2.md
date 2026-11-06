@@ -1,7 +1,7 @@
 # 0017. RadialModel: symmetrise, then a 2θ+4θ ring fit with one q per r² anchored on the full rings
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the plain median on the whole rings superseded by 0091
 
 ## Context
 

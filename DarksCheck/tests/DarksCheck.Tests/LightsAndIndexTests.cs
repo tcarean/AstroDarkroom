@@ -280,7 +280,7 @@ public class LightsAndIndexTests
         Assert.Equal(2, r.Index.RankHigh);
         Assert.InRange(r.Index.Index, 114, 126);
         Assert.Contains("    dark-uri           : idx1", Report(r), StringComparison.Ordinal);
-        Assert.Contains(" ADU-eq: valoarea obisnuita a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)", Report(r), StringComparison.Ordinal);
+        Assert.Contains(" ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)", Report(r), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -426,6 +426,146 @@ public class LightsAndIndexTests
             Assert.Contains(english ? "UNMEASURED: the session has no lights" : "NEMASURAT: sesiunea nu are lights", all, StringComparison.Ordinal);
             List<string> left = texts.Where(t => method.IsMatch(t)).Select(t => $"'{method.Match(t).Value}' in: {t}").ToList();
             Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+        }
+    }
+
+    /// <summary>
+    /// The console's lights table (R-086): each column name ends where its figures end, the file and
+    /// the time start where theirs start, in both languages.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R086_TheLightsTableNamesStandAboveTheirFigures(bool english)
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i));
+        DarkSeriesResult r = Run(s);
+        using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+        {
+            string[] lines = Report(r).Split('\n').Select(l => l.TrimEnd('\r')).ToArray();
+            int at = Array.IndexOf(lines, english ? "  LIGHTS TABLE" : "  TABEL PE LIGHTS");
+            Assert.True(at > 0, "no lights table");
+            string head = lines[at + 1][..lines[at + 1].IndexOf('[', StringComparison.Ordinal)];
+            System.Text.RegularExpressions.Match[] names = System.Text.RegularExpressions.Regex.Matches(head, @"\S+").ToArray();
+            System.Text.RegularExpressions.Match[] figures = System.Text.RegularExpressions.Regex.Matches(lines[at + 2], @"\S+").ToArray();
+            Assert.Equal(10, names.Length);
+            Assert.Equal(10, figures.Length);
+            for (int c = 0; c < 10; c++)
+            {
+                // the file and the time are left-aligned, the rest right-aligned
+                bool left = c is 1 or 2;
+                Assert.True(
+                    left ? names[c].Index == figures[c].Index : names[c].Index + names[c].Length == figures[c].Index + figures[c].Length,
+                    $"'{names[c].Value}' does not stand above '{figures[c].Value}'");
+            }
+        }
+    }
+
+    /// <summary>
+    /// The progress lines in plain words (R-088, ADR 0037): the phases of a run with biases, lights and
+    /// a partner, and of a session that takes the partner's darks, name no part of the method, in
+    /// either language.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R088_TheProgressLinesAreInPlainWords(bool english)
+    {
+        using SessionFixture full = new SessionFixture().WithDarkSeries(6, Dark, biases: 3).WithLights(3, i => Light(i));
+        using SessionFixture alone = new SessionFixture().WithLights(3, i => Light(i, 1.3)).WithBiases(3);
+        using SessionFixture partner = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.2 }, inSubfolder: false);
+        PhaseLog phases = new();
+        using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+        {
+            foreach (SessionFixture s in new[] { full, alone })
+            {
+                DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2, MaxFrames: Th.MaxFramesInMemory, Against: partner.Root), phases);
+            }
+        }
+
+        string[] expected = english
+            ? ["Measuring the darks", "Measuring the lights", "Reading the biases", "Reading the darks", "Reading the partner", "Reading the partner's darks"]
+            : ["Se citeste partenerul", "Se citesc bias-urile", "Se citesc dark-urile", "Se citesc dark-urile partenerului", "Se masoara dark-urile", "Se masoara lights-urile"];
+        Assert.Equal(expected.Order(StringComparer.Ordinal), phases.Seen.Order(StringComparer.Ordinal));
+        System.Text.RegularExpressions.Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
+        Assert.DoesNotContain(phases.Seen, method.IsMatch);
+    }
+
+    /// <summary>
+    /// The console's lights table in plain words (R-086, ADR 0034): its column names and its note
+    /// name no part of the method, in either language.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R086_TheLightsTableIsInPlainWords(bool english)
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i));
+        DarkSeriesResult r = Run(s);
+        using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+        {
+            string header = DarkReport.LightTableHeader(r);
+            string names = header[..header.IndexOf('[', StringComparison.Ordinal)];
+            Assert.Equal(english ? "no file time sky noise bright single hot low high" : "nr fisier ora cer zgomot luminosi singuri fierb. jos sus", string.Join(" ", names.Split(' ', StringSplitOptions.RemoveEmptyEntries)));
+            Assert.Contains(english
+                ? "[the green pixels G1; sky = how bright the sky is, ADU; noise = how much a pixel differs from its neighbours, ADU; bright = brighter than their neighbours by more than 6 times the noise;"
+                : "[pixelii verzi G1; cer = cat de luminos e cerul, ADU; zgomot = cat difera un pixel de vecinii lui, ADU; luminosi = mai luminosi decat vecinii cu peste 6 ori zgomotul;", header, StringComparison.Ordinal);
+            Assert.EndsWith(english ? "low, high = half of them are between these two values]" : "jos, sus = jumatate dintre ei sunt intre aceste doua valori]", header, StringComparison.Ordinal);
+            System.Text.RegularExpressions.Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
+            Assert.False(method.IsMatch(header), "the method's word left: " + method.Match(header).Value);
+        }
+    }
+
+    /// <summary>
+    /// The console's progress line (R-025): each rewrite and the final wipe cover the whole line
+    /// before them, so no tail of a longer phase is left in front of the report.
+    /// </summary>
+    [Fact]
+    public void R025_TheProgressLineCoversWhatItRewrites()
+    {
+        using SessionFixture alone = new SessionFixture().WithLights(3, i => Light(i, 1.3)).WithBiases(3);
+        using SessionFixture partner = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.2 }, inSubfolder: false);
+        (_, _, string stderr) = Cli.Run(alone.Root, "--against", partner.Root, "--threads", "2");
+
+        // Cli.Run turns every line ending into \n, the carriage returns that rewrite the line included
+        string[] segments = stderr.Split('\n').Where(s => s.Length > 0).ToArray();
+        Assert.Contains(segments, s => s.Contains("Se citesc dark-urile partenerului: ", StringComparison.Ordinal));
+        for (int k = 1; k < segments.Length; k++)
+        {
+            Assert.True(segments[k].Length >= segments[k - 1].Length, $"'{segments[k]}' leaves the end of '{segments[k - 1]}'");
+        }
+
+        Assert.True(string.IsNullOrWhiteSpace(segments[^1]), $"the progress line is not wiped at the end: '{segments[^1]}'");
+    }
+
+    /// <summary>The phase names a run reports, from whichever thread reports them.</summary>
+    private sealed class PhaseLog : IProgress<RunProgress>
+    {
+        private readonly object _gate = new();
+        private readonly HashSet<string> _seen = [];
+
+        /// <summary>The phases seen so far, each once.</summary>
+        internal IReadOnlyCollection<string> Seen
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return [.. _seen];
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public void Report(RunProgress value)
+        {
+            lock (_gate)
+            {
+                _seen.Add(value.Phase);
+            }
         }
     }
 

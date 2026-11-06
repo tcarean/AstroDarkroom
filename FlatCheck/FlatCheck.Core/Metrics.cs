@@ -110,22 +110,21 @@ namespace FlatCheck
 
         // A robust radial profile + a 2D model rebuilt by interpolation.
         //
-        // Inside the inscribed circle the profile is the median per ring, as always: exact on a
-        // whole ring and immune to what is compact. Beyond it a ring is only partial arcs, at
-        // fixed azimuths (left and right, then only the corners), and any statistic on arcs
-        // inherits the field's dependence on azimuth. Img.Symmetrise removes exactly the ODD part
-        // (the gradient) beforehand; the non-radial EVEN part - a saddle (xy) or a steeper fall
-        // along one axis than along the other (x^2 - y^2) - passes through the symmetrisation
-        // untouched, and the median on the left/right arcs absorbed it into the profile: the
-        // model's slope jumped from 0.21 to 0.71 % per bin right on the inscribed circle, and
-        // the map drew a ridge on it and two lobes with hard edges. Measured on the sky master
-        // of the Tokina at 20 (15 + 15 frames rotated by 180 degrees; the sky's saddle, -6 % at
-        // the corners, is even and the rotation cannot cancel it) and reproduced on a smooth
-        // synthetic with the same coefficients: the map's error against the true residual,
-        // outside the circle, 8.9 % with the median and 0.5 % with the correction; the steepest
-        // step between 8 px tiles 3.58 -> 0.23 %.
+        // The profile is a median per ring: immune to what is compact (a blotch, dust). Beyond
+        // the inscribed circle a ring is only partial arcs, at fixed azimuths (left and right,
+        // then only the corners), and any statistic on arcs inherits the field's dependence on
+        // azimuth. Img.Symmetrise removes exactly the ODD part (the gradient) beforehand; the
+        // non-radial EVEN part - a saddle (xy) or a steeper fall along one axis than along the
+        // other (x^2 - y^2) - passes through the symmetrisation untouched, and the median on the
+        // left/right arcs absorbed it into the profile: the model's slope jumped from 0.21 to
+        // 0.71 % per bin right on the inscribed circle, and the map drew a ridge on it and two
+        // lobes with hard edges. Measured on the sky master of the Tokina at 20 (15 + 15 frames
+        // rotated by 180 degrees; the sky's saddle, -6 % at the corners, is even and the rotation
+        // cannot cancel it) and reproduced on a smooth synthetic with the same coefficients: the
+        // map's error against the true residual, outside the circle, 8.9 % with the median and
+        // 0.5 % with the correction; the steepest step between 8 px tiles 3.58 -> 0.23 %.
         //
-        // THE CORRECTION, on the partial rings: the profile is the median of
+        // THE CORRECTION, on every ring: the profile is the median of
         //     v / (1 + r^2 (q2c cos 2t + q2s sin 2t + q4c cos 4t + q4s sin 4t)),
         // with q the RELATIVE amplitudes per r^2 (a ratio, like every metric of the tool: a sky
         // saddle multiplies, it does not add, and grows with r^2). q is estimated on every
@@ -140,6 +139,20 @@ namespace FlatCheck
         // the unobserved azimuths put +1.3 points on the maximum tile of the Nikkor ISO400 master
         // for no reason (2.9 -> 4.2); anchored, 3.2. a0 stays a median over pixels everywhere,
         // so the profile's noise and robustness are those of before.
+        //
+        // Why the whole rings too (2026-11-06): until then they kept the plain median, on the
+        // reading that a whole ring needs no correction - the median of a sinusoid over a full
+        // turn is its mean. True for one harmonic, false for a mix. The Rosette master (Canon
+        // 40D, 17 flats) carries 2t and 4t together, +1.43 / -0.60 % at the inscribed radius,
+        // and the median of 1.43 cos 2t - 0.60 cos 4t is +0.60 % above its mean: the whole
+        // rings' profile sat above the level by up to 0.44 % (the last whole ring; 0.6 %
+        // analytically at the inscribed radius), the first partial ring - corrected - fell back
+        // to it (a step of -0.66 % against -0.17 / -0.22 % on its neighbours), and the
+        // map drew a hard circle on the inscribed radius. Divided out everywhere, the same q
+        // makes the profile continuous (-0.24 %); near the centre q r^2 is negligible and the
+        // inner profile is the plain median within noise. Measured on synthetics, worst model /
+        // truth error: the Rosette amplitudes 0.51 -> 0.04 %, a pure 11 % saddle and a pure 3 %
+        // four-fold term unchanged. See docs/design/radial-model-even-term.md, section 8.
         //
         // Why 4t too (2026-09-23): on arcs of +-30..60 degrees around the x axis, cos 2t and
         // cos 4t are almost collinear, and a fit with 2t alone read a 4t term as 2t. A master
@@ -188,12 +201,12 @@ namespace FlatCheck
 
         /// <summary>
         /// The radial profile around (<paramref name="cx"/>, <paramref name="cy"/>) and the 2D
-        /// model interpolated from it: the median per ring inside the inscribed circle
-        /// (radius <c>min(cx, cy)</c>), and on the partial rings beyond it the median after
-        /// dividing out the even 2t and 4t terms (the correction described above, and in
-        /// docs/design/radial-model-even-term.md). When no ring from RingQFrom * rIns outwards is
-        /// identifiable, there is no correction and those rings take the plain median too. Rings
-        /// with fewer than 8 pixels are left out.
+        /// model interpolated from it: on every ring, whole or partial, the median after dividing
+        /// out the even 2t and 4t terms (the correction described above, and in
+        /// docs/design/radial-model-even-term.md), one relative amplitude per r^2 estimated on the
+        /// rings from RingQFrom times the inscribed radius <c>min(cx, cy)</c> outwards. When no
+        /// such ring is identifiable, there is no correction and every ring takes the plain
+        /// median. Rings with fewer than 8 pixels are left out.
         /// </summary>
         /// <param name="img">The raster, normally symmetrised
         /// (<see cref="Img.Symmetrise"/>).</param>
@@ -266,7 +279,7 @@ namespace FlatCheck
             {
                 double center = (i + 0.5) / nbins * rmax;
                 centers.Add(center);
-                if (center < rIns || q == null)
+                if (q == null)
                 {
                     prof.Add(Stats.Percentile(binVals[i], 50));
                     continue;

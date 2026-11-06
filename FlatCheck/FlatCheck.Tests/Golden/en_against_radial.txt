@@ -18,7 +18,7 @@ Copyright (C) 2026 Tudor Carean
     local spots (dust etc.)   +0.08 % (brighter)                    +0.05 % (brighter)                    +0.04 % (brighter)
     spread of the 4 corners   0.57 % [PERFECT]                      0.31 % [PERFECT]                      0.26 %
     max azimuthal asymmetry   0.29 % [PERFECT]                      0.18 % [PERFECT]                      0.11 %
-    residual (radial model)   0.29 % [PERFECT]                      0.17 % [PERFECT]                      0.11 %
+    residual (radial model)   0.28 % [PERFECT]                      0.17 % [PERFECT]                      0.11 %
     tilt (gradient)           0.41 % [PERFECT]                      0.26 % [PERFECT]                      0.15 %
     worst spot (one tile)     0.40 % [PERFECT]                      0.22 % [PERFECT]                      0.18 %
 

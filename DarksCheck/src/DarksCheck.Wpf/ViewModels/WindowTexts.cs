@@ -54,12 +54,12 @@ internal static class WindowTexts
         "Alege folderul unei sesiuni sau al unei biblioteci de dark-uri");
 
     internal static string EmptyLead => T(
-        "The Siril working folder, the one that holds darks\\ and, optionally, biases\\ and lights\\, or a folder with "
-        + "the darks directly in it (a library). The analysis starts by itself once you have chosen it: the biases, the darks "
-        + "and the lights are decoded and measured, then come the index and the label.",
-        "Folderul de lucru din Siril, cel care contine darks\\ si, optional, biases\\ si lights\\, sau un folder cu "
-        + "dark-urile direct in el (o biblioteca). Analiza porneste singura dupa ce l-ai ales: bias-urile, dark-urile "
-        + "si lights-urile sunt decodate si masurate, apoi vine indexul si eticheta.");
+        "The Siril working folder, the one that holds darks\\ and, if you have them, biases\\ and lights\\, or a folder with "
+        + "the darks directly in it (a library). The analysis starts by itself once you have chosen it: the program reads and "
+        + "measures the biases, the darks and the lights, then works out the index and the label.",
+        "Folderul de lucru din Siril, cel care contine darks\\ si, daca le ai, biases\\ si lights\\, sau un folder cu "
+        + "dark-urile direct in el (o biblioteca). Analiza porneste singura dupa ce l-ai ales: programul citeste si masoara "
+        + "bias-urile, dark-urile si lights-urile, apoi socoteste indexul si eticheta.");
 
     internal static string ProblemTitle => T("The folder cannot be analysed", "Folderul nu se poate analiza");
 
@@ -99,14 +99,12 @@ internal static class WindowTexts
         "Eticheta e in clipboard; redenumeste folderul cu ea daca vrei.");
 
     internal static string IndexLead => T(
-        "The index is a number for how warm the sensor ran: the median amplitude of the master's pixels at ranks "
-        + $"{RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)} per megapixel, normalised to "
-        + $"ISO {RunReport.F(Th.NormIso, 0)} and {RunReport.F(Th.NormExposureSeconds, 0)} s. The label is the folder's name plus idx<NN>: you copy it "
-        + "and rename the folder yourself; the program writes and renames nothing in the photo folders.",
-        "Indexul e un numar pentru cat de cald a rulat senzorul: mediana amplitudinii pixelilor de pe rangurile "
-        + $"{RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)} pe megapixel ai masterului, normalizata la "
-        + $"ISO {RunReport.F(Th.NormIso, 0)} si {RunReport.F(Th.NormExposureSeconds, 0)} s. Eticheta e numele folderului plus idx<NN>: o copiezi "
-        + "si redenumesti folderul tu; programul nu scrie si nu redenumeste nimic in folderele cu poze.");
+        $"The index is a number for how warm the sensor was: the average value of the master's hot pixels at places {RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)} "
+        + $"per megapixel, counting from the hottest, worked out for ISO {RunReport.F(Th.NormIso, 0)} and {RunReport.F(Th.NormExposureSeconds, 0)} s. The warmer the sensor, the higher the index. "
+        + "The label is the folder's name plus idx and the rounded index (idx- when the index cannot be measured): you copy it and rename the folder yourself; the program writes and renames nothing in the photo folders.",
+        $"Indexul e un numar pentru cat de cald a fost senzorul: valoarea medie a pixelilor fierbinti din master de pe locurile {RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)} "
+        + $"pe fiecare megapixel, numarand de la cel mai fierbinte, socotita pentru ISO {RunReport.F(Th.NormIso, 0)} si {RunReport.F(Th.NormExposureSeconds, 0)} s. Cu cat senzorul a fost mai cald, cu atat indexul e mai mare. "
+        + "Eticheta e numele folderului plus idx si indexul rotunjit (idx- cand indexul nu se poate masura): o copiezi si redenumesti tu folderul; programul nu scrie si nu redenumeste nimic in folderele cu poze.");
 
     internal static string NoDarkMap => T(
         $"No map: the frames are smaller than {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px.",
@@ -127,24 +125,24 @@ internal static class WindowTexts
         + "de la un cadru la altul (RTS). Doar de informare: verificarea asta nu da niciodata avertizare.");
 
     internal static string CandidatesTip => T(
-        $"pixels above {RunReport.F(Th.LightHotSigmas, 0)} local sigma, below saturation",
-        $"pixeli peste {RunReport.F(Th.LightHotSigmas, 0)} sigma locale, sub saturatie");
+        $"how many pixels are brighter than their neighbours by more than {RunReport.F(Th.LightHotSigmas, 0)} times the noise, without being saturated: stars and hot pixels",
+        $"cati pixeli sunt mai luminosi decat vecinii lor cu peste {RoCount(RunReport.F(Th.LightHotSigmas, 0))}ori zgomotul, fara sa fie saturati: stele si pixeli fierbinti");
 
     internal static string IsolatedTip => T(
-        $"candidates with no neighbour above {RunReport.F(Th.LightIsolationSigmas, 0)} sigma: hot pixels, not stars",
-        $"candidati fara niciun vecin peste {RunReport.F(Th.LightIsolationSigmas, 0)} sigma: pixeli fierbinti, nu stele");
+        $"how many of them have no neighbour that also stands out by more than {RunReport.F(Th.LightIsolationSigmas, 0)} times the noise: hot pixels, not stars",
+        $"cati dintre ei nu au niciun vecin care sa iasa si el peste {RoCount(RunReport.F(Th.LightIsolationSigmas, 0))}ori zgomotul: pixeli fierbinti, nu stele");
 
     internal static string MaxFramesTip => T(
-        $"How many frames are held in memory (48 MB each at 24 MP) and how many lights are measured; above that, one in k is taken. Default {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.",
-        $"Cate cadre se tin in memorie (48 MB fiecare la 24 MP) si cate lights se masoara; peste, se ia unul din k. Implicit {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.");
+        $"How many frames are held in memory (48 MB each at 24 MP) and how many lights are measured; if there are more, only some are read, evenly spaced (one in two, for example). Default {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.",
+        $"Cate cadre se tin in memorie (48 MB fiecare la 24 MP) si cate lights se masoara; daca sunt mai multe, se citesc doar unele, la distante egale (de exemplu unul din doua). Implicit {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.");
 
     internal static string IsoFactorTip => T(
-        $"How many times the signal grows per ISO stop, for the normalisation to ISO {RunReport.F(Th.NormIso, 0)}; {RunReport.F(Normalisation.Default.IsoFactorPerStop, 0)} = linear in ISO (D3300)",
-        $"De cate ori creste semnalul la o treapta de ISO, pentru normalizarea la ISO {RunReport.F(Th.NormIso, 0)}; {RunReport.F(Normalisation.Default.IsoFactorPerStop, 0)} = liniar in ISO (D3300)");
+        $"How many times the signal grows at every ISO stop; with it every frame is worked out at ISO {RunReport.F(Th.NormIso, 0)}, so that they can be compared. {RunReport.F(Normalisation.Default.IsoFactorPerStop, 0)} = the signal doubles at every stop (D3300)",
+        $"De cate ori creste semnalul la fiecare treapta de ISO; cu el, toate cadrele se socotesc la ISO {RunReport.F(Th.NormIso, 0)}, ca sa poata fi comparate. {RunReport.F(Normalisation.Default.IsoFactorPerStop, 0)} = semnalul se dubleaza la fiecare treapta (D3300)");
 
     internal static string DoublingTip => T(
-        $"How many degrees double the dark current, for the degrees in the report; {RunReport.F(Th.DoublingCelsius, 0)} on the D3300",
-        $"La cate grade se dubleaza curentul de intuneric, pentru gradele din raport; {RunReport.F(Th.DoublingCelsius, 0)} la D3300");
+        $"How many degrees warmer it takes for the dark current (what the sensor gathers from its own heat) to double; the degrees in the report are worked out from it. {RunReport.F(Th.DoublingCelsius, 0)} on the D3300",
+        $"La cate grade in plus se dubleaza curentul de intuneric (ce aduna senzorul din caldura lui); din el se socotesc gradele din raport. {RunReport.F(Th.DoublingCelsius, 0)} la D3300");
 
     internal static string MapsLead => T(
         $"The three maps show the frame in squares of {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px: the dark master (the mean of the frames), the bias master "
@@ -157,12 +155,14 @@ internal static class WindowTexts
         + "e lumina intrata in aparat sau glow; unul care apare si in bias vine din citirea senzorului, nu e lumina.");
 
     internal static string LightsChartLead => T(
-        "The amplitude of the master's hot pixels in each light, against the master, normalised for ISO and exposure. "
-        + $"Green between {RunReport.F(Th.MatchDirectLow, 1)} and {RunReport.F(Th.MatchDirectHigh, 1)} (direct subtraction), yellow out to "
-        + $"{RunReport.F(Th.MatchOptLow, 1)} and {RunReport.F(Th.MatchOptHigh, 1)} (-opt) and down to {RunReport.F(Th.MatchCosmeticLow, 1)} (cosmetic correction only), "
-        + "red beyond; the first lights of a night are cold.",
-        "Amplitudinea pixelilor fierbinti ai masterului in fiecare light, fata de master, normalizata la ISO si expunere. "
-        + $"Verde intre {RunReport.F(Th.MatchDirectLow, 1)} si {RunReport.F(Th.MatchDirectHigh, 1)} (scadere directa), galben pana la "
-        + $"{RunReport.F(Th.MatchOptLow, 1)} si {RunReport.F(Th.MatchOptHigh, 1)} (-opt) si pana la {RunReport.F(Th.MatchCosmeticLow, 1)} (doar corectie cosmetica), "
-        + "rosu dincolo; primele lights ale unei nopti sunt reci.");
+        "Each point is a light: how hot the master's hot pixels are in it, against the master (1 = the same), once ISO and exposure are taken into account. "
+        + $"Green between {RunReport.F(Th.MatchDirectLow, 1)} and {RunReport.F(Th.MatchDirectHigh, 1)}: the dark can be subtracted as it is. "
+        + $"Yellow between {RunReport.F(Th.MatchOptLow, 1)} and {RunReport.F(Th.MatchOptHigh, 1)}: subtract the dark with -opt (Siril multiplies it so that it matches the lights); "
+        + $"yellow too between {RunReport.F(Th.MatchCosmeticLow, 1)} and {RunReport.F(Th.MatchOptLow, 1)}: use the dark for the cosmetic correction only. "
+        + "Red beyond: they do not match. The first lights of the night usually sit lower, because the camera is still cold.",
+        "Fiecare punct e un light: cat de fierbinti sunt in el pixelii fierbinti ai masterului, fata de master (1 = la fel), dupa ce se tine cont de ISO si de expunere. "
+        + $"Verde intre {RunReport.F(Th.MatchDirectLow, 1)} si {RunReport.F(Th.MatchDirectHigh, 1)}: dark-ul se poate scadea asa cum e. "
+        + $"Galben intre {RunReport.F(Th.MatchOptLow, 1)} si {RunReport.F(Th.MatchOptHigh, 1)}: scade dark-ul cu -opt (Siril il inmulteste cat sa se potriveasca cu lights-urile); "
+        + $"tot galben intre {RunReport.F(Th.MatchCosmeticLow, 1)} si {RunReport.F(Th.MatchOptLow, 1)}: foloseste dark-ul doar pentru corectia cosmetica. "
+        + "Rosu mai departe: nu se potrivesc. Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.");
 }

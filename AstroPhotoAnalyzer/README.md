@@ -127,9 +127,11 @@ nothing and show what the analysis decided. Esc closes them.
   **None** and a check box per cloud. It is made for checking the classes by eye on your own
   images.
 - **Preview**, on a row of the simulation, shows the image lifted to that row's background level
-  (the "as is" row included). Its two check boxes colour the pixels under paper black and those
-  under L\* 15; both start unchecked, so the window opens on the image alone, and each box's
-  label gives the share of the pixels in its class either way.
+  (the "as is" row included). Its two check boxes colour the 32 px patches under paper black and
+  those under L\* 15, the patches the simulation table counts, not single pixels: a stray darker
+  pixel does not show on paper. Both start unchecked, so the window opens on the image alone,
+  and each box's label gives the share of the patches in its class either way; the first is the
+  row's "pure black" figure.
 
 ### Suggested contrast curves
 

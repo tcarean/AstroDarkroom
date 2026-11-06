@@ -159,7 +159,7 @@ public partial class LanguageWindowTests
                 string all = string.Join("\n", texts);
                 Assert.Contains(english ? "HOW MUCH EACH FRAME DIFFERS FROM THE MASTER (ADU)" : "CAT DIFERA FIECARE CADRU DE MASTER (ADU)", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "to discard: the hot pixels are at " : "de aruncat: pixelii fierbinti sunt la ", all, StringComparison.Ordinal);
-                Assert.Contains(english ? "1.5 times the usual noise" : "de 1.5 ori zgomotul obisnuit", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "1.5 times the average noise" : "de 1.5 ori zgomotul mediu", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "no banding" : "fara benzi", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "the noise of the frame, in ADU, on the green pixels G1" : "zgomotul cadrului, in ADU, pe pixelii verzi G1", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "how many pixels of the frame go over 20 ADU-eq, on the green pixels G1" : "cati pixeli din cadru trec de 20 ADU-eq, pe pixelii verzi G1", all, StringComparison.Ordinal);
@@ -259,6 +259,138 @@ public partial class LanguageWindowTests
                 List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
                 Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
             }
+        });
+    }
+
+    /// <summary>
+    /// The Lights tab in plain words (R-086, ADR 0034): the chart's title, sentence and guide lines,
+    /// the table's column names, their hints and its note name no part of the method, in either
+    /// language.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task R086_TheLightsTabIsInPlainWords(bool english)
+    {
+        using TestSettings.Own _ = new();
+        using SessionFixture f = WindowFixture.Session();
+
+        await _sta.InvokeAsync(async () =>
+        {
+            using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+            {
+                MainViewModel vm = new();
+                await vm.OpenAsync(f.Root);
+                Assert.True(vm.HasLights);
+                LightsView view = new() { DataContext = vm };
+                Render(view, 1360, 1800);
+                List<string> texts = [.. TextsOf(view), .. vm.LightGuides.Select(g => g.Label)];
+
+                // the scenes reached their variants, so the words below were looked at
+                string all = string.Join("\n", texts);
+                Assert.Contains(english ? "EACH LIGHT AGAINST THE DARK" : "FIECARE LIGHT FATA DE DARK", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "The first lights of the night usually sit lower, because the camera is still cold." : "Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "0.4 cosmetic only" : "0.4 doar cosmetic", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "how bright the sky is in the light: the average value of the pixels, above the black, in ADU" : "cat de luminos e cerul in light: valoarea medie a pixelilor, peste negru, in ADU", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "stars and hot pixels" : "stele si pixeli fierbinti", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "half of the hot pixels of the master are, in this light, between low and high" : "jumatate din pixelii fierbinti ai masterului sunt, in acest light, intre jos si sus", all, StringComparison.Ordinal);
+                string[] names = english ? ["noise", "bright", "single", "hot", "low", "high"] : ["zgomot", "luminosi", "singuri", "fierb.", "jos", "sus"];
+                foreach (string name in names)
+                {
+                    Assert.Contains(name, texts);
+                }
+
+                Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
+                List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
+                Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+            }
+        });
+    }
+
+    /// <summary>
+    /// The Index tab in plain words (R-087, ADR 0036): the text under the label, the partner's
+    /// explanation and the hint of Analyse again name no part of the method, in either language;
+    /// the run has a partner, so its rows are on the tab too.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task R087_TheIndexTabIsInPlainWords(bool english)
+    {
+        using TestSettings.Own _ = new();
+        using SessionFixture f = WindowFixture.Session();
+        using SessionFixture p = WindowFixture.Partner();
+
+        await _sta.InvokeAsync(async () =>
+        {
+            using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+            {
+                // a run with a partner and one without, so the partner's rows and the empty partner's text are both read
+                List<string> texts = [];
+                foreach (string? partner in new[] { p.Root, null })
+                {
+                    MainViewModel vm = new() { Partner = partner };
+                    await vm.OpenAsync(f.Root);
+                    Assert.True(vm.HasResult);
+                    IndexView view = new() { DataContext = vm };
+                    Render(view, 1360, 1800);
+                    texts.AddRange(TextsOf(view));
+                }
+
+                // the scenes reached their variants, so the words below were looked at
+                string all = string.Join("\n", texts);
+                string places = $"{RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)}";
+                Assert.Contains(english ? "(none: choose a library or another session to compare the darks with)" : "(niciunul: alege o biblioteca sau alta sesiune ca sa compari dark-urile)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? $"the average value of the master's hot pixels at places {places} per megapixel, counting from the hottest" : $"valoarea medie a pixelilor fierbinti din master de pe locurile {places} pe fiecare megapixel, numarand de la cel mai fierbinte", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "The warmer the sensor, the higher the index." : "Cu cat senzorul a fost mai cald, cu atat indexul e mai mare.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "if the session has no darks, they are compared directly with the darks of the partner." : "daca sesiunea nu are dark-uri, se compara direct cu dark-urile partenerului.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "(idx- when the index cannot be measured)" : "(idx- cand indexul nu se poate masura)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "Analyses the open folder again, with the current partner and settings" : "Analizeaza din nou folderul deschis, cu partenerul si setarile de acum", all, StringComparison.Ordinal);
+                Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
+                List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
+                Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+            }
+        });
+    }
+
+    /// <summary>
+    /// The texts around the report in plain words (R-088, ADR 0037): the start screen of a window
+    /// with no folder and the hints of the top bar's four settings name no part of the method, in
+    /// either language.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task R088_TheStartScreenAndTheTopBarAreInPlainWords(bool english)
+    {
+        using TestSettings.Own _ = new();
+
+        await _sta.InvokeAsync(() =>
+        {
+            using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+            {
+                MainViewModel vm = new();
+                FrameworkElement window = (FrameworkElement)new MainWindow(vm).Content;
+                Render(window);
+                List<string> texts = [.. TextsOf(window), vm.MaxFramesTip, vm.IsoFactorTip, vm.DoublingTip];
+
+                // the scenes reached their variants, so the words below were looked at
+                string all = string.Join("\n", texts);
+                Assert.Contains(english ? "the program reads and measures the biases, the darks and the lights, then works out the index and the label." : "programul citeste si masoara bias-urile, dark-urile si lights-urile, apoi socoteste indexul si eticheta.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "How many frames are read at the same time; blank = half the cores of the processor" : "Cate cadre se citesc in acelasi timp; gol = jumatate din nucleele procesorului", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "SIGNAL / ISO STOP" : "SEMNAL / TREAPTA ISO", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "only some are read, evenly spaced (one in two, for example)" : "se citesc doar unele, la distante egale (de exemplu unul din doua)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "2 = the signal doubles at every stop (D3300)" : "2 = semnalul se dubleaza la fiecare treapta (D3300)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "(what the sensor gathers from its own heat)" : "(ce aduna senzorul din caldura lui)", all, StringComparison.Ordinal);
+                Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
+                List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
+                Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+            }
+
+            return Task.CompletedTask;
         });
     }
 
