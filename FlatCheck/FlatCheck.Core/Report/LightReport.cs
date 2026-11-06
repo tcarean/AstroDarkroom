@@ -43,7 +43,9 @@ namespace FlatCheck
         /// good case. Python wrote "-0.00" there, so it was also a divergence between the
         /// implementations.
         ///
-        /// IsNegative, not "&lt; 0", so as to keep the sign of -0.0 - the same as Python.
+        /// IsNegative, not "&lt; 0", so as to keep the sign of -0.0 - the same as Python. The
+        /// other reports show such a zero as "+0.00" through <see cref="Numbers.Signed"/>
+        /// (R-129); this one stays as it is, for the parity goldens.
         /// </summary>
         /// <param name="v">The value.</param>
         /// <returns>"+" or "-" and the absolute value with two decimals.</returns>

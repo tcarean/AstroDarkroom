@@ -95,8 +95,8 @@ namespace FlatCheck
         /// <returns>The title, in capitals.</returns>
         internal static string PngTitle(DateTime when, PngWriter.MapRange range)
         {
-            string lo = ((range.Lo - PngWriter.Mid) * 100).ToString("+0.0;-0.0", CultureInfo.InvariantCulture);
-            string hi = ((range.Hi - PngWriter.Mid) * 100).ToString("+0.0;-0.0", CultureInfo.InvariantCulture);
+            string lo = Numbers.Signed((range.Lo - PngWriter.Mid) * 100, 1, CultureInfo.InvariantCulture);
+            string hi = Numbers.Signed((range.Hi - PngWriter.Mid) * 100, 1, CultureInfo.InvariantCulture);
             return T($"FLATCHECK {VersionInfo.Value}  {DateLine(when)}  BLUE {lo} %  WHITE 0  RED {hi} %",
                      $"FLATCHECK {VersionInfo.Value}  {DateLine(when)}  ALBASTRU {lo} %  ALB 0  ROSU {hi} %").ToUpperInvariant();
         }
@@ -192,7 +192,7 @@ namespace FlatCheck
                 {
                     ProfileDepth d = SplitRun.Against(c.Outcome, p.Profile);
                     return d == null ? new SplitCell(Dash, null)
-                        : new SplitCell(T($"{d.DiffStops:+0.00;-0.00} stops = {d.ErrorPct:F1} %", $"{d.DiffStops:+0.00;-0.00} stopuri = {d.ErrorPct:F1} %"), d.Verdict);
+                        : new SplitCell(T($"{Numbers.Signed(d.DiffStops, 2)} stops = {d.ErrorPct:F1} %", $"{Numbers.Signed(d.DiffStops, 2)} stopuri = {d.ErrorPct:F1} %"), d.Verdict);
                 }).ToList();
                 diff.Add(new SplitCell(Stops(p.CornerStops), null));
                 rows.Add(new SplitRow(DiffKey, ProfileLabel(p.Profile), diff, ProfileNote(p, isReference, r.ReferenceByAdobe), false, isReference));

@@ -138,9 +138,9 @@ public class CultureTests
     }
 
     /// <summary>
-    /// The map legend too. It has its own format ("+0.0;-0.0"), so it is not covered by any
-    /// test above: on a Romanian Windows it would have written "-10,0 %" beside a report that
-    /// writes "10.96 %".
+    /// The map legend too. Its number goes through Numbers.Signed, not the report's F2, so it
+    /// is not covered by any test above: on a Romanian Windows it would have written "-10,0 %"
+    /// beside a report that writes "10.96 %".
     /// </summary>
     [Fact]
     public async Task TheMapLegendUsesTheSameSeparatorAsTheReport()
