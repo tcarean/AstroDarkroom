@@ -94,3 +94,21 @@ the red legend's share is the row's "pure black" column.
 - `APA_DUMP_SCREENS` render of the preview window, or the window run on
   `starless_rbf0.5_stretch0.17.fit` at row 0.20: the red layer is the core of B78 alone, no
   sprinkle, and the legend reads 0.1 % of the patches, the table's figure.
+
+## Record (2026-11-06)
+
+Followed as written, with these deviations:
+
+- `Render` gained a fourth parameter, `asIs`: the review found that a grid row whose target
+  equals the background has a gamma of exactly 1, which the simulation measures through its
+  lift table and the preview, keyed on the gamma alone, would have measured exactly; the row's
+  own flag now picks the path, as the simulation does.
+- The review's other items applied: a test of the pixel-to-patch mapping at a reduction step of
+  3 (`R045_ThePreviewMapsThePatchesThroughTheReductionStep`), the preview's subsample reused
+  for the patches when the two steps coincide, and a guard for an impossible empty grid removed.
+- Left to the owner: storing each row's patch L\* on `SimulationRow` (about 87 KB a row) so
+  that the preview projects the row instead of recomputing its patches; not done, the
+  recomputation being a few tens of milliseconds per preview.
+- Validation re-run before the first commit: V-001 to V-015 unchanged (the preview has no
+  figure there).
+

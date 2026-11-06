@@ -431,7 +431,7 @@ public class DustAnalyzerTests
     public void R045_ThePreviewClassesFollowPaperBlackAndTheSeparationThreshold()
     {
         Raster flat = SyntheticRasters.Flat(64, 64, 0.08f);
-        PrintPreviewResult asIs = PrintPreview.Render(flat, 1, 2.0);
+        PrintPreviewResult asIs = PrintPreview.Render(flat, 1, 2.0, asIs: true);
 
         Assert.Equal(64 * 64, asIs.Classes.Length);
         Assert.All(asIs.Classes, c => Assert.Equal(PreviewClass.UnderPaperBlack, c));
@@ -440,12 +440,12 @@ public class DustAnalyzerTests
         Assert.Equal(flat.Planes[0].Length, asIs.Image.Planes[0].Length);
 
         // Lifted to 0.19: L* ~20, above paper black and above L* 15.
-        PrintPreviewResult lifted = PrintPreview.Render(flat, RasterOps.GammaFor(0.08, 0.19), 2.0);
+        PrintPreviewResult lifted = PrintPreview.Render(flat, RasterOps.GammaFor(0.08, 0.19), 2.0, asIs: false);
         Assert.All(lifted.Classes, c => Assert.Equal(PreviewClass.None, c));
         Assert.Equal(0.19f, lifted.Image.Planes[1][0], 3);
 
         // Lifted to 0.12: L* ~12, above paper black but under 15.
-        PrintPreviewResult between = PrintPreview.Render(flat, RasterOps.GammaFor(0.08, 0.12), 2.0);
+        PrintPreviewResult between = PrintPreview.Render(flat, RasterOps.GammaFor(0.08, 0.12), 2.0, asIs: false);
         Assert.All(between.Classes, c => Assert.Equal(PreviewClass.UnderLowSeparation, c));
         Assert.Equal(0, between.PctUnderPaperBlack);
         Assert.Equal(100, between.PctUnderLowSeparation);
@@ -463,7 +463,7 @@ public class DustAnalyzerTests
         Raster speck = SyntheticRasters.Flat(64, 64, 0.19f);
         foreach (int i in new[] { 5 * 64 + 5, 5 * 64 + 40, 40 * 64 + 5, 40 * 64 + 40 })
             foreach (float[] plane in speck.Planes) plane[i] = 0;
-        PrintPreviewResult p = PrintPreview.Render(speck, 1, 2.0);
+        PrintPreviewResult p = PrintPreview.Render(speck, 1, 2.0, asIs: true);
         Assert.All(p.Classes, c => Assert.Equal(PreviewClass.None, c));
         Assert.Equal(0, p.PctUnderPaperBlack);
         Assert.Equal(0, p.PctUnderLowSeparation);
@@ -473,7 +473,7 @@ public class DustAnalyzerTests
         for (int y = 32; y < 64; y++)
             for (int x = 0; x < 32; x++)
                 foreach (float[] plane in one.Planes) plane[y * 64 + x] = 0.02f;
-        p = PrintPreview.Render(one, 1, 2.0);
+        p = PrintPreview.Render(one, 1, 2.0, asIs: true);
         for (int y = 0; y < 64; y++)
             for (int x = 0; x < 64; x++)
                 Assert.Equal(y >= 32 && x < 32 ? PreviewClass.UnderPaperBlack : PreviewClass.None, p.Classes[y * 64 + x]);
@@ -481,7 +481,7 @@ public class DustAnalyzerTests
         Assert.Equal(25, p.PctUnderLowSeparation);
 
         // 70 x 70 at 0.08: four whole patches under black, the 6 px margins in no class.
-        p = PrintPreview.Render(SyntheticRasters.Flat(70, 70, 0.08f), 1, 2.0);
+        p = PrintPreview.Render(SyntheticRasters.Flat(70, 70, 0.08f), 1, 2.0, asIs: true);
         for (int y = 0; y < 70; y++)
             for (int x = 0; x < 70; x++)
                 Assert.Equal(y < 64 && x < 64 ? PreviewClass.UnderPaperBlack : PreviewClass.None, p.Classes[y * 70 + x]);
@@ -491,7 +491,7 @@ public class DustAnalyzerTests
         AnalysisResult result = AnalysisRun.Execute(Scenes.DarkSky(), "memorie", Scenes.OnBuiltForPaper());
         foreach (SimulationRow row in result.Simulation.Rows)
         {
-            PrintPreviewResult pv = PrintPreview.Render(result.Raster, row.Gamma, result.Parameters.Dmax);
+            PrintPreviewResult pv = PrintPreview.Render(result.Raster, row.Gamma, result.Parameters.Dmax, row.AsIs);
             Assert.Equal(row.PctPatchesBelowPaperBlack, pv.PctUnderPaperBlack, 9);
         }
     }
@@ -500,9 +500,35 @@ public class DustAnalyzerTests
     public void R045_ThePreviewIsReducedUnderTheMaximumSide()
     {
         Raster big = SyntheticRasters.Flat(Thresholds.PreviewMaxSide * 2 + 10, 100, 0.3f);
-        PrintPreviewResult p = PrintPreview.Render(big, 1, 2.0);
+        PrintPreviewResult p = PrintPreview.Render(big, 1, 2.0, asIs: true);
 
         Assert.True(p.Image.W <= Thresholds.PreviewMaxSide);
         Assert.Equal(p.Image.W * p.Image.H, p.Classes.Length);
+    }
+
+    /// <summary>
+    /// At a reduction step over 1 (here 3: a 3210 px wide raster), a patch's pixels are found
+    /// through the step: the dark 32 px patch at image x 64..95 paints the reduced columns whose
+    /// image position falls in it, 22..31, and no other (ADR 0082).
+    /// </summary>
+    [Fact]
+    public void R045_ThePreviewMapsThePatchesThroughTheReductionStep()
+    {
+        int w = Thresholds.PreviewMaxSide * 2 + 10;   // 3210: stride 3
+        Raster big = SyntheticRasters.Flat(100, w, 0.3f);
+        for (int y = 0; y < 32; y++)
+            for (int x = 64; x < 96; x++)
+                foreach (float[] plane in big.Planes) plane[y * w + x] = 0.02f;
+        PrintPreviewResult p = PrintPreview.Render(big, 1, 2.0, asIs: true);
+
+        Assert.Equal(3, PrintPreview.ReductionStride(big));
+        int pw = p.Image.W;
+        for (int y = 0; y < p.Image.H; y++)
+            for (int x = 0; x < pw; x++)
+            {
+                bool inPatch = y * 3 < 32 && x * 3 >= 64 && x * 3 < 96;   // columns 22..31, rows 0..10
+                Assert.Equal(inPatch ? PreviewClass.UnderPaperBlack : PreviewClass.None, p.Classes[y * pw + x]);
+            }
+        Assert.Equal(100.0 / ((w / 4) / 8 * (100 / 4 / 8)), p.PctUnderPaperBlack, 9);   // one patch of the grid
     }
 }

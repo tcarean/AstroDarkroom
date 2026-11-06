@@ -39,7 +39,8 @@ The owner chose the patches: "Classify by patch".
 `PrintPreview.Render` classes the 32 px patches of the simulation's grid, not the pixels: the
 patches' L\* at the row's lift (`DustAnalyzer.PatchLstars` through the row's `LiftTable`, the
 computation `PrintStretchSimulator.Simulate` runs for the row; exact on the "as is" row, as
-there) against paper black and `LowSeparationLstar`; every reduced pixel takes its patch's class
+there, which the row's `AsIs` flag says, since a grid row can have a gamma of 1 too) against
+paper black and `LowSeparationLstar`; every reduced pixel takes its patch's class
 by the map's geometry, and the pixels past the last whole patch, at the right and the bottom,
 take none, as they belong to no patch of the table either. The two shares are shares of the
 patches, so the red legend's figure is the row's "pure black" column to the last decimal; the

@@ -79,7 +79,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <returns>The view-model, with both layers hidden until their boxes are ticked.</returns>
         internal static PreviewWindowViewModel From(AnalysisResult r, SimulationRow row)
         {
-            PrintPreviewResult p = PrintPreview.Render(r.Raster, row.Gamma, r.Parameters.Dmax);
+            PrintPreviewResult p = PrintPreview.Render(r.Raster, row.Gamma, r.Parameters.Dmax, row.AsIs);
             Raster img = p.Image;
             int w = img.W, h = img.H;
             PreviewClass[] c = p.Classes;

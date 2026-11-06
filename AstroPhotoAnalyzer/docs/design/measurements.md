@@ -184,10 +184,12 @@ predicted it above from 0.14); a disc is not the cloud's contour.
 
 ### B6 - `PrintPreview` - a simulation row as an image (window only)
 
-`Render(img, gamma, dmax)`: the image subsampled to at most `PreviewMaxSide` (1600), lifted with
-the row's gamma (left alone at gamma 1), and one `PreviewClass` per pixel, its patch's (ADR
+`Render(img, gamma, dmax, asIs)`: the image subsampled to at most `PreviewMaxSide` (1600), lifted
+with the row's gamma (left alone at gamma 1), and one `PreviewClass` per pixel, its patch's (ADR
 0082): the 32 px patches' L\* at the row's lift, `DustAnalyzer.PatchLstars` on the stride-4
-subsample through the row's `LiftTable` (exact at gamma 1), the computation B4 runs for the row;
+subsample (the preview's own when the two steps coincide) through the row's `LiftTable`, or
+exactly when `asIs` says the row is the simulation's "as is" row, the computation B4 runs for
+the row;
 `UnderPaperBlack`, `UnderLowSeparation` (under 15 but not under paper black) or `None`. Each
 reduced pixel is mapped to its patch as `MapViewModel` maps them (`DustAnalyzer.Grid`, the
 patch side times `TonalStride`, divided by the preview's `ReductionStride`); the pixels past the

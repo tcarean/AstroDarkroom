@@ -90,26 +90,31 @@ namespace AstroPhotoAnalyzer
         /// <param name="img">The image, 0..1.</param>
         /// <param name="gamma">
         /// The row's gamma, positive, as <see cref="RasterOps.GammaFor"/> gives it; within 1e-12
-        /// of 1 the reduced image is left as it is and the patches are measured exactly, as the
-        /// simulation's "as is" row is.
+        /// of 1 the reduced image is left as it is.
         /// </param>
         /// <param name="dmax">The paper's Dmax, positive.</param>
+        /// <param name="asIs">
+        /// Whether the row is the simulation's "as is" row: its patches are then measured exactly,
+        /// as the simulation measures that row, and every other row's through the lift table of
+        /// its gamma, even a gamma of 1 (a grid target equal to the background), so that the
+        /// shares are the row's to the last decimal.
+        /// </param>
         /// <returns>
         /// The reduced, lifted image (<paramref name="img"/> itself when it needs neither), the
         /// class of each of its pixels (its patch's; None past the last whole patch), and the
         /// percentages of the patches under paper black and under the low-separation L* (those
         /// under paper black included).
         /// </returns>
-        internal static PrintPreviewResult Render(Raster img, double gamma, double dmax)
+        internal static PrintPreviewResult Render(Raster img, double gamma, double dmax, bool asIs)
         {
             int stride = ReductionStride(img);
             Raster small = RasterOps.Subsample(img, stride);
-            bool asIs = Math.Abs(gamma - 1) < 1e-12;
-            Raster lifted = asIs ? small : RasterOps.Gamma(small, gamma);
+            Raster lifted = Math.Abs(gamma - 1) < 1e-12 ? small : RasterOps.Gamma(small, gamma);
 
             // The patches' L* at this lift: the simulation's own computation for the row, on the
-            // same subsample and grid (R-044, ADR 0035), exact on the "as is" row as there.
-            Raster sub = RasterOps.Subsample(img, Thresholds.TonalStride);
+            // same subsample and grid (R-044, ADR 0035), exact on the "as is" row as there. The
+            // subsample is the preview's own when the two steps coincide.
+            Raster sub = stride == Thresholds.TonalStride ? small : RasterOps.Subsample(img, Thresholds.TonalStride);
             float[] patchL = asIs ? DustAnalyzer.PatchLstars(sub) : DustAnalyzer.PatchLstars(sub, new LiftTable(gamma));
             var (cols, rows, side) = DustAnalyzer.Grid(img.W, img.H, Thresholds.TonalStride);
             double black = ColorMath.PaperBlackLstar(dmax);
@@ -137,15 +142,15 @@ namespace AstroPhotoAnalyzer
                     classes[y * w + x] = patchClass[by * cols + bx];
                 }
             }
-            int patches = Math.Max(1, patchL.Length);
+            // The grid has at least one patch for any raster of a pixel or more.
             return new PrintPreviewResult
             {
                 Image = lifted,
                 Classes = classes,
                 Gamma = gamma,
                 PaperBlackLstar = black,
-                PctUnderPaperBlack = 100.0 * nBlack / patches,
-                PctUnderLowSeparation = 100.0 * nLow / patches,
+                PctUnderPaperBlack = 100.0 * nBlack / patchL.Length,
+                PctUnderLowSeparation = 100.0 * nLow / patchL.Length,
             };
         }
     }
