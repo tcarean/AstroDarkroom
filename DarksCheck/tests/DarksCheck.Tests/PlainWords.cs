@@ -20,21 +20,21 @@ using System.Text.RegularExpressions;
 namespace DarksCheck.Tests;
 
 /// <summary>
-/// The words of the method the Cadre, Harti, Pixeli fierbinti and Lights tabs' texts must not use
-/// (ADR 0028, R-083 to R-086), shared by the core's tests and the window's, which link this file; one
+/// The words of the method the Cadre, Harti, Pixeli fierbinti, Lights and Index tabs' texts must not
+/// use (ADR 0028, R-083 to R-087), shared by the core's tests and the window's, which link this file; one
 /// list per language, whole words in any case. The earlier tabs' lists stay beside their tests in
 /// DarkSeriesTests. The Romanian list also holds <c>obisnuit</c>, whose place <c>medie</c> took
 /// (ADR 0035).
 /// </summary>
 internal static partial class PlainWords
 {
-    /// <summary>R-083's to R-086's words of the method in the four tabs' Romanian texts.</summary>
+    /// <summary>R-083's to R-087's words of the method in the five tabs' Romanian texts.</summary>
     /// <returns>The pattern; a match is a word the text must lose.</returns>
-    [GeneratedRegex(@"\b(sigma|sqrt|obisnuit\w*|rezid\w*|deviat\w*|abater\w*|offset\w*|amplit\w*|median\w*|metadat\w*|decod\w*|outlier\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|radacin\w*|castig\w*|brut\w*|percentil\w*|temporal\w*|candidat\w*|planuri\w*|exces\w*|detector\w*|quartil\w*|izolat\w*|q25|q75)\b|(?<![\w-])e-(?!\w)|(?<![\w-])n ?=|zgomot\w* alb|planul\w* de referinta|culoarea de atentie", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(sigma|sqrt|obisnuit\w*|rezid\w*|deviat\w*|abater\w*|offset\w*|amplit\w*|median\w*|metadat\w*|decod\w*|outlier\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|radacin\w*|castig\w*|brut\w*|percentil\w*|temporal\w*|candidat\w*|planuri\w*|exces\w*|detector\w*|quartil\w*|izolat\w*|q25|q75|rang\w*|echivalent\w*)\b|(?<![\w-])e-(?!\w)|(?<![\w-])n ?=|zgomot\w* alb|planul\w* de referinta|culoarea de atentie", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     internal static partial Regex RomanianTabWords();
 
-    /// <summary>R-083's to R-086's words of the method in the four tabs' English texts.</summary>
+    /// <summary>R-083's to R-087's words of the method in the five tabs' English texts.</summary>
     /// <returns>The pattern; a match is a word the text must lose.</returns>
-    [GeneratedRegex(@"\b(sigma|sqrt|resid\w*|deviation\w*|offset\w*|amplitude\w*|ampl|median\w*|metadata|decod\w*|outlier\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gain\w*|percentile\w*|temporal\w*|candidate\w*|planes|excess\w*|detector\w*|quartile\w*|isolated|q25|q75)\b|raw ADU|(?<![\w-])e-(?!\w)|(?<![\w-])n ?=|square root|white noise|reference plane|attention colou?r", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(sigma|sqrt|resid\w*|deviation\w*|offset\w*|amplitude\w*|ampl|median\w*|metadata|decod\w*|outlier\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gain\w*|percentile\w*|temporal\w*|candidate\w*|planes|excess\w*|detector\w*|quartile\w*|isolated|q25|q75|rank\w*|equivalent\w*)\b|raw ADU|(?<![\w-])e-(?!\w)|(?<![\w-])n ?=|square root|white noise|reference plane|attention colou?r", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     internal static partial Regex EnglishTabWords();
 }

@@ -53,13 +53,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="{l:T En='PARTNER', Ro='PARTENER'}" />
           <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,8" TextWrapping="Wrap"
-                     Text="{l:T En='Another folder of darks, a library or another session: the session darks are compared with its master on the pixels hot in both, in equivalent degrees, and the lights through the darks. It is remembered between starts and applies to the next analysis.', Ro='Alt folder de dark-uri, o biblioteca sau alta sesiune: dark-urile sesiunii se compara cu masterul lui pe pixelii fierbinti in amandoua, in grade echivalente, iar lights-urile prin dark-uri. Se tine minte intre porniri si se aplica la urmatoarea analiza.'}" />
+                     Text="{l:T En='The partner is another folder of darks: a library or another session. The program compares the darks of the session with the master of the partner, on the pixels hot in both, and says by how many degrees the darks of the session are warmer or colder than it. The lights are compared with the partner through the darks of the session; if the session has no darks, they are compared directly with the darks of the partner. The program remembers the partner you chose after you close it, and uses it in the next analysis.', Ro='Partenerul e alt folder de dark-uri: o biblioteca sau alta sesiune. Programul compara dark-urile sesiunii cu masterul partenerului, pe pixelii fierbinti in amandoua, si spune cu cate grade sunt dark-urile sesiunii mai calde sau mai reci decat el. Lights-urile se compara cu partenerul prin dark-urile sesiunii; daca sesiunea nu are dark-uri, se compara direct cu dark-urile partenerului. Programul tine minte partenerul ales si dupa ce il inchizi, si il foloseste la urmatoarea analiza.'}" />
           <TextBlock TextTrimming="CharacterEllipsis" Text="{Binding PartnerText}" ToolTip="{Binding PartnerText}" />
           <StackPanel Orientation="Horizontal" Margin="0,10,0,0" IsEnabled="{Binding IsIdle}">
             <Button Content="{l:T En='Choose partner...', Ro='Alege partener...'}" Click="ChoosePartner" />
             <Button Content="{l:T En='No partner', Ro='Fara partener'}" Click="ClearPartner" Margin="10,0,0,0" IsEnabled="{Binding HasPartner}" />
             <Button Content="{l:T En='Analyse again', Ro='Analizeaza din nou'}" Click="Rerun" Margin="10,0,0,0" IsEnabled="{Binding HasFolder}"
-                    ToolTip="{l:T En='Runs the open folder again, with the current partner and settings', Ro='Ruleaza din nou folderul deschis, cu partenerul si setarile de acum'}" />
+                    ToolTip="{l:T En='Analyses the open folder again, with the current partner and settings', Ro='Analizeaza din nou folderul deschis, cu partenerul si setarile de acum'}" />
           </StackPanel>
         </StackPanel>
       </Border>

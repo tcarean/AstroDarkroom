@@ -34,6 +34,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Index tab's own texts speak plain words, in English and Romanian (R-087, ADR 0036): the text
+  under the label says the index in the INDEX row's words (`the average value of the master's hot
+  pixels at places 5-20 per megapixel`) and that a warmer sensor gives a higher index, the
+  partner's explanation says what is compared with what, the lights of a session without darks
+  directly with the partner's darks, and **Analyse again**'s hint says it analyses the open folder
+  again.
+
 - A typical value is `average` (`medie`, `mediu`, `in medie`) wherever a text called it `usual`
   or `typical` (`obisnuit`) (ADR 0035), the figures unchanged: the `dark - bias` row (`the
   average pixel`), check 2's frame light row (`the average spread of the frames`), the index

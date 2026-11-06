@@ -308,6 +308,53 @@ public partial class LanguageWindowTests
         });
     }
 
+    /// <summary>
+    /// The Index tab in plain words (R-087, ADR 0036): the text under the label, the partner's
+    /// explanation and the hint of Analyse again name no part of the method, in either language;
+    /// the run has a partner, so its rows are on the tab too.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task R087_TheIndexTabIsInPlainWords(bool english)
+    {
+        using TestSettings.Own _ = new();
+        using SessionFixture f = WindowFixture.Session();
+        using SessionFixture p = WindowFixture.Partner();
+
+        await _sta.InvokeAsync(async () =>
+        {
+            using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+            {
+                // a run with a partner and one without, so the partner's rows and the empty partner's text are both read
+                List<string> texts = [];
+                foreach (string? partner in new[] { p.Root, null })
+                {
+                    MainViewModel vm = new() { Partner = partner };
+                    await vm.OpenAsync(f.Root);
+                    Assert.True(vm.HasResult);
+                    IndexView view = new() { DataContext = vm };
+                    Render(view, 1360, 1800);
+                    texts.AddRange(TextsOf(view));
+                }
+
+                // the scenes reached their variants, so the words below were looked at
+                string all = string.Join("\n", texts);
+                string places = $"{RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)}";
+                Assert.Contains(english ? "(none: choose a library or another session to compare the darks with)" : "(niciunul: alege o biblioteca sau alta sesiune ca sa compari dark-urile)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? $"the average value of the master's hot pixels at places {places} per megapixel, counting from the hottest" : $"valoarea medie a pixelilor fierbinti din master de pe locurile {places} pe fiecare megapixel, numarand de la cel mai fierbinte", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "The warmer the sensor, the higher the index." : "Cu cat senzorul a fost mai cald, cu atat indexul e mai mare.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "if the session has no darks, they are compared directly with the darks of the partner." : "daca sesiunea nu are dark-uri, se compara direct cu dark-urile partenerului.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "(idx- when the index cannot be measured)" : "(idx- cand indexul nu se poate masura)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "Analyses the open folder again, with the current partner and settings" : "Analizeaza din nou folderul deschis, cu partenerul si setarile de acum", all, StringComparison.Ordinal);
+                Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
+                List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
+                Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+            }
+        });
+    }
+
     private static void Render(FrameworkElement el, int w = 1360, int h = 820)
     {
         el.Measure(new Size(w, h));
