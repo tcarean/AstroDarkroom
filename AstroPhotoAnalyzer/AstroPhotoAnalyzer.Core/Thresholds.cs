@@ -144,7 +144,7 @@ namespace AstroPhotoAnalyzer
         /// does not move and the nebula class shrinks by about a third. Measured on 2026-11-06
         /// (ADR 0084).
         /// </summary>
-        internal const double SkyModelLowPercentile = 50;
+        internal const double SkyModelPercentile = 50;
 
         /// <summary>
         /// The sky's noise over the patches: the robust sigma (1.4826 x MAD) of the difference
@@ -160,7 +160,7 @@ namespace AstroPhotoAnalyzer
         /// patches, where pixel noise is averaged away (0 to 10 levels of added noise move it
         /// from 1.17 to 1.33 L* on a denoised frame), so it follows the stretch and the stars,
         /// not the denoising. ADR 0033 took 4 with the 25th-percentile model; with the median
-        /// model (SkyModelLowPercentile), 3 puts the dust class of the Smida Milky Way frame on
+        /// model (SkyModelPercentile), 3 puts the dust class of the Smida Milky Way frame on
         /// the band path's (9.8 % of the patches, L* 4.90, against 9.5 % and 4.85; with 4, 7.2 %
         /// and 4.20), finding 73 % of the band path's dust patches. The bright-nebula threshold
         /// has no constant: it is the Otsu threshold of the tail above. Measured on 2026-11-06

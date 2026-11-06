@@ -215,7 +215,7 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 - 2026-11-06 (ADR 0084, the sky model is the median of each cell and the dust three sigmas
   under it, `docs/plans/2026-11-06-find-the-dust-without-a-wcs.md`): `SkyModelLowPercentile`
-  25 -> 50 and `SkyNoiseK` 4 -> 3 in `Thresholds.cs`, so that a Milky Way frame without a WCS
+  25 -> 50 (renamed `SkyModelPercentile`) and `SkyNoiseK` 4 -> 3 in `Thresholds.cs`, so that a Milky Way frame without a WCS
   finds the Great Rift. Re-run on the branch, the twelve files of the manifest copied into the
   worktree: of the 1323 figures the sixteen cases record, 213 moved, all on the sky-path cases
   (V-001, V-003, V-005, V-009 on `de_printat.png`; V-010, V-011 on the Rosetta; V-012 on

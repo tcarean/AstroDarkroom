@@ -2,7 +2,7 @@
 
 Date: 2026-11-06
 Status: accepted 2026-11-06
-Supersedes: 0033 in part (the values of `SkyModelLowPercentile` and `SkyNoiseK`)
+Supersedes: 0033 in part (the values of `SkyModelLowPercentile`, since renamed, and `SkyNoiseK`)
 
 ## Context
 
@@ -71,10 +71,13 @@ patches, the factor 4 to 1, and a fixed depth in L\* in place of the factor):
 ## Decision
 
 The owner chose, on 2026-11-06, both thresholds: `SkyModelLowPercentile` 25 -> 50 (the model is
-the median of each cell) and `SkyNoiseK` 4 -> 3. Both stay relative: a rank inside the cell and
-a multiple of the sky's own noise measured on the image, so a stretch to any background level
-and any amount of denoising leave the rule the same. Nothing else of ADR 0033 changes: the
-clipping pass, the Otsu split, the 5 % floor, the one measurement on both paths.
+the median of each cell; the constant is renamed `SkyModelPercentile`, since the median is no
+low value) and `SkyNoiseK` 4 -> 3. The Tonuri guide's sentence on the sky model, "the lower
+part of each zone", became "the middle of each zone" on the owner's yes of the same day.
+Both stay relative: a rank inside the cell and a multiple of the sky's own noise measured on
+the image, so a stretch to any background level and any amount of denoising leave the rule
+the same. Nothing else of ADR 0033 changes: the clipping pass, the Otsu split, the 5 % floor,
+the one measurement on both paths.
 
 ## Alternatives rejected
 

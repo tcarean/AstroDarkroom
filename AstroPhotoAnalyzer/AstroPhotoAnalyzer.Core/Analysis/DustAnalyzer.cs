@@ -30,7 +30,7 @@
 //     patch outside it BrightCloudLstar over the modelled sky, the sky the rest outside the band;
 //   - otherwise (no WCS, a frame without the band or wholly inside it, or a frame spanning under
 //     BandMinLatitudeSpanDeg degrees of galactic latitude, deep-sky in the band; ADR 0033,
-//     ADR 0037): the sky is a smooth model from ALL the patches, with the SkyModelLowPercentile
+//     ADR 0037): the sky is a smooth model from ALL the patches, with the SkyModelPercentile
 //     percentile per cell; the thresholds come from the image: the nebula is a patch more than
 //     SkyNoiseK sky sigmas over the model, the dust as much under it, the bright nebula over the
 //     Otsu threshold of the nebula's tail (without the peaks), the peaks as above, the sky the
@@ -530,7 +530,7 @@ namespace AstroPhotoAnalyzer
         static void ClassifyBySky(DustMap map, float[] L, SkyReason reason)
         {
             int cols = map.Cols, rows = map.Rows, n = cols * rows;
-            float[] sky = SkyModel(L, new bool[n], cols, rows, Thresholds.SkyModelLowPercentile);
+            float[] sky = SkyModel(L, new bool[n], cols, rows, Thresholds.SkyModelPercentile);
             var resid = new float[n];
             for (int i = 0; i < n; i++) resid[i] = L[i] - sky[i];
 
@@ -584,7 +584,7 @@ namespace AstroPhotoAnalyzer
         /// <param name="rows">The grid's rows.</param>
         /// <param name="percentile">
         /// The percentile taken in each cell, 0..100: 50 on the band path,
-        /// <see cref="Thresholds.SkyModelLowPercentile"/> on the sky path.
+        /// <see cref="Thresholds.SkyModelPercentile"/> on the sky path.
         /// </param>
         /// <returns>
         /// The model, an L* per patch, in the map's row order; 0 everywhere when every patch is in
