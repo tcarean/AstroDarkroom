@@ -355,6 +355,45 @@ public partial class LanguageWindowTests
         });
     }
 
+    /// <summary>
+    /// The texts around the report in plain words (R-088, ADR 0037): the start screen of a window
+    /// with no folder and the hints of the top bar's four settings name no part of the method, in
+    /// either language.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task R088_TheStartScreenAndTheTopBarAreInPlainWords(bool english)
+    {
+        using TestSettings.Own _ = new();
+
+        await _sta.InvokeAsync(() =>
+        {
+            using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+            {
+                MainViewModel vm = new();
+                FrameworkElement window = (FrameworkElement)new MainWindow(vm).Content;
+                Render(window);
+                List<string> texts = [.. TextsOf(window), vm.MaxFramesTip, vm.IsoFactorTip, vm.DoublingTip];
+
+                // the scenes reached their variants, so the words below were looked at
+                string all = string.Join("\n", texts);
+                Assert.Contains(english ? "the program reads and measures the biases, the darks and the lights, then works out the index and the label." : "programul citeste si masoara bias-urile, dark-urile si lights-urile, apoi socoteste indexul si eticheta.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "How many frames are read at the same time; blank = half the cores of the processor" : "Cate cadre se citesc in acelasi timp; gol = jumatate din nucleele procesorului", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "SIGNAL / ISO STOP" : "SEMNAL / TREAPTA ISO", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "only some are read, evenly spaced (one in two, for example)" : "se citesc doar unele, la distante egale (de exemplu unul din doua)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "2 = the signal doubles at every stop (D3300)" : "2 = semnalul se dubleaza la fiecare treapta (D3300)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "(what the sensor gathers from its own heat)" : "(ce aduna senzorul din caldura lui)", all, StringComparison.Ordinal);
+                Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
+                List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
+                Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+            }
+
+            return Task.CompletedTask;
+        });
+    }
+
     private static void Render(FrameworkElement el, int w = 1360, int h = 820)
     {
         el.Measure(new Size(w, h));

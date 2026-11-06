@@ -34,6 +34,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The texts around the report speak plain words, in English and Romanian (R-088, ADR 0037): the
+  start screen says the program reads and measures the frames, the progress lines read `Reading
+  the darks: 3 / 20` (`Se citesc dark-urile`) in the window and on the console's stderr, and the
+  top bar's hints say what each setting does, the second one named `SIGNAL / ISO STOP` (`SEMNAL /
+  TREAPTA ISO`, was `GAIN / ISO STOP`); `--help` says what each option does in the same words, and
+  a blank folder path reads `the folder's path is blank`.
+
 - The Index tab's own texts speak plain words, in English and Romanian (R-087, ADR 0036): the text
   under the label says the index in the INDEX row's words (`the average value of the master's hot
   pixels at places 5-20 per megapixel`) and that a warmer sensor gives a higher index, the

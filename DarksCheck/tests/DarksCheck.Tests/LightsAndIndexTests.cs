@@ -463,6 +463,37 @@ public class LightsAndIndexTests
     }
 
     /// <summary>
+    /// The progress lines in plain words (R-088, ADR 0037): the phases of a run with biases, lights and
+    /// a partner, and of a session that takes the partner's darks, name no part of the method, in
+    /// either language.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R088_TheProgressLinesAreInPlainWords(bool english)
+    {
+        using SessionFixture full = new SessionFixture().WithDarkSeries(6, Dark, biases: 3).WithLights(3, i => Light(i));
+        using SessionFixture alone = new SessionFixture().WithLights(3, i => Light(i, 1.3)).WithBiases(3);
+        using SessionFixture partner = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.2 }, inSubfolder: false);
+        PhaseLog phases = new();
+        using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+        {
+            foreach (SessionFixture s in new[] { full, alone })
+            {
+                DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2, MaxFrames: Th.MaxFramesInMemory, Against: partner.Root), phases);
+            }
+        }
+
+        string[] expected = english
+            ? ["Measuring the darks", "Measuring the lights", "Reading the biases", "Reading the darks", "Reading the partner", "Reading the partner's darks"]
+            : ["Se citeste partenerul", "Se citesc bias-urile", "Se citesc dark-urile", "Se citesc dark-urile partenerului", "Se masoara dark-urile", "Se masoara lights-urile"];
+        Assert.Equal(expected.Order(StringComparer.Ordinal), phases.Seen.Order(StringComparer.Ordinal));
+        System.Text.RegularExpressions.Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
+        Assert.DoesNotContain(phases.Seen, method.IsMatch);
+    }
+
+    /// <summary>
     /// The console's lights table in plain words (R-086, ADR 0034): its column names and its note
     /// name no part of the method, in either language.
     /// </summary>
@@ -485,6 +516,56 @@ public class LightsAndIndexTests
             Assert.EndsWith(english ? "low, high = half of them are between these two values]" : "jos, sus = jumatate dintre ei sunt intre aceste doua valori]", header, StringComparison.Ordinal);
             System.Text.RegularExpressions.Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
             Assert.False(method.IsMatch(header), "the method's word left: " + method.Match(header).Value);
+        }
+    }
+
+    /// <summary>
+    /// The console's progress line (R-025): each rewrite and the final wipe cover the whole line
+    /// before them, so no tail of a longer phase is left in front of the report.
+    /// </summary>
+    [Fact]
+    public void R025_TheProgressLineCoversWhatItRewrites()
+    {
+        using SessionFixture alone = new SessionFixture().WithLights(3, i => Light(i, 1.3)).WithBiases(3);
+        using SessionFixture partner = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.2 }, inSubfolder: false);
+        (_, _, string stderr) = Cli.Run(alone.Root, "--against", partner.Root, "--threads", "2");
+
+        // Cli.Run turns every line ending into \n, the carriage returns that rewrite the line included
+        string[] segments = stderr.Split('\n').Where(s => s.Length > 0).ToArray();
+        Assert.Contains(segments, s => s.Contains("Se citesc dark-urile partenerului: ", StringComparison.Ordinal));
+        for (int k = 1; k < segments.Length; k++)
+        {
+            Assert.True(segments[k].Length >= segments[k - 1].Length, $"'{segments[k]}' leaves the end of '{segments[k - 1]}'");
+        }
+
+        Assert.True(string.IsNullOrWhiteSpace(segments[^1]), $"the progress line is not wiped at the end: '{segments[^1]}'");
+    }
+
+    /// <summary>The phase names a run reports, from whichever thread reports them.</summary>
+    private sealed class PhaseLog : IProgress<RunProgress>
+    {
+        private readonly object _gate = new();
+        private readonly HashSet<string> _seen = [];
+
+        /// <summary>The phases seen so far, each once.</summary>
+        internal IReadOnlyCollection<string> Seen
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return [.. _seen];
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public void Report(RunProgress value)
+        {
+            lock (_gate)
+            {
+                _seen.Add(value.Phase);
+            }
         }
     }
 

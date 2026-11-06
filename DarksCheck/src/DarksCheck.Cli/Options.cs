@@ -134,7 +134,7 @@ internal sealed class Options
 
             if (string.IsNullOrWhiteSpace(a))
             {
-                o.Error = T("the folder is blank; give the path of the session folder or of the folder of darks", "folderul e gol; da calea folderului sesiunii sau al dark-urilor");
+                o.Error = T("the folder's path is blank; give the path of the session folder or of the folder of darks", "calea folderului e goala; da calea folderului sesiunii sau al dark-urilor");
                 return o;
             }
 
