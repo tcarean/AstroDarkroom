@@ -7,8 +7,7 @@ Supersedes: 0033 in part (the values of `SkyModelLowPercentile` and `SkyNoiseK`)
 ## Context
 
 ADR 0033 made the classes without the band relative to a sky modelled from all the patches, at
-the 25th percentile of each cell "so that an object covering half a cell does not lift the
-median into itself", with dust and nebula at 4 robust sigmas under and over the model. It was
+the 25th percentile of each cell "so a nebula covering half a cell does not lift it", with dust and nebula at 4 robust sigmas under and over the model. It was
 measured on deep-sky frames (Rosetta, Orion, Andromeda) and on the two reference images, and
 `docs/design/known-limitations.md` recorded that on the sky path the Great Rift is not found:
 the 25th percentile sinks into the Rift, which is then never under the sky, and the dust
@@ -63,7 +62,8 @@ patches, the factor 4 to 1, and a fixed depth in L\* in place of the factor):
   class stays under the 5 % floor or lighter than the darkest sky); the nebula class shrinks
   (Rosetta starless 12.6 to 8.8 %, Orion 18.4 to 11.8 %, Andromeda 23.8 to 16.0 %) and the
   curve anchors rise (Rosetta 29.5 / 45.2 to 34.8 / 47.8, Orion 39.6 / 76.3 to 47.4 / 77.9,
-  Andromeda 18.1 / 38.9 to 21.4 / 44.1). `de_printat.png` moves from 4.18 / 8.87 to
+  Andromeda 18.1 / 38.9 to 21.4 / 44.1; Rosetta with its stars 34.2 against 34.8 starless, the
+  speckles still under 1 L\*). `de_printat.png` moves from 4.18 / 8.87 to
   4.40 / 9.03 (the class is 7.8 % but its 25 % percentile, 6.10, is lighter than the darkest
   sky, so the sky still decides).
 
@@ -100,5 +100,10 @@ clipping pass, the Otsu split, the 5 % floor, the one measurement on both paths.
   V-010, V-011 (Rosetta), V-012 (Orion), V-013, V-014 (the Veil); the band-path cases V-004
   and V-008 do not. The golden files of the synthetic sky-path scenes change where their classes
   do.
+- The synthetic `dark-sky` golden scene (512 px, one model cell, a halo over most of it) now
+  classes 30 % of its frame as dust and reports the dust 2 L\* over its blob: the median of the
+  one cell is lifted by the halo, and the plain sky's lower half falls under it by more than
+  the sky's noise (`known-limitations.md`). No real frame is one cell wide; no test guards the
+  scene's dust share.
 - The band path keeps its absolute `DustDepthLstar`, which the 0.10 stretch showed to find
   less of the Rift on a darker stretch: a task of its own, if wanted.

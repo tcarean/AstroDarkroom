@@ -126,7 +126,7 @@ public class DustAnalyzerTests
         Assert.NotNull(map.SkyModel);
         Assert.True(map.SkySigma > 0);
         Assert.Equal(Thresholds.SkyNoiseK * map.SkySigma, map.NoiseThreshold, 9);
-        Assert.True(map.NoiseThreshold > 0 && map.NoiseThreshold < 5);   // a few tenths of an L* of patch noise, times 4
+        Assert.True(map.NoiseThreshold > 0 && map.NoiseThreshold < 5);   // a few tenths of an L* of patch noise, times 3
         Assert.True(map.BrightThreshold > map.NoiseThreshold);
 
         // The flat sky is sky, the halo nebula, the core bright nebula, the single brightest patch the peak.

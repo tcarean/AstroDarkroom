@@ -67,7 +67,12 @@
   (ADR 0033).
 - An object that fills the frame becomes the modelled sky: on a 1.3 degree field on LDN 42 the
   cloud is the sky class and the plain sky around it the bright nebula, and the verdict's "sky"
-  is the cloud's own level. The report still says what it measured.
+  is the cloud's own level. The report still says what it measured. Since ADR 0084 the model
+  is the median of each cell, so on a frame no wider than one cell (640 px) whose object's halo
+  covers most of it, the halo lifts the model and the lower half of the plain sky falls under
+  it by more than the sky's own noise: the synthetic `dark-sky` golden scene (512 px) classes
+  30 % of its frame as dust and reports the dust 2 L\* over its dark blob. A print file is
+  never that small; a real frame has tens of cells.
 - The dark globules inside a nebula are not dust on the sky path: they are under the nebula,
   not under the modelled sky; that would need the band path's local level over the whole frame.
 - Without a WCS, a foreground or a silhouette darker than the modelled sky by the sky's noise and

@@ -279,8 +279,8 @@ namespace AstroPhotoAnalyzer
                               $"nicio tinta din grila nu aduce praful pe negrul hartiei, nici {Fmt.Level(Thresholds.ExactTargetHi)}");
 
         /// <summary>
-        /// "dust = the 25 % percentile of the dust patches (0.5 L* below the modelled sky (4 sigma
-        /// of the sky); 5.5 % of the frame) (no WCS); sky = the median of the sky patches (classes
+        /// "dust = the 25 % percentile of the dust patches (0.4 L* below the modelled sky (3 sigma
+        /// of the sky); 30.1 % of the frame) (no WCS); sky = the median of the sky patches (classes
         /// relative to the modelled sky); pure black = 32 px patches under paper black (L* 9.0 at
         /// Dmax 2.0)"; in Romanian "praful = percentila 25 % a dalelor de praf ...".
         /// </summary>
