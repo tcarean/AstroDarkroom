@@ -181,15 +181,13 @@ internal static class WcsCopy
         string counts = LogSelection(present, cards, dest, request.IncludeOptical, drop);
         clock.Lap("select");
 
-        string names = string.Join(", ", drop);
+        string? dropped = DropLine(drop, request.DryRun);
         if (request.DryRun)
         {
             clock.Done("previewed " + LogText.Int(cards.Count) + " keys " + counts);
             return new WcsCopyOutcome(WcsCopyKind.Previewed, null, warnings, cards, null,
                 [T($"Keys that would be copied ({cards.Count}):", $"Chei care ar fi copiate ({cards.Count}):")],
-                drop.Count == 0 ? null : T(
-                    $"Old plate-solve keys of the destination that would be dropped ({drop.Count}): {names}",
-                    $"Chei vechi de plate solve ale destinatiei care ar fi eliminate ({drop.Count}): {names}"));
+                dropped);
         }
 
         foreach (var k in drop)
@@ -231,9 +229,43 @@ internal static class WcsCopy
               "Verifica vizual adnotarea: daca imaginea a fost oglindita/flip-uita " +
               "pe parcursul procesarii, WCS-ul copiat va fi gresit fara sa dea eroare."),
         ],
-        drop.Count == 0 ? null : T(
-            $"Dropped {drop.Count} old plate-solve keys of the destination: {names}.",
-            $"Eliminate {drop.Count} chei vechi de plate solve ale destinatiei: {names}."));
+        dropped);
+    }
+
+    /// <summary>
+    /// The one line naming the destination's old plate-solve keys a run drops (R-016), in the
+    /// run's language: a preview's with the count in brackets, a copy's as a sentence, in the
+    /// singular for one key and, in Romanian, with "de" from 20 keys on.
+    /// </summary>
+    /// <param name="drop">The keys dropped, in the destination's order; empty when none.</param>
+    /// <param name="preview">True for a dry run's line, false for a copy's.</param>
+    /// <returns>The line, or null when there is no key to drop.</returns>
+    private static string? DropLine(List<string> drop, bool preview)
+    {
+        if (drop.Count == 0)
+        {
+            return null;
+        }
+
+        string names = string.Join(", ", drop);
+        int n = drop.Count;
+        if (preview)
+        {
+            return T($"Old plate-solve keys of the destination that would be dropped ({n}): {names}",
+                $"Chei vechi de plate solve ale destinatiei care ar fi eliminate ({n}): {names}");
+        }
+
+        if (n == 1)
+        {
+            return T($"Dropped 1 old plate-solve key of the destination: {names}.",
+                $"Eliminata 1 cheie veche de plate solve a destinatiei: {names}.");
+        }
+
+        // Romanian puts "de" after a number from 20 on, unless its last two digits are 01 to 19.
+        string count = n.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        string ro = n % 100 is 0 or >= 20 ? count + " de" : count;
+        return T($"Dropped {n} old plate-solve keys of the destination: {names}.",
+            $"Eliminate {ro} chei vechi de plate solve ale destinatiei: {names}.");
     }
 
     /// <summary>

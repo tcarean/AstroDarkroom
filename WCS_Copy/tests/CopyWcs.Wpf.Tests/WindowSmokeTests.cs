@@ -24,6 +24,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using CopyWcs.Tests;
 
 namespace CopyWcs.Wpf.Tests;
 
@@ -46,7 +47,7 @@ public partial class WindowSmokeTests
     // Words that only the Romanian texts hold, the console's (LanguageTests) and the window's
     // own (R-036); the paths of the fixture are temp folders named CopyWcsTests_ plus random
     // letters, so none of these can come from them.
-    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Copiate|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un|Versiune|licenta|rezolvat|aceeasi|pixelii|COMPONENTE|TERTE|componente|Unealta|jurnalului|leaga)\b", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Chei vechi|Copiate|Eliminate|Eliminata|destinatiei|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un|Versiune|licenta|rezolvat|aceeasi|pixelii|COMPONENTE|TERTE|componente|Unealta|jurnalului|leaga)\b", RegexOptions.CultureInvariant)]
     private static partial Regex RomanianWord();
 
     /// <summary>Every text a rendered tree shows: the text blocks (the buttons' and the check boxes' labels become ones), and the hints as strings.</summary>
@@ -102,21 +103,21 @@ public partial class WindowSmokeTests
 
     /// <summary>
     /// Both windows in English, with an outcome that has a refusal heading, a warning, the
-    /// preview's heading and the cards: no Romanian word is left anywhere (R-036); and in
-    /// Romanian the buttons read as R-036 says.
+    /// preview's heading, the cards and the line of the keys it would drop (R-016): no
+    /// Romanian word is left anywhere (R-036); and in Romanian the buttons read as R-036 says.
     /// </summary>
     [Fact]
     public Task R036_BothWindowsRenderInEnglishWithNoRomanianWordAndInRomanian()
         => _sta.InvokeAsync(async () =>
         {
-            using WindowFixture f = new(destWidth: 200);
+            using WindowFixture f = new(destCards: FitsTestData.OldSolveCards(200, 80));
             List<string> english;
             using (Ui.Use(UiLanguage.English))
             {
                 using BindingErrors errors = new();
                 MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, Force = true };
                 await vm.Preview();
-                Assert.True(vm.HasWarnings && vm.HasCards);
+                Assert.True(vm.HasWarnings && vm.HasCards && vm.HasNotes);
                 FrameworkElement window = (FrameworkElement)new MainWindow(vm).Content;
                 Render(window, name: "window-en");
                 english = TextsOf(window).ToList();
@@ -138,6 +139,7 @@ public partial class WindowSmokeTests
             Assert.Contains("About", english);
             Assert.Contains("Refused", english);
             Assert.Contains("Source: 100 x 80, plate-solved", english);
+            Assert.Contains(english, t => t.StartsWith("Old plate-solve keys of the destination that would be dropped (6): ", StringComparison.Ordinal));
             List<string> romanian = english.Where(t => RomanianWord().IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
             Assert.True(romanian.Count == 0, "Romanian left in the English window:\n" + string.Join("\n", romanian));
 

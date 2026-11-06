@@ -389,6 +389,24 @@ public class LoggingTests
                        DoneLine(capture));
     }
 
+    /// <summary>A keyword the destination holds twice: one <c>drop</c> line per card, while the done line counts the key once.</summary>
+    [Fact]
+    public void R042_AKeywordHeldTwiceIsLoggedCardByCard_AndCountedOnce()
+    {
+        using var ws = new TempWorkspace();
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards.Add(FitsTestData.Card("CD1_1", "-0.000264"));
+        destCards.Add(FitsTestData.Card("CD1_1", "-0.000265"));
+        var (src, dst) = Pair(ws, dest: destCards);
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli(src, dst, "--dry-run").Code);
+
+        Assert.Equal(["drop CD1_1: CD1_1   = -0.000264", "drop CD1_1: CD1_1   = -0.000265"],
+                     capture.Messages.Where(m => m.StartsWith("drop ", StringComparison.Ordinal)));
+        Assert.Matches(@"^copy done previewed 15 keys \(new 14, replaced 0, identical 1, dropped 1\) in \d+ ms", DoneLine(capture));
+    }
+
     [Fact]
     public void R042_AFileThatCannotBeReadIsAWarningWithTheExceptionAndItsStack()
     {

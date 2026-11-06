@@ -1,5 +1,5 @@
 {
-  "$comment": "Acceptance figures, machine-readable, measured on the header of a real Siril plate solve kept as a fixture (ADR 0005). ValidationTests reads this file; docs/validation.md explains each entry. Change a figure here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "$comment": "Acceptance figures, machine-readable, measured on real headers kept as fixtures (ADR 0005): a Siril plate solve (V-001), and that solve copied into the same stack after the SyQon CLI (V-002). ValidationTests reads this file; docs/validation.md explains each entry. Change a figure here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
   "cases": [
     {
       "id": "V-001",

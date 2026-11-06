@@ -50,7 +50,7 @@ copywcs <solved.fit> <destination.fit> [options]
 | Option | What it does |
 | --- | --- |
 | `-o, --output <file>` | Write a new file instead of changing the destination in place |
-| `--dry-run` | Show the cards that would be copied, without writing anything |
+| `--dry-run` | Show the cards that would be copied, and the old plate-solve keys that would be dropped, without writing anything |
 | `--force` | Continue even when the images' dimensions differ |
 | `--no-optical` | Copy only the WCS keys, not the optical metadata |
 | `--lang en\|ro` | The language of the texts: `en` (English, the default) or `ro` (Romanian) |
@@ -118,7 +118,8 @@ write into the same file, each line marked with its process.
 command line, the Windows and .NET versions and the folders; every file read, with its size and
 the header keys that say what it is (`BITPIX`, `NAXIS`, the sizes, `EXTEND`, `CTYPE`,
 `ROWORDER`, the SIP order, `PLTSOLVD`); the options of each copy, every card copied and the card
-of the destination it replaced, the file written and the time each stage took; the warnings, the
+of the destination it replaced, every card of the destination dropped, the file written and the
+time each stage took; the warnings, the
 refusals with their reasons and every error with its technical details; in the window the
 language, the files picked and the About window; at the end the exit code and the time taken.
 The log's own words are English whatever `--lang` says; an error's message appears as you saw

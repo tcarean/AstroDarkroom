@@ -273,19 +273,83 @@ public class WcsCopyTests
         Assert.Null(WcsCopy.Run(Request(source, dest)).Dropped);
     }
 
+    /// <summary>The one refusal that comes after the cards are dropped in memory: a write that fails names nothing and changes nothing.</summary>
     [Fact]
-    public void R016_Run_ARefusal_DropsNothing()
+    public void R016_Run_AWriteError_DropsNothingAndHasNoLine()
     {
         using var ws = new TempWorkspace();
-        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(100, 80)));
-        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards(200, 80));
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards());
         var dest = ws.WriteFile("dest.fit", destBytes);
+        var output = Path.Combine(ws.FilePath("no-such-folder"), "out.fit");
+
+        var outcome = WcsCopy.Run(Request(source, dest, output));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.StartsWith("Eroare la scriere", outcome.Error, StringComparison.Ordinal);
+        Assert.Null(outcome.Dropped);
+        Assert.Equal(destBytes, File.ReadAllBytes(dest));
+    }
+
+    [Fact]
+    public void R016_Run_DryRun_SourceWithoutCtype1_NamesNothing()
+    {
+        using var ws = new TempWorkspace();
+        var cards = FitsTestData.PlateSolvedCards();
+        cards.RemoveAll(c => c.StartsWith("CTYPE1", StringComparison.Ordinal));
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(cards));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards()));
+
+        var outcome = WcsCopy.Run(Request(source, dest, dryRun: true));
+
+        Assert.Equal(WcsCopyKind.Previewed, outcome.Kind);
+        Assert.Null(outcome.Dropped);
+    }
+
+    /// <summary>A keyword the source lacks and the destination holds twice: both cards go, and the line names the key once, in the singular.</summary>
+    [Fact]
+    public void R016_Run_AKeywordHeldTwice_DropsBothCards_AndNamesItOnceInTheSingular()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards.Add(FitsTestData.Card("CD1_1", "-0.000264"));
+        destCards.Add(FitsTestData.Card("CD1_1", "-0.000265"));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards));
 
         var outcome = WcsCopy.Run(Request(source, dest));
 
-        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
-        Assert.Null(outcome.Dropped);
-        Assert.Equal(destBytes, File.ReadAllBytes(dest));
+        Assert.Equal("Eliminata 1 cheie veche de plate solve a destinatiei: CD1_1.", outcome.Dropped);
+        Assert.False(FitsHeader.ReadPrimary(dest).Contains("CD1_1"));
+        using (Ui.Use(UiLanguage.English))
+        {
+            var english = WcsCopy.Run(Request(source, ws.WriteFile("dest2.fit", FitsTestData.MinimalFitsFile(destCards)), dryRun: true));
+            Assert.Equal("Old plate-solve keys of the destination that would be dropped (1): CD1_1", english.Dropped);
+            var copied = WcsCopy.Run(Request(source, ws.FilePath("dest2.fit")));
+            Assert.Equal("Dropped 1 old plate-solve key of the destination: CD1_1.", copied.Dropped);
+        }
+    }
+
+    /// <summary>From 20 keys on the Romanian count takes "de", unless its last two digits are 01 to 19.</summary>
+    [Theory]
+    [InlineData(19, "Eliminate 19 chei vechi")]
+    [InlineData(20, "Eliminate 20 de chei vechi")]
+    [InlineData(24, "Eliminate 24 de chei vechi")]
+    public void R016_Run_TheRomanianCount_TakesDeFrom20(int keys, string start)
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        List<string> destCards = FitsTestData.ProcessedCards();
+        for (var i = 0; i < keys; i++)
+        {
+            destCards.Add(FitsTestData.Card($"A_{4 + (i / 5)}_{i % 5}", "1.0e-12"));
+        }
+
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards));
+
+        var outcome = WcsCopy.Run(Request(source, dest, ws.FilePath("out.fit")));
+
+        Assert.StartsWith(start + " de plate solve ale destinatiei: A_4_0, A_4_1", outcome.Dropped, StringComparison.Ordinal);
     }
 
     /// <summary>A path that is empty or blank (an unset shell variable) is a refusal like any other unreadable file, not a crash.</summary>

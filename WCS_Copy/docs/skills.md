@@ -19,8 +19,10 @@ Values, not prose, go in `kit.json` (the solution, the folders, the publish list
   block R-010 to R-019 of `docs/requirements.md` and its test in `WcsCopyTests` (the outcome)
   and `CopyWcsCliTests` (the printed text); a console option, in the block R-001 to R-009 and
   `OptionsTests`.
-- A new key in `WcsMetadataKeys` changes V-001: re-measure it with the console's `--dry-run`
-  on the fixture and record the change in `docs/validation.md` before `validation.json`.
+- A new key in `WcsMetadataKeys` changes V-001, and a new key of `WcsKeys` V-002 too, since the
+  keys a copy drops are read from the same list: re-measure them with the console's
+  `--dry-run` on the fixtures and record the change in `docs/validation.md` before
+  `validation.json`.
 - A new text of the window is a `{l:T En='...', Ro='...'}` pair in XAML or a `T(...)` pair in
   the view-model, never a sentence about the copy (ADR 0007); its Romanian word joins the
   list in `tests/CopyWcs.Wpf.Tests/WindowSmokeTests.cs`, so `R036_` keeps the English pass

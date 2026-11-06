@@ -126,7 +126,9 @@ shows what this yields on a real Siril header: 61 WCS and SIP keys, 11 optical o
 `SelectKeysToDrop(source, dest)` walks the destination's `Keywords` in order and keeps each one
 that is in `WcsKeys` or matches `SipCoefficient` and that the source does not have, each once
 (R-016). It is the same two lists that decide what a plate solve is, read from the other side, so
-the target holds the source's plate solve and no other; `OpticalKeys` never take part, so a
+no card of those keys is left in the target but the source's, save a second card of a keyword the
+source has, which `SetCard` does not reach; a plate-solve card outside both lists (`RADECSYS`,
+`PVi_m`, `CTYPE1A`) is neither copied nor dropped. `OpticalKeys` never take part, so a
 destination's own `OBJECT` or `SITELAT` stays when the source lacks it. The selector itself does
 not look at `CTYPE1`: the run asks for it only when the source has one (ADR 0011). V-002 shows it
 on a real destination: the 4 `CD` keys the SyQon CLI wrote beside Siril's `PC`.

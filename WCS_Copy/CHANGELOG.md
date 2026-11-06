@@ -9,7 +9,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - A diagnostic log beside each executable, `log\copywcs.log` and `log\CopyWcs.Wpf.log`, five
   files of 1 MiB at most, with each copy's options, the headers read, every card copied and the
-  card of the destination it replaced, the file written, the time of each stage and every error
+  card of the destination it replaced, every card dropped, the file written, the time of each
+  stage and every error
   with its technical details (ADR 0009); attach the `log` folder to a bug report;
   `COPYWCS_LOG` sets the level (`off` to `trace`).
 - The About window lists the third-party components (NLog), and the About button's tooltip
@@ -25,8 +26,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   when the option is absent (ADR 0004); `--lang` anywhere, `--lang=ro` too, a value that is
   not `en` or `ro` refused with exit 1.
 - `README.md`, the user documentation, in English (ADR 0006).
-- One validation case, V-001: the keys the tool selects from the header of a real Siril 1.4.4
-  plate solve of the Veil session of 2026-10-06, kept as a fixture in the repo (ADR 0005).
+- Two validation cases, on real headers kept as fixtures in the repo (ADR 0005): V-001, the keys
+  the tool selects from a Siril 1.4.4 plate solve of the Veil session of 2026-10-06; V-002, the
+  keys a copy of that solve drops from the same stack after the SyQon CLI (ADR 0011).
 
 ### Changed
 
