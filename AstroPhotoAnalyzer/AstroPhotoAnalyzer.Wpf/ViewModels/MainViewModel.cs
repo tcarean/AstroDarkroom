@@ -309,7 +309,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 CurvesComputation = Curves.ComputeAsync();
                 // The soft proof too (R-163, ADR 0066): its own run, independent of the curves'.
                 ProofComputation = SoftProof.ComputeAsync();
-                // And the paper fit (R-178, ADR 0082): its own run as well.
+                // And the paper fit (R-178, ADR 0083): its own run as well.
                 GamutFitComputation = GamutFit.ComputeAsync();
             }
             catch (RefusedImageException e)

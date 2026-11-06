@@ -169,7 +169,7 @@ filled like the Editare Curbe tab by a run after the analysis, `ProofRun`; the t
 the same view-model and their keys are described in `soft-proof.md`.
 
 **The Culori pentru hartie tab** (`ViewModels/GamutFitTab.cs`, `Views/GamutFitView.xaml`; R-178,
-ADR 0082): between the two, filled like the Editare Curbe tab by a run after the analysis,
+ADR 0083): between the two, filled like the Editare Curbe tab by a run after the analysis,
 `GamutFitRun`, with the same gallery pattern (the run number, the stacked evidence, the save
 through `SaveRequested`) plus the box of the red layer; described in `paper-fit.md`. The arrow
 keys of `MainWindow.GalleryKeys` serve whichever of the two gallery tabs is selected.

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// TiffWriter.cs - the tool's own 16-bit TIFF writer (R-177, ADR 0082): classic little-endian
+// TiffWriter.cs - the tool's own 16-bit TIFF writer (R-177, ADR 0083): classic little-endian
 // TIFF, uncompressed, 16 bits per sample, RGB chunky or grey, the ICC profile embedded, a
 // description and the program's name in their tags. Written by hand because ImageSharp 3.1
 // writes a TIFF at 8 bits whatever is asked (measured 2026-11-06; docs/design/dependencies.md),

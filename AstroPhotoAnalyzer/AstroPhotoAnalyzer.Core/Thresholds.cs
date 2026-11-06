@@ -759,7 +759,7 @@ namespace AstroPhotoAnalyzer
         internal const int ProofMaxSide = 2400;
 
         /// <summary>
-        /// The nodes of the paper fit's table over L* (R-175, ADR 0082): the largest chroma the
+        /// The nodes of the paper fit's table over L* (R-175, ADR 0083): the largest chroma the
         /// paper holds, searched exactly at each node (ten bisections through the profile) and
         /// read bilinearly between them. 101 nodes, one per unit of L*: with 121 hue nodes the
         /// table builds in 1.3 s with the rows in parallel (measured 2026-11-06 on the lab's
@@ -770,14 +770,14 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The nodes of the paper fit's table over the hue, 0 to 360 degrees inclusive: 121, one
-        /// per 3 degrees (R-175, ADR 0082; the measurement of GamutFitLstarNodes).
+        /// per 3 degrees (R-175, ADR 0083; the measurement of GamutFitLstarNodes).
         /// </summary>
         internal const int GamutFitHueNodes = 121;
 
         /// <summary>
         /// The band of chroma, in units, around the table's largest chroma within which the exact
         /// rule through the profile is searched for a pixel that would land near the edge (R-175,
-        /// ADR 0082): every pixel whose chroma reaches within this of the table's edge, or passes
+        /// ADR 0083): every pixel whose chroma reaches within this of the table's edge, or passes
         /// it, gets the search along its own hue at its own L*; the others keep the table's
         /// answer, which is within 0.025 of the exact search in the chroma factor on the baryta
         /// profiles and 0.28 at most on the canvas (measured 2026-11-06), so a band of 0.6 holds
@@ -790,7 +790,7 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The knee of the Exacta variant (R-176): 1, a hard fit, only the pixels outside moved,
-        /// onto the edge. Measured 2026-11-06 with the probe of ADR 0082 (a quarter reduction) on
+        /// onto the edge. Measured 2026-11-06 with the probe of ADR 0083 (a quarter reduction) on
         /// the plate-solved FITS through the lab's baryta: touches 1.88 % of the pixels, the chroma
         /// given up 0.70 at the median, 4.2 at the 99 % mark; on the Smida TIFF through the
         /// WhiteWall baryta 1.37 %, 1.85 and 14.1. V-016 holds the built code's figures.
@@ -800,7 +800,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The knee of the Lina variant (R-176): the chroma is compressed smoothly from this share
         /// of the edge, so that a gradient of growing saturation keeps its steps instead of
-        /// flattening on the edge. Measured 2026-11-06 with the probe of ADR 0082: touches 4.06 %
+        /// flattening on the edge. Measured 2026-11-06 with the probe of ADR 0083: touches 4.06 %
         /// of the FITS's pixels (2.26 % of the TIFF's), the chroma given up 0.47 (0.74) at the
         /// median; V-016 reads 3.81 % and 0.41 on the tonal subsample.
         /// </summary>
@@ -808,7 +808,7 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The knee of the Foarte lina variant (R-176): from this share of the edge. Measured
-        /// 2026-11-06 with the probe of ADR 0082: touches 6.11 % of the FITS's pixels (3.50 % of
+        /// 2026-11-06 with the probe of ADR 0083: touches 6.11 % of the FITS's pixels (3.50 % of
         /// the TIFF's), the chroma given up 0.65 (0.53) at the median (V-016: 6.22 % and 0.58);
         /// from 0.7 it would touch 8.54 % (5.34 %) for no further gain in the fit, which is why
         /// the gentlest variant stops here.

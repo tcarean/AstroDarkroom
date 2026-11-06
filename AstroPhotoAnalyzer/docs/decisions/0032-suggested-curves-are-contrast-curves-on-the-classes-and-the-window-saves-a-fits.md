@@ -1,7 +1,7 @@
 # 0032. Suggested curves are contrast curves anchored on the classes, and the window saves a FITS
 
 Date: 2026-10-05
-Status: accepted 2026-10-05; the histogram anchors of a frame without a WCS superseded by 0033; the uncapped Maxima factor of decision 4 and the judgement of a curve on its clamped table superseded by 0039; the gamut figure built on a round-trip grid alone superseded by 0042; the suggestions computed on demand (decision 7) superseded by 0051; the gamut figure counting the chroma alone, without black point compensation, superseded by 0081; the gamut as a figure only with the saturation left to soft-proofing (decision 5) and the FITS as the one export (decision 6) superseded by 0082
+Status: accepted 2026-10-05; the histogram anchors of a frame without a WCS superseded by 0033; the uncapped Maxima factor of decision 4 and the judgement of a curve on its clamped table superseded by 0039; the gamut figure built on a round-trip grid alone superseded by 0042; the suggestions computed on demand (decision 7) superseded by 0051; the gamut figure counting the chroma alone, without black point compensation, superseded by 0081; the gamut as a figure only with the saturation left to soft-proofing (decision 5) and the FITS as the one export (decision 6) superseded by 0083
 
 ## Context
 

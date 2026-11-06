@@ -1,6 +1,6 @@
 # The paper fit
 
-> Written 2026-11-06 with the feature (R-175 to R-178, ADR 0082). **Covers:**
+> Written 2026-11-06 with the feature (R-175 to R-178, ADR 0083). **Covers:**
 > `AstroPhotoAnalyzer.Core/Analysis/GamutFit.cs`, `AstroPhotoAnalyzer.Core/Runs/GamutFitRun.cs`,
 > `AstroPhotoAnalyzer.Core/Report/GamutFitTexts.cs`, `AstroPhotoAnalyzer.Core/Input/TiffWriter.cs`,
 > `AstroPhotoAnalyzer.Core/Input/IccProfiles.cs`, `AstroPhotoAnalyzer.Wpf/ViewModels/GamutFitTab.cs`,
@@ -16,7 +16,7 @@ the whole colour difference after the compensated round trip through the profile
 largest chroma the paper holds there; L\* and hue never move. Three variants differ by their
 knee; the tab shows them in a gallery like Editare Curbe, with the red layer of what is still
 outside, and saves one as a new FITS or 16-bit TIFF. The owner's question behind it, the
-measurements and the alternatives are in ADR 0082.
+measurements and the alternatives are in ADR 0083.
 
 ## The table (`GamutFitTable`)
 
@@ -31,7 +31,7 @@ keeps within the threshold; a node whose grey itself fails is 0 and its L\* mark
 `GreyOutOfReach`; a node whose ceiling still fits is `Unbounded`. `CmaxAt(L, hue)` reads
 bilinearly. A rule that gives NaN makes a table with only `Problem`.
 
-Measured on 2026-11-06 (the scratchpad probe of ADR 0082): the table builds in 1.3 s on the
+Measured on 2026-11-06 (the scratchpad probe of ADR 0083): the table builds in 1.3 s on the
 lab's baryta profile; against the exact per-pixel search the factor differs by 0.004 at the
 median and 0.025 at most on the two baryta profiles, by up to 0.28 on the canvas, whose edge is
 sharper near its black (L\* 22). Hence the edge rule below. With the code as built (the probe
@@ -131,7 +131,7 @@ description (270), strip offsets, samples per pixel, rows per strip, strip byte 
 planar (1), resolution unit, software (305, the banner), sample format (1) and the ICC profile
 (34675). Samples are rounded to 0..65535. An image over 4 GB is refused (a classic TIFF's
 offsets are 32-bit). Written through `AtomicFile.Write`. Why not ImageSharp's encoder: it writes
-8 bits whatever is asked (`dependencies.md`). Why uncompressed: ADR 0082.
+8 bits whatever is asked (`dependencies.md`). Why uncompressed: ADR 0083.
 
 `IccProfiles.Srgb` is the profile embedded when the input has none (a FITS, a PNG without
 `iCCP`): a v2 display profile built at first use from the sRGB primaries adapted to D50 (the

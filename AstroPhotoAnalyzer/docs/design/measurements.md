@@ -480,7 +480,7 @@ Not a measurement of the image but of the paper's effect on it, viewing only: th
 the profile's tables, the table per intent, the display step and the two warnings are in
 `soft-proof.md`; the decision is ADR 0066.
 
-### F3 - `GamutFit` - the paper fit (R-175, R-176, ADR 0082)
+### F3 - `GamutFit` - the paper fit (R-175, R-176, ADR 0083)
 
 The one analyzer that makes a new raster rather than a figure: the colours the F2 rule marks
 have their chroma lowered along their hue at their L\* to the largest the paper holds there,

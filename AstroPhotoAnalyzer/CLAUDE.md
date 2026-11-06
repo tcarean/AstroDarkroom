@@ -7,7 +7,7 @@ largest size the real detail supports, how much denoise the print version needs.
 recommendations only, each with the number and the threshold behind it, and **writes an image
 only on request**, the input never touched: a FITS with a suggested curve (Editare Curbe, ADR
 0032) or a FITS or 16-bit TIFF with the colours fitted to the paper (Culori pentru hartie, ADR
-0082); every other export is made cleanly from Siril. Two applications, a console (`AstroPhotoAnalyzer.exe`) and a WPF
+0083); every other export is made cleanly from Siril. Two applications, a console (`AstroPhotoAnalyzer.exe`) and a WPF
 window, over one core library that hand-parses FITS and takes ImageSharp for TIFF/PNG/JPEG;
 neither application computes a number or writes a sentence of diagnosis. .NET 8. A sibling of
 FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this file says so.
@@ -53,7 +53,7 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
   decides words (English and Romanian, `Language.cs`) and the recommendations, `Runs/` chains
   them; both applications call `Runs/AnalysisRun.Execute`, and the window alone, after it,
   `Runs/CurveRun.cs` (the curves' FITS, ADR 0032, ADR 0051), `Runs/ProofRun.cs` (the soft proof,
-  ADR 0066) and `Runs/GamutFitRun.cs` (the paper fit's FITS or TIFF, ADR 0082), nothing else. `Thresholds.cs`, `Parameters.cs`.
+  ADR 0066) and `Runs/GamutFitRun.cs` (the paper fit's FITS or TIFF, ADR 0083), nothing else. `Thresholds.cs`, `Parameters.cs`.
   `Logging/` configures the diagnostic log, which the two entry points start and close (ADR 0069).
 - `AstroPhotoAnalyzer/` - the console: `Program.cs`, `Options.cs`, `AnalyzerCli.cs`. Nothing else.
 - `AstroPhotoAnalyzer.Wpf/` - the window, `net8.0-windows`, dark theme: `ParameterFields` in, eight
@@ -179,7 +179,7 @@ edit:
 - `ToneCurve`, `CurveAdvisor`, `GamutAnalyzer`, `FitsWriter`: ADR 0032 (the curve never moves
   the dust or the sky; the anchors are the upper part of the classes; the spline is Siril's; the
   gamut is a figure; the writer copies a FITS and never opens the input for writing).
-- `GamutFit`, `GamutFitRun`, `TiffWriter`, `IccProfiles`: `docs/design/paper-fit.md` and ADR 0082
+- `GamutFit`, `GamutFitRun`, `TiffWriter`, `IccProfiles`: `docs/design/paper-fit.md` and ADR 0083
   (chroma only, never a tone; the Soft proof judge decides the edge; the TIFF is 16-bit on purpose).
 - Any text in a view-model: `docs/design/window.md` and ADR 0020.
 - The ImageSharp version or a 16-bit fixture: `docs/design/dependencies.md` (four measured

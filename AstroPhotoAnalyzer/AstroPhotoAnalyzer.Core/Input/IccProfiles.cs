@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // IccProfiles.cs - the sRGB profile the tool embeds in a TIFF whose input had none (R-177,
-// ADR 0082): a v2 display profile built here from the sRGB primaries adapted to D50 and the
+// ADR 0083): a v2 display profile built here from the sRGB primaries adapted to D50 and the
 // sRGB curve, nothing copied from anyone's file. The tool assumes every input is sRGB (R-096),
 // so a file it writes says so.
 

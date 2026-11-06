@@ -68,7 +68,7 @@ striped frame without a WCS, and the saved FITS against hand-built FITS and PNG 
 for print (with the parameter `icc`, a profile beside the image, for the gamut figure) and a
 save of the last suggestion into a temporary folder, with the input hashed before and after.
 
-## The paper fit in the tests (ADR 0082)
+## The paper fit in the tests (ADR 0083)
 
 `GamutFitTests` injects the rule as a function of L\*, a\*, b\* (a paper that holds a chroma of
 10 from L\* 30 up and 5 under it, with the tones under L\* 8 out of reach; a paper whose edge

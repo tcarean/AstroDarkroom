@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// GamutFitTexts.cs - every sentence of the Culori pentru hartie tab (R-176, R-178, ADR 0082):
+// GamutFitTexts.cs - every sentence of the Culori pentru hartie tab (R-176, R-178, ADR 0083):
 // the variants' names and helps, the evidence under each, the recipe for a hand-made mask, the
 // proposed file name, the HISTORY cards and the TIFF description of the saved file. In plain
 // words (ADR 0076): no median, percentile, chroma or knee; the numbers interpolated.

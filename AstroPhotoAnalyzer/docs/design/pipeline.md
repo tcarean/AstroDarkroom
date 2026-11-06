@@ -100,7 +100,7 @@ gamut once (the rule of R-144); Render proofs the reduction through the intent's
 its first use and kept on the profile. The chain itself is in `soft-proof.md`. Prepare is timed
 by a `RunClock` (`profile`, `gamut`, `mask`), Render writes one Debug line per render.
 
-### The fourth run (`Runs/GamutFitRun.cs`, ADR 0082)
+### The fourth run (`Runs/GamutFitRun.cs`, ADR 0083)
 
 `GamutFitRun.Execute(AnalysisResult, maxWidth, maxHeight)` is the paper fit's run, started by the
 window beside the other two once the tabs are filled and again on `Calculeaza`; the console

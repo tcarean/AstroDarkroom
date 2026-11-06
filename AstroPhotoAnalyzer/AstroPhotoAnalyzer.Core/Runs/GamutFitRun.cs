@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // GamutFitRun.cs - the fourth run, after the analysis: the paper fit of the analysed image in
-// three variants, for the Culori pentru hartie tab (R-175 to R-178, ADR 0082), and the save of
+// three variants, for the Culori pentru hartie tab (R-175 to R-178, ADR 0083), and the save of
 // one variant as a new FITS or 16-bit TIFF. Called by the window alone, never by the console,
 // like CurveRun and ProofRun. The figures of the evidence are measured on the tonal subsample
 // (Thresholds.TonalStride), as the curves' are; the previews and their masks on the reduction
@@ -93,7 +93,7 @@ namespace AstroPhotoAnalyzer
         internal GamutFitRecipe Recipe { get; init; }
     }
 
-    /// <summary>Computes the paper fit of an analysed image, after the analysis (ADR 0082, ADR 0051).</summary>
+    /// <summary>Computes the paper fit of an analysed image, after the analysis (ADR 0083, ADR 0051).</summary>
     internal static class GamutFitRun
     {
         /// <summary>

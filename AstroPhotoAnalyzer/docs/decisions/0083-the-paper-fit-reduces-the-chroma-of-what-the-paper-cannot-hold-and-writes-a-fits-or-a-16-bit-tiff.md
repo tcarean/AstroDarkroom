@@ -1,4 +1,4 @@
-# 0082. The paper fit reduces the chroma of what the paper cannot hold, tone and hue kept, in three variants, and writes a FITS or a 16-bit TIFF
+# 0083. The paper fit reduces the chroma of what the paper cannot hold, tone and hue kept, in three variants, and writes a FITS or a 16-bit TIFF
 
 Date: 2026-11-06
 Status: accepted 2026-11-06

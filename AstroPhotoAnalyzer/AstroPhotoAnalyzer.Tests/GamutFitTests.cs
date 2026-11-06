@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // GamutFitTests - the paper fit (R-175), its variants and evidence (R-176) and the files it
-// writes (R-177, ADR 0082). The fit's rule is injected as a function of L*, a*, b*, so the
+// writes (R-177, ADR 0083). The fit's rule is injected as a function of L*, a*, b*, so the
 // tests know the largest chroma the "paper" holds; the real rule comes from the profile
 // (GamutAnalyzer) and is measured on the reference image (V-016).
 

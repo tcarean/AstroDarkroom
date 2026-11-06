@@ -111,7 +111,7 @@ paper, which sends to the stretch; the noise after the gain over `NoisePrintHiLs
 anchors came from, why nothing is suggested, the proposed file name and the `HISTORY` text of
 the saved FITS (one piece per card, at most 70 characters, the points as `x y` pairs).
 
-### The Culori pentru hartie tab's sentences (`Report/GamutFitTexts.cs`, ADR 0082)
+### The Culori pentru hartie tab's sentences (`Report/GamutFitTexts.cs`, ADR 0083)
 
 Not part of the report either. The names and the one-line helps of the three variants, the
 evidence rows of a variant (the shares before and after, the pixels changed and what they lose,

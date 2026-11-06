@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// GamutFit.cs - the paper fit (R-175, R-176, ADR 0082): the colours the paper cannot hold
+// GamutFit.cs - the paper fit (R-175, R-176, ADR 0083): the colours the paper cannot hold
 // (the rule of ADR 0081) have their chroma reduced along their own hue, at their own L*, to the
 // largest chroma the paper holds there; tone and hue never move. The largest chroma comes from
 // a table over L* and hue (GamutFitTable), built once per profile by the exact rule at every

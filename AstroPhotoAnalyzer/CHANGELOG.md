@@ -8,7 +8,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
-- A Colours for paper tab in the window (R-175 to R-178, ADR 0082): the colours the paper cannot
+- A Colours for paper tab in the window (R-175 to R-178, ADR 0083): the colours the paper cannot
   reproduce, the ones the Soft proof tab paints in red, have their saturation lowered, each along
   its own hue and at its own tone, to the most the paper holds there, in three variants (Exact,
   Soft, Softer), with the share outside before and after, the pixels changed and what they lose,

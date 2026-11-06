@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// GamutFitTabTests - the Culori pentru hartie tab (R-178, ADR 0082): the gallery of the
+// GamutFitTabTests - the Culori pentru hartie tab (R-178, ADR 0083): the gallery of the
 // original and the three variants, the red layer, the save, the sentence without a profile.
 
 using AstroPhotoAnalyzer.Tests;

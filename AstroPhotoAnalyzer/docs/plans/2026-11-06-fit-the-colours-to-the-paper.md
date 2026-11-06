@@ -2,7 +2,7 @@
 
 Date: 2026-11-06. Branch `claude/Fit-the-colours-to-the-paper`, worktree
 `.claude/worktrees/Fit-the-colours-to-the-paper` (from `main` at c3141954, the kit's rule "Worktrees").
-Already in the worktree: the draft rows R-175 to R-178 in `docs/requirements.md`, ADR 0082
+Already in the worktree: the draft rows R-175 to R-178 in `docs/requirements.md`, ADR 0083
 (accepted 2026-11-06 in chat), the failing tests `AstroPhotoAnalyzer.Tests/GamutFitTests.cs` and
 `AstroPhotoAnalyzer.Wpf.Tests/GamutFitTabTests.cs` (the solution does not compile: the types do not
 exist), V-016 unmeasured in `docs/validation.json` and `.md`.
@@ -12,7 +12,7 @@ exist), V-016 unmeasured in `docs/validation.json` and `.md`.
 Since ADR 0081 the warning marks what Lightroom marks: dark saturated dust the paper cannot hold.
 The owner asked (2026-11-06) for the correction to be automated generically: the recipe as a
 recommendation, and a new corrected FITS or 16-bit TIFF written by the tool, the originals never
-touched, offered as variants in a tab like Editare Curbe. Measured (ADR 0082): every such pixel
+touched, offered as variants in a tab like Editare Curbe. Measured (ADR 0083): every such pixel
 fits once its chroma alone is reduced along its hue at its L\*; a table over L\* and hue builds in
 1.3 s and matches the exact search on baryta, needs the exact search near the edge on canvas;
 ImageSharp writes TIFF at 8 bits only, so the TIFF writer is ours.
@@ -32,7 +32,7 @@ ImageSharp writes TIFF at 8 bits only, so the TIFF writer is ours.
   (1.0), `GamutFitKneeSoft` (0.9), `GamutFitKneeSofter` (0.8), `GamutFitBandShare` (0.90),
   `GamutFitRecipeShare` (0.99), `GamutFitRecipeStep` (0.05), `GamutFitMinChroma` (0.05, under
   which a pixel is grey and never touched). Each with its provenance comment (the probe figures of
-  ADR 0082).
+  ADR 0083).
 
 ### 2. Core: the fit (`Analysis/GamutFit.cs`)
 

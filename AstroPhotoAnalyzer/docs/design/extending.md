@@ -93,7 +93,7 @@ A tab whose content is a second run after the analysis, like Editare Curbe, also
 `Core/Runs/` beside `AnalysisRun` (**`pipeline.md`**), never a computation in the view-model.
 
 **A new output**: the tool writes two kinds of image, the FITS of `Core/Input/FitsWriter.cs`
-(ADR 0032) and the 16-bit TIFF of `Core/Input/TiffWriter.cs` (ADR 0082). Another format, or
+(ADR 0032) and the 16-bit TIFF of `Core/Input/TiffWriter.cs` (ADR 0083). Another format, or
 another thing written, is a decision first; then a writer in `Core/Input/`, called from
 `Core/Runs/` under `CurveExport.Guarded`, so that it never opens the input for writing;
 **`input.md`** or **`paper-fit.md`**.
