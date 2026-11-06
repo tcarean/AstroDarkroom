@@ -455,10 +455,10 @@ namespace FlatCheck
 
             double gap = screen.CentreMedianPct - raw.CentreMedianPct;
             s.Add(T($"On the deciding channel, the sensor is at {raw.CentreMedianPct:F1} % and the camera's "
-                    + $"screen shows {screen.CentreMedianPct:F1} %: {gap:+0.0;-0.0} points, in "
+                    + $"screen shows {screen.CentreMedianPct:F1} %: {Numbers.Signed(gap, 1)} points, in "
                     + "the same middle of the frame (20 %).",
                     $"Pe canalul care decide, senzorul e la {raw.CentreMedianPct:F1} % si ecranul "
-                    + $"aparatului arata {screen.CentreMedianPct:F1} %: {gap:+0.0;-0.0} puncte, in "
+                    + $"aparatului arata {screen.CentreMedianPct:F1} %: {Numbers.Signed(gap, 1)} puncte, in "
                     + "acelasi mijloc al cadrului (20 %)."));
 
             s.Add(T("Most of it comes from the way the camera makes the JPEG: the brightness steps are "
@@ -645,8 +645,9 @@ namespace FlatCheck
         /// screen table.</summary>
         /// <param name="rawPct">The raw's central median, in percent of white.</param>
         /// <param name="screenPct">The preview's central median, in percent of 255.</param>
-        /// <returns>The signed difference in whole points: "+52 puncte".</returns>
+        /// <returns>The signed difference in whole points: "+52 puncte"; "+0 puncte" for what
+        /// rounds to zero (R-129).</returns>
         internal static string ScreenGap(double rawPct, double screenPct)
-            => T($"{screenPct - rawPct:+0;-0} points", $"{screenPct - rawPct:+0;-0} puncte");
+            => T($"{Numbers.Signed(screenPct - rawPct, 0)} points", $"{Numbers.Signed(screenPct - rawPct, 0)} puncte");
     }
 }

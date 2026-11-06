@@ -215,6 +215,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A negative difference that rounds to zero no longer reads `-+0.00 stops` (R-129, ADR 0092): the profile
+  rows, the comparison summary and the depth verdict of the structure report, the Split tab's
+  difference cells, the ends of the map's scale in the legend and the mosaic's title, and the
+  screen-to-raw gap of `--expo` write `+0.00` (`+0.0`, `+0` where fewer decimals are shown), the
+  way the local spot already did. Seen on a
+  master that was the model of a lensfun profile itself. The radial figure of `--light` keeps
+  `-0.00`, as the Python prototype wrote it.
 - The structure map no longer draws a circle on the inscribed radius of a master whose azimuthal
   profile mixes 2θ and 4θ (the Rosette master of a Canon 40D: +1.4 / -0.6 % at that radius): the
   even-harmonic correction of the radial model now applies on every ring, the whole rings

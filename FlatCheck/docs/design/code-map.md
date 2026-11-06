@@ -242,7 +242,15 @@ a library extraction and not a copy is ADR 0011.
     and `ViewCaption()` - window-only, like the others. `StructureReport.TestLabel`/`TestKeys`/`Test` exist so that the
     against and split reports cannot name a test differently from the structure report (they
     were added for the smoothing report, removed since, ADR 0080); the negative-zero rounding
-    of `LocalSpotSize` is ADR 0041.
+    of `LocalSpotSize` is ADR 0041. `Report/Numbers.cs` holds the one signed format the
+    reports share, `Numbers.Signed(value, decimals)`: the digits are formatted first and the
+    sign decided on them, so a negative that rounds to zero reads `+0.00`, never `-+0.00`, which
+    the format with sections `+0.00;-0.00` gave (R-129, ADR 0092). `LocalSpotSize` takes its
+    zero from `Numbers.RoundsToZero`, so the word beside the digits follows the same rounding;
+    the profile rows, the comparison summary, `DepthDetail`, the Split cells, `MapLegend`,
+    `SplitReport.PngTitle` (with the invariant culture, for the bitmap font) and the two
+    screen-gap texts of `ExposureReport` call it. `LightReport.Signed` is the one format that
+    keeps `-0.00`: the parity goldens hold it.
   - `Runs/` - the chain of one mode, the layer both applications call (ADR 0011):
     `StructureRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, `HistEqRun`,
     `SyntheticRun`, `AgainstRun`, `SplitRun`, plus `SeriesFinder` (which files a
