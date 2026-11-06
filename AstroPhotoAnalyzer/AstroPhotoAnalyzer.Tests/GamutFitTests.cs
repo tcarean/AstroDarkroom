@@ -27,19 +27,19 @@ namespace AstroPhotoAnalyzer.Tests;
 public class GamutFitTests
 {
     /// <summary>
-    /// A paper that holds a chroma of 10 from L* 30 up and 5 under it, and cannot reach any
-    /// tone under L* 8: the whole difference is 0 inside, 4 plus the excess outside, 6 for a tone
-    /// out of reach.
+    /// A paper that holds a chroma of 10 from L* 30 up, 5 from L* 10 up, next to nothing (0.02)
+    /// between L* 8 and 10, and cannot reach any tone under L* 8: the whole difference is 0
+    /// inside, 4 plus the excess outside, 6 for a tone out of reach.
     /// </summary>
     static double FakeRule(double l, double a, double b)
     {
         double c = Math.Sqrt(a * a + b * b);
         if (l < 8) return 6;
-        double cmax = l >= 30 ? 10 : 5;
+        double cmax = Cmax(l);
         return c > cmax ? 4 + (c - cmax) : 0;
     }
 
-    static double Cmax(double l) => l >= 30 ? 10 : 5;
+    static double Cmax(double l) => l >= 30 ? 10 : l >= 10 ? 5 : 0.02;
 
     /// <summary>A one-row raster whose pixels are the given D50 Lab colours.</summary>
     static Raster RasterOf(params (double L, double A, double B)[] colours)
@@ -64,8 +64,10 @@ public class GamutFitTests
     {
         GamutFitTable t = GamutFitTable.Build(FakeRule);
         Assert.Null(t.Problem);
-        // Inside, outside above and under L* 30, hues around the circle, one tone out of reach.
-        Raster r = RasterOf((50, 4, 3), (50, 16, 0), (50, 0, -18), (50, -12, 12), (20, 6, 6), (20, -2, 1), (5, 10, 0));
+        // Inside, outside above and under L* 30, hues around the circle, one tone out of reach,
+        // and one whose edge is next to nothing but whose grey the paper keeps: fitted to grey,
+        // not left as out of reach (the second review of 2026-11-06).
+        Raster r = RasterOf((50, 4, 3), (50, 16, 0), (50, 0, -18), (50, -12, 12), (20, 6, 6), (20, -2, 1), (5, 10, 0), (9, 0.5, 0));
         GamutFitOutcome o = GamutFit.Apply(r, t, knee: 1, keepFacts: true);
         Raster f = o.Image;
         for (int i = 0; i < r.W; i++)
@@ -83,22 +85,22 @@ public class GamutFitTests
             Assert.InRange(ChromaOf(after), want - 0.3, want + 0.3);
             if (ChromaOf(before) > 1) Assert.InRange(HueOf(after), HueOf(before) - 1, HueOf(before) + 1);
         }
-        Assert.Equal(new[] { false, true, true, true, true, false, true }, o.OutsideBefore);
-        Assert.Equal(new[] { false, false, false, false, false, false, true }, o.OutsideAfter);
-        Assert.Equal(100.0 * 5 / 7, o.PctOutsideBefore, 3);
-        Assert.Equal(100.0 / 7, o.PctOutsideAfter, 3);
-        Assert.Equal(100.0 / 7, o.PctUnreachable, 3);
-        Assert.Equal(100.0 * 4 / 7, o.PctTouched, 3);
+        Assert.Equal(new[] { false, true, true, true, true, false, true, true }, o.OutsideBefore);
+        Assert.Equal(new[] { false, false, false, false, false, false, true, false }, o.OutsideAfter);
+        Assert.Equal(100.0 * 6 / 8, o.PctOutsideBefore, 3);
+        Assert.Equal(100.0 / 8, o.PctOutsideAfter, 3);
+        Assert.Equal(100.0 / 8, o.PctUnreachable, 3);
+        Assert.Equal(100.0 * 5 / 8, o.PctTouched, 3);
     }
 
     [Fact]
     public void R175_TheTableIsReadBetweenItsNodesAndTheExactRuleDecidesNearTheEdge()
     {
         // A paper whose largest chroma grows with the hue, 5 at 0 degrees to 15 at 360, and with
-        // L* by a tenth, plus a wave of 0.3 whose nodes fall on the table's (one per unit of L*),
-        // so the table sees a straight edge and misses the true one by up to 0.3 between its
-        // nodes: a pixel landed on the edge must be decided by the rule, not by the table.
-        static double Cmax(double l, double hDeg) => 5 + 10 * hDeg / 360 + l / 10 + 0.3 * Math.Sin(l * Math.PI);
+        // L* by a tenth, plus a wave of 0.3 whose zeros fall on the table's nodes (whatever their
+        // count), so the table sees a straight edge and misses the true one by up to 0.3 between
+        // its nodes: a pixel landed on the edge must be decided by the rule, not by the table.
+        static double Cmax(double l, double hDeg) => 5 + 10 * hDeg / 360 + l / 10 + 0.3 * Math.Sin(l * Math.PI * (Thresholds.GamutFitLstarNodes - 1) / 100);
         static double Rule(double l, double a, double b)
         {
             double h = Math.Atan2(b, a) * 180 / Math.PI; if (h < 0) h += 360;
@@ -217,11 +219,12 @@ public class GamutFitTests
         // sample of each strip is the raster's red at that strip's first row, as a 16-bit level.
         Assert.Equal(3u, tags[273].Count);
         uint[] offsets = Longs(bytes, tags[273]), counts = Longs(bytes, tags[279]);
-        Assert.Equal(new uint[] { 64 * 64 * 6, 64 * 64 * 6, 2 * 64 * 6 }, counts);
+        uint rowBytes = (uint)r.W * 6;
+        Assert.Equal(new uint[] { TiffWriter.RowsPerStrip * rowBytes, TiffWriter.RowsPerStrip * rowBytes, (130 - 2 * TiffWriter.RowsPerStrip) * rowBytes }, counts);
         for (int s = 0; s < 3; s++)
         {
             ushort red = BitConverter.ToUInt16(bytes, (int)offsets[s]);
-            Assert.Equal((int)Math.Round(r.Planes[0][s * 64 * 64] * 65535), red);
+            Assert.Equal((int)Math.Round(r.Planes[0][s * TiffWriter.RowsPerStrip * r.W] * 65535), red);
         }
         Assert.Equal(offsets[0] + counts[0], offsets[1]);
         Assert.Equal(offsets[2] + counts[2], (uint)bytes.Length);

@@ -250,12 +250,13 @@ namespace AstroPhotoAnalyzer
                     double cmax = Edge(t, l, a, b, c, R[i], G[i], B[i]);
                     bool outside = c > cmax;
                     if (keepFacts) before[i] = outside;
-                    if (outside && cmax < Thresholds.GamutFitMinChroma)
+                    if (outside && cmax < 0)
                     {
                         // The tone itself is out of reach: the judge rejects even its grey (the
-                        // edge search answers 0 there), so no chroma brings it in. Left as it is,
-                        // and counted; the review of 2026-11-06 found the nearest node's answer
-                        // could disagree with the judge's within one L* and send such a pixel to grey.
+                        // edge search answers a negative there), so no chroma brings it in. Left
+                        // as it is, and counted. The two reviews of 2026-11-06: the nearest node's
+                        // answer could disagree with the judge's within one L*, and a tiny edge
+                        // (under the grey floor) with a grey the judge keeps is not out of reach.
                         oR[i] = R[i]; oG[i] = G[i]; oB[i] = B[i];
                         if (keepFacts) { after[i] = true; unreachable[i] = true; }
                         continue;
@@ -313,7 +314,7 @@ namespace AstroPhotoAnalyzer
         /// <param name="r">The pixel's encoded red, for the cache's key.</param>
         /// <param name="g">The pixel's encoded green.</param>
         /// <param name="bl">The pixel's encoded blue.</param>
-        /// <returns>The largest chroma the paper holds at the pixel's L* and hue.</returns>
+        /// <returns>The largest chroma the paper holds at the pixel's L* and hue; -1 when its tone is out of reach.</returns>
         static double Edge(GamutFitTable t, double l, double a, double b, double c, float r, float g, float bl)
         {
             double hue = Math.Atan2(b, a) * 180 / Math.PI;
@@ -333,22 +334,23 @@ namespace AstroPhotoAnalyzer
         /// Thresholds.GamutFitEdgeMargin around the table's guess is bracketed (from zero when
         /// its bottom is already outside; its top kept when it is still inside), then halved
         /// <see cref="EdgeHalvings"/> times; the answer is the bracket's bottom, a chroma the
-        /// judge keeps. A bisection and not a secant, since the judge is a yes or no, and the
-        /// tool's judge is a step function of the 8-bit colour.
+        /// judge keeps, or -1 when the judge rejects even the grey of that L*: a tone out of
+        /// reach, which no chroma brings in. A bisection and not a secant, since the judge is a
+        /// yes or no, and the tool's judge is a step function of the 8-bit colour.
         /// </summary>
         /// <param name="outside">The judge: L*, a*, b* in, whether the colour is outside.</param>
         /// <param name="l">The L*.</param>
         /// <param name="ca">The cosine of the hue (a* per unit of chroma).</param>
         /// <param name="sb">The sine of the hue (b* per unit of chroma).</param>
         /// <param name="guess">The table's largest chroma there.</param>
-        /// <returns>The largest chroma, at least 0.</returns>
+        /// <returns>The largest chroma, 0 or more; -1 when the grey itself is outside.</returns>
         internal static double ExactEdge(Func<double, double, double, bool> outside, double l, double ca, double sb, double guess)
         {
             double lo = Math.Max(0, guess - Thresholds.GamutFitEdgeMargin), up = guess + Thresholds.GamutFitEdgeMargin;
             if (outside(l, ca * lo, sb * lo))
             {
                 up = lo; lo = 0;
-                if (outside(l, 0, 0)) return 0;
+                if (outside(l, 0, 0)) return -1;
             }
             else if (!outside(l, ca * up, sb * up)) return up;
             for (int k = 0; k < EdgeHalvings; k++)
@@ -422,11 +424,11 @@ namespace AstroPhotoAnalyzer
             long inBand = 0;
             for (int i = 0; i < n; i++) if (lAll[i] < ceiling) inBand++;
             // The factor is decided on the band's own pixels outside that a factor can bring in:
-            // the ones above the band, and the ones whose tone itself is out of reach (no chroma
-            // the paper holds, cmax under the grey floor), are out of the mask's reach and are
+            // the ones above the band, and the ones whose tone itself is out of reach (a negative
+            // cmax: the judge rejects even their grey), are out of the mask's reach and are
             // counted in what is left.
             long inBandOut = 0;
-            for (int i = 0; i < n; i++) if (isOut[i] && lOut[i] < ceiling && cmaxOut[i] >= Thresholds.GamutFitMinChroma) inBandOut++;
+            for (int i = 0; i < n; i++) if (isOut[i] && lOut[i] < ceiling && cmaxOut[i] >= 0) inBandOut++;
             double factor = 1, left = 100;
             for (double f = 1; f >= Thresholds.GamutFitRecipeStep - 1e-9; f -= Thresholds.GamutFitRecipeStep)
             {
@@ -434,7 +436,7 @@ namespace AstroPhotoAnalyzer
                 for (int i = 0; i < n; i++)
                 {
                     if (!isOut[i]) continue;
-                    bool band = lOut[i] < ceiling, reachable = cmaxOut[i] >= Thresholds.GamutFitMinChroma;
+                    bool band = lOut[i] < ceiling, reachable = cmaxOut[i] >= 0;
                     double c = band ? cOut[i] * f : cOut[i];
                     if (c > cmaxOut[i]) { stillOut++; if (band && reachable) stillOutInBand++; }
                 }

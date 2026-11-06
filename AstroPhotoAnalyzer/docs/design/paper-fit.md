@@ -66,8 +66,9 @@ hue and the edge moves by more than the tolerance within a cell. The judge is a 
 of the 8-bit colour, not monotone in chroma, so a pixel the knees move inward can land on a
 colour the judge calls outside: V-016 reads 0.02 % left after `Lina` against 0.001 % after
 `Exacta`, under the figure's precision. A pixel
-whose chroma passes `cmax` is outside; if `cmax` is under `GamutFitMinChroma` (the judge
-rejects even the grey of that tone, so the edge search answers 0) it is copied and counted
+whose chroma passes `cmax` is outside; if `cmax` is negative (the judge rejects even the grey
+of that tone: the edge search's answer for it, apart from a tiny edge over a grey it keeps,
+which fits the pixel to that grey) it is copied and counted
 (`PctUnreachable`): no chroma brings it in, and the Tonuri tab's lift is the remedy. The table's
 `GreyOutOfReach` marks the nodes where that happens, for the record; the decision is the
 judge's, since within one L\* of such a node the two can disagree. Otherwise the new chroma is `Knee(c, cmax, knee)`: unchanged up to
@@ -106,7 +107,7 @@ gallery's size (`CurveRun.PreviewStride`) and the tonal subsample (`TonalStride`
 of `Knees` (`GamutFitKneeExact`, `GamutFitKneeSoft`, `GamutFitKneeSofter`) the fit of the
 preview with facts (its image and mask are the gallery's) and of the subsample with facts (its
 figures are the evidence, `GamutFitEvidence.Of`); the recipe on the subsample. Timed by a
-`RunClock` named `gamutfit` (`profile`, `table`, `original`, each variant's name, `recipe`),
+`RunClock` named `gamutfit` (`profile`, `table`, each variant's name, `recipe`),
 each variant's figures at Debug, the done line with the share outside, the recipe and the
 profile's name. The set keeps the table and the variants' knees for the save; the window drops
 the previews once drawn.

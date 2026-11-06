@@ -109,7 +109,7 @@ the largest chroma over L\* and hue from it, then the three variants on the gall
 (their previews and masks) and on the tonal subsample (their evidence), and the recipe. The save
 of a variant, `GamutFitExport.Save`, fits the whole image and writes a FITS or a 16-bit TIFF
 under `CurveExport.Guarded`. The chain itself is in `paper-fit.md`. The run is timed by a
-`RunClock` (`profile`, `table`, `original`, each variant, `recipe`).
+`RunClock` (`profile`, `table`, each variant, `recipe`).
 
 Timing (Release, 2026-10-05): the two validation cases V-008 and V-009, each an analysis of a
 23 MP image, a curve run and a save of the full image, take 85 s together.
