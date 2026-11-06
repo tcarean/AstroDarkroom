@@ -2,6 +2,7 @@
 
 Date: 2026-11-06
 Status: accepted 2026-11-06
+Supersedes: 0041 in part (the rounding to zero before formatting)
 
 ## Context
 

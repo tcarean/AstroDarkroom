@@ -1,7 +1,7 @@
 # 0041. The local spot warns above 2 % and never votes, and its round-or-elongated check stays manual
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the rounding to zero before formatting superseded by 0092
 
 ## Context
 
@@ -48,6 +48,8 @@ is deliberately not automated.
   warn about dust that is not there, and the reader checks the shape by eye.
 - The `--smooth` report reuses `LocalSpotValue(pct, x, y)` for a spot measured on another raster;
   that overload rounds to zero before formatting, since .NET keeps a negative zero (`-+0.00`).
+  Superseded 2026-11-06 by ADR 0092: the rounding is `Numbers.RoundsToZero`, shared by every
+  report, and the digits come from `Numbers.Signed`.
 - Ties within 1e-12 keep the first tile in row-major order in both implementations; `crosscheck.py`
   caught a position flip on the diagonal fixture that way.
 - The window shows the warning under the verdict, the console under the informative rows.
