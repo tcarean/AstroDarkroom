@@ -1,7 +1,7 @@
 # 0025. The dust is the catalogued dark nebulae over the image's WCS, the sky is what lies outside them, and the lift is the lowest that puts the dust on paper black
 
 Date: 2026-10-02
-Status: accepted 2026-10-02; the dust and the sky (decision 3) and the map's layers superseded by 0026; the frame rule without a WCS (decision 4) superseded by 0033
+Status: accepted 2026-10-02; the dust and the sky (decision 3) and the map's layers superseded by 0026; the frame rule without a WCS (decision 4) superseded by 0033; the preview's classes per pixel superseded by 0082
 
 ## Context
 

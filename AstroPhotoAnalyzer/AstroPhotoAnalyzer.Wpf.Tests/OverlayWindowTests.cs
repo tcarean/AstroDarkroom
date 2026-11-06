@@ -206,15 +206,16 @@ public class OverlayWindowTests
         Assert.StartsWith("Preview asa cum e (0.08)", a.Title);
         Assert.Contains("gamma 1.000", a.Caption);
         Assert.Contains("praful la L* 6.", a.Caption);
-        Assert.Contains("sub negrul hartiei (L* 9.0): 100.0 % din pixeli", a.BlackLegend);
+        Assert.Contains("sub negrul hartiei (L* 9.0): 100.0 % din dalele de 32 px", a.BlackLegend);
         Assert.False(a.ShowBlack || a.ShowLow);   // both layers start off (ADR 0064)
         Assert.Equal(64, a.Width);
+        Assert.Contains("Culorile acopera dale de 32 px, cele pe care le numara tabelul, nu pixeli", a.Note);   // ADR 0082
 
         PreviewWindowViewModel b = PreviewWindowViewModel.From(result, lifted);
         Assert.StartsWith("Preview fundal 0.20", b.Title);
         Assert.Contains("print-safe", b.Caption);
-        Assert.Contains("sub negrul hartiei (L* 9.0): 0.0 % din pixeli", b.BlackLegend);
-        Assert.Contains("0.0 % din pixeli", b.LowLegend);
+        Assert.Contains("sub negrul hartiei (L* 9.0): 0.0 % din dalele de 32 px", b.BlackLegend);
+        Assert.Contains("0.0 % din dalele de 32 px", b.LowLegend);
     }
 
     /// <summary>
@@ -303,7 +304,7 @@ public class OverlayWindowTests
             foreach (SimulationRow row in new[] { result.Simulation.AsIs, result.Simulation.Rows.Last() })
             {
                 PreviewWindowViewModel p = PreviewWindowViewModel.From(result, row);
-                texts.AddRange(new[] { p.Caption, p.BlackLegend, p.LowLegend });
+                texts.AddRange(new[] { p.Caption, p.BlackLegend, p.LowLegend, p.Note });
             }
         }
         var pair = new System.Text.RegularExpressions.Regex(@"\{local:T En='([^']*)', Ro='([^']*)'\}");

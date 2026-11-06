@@ -46,6 +46,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The preview window of a simulation row colours the 32 px patches under paper black and
+  under L* 15, the ones the simulation table counts, not single pixels (R-045, R-131, ADR
+  0082): the red legend's share is the row's "pure black" figure, and the sprinkle of
+  stray dark pixels, which read as large zones, is gone. The note under the boxes says so.
+
 - The paper-gamut figure of the Curves Editing tab and the Soft proof tab's warning count the
   whole colour difference, lightness included, after the round trip with black point
   compensation, over 4 (before: the hue and saturation alone, over 3, without the
