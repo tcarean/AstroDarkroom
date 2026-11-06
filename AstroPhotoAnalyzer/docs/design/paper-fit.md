@@ -62,10 +62,15 @@ judge, both agree). Why not once per 8-bit
 colour, or per cell of L\* and hue, as ADR 0042's hybrid does: measured 2026-11-06, half of the
 fitted pixels of the plate-solved FITS were still outside by the exact rule with either key,
 since the pixels outside are dark, where one 8-bit step is a unit of L\* and tens of degrees of
-hue and the edge moves by more than the tolerance within a cell. A pixel
-whose chroma passes `cmax` is outside; if `cmax` is under `GamutFitMinChroma` and the tone is
-out of reach it is copied and counted (`PctUnreachable`): no chroma brings it in, and the Tonuri
-tab's lift is the remedy. Otherwise the new chroma is `Knee(c, cmax, knee)`: unchanged up to
+hue and the edge moves by more than the tolerance within a cell. The judge is a step function
+of the 8-bit colour, not monotone in chroma, so a pixel the knees move inward can land on a
+colour the judge calls outside: V-016 reads 0.02 % left after `Lina` against 0.001 % after
+`Exacta`, under the figure's precision. A pixel
+whose chroma passes `cmax` is outside; if `cmax` is under `GamutFitMinChroma` (the judge
+rejects even the grey of that tone, so the edge search answers 0) it is copied and counted
+(`PctUnreachable`): no chroma brings it in, and the Tonuri tab's lift is the remedy. The table's
+`GreyOutOfReach` marks the nodes where that happens, for the record; the decision is the
+judge's, since within one L\* of such a node the two can disagree. Otherwise the new chroma is `Knee(c, cmax, knee)`: unchanged up to
 `knee x cmax`, then `start + room x (1 - exp(-(c - start) / room))` with `room = cmax - start`,
 asymptotic to the edge; a knee of 1 is a hard clip at the edge. The colour goes back through
 `ColorMath.SrgbOfLabD50`, clamped. With `keepFacts` the outcome also holds the masks before and
@@ -85,7 +90,8 @@ smallest whole L\* under which `GamutFitBandShare` of the pixels outside lie, an
 saturation factor in steps of `GamutFitRecipeStep` whose uniform scaling of the chroma of every
 pixel under that L\* brings `GamutFitRecipeShare` of the pixels outside in (decided with the
 pixel's own `cmax`, so no further trips), the factor decided on the band's own pixels outside
-(those above the band are out of the mask's reach and are counted in what is left; before this,
+whose tone is in reach (those above the band, and those whose tone is out of reach, are beyond
+the mask and are counted in what is left; before this,
 on the Smida TIFF, where 10 % of the pixels outside sit above the band, the factor ran down to
 5 %), with the share of all the pixels outside it leaves. Measured on the tonal subsample, where
 the evidence is measured too.
@@ -140,7 +146,8 @@ result, `MainViewModel` starts `ComputeAsync` beside the other two once every ta
 `_run` makes a late result nobody's. `Show` makes, once per item, the bitmap
 (`RasterBitmaps.Region`) and the red layer (`RasterBitmaps.Overlay` over the set's mask, the
 soft proof's half-transparent red; null when nothing is outside), the evidence rows from
-`GamutFitTexts.EvidenceRows`, and drops the previews. The box `ShowOutside` is pushed to every
+`GamutFitTexts.EvidenceRows`, and keeps on each item the variant without its preview, so the
+rasters are dropped once drawn. The box `ShowOutside` is pushed to every
 item (`GamutFitGalleryItem.ShowOutside`), whose `Overlay` is its layer or null accordingly, so the
 view binds one property; `Reset` turns the box off. `SaveAs` raises `SaveRequested` with
 `GamutFitTexts.ProposedFileName` (the input's kind), the window shows a dialog whose filter puts

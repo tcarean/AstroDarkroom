@@ -154,14 +154,15 @@ namespace AstroPhotoAnalyzer
             Raster r = a.Raster;
             Raster original = RasterOps.Subsample(r, CurveRun.PreviewStride(r, maxWidth, maxHeight));
             Raster sub = RasterOps.Subsample(r, Thresholds.TonalStride);
-            GamutFitOutcome originalFacts = GamutFit.Apply(original, table, 1, keepFacts: true);
-            clock.Lap("original");
             var variants = new List<GamutFitVariant>();
+            bool[] originalOutside = null;
             foreach (double knee in Knees)
             {
                 string name = GamutFitTexts.Name(knee);
                 progress?.Report(name);
                 GamutFitOutcome preview = GamutFit.Apply(original, table, knee, keepFacts: true);
+                // The mask of the original is the same under every knee: the first variant's.
+                originalOutside ??= preview.OutsideBefore;
                 GamutFitOutcome facts = GamutFit.Apply(sub, table, knee, keepFacts: true);
                 var v = new GamutFitVariant { Name = name, Knee = knee, Preview = preview.Image, Outside = preview.OutsideAfter, Evidence = GamutFitEvidence.Of(facts) };
                 variants.Add(v);
@@ -180,7 +181,7 @@ namespace AstroPhotoAnalyzer
                 ProfileDescription = description,
                 Table = table,
                 OriginalPreview = original,
-                OriginalOutside = originalFacts.OutsideBefore,
+                OriginalOutside = originalOutside,
                 Variants = variants,
                 Recipe = recipe,
             };

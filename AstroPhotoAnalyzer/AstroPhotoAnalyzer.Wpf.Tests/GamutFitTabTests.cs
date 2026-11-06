@@ -129,6 +129,7 @@ public class GamutFitTabTests
         Raster back = ImageLoader.Load(target);
         Assert.Equal("TIFF", back.Source.Format);
         Assert.Equal(16, back.Source.BitDepth);
+        Assert.Equal(IccTestData.V2("sRGB test"), back.Source.Icc);   // the input's own profile, embedded
 
         string fits = ws.PathTo("calea-lactee_Exacta.fit");
         tab.Save(fits);

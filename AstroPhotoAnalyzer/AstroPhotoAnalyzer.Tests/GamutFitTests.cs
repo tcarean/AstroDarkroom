@@ -94,13 +94,15 @@ public class GamutFitTests
     [Fact]
     public void R175_TheTableIsReadBetweenItsNodesAndTheExactRuleDecidesNearTheEdge()
     {
-        // A paper whose largest chroma grows with the hue: 5 at 0 degrees to 15 at 360, and with
-        // L* by a tenth: between two nodes the table must not round the edge inward by more than
-        // the margin, and a pixel right at the edge is decided by the rule, not by the table.
+        // A paper whose largest chroma grows with the hue, 5 at 0 degrees to 15 at 360, and with
+        // L* by a tenth, plus a wave of 0.3 whose nodes fall on the table's (one per unit of L*),
+        // so the table sees a straight edge and misses the true one by up to 0.3 between its
+        // nodes: a pixel landed on the edge must be decided by the rule, not by the table.
+        static double Cmax(double l, double hDeg) => 5 + 10 * hDeg / 360 + l / 10 + 0.3 * Math.Sin(l * Math.PI);
         static double Rule(double l, double a, double b)
         {
             double h = Math.Atan2(b, a) * 180 / Math.PI; if (h < 0) h += 360;
-            double cmax = 5 + 10 * h / 360 + l / 10, c = Math.Sqrt(a * a + b * b);
+            double cmax = Cmax(l, h), c = Math.Sqrt(a * a + b * b);
             return c > cmax ? 4 + (c - cmax) : 0;
         }
         GamutFitTable t = GamutFitTable.Build(Rule);
@@ -109,7 +111,7 @@ public class GamutFitTests
         for (int i = 0; i < 400; i++)
         {
             double l = 10 + 70 * rng.NextDouble(), h = 360 * rng.NextDouble() * Math.PI / 180;
-            double cmax = 5 + 10 * h * 180 / Math.PI / 360 + l / 10, c = cmax * (0.8 + 0.4 * rng.NextDouble());
+            double cmax = Cmax(l, h * 180 / Math.PI), c = cmax * (0.8 + 0.4 * rng.NextDouble());
             colours.Add((l, c * Math.Cos(h), c * Math.Sin(h)));
         }
         Raster r = RasterOf(colours.ToArray());
@@ -122,8 +124,8 @@ public class GamutFitTests
             // Fitted onto the edge, not far inside it: the rule of the pixel itself.
             Assert.InRange(Rule(after.L, after.A, after.B), 0, 0.001);
             double h = Math.Atan2(after.B, after.A) * 180 / Math.PI; if (h < 0) h += 360;
-            double cmax = 5 + 10 * h / 360 + after.L / 10;
-            Assert.InRange(ChromaOf(after), cmax - 0.35, cmax + 0.001);
+            double cmax = Cmax(after.L, h);
+            Assert.InRange(ChromaOf(after), cmax - 0.04, cmax + 0.001);   // the search's last step is 0.02
         }
     }
 
@@ -182,7 +184,8 @@ public class GamutFitTests
     {
         using var ws = new TempWorkspace();
         var rng = new Random(3);
-        var r = new Raster(48, 64, 3);
+        // 130 rows: three strips, the last one short, so the offsets and counts live in the heap.
+        var r = new Raster(130, 64, 3);
         foreach (float[] plane in r.Planes) for (int i = 0; i < plane.Length; i++) plane[i] = (float)rng.NextDouble();
         byte[] icc = IccTestData.V2("sRGB test");
         string target = ws.PathTo("scris.tif");
@@ -202,7 +205,7 @@ public class GamutFitTests
         Assert.Equal(new byte[] { 0x49, 0x49, 42, 0 }, bytes[..4]);
         var tags = ReadTags(bytes);
         Assert.Equal(64u, tags[256].Value);          // ImageWidth
-        Assert.Equal(48u, tags[257].Value);          // ImageLength
+        Assert.Equal(130u, tags[257].Value);         // ImageLength
         Assert.Equal(new ushort[] { 16, 16, 16 }, Shorts(bytes, tags[258]));   // BitsPerSample
         Assert.Equal(1u, tags[259].Value);           // Compression: none
         Assert.Equal(2u, tags[262].Value);           // Photometric: RGB
@@ -210,10 +213,18 @@ public class GamutFitTests
         Assert.Equal(1u, tags[284].Value);           // PlanarConfiguration: chunky
         Assert.Equal(icc, Bytes(bytes, tags[34675]));   // the ICC profile
         Assert.Equal("AstroPhotoAnalyzer: Exacta", Encoding.ASCII.GetString(Bytes(bytes, tags[270])).TrimEnd('\0'));
-        // The first sample of the first strip is the raster's first red, as a 16-bit level.
-        uint strip = tags[273].Value;
-        ushort red = BitConverter.ToUInt16(bytes, (int)strip);
-        Assert.Equal((int)Math.Round(r.Planes[0][0] * 65535), red);
+        // Three strips of 64, 64 and 2 rows, their offsets and counts in the heap; the first
+        // sample of each strip is the raster's red at that strip's first row, as a 16-bit level.
+        Assert.Equal(3u, tags[273].Count);
+        uint[] offsets = Longs(bytes, tags[273]), counts = Longs(bytes, tags[279]);
+        Assert.Equal(new uint[] { 64 * 64 * 6, 64 * 64 * 6, 2 * 64 * 6 }, counts);
+        for (int s = 0; s < 3; s++)
+        {
+            ushort red = BitConverter.ToUInt16(bytes, (int)offsets[s]);
+            Assert.Equal((int)Math.Round(r.Planes[0][s * 64 * 64] * 65535), red);
+        }
+        Assert.Equal(offsets[0] + counts[0], offsets[1]);
+        Assert.Equal(offsets[2] + counts[2], (uint)bytes.Length);
     }
 
     [Fact]
@@ -251,7 +262,7 @@ public class GamutFitTests
         Raster fromTiff = ImageLoader.Load(tiff);
         Assert.Equal("TIFF", fromTiff.Source.Format);
         Assert.Equal(16, fromTiff.Source.BitDepth);
-        Assert.NotNull(fromTiff.Source.Icc);   // the standard sRGB profile: the FITS had none
+        Assert.Equal("sRGB", fromTiff.Source.IccDescription);   // the standard sRGB profile: the FITS had none
         for (int i = 0; i < fromFits.W * fromFits.H; i++)
             Assert.InRange(fromTiff.Planes[0][i], fromFits.Planes[0][i] - 1.0 / 65535, fromFits.Planes[0][i] + 1.0 / 65535);
 
@@ -285,6 +296,14 @@ public class GamutFitTests
         int at = t.Count * 2 <= 4 ? t.Offset : (int)t.Value;
         var o = new ushort[t.Count];
         for (int i = 0; i < t.Count; i++) o[i] = BitConverter.ToUInt16(b, at + 2 * i);
+        return o;
+    }
+
+    static uint[] Longs(byte[] b, (ushort Type, uint Count, uint Value, int Offset) t)
+    {
+        if (t.Count == 1) return new[] { t.Value };
+        var o = new uint[t.Count];
+        for (int i = 0; i < t.Count; i++) o[i] = BitConverter.ToUInt32(b, (int)t.Value + 4 * i);
         return o;
     }
 

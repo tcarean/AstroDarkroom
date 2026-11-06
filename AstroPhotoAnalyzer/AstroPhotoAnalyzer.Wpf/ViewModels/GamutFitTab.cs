@@ -84,8 +84,8 @@ namespace AstroPhotoAnalyzer.Wpf
         /// </summary>
         static readonly Logger Log = LogManager.GetLogger(Loggers.GamutFit);
 
-        /// <summary>The red of the layer: the soft proof's paper warning colour (R-161), half transparent.</summary>
-        static readonly Color OutsideColour = Color.FromArgb(150, 0xF8, 0x51, 0x49);
+        /// <summary>The red of the layer: the palette's bad red, half transparent, as the soft proof's warning (R-161).</summary>
+        static readonly Color OutsideColour = Color.FromArgb(150, VerdictPalette.Bad.R, VerdictPalette.Bad.G, VerdictPalette.Bad.B);
 
         AnalysisResult _result;
         GamutFitSet _set;
@@ -266,11 +266,12 @@ namespace AstroPhotoAnalyzer.Wpf
                 RaiseGallery();
                 return;
             }
+            // The previews' rasters are no longer needed once the bitmaps exist: the items and
+            // the set keep the variants without them. The table and the knees stay, for the save.
+            GamutFitVariant[] stripped = set.Variants.Select(v => v with { Preview = null, Outside = null }).ToArray();
             var items = new List<GamutFitGalleryItem> { Item(CurveTexts.Original, set.OriginalPreview, set.OriginalOutside, null, set.Recipe) };
-            foreach (GamutFitVariant v in set.Variants) items.Add(Item(v.Name, v.Preview, v.Outside, v, set.Recipe));
-            // The previews' rasters are no longer needed: the bitmaps take their place. The table
-            // and the variants' knees stay, for the save.
-            _set = set with { OriginalPreview = null, OriginalOutside = null, Variants = set.Variants.Select(v => v with { Preview = null, Outside = null }).ToArray() };
+            for (int i = 0; i < set.Variants.Count; i++) items.Add(Item(stripped[i].Name, set.Variants[i].Preview, set.Variants[i].Outside, stripped[i], set.Recipe));
+            _set = set with { OriginalPreview = null, OriginalOutside = null, Variants = stripped };
             Message = null;
             Items = items;
             foreach (GamutFitGalleryItem i in items) i.ShowOutside = _showOutside;
@@ -281,7 +282,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <param name="name">The item's name, as the gallery shows it.</param>
         /// <param name="preview">The preview raster, at the gallery's size.</param>
         /// <param name="outside">Per preview pixel, whether the paper cannot hold it; may be null.</param>
-        /// <param name="v">The variant; null for the original.</param>
+        /// <param name="v">The variant, without its preview; null for the original.</param>
         /// <param name="recipe">The recipe, for the evidence.</param>
         /// <returns>The item, not yet current.</returns>
         static GamutFitGalleryItem Item(string name, Raster preview, bool[] outside, GamutFitVariant v, GamutFitRecipe recipe)

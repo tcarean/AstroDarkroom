@@ -153,12 +153,6 @@ namespace AstroPhotoAnalyzer
                  + tl * ((1 - th) * Cmax[(l0 + 1) * HNodes + h0] + th * Cmax[(l0 + 1) * HNodes + h0 + 1]);
         }
 
-        /// <summary>
-        /// Whether the grey of an L* is out of the paper's reach: the nearest node's answer.
-        /// </summary>
-        /// <param name="l">L*, clamped to 0..100.</param>
-        /// <returns>True when no chroma can bring a colour of that tone in.</returns>
-        internal bool ToneOutOfReach(double l) => GreyOutOfReach[(int)Math.Round(Math.Clamp(l, 0, 100) / 100 * (LNodes - 1))];
     }
 
     /// <summary>What one fit did to a raster, with its facts when asked for (R-175, R-176).</summary>
@@ -227,8 +221,8 @@ namespace AstroPhotoAnalyzer
         /// onto the edge.
         /// </param>
         /// <param name="keepFacts">
-        /// Whether the masks and the figures are measured too: the exact rule on every fitted
-        /// colour, once per 8-bit colour. Off for the save of a whole image.
+        /// Whether the masks and the figures are measured too: the judge on every fitted
+        /// colour. Off for the save of a whole image.
         /// </param>
         /// <returns>The fitted raster and, with facts, the masks and the figures.</returns>
         internal static GamutFitOutcome Apply(Raster r, GamutFitTable t, double knee, bool keepFacts)
@@ -256,9 +250,12 @@ namespace AstroPhotoAnalyzer
                     double cmax = Edge(t, l, a, b, c, R[i], G[i], B[i]);
                     bool outside = c > cmax;
                     if (keepFacts) before[i] = outside;
-                    if (outside && cmax < Thresholds.GamutFitMinChroma && t.ToneOutOfReach(l))
+                    if (outside && cmax < Thresholds.GamutFitMinChroma)
                     {
-                        // The tone itself is out of reach: no chroma brings it in. Left as it is.
+                        // The tone itself is out of reach: the judge rejects even its grey (the
+                        // edge search answers 0 there), so no chroma brings it in. Left as it is,
+                        // and counted; the review of 2026-11-06 found the nearest node's answer
+                        // could disagree with the judge's within one L* and send such a pixel to grey.
                         oR[i] = R[i]; oG[i] = G[i]; oB[i] = B[i];
                         if (keepFacts) { after[i] = true; unreachable[i] = true; }
                         continue;
@@ -424,10 +421,12 @@ namespace AstroPhotoAnalyzer
             double ceiling = Math.Ceiling(ls[Math.Min(ls.Count - 1, (int)Math.Floor(Thresholds.GamutFitBandShare * (ls.Count - 1) + 0.999999))] + 0.01);
             long inBand = 0;
             for (int i = 0; i < n; i++) if (lAll[i] < ceiling) inBand++;
-            // The factor is decided on the band's own pixels outside: the ones above the band
-            // are out of the mask's reach, and are counted in what is left.
+            // The factor is decided on the band's own pixels outside that a factor can bring in:
+            // the ones above the band, and the ones whose tone itself is out of reach (no chroma
+            // the paper holds, cmax under the grey floor), are out of the mask's reach and are
+            // counted in what is left.
             long inBandOut = 0;
-            for (int i = 0; i < n; i++) if (isOut[i] && lOut[i] < ceiling) inBandOut++;
+            for (int i = 0; i < n; i++) if (isOut[i] && lOut[i] < ceiling && cmaxOut[i] >= Thresholds.GamutFitMinChroma) inBandOut++;
             double factor = 1, left = 100;
             for (double f = 1; f >= Thresholds.GamutFitRecipeStep - 1e-9; f -= Thresholds.GamutFitRecipeStep)
             {
@@ -435,9 +434,9 @@ namespace AstroPhotoAnalyzer
                 for (int i = 0; i < n; i++)
                 {
                     if (!isOut[i]) continue;
-                    bool band = lOut[i] < ceiling;
+                    bool band = lOut[i] < ceiling, reachable = cmaxOut[i] >= Thresholds.GamutFitMinChroma;
                     double c = band ? cOut[i] * f : cOut[i];
-                    if (c > cmaxOut[i]) { stillOut++; if (band) stillOutInBand++; }
+                    if (c > cmaxOut[i]) { stillOut++; if (band && reachable) stillOutInBand++; }
                 }
                 factor = Math.Round(f, 2);
                 left = 100.0 * stillOut / ls.Count;
