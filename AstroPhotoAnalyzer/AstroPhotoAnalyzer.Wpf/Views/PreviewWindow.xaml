@@ -18,9 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- PreviewWindow - the preview of one row of the simulation (R-131): the image lifted to
-     the row's target, maximised, with the pixels below paper black and those below L* 15
-     painted, each layer with its own checkbox, both unchecked when the window opens (ADR 0064).
-     No figure is computed here. -->
+     the row's target, maximised, with the 32 px patches below paper black and those below L* 15
+     painted (ADR 0082), each layer with its own checkbox, both unchecked when the window opens
+     (ADR 0064). No figure is computed here; the note's text comes from the view-model, its
+     patch side from Thresholds. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.PreviewWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -49,8 +50,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Text="{Binding LowLegend}" />
           </CheckBox>
         </StackPanel>
-        <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0"
-                   Text="{local:T En='A reduced copy, with the tones lifted by a simple curve (gamma), not by the stretch in Siril. On screen it looks washed out, but on paper it comes back. The program assumes the pixels are sRGB.', Ro='E o copie micsorata, cu tonurile ridicate printr-o curba simpla (gamma), nu prin stretch-ul din Siril. Pe ecran pare stearsa, dar pe hartie revine. Programul presupune ca pixelii sunt sRGB.'}" />
+        <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding Note}" />
       </StackPanel>
     </Border>
 

@@ -16,13 +16,14 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // PreviewWindowViewModel.cs - the preview window of one row of the simulation (R-131): the
-// image lifted to the row's target, with the pixels under paper black and those under the
-// weak-separation threshold painted differently.
+// image lifted to the row's target, with the 32 px patches under paper black and those under
+// the weak-separation threshold painted differently (ADR 0082).
 //
-// The lifted image, the class of each pixel and the two shares come from the core (PrintPreview,
-// R-045); here they are painted, the amber legend's share is taken as the difference of the
-// two, and the user is let to switch the layers on: both start off, so the window opens on the
-// lifted image alone (ADR 0064).
+// The lifted image, the class of each pixel (its patch's) and the two shares of the patches
+// come from the core (PrintPreview, R-045); here they are painted, the amber legend's share is
+// taken as the difference of the two, and the user is let to switch the layers on: both start
+// off, so the window opens on the lifted image alone (ADR 0064). The note under the boxes is
+// written here, its patch side from Thresholds.
 
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -54,6 +55,12 @@ namespace AstroPhotoAnalyzer.Wpf
         public string BlackLegend { get; private init; }
         public string LowLegend { get; private init; }
 
+        /// <summary>
+        /// The note under the boxes: a reduced copy lifted by a simple curve, and the colours
+        /// covering the patches the table counts, not pixels.
+        /// </summary>
+        public string Note { get; private init; }
+
         public bool ShowBlack { get => _showBlack; set => Set(ref _showBlack, value); }
         public bool ShowLow { get => _showLow; set => Set(ref _showLow, value); }
 
@@ -62,8 +69,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Renders a simulation row through the core and paints its two classes: red where a
-        /// pixel is under paper black, amber where it is under the weak-separation L* but over
-        /// black.
+        /// pixel's patch is under paper black, amber where it is under the weak-separation L*
+        /// but over black.
         /// </summary>
         /// <param name="r">The analysis the row belongs to; its raster and Dmax are read.</param>
         /// <param name="row">
@@ -93,8 +100,12 @@ namespace AstroPhotoAnalyzer.Wpf
                         $"{target}: tonurile ridicate cu o curba (gamma {Fmt.F3(row.Gamma)}); praful la L* {Fmt.F1(row.LstarDust)}, cerul la L* {Fmt.F1(row.LstarSky)}; "
                         + $"negrul hartiei e L* {Fmt.F1(p.PaperBlackLstar)} la Dmax {Fmt.Dmax(r.Parameters.Dmax)}")
                     + ReportWriter.RowMark(row).Replace("   ", "; "),
-                BlackLegend = Tr.Pick($"under paper black (L* {Fmt.F1(p.PaperBlackLstar)}): {Fmt.Pct(p.PctUnderPaperBlack)} of the pixels - they print as the same black", $"sub negrul hartiei (L* {Fmt.F1(p.PaperBlackLstar)}): {Fmt.Pct(p.PctUnderPaperBlack)} din pixeli - se tiparesc cu acelasi negru"),
-                LowLegend = Tr.Pick($"between paper black and L* {Fmt.F0(Thresholds.LowSeparationLstar)}: {Fmt.Pct(p.PctUnderLowSeparation - p.PctUnderPaperBlack)} of the pixels - the paper tells them apart, but the eye barely sees the difference", $"intre negrul hartiei si L* {Fmt.F0(Thresholds.LowSeparationLstar)}: {Fmt.Pct(p.PctUnderLowSeparation - p.PctUnderPaperBlack)} din pixeli - pe hartie se deosebesc, dar ochiul abia le vede diferenta"),
+                BlackLegend = Tr.Pick($"under paper black (L* {Fmt.F1(p.PaperBlackLstar)}): {Fmt.Pct(p.PctUnderPaperBlack)} of the {Thresholds.DustPatchPx} px patches - they print as the same black", $"sub negrul hartiei (L* {Fmt.F1(p.PaperBlackLstar)}): {Fmt.Pct(p.PctUnderPaperBlack)} din dalele de {Thresholds.DustPatchPx} px - se tiparesc cu acelasi negru"),
+                LowLegend = Tr.Pick($"between paper black and L* {Fmt.F0(Thresholds.LowSeparationLstar)}: {Fmt.Pct(p.PctUnderLowSeparation - p.PctUnderPaperBlack)} of the {Thresholds.DustPatchPx} px patches - the paper tells them apart, but the eye barely sees the difference", $"intre negrul hartiei si L* {Fmt.F0(Thresholds.LowSeparationLstar)}: {Fmt.Pct(p.PctUnderLowSeparation - p.PctUnderPaperBlack)} din dalele de {Thresholds.DustPatchPx} px - pe hartie se deosebesc, dar ochiul abia le vede diferenta"),
+                Note = Tr.Pick("A reduced copy, with the tones lifted by a simple curve (gamma), not by the stretch in Siril. On screen it looks washed out, but on paper it comes back. The program assumes the pixels are sRGB. "
+                        + $"The colours cover {Thresholds.DustPatchPx} px patches, the ones the table counts, not pixels: a stray darker pixel does not show on paper.",
+                        "E o copie micsorata, cu tonurile ridicate printr-o curba simpla (gamma), nu prin stretch-ul din Siril. Pe ecran pare stearsa, dar pe hartie revine. Programul presupune ca pixelii sunt sRGB. "
+                        + $"Culorile acopera dale de {Thresholds.DustPatchPx} px, cele pe care le numara tabelul, nu pixeli: un pixel razlet mai intunecat nu se vede pe hartie."),
             };
         }
     }

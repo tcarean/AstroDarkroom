@@ -451,6 +451,51 @@ public class DustAnalyzerTests
         Assert.Equal(100, between.PctUnderLowSeparation);
     }
 
+    /// <summary>
+    /// The classes are the 32 px patches' (ADR 0082): a stray dark pixel in a patch over paper
+    /// black is not painted, a whole dark patch is, the margins past the last whole patch have
+    /// no class, and the shares are shares of the patches.
+    /// </summary>
+    [Fact]
+    public void R045_ThePreviewClassesAreThePatches()
+    {
+        // 64 x 64 at 0.19 (L* ~20): four whole patches; one pixel at 0 in each.
+        Raster speck = SyntheticRasters.Flat(64, 64, 0.19f);
+        foreach (int i in new[] { 5 * 64 + 5, 5 * 64 + 40, 40 * 64 + 5, 40 * 64 + 40 })
+            foreach (float[] plane in speck.Planes) plane[i] = 0;
+        PrintPreviewResult p = PrintPreview.Render(speck, 1, 2.0);
+        Assert.All(p.Classes, c => Assert.Equal(PreviewClass.None, c));
+        Assert.Equal(0, p.PctUnderPaperBlack);
+        Assert.Equal(0, p.PctUnderLowSeparation);
+
+        // One whole patch at 0.02 (L* ~1.5) among three at 0.19: its 32 x 32 pixels, no other.
+        Raster one = SyntheticRasters.Flat(64, 64, 0.19f);
+        for (int y = 32; y < 64; y++)
+            for (int x = 0; x < 32; x++)
+                foreach (float[] plane in one.Planes) plane[y * 64 + x] = 0.02f;
+        p = PrintPreview.Render(one, 1, 2.0);
+        for (int y = 0; y < 64; y++)
+            for (int x = 0; x < 64; x++)
+                Assert.Equal(y >= 32 && x < 32 ? PreviewClass.UnderPaperBlack : PreviewClass.None, p.Classes[y * 64 + x]);
+        Assert.Equal(25, p.PctUnderPaperBlack);
+        Assert.Equal(25, p.PctUnderLowSeparation);
+
+        // 70 x 70 at 0.08: four whole patches under black, the 6 px margins in no class.
+        p = PrintPreview.Render(SyntheticRasters.Flat(70, 70, 0.08f), 1, 2.0);
+        for (int y = 0; y < 70; y++)
+            for (int x = 0; x < 70; x++)
+                Assert.Equal(y < 64 && x < 64 ? PreviewClass.UnderPaperBlack : PreviewClass.None, p.Classes[y * 70 + x]);
+        Assert.Equal(100, p.PctUnderPaperBlack);
+
+        // On a whole run, the preview's share under black is the row's "pure black" column.
+        AnalysisResult result = AnalysisRun.Execute(Scenes.DarkSky(), "memorie", Scenes.OnBuiltForPaper());
+        foreach (SimulationRow row in result.Simulation.Rows)
+        {
+            PrintPreviewResult pv = PrintPreview.Render(result.Raster, row.Gamma, result.Parameters.Dmax);
+            Assert.Equal(row.PctPatchesBelowPaperBlack, pv.PctUnderPaperBlack, 9);
+        }
+    }
+
     [Fact]
     public void R045_ThePreviewIsReducedUnderTheMaximumSide()
     {

@@ -185,10 +185,14 @@ predicted it above from 0.14); a disc is not the cloud's contour.
 ### B6 - `PrintPreview` - a simulation row as an image (window only)
 
 `Render(img, gamma, dmax)`: the image subsampled to at most `PreviewMaxSide` (1600), lifted with
-the row's gamma (left alone at gamma 1), and one `PreviewClass` per pixel from
-`RasterOps.LstarPlane`: `UnderPaperBlack`, `UnderLowSeparation` (under 15 but not under paper
-black) or `None`, with the two shares. The preview window paints the classes; it decides
-nothing.
+the row's gamma (left alone at gamma 1), and one `PreviewClass` per pixel, its patch's (ADR
+0082): the 32 px patches' L\* at the row's lift, `DustAnalyzer.PatchLstars` on the stride-4
+subsample through the row's `LiftTable` (exact at gamma 1), the computation B4 runs for the row;
+`UnderPaperBlack`, `UnderLowSeparation` (under 15 but not under paper black) or `None`. Each
+reduced pixel is mapped to its patch as `MapViewModel` maps them (`DustAnalyzer.Grid`, the
+patch side times `TonalStride`, divided by the preview's `ReductionStride`); the pixels past the
+last whole patch are `None`. The two shares are shares of the patches, the first the row's
+"negru pur". The preview window paints the classes; it decides nothing.
 
 ### B3 - `NoiseAnalyzer` - residual noise in the sky, in 8-bit LSB
 
