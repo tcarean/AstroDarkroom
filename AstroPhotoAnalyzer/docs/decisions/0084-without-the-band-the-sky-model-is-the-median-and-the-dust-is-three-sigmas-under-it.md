@@ -7,8 +7,9 @@ Supersedes: 0033 in part (the values of `SkyModelLowPercentile` and `SkyNoiseK`)
 ## Context
 
 ADR 0033 made the classes without the band relative to a sky modelled from all the patches, at
-the 25th percentile of each cell "so a nebula covering half a cell does not lift it", with dust and nebula at 4 robust sigmas under and over the model. It was
-measured on deep-sky frames (Rosetta, Orion, Andromeda) and on the two reference images, and
+the 25th percentile of each cell "so a nebula covering half a cell does not lift it", with
+dust and nebula at 4 robust sigmas under and over the model. It was measured on deep-sky
+frames (Rosetta, Orion, Andromeda) and on the two reference images, and
 `docs/design/known-limitations.md` recorded that on the sky path the Great Rift is not found:
 the 25th percentile sinks into the Rift, which is then never under the sky, and the dust
 class stays under the `DustClassMinFraction` floor, so the darkest 1 % of the sky decides.
