@@ -125,8 +125,8 @@ namespace FlatCheck
         /// <returns>One line naming blue, white and red with their percentages.</returns>
         internal static string MapLegend(PngWriter.MapRange r)
         {
-            string lo = ((r.Lo - PngWriter.Mid) * 100).ToString("+0.0;-0.0");
-            string hi = ((r.Hi - PngWriter.Mid) * 100).ToString("+0.0;-0.0");
+            string lo = Numbers.Signed((r.Lo - PngWriter.Mid) * 100, 1);
+            string hi = Numbers.Signed((r.Hi - PngWriter.Mid) * 100, 1);
             return T($"blue = {lo} %   white = 0 (exactly on the model)   red = {hi} %",
                      $"albastru = {lo} %   alb = 0 (exact pe model)   rosu = {hi} %");
         }

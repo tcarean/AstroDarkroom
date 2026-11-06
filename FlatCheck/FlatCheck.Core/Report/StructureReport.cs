@@ -310,7 +310,7 @@ namespace FlatCheck
                     ? SyntheticReport.ProfileMismatch(p, c.Shot.FocalMm.Value, c.Shot.FStop.Value, d.LensProfiles) : null;
                 if (mismatch != null) { note += T(" WARNING: ", " ATENTIE: ") + mismatch; warning = true; }
                 rows.Add(new ProfileRow(p.Lens.Key, p.Lens.SourceLabel, p.Lens.Name, p.Lens.Where, p.Settings,
-                    Depth(d.CornerStops), T($"{d.DiffStops:+0.00;-0.00} stops", $"{d.DiffStops:+0.00;-0.00} stopuri"), $"{d.ErrorPct:F1} %", d.Verdict,
+                    Depth(d.CornerStops), T($"{Numbers.Signed(d.DiffStops, 2)} stops", $"{Numbers.Signed(d.DiffStops, 2)} stopuri"), $"{d.ErrorPct:F1} %", d.Verdict,
                     ReferenceEquals(d, c.Deciding), note, warning));
             }
             return rows;
@@ -351,9 +351,9 @@ namespace FlatCheck
                 : T($"given by the nearest profile ({who})", $"dat de profilul cel mai apropiat ({who})");
             string verdict = T(
                 $"the comparison's verdict: {VerdictWords.Of(c.Verdict)}, {whose}: "
-                + $"{c.Deciding.DiffStops:+0.00;-0.00} stops against the profile = {c.Deciding.ErrorPct:F1} % error in the corner of a light calibrated with the master",
+                + $"{Numbers.Signed(c.Deciding.DiffStops, 2)} stops against the profile = {c.Deciding.ErrorPct:F1} % error in the corner of a light calibrated with the master",
                 $"verdictul comparatiei: {VerdictWords.Of(c.Verdict)}, {whose}: "
-                + $"{c.Deciding.DiffStops:+0.00;-0.00} stopuri fata de profil = {c.Deciding.ErrorPct:F1} % eroare in coltul unui light calibrat cu masterul");
+                + $"{Numbers.Signed(c.Deciding.DiffStops, 2)} stopuri fata de profil = {c.Deciding.ErrorPct:F1} % eroare in coltul unui light calibrat cu masterul");
             // The reason names lensfun only when a lensfun row is there to compare (--source
             // adobe, or lensfun rows skipped for want of a crop, leave Adobe rows alone).
             bool lensfunShown = c.Profiles.Any(p => p.Profile.Lens.Source == ProfileSource.Lensfun);
@@ -595,8 +595,8 @@ namespace FlatCheck
         internal static string DepthDetail(StructureOutcome o)
         {
             ProfileDepth n = o.Profiles.Deciding;
-            return T($"{VerdictWords.Of(o.Profiles.Verdict)} - by {n.DiffStops:+0.00;-0.00} stops against the {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Title} profile, that is {n.ErrorPct:F1} % error in the corner of the calibrated light",
-                     $"{VerdictWords.Of(o.Profiles.Verdict)} - cu {n.DiffStops:+0.00;-0.00} stopuri fata de profilul {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Title}, adica {n.ErrorPct:F1} % eroare in coltul light-ului calibrat");
+            return T($"{VerdictWords.Of(o.Profiles.Verdict)} - by {Numbers.Signed(n.DiffStops, 2)} stops against the {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Title} profile, that is {n.ErrorPct:F1} % error in the corner of the calibrated light",
+                     $"{VerdictWords.Of(o.Profiles.Verdict)} - cu {Numbers.Signed(n.DiffStops, 2)} stopuri fata de profilul {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Title}, adica {n.ErrorPct:F1} % eroare in coltul light-ului calibrat");
         }
 
         /// <summary>The line under the two parts of the verdict: the verdict is the worse.</summary>
@@ -734,11 +734,11 @@ namespace FlatCheck
         /// <returns>"+N.NN % (brighter)", with no word at zero.</returns>
         internal static string LocalSpotSize(double pct)
         {
-            // What rounds to zero IS SHOWN as zero: .NET keeps the sign of a negative zero and
-            // "-0.00001" came out "-+0.00" (the format's positive section, with the negative
-            // zero's minus in front). Measured on a golden of the smoothing mode of the time.
-            double shown = Math.Abs(pct) < 0.005 ? 0.0 : pct;
-            return $"{shown:+0.00;-0.00} %{SignWord(shown)}";
+            // What rounds to zero IS SHOWN as zero, "+0.00 %" with no word after it (ADR 0041;
+            // "-0.00001" once came out "-+0.00", measured on a golden of the smoothing mode of
+            // the time). The word is decided on the same rounding as the digits (R-129).
+            double shown = Numbers.RoundsToZero(pct, 2) ? 0.0 : pct;
+            return $"{Numbers.Signed(shown, 2)} %{SignWord(shown)}";
         }
 
         /// <summary>

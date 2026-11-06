@@ -71,7 +71,7 @@ reading ~3 s, JPEG ~5 s.
 ### The second run (`Runs/CurveRun.cs`, ADR 0032)
 
 `CurveRun.Execute(AnalysisResult, CurvePurpose, maxWidth, maxHeight)` is not a stage of the
-chain: the window runs it after the analysis, and again on `Calculeaza` in the Editare Curbe tab (ADR 0051), on the result the chain
+chain: the window runs it after the analysis, and again when the Editare Curbe tab's area allows a finer preview (ADR 0051, ADR 0084), on the result the chain
 already produced (the raster, the patch map of the simulation, the noise, the parameters), and
 the console never calls it. Order: the tonal subsample; the class names of the map's path
 (`CurveSet.Method`, `Labels`) and the five class levels as they are
@@ -103,7 +103,8 @@ by a `RunClock` (`profile`, `gamut`, `mask`), Render writes one Debug line per r
 ### The fourth run (`Runs/GamutFitRun.cs`, ADR 0083)
 
 `GamutFitRun.Execute(AnalysisResult, maxWidth, maxHeight)` is the paper fit's run, started by the
-window beside the other two once the tabs are filled and again on `Calculeaza`; the console
+window beside the other two once the tabs are filled and again when the tab's area allows a
+finer preview (ADR 0084); the console
 never calls it. It builds the gamut table of the profile the Dmax came from, the fit's table of
 the largest chroma over L\* and hue from it, then the three variants on the gallery's reduction
 (their previews and masks) and on the tonal subsample (their evidence), and the recipe. The save

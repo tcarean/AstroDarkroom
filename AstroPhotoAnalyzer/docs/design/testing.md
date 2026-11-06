@@ -64,7 +64,7 @@ the owner's earlier curve, the anchors and the recipe on the band scene of `WcsF
 0.7 of its values (its peak patch is at white, where no control point fits above it) and on a
 striped frame without a WCS, and the saved FITS against hand-built FITS and PNG files.
 `CurvesTabTests` drives the tab's view-model through `Compute(w, h)`, the synchronous body of
-`Calculeaza`. `ValidationTests` has a third kind of case, `curves`: an analysis, a curve run
+the computation, and the automatic recompute through `SetGallerySize` and `Computation`. `ValidationTests` has a third kind of case, `curves`: an analysis, a curve run
 for print (with the parameter `icc`, a profile beside the image, for the gamut figure) and a
 save of the last suggestion into a temporary folder, with the input hashed before and after.
 

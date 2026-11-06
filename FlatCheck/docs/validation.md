@@ -179,6 +179,14 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 
 ## History
 
+- 2026-11-06: re-measured at the wrap-up of the signed-zero fix (R-129), on
+  `claude/Fix-the-signed-zero-format` from main 28d2c226, which moved the signed formats of
+  `Report/` to `Numbers.Signed` without touching a formula: the 36 large files present with
+  their hashes, 44 passed in 2 min 47 s (the 36 cases and the 8 raw samples), and with the
+  measured lines compared to `validation.json` case by case, 23 cases equal figure for figure
+  and 13 within tolerance by at most 0.038 points (V-014's residual 3.499 -> 3.461, the largest),
+  the same residual, worst-tile and local-spot moves the entry below left unrecorded on the day
+  of ADR 0091 ("38 cases unchanged within tolerance"). No figure changed; no formula moved.
 - 2026-11-06: V-001, V-008, V-010, V-015, V-036 and V-037 re-recorded after R-014 / ADR 0091 (the
   even-harmonic correction of the radial model on every ring, the whole rings included), on
   `claude/Divide-the-harmonics-out-on-every-ring` from main c3141954, with the 36 large files

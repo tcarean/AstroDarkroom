@@ -76,7 +76,7 @@ set and readable, no text comparison left: the setter keeps the two in step.
 | `ResolutionTabViewModel` | `Rows` (count, FWHM, effective detail, the five regions as "Latimea stelelor (FWHM) in <region>", corner/centre; each with a `Description` - what it measures, thresholds interpolated from `Thresholds` - except the four corner rows, which the centre row's description covers), `SizeRows` (mono strings from `ReportWriter.SizeTableRow`/`SizeTableFooter`: "*" on the recommended row, or the note on why there is none); a static note under the table states the star rule and the pixel-grid rule (180 dpi in bold); `DpiRows` (mono strings, the dpi - distance reference scale from `DpiLadder`, window only) |
 | `BackgroundTabViewModel` (the Culoare tab) | `Rows` (the background colour per channel, cast metrics; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `RegionRows` (mono strings as in the report, a region measured on every pixel carrying `EdgeRegion.PixelsNote`, except that a flagged region ends in "! colorat" or "! neutru" - "!" alone on mono), `Guide` (`GuideParagraph`s under the table: the zones, the difference from the sky, the "!" mark, coloured vs neutral with the reference image's two corners, black and white) |
 | `SoftProofTabViewModel` (the Soft proof tab, R-163; its full-screen window, R-164) | the intent, the two boxes, the margin, the proof and its warning layer, the core's lines and legend, `FullScreen` (raises `ProofRequested` with the same view-model); filled by the third run `MainViewModel` starts beside the curves' (`ProofComputation`); the whole area in `soft-proof.md` |
-| `GamutFitTabViewModel` (the Culori pentru hartie tab, R-178) | the gallery of the original and the three variants of the paper fit (`GamutFitGalleryItem`: the bitmap, the red layer of what is still outside, the evidence rows), `ShowOutside` (the box, pushed to every item), `Next`/`Previous`/`SaveAs`/`Calculate`, the core's sentences; filled by the fourth run `MainViewModel` starts beside the curves' and the proof's (`GamutFitComputation`); the whole area in `paper-fit.md` |
+| `GamutFitTabViewModel` (the Culori pentru hartie tab, R-178) | the gallery of the original and the three variants of the paper fit (`GamutFitGalleryItem`: the bitmap, the red layer of what is still outside, the evidence rows), `ShowOutside` (the box, pushed to every item), `Next`/`Previous`/`SaveAs`, the core's sentences; filled by the fourth run `MainViewModel` starts beside the curves' and the proof's (`GamutFitComputation`); the whole area in `paper-fit.md` |
 
 Tables are pre-aligned mono strings, the same the report writes, rendered with
 `MonoRowTemplate`; the alternative was a template per table for the same text.
@@ -136,11 +136,19 @@ window; every XAML text is `{local:T En=..., Ro=...}` and every view-model text 
 ADR 0051). Unlike the other tabs it is filled by a second run: `Populate` only keeps the result,
 and `MainViewModel.RunAsync`, once every tab is filled and the busy overlay is gone, starts
 `ComputeAsync`, which runs `CurveRun.Execute` on a pool thread and keeps the task in
-`CurvesComputation` for the tests to await; `Calculeaza` runs the same `ComputeAsync` again, at
-the size the view has reported by then (`Compute(w, h)` is the same body, synchronous, for most
-tests). Before the tab is first shown no size has been reported, so the first computation uses
-`Thresholds.CurvePreviewDefaultWidth` x `Height`, and the view's `Viewbox` only shrinks a preview
-to the area, never enlarges it. The gallery is a list of `CurveGalleryItem` (name,
+`CurvesComputation` for the tests to await (`Compute(w, h)` is the same body, synchronous, for
+most tests). Before the tab is first shown no size has been reported, so the first computation
+uses `Thresholds.CurvePreviewDefaultWidth` x `Height`; the previews are made at least as large as
+the view shows them, the image's aspect fitted into the area (`CurveRun.PreviewStride`, the
+largest step that still covers the fitted size, never over `CurvePreviewMaxPixels`, ADR 0084),
+and the view's `Viewbox` shrinks them to fit (`DownOnly`), with the bitmaps scaled at high
+quality, so the image fills the area; only when the core says the preview was held under the cap
+(`CurveSet.PreviewCapped`, `GamutFitSet.PreviewCapped`, the tab's `PreviewCapped`) does a style
+trigger let it enlarge, so an image smaller than the area stays at its own size. `SetGallerySize`, called at
+every layout pass, compares the step the new size allows with the step the last computation was
+asked for (`_askedWidth` x `_askedHeight`) and runs `ComputeAsync` again by itself when the new
+one is finer (`Computation` holds it for the tests); the gallery shown stays until the new one
+is there. There is no button since ADR 0084. The gallery is a list of `CurveGalleryItem` (name,
 frozen bitmap, evidence lines, the core's suggestion), the original first; `Next` /
 `Previous` move an index and stop at the ends, `OpenCurve` and `SaveAs` are disabled on the
 original. The view is a grid, not a scrolled column, so the image takes the room left, and that room
@@ -152,7 +160,9 @@ for no curve (`CurveSet.Problem`) the tab sets `IsProblem` and the view paints `
 "se calculeaza" and an exception are not problems and stay grey. The
 original and the suggestions are therefore drawn at the same size in the same place. The view
 reports the gallery area's size in screen pixels (`GallerySizeChanged`, `SetGallerySize`) and
-the previews are computed to fit it. The run is always for print; the tab keeps that set and the screen set derived from it
+the previews are computed to cover it (the stride above). A result without a gallery (a
+problem) is never recomputed for a larger area: its reason does not depend on the size. The run
+is always for print; the tab keeps that set and the screen set derived from it
 (`CurveRun.ForScreen`), makes the bitmaps once and then drops the preview rasters, so changing
 the purpose only rebuilds the rows over the same bitmaps and keeps the position. Each run has
 a number (`_run`): `Reset`, on another image or a clear, advances it and frees `IsBusy`, and a

@@ -138,9 +138,9 @@ nothing and show what the analysis decided. Esc closes them.
 The **Curves Editing** tab is filled right after the analysis, so it is ready when you open it:
 a gallery of the original, then three or four suggestions, **Gentle**, **Moderate**, **Strong**
 and, when the peaks still have room under 0.92 of the scale, **Maximum**, each at the size that
-fits the window. Choose **Print** or **Screen** for the evidence under them; **Calculate**
-computes the gallery again, at the size the tab has now. Browse them with **< Back** and **Next >**,
-or with the Left and Right arrow keys.
+fits the window, filling the tab's area; when the area grows (a larger screen, a resized
+window) the gallery is computed again by itself. Choose **Print** or **Screen** for the evidence
+under them. Browse them with **< Back** and **Next >**, or with the Left and Right arrow keys.
 
 The curves are contrast curves: they do not move the dust or the sky, they spread the classes
 above them, taking the peaks towards 0.92 of the scale. Their points come from the classes of the
@@ -189,8 +189,10 @@ hue of every pixel stay what they were. It is computed right after the analysis,
   colours near the paper's limit too, from 90 % and 80 % of it, so that a run of growing
   saturation keeps its steps instead of ending flat. **Back**, **Next** and the arrow keys move
   between them.
-- **Show what does not fit** paints in red, on the image shown, the pixels whose colour the
-  paper still cannot reproduce; on the original it is the Soft proof tab's warning.
+- **Show what does not fit**, on by default, paints in red, on the image shown, the pixels whose
+  colour the paper still cannot reproduce; on the original it is the Soft proof tab's warning,
+  and under the original are its figures: the share of colours the paper cannot reproduce, how
+  many of them are dark tones, and the recipe for doing it by hand.
 - Under each variant: the share of colours the paper cannot reproduce before and after, how many
   pixels changed and how much saturation they lose, how many of the colours outside are dark
   tones, and the recipe for doing it by hand in another program (a mask on the tones under a

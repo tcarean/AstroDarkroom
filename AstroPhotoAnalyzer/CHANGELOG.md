@@ -14,6 +14,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the dust reads L\* 4.9 without the WCS against 4.85 with it (3.5 before); on deep-sky frames
   the dust verdict does not move, the nebula class is smaller and the curve anchors a few L\*
   higher.
+- The Curves Editing and Colours for paper tabs have no Calculate button any more (ADR 0084):
+  their previews are made at least the size the tab shows them at (never over 8 MP) and shrunk
+  to fit it, so the image fills the area, and when the area allows finer previews the gallery is
+  computed again by itself.
 
 ### Added
 

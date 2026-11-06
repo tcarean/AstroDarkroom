@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- GamutFitView - the Culori pentru hartie tab (R-178): the box for the red layer,
-     "Calculeaza", the gallery with the original and the three variants of the paper fit, the
+<!-- GamutFitView - the Culori pentru hartie tab (R-178): the box for the red layer, the
+     gallery with the original and the three variants of the paper fit, the
      evidence of the variant shown and its save button. The grid of CurvesView: the image takes
      all the remaining room. No figure is computed here. -->
 
@@ -39,8 +39,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <CheckBox Content="{local:T En='show what does not fit', Ro='arata ce nu intra'}" IsChecked="{Binding ShowOutside}" Foreground="{StaticResource TextBr}"
                 VerticalAlignment="Center" Margin="0,0,20,0"
                 ToolTip="{local:T En='Paints in red the pixels whose colour the paper still cannot reproduce on the image shown; on the original, the same warning as in the Soft proof tab', Ro='Coloreaza in rosu pixelii a caror culoare hartia tot nu o poate reda pe imaginea aratata; pe original, acelasi avertisment ca in tabul Soft proof'}" />
-      <Button Content="{local:T En='Calculate', Ro='Calculeaza'}" Command="{Binding Calculate}" Padding="14,3"
-              ToolTip="{local:T En='Computes the gallery again, at the size the tab has now; after an analysis it is computed on its own', Ro='Calculeaza galeria din nou, la marimea de acum a tabului; dupa o analiza se calculeaza singura'}" />
       <TextBlock Text="{Binding Message}" VerticalAlignment="Center" Margin="16,0,0,0" TextWrapping="Wrap" MaxWidth="900">
         <TextBlock.Style>
           <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
@@ -55,11 +53,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </StackPanel>
 
     <Border Grid.Row="1" x:Name="GalleryArea" Background="{StaticResource PanelBg2}" CornerRadius="4" SizeChanged="GallerySizeChanged">
-      <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}">
+      <!-- The preview is at least the size the view shows it at, so the Viewbox only shrinks it;
+           it may enlarge only when the core says the preview was held under its cap, on a very
+           large area (ADR 0084). An image smaller than the area is shown at its own size. -->
+      <Viewbox Stretch="Uniform" Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}">
+        <Viewbox.Style>
+          <Style TargetType="Viewbox">
+            <Setter Property="StretchDirection" Value="DownOnly" />
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding PreviewCapped}" Value="True">
+                <Setter Property="StretchDirection" Value="Both" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </Viewbox.Style>
         <!-- The image and, over it, the red layer of what the paper cannot hold, the same size. -->
         <Grid Width="{Binding Current.Width}" Height="{Binding Current.Height}">
-          <Image Source="{Binding Current.Image}" Stretch="None" />
-          <Image Source="{Binding Current.Overlay}" Stretch="None" />
+          <Image Source="{Binding Current.Image}" Stretch="None" RenderOptions.BitmapScalingMode="HighQuality" />
+          <Image Source="{Binding Current.Overlay}" Stretch="None" RenderOptions.BitmapScalingMode="HighQuality" />
         </Grid>
       </Viewbox>
     </Border>

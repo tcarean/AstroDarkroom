@@ -228,8 +228,10 @@ public class ViewModelTests
         Assert.Equal("Originalul", vm.Curves.Current.Name);
         Assert.True(vm.Curves.Items.Count > 1);
 
-        // The size is the default of a screen never reported: the previews fit a Full HD gallery.
-        Assert.InRange(vm.Curves.Current.Image.PixelWidth, 1, Thresholds.CurvePreviewDefaultWidth);
+        // The size is the default of a screen never reported, and the 512 px image is smaller
+        // than it: the preview is the whole image, not enlarged (ADR 0084).
+        Assert.Equal(512, vm.Curves.Current.Image.PixelWidth);
+        Assert.False(vm.Curves.PreviewCapped);
         Assert.InRange(vm.Curves.Current.Image.PixelHeight, 1, Thresholds.CurvePreviewDefaultHeight);
 
         // A run a bad field stops keeps the tabs, the gallery with them, and starts nothing.

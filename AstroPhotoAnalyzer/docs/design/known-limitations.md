@@ -149,6 +149,11 @@
   dialog asks before replacing any existing file.
 - `Salveaza ca...` writes on the UI thread, with a wait cursor: about a second for a 24 MP float
   FITS on an SSD.
+- On a gallery area over 8 MP (a 5K screen; a 4K screen's gallery area stays under it, the
+  window's chrome and the rows under the gallery taken off its 8.3 MP) with an image over 8 MP
+  but smaller than the area, the cap of `CurvePreviewMaxPixels` holds the preview under its cap
+  and the view enlarges it past the image's own size (ADR 0084); on a 4K screen and under, a
+  small image stays at its own size.
 - The paper fit never moves a tone: a pixel whose tone itself is out of the paper's reach (its
   grey fails the rule, which happens under the paper's black of a canvas) stays as it is and is
   counted in the evidence; the Tonuri tab's lift is the remedy (ADR 0083). Far past the paper's

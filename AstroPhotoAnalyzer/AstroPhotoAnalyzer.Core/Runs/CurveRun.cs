@@ -19,9 +19,10 @@
 // and the saving of one (R-140 to R-145, ADR 0032).
 //
 // It is not in AnalysisRun because it is not a diagnosis and it costs: it runs after the
-// analysis, started by the window once the other tabs are filled (ADR 0051) or by "Calculeaza"
-// in the Editare Curbe tab, on the analysis's result (the raster, the patch map, the noise, the
-// parameters). The console does not call it. The purpose (print or screen)
+// analysis, started by the window once the other tabs are filled (ADR 0051), and again when
+// the Editare Curbe tab's area allows a finer preview (ADR 0084), on the analysis's result (the
+// raster, the patch map, the noise, the parameters). The console does not call it. The purpose
+// (print or screen)
 // changes no curve: it adds the paper checks and the gamut figure to the evidence.
 
 using System;
@@ -61,6 +62,12 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>Where the anchors come from, for the user.</summary>
         internal string SourceSentence { get; init; }
+
+        /// <summary>
+        /// Whether the previews are smaller than the view shows them, held under the cap of
+        /// Thresholds.CurvePreviewMaxPixels, so the view must enlarge them (ADR 0084).
+        /// </summary>
+        internal bool PreviewCapped { get; init; }
     }
 
     /// <summary>
@@ -76,19 +83,53 @@ namespace AstroPhotoAnalyzer
         static readonly Logger Log = LogManager.GetLogger("CurveRun");
 
         /// <summary>
-        /// The integer step that brings the image into <paramref name="maxWidth"/> x
-        /// <paramref name="maxHeight"/>.
+        /// The integer step whose subsample still covers the size the view shows it at: the
+        /// image's aspect fitted into an area of <paramref name="maxWidth"/> x
+        /// <paramref name="maxHeight"/>, so that the view, which only shrinks a preview, keeping
+        /// its aspect, fills the area with it (ADR 0084); 1 when the image is smaller than the
+        /// area. The dimension that limits the fit decides, so a preview is never larger than
+        /// the fit needs; and never larger than Thresholds.CurvePreviewMaxPixels, the step
+        /// staying at the smallest that keeps it within, for the view to enlarge (a 4K area on
+        /// a 23 MP image would otherwise take the whole image).
         /// </summary>
         /// <param name="r">The image.</param>
-        /// <param name="maxWidth">The largest width, in pixels; under 1 counts as 1.</param>
-        /// <param name="maxHeight">The largest height, in pixels; under 1 counts as 1.</param>
-        /// <returns>The smallest stride, at least 1, whose subsample fits both.</returns>
+        /// <param name="maxWidth">The area's width, in pixels; under 1 counts as 1.</param>
+        /// <param name="maxHeight">The area's height, in pixels; under 1 counts as 1.</param>
+        /// <returns>The largest stride, at least 1, whose subsample is at least the fitted size, or the smallest that keeps the preview within the cap.</returns>
         internal static int PreviewStride(Raster r, int maxWidth, int maxHeight)
-            => Math.Max(1, (int)Math.Ceiling(Math.Max(r.W / (double)Math.Max(1, maxWidth), r.H / (double)Math.Max(1, maxHeight))));
+        {
+            var (covering, withinCap) = PreviewStrides(r, maxWidth, maxHeight);
+            return Math.Max(1, Math.Max(covering, withinCap));
+        }
+
+        /// <summary>
+        /// Whether the cap of Thresholds.CurvePreviewMaxPixels decides the stride for an area,
+        /// so that the preview is smaller than the size the view shows it at and the view must
+        /// enlarge it (the one case it does, ADR 0084).
+        /// </summary>
+        /// <param name="r">The image.</param>
+        /// <param name="maxWidth">The area's width, in pixels; under 1 counts as 1.</param>
+        /// <param name="maxHeight">The area's height, in pixels; under 1 counts as 1.</param>
+        /// <returns>True when the cap's stride is over the covering one.</returns>
+        internal static bool PreviewCapped(Raster r, int maxWidth, int maxHeight)
+        {
+            var (covering, withinCap) = PreviewStrides(r, maxWidth, maxHeight);
+            return withinCap > Math.Max(1, covering);
+        }
+
+        /// <summary>The two strides <see cref="PreviewStride"/> chooses between.</summary>
+        /// <param name="r">The image.</param>
+        /// <param name="maxWidth">The area's width, in pixels; under 1 counts as 1.</param>
+        /// <param name="maxHeight">The area's height, in pixels; under 1 counts as 1.</param>
+        /// <returns>The largest stride still covering the fitted size (0 when the image is smaller than the area), and the smallest keeping the preview within the cap.</returns>
+        static (int Covering, int WithinCap) PreviewStrides(Raster r, int maxWidth, int maxHeight)
+            => ((int)Math.Floor(Math.Max(r.W / (double)Math.Max(1, maxWidth), r.H / (double)Math.Max(1, maxHeight))),
+                (int)Math.Ceiling(Math.Sqrt((double)r.W * r.H / Thresholds.CurvePreviewMaxPixels)));
 
         /// <summary>
         /// The suggested curves for the analysed image <paramref name="a"/>, with the evidence
-        /// for <paramref name="purpose"/> and with previews that fit in the given rectangle.
+        /// for <paramref name="purpose"/> and with previews at least as large as the view shows
+        /// them in the given area (<see cref="PreviewStride"/>).
         /// The anchors and the evidence are measured on the tonal subsample
         /// (<see cref="Thresholds.TonalStride"/>), on the classes of the simulation's map.
         /// </summary>
@@ -96,8 +137,8 @@ namespace AstroPhotoAnalyzer
         /// <param name="purpose">
         /// Print adds the paper checks and the gamut figure (or its note) to each evidence.
         /// </param>
-        /// <param name="maxWidth">The previews' largest width, in screen pixels.</param>
-        /// <param name="maxHeight">The previews' largest height, in screen pixels.</param>
+        /// <param name="maxWidth">The gallery area's width, in screen pixels.</param>
+        /// <param name="maxHeight">The gallery area's height, in screen pixels.</param>
         /// <param name="progress">
         /// Told each stage as it starts: "ancore", "gamut" (when the table is built), then each
         /// suggestion's name; null for none.
@@ -128,6 +169,7 @@ namespace AstroPhotoAnalyzer
                 Labels = labels,
                 OriginalPreview = original,
                 SourceSentence = CurveTexts.AnchorSource(map, sim.MethodNote),
+                PreviewCapped = PreviewCapped(r, maxWidth, maxHeight),
             };
             clock.Lap("anchors");
             if (Log.IsDebugEnabled)
