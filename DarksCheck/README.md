@@ -115,7 +115,7 @@ the same in both languages; the verdict words are `OK`, `WARNING` and `UNMEASURE
 ### The report
 
 `darkscheck <folder>` decodes the biases, if there are any, then the darks, `--threads N` at a
-time (the progress goes to stderr: `decoding darks: 3 / 20`), and holds them in memory as 16-bit
+time (the progress goes to stderr: `Reading the darks: 3 / 20`), and holds them in memory as 16-bit
 mosaics, 48 MB a frame at 24 MP. Above 60 frames, or the cap `--max-frames N` sets, it decodes
 one file in k and lists the others as `skipped`, which is not an error. Then it reads the lights
 one by one, under the same cap, without keeping them. It prints the session's lines, one section
@@ -505,11 +505,12 @@ With `--lang ro` the tabs are Rezumat, Cadre, Harti, Pixeli fierbinti, Lights, I
 scara ADU and Raport. A screen reader such as Narrator reaches what each tab shows, not only the
 tabs' names.
 
-The top bar holds four settings: `THREADS`, how many frames are decoded in parallel (empty =
+The top bar holds four settings: `THREADS`, how many frames are read at the same time (empty =
 half the cores); `MAX FRAMES`, how many frames are held in memory and how many lights are
-measured (60 by default); `GAIN / ISO STOP`, how much the signal grows for one stop of ISO, for
-the normalisation to ISO 400 (2 = linear, the D3300's); and `DEGREES / DOUBLING`, how many
-degrees double the dark current, for the degrees in the report (6). The four and the partner are
+measured (60 by default); `SIGNAL / ISO STOP`, how many times the signal grows at every ISO stop,
+so that every frame is worked out at ISO 400 (2 = it doubles at every stop, the D3300's); and
+`DEGREES / DOUBLING`, by how many degrees more the dark current doubles, from which the report's
+degrees are worked out (6). The four and the partner are
 read when a folder is opened and remembered between starts in
 `%LOCALAPPDATA%\DarksCheck\settings.json`, the only file the window writes outside the folder
 you export to besides its log ("Logs" below); a value that is not a positive number with `.` as its decimal separator means the

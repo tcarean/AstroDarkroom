@@ -72,7 +72,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0"
                     IsEnabled="{Binding IsIdle}">
           <StackPanel Margin="0,0,12,0">
-            <TextBlock Style="{StaticResource Faint}" Text="{l:T En='THREADS', Ro='FIRE'}" ToolTip="{l:T En='How many frames are decoded in parallel; blank = half the cores', Ro='Cate cadre se decodeaza in paralel; gol = jumatate din nuclee'}" />
+            <TextBlock Style="{StaticResource Faint}" Text="{l:T En='THREADS', Ro='FIRE'}" ToolTip="{l:T En='How many frames are read at the same time; blank = half the cores of the processor', Ro='Cate cadre se citesc in acelasi timp; gol = jumatate din nucleele procesorului'}" />
             <TextBox Style="{StaticResource Field}" Width="48" Margin="0,3,0,0" Text="{Binding ThreadsText, UpdateSourceTrigger=PropertyChanged}" />
           </StackPanel>
           <StackPanel Margin="0,0,12,0">
@@ -80,7 +80,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBox Style="{StaticResource SettingField}" Tag="{Binding MaxFramesIsValid}" Width="56" Margin="0,3,0,0" Text="{Binding MaxFramesText, UpdateSourceTrigger=PropertyChanged}" />
           </StackPanel>
           <StackPanel Margin="0,0,12,0">
-            <TextBlock Style="{StaticResource Faint}" Text="{l:T En='GAIN / ISO STOP', Ro='CASTIG / TREAPTA ISO'}" ToolTip="{Binding IsoFactorTip}" />
+            <TextBlock Style="{StaticResource Faint}" Text="{l:T En='SIGNAL / ISO STOP', Ro='SEMNAL / TREAPTA ISO'}" ToolTip="{Binding IsoFactorTip}" />
             <TextBox Style="{StaticResource SettingField}" Tag="{Binding IsoFactorIsValid}" Width="56" Margin="0,3,0,0" Text="{Binding IsoFactorText, UpdateSourceTrigger=PropertyChanged}" />
           </StackPanel>
           <StackPanel>

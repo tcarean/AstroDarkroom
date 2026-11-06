@@ -170,8 +170,8 @@ pairs read as properties. The verdict chips colour either language's words
 `master bias` and `dark - bias` and the sections by their `5.`, `9.` and `INDEX` prefixes,
 which the report keeps the same in both languages. `LanguageWindowTests` render every tab in an
 English scope and look for Romanian words, and the Cadre, Harti, Pixeli fierbinti, Lights and Index
-tabs in both languages for the method's words of R-083 to R-087, the list `PlainWords.cs` that the core's
-tests share, linked like the fixtures.
+tabs and the empty window's start screen and top bar in both languages for the method's words of
+R-083 to R-088, the list `PlainWords.cs` that the core's tests share, linked like the fixtures.
 
 ## Culture, title bar, icon
 

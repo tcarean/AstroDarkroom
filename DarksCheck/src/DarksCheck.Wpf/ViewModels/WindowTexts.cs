@@ -54,12 +54,12 @@ internal static class WindowTexts
         "Alege folderul unei sesiuni sau al unei biblioteci de dark-uri");
 
     internal static string EmptyLead => T(
-        "The Siril working folder, the one that holds darks\\ and, optionally, biases\\ and lights\\, or a folder with "
-        + "the darks directly in it (a library). The analysis starts by itself once you have chosen it: the biases, the darks "
-        + "and the lights are decoded and measured, then come the index and the label.",
-        "Folderul de lucru din Siril, cel care contine darks\\ si, optional, biases\\ si lights\\, sau un folder cu "
-        + "dark-urile direct in el (o biblioteca). Analiza porneste singura dupa ce l-ai ales: bias-urile, dark-urile "
-        + "si lights-urile sunt decodate si masurate, apoi vine indexul si eticheta.");
+        "The Siril working folder, the one that holds darks\\ and, if you have them, biases\\ and lights\\, or a folder with "
+        + "the darks directly in it (a library). The analysis starts by itself once you have chosen it: the program reads and "
+        + "measures the biases, the darks and the lights, then works out the index and the label.",
+        "Folderul de lucru din Siril, cel care contine darks\\ si, daca le ai, biases\\ si lights\\, sau un folder cu "
+        + "dark-urile direct in el (o biblioteca). Analiza porneste singura dupa ce l-ai ales: programul citeste si masoara "
+        + "bias-urile, dark-urile si lights-urile, apoi socoteste indexul si eticheta.");
 
     internal static string ProblemTitle => T("The folder cannot be analysed", "Folderul nu se poate analiza");
 
@@ -133,16 +133,16 @@ internal static class WindowTexts
         $"cati dintre ei nu au niciun vecin care sa iasa si el peste {RoCount(RunReport.F(Th.LightIsolationSigmas, 0))}ori zgomotul: pixeli fierbinti, nu stele");
 
     internal static string MaxFramesTip => T(
-        $"How many frames are held in memory (48 MB each at 24 MP) and how many lights are measured; above that, one in k is taken. Default {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.",
-        $"Cate cadre se tin in memorie (48 MB fiecare la 24 MP) si cate lights se masoara; peste, se ia unul din k. Implicit {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.");
+        $"How many frames are held in memory (48 MB each at 24 MP) and how many lights are measured; if there are more, only some are read, evenly spaced (one in two, for example). Default {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.",
+        $"Cate cadre se tin in memorie (48 MB fiecare la 24 MP) si cate lights se masoara; daca sunt mai multe, se citesc doar unele, la distante egale (de exemplu unul din doua). Implicit {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.");
 
     internal static string IsoFactorTip => T(
-        $"How many times the signal grows per ISO stop, for the normalisation to ISO {RunReport.F(Th.NormIso, 0)}; {RunReport.F(Normalisation.Default.IsoFactorPerStop, 0)} = linear in ISO (D3300)",
-        $"De cate ori creste semnalul la o treapta de ISO, pentru normalizarea la ISO {RunReport.F(Th.NormIso, 0)}; {RunReport.F(Normalisation.Default.IsoFactorPerStop, 0)} = liniar in ISO (D3300)");
+        $"How many times the signal grows at every ISO stop; with it every frame is worked out at ISO {RunReport.F(Th.NormIso, 0)}, so that they can be compared. {RunReport.F(Normalisation.Default.IsoFactorPerStop, 0)} = the signal doubles at every stop (D3300)",
+        $"De cate ori creste semnalul la fiecare treapta de ISO; cu el, toate cadrele se socotesc la ISO {RunReport.F(Th.NormIso, 0)}, ca sa poata fi comparate. {RunReport.F(Normalisation.Default.IsoFactorPerStop, 0)} = semnalul se dubleaza la fiecare treapta (D3300)");
 
     internal static string DoublingTip => T(
-        $"How many degrees double the dark current, for the degrees in the report; {RunReport.F(Th.DoublingCelsius, 0)} on the D3300",
-        $"La cate grade se dubleaza curentul de intuneric, pentru gradele din raport; {RunReport.F(Th.DoublingCelsius, 0)} la D3300");
+        $"By how many degrees more the dark current doubles (what the sensor gathers from its own heat); the degrees in the report are worked out from it. {RunReport.F(Th.DoublingCelsius, 0)} on the D3300",
+        $"La cate grade in plus se dubleaza curentul de intuneric (ce aduna senzorul din caldura lui); din el se socotesc gradele din raport. {RunReport.F(Th.DoublingCelsius, 0)} la D3300");
 
     internal static string MapsLead => T(
         $"The three maps show the frame in squares of {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px: the dark master (the mean of the frames), the bias master "

@@ -191,7 +191,7 @@ public class AcceptanceTests
         using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel }, biases: 2);
         (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
         Assert.Equal(0, code);
-        Assert.Contains("masurare dark-uri: 4 / 4", stderr, StringComparison.Ordinal);
+        Assert.Contains("Se masoara dark-urile: 4 / 4", stderr, StringComparison.Ordinal);
         Assert.Contains("=== DARK-URI: cadre citite 4 din 4, 256 x 192 px, valori de la 200 (negru) la 65535 ADU (alb) (FITS pe 16 biti, albul dedus din fisier, negrul luat din bias-uri), filtre de culoare RGGB ===", stdout, StringComparison.Ordinal);
         foreach (string section in new[] { "  2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "  3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "  4. ZGOMOTUL FIECARUI CADRU", "  5. PIXELI FIERBINTI", "  6. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "  7. PIXELI MORTI SI SATURATI", "  8. CATE DARK-URI AJUNG", "  TABEL PE CADRE" })
         {
