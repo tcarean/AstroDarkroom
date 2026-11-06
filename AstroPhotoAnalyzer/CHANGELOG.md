@@ -6,6 +6,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Changed
+
+- Without a WCS, the Great Rift and the Pipe count as dust (R-044, ADR 0084): the sky is now
+  modelled as the middle of each zone instead of its lower quarter, and a patch is dust when
+  3 times the sky's own unevenness under that model instead of 4. On the Smida Milky Way frame
+  the dust reads L\* 4.9 without the WCS against 4.85 with it (3.5 before); on deep-sky frames
+  the dust verdict does not move, the nebula class is smaller and the curve anchors a few L\*
+  higher.
+
 ### Added
 
 - A Colours for paper tab in the window (R-175 to R-178, ADR 0083): the colours the paper cannot

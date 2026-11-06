@@ -60,7 +60,7 @@ Appendix B. Background simulation: what happens if you move the background, now 
   0.251 as is          1.000      26.8     27.0       0.0 %      0.0 %        0.1 %   print-safe
   * = recommended: the lowest print-safe target (the dust does not fall under paper black and the sky is at L* 15 or above)
   dust = the darkest 1 % of the sky patches (no dust found) (no WCS); sky = the middle value of the sky patches (the patches sorted by comparison with the sky); pure black = 32 px patches darker than paper black (L* 3.6 at Dmax 2.4)
-  kinds of patches: dust 0.0 %, sky 81.5 %, nebula 9.9 % (over 0.3 L* above the sky, 4 times the sky's noise), bright nebula 7.4 % (over 0.5 L* above the sky: the brightest part of the nebula), peaks 1.2 %
+  kinds of patches: dust 0.0 %, sky 81.5 %, nebula 9.9 % (over 0.2 L* above the sky, 3 times the sky's noise), bright nebula 7.4 % (over 0.4 L* above the sky: the brightest part of the nebula), peaks 1.2 %
   the background at which the dust reaches exactly paper black: 0.051 at Dmax 2.4 (0.062 if the Dmax is 2.3, <= 0.05 if it is 2.5); as the image is, the dust stays above black from Dmax 1.3 up; the sky reaches L* 15 when the background is 0.149
 
 Appendix C. Export

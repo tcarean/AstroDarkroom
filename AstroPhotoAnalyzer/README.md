@@ -328,10 +328,12 @@ two paths. The report says which path it took and why, and gives each class's sh
 - **The sky path**, without a WCS, or on a frame without the band, wholly inside it, or too
   narrow for the band to be more than a gradient (a deep-sky frame such as the Veil, which spans
   11 degrees of latitude). The classes are relative to the sky modelled from all the patches (the
-  25th percentile of each cell, so that an object does not lift it), with thresholds taken from
-  the image: **nebula** more than 4 sigma of the sky's noise over the model, **dust** as much
-  under it, **bright nebula** over the Otsu threshold of the nebula, **peaks** as above. The
-  report gives the thresholds in L\*.
+  median of each cell), with thresholds taken from the image: **nebula** more than 3 sigma of
+  the sky's noise over the model, **dust** as much under it, **bright nebula** over the Otsu
+  threshold of the nebula, **peaks** as above. The sky's noise is measured on the 32 px patches,
+  so it follows the stretch, not the denoising. On a Milky Way frame without a WCS this finds
+  the Great Rift and the Pipe to within a few tenths of an L\* of the band path. The report
+  gives the thresholds in L\*.
 
 On either path the verdict measures the same way. The **sky** is the median of the sky patches.
 The **dust** is the darkest extended area: the 25th percentile of the dust patches when the dust

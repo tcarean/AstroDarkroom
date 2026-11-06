@@ -1,7 +1,7 @@
 # 0033. Without the band, the classes are relative to the modelled sky with thresholds from the image, and one measurement serves both paths
 
 Date: 2026-10-06
-Status: accepted 2026-10-06
+Status: accepted 2026-10-06; the values of `SkyModelLowPercentile` and `SkyNoiseK` superseded by 0084
 Supersedes: 0025 in part (decision 4, the frame rule); 0026 in part (the fallback to the frame rule and the `NoDust` case); 0032 in part (the histogram anchors without a WCS)
 
 ## Context
