@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Globalization;
 using System.Text;
 using NLog;
 using static CopyWcs.Ui;
@@ -235,26 +236,83 @@ internal sealed class FitsHeader
     /// <returns>The value, or -1 when the card is missing, has no '=' or does not hold an integer (a byte 0xA0 beside the digits is not an integer).</returns>
     public int GetInt(string key)
     {
+        var value = ValueText(key);
+        return value is not null && int.TryParse(value, out var n) ? n : -1;
+    }
+
+    /// <summary>
+    /// The number a card holds, read like <see cref="GetInt"/>, the FITS exponent letter <c>D</c>
+    /// taken as <c>E</c> (<c>1.0D-05</c>): the CD, CDELT and PC values whose determinant R-017
+    /// compares. Invariant whatever the culture.
+    /// </summary>
+    /// <param name="key">The keyword, case-sensitive.</param>
+    /// <returns>The value; null when the card is missing, has no '=' or does not hold a finite number (a string, a logical, nothing).</returns>
+    public double? GetDouble(string key)
+    {
+        var value = ValueText(key)?.Replace('D', 'E').Replace('d', 'e');
+        return value is not null && double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var x) && double.IsFinite(x)
+            ? x
+            : null;
+    }
+
+    /// <summary>
+    /// The text a card's string value holds, between its quotes, a doubled quote read as one and
+    /// the trailing spaces dropped (<c>'TAN     '</c> gives <c>TAN</c>): the <c>CTYPE1</c> whose
+    /// axis R-017 compares. A '/' inside the quotes is part of the text.
+    /// </summary>
+    /// <param name="key">The keyword, case-sensitive.</param>
+    /// <returns>The text; null when the card is missing, has no '=', or its value is not a quoted string closed on the card.</returns>
+    public string? GetString(string key)
+    {
         var card = GetCard(key);
-        if (card is null)
+        var eq = card?.IndexOf('=') ?? -1;
+        if (card is null || eq < 0)
         {
-            return -1;
+            return null;
         }
 
-        var eq = card.IndexOf('=');
-        if (eq < 0)
+        var rest = card[(eq + 1)..].TrimStart(' ');
+        if (rest.Length == 0 || rest[0] != '\'')
         {
-            return -1;
+            return null;
+        }
+
+        var text = new StringBuilder();
+        for (var i = 1; i < rest.Length; i++)
+        {
+            if (rest[i] != '\'')
+            {
+                text.Append(rest[i]);
+            }
+            else if (i + 1 < rest.Length && rest[i + 1] == '\'')
+            {
+                text.Append('\'');
+                i++;
+            }
+            else
+            {
+                return text.ToString().TrimEnd(' ');
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>The text of a card's value: between the '=' and the '/' of a comment, if any, trimmed of spaces only.</summary>
+    /// <param name="key">The keyword, case-sensitive.</param>
+    /// <returns>The text; null when the card is missing or has no '='.</returns>
+    private string? ValueText(string key)
+    {
+        var card = GetCard(key);
+        var eq = card?.IndexOf('=') ?? -1;
+        if (card is null || eq < 0)
+        {
+            return null;
         }
 
         var value = card[(eq + 1)..];
         var slash = value.IndexOf('/');
-        if (slash >= 0)
-        {
-            value = value[..slash];
-        }
-
-        return int.TryParse(value.Trim(' '), out var n) ? n : -1;
+        return (slash >= 0 ? value[..slash] : value).Trim(' ');
     }
 
     /// <summary>Replaces the card of a keyword in place, or appends it when the header has none.</summary>
@@ -273,6 +331,29 @@ internal sealed class FitsHeader
             _cards.Add(card);
         }
     }
+
+    /// <summary>
+    /// Removes every card of a keyword, wherever it sits, the other cards keeping their order:
+    /// how a copy drops the destination's old plate-solve cards (R-016).
+    /// </summary>
+    /// <param name="key">The keyword, case-sensitive, as <see cref="Contains"/> takes it.</param>
+    /// <returns>The cards removed, raw, in the order the header held them; empty when no card had the keyword.</returns>
+    public IReadOnlyList<string> RemoveCards(string key)
+    {
+        var removed = CardsOf(key);
+        if (removed.Count > 0)
+        {
+            _cards.RemoveAll(c => string.Equals(KeywordOf(c), key, StringComparison.Ordinal));
+        }
+
+        return removed;
+    }
+
+    /// <summary>Every card of a keyword, raw, in the order the header holds them; a header may hold a keyword more than once.</summary>
+    /// <param name="key">The keyword, case-sensitive.</param>
+    /// <returns>The cards; empty when no card has the keyword.</returns>
+    public IReadOnlyList<string> CardsOf(string key) =>
+        _cards.Where(c => string.Equals(KeywordOf(c), key, StringComparison.Ordinal)).ToList();
 
     /// <summary>
     /// Appends a HISTORY card, ASCII whatever the text holds (<see cref="AsciiText.Of"/>), so the

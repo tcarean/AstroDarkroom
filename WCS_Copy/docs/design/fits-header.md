@@ -4,9 +4,10 @@
 `src/CopyWcs.Core/WcsMetadataKeys.cs`.
 
 How the header is read, changed and written back by hand, how the one card the tool composes is
-kept ASCII, and which keys a copy takes. What the tool does with them is in
-`run-and-console.md`; why there is no FITS library is ADR 0001; why the bytes are kept as they
-are and the HISTORY card is ASCII is ADR 0010.
+kept ASCII, and which keys a copy takes and which of the destination's it drops. What the tool
+does with them is in `run-and-console.md`; why there is no FITS library is ADR 0001; why the
+bytes are kept as they are and the HISTORY card is ASCII is ADR 0010; why a copy drops the
+destination's old plate-solve cards is ADR 0011.
 
 ## The card and block model
 
@@ -34,10 +35,21 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
 - `GetInt` takes the text after `=` up to a `/`, trimmed, and returns -1 when the card is
   missing, has no `=` or is not an integer. Two files that both lack `NAXIS1` therefore
   compare as equal sizes (-1 and -1); the run does not special-case it, since such a file is
-  not an image.
+  not an image. `GetDouble` reads the same text (`ValueText`, shared by both) as a finite
+  double, invariant, the FITS exponent letter `D` taken as `E`, and gives null for a missing
+  card, a string, a logical or nothing: the numbers of R-017's check. `GetString` reads a quoted
+  value from the card itself, not through `ValueText`, so a '/' inside the quotes stays text; a
+  doubled quote is one, the trailing spaces go, and a value with no closing quote on the card is
+  null.
 - `SetCard(key, raw)` replaces the first card of that keyword in place, keeping its position,
   or appends when there is none; the raw text is padded to 80 or cut at 80 by `Pad`. This is
   the verbatim copy of R-010: the caller passes the source's card, and nothing is reparsed.
+  A second card of the same keyword, which a header may hold though the standard says it
+  should not, is left as it is.
+- `CardsOf(key)` lists every card of a keyword in the header's order; `RemoveCards(key)` takes
+  them all out, the other cards keeping their order, and returns them (R-016). The run logs a
+  dropped key's cards through `CardsOf` before anything changes, and drops them through
+  `RemoveCards` before the first `SetCard`.
 - `AddHistory(text)` appends `HISTORY ` plus at most 72 characters of `AsciiText.Of(text)`
   (R-011): the text is made ASCII first, then cut, so the cut counts the characters written.
 
@@ -115,3 +127,26 @@ no length.
 coefficients in the source's own order between the WCS keys and the optical ones, drops
 duplicates and keeps only the keys the source has (R-007). V-001 in `docs/validation.md`
 shows what this yields on a real Siril header: 61 WCS and SIP keys, 11 optical ones.
+
+`SelectKeysToDrop(source, dest)` walks the destination's `Keywords` in order and keeps each one
+that is in `WcsKeys` or matches `SipCoefficient` and that the source does not have, each once
+(R-016). It is the same two lists that decide what a plate solve is, read from the other side, so
+no card of those keys is left in the target but the source's, save a second card of a keyword the
+source has, which `SetCard` does not reach; a plate-solve card outside both lists (`RADECSYS`,
+`PVi_m`, `CTYPE1A`) is neither copied nor dropped. `OpticalKeys` never take part, so a
+destination's own `OBJECT` or `SITELAT` stays when the source lacks it. The selector itself does
+not look at `CTYPE1`: the run asks for it only when the source has one (ADR 0011). V-002 shows it
+on a real destination: the 4 `CD` keys the SyQon CLI wrote beside Siril's `PC`.
+
+`Determinant(header)` is the determinant of a plate solve's linear part, read as Siril 1.4.4
+reads it (measured, ADR 0011): the CD matrix when the header holds any `CDi_j` card, a missing
+one 0 as the WCS standard says; else `CDELT1` times `CDELT2` (each 1 when missing) times the PC
+matrix's determinant (the identity where a `PC` card is missing). A `CROTA` is not read, since a
+turn has determinant 1 and never mirrors. It is null without `CTYPE1`, without a linear part (no
+`CDi_j` and no `CDELTi` card: the defaults alone would give +1 to a header that holds no scale),
+or when a card it reads is there but holds no number. `Orientation` is its sign, null for 0 too.
+`Mirrored(source, dest)` compares the two orientations only when both `CTYPE1` name the same
+first axis, the text before the first '-' (`RA` of `'RA---TAN-SIP'`): the same solve written
+declination first has the opposite sign without being a mirror, and a `LINEAR` axis is no sky
+solve. It returns true for a mirror, false for the same orientation and null when there is
+nothing to compare (R-017, ADR 0012). V-002's pair has -2.9641E-6 and +2.9641E-6.

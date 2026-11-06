@@ -16,7 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // WcsCopy.cs - the copy run, shared by the console and the window: reads both headers, checks
-// the pixel grid, selects the cards, lists or copies them, and returns what happened as lines
+// the pixel grid and that the destination's own plate solve is no mirror of the source's (R-017),
+// selects the cards and the destination's old plate-solve cards to drop (R-016), lists them, or
+// drops those and copies the others, and returns what happened as lines
 // already worded, so that each application only prints or shows them (ADR 0001, ADR 0007). The
 // run also writes its own lines to the diagnostic log, in English, never the worded ones (R-042,
 // R-046, ADR 0009).
@@ -31,7 +33,7 @@ namespace CopyWcs;
 /// <param name="Dest">The path of the FITS that receives them, and whose data area is kept.</param>
 /// <param name="Output">The path of the file to write, or null to rewrite <paramref name="Dest"/> in place.</param>
 /// <param name="IncludeOptical">True to copy the optical metadata keys beside the WCS keys.</param>
-/// <param name="Force">True to copy even when the two images' dimensions differ.</param>
+/// <param name="Force">True to copy even when the two images' dimensions differ or the destination's own plate solve is the mirror image of the source's (R-005, R-017).</param>
 /// <param name="DryRun">True to list the cards that would be copied and write nothing.</param>
 internal sealed record WcsCopyRequest(
     string Source,
@@ -64,13 +66,15 @@ internal enum WcsCopyKind
 /// <param name="Cards">The raw 80-character cards selected for the copy, in the source's order; empty when the run was refused before the selection.</param>
 /// <param name="Target">The path of the file written; null unless <paramref name="Kind"/> is <see cref="WcsCopyKind.Copied"/>.</param>
 /// <param name="Notes">The closing lines: the heading of a preview, or the count copied and the reminder to check the annotation; empty when the run was refused.</param>
+/// <param name="Dropped">The one line naming the destination's old plate-solve keys the run drops, or would drop in a preview (R-016); null when there is none to drop or the run was refused.</param>
 internal sealed record WcsCopyOutcome(
     WcsCopyKind Kind,
     string? Error,
     IReadOnlyList<string> Warnings,
     IReadOnlyList<string> Cards,
     string? Target,
-    IReadOnlyList<string> Notes);
+    IReadOnlyList<string> Notes,
+    string? Dropped);
 
 /// <summary>The copy run: the one sequence both applications call.</summary>
 internal static class WcsCopy
@@ -80,8 +84,10 @@ internal static class WcsCopy
 
     /// <summary>
     /// Runs a copy: reads both headers, refuses a pixel grid that differs unless forced, warns
-    /// about a source without <c>CTYPE1</c>, selects the cards, and either lists them (a dry
-    /// run) or copies them verbatim, appends a HISTORY card and writes the target with the
+    /// about a source without <c>CTYPE1</c>, refuses a destination whose own plate solve is the
+    /// mirror image of the source's unless forced (R-017), selects the cards and the destination's old
+    /// plate-solve cards to drop (R-016), and either lists them (a dry run) or drops those,
+    /// copies the selected cards verbatim, appends a HISTORY card and writes the target with the
     /// destination's data. Every step writes its line to the diagnostic log (R-042); a refusal's
     /// exception goes there with its stack, the outcome keeps its message only.
     /// </summary>
@@ -158,6 +164,42 @@ internal static class WcsCopy
                 "ATENTIE: sursa nu pare plate-solved (lipseste CTYPE1)."));
         }
 
+        // A destination with a plate solve of its own tells which way its pixels lie: one that is
+        // the mirror image of the source's means the image was mirrored or flipped after the
+        // source was solved, and any copy would point the wrong way (R-017, ADR 0012). The
+        // comparison is logged whatever its result, so a copy that slipped through leaves a trace.
+        bool? mirrored = WcsMetadataKeys.Mirrored(source, dest);
+        string dets = "source det " + LogText.Signed(WcsMetadataKeys.Determinant(source))
+                      + ", destination det " + LogText.Signed(WcsMetadataKeys.Determinant(dest));
+        if (mirrored is null)
+        {
+            Log.Debug("orientation not compared: " + dets);
+        }
+        else if (mirrored == false)
+        {
+            Log.Debug("same orientation: " + dets);
+        }
+        else
+        {
+            if (!request.Force)
+            {
+                Log.Warn("mirrored plate solve: " + dets + "; not forced, nothing is written");
+                clock.Lap("select");
+                clock.Done("refused: mirrored plate solve (" + dets + ")");
+                return Refused(T(
+                    "The destination's own plate solve is a mirror image of the source's: the image was mirrored or flipped "
+                    + "after the source was solved, so the copied WCS would be wrong. Flip the image back first, or keep its "
+                    + "own plate solve. Use --force if you know what you are doing.",
+                    "Plate solve-ul destinatiei e in oglinda fata de cel al sursei: imaginea a fost oglindita/flip-uita "
+                    + "dupa ce sursa a fost rezolvata, asa ca WCS-ul copiat ar fi gresit. Intoarce intai imaginea inapoi "
+                    + "sau pastreaza-i plate solve-ul. Foloseste --force daca stii ce faci."), warnings);
+            }
+
+            Log.Warn("mirrored plate solve: " + dets + "; forced, the copy goes on");
+            warnings.Add(T("WARNING: the destination's own plate solve is a mirror image of the source's. Continuing anyway (--force).",
+                "ATENTIE: plate solve-ul destinatiei e in oglinda fata de cel al sursei. Continui oricum (--force)."));
+        }
+
         var present = WcsMetadataKeys.SelectKeysToCopy(source, request.IncludeOptical);
         if (present.Count == 0)
         {
@@ -169,14 +211,26 @@ internal static class WcsCopy
         }
 
         var cards = present.Select(k => source.GetCard(k)!).ToList();
-        string counts = LogSelection(present, cards, dest, request.IncludeOptical);
+
+        // A plate solve replaces the destination's own whole (R-016): a card of the old one that
+        // the source lacks would stay beside the copied ones, and Siril 1.4.4 reads a CD matrix
+        // over PC and CDELT (ADR 0011). Only a source with a plate solve has one to give.
+        List<string> drop = source.Contains("CTYPE1") ? WcsMetadataKeys.SelectKeysToDrop(source, dest) : [];
+        string counts = LogSelection(present, cards, dest, request.IncludeOptical, drop);
         clock.Lap("select");
 
+        string? dropped = DropLine(drop, request.DryRun);
         if (request.DryRun)
         {
             clock.Done("previewed " + LogText.Int(cards.Count) + " keys " + counts);
             return new WcsCopyOutcome(WcsCopyKind.Previewed, null, warnings, cards, null,
-                [T($"Keys that would be copied ({cards.Count}):", $"Chei care ar fi copiate ({cards.Count}):")]);
+                [T($"Keys that would be copied ({cards.Count}):", $"Chei care ar fi copiate ({cards.Count}):")],
+                dropped);
+        }
+
+        foreach (var k in drop)
+        {
+            dest.RemoveCards(k);
         }
 
         // The raw 80-byte card is copied, not a reparsed value: that keeps the source's
@@ -212,21 +266,60 @@ internal static class WcsCopy
               "the copied WCS will be wrong without any error.",
               "Verifica vizual adnotarea: daca imaginea a fost oglindita/flip-uita " +
               "pe parcursul procesarii, WCS-ul copiat va fi gresit fara sa dea eroare."),
-        ]);
+        ],
+        dropped);
     }
 
     /// <summary>
-    /// Writes the selection to the diagnostic log, before any card is set: the count of keys per
-    /// list, and at Debug one line per key with the source's card and the destination's card it
-    /// replaces (<c>none</c>, <c>same</c>, or that card), the one record a wrong WCS can be
-    /// diagnosed from (R-042).
+    /// The one line naming the destination's old plate-solve keys a run drops (R-016), in the
+    /// run's language: a preview's with the count in brackets, a copy's as a sentence, in the
+    /// singular for one key and, in Romanian, with "de" from 20 keys on.
+    /// </summary>
+    /// <param name="drop">The keys dropped, in the destination's order; empty when none.</param>
+    /// <param name="preview">True for a dry run's line, false for a copy's.</param>
+    /// <returns>The line, or null when there is no key to drop.</returns>
+    private static string? DropLine(List<string> drop, bool preview)
+    {
+        if (drop.Count == 0)
+        {
+            return null;
+        }
+
+        string names = string.Join(", ", drop);
+        int n = drop.Count;
+        if (preview)
+        {
+            return T($"Old plate-solve keys of the destination that would be dropped ({n}): {names}",
+                $"Chei vechi de plate solve ale destinatiei care ar fi eliminate ({n}): {names}");
+        }
+
+        if (n == 1)
+        {
+            return T($"Dropped 1 old plate-solve key of the destination: {names}.",
+                $"Eliminata 1 cheie veche de plate solve a destinatiei: {names}.");
+        }
+
+        // Romanian puts "de" after a number from 20 on, unless its last two digits are 01 to 19.
+        string count = n.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        string ro = n % 100 is 0 or >= 20 ? count + " de" : count;
+        return T($"Dropped {n} old plate-solve keys of the destination: {names}.",
+            $"Eliminate {ro} chei vechi de plate solve ale destinatiei: {names}.");
+    }
+
+    /// <summary>
+    /// Writes the selection to the diagnostic log, before any card is set or dropped: the count
+    /// of keys per list, and at Debug one line per key with the source's card and the
+    /// destination's card it replaces (<c>none</c>, <c>same</c>, or that card), then one line per
+    /// card of the destination dropped (R-016), the one record a wrong WCS can be diagnosed from
+    /// (R-042).
     /// </summary>
     /// <param name="present">The keys selected, in the copy's order.</param>
     /// <param name="cards">The source's cards of those keys, in the same order.</param>
     /// <param name="dest">The destination's header, still as read.</param>
     /// <param name="includeOptical">True when the optical keys were asked for.</param>
-    /// <returns>The counts for the done line: <c>(new 14, replaced 1, identical 0)</c>.</returns>
-    private static string LogSelection(List<string> present, List<string> cards, FitsHeader dest, bool includeOptical)
+    /// <param name="drop">The destination's keys the copy drops, in its order; empty when none.</param>
+    /// <returns>The counts for the done line: <c>(new 14, replaced 1, identical 0, dropped 0)</c>, the dropped ones counted by key.</returns>
+    private static string LogSelection(List<string> present, List<string> cards, FitsHeader dest, bool includeOptical, List<string> drop)
     {
         int wcs = present.Count(k => WcsMetadataKeys.WcsKeys.Contains(k));
         int optical = present.Count(k => WcsMetadataKeys.OpticalKeys.Contains(k));
@@ -261,13 +354,25 @@ internal static class WcsCopy
             }
         }
 
-        return "(new " + LogText.Int(added) + ", replaced " + LogText.Int(replaced) + ", identical " + LogText.Int(identical) + ")";
+        if (Log.IsDebugEnabled)
+        {
+            foreach (var key in drop)
+            {
+                foreach (var card in dest.CardsOf(key))
+                {
+                    Log.Debug("drop " + key + ": " + LogText.Card(card));
+                }
+            }
+        }
+
+        return "(new " + LogText.Int(added) + ", replaced " + LogText.Int(replaced) + ", identical " + LogText.Int(identical)
+               + ", dropped " + LogText.Int(drop.Count) + ")";
     }
 
     /// <summary>A refused outcome: the error line and the warnings raised before it.</summary>
     /// <param name="error">The one line that says why.</param>
     /// <param name="warnings">The warnings raised so far; the outcome keeps them.</param>
-    /// <returns>The outcome, with no cards, no target and no notes.</returns>
+    /// <returns>The outcome, with no cards, no target, no notes and nothing dropped.</returns>
     private static WcsCopyOutcome Refused(string error, List<string> warnings)
-        => new(WcsCopyKind.Refused, error, warnings, [], null, []);
+        => new(WcsCopyKind.Refused, error, warnings, [], null, [], null);
 }

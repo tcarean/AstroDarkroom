@@ -20,21 +20,101 @@ using System.Text.Json;
 namespace CopyWcs.Tests;
 
 /// <summary>
-/// The acceptance figures of <c>docs/validation.json</c>, measured on the header of a real
-/// Siril plate solve kept as a fixture (ADR 0005): which keys the tool selects from it, with
-/// and without the optical ones, in which order, and that a dry run of the console lists the
-/// same cards. In the gate, since the fixture is in the repo. A figure here changes only after
-/// a re-measurement recorded in <c>docs/validation.md</c>.
+/// The acceptance figures of <c>docs/validation.json</c>, measured on real headers kept as
+/// fixtures (ADR 0005): which keys the tool selects from a real Siril plate solve, with and
+/// without the optical ones, in which order, and that a dry run of the console lists the same
+/// cards (the cases with <c>keysWithOptical</c>); which keys a copy drops from a real
+/// destination that holds an old plate solve, and what it copies (the cases with a
+/// <c>destination</c>, R-016). In the gate, since the fixtures are in the repo. A figure here
+/// changes only after a re-measurement recorded in <c>docs/validation.md</c>.
 /// </summary>
 public class ValidationTests
 {
     private sealed record Case(string Id, string Fixture, int Naxis1, int Naxis2, string[] WithOptical, string[] WcsOnly);
 
-    private static IEnumerable<Case> Cases()
+    private sealed record DropCase(string Id, string Fixture, string Destination, int Naxis1, int Naxis2, int KeysCopied, string[] KeysDropped, bool Mirrored);
+
+    private static JsonElement[] AllCases()
     {
         var path = Path.Combine(AppContext.BaseDirectory, "docs", "validation.json");
         using var doc = JsonDocument.Parse(File.ReadAllText(path));
-        foreach (var c in doc.RootElement.GetProperty("cases").EnumerateArray())
+        return doc.RootElement.GetProperty("cases").EnumerateArray().Select(c => c.Clone()).ToArray();
+    }
+
+    private static IEnumerable<DropCase> DropCases()
+    {
+        foreach (var c in AllCases().Where(c => c.TryGetProperty("destination", out _)))
+        {
+            var expected = c.GetProperty("expected");
+            yield return new DropCase(
+                c.GetProperty("id").GetString()!,
+                c.GetProperty("fixture").GetString()!,
+                c.GetProperty("destination").GetString()!,
+                expected.GetProperty("naxis1").GetInt32(),
+                expected.GetProperty("naxis2").GetInt32(),
+                expected.GetProperty("keysCopied").GetInt32(),
+                expected.GetProperty("keysDropped").EnumerateArray().Select(k => k.GetString()!).ToArray(),
+                expected.GetProperty("mirrored").GetBoolean());
+        }
+    }
+
+    public static IEnumerable<object[]> DropCaseIds() => DropCases().Select(c => new object[] { c.Id });
+
+    [Theory]
+    [MemberData(nameof(DropCaseIds))]
+    public void R016_TheKeysDroppedFromTheRealPair_AreTheOnesRecorded(string id)
+    {
+        var c = DropCases().Single(x => x.Id == id);
+        var source = FitsHeader.ReadPrimary(TestData.Fixture(c.Fixture));
+        var dest = FitsHeader.ReadPrimary(TestData.Fixture(c.Destination));
+
+        Assert.Equal(c.Naxis1, dest.GetInt("NAXIS1"));
+        Assert.Equal(c.Naxis2, dest.GetInt("NAXIS2"));
+        Assert.Equal(c.KeysDropped, WcsMetadataKeys.SelectKeysToDrop(source, dest));
+    }
+
+    /// <summary>
+    /// A copy of the real pair into a new file, forced past the mirror check when the pair is
+    /// recorded as mirrored (R-017), copies the recorded count of keys and leaves none of the
+    /// dropped ones.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(DropCaseIds))]
+    public void R016_ACopyOfTheRealPair_CopiesTheRecordedCountAndLeavesNoDroppedKey(string id)
+    {
+        var c = DropCases().Single(x => x.Id == id);
+        using var ws = new TempWorkspace();
+        var output = ws.FilePath("out.fit");
+
+        var outcome = WcsCopy.Run(new WcsCopyRequest(TestData.Fixture(c.Fixture), TestData.Fixture(c.Destination), output,
+            IncludeOptical: true, Force: c.Mirrored, DryRun: false));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.Equal(c.Mirrored ? 1 : 0, outcome.Warnings.Count);
+        Assert.Equal(c.KeysCopied, outcome.Cards.Count);
+        Assert.NotNull(outcome.Dropped);
+        var written = FitsHeader.ReadPrimary(output);
+        Assert.All(c.KeysDropped, k => Assert.False(written.Contains(k), k));
+    }
+
+    /// <summary>The two real headers' plate solves, read as Siril reads them, are mirror images when recorded so, and the copy is then refused without force (R-017).</summary>
+    [Theory]
+    [MemberData(nameof(DropCaseIds))]
+    public void R017_TheRealPairsOrientations_AreAsRecorded_AndAMirrorIsRefusedWithoutForce(string id)
+    {
+        var c = DropCases().Single(x => x.Id == id);
+        var source = FitsHeader.ReadPrimary(TestData.Fixture(c.Fixture));
+        var dest = FitsHeader.ReadPrimary(TestData.Fixture(c.Destination));
+
+        Assert.Equal(c.Mirrored, WcsMetadataKeys.Orientation(source) != WcsMetadataKeys.Orientation(dest));
+        var outcome = WcsCopy.Run(new WcsCopyRequest(TestData.Fixture(c.Fixture), TestData.Fixture(c.Destination), null,
+            IncludeOptical: true, Force: false, DryRun: true));
+        Assert.Equal(c.Mirrored ? WcsCopyKind.Refused : WcsCopyKind.Previewed, outcome.Kind);
+    }
+
+    private static IEnumerable<Case> Cases()
+    {
+        foreach (var c in AllCases().Where(c => c.GetProperty("expected").TryGetProperty("keysWithOptical", out _)))
         {
             var expected = c.GetProperty("expected");
             yield return new Case(

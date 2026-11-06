@@ -208,6 +208,65 @@ public class MainViewModelTests
         Assert.Equal("Destinatia: 100 x 80", vm.DestFacts);
     }
 
+    /// <summary>
+    /// A destination that still holds an old plate solve (R-016): the preview shows the core's
+    /// line naming the keys it would drop under the cards, the line the console prints after
+    /// them; the copy shows it before the two closing lines, as the console prints them, and
+    /// writes the console's bytes.
+    /// </summary>
+    [Fact]
+    public async Task R016_ThePreviewAndTheCopyShowTheConsolesDropLine()
+    {
+        using WindowFixture window = new(destCards: FitsTestData.OldSolveCards());
+        using WindowFixture console = new(destCards: FitsTestData.OldSolveCards());
+        MainViewModel vm = Open(window);
+
+        await vm.Preview();
+
+        (_, string[] lines, _) = Console(window.Source, window.Dest, "--dry-run");
+        Assert.Equal(lines[0], vm.Heading);
+        Assert.Equal(lines[1..^1].Select(l => l[2..]), vm.Cards);
+        Assert.Equal([lines[^1]], vm.Notes);
+        Assert.StartsWith("Chei vechi de plate solve ale destinatiei care ar fi eliminate (6): ", vm.Notes[0], StringComparison.Ordinal);
+
+        await vm.Copy();
+
+        (int code, string[] copyLines, _) = Console(console.Source, console.Dest);
+        Assert.Equal(0, code);
+        Assert.Equal(File.ReadAllBytes(console.Dest), File.ReadAllBytes(window.Dest));
+        Assert.Equal(copyLines.Select(l => l.Replace(console.Dir, window.Dir, StringComparison.Ordinal)), vm.Notes);
+        Assert.Equal(3, vm.Notes.Count);
+        Assert.StartsWith("Eliminate 6 chei vechi de plate solve ale destinatiei: ", vm.Notes[0], StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A destination whose own plate solve is the mirror image of the source's (R-017): the copy
+    /// is refused in the core's words, the console's stderr line, and writes nothing; with the
+    /// option on, the preview goes through under the core's warning.
+    /// </summary>
+    [Fact]
+    public async Task R017_AMirroredDestinationIsRefusedInTheCoresWords_AndTheOptionLetsItThrough()
+    {
+        using WindowFixture f = new(destCards: FitsTestData.MirroredSolveCards());
+        byte[] before = File.ReadAllBytes(f.Dest);
+        MainViewModel vm = Open(f);
+
+        await vm.Copy();
+
+        Assert.True(vm.HasError);
+        Assert.Equal("Refuzat", vm.RefusedHeading);
+        Assert.Equal(Console(f.Source, f.Dest).Stderr, vm.Error);
+        Assert.False(vm.HasCards);
+        Assert.Equal(before, File.ReadAllBytes(f.Dest));
+
+        vm.Force = true;
+        await vm.Preview();
+
+        Assert.False(vm.HasError);
+        Assert.Equal(["ATENTIE: plate solve-ul destinatiei e in oglinda fata de cel al sursei. Continui oricum (--force)."], vm.Warnings);
+        Assert.Equal(before, File.ReadAllBytes(f.Dest));
+    }
+
     /// <summary>A path typed with spaces around it names the same file: the core gets it trimmed, so the written file has no space in its name.</summary>
     [Fact]
     public async Task R032_ThePathsReachTheCoreWithoutTheirSurroundingWhitespace()

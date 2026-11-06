@@ -342,7 +342,7 @@ public class LoggingTests
         Assert.Contains("appended HISTORY WCS copied from source.fit", messages);
         Assert.Contains("write " + dst + " in place through " + dst + ".tmp, the data from byte 2880 of " + dst, messages);
         Assert.Contains("wrote " + dst + " (3.2 KiB) bytes=3280 cards=21 blocks=1 data=400", messages);
-        Assert.Matches("^copy done copied 15 keys into " + Regex.Escape(dst) + @" \(new 14, replaced 1, identical 0\) in \d+ ms"
+        Assert.Matches("^copy done copied 15 keys into " + Regex.Escape(dst) + @" \(new 14, replaced 1, identical 0, dropped 0\) in \d+ ms"
                        + @" \(source \d+ ms, dest \d+ ms, select \d+ ms, write \d+ ms\)$", DoneLine(capture));
         Assert.Contains(capture.Events, e => e.Logger == "FitsHeader" && e.Message.StartsWith("read " + src, StringComparison.Ordinal));
         Assert.Contains(capture.Events, e => e.Logger == "WcsCopy" && e.Message.StartsWith("card OBJECT:", StringComparison.Ordinal));
@@ -360,8 +360,87 @@ public class LoggingTests
 
         Assert.Contains("card OBJECT: OBJECT  = 'M42' | dest: same", capture.Messages);
         Assert.DoesNotContain(capture.Messages, m => m.StartsWith("write ", StringComparison.Ordinal) || m.StartsWith("wrote ", StringComparison.Ordinal));
-        Assert.Matches(@"^copy done previewed 15 keys \(new 14, replaced 0, identical 1\) in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)$",
+        Assert.Matches(@"^copy done previewed 15 keys \(new 14, replaced 0, identical 1, dropped 0\) in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)$",
                        DoneLine(capture));
+    }
+
+    [Fact]
+    public void R042_ADroppedCardIsLoggedWithTheDestinationsCard_InACopyAndInADryRun()
+    {
+        using var ws = new TempWorkspace();
+        var (src, dst) = Pair(ws, dest: FitsTestData.OldSolveCards());
+
+        using (var preview = LogCapture.Start())
+        {
+            Assert.Equal(0, Cli(src, dst, "--dry-run").Code);
+
+            string[] dropLines = preview.Messages.Where(m => m.StartsWith("drop ", StringComparison.Ordinal)).ToArray();
+            Assert.Equal(FitsTestData.OldSolveKeysToDrop, dropLines.Select(m => m[5..m.IndexOf(':', StringComparison.Ordinal)]));
+            Assert.Contains("drop CD1_1: CD1_1   = -0.000264", dropLines);
+            Assert.Contains("drop A_3_0: A_3_0   = 5.0e-10", dropLines);
+            Assert.Matches(@"^copy done previewed 15 keys \(new 7, replaced 7, identical 1, dropped 6\) in \d+ ms",
+                           DoneLine(preview));
+        }
+
+        using var capture = LogCapture.Start();
+        Assert.Equal(0, Cli(src, dst).Code);
+        Assert.Equal(6, capture.Messages.Count(m => m.StartsWith("drop ", StringComparison.Ordinal)));
+        Assert.Matches("^copy done copied 15 keys into " + Regex.Escape(dst) + @" \(new 7, replaced 7, identical 1, dropped 6\) in \d+ ms",
+                       DoneLine(capture));
+    }
+
+    /// <summary>A mirrored destination (R-017): the warning line with both determinants, then the refusal's reason, or the forced copy going on.</summary>
+    [Fact]
+    public void R042_AMirroredDestinationIsLoggedWithBothDeterminants()
+    {
+        using var ws = new TempWorkspace();
+        var (src, dst) = Pair(ws, dest: FitsTestData.MirroredSolveCards());
+
+        using (var refused = LogCapture.Start())
+        {
+            Assert.Equal(1, Cli(src, dst).Code);
+            Assert.Contains("mirrored plate solve: source det -9.3025E-8, destination det +9.3025E-8; not forced, nothing is written", refused.Messages);
+            Assert.Matches(@"^copy done refused: mirrored plate solve \(source det -9\.3025E-8, destination det \+9\.3025E-8\) in \d+ ms",
+                           DoneLine(refused));
+        }
+
+        using var forced = LogCapture.Start();
+        Assert.Equal(0, Cli(src, dst, "--force", "-o", ws.FilePath("out.fit")).Code);
+        Assert.Contains("mirrored plate solve: source det -9.3025E-8, destination det +9.3025E-8; forced, the copy goes on", forced.Messages);
+    }
+
+    /// <summary>The comparison of R-017 is logged at Debug when it passes or cannot be made, so a copy that should have been refused leaves a trace.</summary>
+    [Fact]
+    public void R042_TheOrientationsAreLoggedWhenTheyMatchOrCannotBeCompared()
+    {
+        using var ws = new TempWorkspace();
+        var (src, sameWay) = Pair(ws, dest: FitsTestData.OldSolveCards());
+        string unsolved = ws.WriteFile("unsolved.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli(src, sameWay, "--dry-run").Code);
+        Assert.Equal(0, Cli(src, unsolved, "--dry-run").Code);
+
+        Assert.Contains("same orientation: source det -9.3025E-8, destination det -9.28E-8", capture.Messages);
+        Assert.Contains("orientation not compared: source det -9.3025E-8, destination det none", capture.Messages);
+    }
+
+    /// <summary>A keyword the destination holds twice: one <c>drop</c> line per card, while the done line counts the key once.</summary>
+    [Fact]
+    public void R042_AKeywordHeldTwiceIsLoggedCardByCard_AndCountedOnce()
+    {
+        using var ws = new TempWorkspace();
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards.Add(FitsTestData.Card("CD1_1", "-0.000264"));
+        destCards.Add(FitsTestData.Card("CD1_1", "-0.000265"));
+        var (src, dst) = Pair(ws, dest: destCards);
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli(src, dst, "--dry-run").Code);
+
+        Assert.Equal(["drop CD1_1: CD1_1   = -0.000264", "drop CD1_1: CD1_1   = -0.000265"],
+                     capture.Messages.Where(m => m.StartsWith("drop ", StringComparison.Ordinal)));
+        Assert.Matches(@"^copy done previewed 15 keys \(new 14, replaced 0, identical 1, dropped 1\) in \d+ ms", DoneLine(capture));
     }
 
     [Fact]

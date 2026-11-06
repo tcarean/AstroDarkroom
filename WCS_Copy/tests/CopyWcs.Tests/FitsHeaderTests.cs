@@ -181,6 +181,71 @@ public class FitsHeaderTests
         Assert.True(header.Contains("Z"));
     }
 
+    [Theory]
+    [InlineData("-6.29608997961999E-06", -6.29608997961999E-06)]
+    [InlineData("3.", 3.0)]
+    [InlineData("1.0D-05", 1.0e-05)]
+    [InlineData("1.0d-05", 1.0e-05)]
+    [InlineData("  0.002  ", 0.002)]
+    public void R017_GetDouble_ParsesAFitsNumber(string value, double expected)
+    {
+        var header = ReadHeader(FitsTestData.Card("X", value, "a comment"));
+
+        Assert.Equal(expected, header.GetDouble("X")!.Value, 15);
+    }
+
+    [Theory]
+    [InlineData("'text'")]
+    [InlineData("T")]
+    [InlineData("")]
+    [InlineData("NaN")]
+    [InlineData("Infinity")]
+    public void R017_GetDouble_AValueThatIsNotAFiniteNumber_IsNull(string value)
+    {
+        var header = ReadHeader(FitsTestData.Card("X", value));
+
+        Assert.Null(header.GetDouble("X"));
+        Assert.Null(header.GetDouble("MISSING"));
+    }
+
+    [Theory]
+    [InlineData("'RA---TAN-SIP'", "RA---TAN-SIP")]
+    [InlineData("'TAN     '", "TAN")]
+    [InlineData("'it''s'", "it's")]
+    [InlineData("'a/b' / a comment", "a/b")]
+    [InlineData("3.", null)]
+    [InlineData("'unclosed", null)]
+    public void R017_GetString_ReadsAQuotedFitsString(string value, string? expected)
+    {
+        var header = ReadHeader(FitsTestData.Card("X", value));
+
+        Assert.Equal(expected, header.GetString("X"));
+        Assert.Null(header.GetString("MISSING"));
+    }
+
+    [Fact]
+    public void R016_RemoveCards_RemovesEveryCardOfTheKeyword_AndReturnsThemInOrder()
+    {
+        string first = FitsTestData.Card("CD1_1", "-0.000264");
+        string second = FitsTestData.Card("CD1_1", "-0.000265");
+        var header = ReadHeader(FitsTestData.Card("A", "1"), first, FitsTestData.Card("B", "2"), second);
+
+        IReadOnlyList<string> removed = header.RemoveCards("CD1_1");
+
+        Assert.Equal([first, second], removed);
+        Assert.False(header.Contains("CD1_1"));
+        Assert.Equal(["SIMPLE", "A", "B"], header.Keywords);
+    }
+
+    [Fact]
+    public void R016_RemoveCards_AKeywordTheHeaderLacks_RemovesNothing()
+    {
+        var header = ReadHeader(FitsTestData.Card("A", "1"));
+
+        Assert.Empty(header.RemoveCards("CD1_1"));
+        Assert.Equal(["SIMPLE", "A"], header.Keywords);
+    }
+
     [Fact]
     public void SetCard_ShortCard_PadsTo80Chars()
     {

@@ -7,9 +7,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A copy is refused when the destination's own plate solve is the mirror image of the
+  source's, as in the SyQon CLI's top-down output: the image was flipped after the source was
+  solved, so the copy would point the wrong way. `--force`, and the window's renamed option
+  `Continue even when the dimensions differ or the image is mirrored`, let it through
+  (ADR 0012).
 - A diagnostic log beside each executable, `log\copywcs.log` and `log\CopyWcs.Wpf.log`, five
   files of 1 MiB at most, with each copy's options, the headers read, every card copied and the
-  card of the destination it replaced, the file written, the time of each stage and every error
+  card of the destination it replaced, every card dropped, the file written, the time of each
+  stage and every error
   with its technical details (ADR 0009); attach the `log` folder to a bug report;
   `COPYWCS_LOG` sets the level (`off` to `trace`).
 - The About window lists the third-party components (NLog), and the About button's tooltip
@@ -25,8 +31,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   when the option is absent (ADR 0004); `--lang` anywhere, `--lang=ro` too, a value that is
   not `en` or `ro` refused with exit 1.
 - `README.md`, the user documentation, in English (ADR 0006).
-- One validation case, V-001: the keys the tool selects from the header of a real Siril 1.4.4
-  plate solve of the Veil session of 2026-10-06, kept as a fixture in the repo (ADR 0005).
+- Two validation cases, on real headers kept as fixtures in the repo (ADR 0005): V-001, the keys
+  the tool selects from a Siril 1.4.4 plate solve of the Veil session of 2026-10-06; V-002, that
+  solve against the same stack after the SyQon CLI, a mirror image refused without `--force`,
+  and the keys a forced copy drops (ADR 0011, ADR 0012).
 
 ### Changed
 
@@ -40,6 +48,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the usage gaining its `--lang` line.
 - The `HISTORY` card written into the destination reads `WCS copied from <file>` in both
   languages, where it read `WCS copiat din <file>` (ADR 0004).
+
+### Fixed
+
+- A copy drops the destination's own plate-solve keys that the source does not have, such as
+  a `CD` matrix left beside Siril's `PC` and `CDELT` by an earlier plate solve of the same
+  image. Siril 1.4.4 reads the `CD` matrix first, so such a leftover would have hidden the copied
+  solution. The optical keys are never dropped; the preview and the copy name the keys dropped
+  (ADR 0011).
 
 ### Internal
 

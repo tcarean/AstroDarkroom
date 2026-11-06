@@ -184,6 +184,289 @@ public class WcsCopyTests
         Assert.False(File.Exists(output));
     }
 
+    [Fact]
+    public void R016_Run_Copy_DropsTheDestinationsOldPlateSolveCards_AndNamesThem()
+    {
+        using var ws = new TempWorkspace();
+        var data = FitsTestData.DeterministicData(400);
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), data));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards(), data));
+
+        var outcome = WcsCopy.Run(Request(source, dest));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.Equal("Eliminate 6 chei vechi de plate solve ale destinatiei: CD1_1, CD1_2, CD2_1, CD2_2, CROTA2, A_3_0.", outcome.Dropped);
+        Assert.Equal(2, outcome.Notes.Count);
+        var written = FitsHeader.ReadPrimary(dest);
+        foreach (var key in FitsTestData.OldSolveKeysToDrop)
+        {
+            Assert.False(written.Contains(key), key);
+        }
+
+        // An optical key the source lacks stays; a key both have takes the source's card.
+        Assert.True(written.Contains("SITELAT"));
+        Assert.Equal(FitsHeader.ReadPrimary(source).GetCard("CRVAL1"), written.GetCard("CRVAL1"));
+        Assert.Equal(FitsHeader.ReadPrimary(source).GetCard("A_0_2"), written.GetCard("A_0_2"));
+        Assert.Equal(data, File.ReadAllBytes(dest)[^data.Length..]);
+    }
+
+    [Fact]
+    public void R016_Run_DryRun_NamesTheKeysItWouldDropAndWritesNothing()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards());
+        var dest = ws.WriteFile("dest.fit", destBytes);
+
+        var outcome = WcsCopy.Run(Request(source, dest, dryRun: true));
+
+        Assert.Equal(WcsCopyKind.Previewed, outcome.Kind);
+        Assert.Equal("Chei vechi de plate solve ale destinatiei care ar fi eliminate (6): CD1_1, CD1_2, CD2_1, CD2_2, CROTA2, A_3_0", outcome.Dropped);
+        Assert.Equal(["Chei care ar fi copiate (15):"], outcome.Notes);
+        Assert.Equal(destBytes, File.ReadAllBytes(dest));
+    }
+
+    [Fact]
+    public void R016_Run_IntoANewFile_LeavesTheOldCardsOutAndTheDestinationAsItWas()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards());
+        var dest = ws.WriteFile("dest.fit", destBytes);
+        var output = ws.FilePath("out.fit");
+
+        var outcome = WcsCopy.Run(Request(source, dest, output));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.NotNull(outcome.Dropped);
+        var written = FitsHeader.ReadPrimary(output);
+        Assert.All(FitsTestData.OldSolveKeysToDrop, key => Assert.False(written.Contains(key), key));
+        Assert.Equal(destBytes, File.ReadAllBytes(dest));
+    }
+
+    [Fact]
+    public void R016_Run_SourceWithoutCtype1_DropsNothing()
+    {
+        using var ws = new TempWorkspace();
+        var cards = FitsTestData.PlateSolvedCards();
+        cards.RemoveAll(c => c.StartsWith("CTYPE1", StringComparison.Ordinal));
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(cards));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards()));
+
+        var outcome = WcsCopy.Run(Request(source, dest));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.Single(outcome.Warnings);
+        Assert.Null(outcome.Dropped);
+        var written = FitsHeader.ReadPrimary(dest);
+        Assert.All(FitsTestData.OldSolveKeysToDrop, key => Assert.True(written.Contains(key), key));
+    }
+
+    [Fact]
+    public void R016_Run_NothingToDrop_HasNoLine()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        Assert.Null(WcsCopy.Run(Request(source, dest, dryRun: true)).Dropped);
+        Assert.Null(WcsCopy.Run(Request(source, dest)).Dropped);
+    }
+
+    /// <summary>The one refusal that comes after the cards are dropped in memory: a write that fails names nothing and changes nothing.</summary>
+    [Fact]
+    public void R016_Run_AWriteError_DropsNothingAndHasNoLine()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards());
+        var dest = ws.WriteFile("dest.fit", destBytes);
+        var output = Path.Combine(ws.FilePath("no-such-folder"), "out.fit");
+
+        var outcome = WcsCopy.Run(Request(source, dest, output));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.StartsWith("Eroare la scriere", outcome.Error, StringComparison.Ordinal);
+        Assert.Null(outcome.Dropped);
+        Assert.False(File.Exists(output));
+        Assert.Equal(destBytes, File.ReadAllBytes(dest));
+    }
+
+    [Fact]
+    public void R016_Run_DryRun_SourceWithoutCtype1_NamesNothing()
+    {
+        using var ws = new TempWorkspace();
+        var cards = FitsTestData.PlateSolvedCards();
+        cards.RemoveAll(c => c.StartsWith("CTYPE1", StringComparison.Ordinal));
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(cards));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards()));
+
+        var outcome = WcsCopy.Run(Request(source, dest, dryRun: true));
+
+        Assert.Equal(WcsCopyKind.Previewed, outcome.Kind);
+        Assert.Null(outcome.Dropped);
+    }
+
+    /// <summary>A keyword the source lacks and the destination holds twice: both cards go, and the line names the key once, in the singular.</summary>
+    [Fact]
+    public void R016_Run_AKeywordHeldTwice_DropsBothCards_AndNamesItOnceInTheSingular()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards.Add(FitsTestData.Card("CD1_1", "-0.000264"));
+        destCards.Add(FitsTestData.Card("CD1_1", "-0.000265"));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards));
+
+        var outcome = WcsCopy.Run(Request(source, dest));
+
+        Assert.Equal("Eliminata 1 cheie veche de plate solve a destinatiei: CD1_1.", outcome.Dropped);
+        Assert.False(FitsHeader.ReadPrimary(dest).Contains("CD1_1"));
+        using (Ui.Use(UiLanguage.English))
+        {
+            var english = WcsCopy.Run(Request(source, ws.WriteFile("dest2.fit", FitsTestData.MinimalFitsFile(destCards)), dryRun: true));
+            Assert.Equal("Old plate-solve keys of the destination that would be dropped (1): CD1_1", english.Dropped);
+            var copied = WcsCopy.Run(Request(source, ws.FilePath("dest2.fit")));
+            Assert.Equal("Dropped 1 old plate-solve key of the destination: CD1_1.", copied.Dropped);
+        }
+    }
+
+    /// <summary>From 20 keys on the Romanian count takes "de", unless its last two digits are 01 to 19.</summary>
+    [Theory]
+    [InlineData(19, "Eliminate 19 chei vechi")]
+    [InlineData(20, "Eliminate 20 de chei vechi")]
+    [InlineData(24, "Eliminate 24 de chei vechi")]
+    [InlineData(100, "Eliminate 100 de chei vechi")]
+    [InlineData(101, "Eliminate 101 chei vechi")]
+    [InlineData(119, "Eliminate 119 chei vechi")]
+    [InlineData(120, "Eliminate 120 de chei vechi")]
+    public void R016_Run_TheRomanianCount_TakesDeFrom20(int keys, string start)
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        List<string> destCards = FitsTestData.ProcessedCards();
+        for (var i = 0; i < keys; i++)
+        {
+            destCards.Add(FitsTestData.Card($"A_{4 + (i / 5)}_{i % 5}", "1.0e-12"));
+        }
+
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards));
+
+        var outcome = WcsCopy.Run(Request(source, dest, ws.FilePath("out.fit")));
+
+        Assert.StartsWith(start + " de plate solve ale destinatiei: A_4_0, A_4_1", outcome.Dropped, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R017_Run_AMirroredDestination_IsRefusedWithoutForce_ADryRunToo_AndNothingIsWritten()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards());
+        var dest = ws.WriteFile("dest.fit", destBytes);
+
+        foreach (var dryRun in new[] { false, true })
+        {
+            var outcome = WcsCopy.Run(Request(source, dest, dryRun: dryRun));
+
+            Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+            Assert.Equal("Plate solve-ul destinatiei e in oglinda fata de cel al sursei: imaginea a fost oglindita/flip-uita "
+                         + "dupa ce sursa a fost rezolvata, asa ca WCS-ul copiat ar fi gresit. Intoarce intai imaginea inapoi "
+                         + "sau pastreaza-i plate solve-ul. Foloseste --force daca stii ce faci.", outcome.Error);
+            Assert.Empty(outcome.Cards);
+            Assert.Null(outcome.Dropped);
+            Assert.Equal(destBytes, File.ReadAllBytes(dest));
+        }
+    }
+
+    [Fact]
+    public void R017_Run_AMirroredDestination_WithForce_WarnsAndCopies()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards()));
+
+        var outcome = WcsCopy.Run(Request(source, dest, force: true));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        var warning = Assert.Single(outcome.Warnings);
+        Assert.Equal("ATENTIE: plate solve-ul destinatiei e in oglinda fata de cel al sursei. Continui oricum (--force).", warning);
+        Assert.False(FitsHeader.ReadPrimary(dest).Contains("CD2_2"));
+        using (Ui.Use(UiLanguage.English))
+        {
+            var english = WcsCopy.Run(Request(source, ws.WriteFile("dest2.fit", FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards())), dryRun: true));
+            Assert.Equal(WcsCopyKind.Refused, english.Kind);
+            Assert.StartsWith("The destination's own plate solve is a mirror image of the source's: ", english.Error, StringComparison.Ordinal);
+            var forced = WcsCopy.Run(Request(source, ws.FilePath("dest2.fit"), force: true, dryRun: true));
+            Assert.Equal("WARNING: the destination's own plate solve is a mirror image of the source's. Continuing anyway (--force).", Assert.Single(forced.Warnings));
+        }
+    }
+
+    [Fact]
+    public void R017_Run_ARefusedCopyIntoANewFile_WritesNoFile()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards()));
+        var output = ws.FilePath("out.fit");
+
+        Assert.Equal(WcsCopyKind.Refused, WcsCopy.Run(Request(source, dest, output)).Kind);
+        Assert.False(File.Exists(output));
+    }
+
+    [Fact]
+    public void R017_Run_AMirrorAndASizeMismatch_UnderForce_WarnTheSizeFirst()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(100, 80)));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards(200, 80)));
+
+        var outcome = WcsCopy.Run(Request(source, dest, ws.FilePath("out.fit"), force: true));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.Equal(2, outcome.Warnings.Count);
+        Assert.StartsWith("ATENTIE: Dimensiuni diferite", outcome.Warnings[0], StringComparison.Ordinal);
+        Assert.StartsWith("ATENTIE: plate solve-ul destinatiei e in oglinda", outcome.Warnings[1], StringComparison.Ordinal);
+    }
+
+    /// <summary>The same plate solve written DEC first has the opposite determinant without being a mirror: it is not compared, so it is not refused (R-017).</summary>
+    [Fact]
+    public void R017_Run_ADestinationSolvedDecFirst_IsNotRefused()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        List<string> decFirst = FitsTestData.MirroredSolveCards();
+        decFirst[decFirst.FindIndex(c => c.StartsWith("CTYPE1", StringComparison.Ordinal))] = FitsTestData.Card("CTYPE1", "'DEC--TAN'");
+        decFirst[decFirst.FindIndex(c => c.StartsWith("CTYPE2", StringComparison.Ordinal))] = FitsTestData.Card("CTYPE2", "'RA---TAN'");
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(decFirst));
+
+        var outcome = WcsCopy.Run(Request(source, dest, dryRun: true));
+
+        Assert.Equal(WcsCopyKind.Previewed, outcome.Kind);
+        Assert.Empty(outcome.Warnings);
+    }
+
+    /// <summary>The check needs both plate solves: a source without CTYPE1 only warns as R-006 says, and a destination of the same orientation goes through.</summary>
+    [Fact]
+    public void R017_Run_IsLeftOutWithoutTwoPlateSolves_AndPassesTheSameOrientation()
+    {
+        using var ws = new TempWorkspace();
+        var cards = FitsTestData.PlateSolvedCards();
+        cards.RemoveAll(c => c.StartsWith("CTYPE1", StringComparison.Ordinal));
+        var unsolved = ws.WriteFile("unsolved.fit", FitsTestData.MinimalFitsFile(cards));
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var mirrored = ws.WriteFile("mirrored.fit", FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards()));
+        var sameWay = ws.WriteFile("same.fit", FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards()));
+
+        var noSourceSolve = WcsCopy.Run(Request(unsolved, mirrored, dryRun: true));
+        var sameOrientation = WcsCopy.Run(Request(source, sameWay, dryRun: true));
+
+        Assert.Equal(WcsCopyKind.Previewed, noSourceSolve.Kind);
+        Assert.Contains("nu pare plate-solved", Assert.Single(noSourceSolve.Warnings), StringComparison.Ordinal);
+        Assert.Equal(WcsCopyKind.Previewed, sameOrientation.Kind);
+        Assert.Empty(sameOrientation.Warnings);
+    }
+
     /// <summary>A path that is empty or blank (an unset shell variable) is a refusal like any other unreadable file, not a crash.</summary>
     [Theory]
     [InlineData("")]

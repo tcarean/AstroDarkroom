@@ -1,5 +1,5 @@
 {
-  "$comment": "What the shared scripts, skills and agent need to know about CopyWcs. With docs/skills.md, the only file edited here to use them; scripts/, .claude/skills/, .claude/agents/ and .claude/rules/kit/ are byte-identical with ../ClaudeCodeStarterKit's (scripts/sync.ps1 keeps them so; the kit's ADRs 0017, 0018 and 0028). The one validation case reads a fixture in the repo, so the gate runs every test (ADR 0005). See scripts/kit-config.ps1 for every key.",
+  "$comment": "What the shared scripts, skills and agent need to know about CopyWcs. With docs/skills.md, the only file edited here to use them; scripts/, .claude/skills/, .claude/agents/ and .claude/rules/kit/ are byte-identical with ../ClaudeCodeStarterKit's (scripts/sync.ps1 keeps them so; the kit's ADRs 0017, 0018 and 0028). The two validation cases read fixtures in the repo, so the gate runs every test (ADR 0005). See scripts/kit-config.ps1 for every key.",
   "solution": "CopyWcs.sln",
   "testFilter": "",
   "codeFolders": ["src/"],

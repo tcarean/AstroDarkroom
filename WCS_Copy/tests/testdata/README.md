@@ -4,10 +4,11 @@ Every FITS a test reads is built in memory by `FitsTestData` (a header of hand-w
 and a small data area) and written to a temporary folder by `TempWorkspace`; no generated file
 is kept here.
 
-- `fixtures/` is in the repo: the header blocks of a real Siril plate solve, every 2880-byte
-  block up to and including the one that holds `END`, nothing of the image (the tool reads
-  nothing past the header). It is listed in `manifest.json` with its SHA-256, where it came
-  from and which validation case it demonstrates; `scripts/check-testdata.ps1` checks the hash
+- `fixtures/` is in the repo: the header blocks of two real files, a Siril plate solve and the
+  same stack after the SyQon CLI, every 2880-byte block up to and including the one that holds
+  `END`, nothing of the image (the tool reads nothing past the header). Each is listed in
+  `manifest.json` with its SHA-256, where it came from and which validation case it
+  demonstrates; `scripts/check-testdata.ps1` checks the hash
   as a step of the gate, and `RepoInvariantTests` fails on a fixture missing from the
   manifest. `.gitattributes` marks fixtures `-text`, so git never converts their bytes (the
   kit's ADR 0014).

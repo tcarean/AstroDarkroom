@@ -31,11 +31,12 @@ internal sealed class WindowFixture : IDisposable
     /// <summary>The pair, the destination with the given width (80 rows); 100 matches the source.</summary>
     /// <param name="destWidth">The destination's NAXIS1; the source is always 100 x 80.</param>
     /// <param name="sourceCards">The source's cards; the default plate-solved header when null.</param>
-    internal WindowFixture(int destWidth = 100, List<string>? sourceCards = null)
+    /// <param name="destCards">The destination's cards, which then set its width; the processed header of <paramref name="destWidth"/> when null.</param>
+    internal WindowFixture(int destWidth = 100, List<string>? sourceCards = null, List<string>? destCards = null)
     {
         byte[] data = FitsTestData.DeterministicData(400);
         Source = _ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(sourceCards ?? FitsTestData.PlateSolvedCards(), data));
-        Dest = _ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(destWidth), data));
+        Dest = _ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards ?? FitsTestData.ProcessedCards(destWidth), data));
     }
 
     internal string Source { get; }

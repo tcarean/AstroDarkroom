@@ -127,7 +127,7 @@ public sealed class MainViewModel : ObservableObject
         set => Set(ref _includeOptical, value);
     }
 
-    /// <summary>True to copy even when the two images' dimensions differ.</summary>
+    /// <summary>True to copy even when the two images' dimensions differ or the destination's own plate solve is mirrored (R-005, R-017).</summary>
     public bool Force
     {
         get => _force;
@@ -183,8 +183,18 @@ public sealed class MainViewModel : ObservableObject
 
     public bool HasCards => Cards.Count > 0;
 
-    /// <summary>The core's closing lines of a copy (the count and the reminder); empty otherwise.</summary>
-    public IReadOnlyList<string> Notes => _outcome is { Kind: WcsCopyKind.Copied } ? _outcome.Notes : [];
+    /// <summary>
+    /// The core's lines under the cards, in the console's order: the line naming the
+    /// destination's old plate-solve keys dropped, or a preview would drop (R-016), when there
+    /// is one, then a copy's closing lines (the count and the reminder); empty after a refusal.
+    /// </summary>
+    public IReadOnlyList<string> Notes => _outcome switch
+    {
+        { Kind: WcsCopyKind.Copied, Dropped: { } dropped } o => [dropped, .. o.Notes],
+        { Kind: WcsCopyKind.Copied } o => o.Notes,
+        { Kind: WcsCopyKind.Previewed, Dropped: { } dropped } => [dropped],
+        _ => [],
+    };
 
     public bool HasNotes => Notes.Count > 0;
 

@@ -23,14 +23,34 @@ It is free software under the GNU General Public License v3 or later; see `LICEN
 Only the keys present in the source are copied. On a Siril 1.4.4 solve of a DSLR stack that
 is 72 cards: 21 WCS keys, 40 SIP coefficients and 11 optical keys (`docs/validation.md`).
 
+**The destination's old plate solve is dropped.** When the destination already holds a plate
+solve, one another program made for example, its plate-solve keys that the source does not have
+are removed before the copy: a `CD` matrix beside Siril's `PC` and `CDELT`, a `CROTA`, a SIP
+coefficient of a higher degree. Siril 1.4.4 reads a `CD` matrix in place of `PC` and `CDELT`
+when a file holds both, so a `CD` left behind would hide the copied solution from the very
+program the copy is checked in (ADR 0011). The optical keys are never removed, and nothing is
+removed when the source has no `CTYPE1`. `--dry-run` and the window's Preview name the keys
+that would be dropped under the cards, and a copy names them before its closing lines.
+
 The two images must have the same pixel grid: the tool compares `NAXIS1` and `NAXIS2` and
 refuses to copy when they differ, because the solution would point at the wrong pixels.
 `--force` copies anyway, for the case you know is right.
 
-**Check the result by eye.** If the image was mirrored or flipped during processing, the
-copied solution is wrong without any error being possible: the header cannot know what
-happened to the pixels. Open the result in Siril and look at the annotation before trusting
-it.
+**A mirrored destination is refused.** When the destination holds a plate solve of its own and
+it is the mirror image of the source's (the determinant of its scale and turn, read `CD` first
+as Siril reads it, has the opposite sign, both solves naming RA first), its pixels were mirrored
+or flipped after the source was solved, and a copied solution would point the wrong way: the
+copy is refused, a dry run too, unless `--force` (ADR 0012). The SyQon CLI's output is such an
+image: it stores the rows top-down and writes a flipped `CD` matrix for them, so Siril already
+shows it right. `--force` is also for the rare destination whose own plate solve was left
+mirrored after its pixels were flipped back.
+
+**Check the result by eye.** The mirror check sees a flip only when whatever flipped the pixels
+flipped the destination's own plate solve with them, as Siril and the SyQon CLI do. A program
+that flips the pixels and passes the header through, or a destination with no plate solve of its
+own, leaves nothing to compare, and the copied solution is then wrong without any error being
+possible: the header cannot know what happened to the pixels. Open the result in Siril and look
+at the annotation before trusting it.
 
 ## The console
 
@@ -41,15 +61,16 @@ copywcs <solved.fit> <destination.fit> [options]
 | Option | What it does |
 | --- | --- |
 | `-o, --output <file>` | Write a new file instead of changing the destination in place |
-| `--dry-run` | Show the cards that would be copied, without writing anything |
-| `--force` | Continue even when the images' dimensions differ |
+| `--dry-run` | Show the cards that would be copied, and the old plate-solve keys that would be dropped, without writing anything |
+| `--force` | Continue even when the images' dimensions differ or the destination's own plate solve is mirrored |
 | `--no-optical` | Copy only the WCS keys, not the optical metadata |
 | `--lang en\|ro` | The language of the texts: `en` (English, the default) or `ro` (Romanian) |
 | `-h, --help` | Show the usage and the warranty notice |
 
 Every run begins with the version (`copywcs 1.0.0`) and the copyright line, so a pasted output
 says which version produced it. Exit codes: 0 on success or a dry run, 1 when the copy was
-refused (a file that cannot be read, different dimensions without `--force`, no relevant key,
+refused (a file that cannot be read, different dimensions or a mirrored plate solve without
+`--force`, no relevant key,
 a write error, a `--lang` value that is not `en` or `ro`), 2 on a usage error.
 
 Example: preview, then copy into a new file.
@@ -69,7 +90,8 @@ it was.
 window: dark, one page. Pick the plate-solved source and the destination (or pass them on the
 command line: the first two arguments that are existing files fill the boxes, so a shortcut
 or "Send to" works), choose whether to write into the destination or into a new file, keep or
-drop the optical metadata, allow or refuse different dimensions, then **Preview** or **Copy**.
+drop the optical metadata, allow or refuse different dimensions or a mirrored image, then
+**Preview** or **Copy**.
 Under each file box the window shows what it read from the header (`Source: 5601 x 3692,
 plate-solved`, `Destination: 5601 x 3692`); after a copy the destination reads `already
 plate-solved`.
@@ -109,7 +131,8 @@ write into the same file, each line marked with its process.
 command line, the Windows and .NET versions and the folders; every file read, with its size and
 the header keys that say what it is (`BITPIX`, `NAXIS`, the sizes, `EXTEND`, `CTYPE`,
 `ROWORDER`, the SIP order, `PLTSOLVD`); the options of each copy, every card copied and the card
-of the destination it replaced, the file written and the time each stage took; the warnings, the
+of the destination it replaced, every card of the destination dropped, the file written and the
+time each stage took; the warnings, the
 refusals with their reasons and every error with its technical details; in the window the
 language, the files picked and the About window; at the end the exit code and the time taken.
 The log's own words are English whatever `--lang` says; an error's message appears as you saw

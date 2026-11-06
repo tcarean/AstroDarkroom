@@ -116,4 +116,136 @@ public class WcsMetadataKeysTests
 
         Assert.Equal(selected.Count, selected.Distinct().Count());
     }
+
+    private static FitsHeader Read(List<string> cards) => FitsHeader.ReadFrom(new MemoryStream(FitsTestData.HeaderBlock(cards)));
+
+    [Fact]
+    public void R016_SelectKeysToDrop_TheDestinationsWcsAndSipKeysTheSourceLacks_InTheDestinationsOrder()
+    {
+        var source = Read(FitsTestData.PlateSolvedCards());
+        var dest = Read(FitsTestData.OldSolveCards());
+
+        var drop = WcsMetadataKeys.SelectKeysToDrop(source, dest);
+
+        Assert.Equal(FitsTestData.OldSolveKeysToDrop, drop);
+    }
+
+    [Fact]
+    public void R016_SelectKeysToDrop_NeverAnOpticalKey_AKeyTheSourceHas_OrAnUnrelatedKey()
+    {
+        // SITELAT is optical and absent from the source; CRVAL1, A_0_2 and OBJECT are in both;
+        // ABC_1_2 only looks like a SIP coefficient.
+        var source = Read(FitsTestData.PlateSolvedCards());
+        List<string> destCards = FitsTestData.OldSolveCards();
+        destCards.Add(FitsTestData.Card("ABC_1_2", "1.0"));
+        var dest = Read(destCards);
+
+        var drop = WcsMetadataKeys.SelectKeysToDrop(source, dest);
+
+        Assert.DoesNotContain("SITELAT", drop);
+        Assert.DoesNotContain("CRVAL1", drop);
+        Assert.DoesNotContain("A_0_2", drop);
+        Assert.DoesNotContain("OBJECT", drop);
+        Assert.DoesNotContain("ABC_1_2", drop);
+    }
+
+    [Fact]
+    public void R016_SelectKeysToDrop_AKeywordTwiceInTheDestination_IsNamedOnce()
+    {
+        var source = Read(FitsTestData.PlateSolvedCards());
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards.Add(FitsTestData.Card("CD1_1", "-0.000264"));
+        destCards.Add(FitsTestData.Card("CD1_1", "-0.000265"));
+        var dest = Read(destCards);
+
+        var drop = WcsMetadataKeys.SelectKeysToDrop(source, dest);
+
+        Assert.Equal(["CD1_1"], drop);
+    }
+
+    [Fact]
+    public void R017_Orientation_ReadsTheCdMatrixFirst_AsSirilDoes()
+    {
+        // The SyQon-like header: CDELT as Siril left it (negative), the CD turned over (positive).
+        Assert.Equal(1, WcsMetadataKeys.Orientation(Read(FitsTestData.MirroredSolveCards())));
+    }
+
+    [Fact]
+    public void R017_Orientation_WithoutCd_IsCdeltTimesThePcMatrix_TheIdentityWhereAPcCardIsMissing()
+    {
+        Assert.Equal(-1, WcsMetadataKeys.Orientation(Read(FitsTestData.PlateSolvedCards())));
+
+        List<string> turnedOver = FitsTestData.PlateSolvedCards();
+        turnedOver.Add(FitsTestData.Card("PC2_2", "-1.0"));
+        Assert.Equal(1, WcsMetadataKeys.Orientation(Read(turnedOver)));
+    }
+
+    [Fact]
+    public void R017_Orientation_AMissingCdeltCountsAs1()
+    {
+        List<string> cards = [FitsTestData.Card("SIMPLE", "T"), FitsTestData.Card("CTYPE1", "'RA---TAN'")];
+
+        Assert.Equal(-1, WcsMetadataKeys.Orientation(Read([.. cards, FitsTestData.Card("CDELT1", "-0.000305")])));
+        Assert.Equal(1, WcsMetadataKeys.Orientation(Read([.. cards, FitsTestData.Card("CDELT2", "0.000305")])));
+    }
+
+    /// <summary>
+    /// Two plate solves are compared only when both have a linear part (a CD or a CDELT card) and
+    /// the same first axis: a header with neither, one whose first axis is DEC, or a LINEAR one
+    /// is no mirror of an RA-first solve (R-017).
+    /// </summary>
+    [Fact]
+    public void R017_Mirrored_ComparesOnlyTwoSolvesWithALinearPartAndTheSameFirstAxis()
+    {
+        var source = Read(FitsTestData.PlateSolvedCards());
+
+        Assert.True(WcsMetadataKeys.Mirrored(source, Read(FitsTestData.MirroredSolveCards())));
+        Assert.False(WcsMetadataKeys.Mirrored(source, Read(FitsTestData.OldSolveCards())));
+
+        List<string> noLinearPart = FitsTestData.ProcessedCards();
+        noLinearPart.AddRange([FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"), FitsTestData.Card("CRVAL1", "83.6")]);
+        Assert.Null(WcsMetadataKeys.Mirrored(source, Read(noLinearPart)));
+
+        List<string> decFirst = FitsTestData.MirroredSolveCards();
+        decFirst[decFirst.FindIndex(c => c.StartsWith("CTYPE1", StringComparison.Ordinal))] = FitsTestData.Card("CTYPE1", "'DEC--TAN'");
+        decFirst[decFirst.FindIndex(c => c.StartsWith("CTYPE2", StringComparison.Ordinal))] = FitsTestData.Card("CTYPE2", "'RA---TAN'");
+        Assert.Null(WcsMetadataKeys.Mirrored(source, Read(decFirst)));
+
+        List<string> linear = FitsTestData.ProcessedCards();
+        linear.AddRange([FitsTestData.Card("CTYPE1", "'LINEAR'"), FitsTestData.Card("CDELT1", "1.0"), FitsTestData.Card("CDELT2", "1.0")]);
+        Assert.Null(WcsMetadataKeys.Mirrored(source, Read(linear)));
+        Assert.Null(WcsMetadataKeys.Mirrored(source, Read(FitsTestData.ProcessedCards())));
+    }
+
+    [Fact]
+    public void R017_Orientation_ACrotaTurnNeverMirrors()
+    {
+        List<string> cards = FitsTestData.PlateSolvedCards();
+        cards.Add(FitsTestData.Card("CROTA2", "180.0"));
+
+        Assert.Equal(-1, WcsMetadataKeys.Orientation(Read(cards)));
+    }
+
+    [Fact]
+    public void R017_Orientation_IsUnknownWithoutCtype1_ForAValueThatIsNotANumber_OrADeterminantOf0()
+    {
+        Assert.Null(WcsMetadataKeys.Orientation(Read(FitsTestData.ProcessedCards())));
+
+        List<string> notANumber = FitsTestData.PlateSolvedCards();
+        notANumber[notANumber.FindIndex(c => c.StartsWith("CDELT1", StringComparison.Ordinal))] = FitsTestData.Card("CDELT1", "'x'");
+        Assert.Null(WcsMetadataKeys.Orientation(Read(notANumber)));
+
+        List<string> flat = FitsTestData.PlateSolvedCards();
+        flat.Add(FitsTestData.Card("CD1_1", "0.0"));
+        Assert.Null(WcsMetadataKeys.Orientation(Read(flat)));
+    }
+
+    [Fact]
+    public void R016_SelectKeysToDrop_ADestinationWithoutAPlateSolve_DropsNothing()
+    {
+        var source = Read(FitsTestData.PlateSolvedCards());
+        var dest = Read(FitsTestData.ProcessedCards());
+
+        Assert.Empty(WcsMetadataKeys.SelectKeysToDrop(source, dest));
+    }
 }

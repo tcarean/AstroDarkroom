@@ -121,9 +121,21 @@ internal static class CopyWcsCli
                     stdout.WriteLine("  " + card.TrimEnd(' '));
                 }
 
+                // The keys the copy would drop, under the cards it would write (R-016).
+                if (outcome.Dropped is not null)
+                {
+                    stdout.WriteLine(outcome.Dropped);
+                }
+
                 return 0;
 
             default:
+                // The keys dropped first, so the count and the reminder stay the last two lines (R-012, R-016).
+                if (outcome.Dropped is not null)
+                {
+                    stdout.WriteLine(outcome.Dropped);
+                }
+
                 foreach (var note in outcome.Notes)
                 {
                     stdout.WriteLine(note);
