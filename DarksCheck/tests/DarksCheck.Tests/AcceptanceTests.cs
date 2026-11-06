@@ -70,6 +70,31 @@ public class AcceptanceTests
         Assert.StartsWith("EROARE:", stderr, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The help in plain words (R-088, ADR 0037): no line of <c>--help</c> names a part of the method,
+    /// in either language, and a blank folder's message says that the path is blank.
+    /// </summary>
+    /// <param name="lang">The value of <c>--lang</c>.</param>
+    [Theory]
+    [InlineData("ro")]
+    [InlineData("en")]
+    public void R088_TheHelpIsInPlainWords(string lang)
+    {
+        bool english = lang == "en";
+        (int code, string stdout, _) = Cli.Run("--help", "--lang", lang);
+        Assert.Equal(0, code);
+        Assert.Contains(english ? "reads and measures the biases, the darks and the lights" : "citeste si masoara bias-urile, dark-urile si lights-urile", stdout, StringComparison.Ordinal);
+        Assert.Contains(english ? "the session's darks are warmer or colder than it" : "cate grade sunt dark-urile sesiunii mai calde sau mai reci decat el", stdout, StringComparison.Ordinal);
+        Assert.Contains(english ? "only what the files say, without reading the pixels" : "doar ce scrie in fisiere, fara sa citeasca pixelii", stdout, StringComparison.Ordinal);
+        System.Text.RegularExpressions.Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
+        List<string> left = stdout.Split('\n').Where(l => method.IsMatch(l)).ToList();
+        Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+
+        (int blank, _, string stderr) = Cli.Run("", "--lang", lang);
+        Assert.Equal(1, blank);
+        Assert.Contains(english ? "the folder's path is blank; give the path" : "calea folderului e goala; da calea", stderr, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R002_MissingFolder_NamesIt_Exit1()
     {

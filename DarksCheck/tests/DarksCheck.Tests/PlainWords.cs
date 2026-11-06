@@ -29,13 +29,13 @@ namespace DarksCheck.Tests;
 /// </summary>
 internal static partial class PlainWords
 {
-    /// <summary>R-083's to R-088's words of the method in the window's Romanian texts.</summary>
+    /// <summary>R-083's to R-088's words of the method in the window's and the help's Romanian texts.</summary>
     /// <returns>The pattern; a match is a word the text must lose.</returns>
-    [GeneratedRegex(@"\b(sigma|sqrt|obisnuit\w*|rezid\w*|deviat\w*|abater\w*|offset\w*|amplit\w*|median\w*|metadat\w*|decod\w*|outlier\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|radacin\w*|castig\w*|brut\w*|percentil\w*|temporal\w*|candidat\w*|planuri\w*|exces\w*|detector\w*|quartil\w*|izolat\w*|q25|q75|rang\w*|echivalent\w*|liniar\w*)\b|(?<![\w-])e-(?!\w)|(?<![\w-])n ?=|zgomot\w* alb|planul\w* de referinta|culoarea de atentie", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(sigma|sqrt|obisnuit\w*|rezid\w*|deviat\w*|abater\w*|offset\w*|amplit\w*|median\w*|metadat\w*|decod\w*|outlier\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|radacin\w*|castig\w*|brut\w*|percentil\w*|temporal\w*|candidat\w*|planuri\w*|exces\w*|detector\w*|quartil\w*|izolat\w*|q25|q75|rang\w*|echivalent\w*|liniar\w*|deriv\w*|cadent\w*)\b|(?<![\w-])e-(?!\w)|(?<![\w-])n ?=|zgomot\w* alb|planul\w* de referinta|culoarea de atentie", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     internal static partial Regex RomanianTabWords();
 
-    /// <summary>R-083's to R-088's words of the method in the window's English texts.</summary>
+    /// <summary>R-083's to R-088's words of the method in the window's and the help's English texts.</summary>
     /// <returns>The pattern; a match is a word the text must lose.</returns>
-    [GeneratedRegex(@"\b(sigma|sqrt|resid\w*|deviation\w*|offset\w*|amplitude\w*|ampl|median\w*|metadata|decod\w*|outlier\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gain\w*|percentile\w*|temporal\w*|candidate\w*|planes|excess\w*|detector\w*|quartile\w*|isolated|q25|q75|rank\w*|equivalent\w*|linear\w*)\b|raw ADU|(?<![\w-])e-(?!\w)|(?<![\w-])n ?=|square root|white noise|reference plane|attention colou?r", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(sigma|sqrt|resid\w*|deviation\w*|offset\w*|amplitude\w*|ampl|median\w*|metadata|decod\w*|outlier\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gain\w*|percentile\w*|temporal\w*|candidate\w*|planes|excess\w*|detector\w*|quartile\w*|isolated|q25|q75|rank\w*|equivalent\w*|linear\w*|drift\w*|cadence\w*)\b|raw ADU|(?<![\w-])e-(?!\w)|(?<![\w-])n ?=|square root|white noise|reference plane|attention colou?r", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     internal static partial Regex EnglishTabWords();
 }

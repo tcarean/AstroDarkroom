@@ -39,3 +39,16 @@ The English says the same, with the same figures: `Reading the darks: 3 / 20`, `
 3. Code: `WindowTexts.cs`, `MainWindow.xaml`, `DarkSeriesRun.cs`; the progress line is on stderr,
    not in the goldens, and no figure changes, so no golden changes and no `/validate`.
 4. Gate, ADR 0037, CHANGELOG, README, the design note, commit; then part 2's list.
+
+## Part 2, approved as proposed ("Da, toate", 2026-11-06)
+
+| # | Text | Before | After |
+| --- | --- | --- | --- |
+| 1 | without options | `Fara optiuni: decodeaza bias-urile, dark-urile si lights-urile si tipareste raportul: scurgeri de lumina, deriva termica, zgomot, pixeli fierbinti, model fix, pixeli morti, cate dark-uri ajung, lights-urile fata de dark, indexul si eticheta, cate un tabel pe dark-uri si pe lights.` | `Fara optiuni: citeste si masoara bias-urile, dark-urile si lights-urile si tipareste raportul: scurgeri de lumina, incalzirea camerei, zgomotul fiecarui cadru, pixeli fierbinti, ce e la fel in toate cadrele, pixeli morti si saturati, cate dark-uri ajung, cat de bine se potriveste dark-ul cu lights-urile, indexul si eticheta, cate un tabel pe dark-uri si pe lights.` |
+| 2 | `--against DIR` | `alt folder de dark-uri (o biblioteca sau o sesiune): indexul lui si raportul dark-urilor sesiunii fata de el, in grade echivalente; o sesiune cu lights dar fara dark-uri ia dark-urile lui drept ale ei.` | `alt folder de dark-uri (o biblioteca sau o sesiune): indexul lui si cu cate grade sunt dark-urile sesiunii mai calde sau mai reci decat el; o sesiune cu lights dar fara dark-uri ia dark-urile lui drept ale ei.` |
+| 3 | `--threads N` | `cate cadre se decodeaza in paralel (implicit jumatate din nuclee).` | `cate cadre se citesc in acelasi timp (implicit jumatate din nucleele procesorului).` |
+| 4 | `--max-frames N` | `... si cate lights se masoara; peste, se decodeaza unul din k si restul sunt listate ca sarite.` | `... si cate lights se masoara; daca sunt mai multe, se citesc doar unele, la distante egale (de exemplu unul din doua), iar restul apar in tabel ca sarite.` |
+| 5 | `--inventory` | `doar metadatele cadrelor (fara decodare): ora, expunere, ISO, pauzele si cadenta fiecarui grup, potrivirea dark-urilor cu lights-urile.` | `doar ce scrie in fisiere, fara sa citeasca pixelii: ora, expunerea si ISO-ul fiecarui cadru, cat de des s-au facut cadrele si pauzele dintre ele, daca dark-urile se potrivesc cu lights-urile.` |
+| 6 | a blank folder path | `folderul e gol; da calea folderului sesiunii sau al dark-urilor` | `calea folderului e goala; da calea folderului sesiunii sau al dark-urilor` |
+
+The English says the same; the two help goldens change on the lines of these options only.

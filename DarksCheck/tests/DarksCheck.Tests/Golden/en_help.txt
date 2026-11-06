@@ -9,22 +9,24 @@ Usage: darkscheck <session folder or folder of darks> [--against DIR] [--out DIR
   from biases\ and the lights from lights\, both optional. Camera raw
   (.nef, .cr2, .cr3, .arw, .dng, .raf, .pef) or FITS. Nothing is written into the folder.
 
-  No options:   decodes the biases, the darks and the lights and prints the report:
-                light leaks, thermal drift, noise, hot pixels, fixed pattern,
-                dead pixels, how many darks are enough, the lights against the
-                dark, the index and the label, one table for the darks and one for the lights.
-  --against DIR another folder of darks (a library or a session): its index and
-                the report of the session's darks against it, in equivalent degrees;
-                a session with lights but no darks takes its darks as its own.
+  No options:   reads and measures the biases, the darks and the lights and prints the
+                report: light leaks, the camera's warming, the noise of each frame, hot
+                pixels, what is the same in every frame, dead and saturated pixels, how
+                many darks are enough, how well the dark fits the lights, the index and
+                the label, one table for the darks and one for the lights.
+  --against DIR another folder of darks (a library or a session): its index and by how
+                many degrees the session's darks are warmer or colder than it; a
+                session with lights but no darks takes its darks as its own.
   --out DIR     writes into DIR the report, a CSV with every figure for the darks,
                 the biases and the lights, and the maps (darkscheck-report.txt, darkscheck-darks.csv,
                 darkscheck-biases.csv, darkscheck-lights.csv, darkscheck-map-dark.png, ...).
-  --threads N   how many frames are decoded in parallel (default: half the cores).
+  --threads N   how many frames are read at the same time (default: half the cores of the processor).
   --max-frames N  how many frames are held in memory (default 60, 48 MB each at 24 MP) and how many lights are measured;
-                above that, one in k is decoded and the rest are listed as skipped.
-  --inventory   the frames' metadata only (no decoding): time, exposure, ISO,
-                the gaps and the cadence of each group, how the darks match
-                the lights.
+                if there are more, only some are read, evenly spaced (one in two, for
+                example), and the rest are in the table as skipped.
+  --inventory   only what the files say, without reading the pixels: the time, the
+                exposure and the ISO of each frame, how often the frames were taken and
+                the gaps between them, whether the darks match the lights.
   --lang en|ro  the language of the texts: en (English, the default) or ro (Romanian).
   -h, --help    this text
 

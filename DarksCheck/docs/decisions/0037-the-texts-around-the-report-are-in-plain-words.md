@@ -13,7 +13,9 @@ window and the console (`decodare dark-uri: 3 / 20`), the hints of the top bar's
 (`se decodeaza in paralel`, `se ia unul din k`, `pentru normalizarea la ISO 400; 2 = liniar in
 ISO`) with the setting named `CASTIG / TREAPTA ISO`, and the console's `--help`. The owner
 approves them in two parts, each list shown original and proposal side by side; part 1, the
-window's texts and the progress lines, with "Da, toate".
+window's texts and the progress lines, with "Da, toate"; part 2, the console's `--help` and the
+message of a blank folder path (`folderul e gol`, which reads as a folder without files), with
+"Da, toate" too.
 
 ## Decision
 
@@ -31,12 +33,20 @@ window's texts and the progress lines, with "Da, toate".
    that with it `toate cadrele se socotesc la ISO 400, ca sa poata fi comparate`, its 2 meaning
    `semnalul se dubleaza la fiecare treapta`; the doubling names the dark current with its meaning
    (`ce aduna senzorul din caldura lui`).
-4. **R-088 guards it**: `R088_...` collects the phases of real runs and renders the empty window,
-   in both languages, with the word list of R-083 to R-087, which now also holds `liniar` /
-   `linear`.
+4. **The help says what each option does in the same words**: without options the program
+   `citeste si masoara` the frames and prints the checks by the Rezumat's names (`incalzirea
+   camerei`, `ce e la fel in toate cadrele`, `cat de bine se potriveste dark-ul cu lights-urile`);
+   `--against` gives the partner's index and `cu cate grade sunt dark-urile sesiunii mai calde sau
+   mai reci decat el`; `--threads` and `--max-frames` say what the top bar's hints say;
+   `--inventory` reads `doar ce scrie in fisiere, fara sa citeasca pixelii`, with `cat de des s-au
+   facut cadrele` for the cadence. A blank folder path reads `calea folderului e goala`.
+5. **R-088 guards it**: `R088_...` collects the phases of real runs, renders the empty window and
+   reads `--help` and the blank path's message, in both languages, with the word list of R-083 to
+   R-087, which now also holds `liniar` / `linear`, `deriv...` / `drift` and `cadent...` /
+   `cadence`.
 
 ## Consequences
 
 - R-088 is new; R-025 quotes the new progress line and R-075 the new setting name.
 - The progress line is on stderr, which the goldens do not hold; the tests that read it take the
-  new phases.
+  new phases. The two help goldens take the new lines of the options they name, nothing else.
