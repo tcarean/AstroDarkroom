@@ -1453,6 +1453,51 @@
         "proof.RelativeNoBpc.meanLstar": 18.1787,
         "proof.RelativeNoBpc.simulated.meanLstar": 19.0818
       }
+    },
+    {
+      "id": "V-016",
+      "kind": "gamutfit",
+      "image": "starless_rbf0.5_stretch0.17.fit",
+      "parameters": {
+        "icc": "Hahnemuhle PRBaryta.icm"
+      },
+      "tolerance": 0.01,
+      "measuredOn": "2026-11-06",
+      "expected": {
+        "gamutfit.problem": "none",
+        "gamutfit.description": "Hahnemuhle PRBaryta",
+        "gamutfit.names": "Exacta,Lina,Foarte lina",
+        "gamutfit.Exacta.before": 1.9073,
+        "gamutfit.Exacta.after": 0.0008,
+        "gamutfit.Exacta.touched": 1.9073,
+        "gamutfit.Exacta.unreachable": 0,
+        "gamutfit.Exacta.lostMedian": 0.6276,
+        "gamutfit.Exacta.lostP99": 4.2628,
+        "gamutfit.Exacta.dark": 99.5469,
+        "gamutfit.Lina.before": 1.9073,
+        "gamutfit.Lina.after": 0.0227,
+        "gamutfit.Lina.touched": 3.8088,
+        "gamutfit.Lina.unreachable": 0,
+        "gamutfit.Lina.lostMedian": 0.4121,
+        "gamutfit.Lina.lostP99": 3.6887,
+        "gamutfit.Lina.dark": 99.5469,
+        "gamutfit.Foarte-lina.before": 1.9073,
+        "gamutfit.Foarte-lina.after": 0.0006,
+        "gamutfit.Foarte-lina.touched": 6.2164,
+        "gamutfit.Foarte-lina.unreachable": 0,
+        "gamutfit.Foarte-lina.lostMedian": 0.5769,
+        "gamutfit.Foarte-lina.lostP99": 3.5504,
+        "gamutfit.Foarte-lina.dark": 99.5469,
+        "gamutfit.recipe.lstar": 12,
+        "gamutfit.recipe.factor": 0.7,
+        "gamutfit.recipe.left": 4.8723,
+        "gamutfit.recipe.inBand": 10.0108,
+        "gamutfit.fits.bytes": 270869760,
+        "gamutfit.tiff.bytes": 135437610,
+        "gamutfit.tiff.bitDepth": 16,
+        "gamutfit.tiff.icc": "sRGB",
+        "gamutfit.tiffVsFits.maxLevels16": 0.5019
+      }
     }
   ]
 }

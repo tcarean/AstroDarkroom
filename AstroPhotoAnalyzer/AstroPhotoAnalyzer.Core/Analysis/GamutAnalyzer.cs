@@ -157,17 +157,6 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// The round trip of one colour through the profile: sRGB to XYZ, the black point
-        /// compensation towards the paper, the printer's device values, back to XYZ, the
-        /// compensation undone; the displacement of L*, a*, b* against the colour's own.
-        /// </summary>
-        /// <param name="config">The package's configuration with the profile's tables.</param>
-        /// <param name="black">The paper's black, XYZ, as <see cref="ProofProfile.NeutralBlack"/> gives it.</param>
-        /// <param name="r">The encoded sRGB red, 0..1.</param>
-        /// <param name="g">The encoded sRGB green, 0..1.</param>
-        /// <param name="b">The encoded sRGB blue, 0..1.</param>
-        /// <returns>The L*, a* and b* of the colour back minus the colour's own.</returns>
-        /// <summary>
         /// The whole colour difference of a Lab colour after the compensated trip to the paper
         /// and back: the trip of <see cref="RoundTrip"/> from Lab instead of sRGB, for the paper
         /// fit's table (R-175), whose nodes are colours no sRGB value need hold.
@@ -190,6 +179,17 @@ namespace AstroPhotoAnalyzer
             return Math.Sqrt(dl * dl + da * da + db * db);
         }
 
+        /// <summary>
+        /// The round trip of one colour through the profile: sRGB to XYZ, the black point
+        /// compensation towards the paper, the printer's device values, back to XYZ, the
+        /// compensation undone; the displacement of L*, a*, b* against the colour's own.
+        /// </summary>
+        /// <param name="config">The package's configuration with the profile's tables.</param>
+        /// <param name="black">The paper's black, XYZ, as <see cref="ProofProfile.NeutralBlack"/> gives it.</param>
+        /// <param name="r">The encoded sRGB red, 0..1.</param>
+        /// <param name="g">The encoded sRGB green, 0..1.</param>
+        /// <param name="b">The encoded sRGB blue, 0..1.</param>
+        /// <returns>The L*, a* and b* of the colour back minus the colour's own.</returns>
         static (double Dl, double Da, double Db) RoundTrip(Configuration config, double[] black, double r, double g, double b)
         {
             var colour = new Unicolour(config, ColourSpace.Rgb, r, g, b);

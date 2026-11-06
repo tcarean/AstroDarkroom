@@ -75,6 +75,7 @@ stops on a drift instead of editing them.
 | V-013 | the Veil FITS; none | measured 2026-10-11 (ADR 0037): the sky path on a frame inside the band but narrower than it: method `Sky` for the reason `NarrowField`, the patch centres spanning 10.9 degrees of latitude; sky 96.4 %, nebula 2.9 %, bright nebula 0.5 %, peaks 0.1 %; 20 125 patches, 6 clouds named (LDN 873 first, 68 patches, L\* 7.6), the dust class 1 patch, so the dust is the darkest sky, L\* 6.3, and the sky 9.3; the recommended row 0.16 (the sky reaches L\* 15 at 0.155), the exact target 0.074, passes as is from Dmax 2.16; no smooth tile for the noise; 1 star since ADR 0054 (22 485 at FWHM 2.18 px before: the grain of a starless frame) and the size table on the dpi rule, the reference row 70 cm; and every other figure of the run |
 | V-014 | the Veil FITS; kind `curves` | measured 2026-10-11: the curves anchored on the nebula's own classes: anchors 0.078, 0.102, 0.166, 0.359, 0.498; four suggestions, `Puternica` taking the five L\* from 6.3, 9.3, 17.2, 38.8, 53.2 to 6.3, 10.0, 23.1, 49.4, 63.6 with a noise gain of 1.20, `Maxima` the peaks to 0.92 with a gain of 1.47; one paper check (the sky under L\* 15); the save keeps all 93 cards and the WCS |
 | V-015 | the plate-solved FITS; kind `proof`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-10-30: the soft proof through the lab's baryta profile (R-160 to R-162, ADR 0066): the paper white of the `wtpt` tag L\* 97.19, a\* -0.01, b\* +1.11, shown as sRGB 248, 247, 245 under the simulation; the paper black L\* 3.49 at Dmax 2.41 (V-006); the proof 1946 px wide (stride 3); 1.90 % of its pixels outside the paper's gamut (ADR 0081, re-measured 2026-11-05; V-008 reads 1.94 % on the tonal subsample); the mean L\* of the proof 17.0 on `Perceptual`, 19.7 on `Relative`, 18.2 on `RelativeNoBpc` (18.0, 20.4 and 19.1 simulated): the three intents differ, and the compensated one keeps the most of the shadows |
+| V-016 | the plate-solved FITS; kind `gamutfit`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-11-06: the paper fit through the lab's baryta profile (R-175 to R-177, ADR 0082): 1.91 % of the pixels outside as is; `Exacta` touches 1.91 % and leaves 0.001 %, the chroma given up 0.63 at the median and 4.3 at the 99 % mark, 99.5 % of the pixels outside under L\* 15, none out of reach; `Lina` touches 3.81 % (0.41 at the median), `Foarte lina` 6.22 % (0.58); the recipe: a mask under L\* 12 (10.0 % of the pixels) at 70 % saturation leaves 4.9 % of them; the saved FITS 270869760 bytes, the saved TIFF 135437610 bytes, 16-bit, profile `sRGB`, the two within 0.5 16-bit levels of each other |
 
 The figures recorded for each case are in `validation.json`; the table below, from the reference
 run of 2026-09-21, gives the same measurements made by hand in the originating conversation.
@@ -531,3 +532,13 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   since the compensation keeps their colour. Exact per pixel the same day: all 1.917, dust 10.956
   (the hybrid within 0.14 points on every class, ADR 0081). The other thirteen cases did not
   move. The fifteen cases (and the eleven star-pair checks) pass.
+- 2026-11-06 (ADR 0082, the paper fit): V-016 added, kind `gamutfit`, on the plate-solved FITS
+  through the lab's baryta profile (`docs/plans/2026-11-06-fit-the-colours-to-the-paper.md`):
+  1.91 % of the pixels outside as is on the tonal subsample; `Exacta` touches those and leaves
+  0.001 %, the chroma given up 0.63 at the median and 4.3 at the 99 % mark, 99.5 % of the pixels
+  outside under L\* 15; `Lina` touches 3.81 % (0.41 at the median, 0.02 % left), `Foarte lina`
+  6.22 % (0.58); the recipe a mask under L\* 12 at 70 % saturation, leaving 4.9 %; the saved FITS
+  270 869 760 bytes (the input's size, its cards kept), the saved TIFF 135 437 610 bytes, 16-bit,
+  profile `sRGB`, the two within 0.5 of a 16-bit level. The other fifteen cases did not move:
+  `ColorMath` gained the D50 conversions and the display step took its matrix from there,
+  without a figure changing (V-015's means to four decimals).
