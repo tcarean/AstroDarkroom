@@ -254,7 +254,7 @@ internal sealed class FrameStack
                 // plane
                 StackFrame first = frames.First(f => f.Pixels is not null);
                 double black = Planes.Median(Planes.Extract(first.Pixels!, gw, gh, stack.ReferencePlane));
-                stack = new FrameStack(frames, gw, gh, black, gwhite, gcfa, gsource + T($", the black taken from the usual value of frame {first.Info.Index}", $", negrul luat din valoarea obisnuita a cadrului {first.Info.Index}"), gnorm, nz, blackEstimated: true);
+                stack = new FrameStack(frames, gw, gh, black, gwhite, gcfa, gsource + T($", the black taken from the average value of frame {first.Info.Index}", $", negrul luat din valoarea medie a cadrului {first.Info.Index}"), gnorm, nz, blackEstimated: true);
             }
         }
 

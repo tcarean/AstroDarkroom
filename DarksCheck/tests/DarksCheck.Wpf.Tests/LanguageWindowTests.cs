@@ -159,7 +159,7 @@ public partial class LanguageWindowTests
                 string all = string.Join("\n", texts);
                 Assert.Contains(english ? "HOW MUCH EACH FRAME DIFFERS FROM THE MASTER (ADU)" : "CAT DIFERA FIECARE CADRU DE MASTER (ADU)", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "to discard: the hot pixels are at " : "de aruncat: pixelii fierbinti sunt la ", all, StringComparison.Ordinal);
-                Assert.Contains(english ? "1.5 times the usual noise" : "de 1.5 ori zgomotul obisnuit", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "1.5 times the average noise" : "de 1.5 ori zgomotul mediu", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "no banding" : "fara benzi", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "the noise of the frame, in ADU, on the green pixels G1" : "zgomotul cadrului, in ADU, pe pixelii verzi G1", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "how many pixels of the frame go over 20 ADU-eq, on the green pixels G1" : "cati pixeli din cadru trec de 20 ADU-eq, pe pixelii verzi G1", all, StringComparison.Ordinal);

@@ -58,3 +58,6 @@ The English says the same, with the same figures: `EACH LIGHT AGAINST THE DARK`,
   approved note's start, as it already did for the frames table's note.
 - The sky's hint says `valoarea medie` at the owner's word while its figure is the median; ADR
   0034 records it, and the owner is told.
+- Step 6: the seven other texts that said `obisnuit` were shown to the owner and approved ("Da,
+  toate"); they say `medie` / `mediu` / `in medie` in a second commit, with ADR 0035, the word
+  added to the Romanian lists of R-081 to R-086's tests first, which then named every one.

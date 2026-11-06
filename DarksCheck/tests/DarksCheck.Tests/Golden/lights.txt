@@ -13,7 +13,7 @@ Copyright (C) 2026 Tudor Carean
     potrivire          : OK: dark-urile au aceeasi expunere (120.0 s) si acelasi ISO (400) ca lights-urile
     bias               : (lipsa)
 
-=== DARK-URI: cadre citite 4 din 4, 256 x 192 px, valori de la 200 (negru) la 65535 ADU (alb) (FITS pe 16 biti, albul dedus din fisier, negrul luat din valoarea obisnuita a cadrului 1), filtre de culoare RGGB ===
+=== DARK-URI: cadre citite 4 din 4, 256 x 192 px, valori de la 200 (negru) la 65535 ADU (alb) (FITS pe 16 biti, albul dedus din fisier, negrul luat din valoarea medie a cadrului 1), filtre de culoare RGGB ===
     1 ADU-eq           : 1 ADU din fisier: setul e facut chiar la setarile de referinta, ISO 400, 120.0 s
     pasul valorilor    : langa negru, valorile din fisier cresc din 1 in 1 ADU; primul cadru are 23 de valori diferite (pixelii verzi G1)
 
@@ -66,7 +66,7 @@ Copyright (C) 2026 Tudor Carean
     verdict            : ATENTIE: scade dark-ul cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); in lights pixelii fierbinti sunt de 1.30 ori cat in dark, intre 0.7 si 1.4: dark-ul e mai rece cu 2.3 grade
 
   INDEX
-    dark-uri           : idx121 (121.0 ADU-eq: valoarea obisnuita a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)
+    dark-uri           : idx121 (121.0 ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)
     eticheta           : <sesiune>-idx121
     lights             : ca un dark cu idx157 (de 1.30 ori cat dark-ul, adica cu 2.3 grade mai calde decat el)
     partener           : <partener>: idx241 (241.0 ADU-eq; cadre citite 3 din 3, ISO 400, 120.0 s); eticheta <partener>-idx241

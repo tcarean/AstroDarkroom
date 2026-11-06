@@ -28,8 +28,9 @@ original and proposal side by side, with one change: "peste tot in loc de obisnu
 3. **Each hint says what the column measures**, with the thresholds in words: `cu peste 6 ori
    zgomotul`, `peste 3 ori zgomotul`. The `ora` hint is the Cadre tab's. The sky's hint says
    `valoarea medie a pixelilor`: the owner's word for a typical value, asked for in place of
-   `obisnuita`. The figure is the median of the pixels (the middle value, which the stars do not
-   pull up), so in Siril's statistics it is the median, not the mean; the owner was told.
+   `obisnuita` and now used everywhere (ADR 0035). The figure is the median of the pixels (the
+   middle value, which the stars do not pull up), so in Siril's statistics it is the median, not
+   the mean; the owner was told.
 4. **The chart is titled `FIECARE LIGHT FATA DE DARK`** and its sentence says what each colour
    means to do with the dark (`se poate scadea asa cum e`, `cu -opt`, `doar pentru corectia
    cosmetica`), in check 9's verdict words; the guide lines say the same in short (`0.9 asa cum

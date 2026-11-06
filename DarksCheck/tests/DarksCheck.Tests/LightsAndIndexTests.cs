@@ -280,7 +280,7 @@ public class LightsAndIndexTests
         Assert.Equal(2, r.Index.RankHigh);
         Assert.InRange(r.Index.Index, 114, 126);
         Assert.Contains("    dark-uri           : idx1", Report(r), StringComparison.Ordinal);
-        Assert.Contains(" ADU-eq: valoarea obisnuita a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)", Report(r), StringComparison.Ordinal);
+        Assert.Contains(" ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)", Report(r), StringComparison.Ordinal);
     }
 
     [Fact]

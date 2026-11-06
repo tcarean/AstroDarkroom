@@ -19,7 +19,7 @@ Copyright (C) 2026 Tudor Carean
   2. LIGHT LEAKS AND DIFFERENCES ACROSS THE FRAME
     master dark        : centre -0.02, corners 0.01 / 0.12 / 0.03 / 0.10 (top-left / top-right / bottom-left / bottom-right), edges top 0.00 bottom 0.00 left -0.03 right -0.03  [the green pixels G1, ADU above the black, mean of 4 frames, in squares of 32 px]
     master bias        : centre -0.07, corners 0.10 / -0.01 / -0.05 / 0.13 (top-left / top-right / bottom-left / bottom-right), edges top 0.05 bottom -0.03 left -0.02 right 0.03  [the green pixels G1, ADU above the black, mean of 3 frames]
-    dark - bias        : centre 0.05, corners -0.09 / 0.13 / 0.08 / -0.04 (top-left / top-right / bottom-left / bottom-right), edges top -0.04 bottom 0.03 left -0.01 right -0.06; the typical pixel -0.03, nearly all (98 %) between -0.25 and 0.23
+    dark - bias        : centre 0.05, corners -0.09 / 0.13 / 0.08 / -0.04 (top-left / top-right / bottom-left / bottom-right), edges top -0.04 bottom 0.03 left -0.01 right -0.06; the average pixel -0.03, nearly all (98 %) between -0.25 and 0.23
     light per frame    : UNMEASURED: there are fewer than 6 frames with hot pixels
     glow / constant    : UNMEASURED: there are fewer than 6 frames with hot pixels
     constant light     : UNMEASURED: there are fewer than 6 frames with hot pixels
@@ -62,7 +62,7 @@ Copyright (C) 2026 Tudor Carean
     verdict            : UNMEASURED: the session has no lights
 
   INDEX
-    darks              : idx145 (145.0 ADU-eq: the usual value of the hot pixels at places 2 .. 2, counting from the hottest, that is 5-20 per Mpx of 0.05 Mpx; worked out for ISO 400 and 120 s)
+    darks              : idx145 (145.0 ADU-eq: the average value of the hot pixels at places 2 .. 2, counting from the hottest, that is 5-20 per Mpx of 0.05 Mpx; worked out for ISO 400 and 120 s)
     label              : <session>-idx145
 
   FRAMES TABLE
@@ -78,7 +78,7 @@ Copyright (C) 2026 Tudor Carean
     value step         : near the black, the file's values go up 1 by 1 ADU
     electrons          : at ISO 400, 1 ADU = 2.07 electrons (the sensor turns light into electrons, and the camera counts them in ADU); 1 ADU-eq = 1.00 ADU = 2.1 electrons; a pixel holds 34446 electrons (full well), and it catches 56 % of the light that falls on it (QE). Figures for Nikon D3300 from photonstophotos.net, worked out from DxOMark's measurements, read on 2026-10-20; on small sensors the method gives too many electrons per ADU.
     read noise         : 2.02 ADU per pixel = 4.2 electrons: the noise the camera adds when it reads the sensor, measured on the biases (the green pixels G1)
-    noise on one dark  : one dark has 3.01 ADU of noise per pixel; the dark current (what a typical pixel gathers from the sensor's heat) is -0.03 ADU at ISO 400, 120.0 s
+    noise on one dark  : one dark has 3.01 ADU of noise per pixel; the dark current (what a pixel gathers on average from the sensor's heat) is -0.03 ADU at ISO 400, 120.0 s
     master noise       : the dark master, made of 4 frames, still has 1.87 ADU of noise per pixel; the lights stack: the session has no lights
     this set's limits  : hot pixel: above 20 ADU-eq (20 ADU in the file); light leak on the map: above 1.0 ADU-eq (1.0 ADU); constant light on a side: above 0.15 ADU-eq (0.15 ADU); light on a single frame: above 0.1 ADU-eq (0.10 ADU)
     what was found     : nothing over the thresholds

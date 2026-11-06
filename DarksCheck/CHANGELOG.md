@@ -34,6 +34,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- A typical value is `average` (`medie`, `mediu`, `in medie`) wherever a text called it `usual`
+  or `typical` (`obisnuit`) (ADR 0035), the figures unchanged: the `dark - bias` row (`the
+  average pixel`), check 2's frame light row (`the average spread of the frames`), the index
+  (`the average value of the hot pixels`), the dark current (`what a pixel gathers on average`),
+  the darks' header for a FITS without a black (`the average value of frame 1`) and the Cadre
+  tab's guide line (`1.5 times the average noise`).
+
 - The Lights tab and the console's lights table speak plain words, in English and Romanian (R-086,
   ADR 0034), the figures unchanged: the columns `sigma`, `candidates`, `isolated`, `ampl.`, `q25`
   and `q75` are `noise`, `bright`, `single`, `hot`, `low` and `high` (`zgomot`, `luminosi`,

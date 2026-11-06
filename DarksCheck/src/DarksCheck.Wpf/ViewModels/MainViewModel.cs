@@ -688,7 +688,7 @@ public sealed class MainViewModel : ObservableObject
             : [master];
         WarmingNote = DarkReport.WarmingChartNote(r);
         ResidualPoints = residual;
-        ResidualGuides = double.IsNaN(r.Verdicts.Noise.OutlierLimitAdu) ? [] : [new GuideLine(r.Verdicts.Noise.OutlierLimitAdu, T($"{RunReport.F(Th.NoiseOutlierFactor, 1)} times the usual noise", $"de {RunReport.F(Th.NoiseOutlierFactor, 1)} ori zgomotul obisnuit"), VerdictPalette.Warn)];
+        ResidualGuides = double.IsNaN(r.Verdicts.Noise.OutlierLimitAdu) ? [] : [new GuideLine(r.Verdicts.Noise.OutlierLimitAdu, T($"{RunReport.F(Th.NoiseOutlierFactor, 1)} times the average noise", $"de {RunReport.F(Th.NoiseOutlierFactor, 1)} ori zgomotul mediu"), VerdictPalette.Warn)];
         BandingPoints = banding;
         BandingGuides = [new GuideLine(1.0, T("no banding", "fara benzi"), VerdictPalette.Neutral)];
         NoisePoints = d.Noise.Curve.Select(p => new ChartPoint(p.N, p.Measured, p.N.ToString(CultureInfo.InvariantCulture), VerdictPalette.Accent, RunReport.Frames(p.N) + T($": measured {RunReport.F(p.Measured, 3)}, expected {RunReport.F(p.Expected, 3)}", $": masurat {RunReport.F(p.Measured, 3)}, se astepta {RunReport.F(p.Expected, 3)}"))).ToList();

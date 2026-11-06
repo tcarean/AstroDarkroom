@@ -398,7 +398,7 @@ internal static class ScaleReport
         }
 
         string eq = Math.Abs(g.Norm - 1) < 1e-9 ? "" : $" ({F(dc.Median / g.Norm, 2)} {g.Eq})";
-        return T($"{noise}; the dark current (what a typical pixel gathers from the sensor's heat) is {F(dc.Median, 2)} ADU{eq} at {g.Settings}", $"{noise}; curentul de intuneric (ce aduna un pixel obisnuit din caldura senzorului) e {F(dc.Median, 2)} ADU{eq} la {g.Settings}");
+        return T($"{noise}; the dark current (what a pixel gathers on average from the sensor's heat) is {F(dc.Median, 2)} ADU{eq} at {g.Settings}", $"{noise}; curentul de intuneric (ce aduna in medie un pixel din caldura senzorului) e {F(dc.Median, 2)} ADU{eq} la {g.Settings}");
     }
 
     /// <summary>
