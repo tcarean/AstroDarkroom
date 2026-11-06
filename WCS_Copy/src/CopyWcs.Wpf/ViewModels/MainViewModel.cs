@@ -263,10 +263,19 @@ public sealed class MainViewModel : ObservableObject
         Raise(nameof(CanCopy));
     }
 
-    /// <summary>A path as typed, without the whitespace around it: a box is typed into, and a name with a space in front is not the file meant.</summary>
+    /// <summary>
+    /// A path as typed or pasted, without the whitespace around it and then without one pair of
+    /// double quotes around what is left (R-030): a box is typed into, a name with a space in
+    /// front is not the file meant, and File Explorer's "Copy as path" puts the path in quotes,
+    /// which no Windows file name holds.
+    /// </summary>
     /// <param name="path">The box's text; empty is allowed.</param>
-    /// <returns>The path trimmed at both ends.</returns>
-    private static string Clean(string path) => path.Trim();
+    /// <returns>The path trimmed at both ends, its one pair of surrounding quotes taken off.</returns>
+    private static string Clean(string path)
+    {
+        string trimmed = path.Trim();
+        return trimmed.Length >= 2 && trimmed[0] == '"' && trimmed[^1] == '"' ? trimmed[1..^1] : trimmed;
+    }
 
     /// <summary>
     /// The two facts of a header, worded for the box they sit under: the size, and whether

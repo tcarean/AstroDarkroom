@@ -65,6 +65,9 @@ bad value in English with exit 1 (R-022) and runs the rest inside `Ui.Use(chosen
 was given (R-020, R-021). The test assembly sets `Ui.Default` to Romanian once
 (`RomanianByDefault`), so the tests written before the English interface assert the Romanian
 wordings unchanged, and `LanguageTests` opens English scopes or passes `--lang en`.
+`Ui.RoCount(n)` writes a count the way Romanian puts it before a noun, with "de" from 20 on
+unless the last two digits are 01 to 19; the copy's closing line and the drop line use it, each
+choosing its own singular for one key (ADR 0013).
 
 ## The banner, the copyright and the warranty (`VersionInfo`, `LicenseInfo`)
 

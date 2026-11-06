@@ -273,6 +273,39 @@ public class WcsCopyTests
         Assert.Null(WcsCopy.Run(Request(source, dest)).Dropped);
     }
 
+    /// <summary>The count of the copy's closing line follows each language's grammar (R-012, ADR 0013): one key in the singular, and in Romanian "de" from 20 keys on unless the last two digits are 01 to 19.</summary>
+    [Theory]
+    [InlineData(1, "Copied 1 key into ", "Copiata 1 cheie in ")]
+    [InlineData(19, "Copied 19 keys into ", "Copiate 19 chei in ")]
+    [InlineData(20, "Copied 20 keys into ", "Copiate 20 de chei in ")]
+    [InlineData(72, "Copied 72 keys into ", "Copiate 72 de chei in ")]
+    [InlineData(101, "Copied 101 keys into ", "Copiate 101 chei in ")]
+    [InlineData(120, "Copied 120 keys into ", "Copiate 120 de chei in ")]
+    public void R012_Run_TheCopysCount_FollowsEachLanguagesGrammar(int keys, string english, string romanian)
+    {
+        using var ws = new TempWorkspace();
+        List<string> cards = FitsTestData.ProcessedCards();
+        cards.Add(FitsTestData.Card("CTYPE1", "'RA---TAN'"));
+        for (var i = 1; i < keys; i++)
+        {
+            cards.Add(FitsTestData.Card($"A_{4 + (i / 5)}_{i % 5}", "1.0e-12"));
+        }
+
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(cards));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        var ro = WcsCopy.Run(Request(source, dest, ws.FilePath("ro.fit"), includeOptical: false));
+        WcsCopyOutcome en;
+        using (Ui.Use(UiLanguage.English))
+        {
+            en = WcsCopy.Run(Request(source, dest, ws.FilePath("en.fit"), includeOptical: false));
+        }
+
+        Assert.Equal(keys, ro.Cards.Count);
+        Assert.StartsWith(romanian, ro.Notes[0], StringComparison.Ordinal);
+        Assert.StartsWith(english, en.Notes[0], StringComparison.Ordinal);
+    }
+
     /// <summary>The one refusal that comes after the cards are dropped in memory: a write that fails names nothing and changes nothing.</summary>
     [Fact]
     public void R016_Run_AWriteError_DropsNothingAndHasNoLine()

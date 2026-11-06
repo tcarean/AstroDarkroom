@@ -64,6 +64,19 @@ internal static class Ui
     internal static string T(string en, string ro) => Current == UiLanguage.Romanian ? ro : en;
 
     /// <summary>
+    /// A count as Romanian writes it before a noun (ADR 0013): followed by "de" from 20 on,
+    /// unless its last two digits are 01 to 19 (<c>20 de</c>, <c>72 de</c>, <c>100 de</c>, but
+    /// <c>19</c>, <c>101</c>, <c>119</c>). Digits invariant.
+    /// </summary>
+    /// <param name="n">The count; 0 or more.</param>
+    /// <returns>The number, with " de" when the grammar asks for it.</returns>
+    internal static string RoCount(int n)
+    {
+        string count = n.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return n >= 20 && n % 100 is 0 or >= 20 ? count + " de" : count;
+    }
+
+    /// <summary>
     /// Opens a scope in which <see cref="Current"/> is <paramref name="language"/>, on this
     /// flow and on the tasks it starts; disposing it restores the language before it.
     /// </summary>
