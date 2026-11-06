@@ -8,7 +8,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
-- Without a WCS, the Great Rift and the Pipe count as dust (R-044, ADR 0084): the sky is now
+- Without a WCS, the Great Rift and the Pipe count as dust (R-044, ADR 0085): the sky is now
   modelled as the middle of each zone instead of its lower quarter, and a patch is dust when
   3 times the sky's own unevenness under that model instead of 4. On the Smida Milky Way frame
   the dust reads L\* 4.9 without the WCS against 4.85 with it (3.5 before); on deep-sky frames

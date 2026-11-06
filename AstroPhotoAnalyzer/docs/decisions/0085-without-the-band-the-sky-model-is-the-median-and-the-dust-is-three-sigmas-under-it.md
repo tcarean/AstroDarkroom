@@ -1,4 +1,4 @@
-# 0084. Without the band, the sky model is the median of each cell and the dust is three sigmas under it, so a Milky Way frame without a WCS finds the Great Rift
+# 0085. Without the band, the sky model is the median of each cell and the dust is three sigmas under it, so a Milky Way frame without a WCS finds the Great Rift
 
 Date: 2026-11-06
 Status: accepted 2026-11-06

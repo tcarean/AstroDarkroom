@@ -142,7 +142,7 @@ namespace AstroPhotoAnalyzer
         /// that frame (dust 9.8 % against 9.5 %, L* 4.90 against 4.85) and on the reference
         /// FITS run without its WCS (8.2 against 7.9); on the deep-sky frames the verdict's dust
         /// does not move and the nebula class shrinks by about a third. Measured on 2026-11-06
-        /// (ADR 0084).
+        /// (ADR 0085).
         /// </summary>
         internal const double SkyModelPercentile = 50;
 
@@ -164,7 +164,7 @@ namespace AstroPhotoAnalyzer
         /// the band path's (9.8 % of the patches, L* 4.90, against 9.5 % and 4.85; with 4, 7.2 %
         /// and 4.20), finding 73 % of the band path's dust patches. The bright-nebula threshold
         /// has no constant: it is the Otsu threshold of the tail above. Measured on 2026-11-06
-        /// (ADR 0084).
+        /// (ADR 0085).
         /// </summary>
         internal const double SkyNoiseK = 3;
 

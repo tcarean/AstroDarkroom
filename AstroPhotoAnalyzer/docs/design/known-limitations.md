@@ -54,7 +54,7 @@
   diagonal) falls on either side of that gate by its orientation. A horizon corner darker than
   the modelled sky counts as dust on either path.
 - On the sky path the Great Rift is found to within a few tenths of an L\* of the band path,
-  not exactly (ADR 0084): without geometry the dust is what lies 3 sigmas under the median of
+  not exactly (ADR 0085): without geometry the dust is what lies 3 sigmas under the median of
   its cell, which takes 73 % of the band path's dust patches and some sky and band patches at
   the Rift's edges (the Smida frame with stars: L\* 4.90 against 4.85; the same frame starless:
   4.92 against 4.03, the class 13 % of the frame against 9 %, since without stars the sky's
@@ -63,11 +63,11 @@
   `--wcs` with the stack's header, is the way to the band classes and the clouds' names.
 - On the sky path a 32 px patch holding a bright star reads as nebula or bright nebula, so a
   frame with stars has speckles on the map; the anchors move by under 1 L\* (Rosetta with and
-  without stars: 34.2 against 34.8 since ADR 0084; 32.0 against 32.2 before). A 3 x 3 median on the patches was measured and rejected
+  without stars: 34.2 against 34.8 since ADR 0085; 32.0 against 32.2 before). A 3 x 3 median on the patches was measured and rejected
   (ADR 0033).
 - An object that fills the frame becomes the modelled sky: on a 1.3 degree field on LDN 42 the
   cloud is the sky class and the plain sky around it the bright nebula, and the verdict's "sky"
-  is the cloud's own level. The report still says what it measured. Since ADR 0084 the model
+  is the cloud's own level. The report still says what it measured. Since ADR 0085 the model
   is the median of each cell, so on a frame no wider than one cell (640 px) whose object's halo
   covers most of it, the halo lifts the model and the lower half of the plain sky falls under
   it by more than the sky's own noise: the synthetic `dark-sky` golden scene (512 px) classes
