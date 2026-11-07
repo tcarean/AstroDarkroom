@@ -25,7 +25,6 @@ Copyright (C) 2026 Tudor Carean
     verdict            : OK: no edge and no corner differs from the centre by more than 1.0 ADU (the most +0.13, at the top-right, on the dark master (no biases)); the light per frame could not be measured
 
   3. THE CAMERA'S WARMING DURING THE SERIES
-    hot pixels         : in the first frame they are at 1.00 of their level in the master, in the last at 1.00 (20 pixels above 20 ADU); they rise with the temperature, so they show how warm the sensor was
     plateau            : UNMEASURED: there are fewer than 6 frames with hot pixels
     to discard         : UNMEASURED: there are fewer than 6 frames with hot pixels
     verdict            : OK: every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); there are fewer than 6 frames, so no plateau

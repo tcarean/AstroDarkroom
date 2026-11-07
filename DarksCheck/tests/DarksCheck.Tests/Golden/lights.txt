@@ -25,7 +25,6 @@ Copyright (C) 2026 Tudor Carean
     verdict            : OK: nicio margine si niciun colt nu difera de centru cu peste 1.0 ADU (cel mai mult +0.13, la dreapta-sus, pe masterul dark (fara bias-uri)); lumina pe cadre nu s-a putut masura
 
   3. INCALZIREA CAMEREI IN TIMPUL SERIEI
-    pixeli fierbinti   : in primul cadru sunt la 1.00 din nivelul din master, in ultimul la 1.00 (20 de pixeli peste 20 ADU); cresc cu temperatura, deci arata cat de cald era senzorul
     platou             : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
     de aruncat         : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
     verdict            : OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); sunt mai putin de 6 cadre, deci fara platou

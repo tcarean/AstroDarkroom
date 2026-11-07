@@ -1,0 +1,123 @@
+darkscheck <versiune>
+Copyright (C) 2026 Tudor Carean
+
+=== SESIUNE: <sesiune> ===
+    darks              : darks\ (12 cadre .fit)
+    biases             : (lipsa)
+    lights             : (lipsa)
+    aparat             : NIKON D3300
+    expunere darks     : 120.0 s la ISO 400 (toate cadrele)
+    interval darks     : 2026-08-13 00:48:53 -> 2026-08-13 01:12:53 (24 min); 12 cadre, cate unul la 120.0 s; fara pauze peste 5 s
+    potrivire          : NEMASURAT: nu exista lights
+    bias               : (lipsa)
+
+=== DARK-URI: cadre citite 12 din 12, 256 x 192 px, valori de la 200 (negru) la 65535 ADU (alb) (FITS pe 16 biti, albul dedus din fisier, negrul luat din valoarea medie a cadrului 1), filtre de culoare RGGB ===
+    1 ADU-eq           : 1 ADU din fisier: setul e facut chiar la setarile de referinta, ISO 400, 120.0 s
+    pasul valorilor    : langa negru, valorile din fisier cresc din 1 in 1 ADU; primul cadru are 23 de valori diferite (pixelii verzi G1)
+
+  2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU
+    master dark        : centru 0.00, colturi 0.00 / 0.09 / -0.04 / 0.12 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus 0.01 jos 0.03 stanga -0.02 dreapta 0.04  [pixelii verzi G1, ADU peste negru, media a 12 cadre, pe patrate de 32 px]
+    lumina pe cadre    : niciun cadru nu e mai luminos decat ar explica incalzirea (prag: peste 0.1 ADU si de peste 5 ori variatia medie a cadrelor, 0.01 ADU)
+    glow / constant    : la dreapta-jos: glow -0.28 (creste cand senzorul se incalzeste), constant +0.42 ADU (fara bias-uri nu se stie daca e lumina sau o diferenta de nivel din citirea senzorului)
+    lumina constanta   : fara bias-uri nu se poate desparti de diferenta de nivel din citire: constant sus +0.29, jos +0.07, stanga +0.48, dreapta +0.32 ADU
+    verdict            : OK: nicio margine si niciun colt nu difera de centru cu peste 1.0 ADU (cel mai mult +0.12, la dreapta-jos, pe masterul dark (fara bias-uri)); niciun cadru nu are lumina in plus
+
+  3. INCALZIREA CAMEREI IN TIMPUL SERIEI
+    platou             : aparatul s-a racit pe toata seria: pixelii fierbinti scad de la 1.37 din master in primul cadru la 0.85 in ultimul. Daca ar continua, s-ar opri cu 2.3 grade sub master (platoul, la 0.77 din master; doua treimi din drum iau 11 min); ultimul cadru e cu 0.9 grade peste platou
+    de aruncat         : 7 cadre (1 .. 7) sunt la mai mult de 2.0 grade de platou (pixelii fierbinti sub 0.61 sau peste 0.96 din master; platoul 0.77); fara ele masterul ar fi cu 1.2 grade peste platou, dar cu 55 % mai mult zgomot
+    verdict            : REFA: 7 din 12 cadre sunt la peste 2.0 grade de platou, deci masterul nu apartine niciunei temperaturi; refa seria dupa ce aparatul a stat vreo 35 min in locul unde se trag dark-urile (de trei ori cele 11 min ale seriei)
+
+  4. ZGOMOTUL FIECARUI CADRU
+    fata de master     : R 2.91 .. 3.01; G1 2.88 .. 2.97 (de obicei 2.94); G2 2.91 .. 2.96; B 2.88 .. 2.97  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]
+    zgomot de citire   : NEMASURAT: sesiunea nu are bias-uri
+    benzi aleatoare    : orizontale: randurile difera intre ele cu 0.262 ADU, de 1.0 ori cat ar da zgomotul singur; verticale: de 1.0 ori (1 inseamna fara benzi)
+    verdict            : OK: niciun cadru nu are zgomotul de peste 1.5 ori mai mare decat de obicei (2.94 ADU)
+
+  5. PIXELI FIERBINTI
+    pixeli peste prag  : peste 10: 20; peste 20: 20; peste 50: 20; peste 100: 20; peste 500: 0  [pixeli ai masterului, ADU peste negru, toate culorile]
+    pe culori, peste 20: R 20  G1 0  G2 0  B 0
+    cat de fierbinti   : de obicei 116 ADU; 80 % dintre ei intre 114 si 117; cei mai fierbinti 1 % peste 118 (din 20 de pixeli)
+    stabilitate        : 20 din 20 se vad (peste jumatate din prag) in toate cele 12 cadre, 0 lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu 18.80 ADU, ceilalti pixeli cu 2.95; 0 pixeli verzi G1 sar intre doua niveluri (RTS: variaza de peste 6 ori cat zgomotul unui cadru, 3.01)
+    verdict            : OK (informativ): 20 de pixeli peste 20 ADU in 0.05 Mpx
+
+  6. MODEL FIX: CE E LA FEL IN TOATE CADRELE
+    benzi fixe         : randurile masterului difera intre ele cu 0.168 ADU (1.04 intre cel mai luminos si cel mai intunecat, pe R), coloanele cu 0.186 (1.32, pe R)  [dupa ce se scot variatiile lente, pe cate 101 randuri sau coloane]
+    glow               : -0.28 ADU la dreapta-jos, partea care creste cand senzorul se incalzeste (in afara ei, constant +0.42; pe masterul dark)
+    verdict            : OK: benzile fixe raman sub 2.0 ADU intre cel mai luminos si cel mai intunecat rand, iar marginile sub 1.0 fata de centru
+
+  7. PIXELI MORTI SI SATURATI
+    master             : 0 pixeli morti (sub negru minus 50 ADU), 0 saturati (la alb, 65535)
+    verdict            : OK: niciun pixel mort sau saturat pe master
+
+  8. CATE DARK-URI AJUNG
+    zgomot dupa medie  : 1 cadru: 2.99 (se astepta 3.01); 2 cadre: 2.16 (se astepta 2.13); 4 cadre: 1.52 (se astepta 1.51); 5 cadre: 1.35 (se astepta 1.35)  [pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul]
+    master             : 12 cadre dau un master cu 1.08 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 2.99); un master din 6 cadre facut cu mediana si unul din celelalte 6 facut cu media difera cu 1.77 ADU
+    verdict            : ATENTIE: zgomotul masterului (1.08 ADU) e peste pasul valorilor din fisier (1 ADU); ar cobori sub el de la 15 cadre
+
+  9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE
+    verdict            : NEMASURAT: sesiunea nu are lights
+
+  INDEX
+    dark-uri           : idx118 (117.5 ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)
+    eticheta           : <sesiune>-idx118
+
+  TABEL PE CADRE
+     nr  fisier                ora        medie  zgomot    dif.   benzi   fierb.  platou  lumina  latura   >20   [pixelii verzi G1; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); platou = cu cate grade e cadrul fata de temperatura stabila a seriei; de aruncat = la peste 2.0 grade de ea (verificarea 3); lumina = lumina in plus fata de cat explica incalzirea, ADU; latura = latura din stanga fata de centru (fara bias-uri, cu glow), ADU]
+      1  DSC_0001.fit          00:48:53    0.05    3.01    2.89     1.0    1.367    +5.0   -0.01   +0.22     0   de aruncat: pixelii fierbinti sunt la 1.367 din master, peste 0.96, adica la peste 2.0 grade peste platou (0.77)
+      2  DSC_0002.fit          00:50:53    0.05    2.99    2.88     1.0    1.283    +4.5   +0.00   +0.05     0   de aruncat: pixelii fierbinti sunt la 1.283 din master, peste 0.96, adica la peste 2.0 grade peste platou (0.77)
+      3  DSC_0003.fit          00:52:53    0.06    3.03    2.94     1.0    1.192    +3.8   +0.00   -0.01     0   de aruncat: pixelii fierbinti sunt la 1.192 din master, peste 0.96, adica la peste 2.0 grade peste platou (0.77)
+      4  DSC_0004.fit          00:54:53    0.06    3.00    2.94     1.0    1.119    +3.3   +0.00   -0.36     0   de aruncat: pixelii fierbinti sunt la 1.119 din master, peste 0.96, adica la peste 2.0 grade peste platou (0.77)
+      5  DSC_0005.fit          00:56:53    0.06    3.01    2.96     1.0    1.058    +2.8   +0.01   -0.32     0   de aruncat: pixelii fierbinti sunt la 1.058 din master, peste 0.96, adica la peste 2.0 grade peste platou (0.77)
+      6  DSC_0006.fit          00:58:53    0.06    3.01    2.97     1.0    1.022    +2.5   +0.01   +0.15     0   de aruncat: pixelii fierbinti sunt la 1.022 din master, peste 0.96, adica la peste 2.0 grade peste platou (0.77)
+      7  DSC_0007.fit          01:00:53    0.06    3.02    2.97     1.2    0.978    +2.1   +0.01   -0.29     0   de aruncat: pixelii fierbinti sunt la 0.978 din master, peste 0.96, adica la peste 2.0 grade peste platou (0.77)
+      8  DSC_0008.fit          01:02:53    0.05    2.97    2.93     0.9    0.943    +1.8   +0.00   +0.19     0
+      9  DSC_0009.fit          01:04:53    0.04    3.00    2.94     1.1    0.913    +1.5   -0.01   -0.04     0
+     10  DSC_0010.fit          01:06:53    0.03    3.02    2.92     0.9    0.871    +1.1   -0.02   +0.13     0
+     11  DSC_0011.fit          01:08:53    0.05    3.01    2.93     1.0    0.882    +1.2   -0.01   -0.20     0
+     12  DSC_0012.fit          01:10:53    0.06    3.05    2.95     0.9    0.854    +0.9   +0.01   +0.25     0
+
+  EXPLICATII SCARA ADU
+    fisier             : valori de la 0 la 65535 ADU (16 biti); negrul camerei e la 200 si albul la 65535, deci pentru lumina raman 0 .. 65335 ADU
+    1 ADU-eq           : 1 ADU din fisier: setul e facut chiar la setarile de referinta, ISO 400, 120.0 s
+    pasul valorilor    : langa negru, valorile din fisier cresc din 1 in 1 ADU
+    electroni          : la ISO 400, 1 ADU = 2.07 electroni (senzorul transforma lumina in electroni, iar camera ii numara in ADU); 1 ADU-eq = 1.00 ADU = 2.1 electroni; intr-un pixel incap 34446 electroni (full well), iar pixelul prinde 56 % din lumina care cade pe el (QE). Cifre pentru Nikon D3300 de pe photonstophotos.net, scoase din masuratorile DxOMark, citite pe 2026-10-20; la senzorii mici metoda da prea multi electroni pe ADU.
+    zgomot de citire   : NEMASURAT: sesiunea nu are bias-uri (sursa da 2.0 electroni pentru Nikon D3300)
+    zgomot pe un dark  : un dark are 3.01 ADU de zgomot pe pixel; curentul de intuneric (ce aduna un pixel din caldura senzorului) se masoara doar cu bias-uri
+    zgomot in master   : masterul dark, facut din 12 cadre, mai are 1.08 ADU de zgomot pe pixel; stack-ul de lights: sesiunea nu are lights
+    praguri pe set     : pixel fierbinte: peste 20 ADU-eq (20 ADU in fisier); scurgere de lumina pe harta: peste 1.0 ADU-eq (1.0 ADU); lumina constanta pe o latura: peste 0.15 ADU-eq (0.15 ADU); lumina pe un singur cadru: peste 0.1 ADU-eq (0.10 ADU)
+    ce s-a gasit       : nimic peste praguri
+    cer                : fara lights in sesiune
+    saturatie          : la 65535 ADU pixelul e plin si nu mai poate creste; dupa sursa, intr-un pixel incap 34446 electroni (full well)
+
+    ADU e unitatea in care fisierul scrie cat de luminos e fiecare pixel: aici numere intregi de
+    la 0 la 65535 (16 biti), cu negrul camerei la 200. ADU-eq e acelasi ADU recalculat ca si cum
+    cadrul ar fi fost facut la ISO 400 si 120 s, ca sa poti compara serii facute cu setari
+    diferite: pe acest set 1 ADU-eq = 1.00 ADU din fisier. Fisierul urca din 1 in 1 ADU, dar
+    media multor pixeli poate iesi si o fractiune de ADU, pentru ca zgomotul face ca unii pixeli
+    sa cada pe o treapta si altii pe urmatoarea.
+
+    O greseala din masterul dark nu e zgomot. De exemplu: lumina intrata in aparat, sau un nivel
+    de negru putin mutat. Masterul se scade din fiecare light, asa ca greseala ajunge intreaga
+    in stack, oricate cadre ai aduna. Zgomotul, in schimb, scade cand aduni cadre: de 4 ori mai
+    multe cadre il injumatatesc. Masterul dark, facut din 12 cadre, mai are 1.08 ADU de zgomot
+    pe pixel; cu acesta compari o greseala, nu cu zgomotul unui singur cadru. Pe un singur
+    pixel, cei 3.0 ADU de zgomot ai unui dark ascund orice greseala sub 1 ADU. Dar ochiul vede
+    zone, nu pixeli: intr-o zona de 50 x 50 de pixeli zgomotul se compenseaza, iar greseala se
+    vede de 50 de ori mai bine decat pe un pixel. De aceea o treapta de 1 ADU cu margine dreapta
+    se vede cand intinzi tare (stretch) un cer intunecat.
+
+    Fata de cer: sesiunea nu are lights, deci nu se poate spune cat inseamna 1 ADU fata de cerul
+    tau, nici cat zgomot ramane in stack. Deschide sesiunea impreuna cu lights-urile ei si
+    randurile `zgomot in master` si `cer` se completeaza.
+
+    Pragurile: un pixel e fierbinte peste 20 ADU-eq. Pe harta din tab-ul Harti, o scurgere de
+    lumina e evidenta peste 1.0 ADU-eq (pragul din analiza facuta de mana). Lumina constanta pe
+    o latura conteaza peste 0.15 ADU-eq, si doar daca e de peste 3 ori mai mare decat cat poate
+    gresi masuratoarea. Lumina pe un singur cadru conteaza peste 0.1 ADU-eq, si doar daca e de
+    peste 5 ori mai mare decat cat difera de obicei un cadru de celelalte. Ultimele doua praguri
+    spun 'aici e lumina reala, masurata', nu 'se vede in imagine': la 0.15 ADU in fisier abia
+    s-ar vedea, la 1.0 ADU se vede. Remediul e acelasi in ambele cazuri: acoperi vizorul si
+    refaci seria.
+--- stderr ---
+(progresul, omis)
+--- exit 0 ---

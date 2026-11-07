@@ -91,16 +91,21 @@ internal sealed record LeakVerdict(Verdict Verdict, double OffsetAdu, MapRegion 
 /// without a fit), the frames whose ratio to the master is outside <see cref="Th.MatchOptLow"/> ..
 /// <see cref="Th.MatchOptHigh"/> and, of those, the ratio farthest from 1 (NaN when none).
 /// </summary>
-/// <param name="Verdict">Ok when settled and no frame is outside; Unmeasured when the warming's
-/// first-to-last degrees are NaN.</param>
+/// <param name="Verdict">Redo when <paramref name="MostlyOff"/>; else Ok when settled and no
+/// frame is outside; Unmeasured when the warming's first-to-last degrees are NaN.</param>
 /// <param name="Warming">The series' warming.</param>
 /// <param name="Settled">True when the fitted last frame is within
 /// <see cref="Th.SettledCelsius"/> of the plateau, or without a fit.</param>
+/// <param name="MostlyOff">True when the frames off the plateau are more than
+/// <see cref="Th.RedoOffPlateauFraction"/> of <paramref name="FramesWithRatio"/> (ADR 0038); false
+/// without a fit, or with a plateau extrapolated from the top of the grid.</param>
+/// <param name="FramesWithRatio">How many frames have an amplitude ratio (decoded, hot pixels
+/// measured).</param>
 /// <param name="OutsideFrames">The indices (<see cref="FrameInfo.Index"/>) of the frames
 /// outside the band.</param>
 /// <param name="FarthestRatio">The ratio of those farthest from 1 on the log scale; NaN when
 /// none.</param>
-internal sealed record DriftVerdict(Verdict Verdict, Warming Warming, bool Settled, IReadOnlyList<int> OutsideFrames, double FarthestRatio);
+internal sealed record DriftVerdict(Verdict Verdict, Warming Warming, bool Settled, bool MostlyOff, int FramesWithRatio, IReadOnlyList<int> OutsideFrames, double FarthestRatio);
 
 /// <summary>
 /// Check 4: the per-frame residual noise on the reference plane, the frames that stand out, the
@@ -210,8 +215,12 @@ internal static class DarkVerdictAnalyzer
         DarkFrameFigures[] outside = withRatio.Where(f => f.AmpRatioMedian < Th.MatchOptLow || f.AmpRatioMedian > Th.MatchOptHigh).ToArray();
         double farthest = outside.Length == 0 ? double.NaN : outside.Select(f => f.AmpRatioMedian).MaxBy(x => x > 0 ? Math.Abs(Math.Log(x)) : double.PositiveInfinity);
         bool settled = !wm.HasFit || double.IsNaN(wm.SettleCelsius) || Math.Abs(wm.SettleCelsius) <= Th.SettledCelsius;
-        DriftVerdict drift = new(double.IsNaN(wm.DeltaCelsius) ? Verdict.Unmeasured : settled && outside.Length == 0 ? Verdict.Ok : Verdict.Warning,
-            wm, settled, outside.Select(f => f.Info.Index).ToArray(), farthest);
+        // more than half the frames off the plateau: the median master is made of them (ADR 0038); a
+        // plateau guessed from a curve still climbing at the top of the grid condemns nothing
+        bool mostlyOff = wm.HasFit && !wm.TauAtGridTop && wm.OffPlateauFrames.Count > Th.RedoOffPlateauFraction * withRatio.Length;
+        DriftVerdict drift = new(
+            double.IsNaN(wm.DeltaCelsius) ? Verdict.Unmeasured : mostlyOff ? Verdict.Redo : settled && outside.Length == 0 ? Verdict.Ok : Verdict.Warning,
+            wm, settled, mostlyOff, withRatio.Length, outside.Select(f => f.Info.Index).ToArray(), farthest);
 
         // 4. noise
         DarkFrameFigures[] ok = d.Frames.Where(f => f.Error is null).ToArray();

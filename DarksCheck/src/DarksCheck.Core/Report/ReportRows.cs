@@ -32,7 +32,7 @@ namespace DarksCheck.Core;
 internal sealed record ReportRow(string Label, string Value, IReadOnlyList<string>? Bold = null)
 {
     // Both languages' words, so a row is read the same whatever language wrote it (ADR 0021).
-    private static readonly string[] Words = ["NEMASURAT", "UNMEASURED", "ATENTIE", "WARNING", "OK"];
+    private static readonly string[] Words = ["NEMASURAT", "UNMEASURED", "ATENTIE", "WARNING", "REFA", "REDO", "OK"];
 
     /// <summary>
     /// The value's substrings the window renders bold (ADR 0016): the masters' noise and the light
@@ -62,8 +62,8 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
     }
 
     /// <summary>
-    /// OK, WARNING, UNMEASURED, ATENTIE or NEMASURAT when the text opens with it as a word, else
-    /// null.
+    /// OK, WARNING, REDO, UNMEASURED, ATENTIE, REFA or NEMASURAT when the text opens with it as a
+    /// word, else null.
     /// </summary>
     /// <param name="value">The text; not null.</param>
     /// <returns>The verdict word the text opens with, followed by its end, ':' or ' '; null when it

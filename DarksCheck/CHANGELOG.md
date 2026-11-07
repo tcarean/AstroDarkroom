@@ -34,6 +34,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- Check 3 says which way the camera moved and when the series is to be taken again (R-023, ADR
+  0038): the `plateau` row opens with "the camera cooled the whole series" (or warmed), with the
+  hot pixels of the first and the last frame, and the verdict is a red `REDO` (`REFA`) when more
+  than half the frames are more than 2 degrees from the plateau, with the advice to let the
+  camera sit for three time constants before a cooling series is taken again, or to take a
+  warming one longer; no distance to the plateau is printed with a sign any more, a frame is
+  "above" or "below" it, and a cooling series says it started warmer than the place it was in.
+  The `hot pixels` row of check 3 is gone, its figures in the `plateau` row; the window's chart
+  note says what a falling curve means.
 - The texts around the report speak plain words, in English and Romanian (R-088, ADR 0037): the
   start screen says the program reads and measures the frames, the progress lines read `Reading
   the darks: 3 / 20` (`Se citesc dark-urile`) in the window and on the console's stderr, and the

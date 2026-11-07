@@ -38,7 +38,7 @@ public partial class EnglishGoldenOutputTests
         "cadru", "cadre", "grade", "sesiune", "sesiunii", "partener", "partenerului", "eticheta", "biblioteca",
         "lipsa", "fierbinti", "morti", "scurgeri", "scurgere", "lumina", "deriva", "zgomot", "platou", "platoul",
         "sarit", "sarite", "raport", "raportul", "verificarea", "tabel", "harta", "hartile", "folosire", "Folosire",
-        "NEMASURAT", "ATENTIE", "EROARE", "TABEL", "SCURGERI", "DERIVA", "ZGOMOT", "PIXELI", "EXPLICATII", "SCARA",
+        "NEMASURAT", "ATENTIE", "REFA", "EROARE", "TABEL", "SCURGERI", "DERIVA", "ZGOMOT", "PIXELI", "EXPLICATII", "SCARA",
     ];
 
     [Fact]
@@ -56,6 +56,14 @@ public partial class EnglishGoldenOutputTests
         using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel, HotFactor = 0.9 + 0.2 * i / 3 }, biases: 3);
 
         Check("en_darks.txt", true, [s.Root, "--threads", "2"], s.Root, null);
+    }
+
+    [Fact]
+    public void R093_Redo_InEnglish()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice, HotFactor = 0.72 + 0.6 * Math.Exp(-i / 6.0) });
+
+        Check("en_redo.txt", true, [s.Root, "--threads", "2"], s.Root, null);
     }
 
     [Fact]

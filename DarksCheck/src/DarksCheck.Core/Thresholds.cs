@@ -231,6 +231,16 @@ internal static class Th
     internal const double OffPlateauCelsius = 2.0;
 
     /// <summary>
+    /// When more than this fraction of the frames with a ratio are off the plateau, the median
+    /// master belongs to no temperature and check 3 reads REFA: the series is taken again (ADR
+    /// 0038). Measured 2026-11-07 on the eight real series: the owner's darks of 2026-11-07, shot
+    /// after the camera came out warm into 2 °C air, had 21 of 30 off (0.70, the master 83 % noisier
+    /// without them); the next highest, the 9.2 °C library, 12 of 30 (0.40); the others 1 .. 8 of
+    /// 30 and 2 of 20.
+    /// </summary>
+    internal const double RedoOffPlateauFraction = 0.5;
+
+    /// <summary>
     /// A series whose fitted curve still has more than this many degrees to climb (or fall) at its
     /// last frame has not settled: its master belongs to no temperature. The seven series measured
     /// 2026-10-21 had 0.1 .. 0.4 °C left; a series cut mid-warm-up has 1.5 and more (ADR 0017).
