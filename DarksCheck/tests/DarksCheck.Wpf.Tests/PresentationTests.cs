@@ -53,18 +53,21 @@ public class VerdictPaletteTests
     [InlineData("OK", "OK (informativ)")]
     [InlineData("ATENTIE", "ATENTIE: ceva")]
     [InlineData("NEMASURAT", "")]
+    [InlineData("REFA", "EROARE")]
+    [InlineData("REDO: the camera", "REFA: aparatul")]
     public void WordsOfTheSameSeverityShareTheColour(string a, string b)
         => Assert.Equal(VerdictPalette.For(a), VerdictPalette.For(b));
 
     [Fact]
-    public void TheThreeVerdictWordsAndTheErrorGetFourDistinctColours()
+    public void TheFourVerdictWordsAndTheErrorGetFourDistinctColours()
     {
-        Color[] colours = [VerdictPalette.For("OK"), VerdictPalette.For("ATENTIE"), VerdictPalette.For("EROARE"), VerdictPalette.For("NEMASURAT")];
+        Color[] colours = [VerdictPalette.For("OK"), VerdictPalette.For("ATENTIE"), VerdictPalette.For("REFA"), VerdictPalette.For("EROARE"), VerdictPalette.For("NEMASURAT")];
         Assert.Equal(4, colours.Distinct().Count());
         Assert.Equal(VerdictPalette.Good, colours[0]);
         Assert.Equal(VerdictPalette.Warn, colours[1]);
         Assert.Equal(VerdictPalette.Bad, colours[2]);
-        Assert.Equal(VerdictPalette.Neutral, colours[3]);
+        Assert.Equal(VerdictPalette.Bad, colours[3]);
+        Assert.Equal(VerdictPalette.Neutral, colours[4]);
     }
 
     [Theory]

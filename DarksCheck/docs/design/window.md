@@ -166,7 +166,9 @@ from FlatCheck): on a dependency property or a `Setter` it returns a one-time bi
 template parsed once picks its wording when each element is made; elsewhere it returns the
 wording at once. The view-model's sentences (`WindowTexts`, the chart captions) are `T(...)`
 pairs read as properties. The verdict chips colour either language's words
-(`VerdictPalette.Severity`). The window still finds the maps' rows by the labels `master dark`,
+(`VerdictPalette.Severity`: OK good, ATENTIE / WARNING attention, REFA / REDO and EROARE /
+ERROR bad, NEMASURAT / UNMEASURED neutral). The window still finds the maps' rows by the
+labels `master dark`,
 `master bias` and `dark - bias` and the sections by their `5.`, `9.` and `INDEX` prefixes,
 which the report keeps the same in both languages. `LanguageWindowTests` render every tab in an
 English scope and look for Romanian words, and the Cadre, Harti, Pixeli fierbinti, Lights and Index

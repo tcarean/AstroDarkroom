@@ -38,7 +38,7 @@ public partial class EnglishGoldenOutputTests
         "cadru", "cadre", "grade", "sesiune", "sesiunii", "partener", "partenerului", "eticheta", "biblioteca",
         "lipsa", "fierbinti", "morti", "scurgeri", "scurgere", "lumina", "deriva", "zgomot", "platou", "platoul",
         "sarit", "sarite", "raport", "raportul", "verificarea", "tabel", "harta", "hartile", "folosire", "Folosire",
-        "NEMASURAT", "ATENTIE", "EROARE", "TABEL", "SCURGERI", "DERIVA", "ZGOMOT", "PIXELI", "EXPLICATII", "SCARA",
+        "NEMASURAT", "ATENTIE", "REFA", "EROARE", "TABEL", "SCURGERI", "DERIVA", "ZGOMOT", "PIXELI", "EXPLICATII", "SCARA",
     ];
 
     [Fact]

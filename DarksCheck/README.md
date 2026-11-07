@@ -109,8 +109,8 @@ text in Romanian: the usage, the progress, the report and the error messages. `-
 `--lang`, gives English. Another value (`--lang fr`) stops the console with
 `ERROR: --lang expects en or ro, got 'fr'` and exit code `1`, in English; the window says it in a
 message and goes on in English. The figures, the label and the names of the files written are
-the same in both languages; the verdict words are `OK`, `WARNING` and `UNMEASURED` in English,
-`OK`, `ATENTIE` and `NEMASURAT` in Romanian.
+the same in both languages; the verdict words are `OK`, `WARNING`, `REDO` and `UNMEASURED` in
+English, `OK`, `ATENTIE`, `REFA` and `NEMASURAT` in Romanian.
 
 ### The report
 
@@ -119,8 +119,9 @@ time (the progress goes to stderr: `Reading the darks: 3 / 20`), and holds them 
 mosaics, 48 MB a frame at 24 MP. Above 60 frames, or the cap `--max-frames N` sets, it decodes
 one file in k and lists the others as `skipped`, which is not an error. Then it reads the lights
 one by one, under the same cap, without keeping them. It prints the session's lines, one section
-per check, each with its figures and a `verdict` row that starts with `OK`, `WARNING` or
-`UNMEASURED`, then `INDEX`, the frames table, the lights table and `ADU SCALE EXPLAINED`.
+per check, each with its figures and a `verdict` row that starts with `OK`, `WARNING`, `REDO`
+(check 3 only: the series is to be taken again) or `UNMEASURED`, then `INDEX`, the frames
+table, the lights table and `ADU SCALE EXPLAINED`.
 
 On the author's computer (8 cores, 4 threads), the Smida session, 20 darks, 30 biases and 32
 lights, takes 63 to 65 seconds and up to 5.9 GB of memory; the library of 30 darks, 24 to 26
@@ -158,10 +159,9 @@ The start of the report on Smida:
     verdict            : OK: no edge and no corner differs from the centre by more than 1.0 ADU-eq (the most +0.09, at the top-left, on dark minus bias); no frame has more light; no side has constant light above 0.15 ADU-eq
 
   3. THE CAMERA'S WARMING DURING THE SERIES
-    hot pixels         : in the first frame they are at 0.83 of their level in the master, in the last at 1.07 (443 pixels above 20 ADU-eq); they rise with the temperature, so they show how warm the sensor was
-    plateau            : the series warms towards a steady temperature (the plateau), at 1.10 of the master; it covers two thirds of the way in 15 min; the master is 0.8 degrees below the plateau; the last frame is still +0.2 degrees from the plateau
+    plateau            : the camera warmed the whole series: the hot pixels rise from 0.83 of the master in the first frame to 1.07 in the last. Left to run, it would settle 0.8 degrees above the master (the plateau, at 1.10 of the master; two thirds of the way take 15 min); the last frame is still 0.2 degrees below it
     to discard         : 2 frames (1, 2) are more than 2.0 degrees from the plateau (the hot pixels below 0.87 or above 1.38 of the master; the plateau 1.10); without them the master would be 0.7 degrees below the plateau, but with 5 % more noise
-    verdict            : OK: the series settled (the last frame is still +0.2 degrees from the plateau, under 1.0) and every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); the warming of 2.2 degrees over 38 min is at the start (the degrees reckoned with the rule that the thermal signal doubles every 6 degrees); the frames to discard are in the row above
+    verdict            : OK: the series settled (the last frame is 0.2 degrees below the plateau, under 1.0) and every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); the warming of 2.2 degrees over 38 min is at the start (the degrees reckoned with the rule that the thermal signal doubles every 6 degrees); the frames to discard are in the row above
 ```
 
 #### 2. Light leaks and differences across the frame
@@ -215,23 +215,31 @@ constant of 15 min outdoors (Smida) and 18 to 28 min indoors (the libraries). Th
 degrees in 38 min on Smida and 2.8 to 3.6 degrees in 58 min on the libraries, even after 20
 minutes of frames thrown away first.
 
-From 6 frames up, `plateau` fits the curve and says where the plateau is, how far under it the
-master sits (the median of the series, 0.8 to 1.4 degrees on the measured series) and how far
-the series still had to go at its last frame (signed: + still rising, - falling). `to discard`
+From 6 frames up, `plateau` fits the curve and says which way the camera moved, from the hot
+pixels of the first frame to the last (a series that cools came in warmer than the place it
+sat in), where it would settle (the plateau, 0.8 to 1.4 degrees above the master, the median
+of the series, on the measured libraries, with the time two thirds of the way take) and how
+far above or below the plateau the last frame still was. `to discard`
 names the frames more than 2 degrees from the plateau (the cold start, with a dark current more
 than 21 % under the plateau's; 3 to 5 of 30 on the libraries, 2 of 20 on Smida), says where the
 master would be without them and how much its noise would grow (the square root of the frames
 over the frames left). You move them out of `darks\` yourself, since the program writes nothing
 into the folder, and you leave them when the noise costs more than the half degree is worth.
 
-The verdict is `WARNING` only when the series is still climbing at its last frame (more than 1
-degree to go: the master belongs to no temperature, continue the series) or when a frame leaves
-0.7 to 1.4 of the master (the margin of Siril's `-opt`: the series started cold); the warm-up at
-the start is only stated. Under 6 frames no plateau is fitted and the verdict rests on the 0.7
-to 1.4 margin alone. In the frames table the column `plateau` gives every frame's degrees from
-the plateau, and a frame to discard has its reason at the end of its row; in the window, the
-Frames tab shows that row, the value and the reason in yellow, and the chart has
-the plateau and the two bounds.
+The verdict is `REDO`, in red, when more than half the frames are more than 2 degrees from
+the plateau: the master, the median of the series, then belongs to no temperature, and the
+advice is to take the series again, after the camera has sat where it shoots for three times
+the series' time constant when it was cooling, or as a longer series when it was warming. The
+author's darks of 2026-11-07, taken at 2 °C right after the camera came out of the house,
+cooled 4 degrees in the hour and had 21 of 30 frames off the plateau, the master 83 % noisier
+without them. The verdict is `WARNING` when the series is still warming or cooling at its last
+frame (more than 1 degree to go: the master mixes temperatures, continue the series) or when a
+frame leaves 0.7 to 1.4 of the master (the margin of Siril's `-opt`: the series started cold);
+the warm-up at the start is only stated. Under 6 frames no plateau is fitted and the verdict
+rests on the 0.7 to 1.4 margin alone. In the frames table the column `plateau` gives every
+frame's degrees from the plateau, and a frame to discard has its reason at the end of its row;
+in the window, the Frames tab shows that row, the value and the reason in the attention
+colour, and the chart has the plateau and the two bounds.
 
 #### Checks 4 to 8
 

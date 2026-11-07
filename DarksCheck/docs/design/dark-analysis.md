@@ -167,9 +167,12 @@ beside the eight and lets check 6's glow be the glow part of that region.
 `Th`: the leak from the largest region departure of the dark-minus-bias map (or the dark
 master without biases), its sign telling light from a readout offset, `ATENTIE` also when a
 frame is lit, and the words of the brighter case from the cause of the split; the drift as
-`ATENTIE` only when the series has not settled or a frame leaves the `-opt` band of the master
-(the frames off the plateau are information, in the `de aruncat` row, the table's `platou`
-column and a note on their rows); the noise from the residual sigma outliers, with the temporal noise
+`REFA` (`Verdict.Redo`, `DriftVerdict.MostlyOff`) when more than `Th.RedoOffPlateauFraction` of
+the frames with a ratio are off a fitted plateau (not one extrapolated from the top of the
+grid), since the median master is then made of them (ADR 0038), else `ATENTIE` only when the
+series has not settled or a frame leaves the `-opt` band of the master (the frames off the
+plateau are otherwise information, in the `de aruncat` row, the table's `platou` column and a
+note on their rows); the noise from the residual sigma outliers, with the temporal noise
 over the read noise beside it; the pattern from the worst structured banding and the glow;
 the dead and saturated counts; and whether the frames are enough: at least `Th.MinDarks`, and
 the median master's predicted noise (`Th.MedianNoiseFactor` x the temporal sigma / sqrt(N))
@@ -274,12 +277,17 @@ the reference settings themselves (`AtReference`: ISO `Th.NormIso` and `Th.NormE
 by those words and any other set, a factor of 1 at ISO 800 and 60 s included, by its factor.
 `WarmingChartNote` is the sentence the window
 puts under its warming chart: the plateau and the band of the frames to discard, when there
-is a fit. Every side text, check 2's, the note's and the ADU scale section's, names a side
+is a fit. Check 3's rows take the camera's direction from the plateau against the first frame's
+ratio (`PlateauRow`, `Drift`: the plateau under it is a series that cooled), print every
+distance to the plateau unsigned with "above" or "below" (`FromMaster` for the plateau against
+the master, `FromPlateau` for the master against the plateau), and give the `REFA` advice of a
+cooling series as three times `TauMinutes` rounded up to a multiple of five (ADR 0038).
+Every side text, check 2's, the note's and the ADU scale section's, names a side
 with its preposition (`SideWithPreposition`: `latura de sus`, `latura din dreapta`). A frame
 whose hot pixels do not show at all (a ratio at or under 0) is off the plateau in `WarmingOf`,
 and `FrameRows` gives it its own reason, with no degrees; `NoiseColumnTip` and `HotColumnTip`
 are the hints of two columns that name the series' pixels. A `ReportRow` reads its own verdict word off the
-value (`Verdict`: OK, ATENTIE or NEMASURAT, or their English WARNING and UNMEASURED, when the value
+value (`Verdict`: OK, ATENTIE, REFA or NEMASURAT, or their English WARNING, REDO and UNMEASURED, when the value
 opens with it as a word, or ATENTIE (WARNING) when that is the row's label, the warnings about frames that failed; `Rest` the value without
 a leading word and the `: ` or space after it, the whole value otherwise), so the window shows
 the chip and the rest without parsing prose; the word list and the split live here, in

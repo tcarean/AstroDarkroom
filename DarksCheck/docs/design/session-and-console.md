@@ -123,8 +123,8 @@ the English `BadValueMessage` and exit 1, and runs the rest of the console in
 `Ui.Use(language)` when one was given, else under `Ui.Default`. The window reads the same
 record before its first view (`docs/design/window.md`).
 
-The verdict words are the run's language's: `OK`, `WARNING`, `UNMEASURED` in English, `OK`,
-`ATENTIE`, `NEMASURAT` in Romanian; `ReportRow.VerdictOf` and the window's `VerdictPalette`
-read either. The test assemblies set `Ui.Default` to Romanian in a module initializer
+The verdict words are the run's language's: `OK`, `WARNING`, `REDO`, `UNMEASURED` in English,
+`OK`, `ATENTIE`, `REFA`, `NEMASURAT` in Romanian; `ReportRow.VerdictOf` and the window's
+`VerdictPalette` read either. The test assemblies set `Ui.Default` to Romanian in a module initializer
 (`RomanianByDefault.cs`), so the tests written before the English stand as they were; the
 English is pinned by `EnglishGoldenOutputTests` and `LanguageTests`.

@@ -39,8 +39,9 @@ internal static class VerdictPalette
 
     /// <summary>
     /// Severity of a verdict word, in either language (ADR 0021): 0 good (OK), 2 attention
-    /// (ATENTIE, WARNING), 3 bad (EROARE, ERROR), -1 neutral (NEMASURAT, UNMEASURED, empty), 1
-    /// anything else. The word is read by its start, case-insensitively.
+    /// (ATENTIE, WARNING), 3 bad (REFA, REDO, the series to take again, ADR 0038; EROARE, ERROR),
+    /// -1 neutral (NEMASURAT, UNMEASURED, empty), 1 anything else. The word is read by its start,
+    /// case-insensitively.
     /// </summary>
     /// <param name="verdict">The verdict word or the text it starts; null counts as empty.</param>
     /// <returns>The severity, from -1 to 3.</returns>
@@ -62,7 +63,8 @@ internal static class VerdictPalette
             return 2;
         }
 
-        if (v.StartsWith("EROARE", StringComparison.Ordinal) || v.StartsWith("ERROR", StringComparison.Ordinal))
+        if (v.StartsWith("REFA", StringComparison.Ordinal) || v.StartsWith("REDO", StringComparison.Ordinal)
+            || v.StartsWith("EROARE", StringComparison.Ordinal) || v.StartsWith("ERROR", StringComparison.Ordinal))
         {
             return 3;
         }

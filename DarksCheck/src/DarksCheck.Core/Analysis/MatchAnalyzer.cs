@@ -30,6 +30,12 @@ internal enum Verdict
 
     /// <summary>The check could not be made: a figure was missing.</summary>
     Unmeasured,
+
+    /// <summary>
+    /// The series is compromised and is to be taken again: check 3 when more than
+    /// <see cref="Th.RedoOffPlateauFraction"/> of the frames are off the plateau (ADR 0038).
+    /// </summary>
+    Redo,
 }
 
 /// <summary>

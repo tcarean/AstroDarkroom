@@ -39,7 +39,7 @@ public partial class LanguageWindowTests
 
     // Words that only Romanian text holds; the paths of the synthetic sessions are temp folders and
     // the file names DSC_nnnn, so none of these can come from them.
-    [GeneratedRegex(@"\b(cadre|cadru|cadrele|fata de|dark-uri|dark-urile|sesiunii|sesiune|NEMASURAT|ATENTIE|EROARE|Rezumat|Raport|Alege|pixeli|fierbinti|lumina|verificarea|biblioteca|partener|partenerul|eticheta|zgomot|masurat|niciun|niciunul|amandoua|scadere)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(cadre|cadru|cadrele|fata de|dark-uri|dark-urile|sesiunii|sesiune|NEMASURAT|ATENTIE|REFA|EROARE|Rezumat|Raport|Alege|pixeli|fierbinti|lumina|verificarea|biblioteca|partener|partenerul|eticheta|zgomot|masurat|niciun|niciunul|amandoua|scadere)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex RomanianWord();
 
     [Theory]

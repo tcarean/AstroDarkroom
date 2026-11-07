@@ -1,7 +1,7 @@
 # 0017. Check 3 judges the plateau of the series, not the first frame against the last
 
 Date: 2026-10-21
-Status: accepted 2026-10-21
+Status: accepted 2026-10-21; the verdict levels of check 3 and its rows superseded by 0038
 Supersedes: 0007 in part (the drift verdict at 1 °C first to last)
 
 ## Context
