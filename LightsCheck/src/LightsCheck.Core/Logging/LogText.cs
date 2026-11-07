@@ -229,7 +229,7 @@ internal static class LogText
             + " patternSurviving=" + Num(d.PatternSurviving) + " walkingStretch=" + StretchOf(d.WalkingStretch)
             + " runsMid=" + Int(d.RunsMid.Count) + " runsLoose=" + Int(d.RunsLoose.Count)
             + " span x=" + Num(d.SpanX) + " y=" + Num(d.SpanY)
-            + " hotPixelsOk=" + Yes(d.HotPixelsOk) + " walkingNoiseOk=" + Yes(d.WalkingNoiseOk);
+            + " hotPixelsOk=" + Yes(d.HotPixelsOk) + " walkingStretches=" + Int(d.WalkingStretches.Count);
     }
 
     /// <summary>The sensor's fixed pattern read from the lights' central crops.</summary>
@@ -282,7 +282,7 @@ internal static class LogText
             + " focusHeld=" + Yes(s.FocusHeld) + " dewSuspected=" + Yes(s.DewSuspected)
             + " drift x=" + Num(s.DriftXPerMin) + " y=" + Num(s.DriftYPerMin) + " px/min pairs=" + Int(s.DriftPairs) + " approximate=" + Yes(s.DriftApproximate)
             + " medianExposure=" + Num(s.MedianExposureSeconds) + " s driftPerExposure=" + Num(s.DriftPerExposurePx) + " px axis=" + s.DriftAxis
-            + " walking streak=" + Num(s.WalkingStreakPx) + " px noise=" + s.WalkingNoise
+            + " walking streak=" + Num(s.WalkingStreakPx) + " px sharedFrames=" + Int(s.WalkingSharedFrames) + " patternPiles=" + Yes(s.PatternPiles) + " noise=" + s.WalkingNoise
             + " rotation total=" + Num(s.RotationTotalDeg) + " deg perHour=" + Num(s.RotationPerHourDeg)
             + " cornerShiftPerExposure=" + Num(s.CornerShiftPerExposurePx) + " px"
             + " raAxis=" + s.RaAxis + " trailAngle=" + Num(s.TrailAngleDeg) + " trailOn=" + s.TrailOn

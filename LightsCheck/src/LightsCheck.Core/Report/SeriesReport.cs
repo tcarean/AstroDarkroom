@@ -1409,10 +1409,11 @@ internal static class SeriesReport
 
     /// <summary>
     /// The two dithering verdicts in one word pair, the worse first so the chip takes its
-    /// colour (R-021, R-043): walking noise `OK` by the dither rule, `NO` (`FARA`) when the drift
-    /// draws a dash under Th.WalkingStreakVisible in the longest run at 10 px, `INSUFFICIENT`
-    /// (`INSUFICIENT`) otherwise; hot pixels `OK` or `WARNING` (`ATENTIE`). The words stay short for the chip; the dash,
-    /// the drift, the run and the hot-pixel rule open the text, in plain words (R-077).
+    /// colour (R-021, R-043, R-084): walking noise `INSUFFICIENT` (`INSUFICIENT`) when the frames
+    /// whose streak would show reach Th.WalkingSharedFraction, `NO` (`FARA`) when the pattern
+    /// piles in place instead, `OK` otherwise; hot pixels `OK` or `WARNING` (`ATENTIE`). The
+    /// words stay short for the chip; the dash with the frames that share it, the drift, the
+    /// run, the pattern kept and the hot-pixel rule open the text, in plain words (R-077).
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
@@ -1437,15 +1438,12 @@ internal static class SeriesReport
         string drift = s.DriftPerExposurePx is double dpe
             ? T($"the drift is {RunReport.F(dpe, 2)} px over one exposure; {run}", $"driftul e de {RunReport.F(dpe, 2)} px intr-o expunere; {run}")
             : T($"the drift could not be measured; {run}", $"driftul nu s-a putut masura; {run}");
+        string detail = string.Join("; ", new[] { StreakClause(r, drift), PatternClause(r) }.Where(x => x is not null));
         (int Severity, string Word, string? Detail) walk = s.WalkingNoise switch
         {
-            WalkingNoise.Ok => (0, T("OK for walking noise", "OK pentru walking noise"), null),
-            WalkingNoise.Static => (0, T("NO walking noise", "FARA walking noise"), d.WalkingStretch is null
-                ? T($"no walking-noise streak: {drift}", $"nicio dara de walking noise: {drift}")
-                : T($"walking-noise streaks of at most {RunReport.F(s.WalkingStreakPx ?? 0, 1)} px: {drift}", $"dare de walking noise de cel mult {RunReport.F(s.WalkingStreakPx ?? 0, 1)} px: {drift}")),
-            _ => (3, T("INSUFFICIENT for walking noise", "INSUFICIENT pentru walking noise"), s.WalkingStreakPx is double st
-                ? T($"walking-noise streaks of up to {RunReport.F(st, 1)} px along {DriftAxisWord(s)}: {drift}", $"dare de walking noise de pana la {RunReport.F(st, 1)} px pe {DriftAxisWord(s)}: {drift}")
-                : $"walking noise: {drift}"),
+            WalkingNoise.Ok => (0, T("OK for walking noise", "OK pentru walking noise"), detail),
+            WalkingNoise.Static => (0, T("NO walking noise", "FARA walking noise"), detail),
+            _ => (3, T("INSUFFICIENT for walking noise", "INSUFICIENT pentru walking noise"), detail),
         };
         (var first, var second) = walk.Severity >= hot.Severity ? (walk, hot) : (hot, walk);
         string loose = RunReport.F(Th.CoverageLoose, 0), frames = d.Registered.ToString(Inv);
@@ -1457,6 +1455,66 @@ internal static class SeriesReport
             $"{moves} over {frames} frames, {spots} (within {loose} px), {alone}, {both}",
             $"{moves} la {RoCount(frames)}cadre, {spots} (la {loose} px), {alone}, {both}");
         return ($"{first.Word}, {second.Word}", string.Join("; ", new[] { first.Detail, second.Detail, counts }.Where(x => x is not null)));
+    }
+
+    /// <summary>
+    /// How the verdict's text opens (R-084): the streaks with the frames that share one when
+    /// a stretch's dash shows, `walking-noise streaks of up to 5.9 px along Y, in 7 frames of 85
+    /// (8.2 %; from 25 % they show in the stack): the drift ...`; the longest dash with the size
+    /// under which it does not show when none does, `walking-noise streaks of at most 1.9 px
+    /// (under 3 px they do not show): ...`; `no walking-noise streak: ...` without a stretch;
+    /// `walking noise: the drift could not be measured; ...` without a drift.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <param name="drift">The drift and the stretch in words, which every form ends with.</param>
+    /// <returns>The opening clause, in the language of the moment.</returns>
+    private static string StreakClause(SeriesResult r, string drift)
+    {
+        SeriesAnalysis s = r.Series;
+        if (s.WalkingStreakPx is not double st)
+        {
+            return T($"walking noise: {drift}", $"walking noise: {drift}");
+        }
+
+        if (r.Dither.WalkingStretch is null)
+        {
+            return T($"no walking-noise streak: {drift}", $"nicio dara de walking noise: {drift}");
+        }
+
+        string px = RunReport.F(st, 1), visible = RunReport.F(Th.WalkingStreakVisible, 0);
+        if (s.WalkingSharedFrames == 0)
+        {
+            return T($"walking-noise streaks of at most {px} px (under {visible} px they do not show): {drift}", $"dare de walking noise de cel mult {px} px (sub {visible} px nu se vad): {drift}");
+        }
+
+        string shared = s.WalkingSharedFrames.ToString(Inv), frames = r.Dither.Registered.ToString(Inv);
+        // One decimal on the share, so a share just under the limit never prints as the limit.
+        string pct = RunReport.F(100 * s.WalkingSharedFraction, 1), from = RunReport.F(100 * Th.WalkingSharedFraction, 0);
+        return T(
+            $"walking-noise streaks of up to {px} px along {DriftAxisWord(s)}, in {shared} frames of {frames} ({pct} %; from {from} % they show in the stack): {drift}",
+            $"dare de walking noise de pana la {px} px pe {DriftAxisWord(s)}, in {RoCount(shared)}cadre din {frames} ({pct} %; de la {from} % se vad in stiva): {drift}");
+    }
+
+    /// <summary>
+    /// What the stack keeps of one frame's pattern, against the ideal and the limit over which
+    /// it counts as piling (R-084): `in the stack 1.4 % of one frame's pattern stays (ideal
+    /// 1.2 %, fine up to 1.8 %)`, or `the pattern adds up in place: 23.4 % of one frame's
+    /// pattern stays in the stack (ideal 3.1 %, fine up to 4.7 %)` over the limit.
+    /// </summary>
+    /// <param name="r">The result of the series run, with the pattern kept, the registered count and whether it piles.</param>
+    /// <returns>The clause, or null when no frame was registered.</returns>
+    private static string? PatternClause(SeriesResult r)
+    {
+        DitherAnalysis d = r.Dither;
+        if (d.PatternSurviving is not double f || d.Registered == 0)
+        {
+            return null;
+        }
+
+        string kept = RunReport.F(100 * f, 1), ideal = RunReport.F(100.0 / d.Registered, 1), limit = RunReport.F(100 * Th.PatternPilingFactor / d.Registered, 1);
+        return r.Series.PatternPiles
+            ? T($"the pattern adds up in place: {kept} % of one frame's pattern stays in the stack (ideal {ideal} %, fine up to {limit} %)", $"pattern-ul se aduna pe loc: in stiva ramane {kept} % din pattern-ul unui cadru (ideal {ideal} %, bine pana la {limit} %)")
+            : T($"in the stack {kept} % of one frame's pattern stays (ideal {ideal} %, fine up to {limit} %)", $"in stiva ramane {kept} % din pattern-ul unui cadru (ideal {ideal} %, bine pana la {limit} %)");
     }
 
     /// <summary>A count and its noun, the noun singular for one, in the language of the moment.</summary>

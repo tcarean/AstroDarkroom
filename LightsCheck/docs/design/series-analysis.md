@@ -2,7 +2,7 @@
 
 **Covers:** `src/LightsCheck.Core/Analysis/Registration.cs`, `src/LightsCheck.Core/Analysis/Dithering.cs`, `src/LightsCheck.Core/Analysis/SeriesAnalyzer.cs`, `src/LightsCheck.Core/Analysis/Wcs.cs`, `src/LightsCheck.Core/Analysis/NoiseAnalyzer.cs`, `src/LightsCheck.Core/Analysis/PatternAnalyzer.cs`, `src/LightsCheck.Core/Analysis/PixelPitch.cs`, `src/LightsCheck.Core/Runs/SeriesRun.cs`, `src/LightsCheck.Core/Report/SeriesReport.cs`, `src/LightsCheck.Core/Report/SeriesOutputs.cs`.
 
-The behaviour is R-018 to R-028, R-042 to R-046, R-049 and R-050; the dither definitions and the verdicts are ADR 0007, the drift-aware walking verdict and the sensor's pattern ADR 0015, the drift pairs and the polar alignment ADR 0016. The
+The behaviour is R-018 to R-028, R-042 to R-046, R-049, R-050 and R-084; the dither definitions and the verdicts are ADR 0007, the drift-aware walking verdict and the sensor's pattern ADR 0015, the drift pairs and the polar alignment ADR 0016, the verdict by the frames whose streak would show and the pattern that piles ADR 0039. The
 prototype is `prototype/reg.py` and `prototype/summary.py`; `docs/validation/2026-10-06-veil/raport.md`
 is the hand report the tool reproduces, and V-008 pins its session figures.
 
@@ -51,8 +51,8 @@ The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
 `VoteStars`, `VoteRange`, `VoteBin`, `MatchToleranceCoarse`, `MatchToleranceFine`,
 `MatchIterations`, `MinMatches`; dithering, `DitherStep`, `DitherPause`, `DitherSizeBounds`,
 `AxisStep`, `CoverageTight`, `CoverageMid`, `CoverageLoose`, `RunMinFrames`,
-`HotPixelRunMax`, `WalkingNoiseDistinctFraction`, `WalkingNoiseIsolatedFraction`,
-`TwoDAxisFraction`; the drift-aware verdict and the pattern, `WalkingStreakVisible`,
+`HotPixelRunMax`; the drift-aware verdict and the pattern, `WalkingStreakVisible`,
+`WalkingSharedFraction`, `PatternPilingFactor`,
 `PatternCrop`, `PatternHotSigma`, `PatternMinFrames`, `PatternClusterFraction`,
 `PatternSharePx`; the drift pairs and the polar alignment, `DriftMinPairs`,
 `PolarDriftFwhmFraction`, `PolarRotationMinHours`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
@@ -93,16 +93,25 @@ pairs that put the same pixels on the same pixels.
 After the drift per minute, `SeriesAnalyzer` takes the median exposure of the frames that
 carry one and turns the drift vector into `DriftPerExposurePx`; `DriftAxis` is the image axis
 with the larger component (the report words it RA or DEC through `RaAxis`, else X or Y).
-`MedianExposureSeconds` is kept for the report. The dash, `WalkingStreakPx`, is the drift
-per exposure times the frames minus one of `DitherAnalysis.WalkingStretch`, which
-`DitherAnalyzer` takes as the longest result of `Runs` with a minimum of two frames at
-`Th.CoverageLoose`; a pair of frames at one spot with a large drift between them counts,
-which the runs of three did not. `WalkingNoise` reads both: `Ok` when `DitherAnalysis.WalkingNoiseOk` (the
-dither rule is untouched), else `Static` when the dash is known and under
-`Th.WalkingStreakVisible`, else `Insufficient`; `Unknown` under two registered frames. The
-`Static` word is the one Smida gets: a drift of a seventh of a pixel per exposure moves no
-pattern, however the map looks. The report's `DitherVerdict` orders the walking and the
-hot-pixel words worst first, so the chip's colour is the worse of the two.
+`MedianExposureSeconds` is kept for the report. `DitherAnalysis.WalkingStretches` is the
+result of `Runs` with a minimum of two frames at `Th.CoverageLoose`, every stretch of
+frames in a row at one spot, and `WalkingStretch` the longest of them; a pair of frames at
+one spot with a large drift between them counts, which the runs of three did not. The dash,
+`WalkingStreakPx`, is the drift per exposure times the frames minus one of the longest
+stretch. The verdict reads the stack, not the map (R-084, ADR 0039): `WalkingSharedFrames`
+sums the frames of the stretches whose own dash reaches `Th.WalkingStreakVisible`, the
+frames whose streak would show, and `WalkingSharedFraction` divides by the registered
+frames; `PatternPiles` is `PatternSurviving` above `Th.PatternPilingFactor` over the registered
+count (the pattern piles in place instead of walking), decided here once and read by the
+report; `WalkingNoise` is `Insufficient` from `Th.WalkingSharedFraction` up, else `Static`
+when the pattern piles, else `Ok`; `Unknown` under two registered
+frames, and without a drift no dash is known, so no frame is counted and the pattern alone
+decides. The `Static` word is the one Smida gets: a drift of a seventh of a pixel per
+exposure moves no pattern, while 23 % of it stays in the stack. The report's `DitherVerdict`
+orders the walking and the hot-pixel words worst first, so the chip's colour is the worse of
+the two; its text is `StreakClause` (the dash, the frames that share a visible one or the
+size under which none shows, the drift and the longest stretch) then `PatternClause` (what
+stays against the ideal and the piling limit), then the counts of R-021 as information.
 
 ## The polar alignment (`SeriesAnalyzer`, R-050)
 

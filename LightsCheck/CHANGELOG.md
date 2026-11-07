@@ -34,6 +34,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The walking-noise verdict reads what reaches the stack, not how spread out the dither map
+  looks (R-084, ADR 0039): `INSUFFICIENT` when the frames inside runs at one spot whose streak
+  reaches 3 px are 25 % or more of the aligned frames, `NO walking noise` when they are fewer
+  but the stack keeps over one and a half times the ideal share of one frame's pattern, `OK`
+  otherwise. Until now it wanted half the frames in different spots, 30 % alone and a quarter of
+  the moves on each axis, which a random dither inside a small area cannot give: a session of
+  85 frames dithered after 77 of them read `INSUFFICIENT` with a nearly ideal pattern figure.
+  The verdict's text now says in how many frames the streak would show and what the stack
+  keeps of the pattern. The different spots, frames alone and two-axis counts stay as
+  information.
 - The window's four top-bar inputs, PIXEL, THREADS, EAST and NORTH, explain themselves in plain
   words (R-083, ADR 0038): a tooltip on the label and the field, shown also during a run, says
   what to type and what is used when the field is left as it is, the threads count of this

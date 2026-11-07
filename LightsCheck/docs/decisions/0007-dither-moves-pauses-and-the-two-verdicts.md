@@ -1,7 +1,7 @@
 # 0007. A dither move is a registered step of 5 px or more; a pause is 5 s; two verdicts, hot pixels and walking noise
 
 Date: 2026-10-09
-Status: accepted 2026-10-09
+Status: accepted 2026-10-09; the walking-noise rule (half the frames distinct at 10 px, 30 % isolated, a quarter of the moves on each axis) superseded by 0039
 
 ## Context
 

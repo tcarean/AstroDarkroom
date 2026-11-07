@@ -211,18 +211,7 @@ internal static class Th
     /// </summary>
     internal const int HotPixelRunMax = 3;
 
-    /// <summary>
-    /// Walking noise: fine when this fraction of frames are distinct at CoverageLoose ...
-    /// </summary>
-    internal const double WalkingNoiseDistinctFraction = 0.5;
-
-    /// <summary>... this fraction sit at least CoverageLoose from every other frame ...</summary>
-    internal const double WalkingNoiseIsolatedFraction = 0.3;
-
-    /// <summary>... and each axis carries at least this fraction of the moves.</summary>
-    internal const double TwoDAxisFraction = 0.25;
-
-    // ---- walking noise against the drift, and the sensor's pattern (R-043, R-046)
+    // ---- walking noise against the drift, and the sensor's pattern (R-043, R-046, R-084)
 
     /// <summary>
     /// The dash the drift draws inside the longest run at CoverageLoose (the drift per exposure
@@ -232,6 +221,23 @@ internal static class Th
     /// sessions.
     /// </summary>
     internal const double WalkingStreakVisible = 3.0;
+
+    /// <summary>
+    /// Walking noise: from this fraction of the registered frames up, the frames inside the
+    /// stretches whose dash reaches WalkingStreakVisible are too many for the stacking's
+    /// rejection to drop their streak (R-084): a rule of thumb placed between the 8 % of the
+    /// Veil session of 2026-11-06 (a clean stack) and the 61 % of the Veil session of
+    /// 2026-10-06 (worms), measured on 2026-11-07 (ADR 0039); to tune on more sessions.
+    /// </summary>
+    internal const double WalkingSharedFraction = 0.25;
+
+    /// <summary>
+    /// The pattern piles in place when the fraction of one frame's pattern the stack keeps
+    /// (PatternSurviving, R-048) is above this factor times the ideal 1 / n (R-084): placed
+    /// between the 1.37 of the Veil session of 2026-10-06 and the 7.5 of Smida, measured on
+    /// 2026-11-07 (ADR 0039).
+    /// </summary>
+    internal const double PatternPilingFactor = 1.5;
 
     // ---- the drift pairs and the polar alignment (R-049, R-050, ADR 0016)
 

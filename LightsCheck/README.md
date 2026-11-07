@@ -204,14 +204,20 @@ eyepiece and shoot 20 frames at the same ISO, with the same exposure time and at
 temperature, at the end of the session. The flats stay good. The window says the same under its
 DITHERING card.
 
-The verdict of DITHERING reads the drift as well as the map:
+The verdict of DITHERING reads what reaches the stack, not how spread out the map looks: a
+random dither inside a small area has to come back near earlier spots, and a return to within
+10 px is not a return to the same pixels. For every run of frames in a row that stayed in the
+same spot (within 10 px) it works out the streak the drift draws across it, and counts the
+frames of the runs whose streak reaches 3 px, the ones whose streak would show:
 
-- `OK for walking noise` when at least half the frames sit in different spots (10 px apart), at
-  least 30 % stand 10 px or more from every other frame, and each axis carries at least a quarter
-  of the moves;
-- `NO walking noise` when the streak the drift draws over the longest run within 10 px is under
-  3 px, whatever the map looks like;
-- `INSUFFICIENT for walking noise` otherwise, with the streak in pixels and its axis;
+- `INSUFFICIENT for walking noise` when those frames are 25 % or more of the aligned frames,
+  too many for the rejection at stacking to drop their streak, with the longest streak in
+  pixels, its axis and the share of frames;
+- `NO walking noise` when they are fewer but the pattern adds up in place: the stack keeps more
+  than one and a half times the ideal share of one frame's pattern (the `pattern in the stack`
+  row), as it does without dithering at a short focal length;
+- `OK for walking noise` otherwise. The text still lists the different spots, the frames alone
+  and the moves on both axes, as information;
 - `OK for hot pixels` while no more than 3 frames in a row sit within 3 px of one spot, else
   `WARNING on hot pixels`.
 

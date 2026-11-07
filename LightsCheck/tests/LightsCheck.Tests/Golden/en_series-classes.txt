@@ -17,7 +17,7 @@ Copyright (C) 2026 Tudor Carean
     exposure           : GOOD - the sky on green: 2000 -> 2000 ADU; the weakest is channel B: shot/read 10.0 (good from 10), the read noise adds 5 %
     dew                : NO - the stars' width +0 %, the light around the stars (halo) +0.002
     trailed frames     : 1 bad, 3 marginal, 5 good, 1 unread (of 10); it is not known which axis is RA
-    dithering          : NO walking noise, OK for hot pixels - walking-noise streaks of at most 0.5 px: the drift is 0.50 px over one exposure; frames 1-2, 2 frames in a row in the same spot, within 10 px; 3 moves over 9 frames, 4 different spots (within 10 px), 0 frames alone, 0 moves on both axes
+    dithering          : NO walking noise, OK for hot pixels - walking-noise streaks of at most 0.5 px (under 3 px they do not show): the drift is 0.50 px over one exposure; frames 1-2, 2 frames in a row in the same spot, within 10 px; the pattern adds up in place: 23.5 % of one frame's pattern stays in the stack (ideal 11.1 %, fine up to 16.7 %); 3 moves over 9 frames, 4 different spots (within 10 px), 0 frames alone, 0 moves on both axes
     polar alignment    : - (it is not known which axis is RA)
     leave out of stack : 2 frames (the list is under REJECTED); 8 frames stay, that is 16 min of exposure
 
@@ -64,7 +64,7 @@ Copyright (C) 2026 Tudor Carean
     scale              : 1 px = 5.99" on the sky; to move the frame 5 px (the smallest move counted) takes 30" on the sky, and 10 px, 60"
     pattern in the stack: 23.5 % of one frame's pattern stays in the stack (ideally 11.1 %, with 9 frames; 5 pairs of frames sat under 1.5 px from each other, and their pattern adds up)
     fixed pattern      : strength 0.0 ADU on R (0 % of one frame's noise), 0.0 on G1 (0 %), 0.0 on G2 (0 %), 0.0 on B (0 %); 0 hot pixels per million pixels, that is, those above 10 times one frame's noise (from 9 frames, on 480 x 480 px from the centre); 2 darks in darks\, with which Siril takes the pattern out
-    verdict            : NO walking noise, OK for hot pixels - walking-noise streaks of at most 0.5 px: the drift is 0.50 px over one exposure; frames 1-2, 2 frames in a row in the same spot, within 10 px; 3 moves over 9 frames, 4 different spots (within 10 px), 0 frames alone, 0 moves on both axes
+    verdict            : NO walking noise, OK for hot pixels - walking-noise streaks of at most 0.5 px (under 3 px they do not show): the drift is 0.50 px over one exposure; frames 1-2, 2 frames in a row in the same spot, within 10 px; the pattern adds up in place: 23.5 % of one frame's pattern stays in the stack (ideal 11.1 %, fine up to 16.7 %); 3 moves over 9 frames, 4 different spots (within 10 px), 0 frames alone, 0 moves on both axes
 
   REJECTED (1 bad frame and 1 unread frame; the marginal ones stay in the stack, your choice)
       7  DSC_0007.fit          elongation 1.76 (from 1.60 the frame is bad), trail at 90 degrees

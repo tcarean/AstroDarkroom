@@ -127,10 +127,10 @@ public class ValidationTests
         Assert.Equal(e.GetProperty("focusHeld").GetBoolean(), s.FocusHeld);
         Assert.Equal(e.GetProperty("dew").GetBoolean(), s.DewSuspected);
         Assert.Equal(e.GetProperty("hotPixelsOk").GetBoolean(), d.HotPixelsOk);
-        Assert.Equal(e.GetProperty("walkingNoiseOk").GetBoolean(), d.WalkingNoiseOk);
         // The drift over one exposure, the dash and the word it gives, the darks and the pattern (R-042, R-043, R-046).
         AssertWithin("driftPerExposurePx", e.GetProperty("driftPerExposurePx").GetDouble(), Figure(s.DriftPerExposurePx, "driftPerExposure"), t.GetProperty("px").GetDouble());
         AssertWithin("walkingStreakPx", e.GetProperty("walkingStreakPx").GetDouble(), Figure(s.WalkingStreakPx, "walkingStreak"), t.GetProperty("px").GetDouble());
+        Assert.Equal(e.GetProperty("walkingSharedFrames").GetInt32(), s.WalkingSharedFrames);   // the frames whose streak would show (R-084)
         Assert.Equal(e.GetProperty("walkingNoise").GetString(), s.WalkingNoise.ToString());
         Assert.Equal(e.GetProperty("darks").GetInt32(), r.Session.Darks.Count);
         Assert.Equal(e.GetProperty("patternStatus").GetString(), r.Pattern.Status.ToString());

@@ -93,9 +93,9 @@ public class DitheringTests
         Assert.Equal(Math.Sqrt(98.0 * 98.0 + 99.0 * 99.0), d.NearestOther[4]!.Value, 1e-9);   // frame 5 against frame 4 at (2, 1)
     }
 
-    /// <summary>Big moves along one axis only: distinct and isolated, yet not two-dimensional.</summary>
+    /// <summary>Big moves along one axis only: no two frames in a row share a spot, so nothing can walk (R-084; the rule of ADR 0007 failed it for being one-dimensional).</summary>
     [Fact]
-    public void R021_AOneDimensionalPatternFailsTheWalkingNoiseVerdict()
+    public void R084_AOneDimensionalPatternWithAMoveEveryFrameSharesNoSpot()
     {
         double?[] x = Enumerable.Range(0, 12).Select(i => (double?)(i * 15)).ToArray();
         double?[] y = Enumerable.Range(0, 12).Select(i => (double?)(i % 2)).ToArray();
@@ -105,11 +105,25 @@ public class DitheringTests
         Assert.Equal(12, d.DistinctLoose);
         Assert.Equal(12, d.IsolatedLoose);
         Assert.True(d.HotPixelsOk);
-        Assert.False(d.WalkingNoiseOk);
+        Assert.Empty(d.WalkingStretches);
+        Assert.Null(d.WalkingStretch);
+    }
+
+    /// <summary>Every stretch of two or more frames in a row within 10 px of its first, in order; the longest is the walking stretch of R-043 (R-084).</summary>
+    [Fact]
+    public void R084_TheWalkingStretchesListEveryPairOrLongerAtTenPixels()
+    {
+        double?[] x = [0, 3, 30, 30, 30, 60, 62, 90];
+        double?[] y = [0, 0, 0, 2, 4, 0, 0, 0];
+        DitherAnalysis d = Analyze(x, y);
+        Assert.Equal([new FrameStretch(1, 2, 2), new FrameStretch(3, 5, 3), new FrameStretch(6, 7, 2)], d.WalkingStretches);
+        Assert.Equal(new FrameStretch(3, 5, 3), d.WalkingStretch);
+        FrameStretch run = Assert.Single(d.RunsLoose);   // the runs of three or more, as before
+        Assert.Equal(3, run.FirstIndex);
     }
 
     [Fact]
-    public void R021_ARandomTwoDimensionalPatternPassesBothVerdicts()
+    public void R021_ARandomTwoDimensionalPatternIsFineForHotPixelsAndSharesNoSpot()
     {
         Random rng = new(5);
         int n = 40;
@@ -131,7 +145,7 @@ public class DitheringTests
         Assert.Equal(n - 1, d.Moves);
         Assert.Equal(n - 2, d.FramesBetweenMoves[1]);   // n - 1 moves, n - 2 gaps between them
         Assert.True(d.HotPixelsOk);
-        Assert.True(d.WalkingNoiseOk, $"distinct {d.DistinctLoose}, isolated {d.IsolatedLoose}, both {d.MovesOnBoth}");
+        Assert.Empty(d.WalkingStretches);
     }
 
     [Fact]

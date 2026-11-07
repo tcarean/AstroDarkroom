@@ -59,11 +59,12 @@ public class SeriesAnalyzerTests
         Assert.Equal(120, s.MedianExposureSeconds);
         Assert.Equal(new FrameStretch(1, 11, 11), d.WalkingStretch);   // frames 1-11 within 10 px of frame 1
         Assert.Equal(8.51, s.WalkingStreakPx!.Value, 0.05);
-        Assert.False(d.WalkingNoiseOk);
+        Assert.Equal(11, s.WalkingSharedFrames);   // the 11 frames of the one stretch, whose dash shows (R-084)
+        Assert.Equal(11.0 / 12, s.WalkingSharedFraction, 0.001);
         Assert.Equal(WalkingNoise.Insufficient, s.WalkingNoise);
     }
 
-    /// <summary>The same 12 frames drifting 0.1 px per frame: the dash is 0.9 px, under 3, so nothing walks whatever the dither rule says (R-043).</summary>
+    /// <summary>The same 12 frames drifting 0.1 px per frame: the dash is 0.9 px, under 3, so no frame counts as streaked, and the piled pattern alone gives Static (R-043, R-084).</summary>
     [Fact]
     public void R043_ADashUnderThreePixelsIsNoWalkingNoiseEvenWithoutDithering()
     {
@@ -75,7 +76,8 @@ public class SeriesAnalyzerTests
         Assert.Equal(Axis.X, s.DriftAxis);
         Assert.Equal(new FrameStretch(1, 12, 12), d.WalkingStretch);
         Assert.InRange(s.WalkingStreakPx!.Value, 0.9, 1.0);
-        Assert.False(d.WalkingNoiseOk);
+        Assert.Equal(0, s.WalkingSharedFrames);   // the dash of 0.9 px does not show (R-084)
+        Assert.Equal(1.0, d.PatternSurviving!.Value, 0.001);   // all 12 frames within 1.1 px: the pattern piles, hence Static
         Assert.Equal(WalkingNoise.Static, s.WalkingNoise);
     }
 
@@ -94,21 +96,93 @@ public class SeriesAnalyzerTests
         SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
         Assert.Equal(4.5 / 2.35 * 2, s.DriftPerExposurePx!.Value, 0.01);   // the three 4.5 px steps over 2.35 min, times a 120 s exposure
         Assert.Equal(s.DriftPerExposurePx.Value, s.WalkingStreakPx!.Value, 0.001);
+        Assert.Equal(6, s.WalkingSharedFrames);   // every pair's dash of 3.8 px shows: all six frames (R-084)
         Assert.Equal(WalkingNoise.Insufficient, s.WalkingNoise);
     }
 
-    /// <summary>A session the dither rule of R-021 accepts is OK whatever the drift; one without a registered pair is unknown (R-043).</summary>
+    /// <summary>A short run in a well dithered session: 4 frames of 20 (20 %) share a streak of 5.1 px, under the 25 % from which it shows in the stack, and no pair sits on the same pixels (R-084, ADR 0039).</summary>
     [Fact]
-    public void R043_TheDitherRuleWinsAndTwoRegisteredFramesAreNeeded()
+    public void R084_AShortRunInAWellDitheredSessionIsOk()
+    {
+        (AnalyzedFrame[] frames, DitherAnalysis d, Cadence c) = RunThenDither(4);
+        Assert.Equal([new FrameStretch(1, 4, 4)], d.WalkingStretches);
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+
+        Assert.Equal(2.0 / 2.35 * 2, s.DriftPerExposurePx!.Value, 0.01);   // the run's three 2 px steps over 2.35 min each, times a 120 s exposure
+        Assert.Equal(5.1, s.WalkingStreakPx!.Value, 0.05);
+        Assert.Equal(4, s.WalkingSharedFrames);
+        Assert.Equal(0.2, s.WalkingSharedFraction, 0.001);
+        Assert.Equal(1.0 / 20, d.PatternSurviving!.Value, 0.001);   // no pair under 1.5 px: the ideal
+        Assert.Equal(WalkingNoise.Ok, s.WalkingNoise);
+    }
+
+    /// <summary>The same session with a run of 6 (30 %): the streak sits in too many frames for the rejection to drop it (R-084).</summary>
+    [Fact]
+    public void R084_ARunOfAQuarterOfTheFramesIsInsufficient()
+    {
+        (AnalyzedFrame[] frames, DitherAnalysis d, Cadence c) = RunThenDither(6);
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+
+        Assert.Equal(6, s.WalkingSharedFrames);
+        Assert.Equal(0.3, s.WalkingSharedFraction, 0.001);
+        Assert.Equal(WalkingNoise.Insufficient, s.WalkingNoise);
+    }
+
+    /// <summary>Ten pairs of frames on the same pixels, 30 px apart: no dash reaches 3 px, but 10 % of the pattern stays against 5 % ideal (over 1.5 times): the pattern piles in place, NO walking noise (R-084).</summary>
+    [Fact]
+    public void R084_PairsOnTheSamePixelsPileThePatternAndReadStatic()
+    {
+        AnalyzedFrame[] frames = Enumerable.Range(1, 20).Select(i => Frame(i, Measurement(3.0, 1.1, 10000, 120))).ToArray();
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+        double?[] x = new double?[20], y = new double?[20];
+        for (int i = 0; i < 20; i++)
+        {
+            x[i] = 30 * (i / 2);
+            y[i] = 0.5 * (i % 2);
+        }
+
+        DitherAnalysis d = DitherAnalyzer.Analyze(x, y, c.PauseSeconds);
+        Assert.Equal(10, d.WalkingStretches.Count);
+        Assert.Equal(10, d.SharingPairs);
+        Assert.Equal(0.1, d.PatternSurviving!.Value, 0.001);
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+
+        Assert.InRange(s.WalkingStreakPx!.Value, 0.4, 0.5);   // the ten 0.5 px steps read as a drift of 0.43 px per exposure
+        Assert.Equal(0, s.WalkingSharedFrames);
+        Assert.Equal(WalkingNoise.Static, s.WalkingNoise);
+    }
+
+    /// <summary>20 frames 141 s apart: the first <paramref name="run"/> at one spot drifting 2 px along Y per frame, the rest 20 px apart along X.</summary>
+    internal static (AnalyzedFrame[] Frames, DitherAnalysis Dither, Cadence Cadence) RunThenDither(int run)
+    {
+        AnalyzedFrame[] frames = Enumerable.Range(1, 20).Select(i => Frame(i, Measurement(3.0, 1.1, 10000, 120))).ToArray();
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+        double?[] x = new double?[20], y = new double?[20];
+        for (int i = 0; i < 20; i++)
+        {
+            x[i] = i < run ? 0 : 20 * (i - run + 1);
+            y[i] = i < run ? 2 * i : 0;
+        }
+
+        return (frames, DitherAnalyzer.Analyze(x, y, c.PauseSeconds), c);
+    }
+
+    /// <summary>A session with no two frames in a row at one spot is OK whatever the drift; one without a registered pair is unknown (R-043, R-084).</summary>
+    [Fact]
+    public void R043_NoStretchIsOkAndTwoRegisteredFramesAreNeeded()
     {
         AnalyzedFrame[] frames = Enumerable.Range(1, 8).Select(i => Frame(i, Measurement(3.0, 1.1, 10000, 120))).ToArray();
         Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
-        // Every frame 15 px from every other, on both axes: distinct, isolated, two-dimensional.
+        // Every frame 15 px from every other, on both axes.
         double?[] x = [0, 15, 0, 15, 30, 45, 30, 45], y = [0, 15, 30, 45, 0, 15, 30, 45];
         DitherAnalysis d = DitherAnalyzer.Analyze(x, y, c.PauseSeconds);
-        Assert.True(d.WalkingNoiseOk);
+        Assert.Empty(d.WalkingStretches);
         SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
         Assert.Equal(WalkingNoise.Ok, s.WalkingNoise);
+        Assert.Equal(0, s.WalkingSharedFrames);
         Assert.Null(s.DriftPerExposurePx);      // every step was a move: no drift pair
         Assert.Null(d.WalkingStretch);          // no two consecutive frames within 10 px
         Assert.Null(s.WalkingStreakPx);

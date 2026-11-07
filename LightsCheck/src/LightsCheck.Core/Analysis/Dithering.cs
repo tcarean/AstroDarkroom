@@ -141,8 +141,7 @@ internal sealed record SizeClass(double Lower, double? Upper, int Count);
 /// registered frames (R-048); null without a registered frame.
 /// </param>
 /// <param name="WalkingStretch">
-/// The longest stretch of two or more consecutive registered frames within
-/// <see cref="Th.CoverageLoose"/> of its first (R-043); null when there is none.
+/// The longest of <see cref="WalkingStretches"/> (R-043); null when there is none.
 /// </param>
 /// <param name="RunsMid">
 /// The runs of <see cref="Th.RunMinFrames"/> or more consecutive frames within
@@ -161,11 +160,10 @@ internal sealed record SizeClass(double Lower, double? Upper, int Count);
 /// Whether the longest run at <see cref="Th.CoverageTight"/> holds no more than
 /// <see cref="Th.HotPixelRunMax"/> frames.
 /// </param>
-/// <param name="WalkingNoiseOk">
-/// Whether the dithering keeps walking noise away: enough distinct positions
-/// (<see cref="Th.WalkingNoiseDistinctFraction"/>) and isolated frames
-/// (<see cref="Th.WalkingNoiseIsolatedFraction"/>) at <see cref="Th.CoverageLoose"/>, and moves
-/// along both axes (<see cref="Th.TwoDAxisFraction"/>).
+/// <param name="WalkingStretches">
+/// Every stretch of two or more consecutive registered frames within
+/// <see cref="Th.CoverageLoose"/> of its first, in series order (R-084): the frames that
+/// share a spot, across which the drift draws a dash.
 /// </param>
 internal sealed record DitherAnalysis(
     IReadOnlyList<double?> Step,
@@ -207,7 +205,7 @@ internal sealed record DitherAnalysis(
     double SpanY,
     int Registered,
     bool HotPixelsOk,
-    bool WalkingNoiseOk);
+    IReadOnlyList<FrameStretch> WalkingStretches);
 
 /// <summary>
 /// Reads the dithering of a session from the frames' registered positions and pauses (R-019 to
@@ -413,11 +411,13 @@ internal static class DitherAnalyzer
         double spanY = reg.Count > 0 ? reg.Max(i => y[i]!.Value) - reg.Min(i => y[i]!.Value) : 0;
         List<FrameStretch> runsMid = Runs(x, y, Th.CoverageMid), runsLoose = Runs(x, y, Th.CoverageLoose);
 
-        // The frames that share the dash of walking noise (R-043): the longest stretch of two
-        // or more consecutive registered frames within CoverageLoose of its first. A pair
-        // counts: two frames at one spot with a large drift between them draw a dash as long
-        // as that drift, which the runs of RunMinFrames above would miss.
-        FrameStretch? walkingStretch = Runs(x, y, Th.CoverageLoose, 2).MaxBy(st => st.Frames);
+        // The frames that share a dash of walking noise (R-043, R-084): every stretch of two
+        // or more consecutive registered frames within CoverageLoose of its first, the longest
+        // being the one the report names. A pair counts: two frames at one spot with a large
+        // drift between them draw a dash as long as that drift, which the runs of RunMinFrames
+        // above would miss.
+        List<FrameStretch> walkingStretches = Runs(x, y, Th.CoverageLoose, 2);
+        FrameStretch? walkingStretch = walkingStretches.MaxBy(st => st.Frames);
         SpotRun?[] spot = new SpotRun?[n];
         foreach (FrameStretch run in runsLoose)
         {
@@ -450,15 +450,12 @@ internal static class DitherAnalyzer
         double? surviving = reg.Count > 0 ? (reg.Count + 2.0 * sharing) / ((double)reg.Count * reg.Count) : null;
 
         bool hotOk = longestTight <= Th.HotPixelRunMax;
-        bool twoD = moves > 0 && (xOnly + both) >= Th.TwoDAxisFraction * moves && (yOnly + both) >= Th.TwoDAxisFraction * moves;
-        bool walkingOk = reg.Count > 0 && distinctLoose >= Th.WalkingNoiseDistinctFraction * reg.Count
-            && isolated >= Th.WalkingNoiseIsolatedFraction * reg.Count && twoD;
 
         return new DitherAnalysis(step, sx, sy, move, moves, pauses, pausesWithoutMove, movesWithoutPause, between,
             longest, longestFirst, longestLast,
             moveSizes.Count > 0 ? Raster.Percentile(moveSizes, 50) : null, sizes,
             xOnly, yOnly, both, xPlus, xMinus, yPlus, yMinus,
-            nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, largestTight, sharing, surviving, walkingStretch, runsMid, runsLoose, spot, spanX, spanY, reg.Count, hotOk, walkingOk);
+            nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, largestTight, sharing, surviving, walkingStretch, runsMid, runsLoose, spot, spanX, spanY, reg.Count, hotOk, walkingStretches);
     }
 
     /// <summary>The distance between two frames' positions; both must have one.</summary>

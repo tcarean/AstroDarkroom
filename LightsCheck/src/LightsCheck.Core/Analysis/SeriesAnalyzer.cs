@@ -148,11 +148,13 @@ internal enum Axis
 }
 
 /// <summary>
-/// The walking-noise verdict (R-043): Ok by the dither rule of R-021; Static when that rule
-/// fails but the dash the drift draws across DitherAnalysis.WalkingStretch (the longest
-/// stretch of two or more consecutive frames within Th.CoverageLoose) is under
-/// Th.WalkingStreakVisible, so the pattern does not move between the frames that share a
-/// spot; Insufficient otherwise; Unknown with fewer than two registered frames.
+/// The walking-noise verdict (R-043, R-084, ADR 0039): Insufficient when the frames inside the
+/// stretches of DitherAnalysis.WalkingStretches whose dash reaches Th.WalkingStreakVisible are
+/// Th.WalkingSharedFraction of the registered frames or more, too many for the stacking's
+/// rejection to drop their streak; else Static when the pattern piles in place,
+/// DitherAnalysis.PatternSurviving above Th.PatternPilingFactor times the ideal 1 / n, so
+/// nothing walks but the pattern adds up; else Ok; Unknown with fewer than two registered
+/// frames.
 /// </summary>
 internal enum WalkingNoise
 {
@@ -238,7 +240,20 @@ internal enum PolarAlignment
 /// exposure times its frames minus one, in pixels (0 without a stretch); null without the drift per
 /// exposure.
 /// </param>
-/// <param name="WalkingNoise">The walking-noise verdict (R-043).</param>
+/// <param name="WalkingSharedFrames">
+/// The frames inside the stretches whose dash reaches <see cref="Th.WalkingStreakVisible"/>,
+/// the frames whose streak would show in the stack (R-084); 0 without the drift per exposure.
+/// </param>
+/// <param name="WalkingSharedFraction">
+/// <paramref name="WalkingSharedFrames"/> over the registered frames, 0 to 1; 0 without a
+/// registered frame.
+/// </param>
+/// <param name="PatternPiles">
+/// Whether the pattern piles in place: <see cref="DitherAnalysis.PatternSurviving"/> above
+/// <see cref="Th.PatternPilingFactor"/> times the ideal 1 / n (R-084); false without a
+/// registered frame.
+/// </param>
+/// <param name="WalkingNoise">The walking-noise verdict (R-043, R-084).</param>
 /// <param name="RotationTotalDeg">
 /// The last registered frame's rotation minus the first's, in degrees; null under two registered
 /// frames.
@@ -344,6 +359,9 @@ internal sealed record SeriesAnalysis(
     double? DriftPerExposurePx,
     Axis DriftAxis,
     double? WalkingStreakPx,
+    int WalkingSharedFrames,
+    double WalkingSharedFraction,
+    bool PatternPiles,
     WalkingNoise WalkingNoise,
     double? RotationTotalDeg,
     double? RotationPerHourDeg,
@@ -553,16 +571,23 @@ internal static class SeriesAnalyzer
         // The drift over one exposure (the median exposure of the session) and the image axis
         // it mostly runs along; the dash is that drift times the frames minus one of the
         // longest stretch of consecutive frames at one spot (DitherAnalyzer.WalkingStretch,
-        // two frames or more), and the walking-noise verdict reads it (R-043, ADR 0015).
+        // two frames or more) (R-043, ADR 0015). The verdict reads the frames inside the
+        // stretches whose own dash reaches WalkingStreakVisible, those whose streak would
+        // show, and the pattern that piles when nothing walks (R-084, ADR 0039).
         List<double> exposures = frames.Select(f => f.Info.ExposureSeconds).Where(e => e is > 0).Select(e => e!.Value).ToList();
         double? medianExposure = exposures.Count > 0 ? Raster.Percentile(exposures, 50) : null;
         double? driftPerExposure = driftX is double dx && driftY is double dy && medianExposure is double me ? Math.Sqrt(dx * dx + dy * dy) * me / 60 : null;
         Axis driftAxis = driftX is double ax && driftY is double ay ? (Math.Abs(ax) >= Math.Abs(ay) ? Axis.X : Axis.Y) : Axis.Unknown;
         double? streak = driftPerExposure is double dpe ? dpe * ((dither.WalkingStretch?.Frames ?? 1) - 1) : null;
+        int sharedFrames = driftPerExposure is double perExposure
+            ? dither.WalkingStretches.Where(st => perExposure * (st.Frames - 1) >= Th.WalkingStreakVisible).Sum(st => st.Frames)
+            : 0;
+        double sharedFraction = dither.Registered > 0 ? (double)sharedFrames / dither.Registered : 0;
+        bool piles = dither.PatternSurviving is double surviving && dither.Registered > 0 && surviving > Th.PatternPilingFactor / dither.Registered;
         WalkingNoise walking = dither.Registered < 2 ? WalkingNoise.Unknown
-            : dither.WalkingNoiseOk ? WalkingNoise.Ok
-            : streak is double st && st < Th.WalkingStreakVisible ? WalkingNoise.Static
-            : WalkingNoise.Insufficient;
+            : sharedFraction >= Th.WalkingSharedFraction ? WalkingNoise.Insufficient
+            : piles ? WalkingNoise.Static
+            : WalkingNoise.Ok;
 
         // Rotation between the first and the last registered frame.
         AnalyzedFrame? firstReg = frames.FirstOrDefault(f => f.Registration is { Ok: true }), lastReg = frames.LastOrDefault(f => f.Registration is { Ok: true });
@@ -766,7 +791,7 @@ internal static class SeriesAnalyzer
         return new SeriesAnalysis(classes, flags.Select(l => (IReadOnlyList<FrameFlag>)l).ToList(),
             classes.Count(c => c == FrameClass.Good), classes.Count(c => c == FrameClass.Marginal), classes.Count(c => c == FrameClass.Bad), classes.Count(c => c == FrameClass.Unknown),
             sessionFwhm, sessionStars, fwhmTrend, haloTrend, bgTrend, starsTrend, focusHeld, dew,
-            driftX, driftY, pairs, medianExposure, driftPerExposure, driftAxis, streak, walking, rotTotal, rotPerHour, corner, ra, source, trailAngle, trailOn, moves, readNoise, swamping, swampingFrames,
+            driftX, driftY, pairs, medianExposure, driftPerExposure, driftAxis, streak, sharedFrames, sharedFraction, piles, walking, rotTotal, rotPerHour, corner, ra, source, trailAngle, trailOn, moves, readNoise, swamping, swampingFrames,
             approximate, starDrift, wcs?.DecDeg, polarRotPerHour, polarMin, polarMax, polarDriftMin, polarDriftMax, polarElongation, polarRaMax, polar);
     }
 

@@ -127,6 +127,31 @@ public class SeriesTests
         Assert.Empty(s.Flags[0]);
     }
 
+    /// <summary>
+    /// The verdict's text prints the share of frames whose streak would show with one decimal, in
+    /// both languages, so a share just under the limit never reads as the limit (R-084): the
+    /// 20-frame fixture with a run of 4 of the analyzer's tests, put into the pattern session's result.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R084_TheVerdictTextPrintsTheShareOfStreakedFramesWithOneDecimal(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        SeriesResult pattern = RunPattern();
+        (AnalyzedFrame[] frames, DitherAnalysis d, Cadence c) = SeriesAnalyzerTests.RunThenDither(4);
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+        SeriesResult r = pattern with { Frames = frames, Cadence = c, Dither = d, Series = s };
+
+        ReportRow verdict = SeriesReport.DitherScalarRows(r)[^1];
+
+        Assert.StartsWith(english ? "OK for walking noise" : "OK pentru walking noise", verdict.Verdict, StringComparison.Ordinal);
+        Assert.Contains(
+            english ? "walking-noise streaks of up to 5.1 px along Y, in 4 frames of 20 (20.0 %; from 25 % they show in the stack): " : "dare de walking noise de pana la 5.1 px pe Y, in 4 cadre din 20 (20.0 %; de la 25 % se vad in stiva): ",
+            verdict.Value, StringComparison.Ordinal);
+        Assert.Contains(english ? "; in the stack 5.0 % of one frame's pattern stays (ideal 5.0 %, fine up to 7.5 %); " : "; in stiva ramane 5.0 % din pattern-ul unui cadru (ideal 5.0 %, bine pana la 7.5 %); ", verdict.Value, StringComparison.Ordinal);
+    }
+
     /// <summary>The `scara` row of DITHERING words the move thresholds in arcseconds at the fixture's 5.99 "/px (R-044).</summary>
     [Fact]
     public void R044_TheScaleRowSaysWhatAMoveIsOnTheSky()
@@ -247,7 +272,7 @@ public class SeriesTests
         if (!english)
         {
             Assert.Equal(
-                "dare de walking noise de cel mult 0.5 px: driftul e de 0.50 px intr-o expunere; cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px; 3 miscari la 8 cadre, 4 locuri diferite (la 10 px), 0 cadre singure, 0 miscari pe ambele axe",
+                "dare de walking noise de cel mult 0.5 px (sub 3 px nu se vad): driftul e de 0.50 px intr-o expunere; cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px; pattern-ul se aduna pe loc: in stiva ramane 25.0 % din pattern-ul unui cadru (ideal 12.5 %, bine pana la 18.8 %); 3 miscari la 8 cadre, 4 locuri diferite (la 10 px), 0 cadre singure, 0 miscari pe ambele axe",
                 SeriesReport.DitherScalarRows(results[0])[^1].Value);
         }
     }
