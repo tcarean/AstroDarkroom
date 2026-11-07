@@ -98,7 +98,7 @@ public class EnglishGoldenOutputTests
             if (name.StartsWith("series", StringComparison.Ordinal))
             {
                 // The progress lines arrive in the order the threads finish: not golden material.
-                Assert.Matches(lang == "en" ? @"frame (8|10) / \1" : @"cadrul (8|10) / \1", stderr);
+                Assert.Matches(lang == "en" ? @"frame (8|13) / \1" : @"cadrul (8|13) / \1", stderr);
                 stderr = lang == "en" ? "(progress, left out)\n" : "(progresul, omis)\n";
             }
 

@@ -29,7 +29,7 @@ namespace LightsCheck.Tests;
 /// round), the pause before it, and what varies per class: the FWHM, how many of the 40 grid
 /// stars are kept, the factor on the sky background.
 /// </summary>
-internal sealed record SeriesFrame(double Dx, double Dy, double Elongation, double PauseSeconds, double Fwhm = 3.0, int StarsKept = 40, double BackgroundFactor = 1.0);
+internal sealed record SeriesFrame(double Dx, double Dy, double Elongation, double PauseSeconds, double Fwhm = 3.0, int StarsKept = 40, double BackgroundFactor = 1.0, double? Exposure = null);
 
 internal sealed class SessionFixture : IDisposable
 {
@@ -163,10 +163,10 @@ internal sealed class SessionFixture : IDisposable
         {
             if (i > 0)
             {
-                t = t.AddSeconds(exposure + frames[i].PauseSeconds);
+                t = t.AddSeconds((frames[i - 1].Exposure ?? exposure) + frames[i].PauseSeconds);
             }
 
-            File.WriteAllBytes(Path.Combine(LightsDir, $"DSC_{i + 1:0000}.fit"), StarLight(t, exposure, frames[i], i, sensorPattern, bayer));
+            File.WriteAllBytes(Path.Combine(LightsDir, $"DSC_{i + 1:0000}.fit"), StarLight(t, frames[i].Exposure ?? exposure, frames[i], i, sensorPattern, bayer));
         }
 
         if (biases > 0)
@@ -192,16 +192,19 @@ internal sealed class SessionFixture : IDisposable
     ];
 
     /// <summary>
-    /// The ten-frame pattern of the classes golden: the dither of <see cref="Pattern"/> with
+    /// The thirteen-frame pattern of the classes golden: the dither of <see cref="Pattern"/> with
     /// one frame of every class and flag, so the report's words for each are pinned: 3 a trail
     /// at the limit, 4 soft, 5 half the stars (clouds), 6 a brighter sky (jump), 7 trailed,
-    /// 9 overwritten with junk by the test (unreadable).
+    /// 9 overwritten with junk by the test (unreadable), 11 a 0.2 s exposure (short, bad), 12 a
+    /// 137.5 s exposure with the 14 % brighter sky it explains (noted, R-085), 13 a plain frame
+    /// so that 12 has two readable neighbours to judge its sky against.
     /// </summary>
     internal static readonly SeriesFrame[] ClassesPattern =
     [
         new(0, 0, 1.0, 0), new(0.5, 0.2, 1.0, 1), new(12, 0, 1.6, 30), new(12.5, 0.3, 1.0, 1, Fwhm: 4.6),
         new(12, -15, 1.0, 30, StarsKept: 20), new(12.5, -15, 1.0, 1, BackgroundFactor: 1.3), new(40, -15, 2.0, 30), new(40.5, -15.3, 1.0, 1),
         new(41, -15, 1.0, 30), new(41.5, -15.2, 1.0, 1),
+        new(80, -15, 1.0, 30, Exposure: 0.2), new(80.5, -15.2, 1.0, 1, BackgroundFactor: 1.14, Exposure: 137.5), new(81, -15, 1.0, 30),
     ];
 
     /// <summary>How many warm and hot pixels <see cref="SensorPattern"/> puts on a light, and how high above the 40 ADU noise.</summary>

@@ -187,7 +187,18 @@ or not the session has darks; the report's `fixed pattern` row adds what the `da
 
 Two passes: the classes that need no session figure (trailing, from the median elongation)
 and the session medians (FWHM over the good frames, stars over all), then the flags against
-the session (soft, clouds, background jump against the two neighbours on each side). Trends
+the session (soft, clouds, background jump against the two neighbours on each side). Before
+the first pass the usual exposure is read (R-085, ADR 0040): the exposures over 0, rounded to
+a tenth of a second, grouped, the largest group's value, the longer on a tie,
+`UsualExposureSeconds`. In the first pass a measured frame under `Th.ExposureShortFraction`
+of it gets `ShortExposure` and, after its elongation class is set, `Bad`; one farther than
+`Th.ExposureSamePct` from it gets `OtherExposure` and keeps its class. A short frame's stars
+stay out of the stars median, its FWHM out of the good median, and the second pass skips it
+both as a subject (no soft, clouds or jump flag) and as a neighbour (its sky is left out of
+the others' jump medians). A jump on a frame with `OtherExposure` whose size is within
+`Th.BackgroundJumpPct` of `100 * (exposure / usual - 1)` carries `FrameFlag.ExposureDetail`,
+which `SeriesReport.Reason` turns into the `, which its exposure explains` tail
+(`ExposureSuffix`); `ShortFractionWord` words the fraction as `half` while it is 0.5. Trends
 compare the first and the last 10 good frames (fewer on a short session: half the good
 frames). Drift is the mean step per minute over the drift pairs: the consecutive registered pairs with
 no pause above `Th.DitherPause` and no move between them, where nothing was pressed and the

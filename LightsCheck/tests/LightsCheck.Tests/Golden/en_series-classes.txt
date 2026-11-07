@@ -2,42 +2,42 @@ lightscheck <versiune>
 Copyright (C) 2026 Tudor Carean
 
 === SESSION: <sesiune> ===
-    lights             : lights\ (10 frames .fit)
+    lights             : lights\ (13 frames .fit)
     biases             : biases\ (2 frames .fit)
     darks              : darks\ (2 frames .fit)
     camera             : NIKON D3300
     lens               : 135 mm (when shot)
-    exposure           : 120.0 s at ISO 1600 (all frames)
-    interval           : from 2026-10-06 20:35:03 to 2026-10-06 20:57:08 (22 min); total exposure 18 min, from 9 frames (the camera was exposing 82 % of the time)
+    exposure           : 120.0 s at ISO 1600; 0.2 s at ISO 1600; 137.5 s at ISO 1600 (different exposures)
+    interval           : from 2026-10-06 20:35:03 to 2026-10-06 21:02:26 (27 min); total exposure 22 min, from 12 frames (the camera was exposing 81 % of the time)
     WARNING            : 1 frame could not be read (see the list of frames)
     scale              : 1 px = 5.99" on the sky; the pixel is 3.92 um (written in the file (XPIXSZ)); the frames are aligned on frame 1
 
   SUMMARY
     focus              : GOOD - the stars' width (FWHM) is typically 3.25 px = 19.5" on the good frames; 3.25 px at the start and 3.25 px at the end (+0 %): the focus held the whole session
-    exposure           : GOOD - the sky on green: 2000 -> 2000 ADU; the weakest is channel B: shot/read 10.0 (good from 10), the read noise adds 5 %
-    dew                : NO - the stars' width +0 %, the light around the stars (halo) +0.002
-    trailed frames     : 1 bad, 3 marginal, 5 good, 1 unread (of 10); it is not known which axis is RA
-    dithering          : NO walking noise, OK for hot pixels - walking-noise streaks of at most 0.5 px (under 3 px they do not show): the drift is 0.50 px over one exposure; frames 1-2, 2 frames in a row in the same spot, within 10 px; the pattern adds up in place: 23.5 % of one frame's pattern stays in the stack (ideal 11.1 %, fine up to 16.7 %); 3 moves over 9 frames, 4 different spots (within 10 px), 0 frames alone, 0 moves on both axes
+    exposure           : MARGINAL - the sky on green: 2000 -> 2001 ADU; the weakest is channel B: shot/read 10.0 (good from 10), the read noise adds 5 %
+    dew                : NO - the stars' width +0 %, the light around the stars (halo) +0.000
+    trailed frames     : 2 bad, 3 marginal, 7 good, 1 unread (of 13); it is not known which axis is RA
+    dithering          : NO walking noise, OK for hot pixels - walking-noise streaks of at most 1.2 px (under 3 px they do not show): the drift is 0.62 px over one exposure; frames 11-13, 3 frames in a row in the same spot, within 10 px; the pattern adds up in place: 19.4 % of one frame's pattern stays in the stack (ideal 8.3 %, fine up to 12.5 %); 4 moves over 12 frames, 5 different spots (within 10 px), 0 frames alone, 0 moves on both axes
     polar alignment    : - (it is not known which axis is RA)
-    leave out of stack : 2 frames (the list is under REJECTED); 8 frames stay, that is 16 min of exposure
+    leave out of stack : 3 frames (the list is under REJECTED); 10 frames stay, that is 20 min of exposure
 
   FOCUS
     the stars' width (FWHM): 3.25 px = 19.5" (typically, on the good frames)
-    first / last 2 good frames: 3.25 px / 3.25 px (+0 %): the focus held
-    in the centre / in the middle / at the edge: the stars' width 3.25 / 3.25 / 3.25 px (typically, on the good frames)
+    first / last 3 good frames: 3.25 px / 3.25 px (+0 %): the focus held
+    in the centre / in the middle / at the edge: the stars' width 3.24 / 3.25 / 3.25 px (typically, on the good frames)
     verdict            : GOOD - the stars' width (FWHM) is typically 3.25 px = 19.5" on the good frames; 3.25 px at the start and 3.25 px at the end (+0 %): the focus held the whole session
 
   EXPOSURE AND NOISE
-    sky background (good frames, first -> last): 2000 -> 2000 ADU on green, above the black level (+0 %)
+    sky background (good frames, first -> last): 2000 -> 2001 ADU on green, above the black level (+0 %)
     read noise         : R 12.0  G1 12.0  G2 12.0  B 12.0 ADU (the noise the sensor adds to every frame, measured from two biases)
     frame   1          : R: sky 399, shot/read 10.1, extra noise 4.8 %  G1: sky 2002, shot/read 10.1, extra noise 4.8 %  G2: sky 2001, shot/read 10.2, extra noise 4.8 %  B: sky 2300, shot/read 10.0, extra noise 4.9 %
-    frame   5          : R: sky 400, shot/read 10.1, extra noise 4.8 %  G1: sky 1999, shot/read 10.1, extra noise 4.9 %  G2: sky 2000, shot/read 10.1, extra noise 4.8 %  B: sky 2300, shot/read 10.1, extra noise 4.8 %
-    frame  10          : R: sky 400, shot/read 10.3, extra noise 4.7 %  G1: sky 2001, shot/read 10.2, extra noise 4.8 %  G2: sky 2002, shot/read 10.2, extra noise 4.8 %  B: sky 2300, shot/read 10.1, extra noise 4.8 %
+    frame   7          : R: sky 401, shot/read 10.2, extra noise 4.8 %  G1: sky 2000, shot/read 10.3, extra noise 4.7 %  G2: sky 2001, shot/read 10.3, extra noise 4.7 %  B: sky 2301, shot/read 10.2, extra noise 4.8 %
+    frame  13          : R: sky 400, shot/read 10.0, extra noise 4.9 %  G1: sky 2002, shot/read 10.2, extra noise 4.8 %  G2: sky 2000, shot/read 10.1, extra noise 4.9 %  B: sky 2301, shot/read 10.0, extra noise 4.9 %
     what it means      : shot/read from 10 up: the sky covers the read noise, which adds under 5 %; under 10: the channel suffers from the read noise, and longer exposures would help
 
   DEW
-    halo (the light around the stars), first / last: 0.001 / 0.002; stars found 40 -> 40 (+0 %); the stars' width 3.25 / 3.25 px (+0 %)
-    verdict            : NO - the stars' width +0 %, the light around the stars (halo) +0.002
+    halo (the light around the stars), first / last: 0.000 / 0.001; stars found 40 -> 36 (-10 %); the stars' width 3.25 / 3.25 px (+0 %)
+    verdict            : NO - the stars' width +0 %, the light around the stars (halo) +0.000
 
   TRAILED FRAMES
     bad (elongation of at least 1.60): 7
@@ -45,43 +45,47 @@ Copyright (C) 2026 Tudor Carean
     trail direction    : not known (too few bad frames with trails in the same direction); it is not known which axis is RA
 
   DRIFT AND ROTATION
-    drift between frames in a row, without dithering: X +0.25 px/min, Y +0.03 px/min = +1.5 / +0.2 "/min (from 4 pairs of frames without a pause between them)
-    drift over one exposure: 0.50 px = 3.0" in 120 s, along X; walking-noise streaks of up to 0.5 px (frames 1-2, 2 frames in a row in the same spot, within 10 px)
-    field rotation     : the image turned by -0.0' in all, -0.1' an hour; because of this, a star in the corner moves 0.00 px over one exposure
+    drift between frames in a row, without dithering: X +0.31 px/min, Y -0.00 px/min = +1.8 / -0.0 "/min (from 5 pairs of frames without a pause between them)
+    drift over one exposure: 0.62 px = 3.7" in 120 s, along X; walking-noise streaks of up to 1.2 px (frames 11-13, 3 frames in a row in the same spot, within 10 px)
+    field rotation     : the image turned by -0.3' in all, -0.7' an hour; because of this, a star in the corner moves 0.00 px over one exposure
     polar alignment    : - (it is not known which axis is RA)
     RA drift           : -
 
   DITHERING
-    pauses over 5 s    : 3; moves of at least 5 px: 3; pauses after which the frame stayed put: 0; moves without a pause before: 0; frames aligned: 9 of 10
-    how often          : every 2 frames: 2 times
+    pauses over 5 s    : 5; moves of at least 5 px: 4; pauses after which the frame stayed put: 1; moves without a pause before: 0; frames aligned: 12 of 13
+    how often          : every 2 frames: 2 times; every 4 frames: 1 time
     longest stretch without a move: frames 7-10 (4 frames in a row, 8 min)
-    how far            : typically 15.31 px = 91.7"; 5-10 px: 0; 10-20 px: 2; 20+ px: 1
-    direction          : on X only: 2; on Y only: 1; on both: 0; on X towards + / towards -: 2 / 0; on Y towards + / towards -: 0 / 1; it is not known which axis is RA
-    how close the frames are: half the frames have another frame within 0.6 px; with another frame under 3 px: 9, under 5: 9, under 10: 9; frames alone (10 px or more from any other): 0
-    different spots    : 4 within 5 px, 4 within 10 px; area of the positions 41 px on X, 16 px on Y
-    runs under 5 px    : none
-    runs under 10 px   : none
+    how far            : typically 21.41 px = 128.2"; 5-10 px: 0; 10-20 px: 2; 20+ px: 2
+    direction          : on X only: 3; on Y only: 1; on both: 0; on X towards + / towards -: 3 / 0; on Y towards + / towards -: 0 / 1; it is not known which axis is RA
+    how close the frames are: half the frames have another frame within 0.5 px; with another frame under 3 px: 12, under 5: 12, under 10: 12; frames alone (10 px or more from any other): 0
+    different spots    : 5 within 5 px, 5 within 10 px; area of the positions 81 px on X, 16 px on Y
+    runs under 5 px    : 11-13 (3, 4 min)
+    runs under 10 px   : 11-13 (3, 4 min)
     scale              : 1 px = 5.99" on the sky; to move the frame 5 px (the smallest move counted) takes 30" on the sky, and 10 px, 60"
-    pattern in the stack: 23.5 % of one frame's pattern stays in the stack (ideally 11.1 %, with 9 frames; 5 pairs of frames sat under 1.5 px from each other, and their pattern adds up)
-    fixed pattern      : strength 0.0 ADU on R (0 % of one frame's noise), 0.0 on G1 (0 %), 0.0 on G2 (0 %), 0.0 on B (0 %); 0 hot pixels per million pixels, that is, those above 10 times one frame's noise (from 9 frames, on 480 x 480 px from the centre); 2 darks in darks\, with which Siril takes the pattern out
-    verdict            : NO walking noise, OK for hot pixels - walking-noise streaks of at most 0.5 px (under 3 px they do not show): the drift is 0.50 px over one exposure; frames 1-2, 2 frames in a row in the same spot, within 10 px; the pattern adds up in place: 23.5 % of one frame's pattern stays in the stack (ideal 11.1 %, fine up to 16.7 %); 3 moves over 9 frames, 4 different spots (within 10 px), 0 frames alone, 0 moves on both axes
+    pattern in the stack: 19.4 % of one frame's pattern stays in the stack (ideally 8.3 %, with 12 frames; 8 pairs of frames sat under 1.5 px from each other, and their pattern adds up)
+    fixed pattern      : strength 0.0 ADU on R (0 % of one frame's noise), 0.0 on G1 (0 %), 0.0 on G2 (0 %), 0.0 on B (0 %); 0 hot pixels per million pixels, that is, those above 10 times one frame's noise (from 12 frames, on 480 x 480 px from the centre); 2 darks in darks\, with which Siril takes the pattern out
+    verdict            : NO walking noise, OK for hot pixels - walking-noise streaks of at most 1.2 px (under 3 px they do not show): the drift is 0.62 px over one exposure; frames 11-13, 3 frames in a row in the same spot, within 10 px; the pattern adds up in place: 19.4 % of one frame's pattern stays in the stack (ideal 8.3 %, fine up to 12.5 %); 4 moves over 12 frames, 5 different spots (within 10 px), 0 frames alone, 0 moves on both axes
 
-  REJECTED (1 bad frame and 1 unread frame; the marginal ones stay in the stack, your choice)
+  REJECTED (2 bad frames and 1 unread frame; the marginal ones stay in the stack, your choice)
       7  DSC_0007.fit          elongation 1.76 (from 1.60 the frame is bad), trail at 90 degrees
       9  DSC_0009.fit          could not be read: FITS: the file does not begin with SIMPLE.
+     11  DSC_0011.fit          exposure 0.2 s, under half the usual 120.0 s: too short to be worth stacking
 
   FRAME BY FRAME
-     no  file                  time      class     elong   FWHM   stars     bg  pause   step      dX      dY  dithering                                   same spot       reasons
-      1  DSC_0001.fit          20:35:03  good       1.01   3.25      40   2000      -      -     0.0     0.0  -                                           -               
-      2  DSC_0002.fit          20:37:04  good       1.01   3.25      40   2000    1 s    0.5     0.5     0.2  -                                           -               
-      3  DSC_0003.fit          20:39:34  marginal   1.49   4.10      40   2000   30 s   11.5    12.0    -0.0  -                                           -               elongation 1.49 (from 1.35 the frame is marginal), trail at -90 degrees
-      4  DSC_0004.fit          20:41:35  marginal   1.00   4.62      40   2000    1 s    0.6    12.5     0.3  -                                           -               wide stars: width (FWHM) 4.62 px, over 4.23, that is 1.3 times the session's usual width
-      5  DSC_0005.fit          20:44:05  marginal   1.01   3.25      20   2000   30 s   15.3    12.0   -15.0  -                                           -               too few stars: 20, under 24 (60 % of a frame's usual count): clouds or haze
-      6  DSC_0006.fit          20:46:06  good       1.01   3.25      40   2600    1 s    0.5    12.5   -15.0  -                                           -               the sky background jumps by +30 % against the neighbouring frames (flagged from 8 %)
-      7  DSC_0007.fit          20:48:36  BAD        1.76   4.60      40   2001   30 s   27.5    40.0   -15.0  -                                           -               elongation 1.76 (from 1.60 the frame is bad), trail at 90 degrees
-      8  DSC_0008.fit          20:50:37  good       1.01   3.25      40   2000    1 s    0.6    40.5   -15.3  -                                           -               
-      9  DSC_0009.fit          -         unread        -      -       -      -      -      -       -       -  -                                           -               could not be read: FITS: the file does not begin with SIMPLE.
-     10  DSC_0010.fit          20:55:08  good       1.01   3.25      40   2000      -      -    41.5   -15.2  -                                           -               
+     no  file                  time      exposure  class     elong   FWHM   stars     bg  pause   step      dX      dY  dithering                                   same spot       reasons
+      1  DSC_0001.fit          20:35:03   120.0 s  good       1.01   3.25      40   2000      -      -     0.0     0.0  -                                           -               
+      2  DSC_0002.fit          20:37:04   120.0 s  good       1.01   3.25      40   2000    1 s    0.5     0.5     0.2  -                                           -               
+      3  DSC_0003.fit          20:39:34   120.0 s  marginal   1.49   4.10      40   2000   30 s   11.5    12.0    -0.0  -                                           -               elongation 1.49 (from 1.35 the frame is marginal), trail at -90 degrees
+      4  DSC_0004.fit          20:41:35   120.0 s  marginal   1.00   4.62      40   2000    1 s    0.6    12.5     0.3  -                                           -               wide stars: width (FWHM) 4.62 px, over 4.23, that is 1.3 times the session's usual width
+      5  DSC_0005.fit          20:44:05   120.0 s  marginal   1.01   3.25      20   2000   30 s   15.3    12.0   -15.0  -                                           -               too few stars: 20, under 24 (60 % of a frame's usual count): clouds or haze
+      6  DSC_0006.fit          20:46:06   120.0 s  good       1.01   3.25      40   2600    1 s    0.5    12.5   -15.0  -                                           -               the sky background jumps by +30 % against the neighbouring frames (flagged from 8 %)
+      7  DSC_0007.fit          20:48:36   120.0 s  BAD        1.76   4.60      40   2001   30 s   27.5    40.0   -15.0  -                                           -               elongation 1.76 (from 1.60 the frame is bad), trail at 90 degrees
+      8  DSC_0008.fit          20:50:37   120.0 s  good       1.01   3.25      40   2000    1 s    0.6    40.5   -15.3  -                                           -               
+      9  DSC_0009.fit          -                -  unread        -      -       -      -      -      -       -       -  -                                           -               could not be read: FITS: the file does not begin with SIMPLE.
+     10  DSC_0010.fit          20:55:08   120.0 s  good       1.01   3.25      40   2000      -      -    41.5   -15.2  -                                           -               
+     11  DSC_0011.fit          20:57:38     0.2 s  BAD        1.01   3.24      37   2000   30 s   38.5    80.0   -15.0  -                                           1/3 from 11     exposure 0.2 s, under half the usual 120.0 s: too short to be worth stacking
+     12  DSC_0012.fit          20:57:39   137.5 s  good       1.01   3.25      36   2280    1 s    0.5    80.5   -15.2  -                                           2/3 from 11     exposure 137.5 s instead of the usual 120.0 s (Siril evens it out when stacking); the sky background jumps by +14 % against the neighbouring frames (flagged from 8 %), which its exposure explains
+     13  DSC_0013.fit          21:00:26   120.0 s  good       1.01   3.24      36   2001   30 s    0.5    80.9   -15.0  -                                           3/3 from 11     
 --- stderr ---
 (progress, left out)
 --- exit 1 ---

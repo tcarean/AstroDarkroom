@@ -69,7 +69,7 @@ public class SeriesTests
 
         Assert.True(r.HasErrors);
         Assert.Equal(
-            [FrameClass.Good, FrameClass.Good, FrameClass.Marginal, FrameClass.Marginal, FrameClass.Marginal, FrameClass.Good, FrameClass.Bad, FrameClass.Good, FrameClass.Unknown, FrameClass.Good],
+            [FrameClass.Good, FrameClass.Good, FrameClass.Marginal, FrameClass.Marginal, FrameClass.Marginal, FrameClass.Good, FrameClass.Bad, FrameClass.Good, FrameClass.Unknown, FrameClass.Good, FrameClass.Bad, FrameClass.Good, FrameClass.Good],
             s.Classes);
         Assert.Equal(FlagKind.MarginalTrail, Assert.Single(s.Flags[2]).Kind);
         Assert.InRange(s.Flags[2][0].Value, Th.ElongationMarginal, Th.ElongationBad);
@@ -81,9 +81,13 @@ public class SeriesTests
         Assert.InRange(s.Flags[5][0].Value, 25, 35);
         Assert.Equal(FlagKind.Trailed, Assert.Single(s.Flags[6]).Kind);
         Assert.Equal(FlagKind.Unreadable, Assert.Single(s.Flags[8]).Kind);
-        Assert.Equal(5, s.GoodCount);
+        Assert.Equal(FlagKind.ShortExposure, Assert.Single(s.Flags[10]).Kind);   // 0.2 s against the usual 120 s (R-085)
+        Assert.Equal(120, s.UsualExposureSeconds);
+        Assert.Equal([FlagKind.OtherExposure, FlagKind.BackgroundJump], s.Flags[11].Select(x => x.Kind));   // 137.5 s, and the +14 % jump it explains
+        Assert.Equal(FrameFlag.ExposureDetail, s.Flags[11][1].Detail);
+        Assert.Equal(7, s.GoodCount);
         Assert.Equal(3, s.MarginalCount);
-        Assert.Equal(1, s.BadCount);
+        Assert.Equal(2, s.BadCount);
         Assert.Equal(1, s.UnknownCount);
     }
 
@@ -150,6 +154,29 @@ public class SeriesTests
             english ? "walking-noise streaks of up to 5.1 px along Y, in 4 frames of 20 (20.0 %; from 25 % they show in the stack): " : "dare de walking noise de pana la 5.1 px pe Y, in 4 cadre din 20 (20.0 %; de la 25 % se vad in stiva): ",
             verdict.Value, StringComparison.Ordinal);
         Assert.Contains(english ? "; in the stack 5.0 % of one frame's pattern stays (ideal 5.0 %, fine up to 7.5 %); " : "; in stiva ramane 5.0 % din pattern-ul unui cadru (ideal 5.0 %, bine pana la 7.5 %); ", verdict.Value, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The TRAILED FRAMES rows go by the trail, not the class (R-085): a trailed short frame is
+    /// listed once under `bad`, a marginally trailed short frame, bad by its exposure, under
+    /// neither row, while the summary row keeps counting the classes.
+    /// </summary>
+    [Fact]
+    public void R085_ATrailedShortFrameIsListedOnceAndAMarginallyTrailedShortOneInNeitherRow()
+    {
+        SeriesResult pattern = RunPattern();
+        (AnalyzedFrame[] frames, DitherAnalysis d, Cadence c) = SeriesAnalyzerTests.ShortAndTrailed();
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+        Assert.Equal([FrameClass.Good, FrameClass.Bad, FrameClass.Bad, FrameClass.Bad], s.Classes);
+        Assert.Equal([FlagKind.ShortExposure, FlagKind.Trailed], s.Flags[2].Select(f => f.Kind));
+        Assert.Equal([FlagKind.ShortExposure, FlagKind.MarginalTrail], s.Flags[3].Select(f => f.Kind));
+        SeriesResult r = pattern with { Frames = frames, Cadence = c, Dither = d, Series = s };
+
+        IReadOnlyList<ReportRow> rows = SeriesReport.TrailRows(r);
+
+        Assert.Equal("2, 3", rows[0].Value);
+        Assert.Equal("niciunul", rows[1].Value);
+        Assert.StartsWith("3 slabe, 0 la limita, 1 bune (din 4)", Assert.Single(SeriesReport.SummaryRows(r), x => x.Label == "cadre miscate").Value, StringComparison.Ordinal);
     }
 
     /// <summary>The `scara` row of DITHERING words the move thresholds in arcseconds at the fixture's 5.99 "/px (R-044).</summary>
@@ -402,7 +429,7 @@ public class SeriesTests
             english ? "2 bad frames; the marginal ones stay in the stack, your choice" : "2 cadre slabe; cele la limita raman in stiva, la alegerea ta",
             SeriesReport.RejectedHeading(pattern));
         Assert.Equal(
-            english ? "1 bad frame and 1 unread frame; the marginal ones stay in the stack, your choice" : "1 cadru slab si 1 cadru necitit; cele la limita raman in stiva, la alegerea ta",
+            english ? "2 bad frames and 1 unread frame; the marginal ones stay in the stack, your choice" : "2 cadre slabe si 1 cadru necitit; cele la limita raman in stiva, la alegerea ta",
             SeriesReport.RejectedHeading(mixed));
         foreach (string text in SeriesReport.RejectedExplanation.Select(p => p.Text).Append(SeriesReport.RejectedHeading(mixed)))
         {

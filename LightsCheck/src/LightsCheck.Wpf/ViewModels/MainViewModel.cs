@@ -80,6 +80,7 @@ public sealed class FrameRowVm
         Index = row.Index;
         File = row.FileName;
         Time = row.Time;
+        Exposure = row.Exposure;
         Class = row.Class;
         Elongation = row.Elongation;
         Fwhm = row.Fwhm;
@@ -98,6 +99,7 @@ public sealed class FrameRowVm
     public int Index { get; }
     public string File { get; }
     public string Time { get; }
+    public string Exposure { get; }
     public string Class { get; }
     public string Elongation { get; }
     public string Fwhm { get; }

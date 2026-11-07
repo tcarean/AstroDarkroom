@@ -181,8 +181,8 @@
       "session": "Veil/2026-11-06",
       "measuredOn": "2026-11-07",
       "expected": {
-        "good": 81, "marginal": 4, "bad": 0,
-        "badFrames": [],
+        "good": 80, "marginal": 2, "bad": 3,
+        "badFrames": [16, 58, 64],
         "registered": 85, "moves": 77, "pauses": 82, "pausesWithoutMove": 5,
         "distinctMid": 53, "distinctLoose": 38, "isolated": 15, "longestRunLoose": 4,
         "medianMove": 17.14, "rotationArcmin": 5.4, "driftYPerMin": -0.98, "sessionFwhm": 4.70,

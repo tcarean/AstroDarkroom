@@ -32,6 +32,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   lens's name as the camera wrote it and its range. The inventory's `lens` line names it:
   `"EF50mm f/1.4 USM" (ID 198, Canon EF)`, `ID 2263 (Pentax K)`.
 
+### Added
+
+- The frame table shows each frame's exposure, after `time`, in the console and in the window
+  (R-085, ADR 0040). A frame exposed under half the session's usual exposure is bad and leaves
+  the stack, with the reason `exposure 0.2 s, under half the usual 120.2 s: too short to be
+  worth stacking`; its few stars and dark sky no longer read as clouds or as a jump. A frame
+  with another exposure stays in with a note, and a background jump its exposure predicts says
+  so. On the Veil session of 2026-11-06, where the intervalometer misfired, the two 0.2 s frames
+  and the 34.9 s one leave and the 137.5 s one stays.
+
 ### Changed
 
 - The walking-noise verdict reads what reaches the stack, not how spread out the dither map

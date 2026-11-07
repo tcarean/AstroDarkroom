@@ -56,6 +56,8 @@ internal enum FlagKind
     Trails,
     Unreadable,
     Unregistered,
+    ShortExposure,
+    OtherExposure,
 }
 
 /// <summary>
@@ -73,13 +75,21 @@ internal enum FlagKind
 /// </param>
 /// <param name="Detail">
 /// For a trailing flag the stars' angle in whole degrees, null without one; for an unreadable frame
-/// the error; null otherwise.
+/// the error; for a background jump <see cref="ExposureDetail"/> when the frame's exposure
+/// explains it; null otherwise.
 /// </param>
 /// <param name="On">
 /// For a trailing flag, the mount axis the trail runs along; unknown otherwise or without an RA
 /// axis.
 /// </param>
-internal sealed record FrameFlag(FlagKind Kind, double Value, double Threshold, string? Detail = null, TrailAxis On = TrailAxis.Unknown);
+internal sealed record FrameFlag(FlagKind Kind, double Value, double Threshold, string? Detail = null, TrailAxis On = TrailAxis.Unknown)
+{
+    /// <summary>
+    /// The <see cref="Detail"/> of a background jump that the frame's own exposure predicts, so
+    /// the reason says the exposure explains it (R-085).
+    /// </summary>
+    internal const string ExposureDetail = "exposure";
+}
 
 /// <summary>The mount axis a trail runs along, against the RA axis of the image (R-033).</summary>
 internal enum TrailAxis
@@ -200,11 +210,12 @@ internal enum PolarAlignment
 /// <param name="BadCount">The frames classed bad.</param>
 /// <param name="UnknownCount">The frames without a measurement.</param>
 /// <param name="SessionFwhm">
-/// The median of the FWHM medians of the frames neither trailed nor marginally trailed, in pixels;
-/// null when none has one.
+/// The median of the FWHM medians of the frames neither trailed nor marginally trailed nor too
+/// short (R-085), in pixels; null when none has one.
 /// </param>
 /// <param name="SessionStars">
-/// The median of the detected star counts over every measured frame; null without one.
+/// The median of the detected star counts over every measured frame but the too short ones
+/// (R-085); null without one.
 /// </param>
 /// <param name="Fwhm">The trend of the FWHM median over the good frames, in pixels.</param>
 /// <param name="Halo">The trend of the halo over the good frames.</param>
@@ -228,6 +239,10 @@ internal enum PolarAlignment
 /// <param name="DriftPairs">The pairs the drift was read over.</param>
 /// <param name="MedianExposureSeconds">
 /// The median of the positive exposures, in seconds; null without one.
+/// </param>
+/// <param name="UsualExposureSeconds">
+/// The exposure most frames carry, to a tenth of a second, the longer on a tie (R-085); null
+/// when no frame has one.
 /// </param>
 /// <param name="DriftPerExposurePx">
 /// The drift's length over one median exposure, in pixels; null without the drift or the exposure.
@@ -356,6 +371,7 @@ internal sealed record SeriesAnalysis(
     double? DriftYPerMin,
     int DriftPairs,
     double? MedianExposureSeconds,
+    double? UsualExposureSeconds,
     double? DriftPerExposurePx,
     Axis DriftAxis,
     double? WalkingStreakPx,
@@ -448,7 +464,15 @@ internal static class SeriesAnalyzer
             flags[i] = [];
         }
 
-        // First pass: the classes that need no session figure (trailing), and the medians.
+        // The session's usual exposure (R-085): the value most frames carry, to a tenth of a
+        // second, the longer on a tie. A frame under ExposureShortFraction of it is bad and
+        // counts for nothing (its stars stay out of the usual count, its sky out of the jumps);
+        // one with any other exposure is noted and judged like the rest.
+        double? usualExposure = frames.Select(f => f.Info.ExposureSeconds).Where(e => e is > 0).Select(e => Math.Round(e!.Value, 1))
+            .GroupBy(e => e).OrderByDescending(g => g.Count()).ThenByDescending(g => g.Key).Select(g => (double?)g.Key).FirstOrDefault();
+        bool[] shortExposure = new bool[n];
+
+        // First pass: the classes that need no session figure (trailing, the exposure), and the medians.
         List<double> fwhmGood = [];
         List<double> starsAll = [];
         for (int i = 0; i < n; i++)
@@ -462,7 +486,24 @@ internal static class SeriesAnalyzer
             }
 
             FrameMeasurement m = f.Measurement;
-            starsAll.Add(m.Detected);
+            if (usualExposure is double usual && f.Info.ExposureSeconds is double e)
+            {
+                if (e < Th.ExposureShortFraction * usual)
+                {
+                    shortExposure[i] = true;
+                    flags[i].Add(new FrameFlag(FlagKind.ShortExposure, e, Th.ExposureShortFraction * usual));
+                }
+                else if (Math.Abs(e - usual) > Th.ExposureSamePct / 100 * usual)
+                {
+                    flags[i].Add(new FrameFlag(FlagKind.OtherExposure, e, usual));
+                }
+            }
+
+            if (!shortExposure[i])
+            {
+                starsAll.Add(m.Detected);
+            }
+
             double el = m.ElongationMedian ?? 1;
             string? angle = m.AngleDeg is double a ? a.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) : null;
             if (el >= Th.ElongationBad)
@@ -478,10 +519,15 @@ internal static class SeriesAnalyzer
             else
             {
                 classes[i] = FrameClass.Good;
-                if (m.FwhmMedian is double fw)
+                if (!shortExposure[i] && m.FwhmMedian is double fw)
                 {
                     fwhmGood.Add(fw);
                 }
+            }
+
+            if (shortExposure[i])
+            {
+                classes[i] = FrameClass.Bad;
             }
 
             if (m.Trails.Count > 0)
@@ -498,11 +544,12 @@ internal static class SeriesAnalyzer
         double? sessionFwhm = fwhmGood.Count > 0 ? Raster.Percentile(fwhmGood, 50) : null;
         double? sessionStars = starsAll.Count > 0 ? Raster.Percentile(starsAll, 50) : null;
 
-        // Second pass: the flags against the session: soft focus, clouds, background jumps.
+        // Second pass: the flags against the session: soft focus, clouds, background jumps. A
+        // frame too short to stack gets none: its few stars and its dark sky are the exposure's.
         for (int i = 0; i < n; i++)
         {
             FrameMeasurement? m = frames[i].Measurement;
-            if (m is null)
+            if (m is null || shortExposure[i])
             {
                 continue;
             }
@@ -526,7 +573,7 @@ internal static class SeriesAnalyzer
             List<double> neighbours = [];
             for (int j = Math.Max(0, i - Th.BackgroundNeighbours); j <= Math.Min(n - 1, i + Th.BackgroundNeighbours); j++)
             {
-                if (j != i && frames[j].Measurement is FrameMeasurement mj)
+                if (j != i && !shortExposure[j] && frames[j].Measurement is FrameMeasurement mj)
                 {
                     neighbours.Add(mj.BackgroundMedian);
                 }
@@ -538,7 +585,11 @@ internal static class SeriesAnalyzer
                 double pct = med > 0 ? 100 * (m.BackgroundMedian - med) / med : 0;
                 if (Math.Abs(pct) > Th.BackgroundJumpPct)
                 {
-                    flags[i].Add(new FrameFlag(FlagKind.BackgroundJump, pct, Th.BackgroundJumpPct));
+                    // A jump within the jump threshold of what the frame's own exposure predicts
+                    // is the exposure's, and the reason says so (R-085).
+                    bool byExposure = usualExposure is double u && frames[i].Info.ExposureSeconds is double ex
+                        && flags[i].Any(fl => fl.Kind == FlagKind.OtherExposure) && Math.Abs(pct - 100 * (ex / u - 1)) <= Th.BackgroundJumpPct;
+                    flags[i].Add(new FrameFlag(FlagKind.BackgroundJump, pct, Th.BackgroundJumpPct, byExposure ? FrameFlag.ExposureDetail : null));
                 }
             }
         }
@@ -614,7 +665,7 @@ internal static class SeriesAnalyzer
         string source = wcs is null ? T("unknown", "necunoscut") : "plate solve (WCS)";
         double? trailAngle = null;
         List<double> angles = Enumerable.Range(0, n)
-            .Where(i => classes[i] == FrameClass.Bad && frames[i].Measurement?.AngleDeg is not null && frames[i].Measurement!.AngleCoherence is double c && c > Th.TrailAxisCoherence)
+            .Where(i => flags[i].Any(fl => fl.Kind == FlagKind.Trailed) && frames[i].Measurement?.AngleDeg is not null && frames[i].Measurement!.AngleCoherence is double c && c > Th.TrailAxisCoherence)
             .Select(i => frames[i].Measurement!.AngleDeg!.Value).ToList();
         if (angles.Count >= Th.TrailAxisMinFrames)
         {
@@ -791,7 +842,7 @@ internal static class SeriesAnalyzer
         return new SeriesAnalysis(classes, flags.Select(l => (IReadOnlyList<FrameFlag>)l).ToList(),
             classes.Count(c => c == FrameClass.Good), classes.Count(c => c == FrameClass.Marginal), classes.Count(c => c == FrameClass.Bad), classes.Count(c => c == FrameClass.Unknown),
             sessionFwhm, sessionStars, fwhmTrend, haloTrend, bgTrend, starsTrend, focusHeld, dew,
-            driftX, driftY, pairs, medianExposure, driftPerExposure, driftAxis, streak, sharedFrames, sharedFraction, piles, walking, rotTotal, rotPerHour, corner, ra, source, trailAngle, trailOn, moves, readNoise, swamping, swampingFrames,
+            driftX, driftY, pairs, medianExposure, usualExposure, driftPerExposure, driftAxis, streak, sharedFrames, sharedFraction, piles, walking, rotTotal, rotPerHour, corner, ra, source, trailAngle, trailOn, moves, readNoise, swamping, swampingFrames,
             approximate, starDrift, wcs?.DecDeg, polarRotPerHour, polarMin, polarMax, polarDriftMin, polarDriftMax, polarElongation, polarRaMax, polar);
     }
 

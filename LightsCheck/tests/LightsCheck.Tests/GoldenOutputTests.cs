@@ -66,7 +66,7 @@ public class GoldenOutputTests
         using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2, darks: 2);
         File.WriteAllBytes(Path.Combine(s.LightsDir, "DSC_0009.fit"), new byte[100]);
         (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
-        Assert.Contains("cadrul 10 / 10", stderr, StringComparison.Ordinal);
+        Assert.Contains("cadrul 13 / 13", stderr, StringComparison.Ordinal);
         Compare("series-classes.txt", Scrub(stdout, s.Root) + "--- stderr ---\n(progresul, omis)\n--- exit " + code + " ---\n");
     }
 

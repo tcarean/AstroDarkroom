@@ -281,7 +281,7 @@ internal static class LogText
             + " trends fwhm " + TrendOf(s.Fwhm) + " halo " + TrendOf(s.Halo) + " background " + TrendOf(s.Background) + " stars " + TrendOf(s.Stars)
             + " focusHeld=" + Yes(s.FocusHeld) + " dewSuspected=" + Yes(s.DewSuspected)
             + " drift x=" + Num(s.DriftXPerMin) + " y=" + Num(s.DriftYPerMin) + " px/min pairs=" + Int(s.DriftPairs) + " approximate=" + Yes(s.DriftApproximate)
-            + " medianExposure=" + Num(s.MedianExposureSeconds) + " s driftPerExposure=" + Num(s.DriftPerExposurePx) + " px axis=" + s.DriftAxis
+            + " medianExposure=" + Num(s.MedianExposureSeconds) + " s usualExposure=" + Num(s.UsualExposureSeconds) + " s driftPerExposure=" + Num(s.DriftPerExposurePx) + " px axis=" + s.DriftAxis
             + " walking streak=" + Num(s.WalkingStreakPx) + " px sharedFrames=" + Int(s.WalkingSharedFrames) + " patternPiles=" + Yes(s.PatternPiles) + " noise=" + s.WalkingNoise
             + " rotation total=" + Num(s.RotationTotalDeg) + " deg perHour=" + Num(s.RotationPerHourDeg)
             + " cornerShiftPerExposure=" + Num(s.CornerShiftPerExposurePx) + " px"

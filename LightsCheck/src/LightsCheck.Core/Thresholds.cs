@@ -317,6 +317,20 @@ internal static class Th
     internal const double CloudStarFraction = 0.6;
 
     /// <summary>
+    /// A frame exposed under this fraction of the session's usual exposure is bad (R-085): it
+    /// brings almost no signal, and Siril's normalisation would stretch its noise up to the
+    /// others' level. Half, from the owner's call on the Veil session of 2026-11-06, where a
+    /// 34.9 s frame among 120 s ones (29 %) leaves and a 137.5 s one stays (ADR 0040).
+    /// </summary>
+    internal const double ExposureShortFraction = 0.5;
+
+    /// <summary>
+    /// An exposure within this many percent of the session's usual one counts as the usual one
+    /// (R-085): the raws write the shutter time with small differences a camera does not mean.
+    /// </summary>
+    internal const double ExposureSamePct = 2.0;
+
+    /// <summary>
     /// A frame whose green background differs from the median of its neighbours by more than this
     /// percentage has a background jump.
     /// </summary>

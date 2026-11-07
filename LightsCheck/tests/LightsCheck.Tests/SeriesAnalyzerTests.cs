@@ -31,8 +31,8 @@ public class SeriesAnalyzerTests
             z, z, z, halo, Enumerable.Repeat(new Trail(100, 300, 0, 0), trails).ToList(), []);
     }
 
-    private static AnalyzedFrame Frame(int i, FrameMeasurement? m, string? error = null)
-        => new(new FrameInfo(i, $"DSC_{i:0000}.NEF", "cam", 135, 2.8, 120, 1600, SessionFixture.FirstStart.AddSeconds(i * 141.0), null, null, null, null, null, null, null, null, null, null, error), m,
+    private static AnalyzedFrame Frame(int i, FrameMeasurement? m, string? error = null, double exposure = 120)
+        => new(new FrameInfo(i, $"DSC_{i:0000}.NEF", "cam", 135, 2.8, exposure, 1600, SessionFixture.FirstStart.AddSeconds(i * 141.0), null, null, null, null, null, null, null, null, null, null, error), m,
             m is null ? null : new RegistrationResult(true, 300, 200, 0, 0, 0, 1, 0.3), error);
 
     /// <summary>n good frames 141 s apart (120 s exposures), the k-th registered at (dx * k, dy * k), with the dithering read from those positions.</summary>
@@ -153,6 +153,21 @@ public class SeriesAnalyzerTests
         Assert.InRange(s.WalkingStreakPx!.Value, 0.4, 0.5);   // the ten 0.5 px steps read as a drift of 0.43 px per exposure
         Assert.Equal(0, s.WalkingSharedFrames);
         Assert.Equal(WalkingNoise.Static, s.WalkingNoise);
+    }
+
+    /// <summary>Four frames 141 s apart at 120 s but the last two at 0.2 s: a plain one, a trailed one, a trailed short one and a marginally trailed short one (R-085).</summary>
+    internal static (AnalyzedFrame[] Frames, DitherAnalysis Dither, Cadence Cadence) ShortAndTrailed()
+    {
+        AnalyzedFrame[] frames =
+        [
+            Frame(1, Measurement(3.0, 1.1, 10000, 120)),
+            Frame(2, Measurement(3.0, 1.7, 10000, 120)),
+            Frame(3, Measurement(3.0, 1.7, 100, 1), exposure: 0.2),
+            Frame(4, Measurement(3.0, 1.4, 100, 1), exposure: 0.2),
+        ];
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+        double?[] zeros = new double?[4];
+        return (frames, DitherAnalyzer.Analyze(zeros, zeros, c.PauseSeconds), c);
     }
 
     /// <summary>20 frames 141 s apart: the first <paramref name="run"/> at one spot drifting 2 px along Y per frame, the rest 20 px apart along X.</summary>
@@ -385,6 +400,64 @@ public class SeriesAnalyzerTests
         Assert.Equal(1, s.UnknownCount);
         Assert.Equal(3.0, s.SessionFwhm!.Value, 0.01);
         Assert.Equal(10000, s.SessionStars!.Value);
+    }
+
+    /// <summary>
+    /// The session's usual exposure is the one most frames carry; a frame under half of it is bad
+    /// with the short-exposure flag and gets neither the clouds nor the jump flag, and its stars
+    /// stay out of the session's usual count; a frame with another exposure keeps its class with
+    /// a note, and a background jump the exposure predicts carries the exposure detail (R-085).
+    /// </summary>
+    [Fact]
+    public void R085_AFrameUnderHalfTheUsualExposureIsBadAndAnotherExposureIsNoted()
+    {
+        List<AnalyzedFrame> frames = [];
+        for (int i = 1; i <= 10; i++)
+        {
+            frames.Add(Frame(i, Measurement(3.0, 1.1, 10000, i == 5 ? 160 : 120)));   // frame 5: a +33 % jump that no exposure explains
+        }
+
+        frames.Add(Frame(11, Measurement(3.0, 1.1, 100, 1), exposure: 0.2));           // bad: 0.2 s; its 100 stars and its -99 % background are the exposure's doing, and count for no neighbour
+        frames.Add(Frame(12, Measurement(3.0, 1.1, 10000, 137), exposure: 137.5));     // good, noted: 137.5 s, and the +14 % background it predicts
+        frames.Add(Frame(13, Measurement(3.0, 1.1, 10000, 120), exposure: 100));       // good, noted: 100 s, between half and the usual
+        frames.Add(Frame(14, Measurement(3.0, 1.1, 10000, 120), exposure: 121));       // good, within 2 % of the usual: no note
+        SeriesAnalysis s = Analyze(frames.ToArray());
+
+        Assert.Equal(120, s.UsualExposureSeconds);
+        Assert.Equal(FrameClass.Bad, s.Classes[10]);
+        FrameFlag shortFlag = Assert.Single(s.Flags[10]);
+        Assert.Equal(FlagKind.ShortExposure, shortFlag.Kind);
+        Assert.Equal(0.2, shortFlag.Value);
+        Assert.Equal(60, shortFlag.Threshold);
+        Assert.Equal(10000, s.SessionStars!.Value);
+        Assert.Equal(FrameClass.Good, s.Classes[11]);
+        Assert.Equal([FlagKind.OtherExposure, FlagKind.BackgroundJump], s.Flags[11].Select(f => f.Kind));
+        Assert.Equal(137.5, s.Flags[11][0].Value);
+        Assert.Equal(120, s.Flags[11][0].Threshold);
+        Assert.Equal(FrameFlag.ExposureDetail, s.Flags[11][1].Detail);
+        Assert.Equal(FrameClass.Good, s.Classes[12]);
+        Assert.Equal(FlagKind.OtherExposure, Assert.Single(s.Flags[12]).Kind);
+        Assert.Empty(s.Flags[13]);
+        Assert.Equal(FlagKind.BackgroundJump, Assert.Single(s.Flags[4]).Kind);
+        Assert.Null(s.Flags[4][0].Detail);
+        Assert.Equal(13, s.GoodCount);
+        Assert.Equal(1, s.BadCount);
+    }
+
+    /// <summary>The usual exposure on a tie is the longer one, exactly half of it is not under it, and no frame with an exposure means no usual one and no flag (R-085).</summary>
+    [Fact]
+    public void R085_TheUsualExposureTakesTheLongerOnATieAndIsNullWithoutOne()
+    {
+        AnalyzedFrame[] frames = [Frame(1, Measurement(3.0, 1.1, 10000, 120), exposure: 60), Frame(2, Measurement(3.0, 1.1, 10000, 120), exposure: 120)];
+        SeriesAnalysis s = Analyze(frames);
+        Assert.Equal(120, s.UsualExposureSeconds);
+        Assert.Equal(FlagKind.OtherExposure, Assert.Single(s.Flags[0]).Kind);   // 60 s is exactly half, not under it: noted, in the stack
+        Assert.Equal(FrameClass.Good, s.Classes[0]);
+        Assert.Empty(s.Flags[1]);
+
+        SeriesAnalysis none = Analyze(Frame(1, Measurement(3.0, 1.1, 10000, 120), exposure: 0), Frame(2, Measurement(3.0, 1.1, 10000, 120), exposure: 0));
+        Assert.Null(none.UsualExposureSeconds);
+        Assert.All(none.Flags, f => Assert.Empty(f));
     }
 
     [Fact]

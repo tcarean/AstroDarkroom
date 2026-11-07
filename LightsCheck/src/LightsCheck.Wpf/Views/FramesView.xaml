@@ -40,6 +40,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <ColumnDefinition Width="36" />
           <ColumnDefinition Width="130" />
           <ColumnDefinition Width="70" />
+          <ColumnDefinition Width="66" />
           <ColumnDefinition Width="78" />
           <ColumnDefinition Width="52" />
           <ColumnDefinition Width="52" />
@@ -56,18 +57,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TextBlock Grid.Column="0" Style="{StaticResource Cell}" Text="{Binding Index}" />
         <TextBlock Grid.Column="1" Style="{StaticResource Cell}" Text="{Binding File}" TextTrimming="CharacterEllipsis" />
         <TextBlock Grid.Column="2" Style="{StaticResource Cell}" Text="{Binding Time}" />
-        <ContentControl Grid.Column="3" Content="{Binding Class}" ContentTemplate="{StaticResource VerdictChip}" HorizontalAlignment="Left" Margin="0,0,8,0" />
-        <TextBlock Grid.Column="4" Style="{StaticResource Cell}" Text="{Binding Elongation}" />
-        <TextBlock Grid.Column="5" Style="{StaticResource Cell}" Text="{Binding Fwhm}" />
-        <TextBlock Grid.Column="6" Style="{StaticResource Cell}" Text="{Binding Stars}" />
-        <TextBlock Grid.Column="7" Style="{StaticResource Cell}" Text="{Binding Background}" />
-        <TextBlock Grid.Column="8" Style="{StaticResource Cell}" Text="{Binding Pause}" />
-        <TextBlock Grid.Column="9" Style="{StaticResource Cell}" Text="{Binding Step}" />
-        <TextBlock Grid.Column="10" Style="{StaticResource Cell}" Text="{Binding Dx}" />
-        <TextBlock Grid.Column="11" Style="{StaticResource Cell}" Text="{Binding Dy}" />
-        <TextBlock Grid.Column="12" Style="{StaticResource Cell}" Text="{Binding Move}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Move}" />
-        <TextBlock Grid.Column="13" Style="{StaticResource Cell}" Text="{Binding Spot}" />
-        <TextBlock Grid.Column="14" Style="{StaticResource Cell}" Text="{Binding Reasons}" Foreground="{StaticResource MutedBr}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Reasons}" />
+        <TextBlock Grid.Column="3" Style="{StaticResource Cell}" Text="{Binding Exposure}" />
+        <ContentControl Grid.Column="4" Content="{Binding Class}" ContentTemplate="{StaticResource VerdictChip}" HorizontalAlignment="Left" Margin="0,0,8,0" />
+        <TextBlock Grid.Column="5" Style="{StaticResource Cell}" Text="{Binding Elongation}" />
+        <TextBlock Grid.Column="6" Style="{StaticResource Cell}" Text="{Binding Fwhm}" />
+        <TextBlock Grid.Column="7" Style="{StaticResource Cell}" Text="{Binding Stars}" />
+        <TextBlock Grid.Column="8" Style="{StaticResource Cell}" Text="{Binding Background}" />
+        <TextBlock Grid.Column="9" Style="{StaticResource Cell}" Text="{Binding Pause}" />
+        <TextBlock Grid.Column="10" Style="{StaticResource Cell}" Text="{Binding Step}" />
+        <TextBlock Grid.Column="11" Style="{StaticResource Cell}" Text="{Binding Dx}" />
+        <TextBlock Grid.Column="12" Style="{StaticResource Cell}" Text="{Binding Dy}" />
+        <TextBlock Grid.Column="13" Style="{StaticResource Cell}" Text="{Binding Move}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Move}" />
+        <TextBlock Grid.Column="14" Style="{StaticResource Cell}" Text="{Binding Spot}" />
+        <TextBlock Grid.Column="15" Style="{StaticResource Cell}" Text="{Binding Reasons}" Foreground="{StaticResource MutedBr}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Reasons}" />
       </Grid>
     </DataTemplate>
   </UserControl.Resources>
@@ -90,6 +92,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ColumnDefinition Width="36" />
             <ColumnDefinition Width="130" />
             <ColumnDefinition Width="70" />
+            <ColumnDefinition Width="66" />
             <ColumnDefinition Width="78" />
             <ColumnDefinition Width="52" />
             <ColumnDefinition Width="52" />
@@ -106,18 +109,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Grid.Column="0" Style="{StaticResource Head}" Text="{local:T En='no', Ro='nr'}" />
           <TextBlock Grid.Column="1" Style="{StaticResource Head}" Text="{local:T En='file', Ro='fisier'}" />
           <TextBlock Grid.Column="2" Style="{StaticResource Head}" Text="{local:T En='time', Ro='ora'}" />
-          <TextBlock Grid.Column="3" Style="{StaticResource Head}" Text="{local:T En='class', Ro='clasa'}" />
-          <TextBlock Grid.Column="4" Style="{StaticResource Head}" Text="{local:T En='elong.', Ro='alung.'}" ToolTip="{local:T En='how elongated the stars are, typically (1 = round)', Ro='cat de alungite sunt stelele, de obicei (1 = rotunde)'}" />
-          <TextBlock Grid.Column="5" Style="{StaticResource Head}" Text="FWHM" ToolTip="{local:T En='the stars\' width (FWHM), typically, in px', Ro='latimea stelelor (FWHM), de obicei, in px'}" />
-          <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="{local:T En='stars', Ro='stele'}" />
-          <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="{local:T En='bg', Ro='fond'}" ToolTip="{local:T En='the sky background on green, in ADU above the black level', Ro='fondul cerului pe verde, in ADU peste nivelul de negru'}" />
-          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="{local:T En='pause', Ro='pauza'}" ToolTip="{local:T En='how many seconds passed since the end of the frame before', Ro='cate secunde au trecut de la sfarsitul cadrului dinainte'}" />
-          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="{local:T En='step', Ro='pas'}" ToolTip="{local:T En='how far it moved from the frame before, in px', Ro='cat s-a mutat fata de cadrul dinainte, in px'}" />
-          <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="{Binding DxHeader}" ToolTip="{local:T En='where it sat relative to frame 1, in px, along the image\'s X or Y axis; in brackets, the mount\'s axis', Ro='unde a stat fata de cadrul 1, in px, pe axa X sau Y a imaginii; in paranteza, axa monturii'}" />
-          <TextBlock Grid.Column="11" Style="{StaticResource Head}" Text="{Binding DyHeader}" ToolTip="{local:T En='where it sat relative to frame 1, in px, along the image\'s X or Y axis; in brackets, the mount\'s axis', Ro='unde a stat fata de cadrul 1, in px, pe axa X sau Y a imaginii; in paranteza, axa monturii'}" />
-          <TextBlock Grid.Column="12" Style="{StaticResource Head}" Text="dithering" ToolTip="{local:T En='how the mount was moved for the dither: along which axis, by how many pixels, which way on the sky and with which SynScan arrow (EAST and NORTH in the top bar say which arrow is which)', Ro='cum a fost mutata montura la dithering: pe ce axa, cu cati pixeli, incotro pe cer si cu ce sageata SynScan (EST si NORD din bara de sus spun care sageata e care)'}" />
-          <TextBlock Grid.Column="13" Style="{StaticResource Head}" Text="{local:T En='same spot', Ro='acelasi loc'}" ToolTip="{local:T En='which frame in a row in the same spot (less than 10 px) it is, of how many, and from which frame the run starts; walking noise comes from such runs', Ro='al catelea cadru la rand in acelasi loc (la mai putin de 10 px), din cate, si de la ce cadru incepe grupul; din astfel de grupuri vine walking noise-ul'}" />
-          <TextBlock Grid.Column="14" Style="{StaticResource Head}" Text="{local:T En='reasons', Ro='motive'}" />
+          <TextBlock Grid.Column="3" Style="{StaticResource Head}" Text="{local:T En='exposure', Ro='expunere'}" ToolTip="{local:T En='how long the frame was exposed, in seconds', Ro='cat timp a fost expus cadrul, in secunde'}" />
+          <TextBlock Grid.Column="4" Style="{StaticResource Head}" Text="{local:T En='class', Ro='clasa'}" />
+          <TextBlock Grid.Column="5" Style="{StaticResource Head}" Text="{local:T En='elong.', Ro='alung.'}" ToolTip="{local:T En='how elongated the stars are, typically (1 = round)', Ro='cat de alungite sunt stelele, de obicei (1 = rotunde)'}" />
+          <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="FWHM" ToolTip="{local:T En='the stars\' width (FWHM), typically, in px', Ro='latimea stelelor (FWHM), de obicei, in px'}" />
+          <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="{local:T En='stars', Ro='stele'}" />
+          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="{local:T En='bg', Ro='fond'}" ToolTip="{local:T En='the sky background on green, in ADU above the black level', Ro='fondul cerului pe verde, in ADU peste nivelul de negru'}" />
+          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="{local:T En='pause', Ro='pauza'}" ToolTip="{local:T En='how many seconds passed since the end of the frame before', Ro='cate secunde au trecut de la sfarsitul cadrului dinainte'}" />
+          <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="{local:T En='step', Ro='pas'}" ToolTip="{local:T En='how far it moved from the frame before, in px', Ro='cat s-a mutat fata de cadrul dinainte, in px'}" />
+          <TextBlock Grid.Column="11" Style="{StaticResource Head}" Text="{Binding DxHeader}" ToolTip="{local:T En='where it sat relative to frame 1, in px, along the image\'s X or Y axis; in brackets, the mount\'s axis', Ro='unde a stat fata de cadrul 1, in px, pe axa X sau Y a imaginii; in paranteza, axa monturii'}" />
+          <TextBlock Grid.Column="12" Style="{StaticResource Head}" Text="{Binding DyHeader}" ToolTip="{local:T En='where it sat relative to frame 1, in px, along the image\'s X or Y axis; in brackets, the mount\'s axis', Ro='unde a stat fata de cadrul 1, in px, pe axa X sau Y a imaginii; in paranteza, axa monturii'}" />
+          <TextBlock Grid.Column="13" Style="{StaticResource Head}" Text="dithering" ToolTip="{local:T En='how the mount was moved for the dither: along which axis, by how many pixels, which way on the sky and with which SynScan arrow (EAST and NORTH in the top bar say which arrow is which)', Ro='cum a fost mutata montura la dithering: pe ce axa, cu cati pixeli, incotro pe cer si cu ce sageata SynScan (EST si NORD din bara de sus spun care sageata e care)'}" />
+          <TextBlock Grid.Column="14" Style="{StaticResource Head}" Text="{local:T En='same spot', Ro='acelasi loc'}" ToolTip="{local:T En='which frame in a row in the same spot (less than 10 px) it is, of how many, and from which frame the run starts; walking noise comes from such runs', Ro='al catelea cadru la rand in acelasi loc (la mai putin de 10 px), din cate, si de la ce cadru incepe grupul; din astfel de grupuri vine walking noise-ul'}" />
+          <TextBlock Grid.Column="15" Style="{StaticResource Head}" Text="{local:T En='reasons', Ro='motive'}" />
         </Grid>
         <ListBox Grid.Row="1" ItemsSource="{Binding Frames}" SelectedItem="{Binding SelectedFrame, Mode=TwoWay}"
                  ItemTemplate="{StaticResource FrameRow}" Background="Transparent" BorderThickness="0"

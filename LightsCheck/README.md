@@ -146,9 +146,9 @@ default 4 threads, the 87 raws of 24 MP of the Veil night take about two minutes
 - **REJECTED**: each bad frame with its reason, its threshold and the axis of its trail, and each
   frame that could not be read. The marginal frames stay in, your choice; their list is in
   TRAILED FRAMES.
-- **FRAME BY FRAME**: one row per frame: time, class, elongation, FWHM, stars, background,
-  pause, step, the position against the first frame, `dithering`, `same spot` and the reasons
-  (below).
+- **FRAME BY FRAME**: one row per frame: time, exposure, class, elongation, FWHM, stars,
+  background, pause, step, the position against the first frame, `dithering`, `same spot` and
+  the reasons (below).
 
 ### Drift, field rotation and polar alignment
 
@@ -223,6 +223,14 @@ frames of the runs whose streak reaches 3 px, the ones whose streak would show:
 
 ### The frame table
 
+- `exposure` is how long the frame was exposed, in seconds. The session's usual exposure is
+  the one most frames carry. A frame exposed under half of it is bad and leaves the stack: it
+  brings almost no signal, and Siril would have to stretch its noise up to the others' level
+  when it evens the frames out before stacking; its reason reads `exposure 0.2 s, under half
+  the usual 120.2 s: too short to be worth stacking`. A frame with another exposure, longer or a
+  little shorter, stays in with a note, `exposure 137.5 s instead of the usual 120.2 s (Siril
+  evens it out when stacking)`, and when its sky jumps by as much as the exposure predicts, the
+  jump's reason says so: `, which its exposure explains`.
 - `dithering` is the mount's move behind each dither: on which axis, how many pixels, which way on
   the sky and which SynScan arrow, such as `RA 17 px ← W` or `RA 5 px ← W, DEC 29 px ↓ S`: the
   arrow pressed, then the sense on the sky (E or W, N or S). The sense comes from the plate-solved
