@@ -247,12 +247,13 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// How the dust class is defined on the map's path, in plain words (ADR 0072): "dalele cu
-        /// 5 L* mai intunecate decat banda din jur sau decat cerul" or "dalele cu 3.2 L* mai
-        /// intunecate decat cerul (de 3 ori zgomotul lui)"; the same sentence in the map's legend.
+        /// 4.5 L* mai intunecate decat banda din jur sau decat cerul (de 4 ori zgomotul cerului)"
+        /// or "dalele cu 3.2 L* mai intunecate decat cerul (de 3 ori zgomotul lui)"; the same
+        /// sentence in the map's legend.
         /// </summary>
         internal string DustClassDefinition => Map.Method == DustMethod.Band
-            ? Tr.Pick($"the patches {Fmt.F0(Thresholds.DustDepthLstar)} L* darker than the band around them or than the sky",
-                      $"dalele cu {Fmt.F0(Thresholds.DustDepthLstar)} L* mai intunecate decat banda din jur sau decat cerul")
+            ? Tr.Pick($"the patches {Fmt.F1(Map.NoiseThreshold)} L* darker than the band around them or than the sky ({Fmt.F0(Thresholds.BandDustK)} times the sky's noise)",
+                      $"dalele cu {Fmt.F1(Map.NoiseThreshold)} L* mai intunecate decat banda din jur sau decat cerul (de {Fmt.F0(Thresholds.BandDustK)} ori zgomotul cerului)")
             : Tr.Pick($"the patches {Fmt.F1(Map.NoiseThreshold)} L* darker than the sky ({Fmt.F0(Thresholds.SkyNoiseK)} times its noise)",
                       $"dalele cu {Fmt.F1(Map.NoiseThreshold)} L* mai intunecate decat cerul (de {Fmt.F0(Thresholds.SkyNoiseK)} ori zgomotul lui)");
 

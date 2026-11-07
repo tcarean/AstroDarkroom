@@ -1,7 +1,7 @@
 # 0026. The dust and the sky are classes of patches relative to the galactic band, not the catalogue's discs
 
 Date: 2026-10-02
-Status: accepted 2026-10-02; the fallback to the frame rule and the `NoDust` case superseded by 0033; the two fraction tests as the only gate to the band path superseded by 0037
+Status: accepted 2026-10-02; the fallback to the frame rule and the `NoDust` case superseded by 0033; the two fraction tests as the only gate to the band path superseded by 0037; the fixed depth and height in L* of the dust and the bright clouds superseded by 0086
 Supersedes: 0025 in part (decision 3, the dust and the sky; decision 4's map layers)
 
 ## Context

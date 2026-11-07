@@ -77,9 +77,11 @@
   not under the modelled sky; that would need the band path's local level over the whole frame.
 - Without a WCS, a foreground or a silhouette darker than the modelled sky by the sky's noise and
   larger than 5 % of the frame becomes "the dust".
-- On the sky path a posterised or synthetic sky, where more than half the patches share one
-  value, has a sigma of 0: the thresholds collapse to the model and a patch one level off it
-  is nebula or dust. Anexa B then shows a threshold of 0.0 L\*.
+- On either path a posterised or synthetic sky, where more than half the patches share one
+  value, has a sigma of 0: on the sky path the thresholds collapse to the model and a patch one
+  level off it is nebula or dust; on the band path (ADR 0086) a patch a hair under the band's
+  local level is dust and one a hair over it a bright cloud. Anexa B then shows a threshold of
+  0.0 L\*.
 - The SIP terms of a WCS are ignored: at most 6 px at the edge of the plate-solved FITS, under a
   patch; a field with far stronger distortion would misplace the outer patches.
 - Stars on bright nebulosity measure wider (border median overestimates the base); the
