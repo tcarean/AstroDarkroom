@@ -107,10 +107,11 @@ cannot move it (`PatchLstars(sub)`). Three parts:
   `BandMinLatitudeSpanDeg` of galactic latitude (`LatitudeSpanDeg`, the maximum minus the
   minimum of `GalacticLatitude`, set in `Build` before the classes; `NarrowField`, tested
   after the two fractions so that a frame far from the plane still says `NoBand`),
-  `ClassifyBySky` makes the classes instead (ADR 0033, ADR 0037, `Method` `Sky`): the sky
-  model from all patches at `SkyModelPercentile` per cell;
-  the residual patch minus model, with `Stats.RobustSigma` (1.4826 x MAD about the median),
-  one clipping pass at `SkyNoiseClipK` sigmas and sigma taken again on what is kept; `Dust`
+  `ClassifyBySky` makes the classes instead (ADR 0033, ADR 0037, `Method` `Sky`): `SkyNoise`
+  (the sky model from all patches at `SkyModelPercentile` per cell, the residual patch minus
+  model, `Stats.RobustSigma` (1.4826 x MAD about the median), one clipping pass at
+  `SkyNoiseClipK` sigmas and sigma taken again on what is kept), the call the band path shares
+  for its sigma; `Dust`
   under the model by `SkyNoiseK` sigmas (`NoiseThreshold`), `Band` (nebula) over it by as
   much, `BrightCloud` (bright nebula) over `Stats.OtsuThreshold` of the nebula residuals taken
   without the peak patches and with at least `BrightClassMinTailFraction` of them left above

@@ -464,11 +464,12 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The band classes (ADR 0026) on the L*s as it is; or the sky path, with the reason, when
         /// the band or the sky outside it is missing, or when the field is narrower than the band
-        /// (ADR 0037).
+        /// (ADR 0037). With a sigma of 0 (a posterised sky) the depth and the height are 0: a
+        /// patch a hair under the local level is dust, one a hair over it a bright cloud.
         /// </summary>
         /// <param name="map">
-        /// The map, with its grid and galactic latitudes; its classes, models, method and reason
-        /// are written.
+        /// The map, with its grid and galactic latitudes; its classes, models, thresholds, method
+        /// and reason are written.
         /// </param>
         /// <param name="L">
         /// The L* of each patch of the image as it is, in the map's row order.

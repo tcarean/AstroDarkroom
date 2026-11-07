@@ -197,8 +197,8 @@ namespace AstroPhotoAnalyzer
         /// the reference frame at a background of 0.17 but 5.7 % at 0.10. With 4 sigmas (4.5 L*
         /// at 0.17, 3.0 at 0.10, 4.7 on the Smida frame of 2026-08-12) the class is 10.3, 10.1
         /// and 9.9 % of the frame, every patch of the 5 L* class at 0.17 kept and 92 % of the
-        /// class that class; 3 sigmas give 12.4 to 12.6 %, over the catalogue-checked 9.4 % of
-        /// ADR 0025. Measured on 2026-11-06 (ADR 0086).
+        /// new class being that class; 3 sigmas give 12.4 to 12.6 % on the reference frame, over
+        /// the catalogue-checked 9.4 % of ADR 0025. Measured on 2026-11-06 (ADR 0086).
         /// </summary>
         internal const double BandDustK = 4;
 
