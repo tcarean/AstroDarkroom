@@ -297,14 +297,16 @@ same check in its `docs/validation.md` (History, 2026-10-12).
   right and north the other way round, so that forum default was wrong on both axes for this
   app. The app's manual (2023) and the V4 hand-control manual say only that left/right turn RA
   and up/down Dec, and the app's manual lists no setting that reverses the buttons, so the senses
-  are those of this mount with this app. The side of the meridian the test was made on is not
-  recorded: on a German equatorial mount the Dec arrows can swap north and south after a
-  meridian flip, and whether SynScan Pro makes up for it is not known. Two ways to check that
-  side, or another mount or app: by day, with the lens pointed well away from the pole, `↓` at
-  step 8 for 2-3 s tilts the lens toward the pole if `↓` is north, once on a target east of the
-  meridian and once on one west of it; at night, a lone press between two frames shows in
-  LightsCheck's dithering cell for the next frame, whose letter (`E` or `W`, `V` in Romanian;
-  `N` or `S`) comes from the plate solve, not from the arrow setting.
+  are those of this mount with this app. The test was made on a target west of the meridian
+  (the owner, 2026-11-07). On a German equatorial mount the Dec arrows can swap north and south
+  after a meridian flip, when the camera goes to the other side of the mount, and whether
+  SynScan Pro makes up for it is not known: on a target east of the meridian, where a GOTO puts
+  the camera on the other side, `↓` may be south. Two ways to check it, or another mount or app:
+  by day, with the lens pointed well away from the pole, `↓` at step 8 for 2-3 s tilts the lens
+  toward the pole if `↓` is north, on a target east of the meridian; at night, a lone press
+  between two frames shows in LightsCheck's dithering cell for the next frame, whose letter
+  (`E` or `W`, `V` in Romanian; `N` or `S`) comes from the plate solve, not from the arrow
+  setting.
 - 10-20 px is a DSLR rule of thumb, not a measurement. LightsCheck's walking-noise verdict uses
   the same kind of threshold: 10 px or more, random, on both axes (its `docs/decisions/0007`).
 
@@ -378,8 +380,8 @@ same check in its `docs/validation.md` (History, 2026-10-12).
 - The defaults (135 mm, 3.92 µm) give 5.99"/px; the plate solves of the Veil session measure
   6.198"/px (130.1 mm at 3.91 µm). Changing `IMPLICIT_FOCALA_MM` changes the expected outputs of
   the checks above too.
-- The arrow test reported on 2026-11-07 does not say on which side of the meridian it was made;
-  after a meridian flip the Dec arrows may swap north and south (Facts above).
+- The arrow test was made on a target west of the meridian; on a target east of it `↓` may be
+  south, not tested yet (Facts above).
 - Ideas not done: the backlash time as an input, the declination in degrees and minutes, a
   dither pattern that never reverses DEC.
 
