@@ -293,8 +293,9 @@ internal static class Program
         w.WriteLine("  --threads N   how many frames are measured in parallel (default half the cores).");
         w.WriteLine("  --pixel UM    the pixel size in microns; without it, the files' XPIXSZ, else the raw's 35 mm-");
         w.WriteLine("                equivalent focal length, else " + RunReport.F(SeriesOptions.D3300PixelUm, 2) + " (Nikon D3300).");
-        w.WriteLine("  --east left|right  the SynScan arrow that moves the mount east (default right); the other is west.");
-        w.WriteLine("  --north up|down    the SynScan arrow that moves the mount north (default up); the other is south.");
+        w.WriteLine("  --east left|right  the SynScan arrow that moves the mount east (default " + Options.ArrowWords(ArrowKeys.Default.East).En + "); the other is west.");
+        w.WriteLine("  --north up|down    the SynScan arrow that moves the mount north (default " + Options.ArrowWords(ArrowKeys.Default.North).En + "); the other is south.");
+        w.WriteLine("                     The defaults are those of a Star Adventurer GTi with the SynScan Pro app.");
         w.WriteLine("  --inventory   the frames' metadata only (no decoding): time, exposure, ISO, pauses.");
         w.WriteLine("  --frame N     measures one frame only (1 = the first in lights\\).");
         w.WriteLine("  --lang en|ro  the language of the texts: en (English, the default) or ro (Romanian).");
@@ -323,8 +324,9 @@ internal static class Program
         w.WriteLine("  --threads N   cate cadre se masoara in paralel (implicit jumatate din nuclee).");
         w.WriteLine("  --pixel UM    marimea pixelului in microni; fara ea, XPIXSZ din fisiere, apoi focala echivalenta");
         w.WriteLine("                35 mm din raw, apoi " + RunReport.F(SeriesOptions.D3300PixelUm, 2) + " (Nikon D3300).");
-        w.WriteLine("  --est stanga|dreapta  sageata SynScan care muta montura spre est (implicit dreapta); cealalta e vest.");
-        w.WriteLine("  --nord sus|jos        sageata SynScan care muta montura spre nord (implicit sus); cealalta e sud.");
+        w.WriteLine("  --est stanga|dreapta  sageata SynScan care muta montura spre est (implicit " + Options.ArrowWords(ArrowKeys.Default.East).Ro + "); cealalta e vest.");
+        w.WriteLine("  --nord sus|jos        sageata SynScan care muta montura spre nord (implicit " + Options.ArrowWords(ArrowKeys.Default.North).Ro + "); cealalta e sud.");
+        w.WriteLine("                        Implicit, sagetile sunt cele ale unui Star Adventurer GTi cu aplicatia SynScan Pro.");
         w.WriteLine("  --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO, pauze.");
         w.WriteLine("  --frame N     masoara un singur cadru (1 = primul din lights\\).");
         w.WriteLine("  --lang ro|en  limba textelor: ro (romana) sau en (engleza, implicit).");

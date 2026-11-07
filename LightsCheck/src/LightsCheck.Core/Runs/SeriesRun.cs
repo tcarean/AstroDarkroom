@@ -78,13 +78,14 @@ internal enum Arrow
 
 /// <summary>
 /// Which SynScan arrow moves the mount east and which north; the other two follow. The
-/// default is the owner's app, right east and up north (R-040, ADR 0014).
+/// default is a Star Adventurer GTi driven by the SynScan Pro app, as the owner tested that
+/// pair: right east and down north (R-040, ADR 0041).
 /// </summary>
 /// <param name="East">The arrow that moves the mount east.</param>
 /// <param name="North">The arrow that moves the mount north.</param>
 internal sealed record ArrowKeys(Arrow East, Arrow North)
 {
-    internal static readonly ArrowKeys Default = new(Arrow.Right, Arrow.Up);
+    internal static readonly ArrowKeys Default = new(Arrow.Right, Arrow.Down);
 
     internal Arrow West => East == Arrow.Left ? Arrow.Right : Arrow.Left;
 

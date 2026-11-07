@@ -98,7 +98,7 @@ unknown option (anything else starting with `-`), a second folder, a missing fol
 `--inventory` with `--frame`. The pixel size is null unless `--pixel` was given (the run then
 reads it from the files or the raws, `series-analysis.md`, R-066), the thread count defaults to
 0, which `SeriesRun` reads as half the cores, and the arrow keys to
-`ArrowKeys.Default` (right east, up north), each option replacing one key of the record.
+`ArrowKeys.Default` (right east, down north), each option replacing one key of the record.
 
 `Program.Run(args, stdout, stderr)` is the whole console, called by `Main` with the real
 streams (after switching the console's output encoding to UTF-8 for the run, since the report
@@ -120,7 +120,9 @@ the report; stdout stays the report alone, which is what the goldens compare. Ex
 `ERROR: <message>` or `EROARE: <message>`, on stderr, the same line the window shows), and
 for an inventory or a series in which a frame could not be read, the report having been
 printed in full. Any other exception is a bug and crashes. `WriteUsage` is the `--help`
-text, written whole per language; the goldens `help.txt` and `en_help.txt` hold it.
+text, written whole per language, the arrows' defaults in the words `Options.ArrowWords` gives
+for `ArrowKeys.Default`, so the help follows the core; the goldens `help.txt` and `en_help.txt`
+hold it.
 
 `Options.Mode` is the mode, decided once from what `Parse` read by the precedence above: help,
 then an error, then `--frame`, then `--inventory`, else the series. `RunIn` dispatches on it and

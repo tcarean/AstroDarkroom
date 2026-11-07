@@ -130,9 +130,9 @@
       "measuredOn": "2026-10-09",
       "expected": {
         "cells": {
-          "1": "-", "2": "RA 5 px ← V", "3": "DEC 13 px ↓ S", "5": "RA 4 px ← V, DEC 8 px ↑ N",
-          "6": "RA 12 px → E", "17": "DEC 28 px ↓ S", "19": "RA 10 px ← V, DEC 26 px ↓ S",
-          "61": "RA 17 px ← V", "62": "-", "80": "RA 4 px → E, DEC 12 px ↓ S"
+          "1": "-", "2": "RA 5 px ← V", "3": "DEC 13 px ↑ S", "5": "RA 4 px ← V, DEC 8 px ↓ N",
+          "6": "RA 12 px → E", "17": "DEC 28 px ↑ S", "19": "RA 10 px ← V, DEC 26 px ↑ S",
+          "61": "RA 17 px ← V", "62": "-", "80": "RA 4 px → E, DEC 12 px ↑ S"
         },
         "south": 11, "north": 2, "east": 11, "west": 24
       },

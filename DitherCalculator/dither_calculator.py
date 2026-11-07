@@ -32,6 +32,12 @@ VITEZA_SIDERALA = 360 * 3600 / 86164.0905  # ≈ 15,04 secunde de arc pe secund�
 # aplicația arată numărul treptei. Treapta 9 = Max nu are un multiplu fix.
 TREPTE_SYNSCAN = (0.5, 1, 8, 16, 32, 64, 128, 400, 600)
 
+# Săgețile din aplicația SynScan Pro pe Star Adventurer GTi, testate de proprietar pe o țintă
+# la vest de meridian (rezultat dat pe 2026-11-07); la est de meridian nu sunt testate.
+# Stânga-dreapta mută RA, sus-jos mută Dec. Altă montură sau aplicație: schimbă-le aici.
+SAGEATA_EST, SAGEATA_VEST = "→", "←"
+SAGEATA_NORD, SAGEATA_SUD = "↓", "↑"
+
 # Valori implicite: Nikon D3300 (senzor 23,5 mm, 6000 px lățime) + Samyang 135 mm
 IMPLICIT_FOCALA_MM = 135.0
 IMPLICIT_PIXEL_UM = 3.92      # 23,5 mm / 6000 px ≈ 3,92 µm
@@ -172,7 +178,7 @@ def calcul(implicit):
              "îl poate compensa Settings > Backlash din SynScan)"
              if sec_dec is not None else ""))
     print(f"  RA:   {text_secunde(sec_ra, sfat_ra)}"
-          + ("  (spre est, peste 1x motorul se inversează: + backlash)"
+          + (f"  (cu {SAGEATA_EST} spre est, peste 1x motorul se inversează: + backlash)"
              if sec_ra is not None and viteza > 1 else ""))
 
     scurte = [s for s in (sec_dec, sec_ra) if s is not None and s < 1]
@@ -192,8 +198,8 @@ def calcul(implicit):
     # Testul e la treapta 1: acolo niciun buton nu inversează motorul RA (fără backlash)
     test_px = 10 * pixeli_pe_secunda(TREPTE_SYNSCAN[1], scala, dec)
     if test_px >= 1:
-        print("Verifică o dată pe RA, la treapta 1: 10 s spre est și 10 s spre vest trebuie "
-              f"să mute steaua cu câte ~{fmt(test_px, 0)} px.")
+        print(f"Verifică o dată pe RA, la treapta 1: 10 s cu {SAGEATA_EST} (est) și 10 s cu "
+              f"{SAGEATA_VEST} (vest) trebuie să mute steaua cu câte ~{fmt(test_px, 0)} px.")
     else:
         print("Verifică o dată pe RA, la treapta 1, pe o țintă mai departe de pol "
               "(aici RA abia mișcă imaginea).")
@@ -206,6 +212,8 @@ def main():
     # Fără consolă (pipe, fișier), Windows scrie în cp1252 și diacriticele ar opri programul
     sys.stdout.reconfigure(encoding="utf-8")
     print("Calculator dithering manual - Star Adventurer GTi")
+    print(f"Săgețile din SynScan Pro: {SAGEATA_EST} est, {SAGEATA_VEST} vest (RA); "
+          f"{SAGEATA_NORD} nord, {SAGEATA_SUD} sud (Dec).")
     print("Apasă Enter ca să păstrezi valoarea dintre paranteze.")
     valori = {"focala": IMPLICIT_FOCALA_MM, "pixel": IMPLICIT_PIXEL_UM,
               "treapta": IMPLICIT_TREAPTA, "dec": IMPLICIT_DECLINATIE,

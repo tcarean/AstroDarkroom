@@ -240,7 +240,7 @@ public class SeriesAnalyzerTests
         Assert.True(m.Signed);
         Assert.Equal(-142.2, m.RaPx, 1.0);     // west
         Assert.Equal(-128.2, m.DecPx, 1.0);    // south
-        Assert.Equal("RA 142 px ← V, DEC 129 px ↓ S", SeriesReport.MoveCell(m, ArrowKeys.Default));   // 128.7 px through the matrix's 0.0037 shear
+        Assert.Equal("RA 142 px ← V, DEC 129 px ↑ S", SeriesReport.MoveCell(m, ArrowKeys.Default));   // 128.7 px through the matrix's 0.0037 shear
 
         // The same step with the axis from the trails only: the components without their sense.
         SeriesAnalysis u = SeriesAnalyzer.Analyze(frames, c, d, null, null);
@@ -248,7 +248,7 @@ public class SeriesAnalyzerTests
         Assert.Equal("-", SeriesReport.MoveCell(null, ArrowKeys.Default));
         Assert.Equal("RA 142 px, DEC 128 px", SeriesReport.MoveCell(new MountMove(142.2, 128.2, false), ArrowKeys.Default));
         Assert.Equal("RA 15 px ← V", SeriesReport.MoveCell(new MountMove(-15.3, 0.5, true), ArrowKeys.Default));   // DEC under Th.AxisStep left out
-        Assert.Equal("RA 4 px → E, DEC 20 px ↑ N", SeriesReport.MoveCell(new MountMove(4.0, 20.0, true), ArrowKeys.Default));
+        Assert.Equal("RA 4 px → E, DEC 20 px ↓ N", SeriesReport.MoveCell(new MountMove(4.0, 20.0, true), ArrowKeys.Default));
     }
 
     /// <summary>FITS lights are stored as the solve is, so the same step reads the sense its y feeds the other way round, and the handedness with it (R-038, ADR 0023).</summary>
@@ -267,24 +267,24 @@ public class SeriesAnalyzerTests
         Assert.True(VeilWcs.FramesFlipped);    // the default is the raws' case, the measured one
     }
 
-    /// <summary>The arrows are symbols, right is east and up is north by default, and the setting swaps them (R-040, ADR 0014).</summary>
+    /// <summary>The arrows are symbols; right is east and down is north by default, the arrows of a Star Adventurer GTi with SynScan Pro; the setting swaps them (R-040, ADR 0041).</summary>
     [Fact]
-    public void R040_TheArrowsAreSymbolsFromTheKeysAndRightIsEastByDefault()
+    public void R040_TheArrowsAreSymbolsFromTheKeysRightIsEastAndDownIsNorthByDefault()
     {
-        Assert.Equal(new ArrowKeys(Arrow.Right, Arrow.Up), ArrowKeys.Default);
+        Assert.Equal(new ArrowKeys(Arrow.Right, Arrow.Down), ArrowKeys.Default);
         Assert.Equal(Arrow.Left, ArrowKeys.Default.West);
-        Assert.Equal(Arrow.Down, ArrowKeys.Default.South);
+        Assert.Equal(Arrow.Up, ArrowKeys.Default.South);
         Assert.Equal("←", ArrowKeys.Symbol(Arrow.Left));
         Assert.Equal("→", ArrowKeys.Symbol(Arrow.Right));
         Assert.Equal("↑", ArrowKeys.Symbol(Arrow.Up));
         Assert.Equal("↓", ArrowKeys.Symbol(Arrow.Down));
 
         MountMove both = new(-15.3, 12.0, true);
-        ArrowKeys swapped = new(Arrow.Left, Arrow.Down);
+        ArrowKeys swapped = new(Arrow.Left, Arrow.Up);
         Assert.Equal(Arrow.Right, swapped.West);
-        Assert.Equal(Arrow.Up, swapped.South);
-        Assert.Equal("RA 15 px → V, DEC 12 px ↓ N", SeriesReport.MoveCell(both, swapped));   // north is the down arrow under these keys
-        Assert.Equal("→, ↓", SeriesReport.MoveArrows(both, swapped));
+        Assert.Equal(Arrow.Down, swapped.South);
+        Assert.Equal("RA 15 px → V, DEC 12 px ↑ N", SeriesReport.MoveCell(both, swapped));   // north is the up arrow under these keys
+        Assert.Equal("→, ↑", SeriesReport.MoveArrows(both, swapped));
         Assert.Equal("RA 15 px, DEC 12 px", SeriesReport.MoveCell(new MountMove(15.3, 12.0, false), swapped));   // unsigned: no arrow, whatever the keys
     }
 
@@ -311,8 +311,8 @@ public class SeriesAnalyzerTests
 
         // A move on both axes words both, in a cell and as arrows, through one rule.
         MountMove both = new(-15.3, 12.0, true);
-        Assert.Equal("RA 15 px ← V, DEC 12 px ↑ N", SeriesReport.MoveCell(both, ArrowKeys.Default));
-        Assert.Equal("←, ↑", SeriesReport.MoveArrows(both, ArrowKeys.Default));
+        Assert.Equal("RA 15 px ← V, DEC 12 px ↓ N", SeriesReport.MoveCell(both, ArrowKeys.Default));
+        Assert.Equal("←, ↓", SeriesReport.MoveArrows(both, ArrowKeys.Default));
         Assert.Equal("", SeriesReport.MoveArrows(new MountMove(15.3, 12.0, false), ArrowKeys.Default));
     }
 
