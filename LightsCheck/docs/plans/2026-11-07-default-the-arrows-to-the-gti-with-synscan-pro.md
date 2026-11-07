@@ -117,6 +117,10 @@ north and "`→` east unverified"; your test settles both.
   R039 test reads a session without a solve and needed no change.
 - The design notes `window.md` and `language.md`, which cover touched tests and
   `WindowTexts.cs`, needed no change: neither describes the tips' words nor the arrows' default.
+- Step 6 said the other validation cases would not be re-run; the wrap-up ran all 14, since a
+  comment in `Report/` was touched. V-008 and V-011 failed as recorded; V-014 failed because its
+  session changed since its recording (three frames out of `lights\`, no `darks\`, a solved stack
+  at the root), not because of this branch, and is left to the owner.
 - The review of the branch found no bug. It found two tests left on the default words
   (`--north down`, `--nord jos`, which no longer show the option acting), two loose sentences
   in ADR 0041, the stored-setting case the CHANGELOG did not cover (a file written when only EAST

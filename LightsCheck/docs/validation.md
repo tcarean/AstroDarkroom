@@ -112,7 +112,17 @@ drift instead of editing the figures.
   failed as V-011 has since 2026-10-27, so putting it back at the Veil root would not bring the
   senses back, and `result-bge-cc.fit` would. Before the code change, with the old cells:
   `Total tests: 1, Passed: 1, Total time: 1.5102 Minutes`; after it, with the new ones:
-  `Total tests: 1, Passed: 1, Total time: 2.0385 Minutes`. The other cases read no arrow and were not re-run.
+  `Total tests: 1, Passed: 1, Total time: 2.0385 Minutes`. Then all 14 cases ran on the real
+  sessions, `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro` (the change touched a comment in
+  `Report/`): `Total tests: 14, Passed: 11, Failed: 3, Total time: 15.7186 Minutes`. V-008
+  (`polarErrorMax: the frame yielded no figure (null)`) and V-011 (`frame 2: cell 'RA 5 px',
+  expected 'RA 5 px ← V'`) failed as recorded since 2026-10-27. V-014 failed on `bad`
+  (`Expected: 3, Actual: 0`; its good and marginal counts passed): since it was recorded the
+  session itself changed. The three short frames it rejects (`DSC_0016`, `DSC_0058`, `DSC_0064`)
+  are no longer in its `lights\` (82 frames), the `darks\` folder is gone (`masters\` holds
+  `dark_stacked.fit`), and a plate-solved stack, `result_9908s.fit`, sits at the root, so its RA
+  axis, the senses of its moves and its polar figures would now be measured too. The branch
+  moves no figure; V-014 stays as recorded until the owner decides.
 - 2026-11-07, later: a frame exposed under half the session's usual exposure is bad, another
   exposure is noted (R-085, ADR 0040). V-014's classes move the owner's way, 81 good / 4
   marginal / 0 bad to 80 / 2 / 3, the bad frames 16 (34.9 s), 58 and 64 (0.2 s), which the
