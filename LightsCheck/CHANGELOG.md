@@ -48,7 +48,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   as tested on that pair: `→` east and `↓` north, so `←` west and `↑` south (R-040, ADR 0041).
   Until now `↑` was north, so a DEC move named with the default arrows now shows the other
   arrow; the sense on the sky (N or S) and every figure stay. `--help` and the EAST and NORTH
-  tips say whose defaults they are; a window that already stored a choice keeps it.
+  tips say whose defaults they are. A window that has stored its arrows keeps both, since it
+  saves the two together whenever either changes: check NORTH once after the update.
 - The walking-noise verdict reads what reaches the stack, not how spread out the dither map
   looks (R-084, ADR 0039): `INSUFFICIENT` when the frames inside runs at one spot whose streak
   reaches 3 px are 25 % or more of the aligned frames, `NO walking noise` when they are fewer

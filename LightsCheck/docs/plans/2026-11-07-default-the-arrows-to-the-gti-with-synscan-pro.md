@@ -104,13 +104,11 @@ north and "`→` east unverified"; your test settles both.
 
 ## What deviated
 
-- The mirror's solved FITS. `procesate
-esult.fit`, which `docs/validation.md` names since
+- The mirror's solved FITS. `procesate\result.fit`, which `docs/validation.md` names since
   2026-11-02 as the solved stack moved off the root, carries no WCS (no `CTYPE1`, no `PC`
   matrix): a first "before" run with it failed as V-011 has since 2026-10-27 (`frame 2: cell
   'RA 5 px', expected 'RA 5 px ← V'`). The plate-solved stack is
-  `procesatege-cc
-esult-bge-cc.fit`, the file ADR 0013 read; with it the mirror reproduced
+  `procesate\bge-cc\result-bge-cc.fit`, the file ADR 0013 read; with it the mirror reproduced
   V-011 as recorded.
 - One more test pinned the old default and was missed in step 2: R-071's log test reads the
   series start line `east=Right north=Up`; the first gate run failed on it alone (406 + 120
@@ -119,3 +117,8 @@ esult-bge-cc.fit`, the file ADR 0013 read; with it the mirror reproduced
   R039 test reads a session without a solve and needed no change.
 - The design notes `window.md` and `language.md`, which cover touched tests and
   `WindowTexts.cs`, needed no change: neither describes the tips' words nor the arrows' default.
+- The review of the branch found no bug. It found two tests left on the default words
+  (`--north down`, `--nord jos`, which no longer show the option acting), two loose sentences
+  in ADR 0041, the stored-setting case the CHANGELOG did not cover (a file written when only EAST
+  changed holds the old `↑`), a stale example in a comment, and two paths of this section mangled
+  by an escape; all fixed in a second commit.

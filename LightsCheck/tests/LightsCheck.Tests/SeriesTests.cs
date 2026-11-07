@@ -745,10 +745,10 @@ public class SeriesTests
     public void R040_TheConsoleTakesTheArrowKeysAndTheReportFollowsThem()
     {
         Assert.Equal(ArrowKeys.Default, Options.Parse(["x"]).Arrows);
-        Options o = Options.Parse(["x", "--est", "stanga", "--nord", "jos"]);
+        Options o = Options.Parse(["x", "--est", "stanga", "--nord", "sus"]);   // both keys off the default
         Assert.Null(o.Error);
-        Assert.Equal(new ArrowKeys(Arrow.Left, Arrow.Down), o.Arrows);
-        Assert.Equal(new ArrowKeys(Arrow.Right, Arrow.Up), Options.Parse(["x", "--est", "dreapta", "--nord", "sus"]).Arrows);
+        Assert.Equal(new ArrowKeys(Arrow.Left, Arrow.Up), o.Arrows);
+        Assert.Equal(new ArrowKeys(Arrow.Right, Arrow.Down), Options.Parse(["x", "--est", "dreapta", "--nord", "jos"]).Arrows);
         Assert.Contains("--est", Options.Parse(["x", "--est", "sus"]).Error, StringComparison.Ordinal);
         Assert.Contains("--nord", Options.Parse(["x", "--nord", "x"]).Error, StringComparison.Ordinal);
         Assert.Contains("--est", Options.Parse(["x", "--est"]).Error, StringComparison.Ordinal);

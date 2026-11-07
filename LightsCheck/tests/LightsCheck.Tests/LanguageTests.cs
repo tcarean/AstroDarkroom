@@ -130,9 +130,10 @@ public class LanguageTests
     [Fact]
     public void R064_TheArrowOptionsTakeTheirEnglishNamesAndWordsInEitherLanguage()
     {
-        Assert.Equal(new ArrowKeys(Arrow.Left, Arrow.Down), Options.Parse(["x", "--east", "left", "--north", "down"]).Arrows);
-        Assert.Equal(new ArrowKeys(Arrow.Right, Arrow.Up), Options.Parse(["x", "--east", "right", "--north", "up"]).Arrows);
-        Assert.Equal(new ArrowKeys(Arrow.Left, Arrow.Down), Options.Parse(["x", "--est", "left", "--north", "jos"]).Arrows);
+        // Each key is set off its default at least once, so the word is seen to act (right and down are the defaults, ADR 0041).
+        Assert.Equal(new ArrowKeys(Arrow.Left, Arrow.Up), Options.Parse(["x", "--east", "left", "--north", "up"]).Arrows);
+        Assert.Equal(new ArrowKeys(Arrow.Right, Arrow.Down), Options.Parse(["x", "--east", "right", "--north", "down"]).Arrows);
+        Assert.Equal(new ArrowKeys(Arrow.Left, Arrow.Up), Options.Parse(["x", "--est", "left", "--north", "sus"]).Arrows);
         using (Ui.Use(UiLanguage.English))
         {
             Assert.Equal("--east expects left or right: the SynScan arrow that moves the mount east", Options.Parse(["x", "--east", "up"]).Error);
@@ -158,10 +159,11 @@ public class LanguageTests
             FitsTestData.Card("PC2_1", "0.99999"), FitsTestData.Card("PC2_2", "-0.0037"),
         ];
         File.WriteAllBytes(Path.Combine(s.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
-        (_, string english, _) = Cli.Run(s.Root, "--threads", "2", "--east", "left", "--north", "down");
-        (_, string romanian, _) = Cli.Run(s.Root, "--threads", "2", "--est", "stanga", "--nord", "jos");
+        (_, string english, _) = Cli.Run(s.Root, "--threads", "2", "--east", "left", "--north", "up");
+        (_, string romanian, _) = Cli.Run(s.Root, "--threads", "2", "--est", "stanga", "--nord", "sus");
         Assert.Equal(romanian, english);   // the tests' default language is Romanian for both runs
         Assert.Contains("RA 15 px → V", english, StringComparison.Ordinal);
+        Assert.Matches("DEC 1[12] px ↓ S", english);   // north is up under these keys, so south is down
 
         // In English the west letter is W.
         (_, string inEnglish, _) = Cli.Run(s.Root, "--threads", "2", "--east", "left", "--lang", "en");
