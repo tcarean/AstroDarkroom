@@ -11,7 +11,9 @@ pieces fit and what was measured against the prototype (`prototype/analyze_darks
 
 Every record the notes name has one home. `Runs/DarkSeriesRun.cs` declares `DarkOptions`
 (what a run takes from the user: `Threads`, `MaxFrames`, `Against`, `IsoFactorPerStop`,
-`DoublingCelsius`; the run builds its `Normalisation` from the last two, and `EffectiveThreads`
+`DoublingCelsius`, `LightsFrom`, the folder of `--lights` or null; the run builds its
+`Normalisation` from the two settings, hands `LightsFrom` to `InventoryRun.Run`
+(`session-and-console.md`, "The folder"), and `EffectiveThreads`
 is half the cores when `Threads` is 0), `RunProgress(Phase, Done, Total)` (the phase word is
 in the run's language and both applications print it as it is) and `DarkSeriesResult`, the whole result.
 `Analysis/DarkSeriesAnalyzer.cs` declares `DarkSeriesAnalysis` and its parts (`PlaneFigures`,
@@ -224,7 +226,10 @@ darks as `darkPaths`, recomputes check 1's match with the partner darks' metadat
 (`InventoryRun.ReadAll`, kept in `Inventory.PartnerDarks` so the `aparat` row counts their
 camera), records the partner's root in `Inventory.DarksFromPartner` and
 `DarkSeriesResult.DarksFromPartner` (which `DarkOutputs.WriteAll` refuses as an export folder,
-like the session), labels the master with the partner's folder and skips `MatchPartner` (the
+like the session and the chosen lights' folder, each named by `DarkOutputs.OutFolder` in the
+refusal), keeps the partner's own label in `DarkSeriesResult.DarksFromPartnerLabel` for the
+`dark-uri (partener)` row, labels the session on its lights' index once the lights are measured
+(R-066, `lights-and-index.md`, "The index") and skips `MatchPartner` (the
 darks are the partner's); a partner that does not open fails the run with its own message
 prefixed `partenerul: `, so the window's problem card names the right folder. The progress phase then reads
 `Se citesc dark-urile partenerului`. After the verdicts, `DarkSeriesRun` computes the index and the label of the darks' master

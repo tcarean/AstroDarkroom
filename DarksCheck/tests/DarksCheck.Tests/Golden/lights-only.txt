@@ -68,8 +68,8 @@ Copyright (C) 2026 Tudor Carean
     verdict            : ATENTIE: foloseste dark-ul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.50 ori cat in dark: dark-ul e mai cald cu 5.9 grade, ii vede pe toti, dar scazut ar scoate prea mult si ar lasa puncte negre
 
   INDEX
-    dark-uri (partener): idx241 (240.5 ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)
-    eticheta           : <partener>-idx241
+    dark-uri (partener): idx241 (240.5 ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s); eticheta <partener>-idx241
+    eticheta           : <sesiune>-idx121
     lights             : ca un dark cu idx121 (de 0.50 ori cat dark-ul, adica cu 5.9 grade mai reci decat el)
 
   TABEL PE CADRE

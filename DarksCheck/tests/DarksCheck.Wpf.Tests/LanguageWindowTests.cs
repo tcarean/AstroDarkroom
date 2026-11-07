@@ -290,6 +290,11 @@ public partial class LanguageWindowTests
                 // the scenes reached their variants, so the words below were looked at
                 string all = string.Join("\n", texts);
                 Assert.Contains(english ? "EACH LIGHT AGAINST THE DARK" : "FIECARE LIGHT FATA DE DARK", all, StringComparison.Ordinal);
+                // the card of the lights from another folder (R-122)
+                Assert.Contains(english ? "LIGHTS FROM ANOTHER FOLDER" : "LIGHTS-URI DIN ALT FOLDER", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "(none: the open folder's lights)" : "(niciunul: lights-urile folderului deschis)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "The choice holds for this folder only and is not kept." : "Alegerea tine doar pentru folderul asta si nu se pastreaza.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "Choose lights..." : "Alege lights-urile...", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "The first lights of the night usually sit lower, because the camera is still cold." : "Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "0.4 cosmetic only" : "0.4 doar cosmetic", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "how bright the sky is in the light: the average value of the pixels, above the black, in ADU" : "cat de luminos e cerul in light: valoarea medie a pixelilor, peste negru, in ADU", all, StringComparison.Ordinal);

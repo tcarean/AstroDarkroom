@@ -53,21 +53,27 @@ internal static class DarkOutputs
     /// </param>
     /// <returns>The paths written, in order; the CSVs of biases and lights and the maps only when
     /// there is something to write.</returns>
-    /// <exception cref="InvalidOperationException">The folder is the session's or the partner's, or
-    /// lies inside one.</exception>
+    /// <exception cref="InvalidOperationException">The folder is the session's, the partner's or
+    /// the chosen lights', or lies inside one.</exception>
     internal static IReadOnlyList<string> WriteAll(DarkSeriesResult r, string dir, Action<string>? wrote = null)
     {
         ArgumentNullException.ThrowIfNull(r);
-        CheckOutDir(r.Inventory.Session.Root, dir);
+        CheckOutDir(r.Inventory.Session.Root, dir, OutFolder.Session);
         if (r.Partner is PartnerAnalysis partner)
         {
-            CheckOutDir(partner.Folder, dir, partner: true);
+            CheckOutDir(partner.Folder, dir, OutFolder.Partner);
         }
 
         if (r.DarksFromPartner is string darksPartner)
         {
             // a lights-only run: the partner's folder is the one whose darks were read (R-054)
-            CheckOutDir(darksPartner, dir, partner: true);
+            CheckOutDir(darksPartner, dir, OutFolder.Partner);
+        }
+
+        if (r.Inventory.Session.ChosenLightsRoot is string chosenLights)
+        {
+            // lights from another folder (R-055): nothing is written there either
+            CheckOutDir(chosenLights, dir, OutFolder.ChosenLights);
         }
 
         Directory.CreateDirectory(dir);
@@ -121,11 +127,11 @@ internal static class DarkOutputs
     /// </summary>
     /// <param name="sessionRoot">The folder nothing may be written into; not null or blank.</param>
     /// <param name="dir">The output folder asked for; not null or blank.</param>
-    /// <param name="partner">True when the folder is the partner's, false for the session's; it
-    /// names the folder in the refusal.</param>
+    /// <param name="which">Whose folder it is, which names it in the refusal; the session's by
+    /// default.</param>
     /// <exception cref="InvalidOperationException">The output folder is that folder or lies inside
     /// it (compared without case).</exception>
-    internal static void CheckOutDir(string sessionRoot, string dir, bool partner = false)
+    internal static void CheckOutDir(string sessionRoot, string dir, OutFolder which = OutFolder.Session)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionRoot);
         ArgumentException.ThrowIfNullOrWhiteSpace(dir);
@@ -133,10 +139,26 @@ internal static class DarkOutputs
         string root = Path.GetFullPath(sessionRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (full.Equals(root, StringComparison.OrdinalIgnoreCase) || full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException(partner
-                ? T($"--out cannot be the partner's folder or one inside it ({root}): nothing is written there", $"--out nu poate fi folderul partenerului sau unul din el ({root}): acolo nu se scrie nimic")
-                : T($"--out cannot be the session's folder or one inside it ({root}): nothing is written there", $"--out nu poate fi folderul sesiunii sau unul din el ({root}): acolo nu se scrie nimic"));
+            throw new InvalidOperationException(which switch
+            {
+                OutFolder.Partner => T($"--out cannot be the partner's folder or one inside it ({root}): nothing is written there", $"--out nu poate fi folderul partenerului sau unul din el ({root}): acolo nu se scrie nimic"),
+                OutFolder.ChosenLights => T($"--out cannot be the chosen lights' folder or one inside it ({root}): nothing is written there", $"--out nu poate fi folderul lights-urilor alese sau unul din el ({root}): acolo nu se scrie nimic"),
+                _ => T($"--out cannot be the session's folder or one inside it ({root}): nothing is written there", $"--out nu poate fi folderul sesiunii sau unul din el ({root}): acolo nu se scrie nimic"),
+            });
         }
+    }
+
+    /// <summary>Whose folder <see cref="CheckOutDir"/> refuses to write into; it names the folder in the refusal.</summary>
+    internal enum OutFolder
+    {
+        /// <summary>The session or library opened.</summary>
+        Session,
+
+        /// <summary>The partner of `--against` (R-063), or the one whose darks stand in (R-054).</summary>
+        Partner,
+
+        /// <summary>The folder the lights were chosen from (R-055).</summary>
+        ChosenLights,
     }
 
     /// <summary>

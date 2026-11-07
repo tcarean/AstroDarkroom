@@ -143,7 +143,7 @@ internal static class Program
         }
 
         string mode = o.Inventory ? "inventory" : "darks";
-        Log.Info("mode=" + mode + " input=" + o.Folder + " against=" + LogText.Str(o.Against) + " out=" + LogText.Str(o.Out)
+        Log.Info("mode=" + mode + " input=" + o.Folder + " against=" + LogText.Str(o.Against) + " lights=" + LogText.Str(o.Lights) + " out=" + LogText.Str(o.Out)
             + " threads=" + (o.Threads > 0 ? LogText.Int(o.Threads) : "auto") + " maxFrames=" + LogText.Int(o.MaxFrames)
             + " lang=" + (Ui.Current == UiLanguage.Romanian ? "ro" : "en"));
 
@@ -155,24 +155,30 @@ internal static class Program
         {
             if (o.Inventory)
             {
-                Inventory inv = InventoryRun.Run(o.Folder!);
+                Inventory inv = InventoryRun.Run(o.Folder!, o.Lights);
                 InventoryReport.Write(inv, stdout);
                 return inv.HasErrors ? 1 : 0;
             }
 
-            // a bad --against or --out is refused before the minutes of decoding, not after (R-026,
-            // R-063)
+            // a bad --against, --lights or --out is refused before the minutes of decoding, not
+            // after (R-026, R-055, R-063)
             string? partnerRoot = o.Against is null ? null : SessionFolder.Open(o.Against).Root;
+            string? chosenLightsRoot = o.Lights is null ? null : SessionFolder.Open(o.Folder!, allowLightsOnly: true, o.Lights).ChosenLightsRoot;
             if (o.Out is not null)
             {
                 DarkOutputs.CheckOutDir(SessionFolder.Open(o.Folder!, allowLightsOnly: true).Root, o.Out);
                 if (partnerRoot is not null)
                 {
-                    DarkOutputs.CheckOutDir(partnerRoot, o.Out, partner: true);
+                    DarkOutputs.CheckOutDir(partnerRoot, o.Out, DarkOutputs.OutFolder.Partner);
+                }
+
+                if (chosenLightsRoot is not null)
+                {
+                    DarkOutputs.CheckOutDir(chosenLightsRoot, o.Out, DarkOutputs.OutFolder.ChosenLights);
                 }
             }
 
-            DarkSeriesResult r = DarkSeriesRun.Run(o.Folder!, new DarkOptions(o.Threads, o.MaxFrames, o.Against), progress);
+            DarkSeriesResult r = DarkSeriesRun.Run(o.Folder!, new DarkOptions(o.Threads, o.MaxFrames, o.Against, LightsFrom: o.Lights), progress);
             progress.Clear();
             DarkReport.Write(r, stdout);
             if (o.Out is not null)
@@ -265,7 +271,7 @@ internal static class Program
         w.WriteLine();
         if (Ui.Current == UiLanguage.Romanian)
         {
-            w.WriteLine("Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--out DIR] [--threads N] [--max-frames N]");
+            w.WriteLine("Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--lights DIR] [--out DIR] [--threads N] [--max-frames N]");
             w.WriteLine("          darkscheck <folder> --inventory");
             w.WriteLine();
             w.WriteLine("  Folderul sesiunii Siril: dark-urile se iau din darks\\ (sau direct din folder,");
@@ -281,6 +287,8 @@ internal static class Program
             w.WriteLine("  --against DIR alt folder de dark-uri (o biblioteca sau o sesiune): indexul lui si cu");
             w.WriteLine("                cate grade sunt dark-urile sesiunii mai calde sau mai reci decat el; o");
             w.WriteLine("                sesiune cu lights dar fara dark-uri ia dark-urile lui drept ale ei.");
+            w.WriteLine("  --lights DIR  lights-urile din alt folder (o sesiune, din lights\\ al ei, sau un folder");
+            w.WriteLine("                de lights): se compara cu dark-urile deschise, in locul celor din lights\\.");
             w.WriteLine("  --out DIR     scrie in DIR raportul, cate un CSV cu toate cifrele pe dark-uri, pe");
             w.WriteLine("                bias-uri si pe lights si hartile (" + files);
             w.WriteLine("                " + moreFiles);
@@ -299,7 +307,7 @@ internal static class Program
         }
         else
         {
-            w.WriteLine("Usage: darkscheck <session folder or folder of darks> [--against DIR] [--out DIR] [--threads N] [--max-frames N]");
+            w.WriteLine("Usage: darkscheck <session folder or folder of darks> [--against DIR] [--lights DIR] [--out DIR] [--threads N] [--max-frames N]");
             w.WriteLine("       darkscheck <folder> --inventory");
             w.WriteLine();
             w.WriteLine("  The Siril session folder: the darks are taken from darks\\ (or from the folder");
@@ -315,6 +323,8 @@ internal static class Program
             w.WriteLine("  --against DIR another folder of darks (a library or a session): its index and by how");
             w.WriteLine("                many degrees the session's darks are warmer or colder than it; a");
             w.WriteLine("                session with lights but no darks takes its darks as its own.");
+            w.WriteLine("  --lights DIR  the lights of another folder (a session, from its lights\\, or a folder");
+            w.WriteLine("                of lights): compared with the open darks instead of the ones in lights\\.");
             w.WriteLine("  --out DIR     writes into DIR the report, a CSV with every figure for the darks,");
             w.WriteLine("                the biases and the lights, and the maps (" + files);
             w.WriteLine("                " + moreFiles);

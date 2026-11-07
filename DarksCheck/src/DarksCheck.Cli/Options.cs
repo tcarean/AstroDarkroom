@@ -23,8 +23,8 @@ namespace DarksCheck.Cli;
 /// <summary>
 /// The console's arguments: one folder, the mode (the darks analysis by default,
 /// <c>--inventory</c> for the metadata alone), <c>--out DIR</c>, <c>--threads N</c>,
-/// <c>--max-frames N</c>, <c>--against DIR</c>, or --help. Anything else is an error naming
-/// the argument (R-004).
+/// <c>--max-frames N</c>, <c>--against DIR</c>, <c>--lights DIR</c>, or --help. Anything else is
+/// an error naming the argument (R-004).
 /// </summary>
 internal sealed class Options
 {
@@ -34,6 +34,9 @@ internal sealed class Options
     internal int Threads { get; private set; }
     internal int MaxFrames { get; private set; } = DarksCheck.Core.Th.MaxFramesInMemory;
     internal string? Against { get; private set; }
+
+    /// <summary>The folder of <c>--lights DIR</c> (R-055), or null for the folder's own lights.</summary>
+    internal string? Lights { get; private set; }
     internal bool Help { get; private set; }
     internal string? Error { get; private set; }
 
@@ -73,7 +76,7 @@ internal sealed class Options
                 continue;
             }
 
-            if (a is "--out" or "--threads" or "--max-frames" or "--against")
+            if (a is "--out" or "--threads" or "--max-frames" or "--against" or "--lights")
             {
                 if (i + 1 >= args.Length)
                 {
@@ -111,6 +114,16 @@ internal sealed class Options
                     }
 
                     o.Against = v;
+                }
+                else if (a == "--lights")
+                {
+                    if (string.IsNullOrWhiteSpace(v))
+                    {
+                        o.Error = T("--lights expects a folder of lights", "--lights cere un folder de lights");
+                        return o;
+                    }
+
+                    o.Lights = v;
                 }
                 else
                 {

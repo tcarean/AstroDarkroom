@@ -1,0 +1,133 @@
+darkscheck <version>
+Copyright (C) 2026 Tudor Carean
+
+=== SESSION: <session> ===
+    darks              : . (4 frames .fit)
+    biases             : (none)
+    lights             : <lights>\lights (3 frames .fit; chosen by you)
+    camera             : NIKON D3300
+    darks exposure     : 120.0 s at ISO 400 (all frames)
+    lights exposure    : 120.0 s at ISO 400 (all frames)
+    darks interval     : 2026-08-13 00:48:53 -> 2026-08-13 00:56:53 (8 min); 4 frames, one every 120.0 s; no gap over 5 s
+    lights interval    : 2026-08-12 23:41:23 -> 2026-08-12 23:48:23 (7 min); 3 frames, one every 150.0 s; 2 gaps over 5 s (the longest 30 s before frame 2)
+    match              : OK: the darks have the same exposure (120.0 s) and the same ISO (400) as the lights
+    bias               : (none)
+
+=== DARKS: frames read 4 of 4, 256 x 192 px, values from 200 (black) to 65535 ADU (white) (FITS of 16 bits, the white deduced from the file, the black taken from the average value of frame 1), colour filters RGGB ===
+    1 ADU-eq           : 1 ADU in the file: the set was taken at the reference settings themselves, ISO 400, 120.0 s
+    value step         : near the black, the file's values go up 1 by 1 ADU; the first frame has 23 different values (the green pixels G1)
+
+  2. LIGHT LEAKS AND DIFFERENCES ACROSS THE FRAME
+    master dark        : centre -0.02, corners -0.11 / 0.12 / 0.03 / 0.10 (top-left / top-right / bottom-left / bottom-right), edges top -0.01 bottom 0.00 left -0.05 right -0.03  [the green pixels G1, ADU above the black, mean of 4 frames, in squares of 32 px]
+    light per frame    : UNMEASURED: there are fewer than 6 frames with hot pixels
+    glow / constant    : UNMEASURED: there are fewer than 6 frames with hot pixels
+    constant light     : UNMEASURED: there are fewer than 6 frames with hot pixels
+    verdict            : OK: no edge and no corner differs from the centre by more than 1.0 ADU (the most +0.13, at the top-right, on the dark master (no biases)); the light per frame could not be measured
+
+  3. THE CAMERA'S WARMING DURING THE SERIES
+    plateau            : UNMEASURED: there are fewer than 6 frames with hot pixels
+    to discard         : UNMEASURED: there are fewer than 6 frames with hot pixels
+    verdict            : OK: every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); there are fewer than 6 frames, so no plateau
+
+  4. THE NOISE OF EACH FRAME
+    against the master : R 2.64 .. 2.75; G1 2.64 .. 2.71 (usually 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]
+    read noise         : UNMEASURED: the session has no biases
+    random banding     : horizontal: the rows differ from one another by 0.242 ADU, 1.0 times what the noise alone would give; vertical: 1.0 times (1 means no banding)
+    verdict            : OK: no frame has noise more than 1.5 times the usual (2.66 ADU)
+
+  5. HOT PIXELS
+    above the threshold: above 10: 20; above 20: 20; above 50: 20; above 100: 20; above 500: 0  [the master's pixels, ADU above the black, all colours]
+    by colour, above 20: R 20  G1 0  G2 0  B 0
+    how hot            : usually 120 ADU; 80 % of them between 118 and 121; the hottest 1 % above 121 (of 20 pixels)
+    stability          : 20 of 20 show (above half the threshold) in all 4 frames, 0 are missing from 2 or more; from one frame to the next they vary by 2.23 ADU, the other pixels by 2.38; 0 green pixels G1 jump between two levels (RTS: they vary more than 6 times the noise of one frame, 3.01)
+    verdict            : OK (informative): 20 pixels above 20 ADU in 0.05 Mpx
+
+  6. FIXED PATTERN: WHAT IS THE SAME IN EVERY FRAME
+    fixed banding      : the master's rows differ from one another by 0.204 ADU (1.14 between the brightest and the darkest, on R), the columns by 0.215 (1.43, on R)  [once the slow changes are taken out, over 101 rows or columns at a time]
+    glow               : +0.13 ADU at the top-right against the centre (on the dark master)
+    verdict            : OK: the fixed banding stays under 2.0 ADU between the brightest and the darkest row, and the edges under 1.0 from the centre
+
+  7. DEAD AND SATURATED PIXELS
+    master             : 0 dead pixels (below the black minus 50 ADU), 0 saturated (at the white, 65535)
+    verdict            : OK: no dead or saturated pixel in the master
+
+  8. HOW MANY DARKS ARE ENOUGH
+    noise when averaged: 1 frame: 2.99 (expected 3.01); 2 frames: 2.16 (expected 2.13)  [the green pixels G1, the central 192 px, ADU; measured from one frame to the next]
+    master             : 4 frames give a master with 1.87 ADU of noise per pixel (from the noise from one frame to the next, 2.99); a master of 2 frames made with the median and one of the other 2 made with the mean differ by 3.06 ADU
+    verdict            : WARNING: only 4 frames; at least 10 are needed, so that one odd frame does not spoil the master (the master's noise would be 1.87 ADU)
+
+  9. HOW WELL THE DARK FITS THE LIGHTS
+    hot pixels         : 20 hot pixels show in the lights at the same place, in at least 3 of 3 frames (single pixels, not part of a star, brighter than their surroundings by more than 6 times the noise there)
+    in the dark master : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)  [how many of these pixels are in the dark master too, above each threshold in ADU]
+    master in lights   : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)  [how many of the master's pixels above each threshold show in the lights too]
+    not in the master  : none: every hot pixel of the lights is above 20 ADU in the master too
+    lights against dark: in the lights, the hot pixels are usually 1.30 times what they are in the dark (over the 3 frames; in the first 1.33, in the last 1.30; on 20 pixels)
+    verdict            : WARNING: subtract the dark with -opt (-opt: Siril multiplies it so that it matches the lights); in the lights the hot pixels are 1.30 times what they are in the dark, between 0.7 and 1.4: the dark is colder by 2.3 degrees
+
+  INDEX
+    darks              : idx121 (121.0 ADU-eq: the average value of the hot pixels at places 2 .. 2, counting from the hottest, that is 5-20 per Mpx of 0.05 Mpx; worked out for ISO 400 and 120 s)
+    label              : <session>-idx121
+    lights             : like a dark of idx157 (1.30 times the dark, that is 2.3 degrees warmer than it)
+
+  FRAMES TABLE
+     no  file                  time        mean   noise   diff.   bands      hot plateau   light    side   >20   [the green pixels G1; mean = how far the frame is above the black, ADU; noise = the noise of the frame, ADU; diff. = how much the frame differs from the master, ADU; bands = how many times more the rows differ from one another than the noise alone would give (1 = no banding); hot = the hot pixels against the master (1 = the same); plateau = how many degrees the frame is from the steady temperature of the series; to discard = more than 2.0 degrees from it (check 3); light = the light above what the warming explains, ADU; side = the side with the most constant light against the centre (UNMEASURED)]
+      1  DSC_0001.fit          00:48:53    0.03    3.01    2.64     1.0    0.996       -       -       -     0
+      2  DSC_0002.fit          00:50:53    0.04    2.99    2.67     1.0    1.008       -       -       -     0
+      3  DSC_0003.fit          00:52:53    0.05    3.03    2.71     1.0    1.000       -       -       -     0
+      4  DSC_0004.fit          00:54:53    0.05    3.00    2.65     1.0    0.998       -       -       -     0
+
+  LIGHTS TABLE
+     no  file                  time         sky   noise     bright   single      hot    low   high   [the green pixels G1; sky = how bright the sky is, ADU; noise = how much a pixel differs from its neighbours, ADU; bright = brighter than their neighbours by more than 6 times the noise; single = with no bright neighbour, that is hot pixels; hot = the hot pixels of the master against the master (1 = the same); low, high = half of them are between these two values]
+      1  light_0001.fit        23:41:23   500.0    6.79        239       20    1.328  1.277  1.355
+      2  light_0002.fit        23:43:53   500.0    6.70        240       20    1.288  1.260  1.337
+      3  light_0003.fit        23:46:23   500.0    6.41        245       20    1.301  1.274  1.370
+
+  ADU SCALE EXPLAINED
+    file               : values from 0 to 65535 ADU (16 bits); the camera's black is at 200 and the white at 65535, so 0 .. 65335 ADU are left for light
+    1 ADU-eq           : 1 ADU in the file: the set was taken at the reference settings themselves, ISO 400, 120.0 s
+    value step         : near the black, the file's values go up 1 by 1 ADU
+    electrons          : at ISO 400, 1 ADU = 2.07 electrons (the sensor turns light into electrons, and the camera counts them in ADU); 1 ADU-eq = 1.00 ADU = 2.1 electrons; a pixel holds 34446 electrons (full well), and it catches 56 % of the light that falls on it (QE). Figures for Nikon D3300 from photonstophotos.net, worked out from DxOMark's measurements, read on 2026-10-20; on small sensors the method gives too many electrons per ADU.
+    read noise         : UNMEASURED: the session has no biases (the source gives 2.0 electrons for Nikon D3300)
+    noise on one dark  : one dark has 3.01 ADU of noise per pixel; the dark current (what a pixel gathers from the sensor's heat) can be measured only with biases
+    master noise       : the dark master, made of 4 frames, still has 1.87 ADU of noise per pixel; the stack of the 3 lights has 4.1 ADU per pixel if you make it with the mean and 5.0 if you make it with the median (the dark master's noise included)
+    this set's limits  : hot pixel: above 20 ADU-eq (20 ADU in the file); light leak on the map: above 1.0 ADU-eq (1.0 ADU); constant light on a side: above 0.15 ADU-eq (0.15 ADU); light on a single frame: above 0.1 ADU-eq (0.10 ADU)
+    what was found     : nothing over the thresholds
+    sky                : on a light, the sky is at 500.0 ADU above the black, with 6.4 ADU of noise per pixel (the green pixels G1, from 3 lights)
+    saturation         : at 65535 ADU the pixel is full and cannot go higher; per the source, a pixel holds 34446 electrons (full well)
+
+    ADU is the unit in which the file writes how bright each pixel is: here whole numbers from 0
+    to 65535 (16 bits), with the camera's black at 200. ADU-eq is the same ADU worked out as if
+    the frame had been taken at ISO 400 and 120 s, so that you can compare series taken with
+    different settings: on this set 1 ADU-eq = 1.00 ADU in the file. The file goes up 1 by 1
+    ADU, but the mean of many pixels can come out as a fraction of an ADU, because the noise
+    makes some pixels land on one step and others on the next.
+
+    An error in the dark master is not noise. For example: light that got into the camera, or a
+    black level moved a little. The master is subtracted from every light, so the error reaches
+    the stack whole, however many frames you add. The noise, on the other hand, falls as you add
+    frames: 4 times more frames halve it. The dark master, made of 4 frames, still has 1.87 ADU
+    of noise per pixel; that is what you compare an error with, not the noise of a single frame.
+    On a single pixel, the 3.0 ADU of noise of one dark hides any error below 1 ADU. But the eye
+    sees areas, not pixels: on an area of 50 x 50 pixels the noise evens out, and the error
+    shows 50 times better than on one pixel. That is why a step of 1 ADU with a straight edge
+    shows when you stretch a dark sky hard.
+
+    Against the sky: on a light of this session the sky is at 500.0 ADU above the black, so 1
+    ADU is 0.20 % of the sky, about as much as a flat is usually off. In the stack of the 3
+    lights the noise per pixel falls to 4.15 ADU if you make it with the mean (5.00 with the
+    median). Two noises go into this figure. The lights' noise (6.4 ADU on one light) falls the
+    more lights you add. The dark master's noise (1.87 ADU) does not fall, because the same
+    master is subtracted from every light. And an error of 1 ADU in the master stays 1 ADU in
+    the stack.
+
+    The thresholds: a pixel is hot above 20 ADU-eq. On the map of the Maps tab, a light leak is
+    obvious above 1.0 ADU-eq (the threshold of the analysis made by hand). Constant light on a
+    side counts above 0.15 ADU-eq, and only if it is more than 3 times what the measurement can
+    be off by. Light on a single frame counts above 0.1 ADU-eq, and only if it is more than 5
+    times what a frame usually differs from the others. The last two thresholds say 'this is
+    real light, measured', not 'it shows in the image': at 0.15 ADU in the file it would barely
+    show, at 1.0 ADU it shows. The remedy is the same in both cases: cover the viewfinder and
+    take the series again.
+--- stderr ---
+(progress, omitted)
+--- exit 0 ---

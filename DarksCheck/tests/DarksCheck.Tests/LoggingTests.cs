@@ -348,9 +348,9 @@ public partial class LoggingTests
         DarkSeriesResult r = DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2, Against: p.Root));
 
         string[] m = Timeless(capture);
-        Assert.Equal("darks start folder=" + s.Root + " threads=2 maxFrames=60 against=" + p.Root + " isoFactor=2 doubling=6", m[0]);
-        Assert.Contains("opened root=" + s.Root + " kind=session darks=" + s.DarksDir + " (4 frames, .fit) biases=" + s.BiasesDir + " (2) lights=" + s.LightsDir + " (3)", m);
-        Assert.Contains("opened root=" + p.Root + " kind=library darks=" + p.Root + " (3 frames, .fit) biases=none (0) lights=none (0)", m);
+        Assert.Equal("darks start folder=" + s.Root + " threads=2 maxFrames=60 against=" + p.Root + " lightsFrom=none isoFactor=2 doubling=6", m[0]);
+        Assert.Contains("opened root=" + s.Root + " kind=session darks=" + s.DarksDir + " (4 frames, .fit) biases=" + s.BiasesDir + " (2) lights=" + s.LightsDir + " (3) chosenLights=none", m);
+        Assert.Contains("opened root=" + p.Root + " kind=library darks=" + p.Root + " (3 frames, .fit) biases=none (0) lights=none (0) chosenLights=none", m);
         Assert.Contains("inventory done darks=4 biases=2 lights=3 errors=0 in # (open #, darks #, biases #, lights #, cadence #)", m);
         // every file read whole has its line: the darks, the biases, the lights and the partner's darks
         Assert.Equal(12, m.Count(x => x.StartsWith("loaded ", StringComparison.Ordinal)));
@@ -363,7 +363,7 @@ public partial class LoggingTests
         Assert.Equal(3, m.Count(x => LightLine().IsMatch(x)));
         Assert.Single(m, x => x.StartsWith("series: width=256 height=192 black=200 white=65535 cfaLetters=RGGB norm=1 ", StringComparison.Ordinal));
         Assert.Single(m, x => x.StartsWith("verdicts: leak=(verdict=" + r.Verdicts.Leak.Verdict + " offsetAdu=", StringComparison.Ordinal));
-        Assert.Contains("index: " + LogText.Figures(r.Index) + " label=" + r.Label, m);
+        Assert.Contains("index: " + LogText.Figures(r.Index) + " label=" + r.Label + " partnerLabel=none", m);
         Assert.Single(m, x => x.StartsWith("lights: used=3 ", StringComparison.Ordinal));
         Assert.Single(m, x => x.StartsWith("partner: folder=" + p.Root + " frames=3 used=3 ", StringComparison.Ordinal));
         Assert.Equal("darks done " + DarkSeriesRun.Outcome(r) + " in # (inventory #, biases #, darks #, measure #, verdicts #, lights #, partner #)", m[^1]);
@@ -382,7 +382,7 @@ public partial class LoggingTests
 
         string[] m = Timeless(capture);
         string first = Path.Combine(s.DarksDir, "DSC_0001.fit");
-        Assert.Equal("inventory start folder=" + s.Root, m[0]);
+        Assert.Equal("inventory start folder=" + s.Root + " lightsFrom=none", m[0]);
         Assert.Equal(7, m.Count(x => x.StartsWith("read the header of ", StringComparison.Ordinal)));
         Assert.Contains(m, x => x.StartsWith("read the header of " + first + " (0.0 MiB) reader=fits no pixels planes=1 bitpix=16 cfa=none scale=none camera=NIKON D3300 ", StringComparison.Ordinal)
             && x.Contains(" exposure=119.2 iso=400 time=2026-08-13 00:48:53 ", StringComparison.Ordinal));
@@ -630,7 +630,7 @@ public partial class LoggingTests
 
         Assert.Equal(1, code);
         Assert.Equal("EROARE: nu gasesc folderul " + missing + "\n", stderr);
-        Assert.Contains("mode=darks input=" + missing + " against=none out=none threads=2 maxFrames=60 lang=ro", capture.Messages);
+        Assert.Contains("mode=darks input=" + missing + " against=none lights=none out=none threads=2 maxFrames=60 lang=ro", capture.Messages);
         LogCapture.Captured failed = Assert.Single(capture.Events, e => e.Level == LogLevel.Error);
         Assert.Equal("Cli", failed.Logger);
         Assert.Equal("run failed: mode=darks", failed.Message);

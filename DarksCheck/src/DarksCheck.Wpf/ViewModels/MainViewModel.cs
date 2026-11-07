@@ -128,6 +128,9 @@ public sealed class MainViewModel : ObservableObject
     private int _runs;
     private string _folder = "";
     private string? _partner;
+
+    // The lights folder of R-055, for the open folder only: not stored, dropped on another folder.
+    private string? _lightsFrom;
     private string? _problemText;
     private bool _running;
     private double _progress;
@@ -200,6 +203,33 @@ public sealed class MainViewModel : ObservableObject
 
     public string PartnerText => _partner ?? WindowTexts.NoPartner;
 
+    /// <summary>
+    /// The folder the lights are taken from instead of the open folder's own (R-055, R-122):
+    /// null for the folder's own. Not stored, and dropped when another folder is opened.
+    /// </summary>
+    public string? LightsFrom
+    {
+        get => _lightsFrom;
+        set
+        {
+            string? v = string.IsNullOrWhiteSpace(value) ? null : value;
+            if (Set(ref _lightsFrom, v))
+            {
+                Log.Info("lightsFrom=" + LogText.Str(v));
+                Raise(nameof(HasLightsFrom));
+                Raise(nameof(LightsFromText));
+                if (HasResult)
+                {
+                    Status = WindowTexts.LightsFromChanged;
+                }
+            }
+        }
+    }
+
+    public bool HasLightsFrom => _lightsFrom is not null;
+
+    public string LightsFromText => _lightsFrom ?? WindowTexts.NoLightsFrom;
+
     public string? ProblemText
     {
         get => _problemText;
@@ -220,7 +250,13 @@ public sealed class MainViewModel : ObservableObject
 
     public string EmptyLead => WindowTexts.EmptyLead;
 
-    public string IndexLead => WindowTexts.IndexLead;
+    public string LightsFromLead => WindowTexts.LightsFromLead;
+
+    /// <summary>
+    /// The text under the label: the darks' index for a folder with darks, the lights' label for
+    /// a folder whose darks are the partner's (R-066).
+    /// </summary>
+    public string IndexLead => _result?.DarksFromPartner is null ? WindowTexts.IndexLead : WindowTexts.IndexLeadLights;
 
     public string MapsLead => WindowTexts.MapsLead;
 
@@ -354,7 +390,8 @@ public sealed class MainViewModel : ObservableObject
         ParseInt(_maxFramesText) ?? Th.MaxFramesInMemory,
         _partner,
         ParseDouble(_isoFactorText) ?? Normalisation.Default.IsoFactorPerStop,
-        ParseDouble(_doublingText) ?? Normalisation.Default.DoublingCelsius);
+        ParseDouble(_doublingText) ?? Normalisation.Default.DoublingCelsius,
+        _lightsFrom);
 
     internal DarkSeriesResult? Result => _result;
 
@@ -414,6 +451,15 @@ public sealed class MainViewModel : ObservableObject
         CancellationTokenSource cts = new();
         _cts = cts;
         int run = ++_runs;
+        if (HasLightsFrom && HasFolder && !SameFolder(folder, _folder))
+        {
+            // the chosen lights go with the folder they were chosen for (R-122, ADR 0039); a rerun
+            // of the same folder, the problem card's included, keeps them, and so does the first
+            // folder opened after the choice
+            Log.Info("another folder: the chosen lights are dropped");
+            LightsFrom = null;
+        }
+
         Folder = folder;
         ProblemText = null;
         Status = null;
@@ -425,7 +471,7 @@ public sealed class MainViewModel : ObservableObject
         Stopwatch clock = Stopwatch.StartNew();
         Log.Info("run " + LogText.Int(run) + " started: folder=" + folder + " threads=" + (options.Threads > 0 ? LogText.Int(options.Threads) : "auto")
             + " maxFrames=" + LogText.Int(options.MaxFrames) + " isoFactor=" + LogText.Num(options.IsoFactorPerStop)
-            + " doubling=" + LogText.Num(options.DoublingCelsius) + " against=" + LogText.Str(options.Against));
+            + " doubling=" + LogText.Num(options.DoublingCelsius) + " against=" + LogText.Str(options.Against) + " lightsFrom=" + LogText.Str(options.LightsFrom));
         Progress<RunProgress> progress = new(p =>
         {
             // a run superseded by a later OpenAsync still posts a few callbacks: not over the new
@@ -586,6 +632,21 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>Stores the four setting texts as typed and the partner.</summary>
     private void SaveSettings() => UserSettings.Save(new StoredSettings(_threadsText, _maxFramesText, _isoFactorText, _doublingText, _partner));
 
+    /// <summary>Whether two folder paths name the same folder: made full, trailing separators off, case ignored (Windows).</summary>
+    /// <param name="a">One path; blank for none.</param>
+    /// <param name="b">The other path; blank for none.</param>
+    /// <returns>True when both are blank or both name the same folder.</returns>
+    private static bool SameFolder(string a, string b)
+    {
+        if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b))
+        {
+            return string.IsNullOrWhiteSpace(a) && string.IsNullOrWhiteSpace(b);
+        }
+
+        static string Full(string p) => Path.GetFullPath(p).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return string.Equals(Full(a), Full(b), StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>A setting text as a positive whole number, with the invariant culture.</summary>
     /// <param name="s">The text as typed.</param>
     /// <returns>The number when it is a positive integer; null otherwise, so the core's default is
@@ -649,7 +710,8 @@ public sealed class MainViewModel : ObservableObject
         HotHeaderTip = DarkReport.HotColumnTip(r);
         LightTableNote = r.Lights is null ? "" : DarkReport.LightTableNote(r);
         Label = r.Label;
-        Tag = r.Index.Tag;
+        // the label's own tag: the darks' index, or the lights' for a folder without darks (R-066)
+        Tag = r.DarksFromPartner is null ? r.Index.Tag : IndexFigures.TagFor(r.LightsIndex);
 
         DarkSeriesAnalysis d = r.Darks;
         int rp = r.ReferencePlane;
@@ -744,7 +806,7 @@ public sealed class MainViewModel : ObservableObject
             nameof(HasResult), nameof(SessionRows), nameof(HeaderLine), nameof(Sections), nameof(Frames), nameof(Lights), nameof(HasLights),
             nameof(FrameTableNote), nameof(NoiseHeaderTip), nameof(HotHeaderTip), nameof(LightTableNote), nameof(Maps), nameof(HotRows), nameof(WarmingPoints), nameof(WarmingGuides), nameof(WarmingNote),
             nameof(ResidualPoints), nameof(ResidualGuides), nameof(BandingPoints), nameof(BandingGuides), nameof(NoisePoints), nameof(NoiseExpected),
-            nameof(LightPoints), nameof(LightGuides), nameof(LightRows), nameof(IndexRows), nameof(ScaleRows), nameof(ScaleParagraphs), nameof(Label), nameof(Tag),
+            nameof(LightPoints), nameof(LightGuides), nameof(LightRows), nameof(IndexRows), nameof(ScaleRows), nameof(ScaleParagraphs), nameof(Label), nameof(Tag), nameof(IndexLead),
         })
         {
             Raise(name);

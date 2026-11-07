@@ -93,6 +93,34 @@ public partial class MainWindow : Window
     /// <summary>The Index tab's clear button: forgets the partner folder.</summary>
     internal void ClearPartnerFromView() => ClearPartner(this, new RoutedEventArgs());
 
+    /// <summary>The Lights tab's lights button (R-122): asks for the folder of lights.</summary>
+    internal void ChooseLightsFromView() => ChooseLights();
+
+    /// <summary>The Lights tab's clear button (R-122): back to the open folder's own lights.</summary>
+    internal void ClearLightsFromView() => _vm.LightsFrom = null;
+
+    /// <summary>
+    /// Asks for the folder of lights (R-055, R-122), starting in the current choice when it still
+    /// exists, and sets it on the view-model; a cancelled dialog changes nothing.
+    /// </summary>
+    private void ChooseLights()
+    {
+        Microsoft.Win32.OpenFolderDialog dlg = new() { Title = WindowTexts.ChooseLightsTitle, Multiselect = false };
+        if (_vm.LightsFrom is string l && Directory.Exists(l))
+        {
+            dlg.InitialDirectory = l;
+        }
+
+        if (dlg.ShowDialog(this) != true)
+        {
+            Log.Info("lights dialog: cancelled");
+            return;
+        }
+
+        Log.Info("lights dialog: chose " + dlg.FolderName);
+        _vm.LightsFrom = dlg.FolderName;
+    }
+
     /// <summary>
     /// The Index tab's rerun button: runs the same folder again with the settings and the partner
     /// as they are now.

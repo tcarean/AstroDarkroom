@@ -477,6 +477,82 @@ public class MainViewModelTests
     }
 
     [Fact]
+    public async Task R122_TheLightsFolderReachesTheRunAndIsNeitherRememberedNorKeptForAnotherFolder()
+    {
+        using TestSettings.Own _ = new();
+        using SessionFixture library = WindowFixture.Partner();
+        using SessionFixture s = WindowFixture.Session();
+        MainViewModel vm = new();
+        Assert.False(vm.HasLightsFrom);
+        Assert.Equal(WindowTexts.NoLightsFrom, vm.LightsFromText);
+
+        vm.LightsFrom = s.LightsDir;
+        Assert.True(vm.HasLightsFrom);
+        Assert.Equal(s.LightsDir, vm.LightsFromText);
+        Assert.Null(vm.Status);
+        Assert.False(new MainViewModel().HasLightsFrom);
+
+        await vm.OpenAsync(library.Root);
+        Assert.True(vm.HasResult);
+        Assert.True(vm.HasLights);
+        Assert.Equal(4, vm.Lights.Count);
+        Assert.Equal(s.LightsDir, vm.Result!.Inventory.Session.LightsDir);
+        Assert.Contains(vm.SessionRows, row => row.Label == "lights" && row.Value == s.LightsDir + " (4 cadre .fit; alese de tine)");
+        // lights at 1.3 of darks that are 0.5 of the library: 0.65, cosmetic correction only
+        Assert.Contains(vm.LightRows, row => row.Label == "verdict" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("foloseste dark-ul doar pentru corectia cosmetica", StringComparison.Ordinal));
+        Assert.Equal(Path.GetFileName(library.Root) + "-" + vm.Result.Index.Tag, vm.Label);
+
+        // clearing after a run only says so; the next run of the same folder has no lights
+        vm.LightsFrom = null;
+        Assert.Equal(WindowTexts.LightsFromChanged, vm.Status);
+        Assert.True(vm.HasLights);
+        await vm.RerunAsync();
+        Assert.False(vm.HasLights);
+
+        // a choice is kept for a rerun of the same folder and dropped when another folder is opened
+        vm.LightsFrom = s.LightsDir;
+        await vm.RerunAsync();
+        Assert.True(vm.HasLightsFrom);
+        Assert.True(vm.HasLights);
+        await vm.OpenAsync(s.Root);
+        Assert.False(vm.HasLightsFrom);
+        Assert.Equal(WindowTexts.NoLightsFrom, vm.LightsFromText);
+        Assert.Contains(vm.SessionRows, row => row.Label == "lights" && row.Value == "lights\\ (4 cadre .fit)");
+
+        // a lights folder that does not open says so on the card
+        vm.LightsFrom = Path.Combine(s.Root, "nu-exista");
+        await vm.RerunAsync();
+        Assert.True(vm.HasProblem);
+        Assert.StartsWith("lights-urile alese: nu gasesc folderul", vm.ProblemText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task R066_ASessionWithoutDarksShowsItsOwnLabelAndSaysItIsTheLights()
+    {
+        using TestSettings.Own _ = new();
+        using SessionFixture s = new SessionFixture().WithLights(3, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.3, Stars = SyntheticLight.ThreeStars });
+        using SessionFixture p = WindowFixture.Partner();
+        MainViewModel vm = new();
+        vm.Partner = p.Root;
+
+        await vm.OpenAsync(s.Root);
+        Assert.True(vm.HasResult);
+        string like = Math.Round(vm.Result!.LightsIndex, MidpointRounding.AwayFromZero).ToString(CultureInfo.InvariantCulture);
+        Assert.Equal(Path.GetFileName(s.Root) + "-idx" + like, vm.Label);
+        Assert.Equal("idx" + like, vm.Tag);
+        Assert.Equal(WindowTexts.IndexLeadLights, vm.IndexLead);
+        Assert.Contains("dark-urile partenerului", vm.IndexLead, StringComparison.Ordinal);
+        Assert.Contains(vm.IndexRows, row => row.Label == "dark-uri (partener)" && row.Value.EndsWith("; eticheta " + Path.GetFileName(p.Root) + "-" + vm.Result.Index.Tag, StringComparison.Ordinal));
+        Assert.Contains(vm.IndexRows, row => row.Label == "eticheta" && row.Value == vm.Label);
+
+        // a session with darks keeps the darks' label and the usual text
+        using SessionFixture with = WindowFixture.Session();
+        await vm.OpenAsync(with.Root);
+        Assert.Equal(Path.GetFileName(with.Root) + "-" + vm.Result!.Index.Tag, vm.Label);
+        Assert.Equal(WindowTexts.IndexLead, vm.IndexLead);
+    }
+
+    [Fact]
     public void TheNumbersAreParsedWithTheInvariantCulture()
     {
         using TestSettings.Own _ = new();

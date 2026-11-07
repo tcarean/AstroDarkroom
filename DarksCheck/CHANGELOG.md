@@ -8,6 +8,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The lights of another folder, so the question "do these darks fit that session's lights?" is
+  asked darks first (R-055, R-122, ADR 0039): `--lights DIR` in the console, the card
+  `Lights from another folder` on the window's Lights tab. DIR is a session, whose `lights\` is
+  taken, or a folder of lights; those lights replace the open folder's own in the run, the
+  session row `lights` names them as chosen, and the darks' index and label stay the open
+  folder's. The window's choice holds for the open folder only: not kept in the settings,
+  dropped when another folder is opened.
+
 - A diagnostic log, for bug reports (R-100 to R-103, ADR 0025): each application writes
   `log\darkscheck.log` or `log\DarksCheck.Wpf.log` beside its executable (or under
   `%LOCALAPPDATA%\DarksCheck\log` when that folder cannot be written), at most 5 files of 1 MiB
@@ -33,6 +41,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   are missing (R-080, ADR 0023); until now only the `electrons` row said so.
 
 ### Changed
+
+- The label of a session with lights and no darks of its own is the session's: its folder's name
+  and the lights' index, what dark they are like, read through the partner's darks (R-066, ADR
+  0039). The partner's index and label now stand once, on the `darks (partner)` row, where the
+  partner's label is appended; before, the big label on the Index tab and the `label` row were
+  the partner's. The text under the label says so for such a session.
 
 - Check 3 says which way the camera moved and when the series is to be taken again (R-023, ADR
   0038): the `plateau` row opens with "the camera cooled the whole series" (or warmed), with the

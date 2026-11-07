@@ -78,7 +78,7 @@ public class WindowLoggingTests
         await vm.OpenAsync(f.Root);
 
         Assert.True(vm.HasResult);
-        Assert.Contains("run 1 started: folder=" + f.Root + " threads=auto maxFrames=60 isoFactor=2 doubling=6 against=none", capture.Messages);
+        Assert.Contains("run 1 started: folder=" + f.Root + " threads=auto maxFrames=60 isoFactor=2 doubling=6 against=none lightsFrom=none", capture.Messages);
         Assert.Contains(capture.Events, e => e.Logger == "Window" && e.Level == LogLevel.Info
             && Regex.IsMatch(e.Message, @"^run 1 done in \d+\.\d s; the tabs show the result$"));
         Assert.Contains(capture.Events, e => e.Logger == "DarkSeriesRun" && e.Message.StartsWith("darks done ", StringComparison.Ordinal));

@@ -67,7 +67,15 @@ internal enum MatchVerdict
 internal sealed record IndexFigures(double Index, int RankLow, int RankHigh, int BandPixels, int Ranked)
 {
     /// <summary>The token of the label: `idx25`.</summary>
-    internal string Tag => double.IsNaN(Index) ? "idx-" : "idx" + Math.Round(Index, MidpointRounding.AwayFromZero).ToString("0", CultureInfo.InvariantCulture);
+    internal string Tag => TagFor(Index);
+
+    /// <summary>
+    /// The token of a label for any index: `idx` and the index rounded half up, `idx-` when it
+    /// could not be measured (R-061, R-066).
+    /// </summary>
+    /// <param name="index">The index in ADU equivalent; NaN for unmeasured.</param>
+    /// <returns>The token, such as `idx25` or `idx-`.</returns>
+    internal static string TagFor(double index) => double.IsNaN(index) ? "idx-" : "idx" + Math.Round(index, MidpointRounding.AwayFromZero).ToString("0", CultureInfo.InvariantCulture);
 }
 
 /// <summary>
@@ -275,8 +283,23 @@ internal static partial class IndexAnalyzer
     /// <returns>The label, such as `Smida-idx25`.</returns>
     internal static string Label(SessionFolder session, IndexFigures index)
     {
-        ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(index);
+        return Label(session, index.Tag);
+    }
+
+    /// <summary>
+    /// The label of a folder for a given tag: the darks' index tag for a folder with darks
+    /// (R-061), the lights' equivalent index tag for a session without darks of its own (R-066,
+    /// `IndexFigures.TagFor`), whose `darks` folder is absent, so its parent, the session's own
+    /// folder, names the label.
+    /// </summary>
+    /// <param name="session">The session or library; not null.</param>
+    /// <param name="tag">The tag to append, `idx25` or `idx-`; not null.</param>
+    /// <returns>The label, such as `Smida-idx25`.</returns>
+    internal static string Label(SessionFolder session, string tag)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(tag);
         string dir = session.DarksDir;
         string name = Path.GetFileName(dir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         if (string.Equals(name, SessionFolder.DarksName, StringComparison.OrdinalIgnoreCase))
@@ -285,7 +308,7 @@ internal static partial class IndexAnalyzer
             name = parent is null ? name : Path.GetFileName(parent.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         }
 
-        return WithoutLabelSuffix(name) + "-" + index.Tag;
+        return WithoutLabelSuffix(name) + "-" + tag;
     }
 
     /// <summary>

@@ -229,6 +229,24 @@
         "verdicts": { "leak": "Ok", "drift": "Redo", "noise": "Ok", "pattern": "Ok", "deadSat": "Ok", "enough": "Ok" }
       },
       "tolerance": { "adu": 0.02, "ratio": 0.01, "counts": 2 }
+    },
+    {
+      "id": "V-012",
+      "kind": "match",
+      "session": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius-idx67/darks",
+      "lights": "Veil/2026-10-06-3h",
+      "measuredOn": "2026-11-07",
+      "expected": {
+        "index": 67.4, "rankLow": 121, "rankHigh": 483, "label": "2026-10-10-ISO1600-120s-15.8celsius-idx67",
+        "lights": {
+          "used": 44, "persistentThreshold": 36, "persistent": 236,
+          "overlapLevels": [10, 20, 50, 100], "overlapBoth": [225, 224, 214, 117], "overlapDark": [5608, 3940, 528, 176],
+          "missed": 12, "missedMedian": 3,
+          "ampPixels": 3933, "ratio": 0.43, "ratioFirst": 0.41, "ratioLast": 0.37, "verdict": "CosmeticOnly"
+        },
+        "partner": null
+      },
+      "tolerance": { "index": 0.2, "ratio": 0.01, "counts": 2, "celsius": 0.1 }
     }
   ]
 }
