@@ -72,9 +72,9 @@ gate and no Claude Code hook runs here. The rules below are kept by hand.
   names the next step up (`sfat_dec`; `sfat_ra` adds Dec as the way out); a press under 1 s
   names the next step down, because the app's Wi-Fi latency is then a large part of the press.
 - Arrows: `SAGEATA_EST, SAGEATA_VEST = "→", "←"` and `SAGEATA_NORD, SAGEATA_SUD = "↓", "↑"`, the
-  owner's test of 2026-11-07 (Facts below). Left and right turn RA, up and down Dec. The start
-  line names all four; the RA note above 1x names `→`, the press against the tracking; the
-  closing test names `→` and `←`.
+  owner's test, reported on 2026-11-07 (Facts below). Left and right turn RA, up and down Dec.
+  The start line names all four; the RA note above 1x names `→`, the press against the
+  tracking; the closing test names `→` and `←`.
 
 ## What the manuals say, and what the script still assumes
 
@@ -169,7 +169,7 @@ chat assumed EQ mode, the Wi-Fi link and step 2 = 8x.
   speed the RA motor runs at 1.5x to move west and at 0.5x to move east; PHD2's log-analysis
   guide: at 1x or less the RA drive slows or pauses and never reverses), so east stops the RA
   motor at step 1 and reverses it above 1x. That RIGHT is east rested only on the owner's reading
-  of the Veil session until the owner tested it on 2026-11-07 (Facts below): no Sky-Watcher
+  of the Veil session until the owner's test, reported on 2026-11-07 (Facts below): no Sky-Watcher
   document says which way RIGHT turns RA, and both the forum default that LightsCheck first took
   and an EQMOD user on Stargazers Lounge say right = west. On the owner's app `→` is east, so
   there RIGHT is against the tracking.
@@ -287,21 +287,24 @@ same check in its `docs/validation.md` (History, 2026-10-12).
 - The pauses before 63 and 65 moved the camera only 16" and 26" (3 and 4 px) along Dec; their
   press times are not known.
 
-## Facts from the rest of the repo, for when the script grows
+## Facts: the owner's arrow test, and the rest of the repo
 
 - The owner tested the arrows of the SynScan Pro app driving their Star Adventurer GTi and gave
   the result on 2026-11-07: `→` moves the mount east, `←` west, `↓` north and `↑` south. The
   script's `SAGEATA_*` constants hold them. Before that test, LightsCheck's
-  `docs/decisions/0014` had `→` east and `↑` north from the owner's reading of the Veil session:
-  east was right, north the other way round (a forum default with left = east was wrong for this
-  app too). The app's manual (2023) and the V4 hand-control manual say only that left/right turn
-  RA and up/down Dec, and the app's manual lists no setting that reverses the buttons, so the
-  senses are those of this mount with this app. The side of the meridian the test was made on is
-  not recorded: on a German equatorial mount the Dec arrows can swap north and south after a
-  meridian flip, and whether SynScan Pro makes up for it is not known. To check another mount,
-  app or side: a lone press between two frames shows in LightsCheck's dithering cell for the next
-  frame, whose letter (`E` or `V`, `N` or `S`) comes from the plate solve, not from the arrow
-  setting.
+  `docs/decisions/0014` had `→` east, from the owner's reading of the Veil session, and `↑`
+  north, kept from the forum default of its `docs/decisions/0013` (left east, up north): east was
+  right and north the other way round, so that forum default was wrong on both axes for this
+  app. The app's manual (2023) and the V4 hand-control manual say only that left/right turn RA
+  and up/down Dec, and the app's manual lists no setting that reverses the buttons, so the senses
+  are those of this mount with this app. The side of the meridian the test was made on is not
+  recorded: on a German equatorial mount the Dec arrows can swap north and south after a
+  meridian flip, and whether SynScan Pro makes up for it is not known. Two ways to check that
+  side, or another mount or app: by day, with the lens pointed well away from the pole, `↓` at
+  step 8 for 2-3 s tilts the lens toward the pole if `↓` is north, once on a target east of the
+  meridian and once on one west of it; at night, a lone press between two frames shows in
+  LightsCheck's dithering cell for the next frame, whose letter (`E` or `W`, `V` in Romanian;
+  `N` or `S`) comes from the plate solve, not from the arrow setting.
 - 10-20 px is a DSLR rule of thumb, not a measurement. LightsCheck's walking-noise verdict uses
   the same kind of threshold: 10 px or more, random, on both axes (its `docs/decisions/0007`).
 
@@ -314,9 +317,9 @@ same check in its `docs/validation.md` (History, 2026-10-12).
   Backlash), after the Veil DEC presses that moved nothing.
 - 2026-11-07, the owner: the arrows they tested on their SynScan Pro (`→` east, `←` west, `↓`
   north, `↑` south) are the script's defaults. The texts were approved in chat, the old one
-  beside the new: a line at the start names all four, the RA note above 1x reads
-  `(cu → spre est, ...)` and the closing test `10 s cu → (est) și 10 s cu ← (vest)`. The arrows
-  are constants, not asked at each round.
+  beside the new where there was one: a new line at the start names all four, the RA note above
+  1x reads `(cu → spre est, ...)` and the closing test `10 s cu → (est) și 10 s cu ← (vest)`.
+  The arrows are constants, not asked at each round.
 
 ## Invariants (each one fixed a bug reproduced on 2026-10-11)
 
@@ -347,7 +350,8 @@ same check in its `docs/validation.md` (History, 2026-10-12).
 - Numbers go out with a decimal comma through `fmt` (fixed decimals) and `fmt_scurt` (`g`);
   answers take a comma or a point.
 - A text that names an arrow takes it from `SAGEATA_EST`, `SAGEATA_VEST`, `SAGEATA_NORD` or
-  `SAGEATA_SUD`, never the symbol itself, so another mount or app changes them in one place.
+  `SAGEATA_SUD`, never the symbol itself, so another mount or app changes them in one place in
+  the script (the expected lines in Commands quote them too).
 - Standard library only; no packages.
 - LF line endings and UTF-8 without BOM, as the repository's `.gitattributes` (`* text=auto
   eol=lf`) keeps every file.
@@ -374,8 +378,8 @@ same check in its `docs/validation.md` (History, 2026-10-12).
 - The defaults (135 mm, 3.92 µm) give 5.99"/px; the plate solves of the Veil session measure
   6.198"/px (130.1 mm at 3.91 µm). Changing `IMPLICIT_FOCALA_MM` changes the expected outputs of
   the checks above too.
-- The arrow test of 2026-11-07 does not record the side of the meridian; after a meridian flip
-  the Dec arrows may swap north and south (Facts above).
+- The arrow test reported on 2026-11-07 does not say on which side of the meridian it was made;
+  after a meridian flip the Dec arrows may swap north and south (Facts above).
 - Ideas not done: the backlash time as an input, the declination in degrees and minutes, a
   dither pattern that never reverses DEC.
 
