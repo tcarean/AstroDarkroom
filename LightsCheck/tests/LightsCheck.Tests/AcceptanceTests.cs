@@ -259,6 +259,27 @@ public class AcceptanceTests
     }
 
     [Fact]
+    public void R086_TheSessionLinesOpenWithTheTotalExposureToTheSecond()
+    {
+        using SessionFixture s = new SessionFixture().WithLights(3, exposure: 120.2, cadence: 150);
+        (_, string ro, _) = Cli.Run(s.Root, "--inventory");
+        (_, string en, _) = Cli.Run(s.Root, "--inventory", "--lang", "en");
+        // 3 frames of 120.2 s: 360.6 s, rounded to 361 s; the interval line keeps its minutes.
+        Assert.Equal("    expunere totala    : 6 min 1 s", FirstSessionLine(ro));
+        Assert.Equal("    total exposure     : 6 min 1 s", FirstSessionLine(en));
+        Assert.Contains("; expunere totala 6 min, din 3 cadre", ro, StringComparison.Ordinal);
+    }
+
+    /// <summary>The line right under the session's title line (`=== SESIUNE: ... ===`).</summary>
+    private static string FirstSessionLine(string stdout)
+    {
+        string[] lines = stdout.Split('\n');
+        int title = Array.FindIndex(lines, l => l.StartsWith("=== ", StringComparison.Ordinal));
+        Assert.True(title >= 0, "no session title in:\n" + stdout);
+        return lines[title + 1];
+    }
+
+    [Fact]
     public void R005_NumbersUseTheDotWhateverTheCulture()
     {
         using SessionFixture s = new SessionFixture().WithLights(1, exposure: 0.5);

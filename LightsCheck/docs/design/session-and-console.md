@@ -59,8 +59,11 @@ nothing is timed.
 returns `Inventory(Session, Lights, Cadence)`; `HasErrors` is true when any light carries an
 error, which is what makes the console exit 1. `InventoryReport.Write` prints the header and
 the table. `WriteHeader` is shared: the series report opens with the same session lines
-(folders with their frame counts and extension, camera, lens, exposure, interval, and a
-`WARNING` line when frames could not be read). The lens line puts the shot's focal length
+(the total exposure, folders with their frame counts and extension, camera, lens, exposure,
+interval, and a `WARNING` line when frames could not be read). The first line, labelled
+`TotalLabel`, is the cadence's `IntegrationSeconds` through `RunReport.DurationToTheSecond`, the
+same figure the interval line gives in minutes, and an `unknown` sentence when no frame is timed
+(R-086); the window's session card finds that row by its label. The lens line puts the shot's focal length
 and f-number first, then the lens as its chip declares it (`135 mm f/2.0 lens`, a range
 for a zoom) and the lens as the raw names it: the name in quotes, then the ID and the mount in
 one parenthesis (`"EF50mm f/1.4 USM" (ID 198, Canon EF mount)`), or the ID with the mount when the
@@ -78,7 +81,9 @@ and the copyright of `Directory.Build.props`, read from the core assembly's attr
 before the arguments are parsed. `WarrantyLines` is the GPLv3 disclaimer `--help` prints, with the
 licence URL. `F(value, decimals)` is the one number formatter of the reports (invariant
 culture, fixed decimals) and `Duration(seconds)` prints `48 s`, `54 min` or `3 h 22 min`;
-every report in `Report/` uses them, so no text is formatted by a view-model or the console.
+`DurationToTheSecond(seconds)` rounds the same way and keeps the seconds: `38 s`, `45 min 12 s`,
+`2 h 54 min 30 s`. Every report in `Report/` uses them, so no text is formatted by a view-model
+or the console.
 
 ## The console (`Options`, `Program`)
 

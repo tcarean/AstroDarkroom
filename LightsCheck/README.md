@@ -280,6 +280,7 @@ raws of the Veil night:
 
 ```
 === SESSION: E:\Photografie\Astro\Veil\2026-10-06-3h ===
+    total exposure     : 2 h 54 min 30 s
     lights             : lights\ (87 frames .NEF)
     biases             : biases\ (30 frames .NEF)
     darks              : (missing)
@@ -295,8 +296,9 @@ raws of the Veil night:
       3  DSC_0003.NEF          23:40:14     120.2   1600   2.8   135 mm    23 s
 ```
 
-`exposure` lists each exposure and ISO the frames use; that night frame 75 was exposed for
-133.2 s. `pause` is the time between the end of the previous exposure and the start of this one:
+`total exposure` is the exposures of the frames that carry a time of capture added up, to the
+second; `interval` gives the same total in minutes. `exposure` lists each exposure and ISO the frames use; that night frame 75
+was exposed for 133.2 s. `pause` is the time between the end of the previous exposure and the start of this one:
 with manual dithering, the pause in which you moved the mount. The time comes from the EXIF of a
 raw (the camera's clock) and from the `DATE-OBS` of a FITS (UTC, as Siril writes it).
 
@@ -347,7 +349,8 @@ raw (the camera's clock) and from the `DATE-OBS` of a FITS (UTC, as Siril writes
 The analysis starts by itself, the same as `lightscheck <folder>`, with a progress bar and a
 **Stop** button, and the result fills six tabs:
 
-- **Summary**: the report's sections, row by row, each verdict a coloured chip.
+- **Summary**: the report's sections, row by row, each verdict a coloured chip. The SESSION card
+  opens with the total exposure, in bold and a little larger.
 - **Frames**: one row per frame (time, class, elongation, FWHM, stars, background, pause, step,
   the position as `dX (DEC)` and `dY (RA)` when the RA axis is known, `dithering`, `same spot`,
   reasons). Select a frame and the cut-outs of its stars appear on the right, from the centre and

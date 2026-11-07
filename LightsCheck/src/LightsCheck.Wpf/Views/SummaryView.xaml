@@ -18,7 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- SummaryView: the report's sections as cards of labelled rows; a row that opens with a
-     verdict word shows it as a chip. The rows are the core's; nothing is reworded here. -->
+     verdict word shows it as a chip, and the row marked Emphasis (the session's total exposure,
+     R-086) is bold and 2 px larger, label and value. The rows are the core's; nothing is
+     reworded here. -->
 
 <UserControl x:Class="LightsCheck.Wpf.SummaryView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -32,11 +34,33 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <ColumnDefinition Width="Auto" />
           <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <TextBlock Grid.Column="0" Style="{StaticResource Muted}" Text="{Binding Label}" TextWrapping="Wrap" Margin="0,0,12,0" />
+        <TextBlock Grid.Column="0" Text="{Binding Label}" TextWrapping="Wrap" Margin="0,0,12,0">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Emphasis}" Value="True">
+                  <Setter Property="FontWeight" Value="Bold" />
+                  <Setter Property="FontSize" Value="14" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
         <ContentControl Grid.Column="1" Content="{Binding Verdict}" ContentTemplate="{StaticResource VerdictChip}"
                         Margin="0,0,10,0" VerticalAlignment="Top"
                         Visibility="{Binding HasVerdict, Converter={StaticResource BoolToVis}}" />
-        <TextBlock Grid.Column="2" Text="{Binding Value}" TextWrapping="Wrap" />
+        <TextBlock Grid.Column="2" Text="{Binding Value}" TextWrapping="Wrap">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Emphasis}" Value="True">
+                  <Setter Property="FontWeight" Value="Bold" />
+                  <Setter Property="FontSize" Value="15" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
       </Grid>
     </DataTemplate>
   </UserControl.Resources>

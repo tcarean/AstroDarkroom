@@ -2,6 +2,7 @@ lightscheck <versiune>
 Copyright (C) 2026 Tudor Carean
 
 === SESSION: <sesiune> ===
+    total exposure     : 10 min 1 s
     lights             : lights\ (6 frames .fit)
     biases             : biases\ (3 frames .fit)
     darks              : (missing)

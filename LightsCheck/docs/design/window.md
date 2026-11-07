@@ -70,7 +70,10 @@ awaits; the window's log lines and the two logger names of `Loggers` are in `log
 
 - the section cards take `SeriesReport.SummaryRows(r)` and the other row producers as
   `RowVm(Label, Value, Verdict)`; the session card takes the lines `InventoryReport.WriteHeader`
-  prints (split on `" : "`) plus `SeriesReport.ScaleLine`;
+  prints (split on `" : "`) plus `SeriesReport.ScaleLine`, and marks `Emphasis` on the one whose
+  label is `InventoryReport.TotalLabel`, the total exposure that opens them, which `SummaryView`'s
+  row template draws bold, its label at 14 px and its value at 15 px, 2 px over the other rows
+  (R-086);
 - the frames table takes `SeriesReport.FrameRows(r)`, the console's table cells already
   formatted (the run cell as `Spot`), plus the frame's path for the cut-outs, and its `dX` /
   `dY` headers from `SeriesReport.PositionHeaders` (`DxHeader`, `DyHeader`); `Rejected` is
@@ -169,7 +172,8 @@ window; `IconTests` ties both executables' `ApplicationIcon` to `Icon/lightschec
 `WindowSmokeTests` builds each view with a real result from `SessionFixture.Pattern`, lays it
 out, renders it to a bitmap and fails on any binding error traced by
 `PresentationTraceSources`; with `LIGHTSCHECK_DUMP_SCREENS=<folder>` each render is saved as a
-PNG. `StaFixture` is the one STA thread with a `Dispatcher.Run` loop the view-models' awaits
+PNG. One render also reads the drawn session card back, the bold and the sizes of its first row
+against the next (R-086). `StaFixture` is the one STA thread with a `Dispatcher.Run` loop the view-models' awaits
 need; the assembly disables test parallelization. `MainViewModelTests` cover R-029 to R-032
 without a window. `AutomationTreeTests` ask the automation peers in process, the same ones a
 client in another process is answered by: every tab's content under its item, once, and under

@@ -18,6 +18,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LightsCheck.Tests;
@@ -163,6 +164,54 @@ public class WindowSmokeTests
             Render(new FramesView { DataContext = vm }, name: "tab-frames");
 
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+        });
+    }
+
+    /// <summary>Every element under <paramref name="parent"/> in the visual tree, depth first.</summary>
+    private static IEnumerable<DependencyObject> VisualDescendants(DependencyObject parent)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+            yield return child;
+            foreach (DependencyObject below in VisualDescendants(child))
+            {
+                yield return below;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The SESSION card's first row, the total exposure, is bold and 2 px larger than the rows
+    /// under it, its label and its value; the other rows stay as they were (R-086).
+    /// </summary>
+    [Fact]
+    public async Task R086_TheTotalExposureRowIsBoldAndLarger()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2);
+        MainViewModel vm = new();
+
+        await _sta.InvokeAsync(async () =>
+        {
+            await vm.OpenAsync(f.Root);
+            using BindingErrors errors = new();
+            SummaryView view = new() { DataContext = vm };
+            Render(view, h: 1400, name: "tab-summary-total");
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+
+            List<TextBlock> texts = VisualDescendants(view).OfType<TextBlock>().ToList();
+            TextBlock label = Assert.Single(texts, t => t.Text == "expunere totala");
+            TextBlock value = Assert.Single(texts, t => t.Text == "16 min 0 s");
+            TextBlock nextLabel = Assert.Single(texts, t => t.Text == "lights");
+            TextBlock nextValue = Assert.Single(texts, t => t.Text.StartsWith("lights\\ (", StringComparison.Ordinal));
+            Assert.Equal(FontWeights.Bold, label.FontWeight);
+            Assert.Equal(FontWeights.Bold, value.FontWeight);
+            Assert.Equal(14, label.FontSize);
+            Assert.Equal(15, value.FontSize);
+            Assert.Equal(FontWeights.Normal, nextLabel.FontWeight);
+            Assert.Equal(FontWeights.Normal, nextValue.FontWeight);
+            Assert.Equal(12, nextLabel.FontSize);
+            Assert.Equal(13, nextValue.FontSize);
         });
     }
 
