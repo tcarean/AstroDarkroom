@@ -53,4 +53,6 @@ with a 14 % brighter sky and a plain frame after them, so the goldens of the cla
 change throughout (the counts, the dither figures and the new rows), beside the `exposure`
 column every series golden gains. V-014's classes move the owner's way: 80 good, 2 marginal, 3
 bad (16, 58, 64), where the old rules read 81, 4 and 0; V-008's frame 75 (133.2 s) gains a note
-and its +11 % jump the exposure's tail, its class unchanged.
+and its +11 % jump the exposure's tail, its class unchanged. (Restated 2026-11-07: the owner
+deleted frames 16, 58 and 64 from the session's `lights\` the same day, so V-014 now records 80
+good, 2 marginal and 0 bad on 82 frames; `docs/validation.md`, History, 2026-11-07, evening.)

@@ -192,6 +192,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - Every type and method in the code has its XML documentation comment (the kit's rule
   "Documentation comments"), and every comment is English: the files copied from FlatCheck take
   FlatCheck's English text, their code unchanged (ADR 0018). No behaviour changed.
+- The validation case V-014 follows the Veil session of 2026-11-06 as it now is: 82 lights, the
+  three short frames deleted, no darks, and the stack's plate solve at the root, which gives the
+  RA axis; its drift and walking-noise figures move with the frames (1.19 px per exposure instead
+  of 1.97), its verdicts stay. No code changed.
 
 ## [1.0.0] - 2026-10-25
 
