@@ -17,7 +17,8 @@ Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [-
   --pixel UM    marimea pixelului in microni; fara ea, XPIXSZ din fisiere, apoi focala echivalenta
                 35 mm din raw, apoi 3.92 (Nikon D3300).
   --est stanga|dreapta  sageata SynScan care muta montura spre est (implicit dreapta); cealalta e vest.
-  --nord sus|jos        sageata SynScan care muta montura spre nord (implicit sus); cealalta e sud.
+  --nord sus|jos        sageata SynScan care muta montura spre nord (implicit jos); cealalta e sud.
+                        Implicit, sagetile sunt cele ale unui Star Adventurer GTi cu aplicatia SynScan Pro.
   --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO, pauze.
   --frame N     masoara un singur cadru (1 = primul din lights\).
   --lang ro|en  limba textelor: ro (romana) sau en (engleza, implicit).

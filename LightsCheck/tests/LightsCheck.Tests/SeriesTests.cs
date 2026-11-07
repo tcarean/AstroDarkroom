@@ -708,11 +708,11 @@ public class SeriesTests
         IReadOnlyList<FrameTableRow> rows = SeriesReport.FrameRows(r);
         Assert.Equal("-", rows[0].Move);
         Assert.Equal("-", rows[1].Move);
-        Assert.Matches("^DEC 1[12] px ↓ S$", rows[2].Move);   // frame 3: stars +11.5 px in X -> the mount went south, the down arrow by default
+        Assert.Matches("^DEC 1[12] px ↑ S$", rows[2].Move);   // frame 3: stars +11.5 px in X -> the mount went south, the up arrow by default
         Assert.Equal("-", rows[3].Move);
         Assert.Equal("RA 15 px ← V", rows[4].Move);      // frame 5: stars -15.3 px in Y -> the mount went west, the left arrow by default
         Assert.StartsWith("DEC 2", rows[6].Move, StringComparison.Ordinal);
-        Assert.EndsWith(" px ↓ S", rows[6].Move, StringComparison.Ordinal);
+        Assert.EndsWith(" px ↑ S", rows[6].Move, StringComparison.Ordinal);
         Assert.Null(rows[0].StepTip);
         Assert.Equal("cadrul 5: pas 15.3 px; RA 15 px ← V", rows[4].StepTip);
         Assert.Equal("cadrul 2: pas 0.5 px; -", rows[1].StepTip);
@@ -721,7 +721,7 @@ public class SeriesTests
         SeriesReport.Write(r, sw);
         Assert.Matches("      dY  dithering {33}  acelasi loc", sw.ToString());
         // A two-axis cell (41 characters at most, three-digit moves included) fits the column.
-        Assert.True("RA 142 px ← V, DEC 129 px ↓ S".Length <= 42);
+        Assert.True("RA 142 px ← V, DEC 129 px ↑ S".Length <= 42);
 
         string[] csv = SeriesOutputs.Csv(r).Split('\n');
         string[] head = CsvCells(csv[0]);
@@ -740,7 +740,7 @@ public class SeriesTests
         Assert.Equal("RA 15 px", plain[4].Move);
     }
 
-    /// <summary>The console takes the arrow keys as words, names them in the help, and the report follows them (R-040).</summary>
+    /// <summary>The console takes the arrow keys as words, names them and their defaults in the help, and the report follows them (R-040).</summary>
     [Fact]
     public void R040_TheConsoleTakesTheArrowKeysAndTheReportFollowsThem()
     {
@@ -757,6 +757,9 @@ public class SeriesTests
         Assert.Equal(0, code);
         Assert.Contains("--est stanga|dreapta", help, StringComparison.Ordinal);
         Assert.Contains("--nord sus|jos", help, StringComparison.Ordinal);
+        Assert.Contains("(implicit dreapta)", help, StringComparison.Ordinal);   // the defaults in words, from ArrowKeys.Default
+        Assert.Contains("(implicit jos)", help, StringComparison.Ordinal);
+        Assert.Contains("Implicit, sagetile sunt cele ale unui Star Adventurer GTi cu aplicatia SynScan Pro.", help, StringComparison.Ordinal);
 
         using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
         // The fixture's lights are FITS: the Veil solve with its y column mirrored (ADR 0023).
@@ -770,10 +773,10 @@ public class SeriesTests
         File.WriteAllBytes(Path.Combine(s.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
         (_, string stdout, _) = Cli.Run(s.Root, "--threads", "2");
         Assert.Contains("RA 15 px ← V", stdout, StringComparison.Ordinal);
-        Assert.Matches("DEC 1[12] px ↓ S", stdout);
-        (_, string swapped, _) = Cli.Run(s.Root, "--threads", "2", "--est", "stanga", "--nord", "jos");
+        Assert.Matches("DEC 1[12] px ↑ S", stdout);
+        (_, string swapped, _) = Cli.Run(s.Root, "--threads", "2", "--est", "stanga", "--nord", "sus");
         Assert.Contains("RA 15 px → V", swapped, StringComparison.Ordinal);
-        Assert.Matches("DEC 1[12] px ↑ S", swapped);
+        Assert.Matches("DEC 1[12] px ↓ S", swapped);
     }
 
     /// <summary>One CSV line into its cells, the quoted ones unquoted (a reason holds commas).</summary>

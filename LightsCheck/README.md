@@ -83,7 +83,7 @@ lightscheck --help
   line of the report says which was used. With the focal length of the files it gives the scale
   in "/px.
 - `--east left|right` and `--north up|down`: the SynScan arrows that move the mount east and
-  north, for the `dithering` column (below); right and up by default. Their Romanian forms,
+  north, for the `dithering` column (below); right and down by default. Their Romanian forms,
   `--est stanga|dreapta` and `--nord sus|jos`, work too, in either language.
 - `--inventory`: the metadata of the frames only, without decoding them.
 - `--frame N`: measures one frame, the N-th of `lights\` (1 = the first).
@@ -232,15 +232,19 @@ frames of the runs whose streak reaches 3 px, the ones whose streak would show:
   evens it out when stacking)`, and when its sky jumps by as much as the exposure predicts, the
   jump's reason says so: `, which its exposure explains`.
 - `dithering` is the mount's move behind each dither: on which axis, how many pixels, which way on
-  the sky and which SynScan arrow, such as `RA 17 px ← W` or `RA 5 px ← W, DEC 29 px ↓ S`: the
+  the sky and which SynScan arrow, such as `RA 17 px ← W` or `RA 5 px ← W, DEC 29 px ↑ S`: the
   arrow pressed, then the sense on the sky (E or W, N or S). The sense comes from the plate-solved
   FITS at the root. Siril stores a FITS with its rows bottom-up against the raw, and the program
   allows for it; this was checked on the Veil night against plate solves of raw frames. A session
   of FITS lights, such as the `pp_light_*.fit` of Siril's `process\`, is read in the same order as
   the solve and gives the same senses. Without a solve the cell is `RA 17 px`.
-- Which arrow moves the mount east and which north depends on the settings of the SynScan app: by
-  default `→` is east (so `←` is west) and `↑` north (so `↓` is south). Change them with `--east`
-  and `--north`, or with the EAST and NORTH selectors of the window.
+- Which arrow moves the mount east and which north depends on the mount and the app. The
+  defaults are those of a Star Adventurer GTi driven by the SynScan Pro app, tested on that
+  pair: `→` moves the mount east and `←` west, `↓` moves it north and `↑` south. With another
+  mount or app, press one arrow alone between two frames of a session with a plate-solved FITS
+  at the root: the next frame's cell gives the sense on the sky, which comes from the solve, not
+  from the arrows. Change them with `--east` and `--north`, or with the EAST and NORTH selectors
+  of the window.
 - `same spot` says which consecutive frame within 10 px of the run's first it is, out of how many,
   from which frame: `7/10 from 61` is the seventh of ten frames that stayed at the spot of frame
   61. Such runs make walking noise, but the frame stays good and in the stack: the cure is to
@@ -367,7 +371,7 @@ A screen reader such as Narrator reaches what each tab shows, not only the tabs'
 The top bar holds the inputs, read when a folder is opened: `PIXEL (um)`, the pixel size, blank
 by default, when the files' `XPIXSZ` or the raw's own figure decide, as for `--pixel`; `THREADS`, how many frames are measured in parallel
 (empty = half the cores); and `EAST` and `NORTH`, the SynScan arrows that move the mount east and
-north (`→` and `↑` by default), remembered between starts in
+north (`→` and `↓` by default), remembered between starts in
 `%LOCALAPPDATA%\LightsCheck\settings.json`, the only setting the program keeps there (its log goes
 there too when the folder beside the program cannot be written, see [Logs](#logs)).
 **Write the files...** writes the three files of `--out` into a folder you choose; the session

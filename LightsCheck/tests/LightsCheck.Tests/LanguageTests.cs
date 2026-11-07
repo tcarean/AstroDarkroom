@@ -143,6 +143,9 @@ public class LanguageTests
         (_, string help, _) = Cli.Run("--lang", "en", "--help");
         Assert.Contains("--east left|right", help, StringComparison.Ordinal);
         Assert.Contains("--north up|down", help, StringComparison.Ordinal);
+        Assert.Contains("(default right)", help, StringComparison.Ordinal);
+        Assert.Contains("(default down)", help, StringComparison.Ordinal);
+        Assert.Contains("The defaults are those of a Star Adventurer GTi with the SynScan Pro app.", help, StringComparison.Ordinal);
         Assert.DoesNotContain("--est ", help, StringComparison.Ordinal);
 
         using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern);

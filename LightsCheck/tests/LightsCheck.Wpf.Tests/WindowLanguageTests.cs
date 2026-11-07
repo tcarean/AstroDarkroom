@@ -362,8 +362,8 @@ public class WindowLanguageTests
                     [
                         ("PixelInput", "3.92"),
                         ("ThreadsInput", language == UiLanguage.Romanian ? $"Gol: {threads}" : $"Blank: {threads}"),
-                        ("EastInput", "→"),
-                        ("NorthInput", "↑"),
+                        ("EastInput", language == UiLanguage.Romanian ? "Implicit: → est, ca pe un Star Adventurer GTi cu aplicatia SynScan Pro." : "Default: → east, as on a Star Adventurer GTi with the SynScan Pro app."),
+                        ("NorthInput", language == UiLanguage.Romanian ? "Implicit: ↓ nord, ca pe un Star Adventurer GTi cu aplicatia SynScan Pro." : "Default: ↓ north, as on a Star Adventurer GTi with the SynScan Pro app."),
                     ];
                     foreach ((string name, string expected) in inputs)
                     {

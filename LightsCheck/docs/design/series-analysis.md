@@ -267,11 +267,12 @@ trails take their noun through `Count`, singular for one. `RejectedExplanation` 
 under REJECTED, one with `Emphasis` for the bold line, built once from `Th` so the thresholds it
 quotes follow a change there. The CSV adds `trail_on` (`RA`, `DEC`, `oblique` or empty), the
 three `spot_run_*` columns and the three `move_*` columns (signed pixels east and north, and
-the arrow symbols). `MoveCell` words a `MountMove` as `RA 15 px ← W, DEC 12 px ↓ S` under
+the arrow symbols). `MoveCell` words a `MountMove` as `RA 15 px ← W, DEC 12 px ↑ S` under
 an `ArrowKeys` (which SynScan arrow moves the mount east and which north, the other two
 following; `SeriesOptions.Arrows`, carried by the result, `ArrowKeys.Default` = right east and
-up north, ADR 0014): a component under `Th.AxisStep` is dropped, the arrow symbol and the sense
-letter appear only when the move is signed, `MoveArrows` gives the symbols alone for the CSV
+down north, the Star Adventurer GTi's with SynScan Pro, ADR 0041): a component under
+`Th.AxisStep` is dropped, the arrow symbol and the sense letter appear only when the move is
+signed, `MoveArrows` gives the symbols alone for the CSV
 (quoted there, two being joined with a comma); both read the one `MoveComponents` rule;
 `FrameRows` also fills `StepTip`, the bar tooltip `frame 5: step 15.3 px; <cell>`, null when
 the frame has no step.

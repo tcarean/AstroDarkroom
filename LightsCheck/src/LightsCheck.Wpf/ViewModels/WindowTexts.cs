@@ -117,17 +117,17 @@ internal static class WindowTexts
             : T($"Blank: {defaultThreads}.", $"Gol: {defaultThreads}."));
     }
 
-    /// <summary>The tip of the top bar's east selector (R-083).</summary>
+    /// <summary>The tip of the top bar's east selector (R-083), with the default and the mount and app it is from (ADR 0041).</summary>
     /// <param name="arrow">The default arrow for east, as the core writes it.</param>
     /// <returns>The tip, in the language of the moment.</returns>
     internal static string EastTip(string arrow) => T(
-        $"Which arrow of the SynScan app moves the mount east; the other one moves it west. It only names the dither moves on the Frames and Dithering tabs and in the files; the figures do not change. Default: {arrow} east. Kept for the next start.",
-        $"Ce sageata din aplicatia SynScan muta montura spre est; cealalta o muta spre vest. Doar numeste miscarile de dithering din filele Cadre si Dithering si din fisiere; cifrele nu se schimba. Implicit: {arrow} est. Ramane aleasa si la urmatoarea pornire.");
+        $"Which arrow of the SynScan app moves the mount east; the other one moves it west. It only names the dither moves on the Frames and Dithering tabs and in the files; the figures do not change. Default: {arrow} east, as on a Star Adventurer GTi with the SynScan Pro app. Kept for the next start.",
+        $"Ce sageata din aplicatia SynScan muta montura spre est; cealalta o muta spre vest. Doar numeste miscarile de dithering din filele Cadre si Dithering si din fisiere; cifrele nu se schimba. Implicit: {arrow} est, ca pe un Star Adventurer GTi cu aplicatia SynScan Pro. Ramane aleasa si la urmatoarea pornire.");
 
-    /// <summary>The tip of the top bar's north selector (R-083).</summary>
+    /// <summary>The tip of the top bar's north selector (R-083), with the default and the mount and app it is from (ADR 0041).</summary>
     /// <param name="arrow">The default arrow for north, as the core writes it.</param>
     /// <returns>The tip, in the language of the moment.</returns>
     internal static string NorthTip(string arrow) => T(
-        $"Which arrow of the SynScan app moves the mount north; the other one moves it south. It only names the dither moves on the Frames and Dithering tabs and in the files; the figures do not change. Default: {arrow} north. Kept for the next start.",
-        $"Ce sageata din aplicatia SynScan muta montura spre nord; cealalta o muta spre sud. Doar numeste miscarile de dithering din filele Cadre si Dithering si din fisiere; cifrele nu se schimba. Implicit: {arrow} nord. Ramane aleasa si la urmatoarea pornire.");
+        $"Which arrow of the SynScan app moves the mount north; the other one moves it south. It only names the dither moves on the Frames and Dithering tabs and in the files; the figures do not change. Default: {arrow} north, as on a Star Adventurer GTi with the SynScan Pro app. Kept for the next start.",
+        $"Ce sageata din aplicatia SynScan muta montura spre nord; cealalta o muta spre sud. Doar numeste miscarile de dithering din filele Cadre si Dithering si din fisiere; cifrele nu se schimba. Implicit: {arrow} nord, ca pe un Star Adventurer GTi cu aplicatia SynScan Pro. Ramane aleasa si la urmatoarea pornire.");
 }

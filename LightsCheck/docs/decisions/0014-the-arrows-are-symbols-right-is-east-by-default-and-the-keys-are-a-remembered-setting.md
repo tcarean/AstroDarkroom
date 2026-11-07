@@ -1,7 +1,7 @@
 # 0014. The arrows are symbols, right is east by default, and the keys are a setting the window remembers
 
 Date: 2026-10-10
-Status: accepted 2026-10-10
+Status: accepted 2026-10-10; the default north arrow superseded by 0041
 Supersedes: 0013 in part (the SynScan default keys and the decision to take no input for them)
 
 ## Context

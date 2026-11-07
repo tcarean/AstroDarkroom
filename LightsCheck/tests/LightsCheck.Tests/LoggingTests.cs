@@ -289,7 +289,7 @@ public partial class LoggingTests
         string text = capture.Text;
         _output.WriteLine(text);
         Assert.Contains("Cli mode=Series input=" + s.Root + " lang=en", text, StringComparison.Ordinal);
-        Assert.Contains("SeriesRun series start " + s.Root + " pixel=none threads=2 east=Right north=Up", text, StringComparison.Ordinal);
+        Assert.Contains("SeriesRun series start " + s.Root + " pixel=none threads=2 east=Right north=Down", text, StringComparison.Ordinal);   // the default keys (ADR 0041)
         Assert.Contains("SessionFolder session root=" + s.Root + " lights=" + s.LightsDir + " (8 frames, .fit) biases=", text, StringComparison.Ordinal);
         // Eight lights and two biases, each one line.
         Assert.Equal(10, capture.Events.Count(e => e.Logger == "ImageLoader" && e.Message.StartsWith("loaded ", StringComparison.Ordinal)));

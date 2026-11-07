@@ -568,19 +568,19 @@ public class MainViewModelTests
         {
             MainViewModel fresh = new();
             Assert.Equal("→", fresh.EastArrow);
-            Assert.Equal("↑", fresh.NorthArrow);
+            Assert.Equal("↓", fresh.NorthArrow);
             Assert.Equal(["→", "←"], fresh.EastChoices);
-            Assert.Equal(["↑", "↓"], fresh.NorthChoices);
+            Assert.Equal(["↓", "↑"], fresh.NorthChoices);
             Assert.Equal(ArrowKeys.Default, fresh.Options.Arrows);
             Assert.False(File.Exists(file));
 
             fresh.EastArrow = "←";
-            fresh.NorthArrow = "↓";
+            fresh.NorthArrow = "↑";
             Assert.True(File.Exists(file));
             MainViewModel again = new();
             Assert.Equal("←", again.EastArrow);
-            Assert.Equal("↓", again.NorthArrow);
-            Assert.Equal(new ArrowKeys(Arrow.Left, Arrow.Down), again.Options.Arrows);
+            Assert.Equal("↑", again.NorthArrow);
+            Assert.Equal(new ArrowKeys(Arrow.Left, Arrow.Up), again.Options.Arrows);
 
             using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
             // The fixture's lights are FITS: the Veil solve with its y column mirrored (ADR 0023).
@@ -601,12 +601,12 @@ public class MainViewModelTests
             string[] csv = File.ReadAllLines(Path.Combine(ws.Dir, "lightscheck-frames.csv"));
             int col = Array.IndexOf(csv[0].Split(','), "move_arrows");
             Assert.Equal("→", csv[5].Split(',')[col].Trim('"'));   // the cell is quoted, like every text cell of the CSV
-            Assert.Equal("{\"east\":\"←\",\"north\":\"↓\"}", File.ReadAllText(file));   // the symbols themselves, as the README says
+            Assert.Equal("{\"east\":\"←\",\"north\":\"↑\"}", File.ReadAllText(file));   // the symbols themselves, as the README says
 
             File.WriteAllText(file, "{ not json");
             MainViewModel broken = new();
             Assert.Equal("→", broken.EastArrow);
-            Assert.Equal("↑", broken.NorthArrow);
+            Assert.Equal("↓", broken.NorthArrow);
 
             // A path that cannot be written (a directory in its place): the selection still changes, the next start reads the defaults.
             UserSettings.Path = ws.Dir;
