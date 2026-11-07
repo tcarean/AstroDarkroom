@@ -130,7 +130,7 @@
       "against": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius-idx67/darks",
       "measuredOn": "2026-10-16",
       "expected": {
-        "index": 67.4, "rankLow": 121, "rankHigh": 483, "label": "2026-10-10-ISO1600-120s-15.8celsius-idx67",
+        "index": 67.4, "rankLow": 121, "rankHigh": 483, "label": "2026-10-06-3h-idx29",
         "lights": {
           "used": 44, "persistentThreshold": 36, "persistent": 236,
           "overlapLevels": [10, 20, 50, 100], "overlapBoth": [225, 224, 214, 117], "overlapDark": [5608, 3940, 528, 176],
