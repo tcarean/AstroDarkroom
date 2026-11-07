@@ -32,9 +32,9 @@ VITEZA_SIDERALA = 360 * 3600 / 86164.0905  # ≈ 15,04 secunde de arc pe secund�
 # aplicația arată numărul treptei. Treapta 9 = Max nu are un multiplu fix.
 TREPTE_SYNSCAN = (0.5, 1, 8, 16, 32, 64, 128, 400, 600)
 
-# Săgețile din aplicația SynScan Pro pe Star Adventurer GTi, testate de proprietar
-# (rezultat dat pe 2026-11-07). Stânga-dreapta mută RA, sus-jos mută Dec.
-# Altă montură sau aplicație: schimbă-le aici.
+# Săgețile din aplicația SynScan Pro pe Star Adventurer GTi, testate de proprietar pe o țintă
+# la vest de meridian (rezultat dat pe 2026-11-07); la est de meridian nu sunt testate.
+# Stânga-dreapta mută RA, sus-jos mută Dec. Altă montură sau aplicație: schimbă-le aici.
 SAGEATA_EST, SAGEATA_VEST = "→", "←"
 SAGEATA_NORD, SAGEATA_SUD = "↓", "↑"
 
