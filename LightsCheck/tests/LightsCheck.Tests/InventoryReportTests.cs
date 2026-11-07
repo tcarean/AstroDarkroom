@@ -22,7 +22,9 @@ namespace LightsCheck.Tests;
 /// <summary>
 /// The inventory's lens line (R-065) on frames fabricated with the values libraw gave FlatCheck
 /// for each make on 2026-10-26: the record is what the readers would have filled, so no raw is
-/// needed. The words are R-078's plain ones, `(when shot)` and the mount named as one.
+/// needed. The words are R-078's plain ones, `(when shot)` and the mount named as one. The total
+/// exposure line that opens the session lines (R-086), on frames with the exposures of the real
+/// nights.
 /// </summary>
 public class InventoryReportTests
 {
@@ -80,6 +82,74 @@ public class InventoryReportTests
                 LensLine(Frame("Nikon D3300", 135, 2.8, 74, "Nikon F", null, 135, 135, 2.0)));
             Assert.Equal("135 mm (la fotografiere)", LensLine(Frame("Nikon D3300", 135, null, null, null, null)));
             Assert.Equal("necunoscut", LensLine(Frame("Nikon D3300", null, null, null, null, null)));
+        }
+    }
+
+    /// <summary>
+    /// Frames of the given exposures in seconds, numbered from 1 and shot one after the other
+    /// from the fixture's first start with 30 s between them.
+    /// </summary>
+    private static List<FrameInfo> Shots(params double[] exposures)
+    {
+        List<FrameInfo> frames = [];
+        DateTime t = SessionFixture.FirstStart;
+        for (int i = 0; i < exposures.Length; i++)
+        {
+            frames.Add(Frame("Nikon D3300", 135, 2.8, 74, "Nikon F", null) with { Index = i + 1, ExposureSeconds = exposures[i], Timestamp = t });
+            t = t.AddSeconds(exposures[i] + 30);
+        }
+
+        return frames;
+    }
+
+    /// <summary>The line right under the session's title line, in the header written for the frames.</summary>
+    private static string FirstSessionLine(List<FrameInfo> frames)
+    {
+        using SessionFixture s = new SessionFixture().WithLights(1);
+        var inv = new Inventory(SessionFolder.Open(s.Root), frames, CadenceAnalyzer.Analyze(frames));
+        using var w = new StringWriter();
+        InventoryReport.WriteHeader(inv, w);
+        string[] lines = w.ToString().Split('\n').Select(l => l.TrimEnd('\r')).ToArray();
+        int title = Array.FindIndex(lines, l => l.StartsWith("=== ", StringComparison.Ordinal));
+        return lines[title + 1];
+    }
+
+    [Fact]
+    public void R086_TheTotalExposureOpensTheSessionLines_InHoursMinutesAndSeconds()
+    {
+        // The Veil night of 2026-10-06: 86 frames of 120.2 s and frame 75 of 133.2 s, 10470.4 s.
+        List<FrameInfo> veil = Shots(Enumerable.Range(1, 87).Select(i => i == 75 ? 133.2 : 120.2).ToArray());
+        // The Smida night of 2026-08-12: 31 frames of 119.2 s and one of 118.5 s, 3813.7 s.
+        List<FrameInfo> smida = Shots(Enumerable.Range(1, 32).Select(i => i == 32 ? 118.5 : 119.2).ToArray());
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("    total exposure     : 2 h 54 min 30 s", FirstSessionLine(veil));
+            Assert.Equal("    total exposure     : 1 h 3 min 34 s", FirstSessionLine(smida));
+            Assert.Equal("    total exposure     : 45 min 12 s", FirstSessionLine(Shots(1356, 1356)));
+            Assert.Equal("    total exposure     : 38 s", FirstSessionLine(Shots(30, 8)));
+            // 3599.6 s rounds to the whole hour.
+            Assert.Equal("    total exposure     : 1 h 0 min 0 s", FirstSessionLine(Shots(1800, 1799.6)));
+        }
+
+        using (Ui.Use(UiLanguage.Romanian))
+        {
+            Assert.Equal("    expunere totala    : 2 h 54 min 30 s", FirstSessionLine(veil));
+            Assert.Equal("    expunere totala    : 45 min 12 s", FirstSessionLine(Shots(1356, 1356)));
+        }
+    }
+
+    [Fact]
+    public void R086_WithoutAFrameWithATimeAndAnExposure_TheTotalIsUnknown()
+    {
+        List<FrameInfo> untimed = [Shots(120)[0] with { Timestamp = null }, Shots(120, 120)[1] with { ExposureSeconds = null }];
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("    total exposure     : unknown (the frames carry no time or no exposure)", FirstSessionLine(untimed));
+        }
+
+        using (Ui.Use(UiLanguage.Romanian))
+        {
+            Assert.Equal("    expunere totala    : necunoscuta (cadrele nu au ora sau expunerea)", FirstSessionLine(untimed));
         }
     }
 }

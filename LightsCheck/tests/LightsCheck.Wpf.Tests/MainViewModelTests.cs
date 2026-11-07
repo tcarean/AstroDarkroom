@@ -257,6 +257,22 @@ public class MainViewModelTests
         Assert.Equal(SeriesReport.ScaleLabel, vm.SessionRows[^1].Label);
     }
 
+    /// <summary>The SESSION card opens with the total exposure, to the second, without a chip (R-086).</summary>
+    [Fact]
+    public async Task R086_TheSessionCardOpensWithTheTotalExposure()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2);
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(f.Root);
+
+        // Eight frames of 120 s: 960 s.
+        Assert.Equal("expunere totala", vm.SessionRows[0].Label);
+        Assert.Equal("16 min 0 s", vm.SessionRows[0].Value);
+        Assert.False(vm.SessionRows[0].HasVerdict);
+        Assert.Equal("lights", vm.SessionRows[1].Label);
+    }
+
     /// <summary>The frames to drop are the bad and the unreadable ones, the marginal stay with the user.</summary>
     [Fact]
     public async Task R030_TheRejectedTabListsTheBadFramesWithTheirReasons()

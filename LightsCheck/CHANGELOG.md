@@ -41,6 +41,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   with another exposure stays in with a note, and a background jump its exposure predicts says
   so. On the Veil session of 2026-11-06, where the intervalometer misfired, the two 0.2 s frames
   and the 34.9 s one leave and the 137.5 s one stays.
+- The session lines open with the total exposure to the second, in the console and in the
+  window, where the Summary tab's SESSION card shows it first, in bold and a little larger
+  (R-086, ADR 0042): `total exposure : 2 h 54 min 30 s` on the Veil session of 2026-10-06, whose
+  interval line gives the same total in minutes.
 
 ### Changed
 

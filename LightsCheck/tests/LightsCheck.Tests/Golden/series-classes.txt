@@ -2,6 +2,7 @@ lightscheck <versiune>
 Copyright (C) 2026 Tudor Carean
 
 === SESIUNE: <sesiune> ===
+    expunere totala    : 22 min 18 s
     lights             : lights\ (13 cadre .fit)
     biases             : biases\ (2 cadre .fit)
     darks              : darks\ (2 cadre .fit)

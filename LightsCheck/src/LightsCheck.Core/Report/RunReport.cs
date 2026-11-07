@@ -93,4 +93,29 @@ internal static class RunReport
             ? minutes.ToString(CultureInfo.InvariantCulture) + " min"
             : (minutes / 60).ToString(CultureInfo.InvariantCulture) + " h " + (minutes % 60).ToString(CultureInfo.InvariantCulture) + " min";
     }
+
+    /// <summary>
+    /// A duration to the second, as "2 h 54 min 30 s", "45 min 12 s" or "38 s" (R-086): the
+    /// hours only from one hour up, the minutes only from one minute up.
+    /// </summary>
+    /// <param name="seconds">
+    /// The duration in seconds, 0 or more; rounded to the whole second first, as
+    /// <see cref="Duration"/> rounds it.
+    /// </param>
+    /// <returns>
+    /// Whole hours, minutes and seconds; the units are the same in both languages.
+    /// </returns>
+    internal static string DurationToTheSecond(double seconds)
+    {
+        int s = (int)Math.Round(seconds);
+        string sec = (s % 60).ToString(CultureInfo.InvariantCulture) + " s";
+        if (s < 60)
+        {
+            return sec;
+        }
+
+        int minutes = s / 60;
+        string min = (minutes % 60).ToString(CultureInfo.InvariantCulture) + " min " + sec;
+        return minutes < 60 ? min : (minutes / 60).ToString(CultureInfo.InvariantCulture) + " h " + min;
+    }
 }

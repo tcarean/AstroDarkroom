@@ -48,7 +48,11 @@ public sealed record TableVm(string Title, IReadOnlyList<string> Columns, IReadO
 /// <param name="Verdict">
 /// The verdict word the row opens with (shown as a chip), or null for a row without one.
 /// </param>
-public sealed record RowVm(string Label, string Value, string? Verdict)
+/// <param name="Emphasis">
+/// True for the row the session card sets in bold and a little larger, the total exposure
+/// (R-086); false for every other row.
+/// </param>
+public sealed record RowVm(string Label, string Value, string? Verdict, bool Emphasis = false)
 {
     public bool HasVerdict => Verdict is not null;
 
@@ -569,11 +573,11 @@ public sealed class MainViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Shapes a finished run for the tabs: the console's text, the session lines, the core's row
-    /// and table producers, the frames table and the chart points (NaN where a frame has no
-    /// figure), the guide lines at the thresholds, the axis labels and headers. Every figure and
-    /// every word of the report comes from the core; the guide lines' labels are
-    /// <see cref="WindowTexts"/>'.
+    /// Shapes a finished run for the tabs: the console's text, the session lines (the total
+    /// exposure's marked for bold, R-086), the core's row and table producers, the frames table
+    /// and the chart points (NaN where a frame has no figure), the guide lines at the thresholds,
+    /// the axis labels and headers. Every figure and every word of the report comes from the
+    /// core; the guide lines' labels are <see cref="WindowTexts"/>'.
     /// </summary>
     /// <param name="r">The finished run's result.</param>
     internal void Populate(SeriesResult r)
@@ -592,7 +596,8 @@ public sealed class MainViewModel : ObservableObject
             InventoryReport.WriteHeader(new Inventory(r.Session, infos, r.Cadence), header);
             SessionRows = header.ToString().ReplaceLineEndings("\n").Split('\n')
                 .Where(l => l.StartsWith("    ", StringComparison.Ordinal) && l.Contains(" : ", StringComparison.Ordinal))
-                .Select(l => new RowVm(l[4..l.IndexOf(" : ", StringComparison.Ordinal)].Trim(), l[(l.IndexOf(" : ", StringComparison.Ordinal) + 3)..], null))
+                .Select(l => (Label: l[4..l.IndexOf(" : ", StringComparison.Ordinal)].Trim(), Value: l[(l.IndexOf(" : ", StringComparison.Ordinal) + 3)..]))
+                .Select(p => new RowVm(p.Label, p.Value, null, Emphasis: p.Label == InventoryReport.TotalLabel))
                 .Append(new RowVm(SeriesReport.ScaleLabel, SeriesReport.ScaleLine(r), null))
                 .ToList();
         }

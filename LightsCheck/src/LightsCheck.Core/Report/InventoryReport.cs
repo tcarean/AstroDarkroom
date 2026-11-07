@@ -38,8 +38,14 @@ internal static class InventoryReport
     }
 
     /// <summary>
-    /// Writes the session lines: folders, camera, lens, exposure, interval, and a warning line
-    /// when some lights could not be read; the series report reuses them.
+    /// The label of the session's first line, the total exposure (R-086); the window's session
+    /// card sets the row with this label in bold.
+    /// </summary>
+    internal static string TotalLabel => T("total exposure", "expunere totala");
+
+    /// <summary>
+    /// Writes the session lines: the total exposure, folders, camera, lens, exposure, interval,
+    /// and a warning line when some lights could not be read; the series report reuses them.
     /// </summary>
     /// <param name="inv">The inventory of the session; not null.</param>
     /// <param name="w">Where the lines go; not null.</param>
@@ -51,6 +57,7 @@ internal static class InventoryReport
         w.WriteLine();
         string missing = T("(missing)", "(lipsa)");
         w.WriteLine(T($"=== SESSION: {s.Root} ===", $"=== SESIUNE: {s.Root} ==="));
+        w.WriteLine($"    {TotalLabel,-19}: {Total(inv.Cadence)}");
         w.WriteLine($"    lights             : {FolderLine(s.Root, s.LightsDir, s.Lights)}");
         w.WriteLine($"    biases             : {(s.BiasesDir is null ? missing : FolderLine(s.Root, s.BiasesDir, s.Biases))}");
         w.WriteLine($"    darks              : {(s.DarksDir is null ? missing : FolderLine(s.Root, s.DarksDir, s.Darks))}");
@@ -220,6 +227,19 @@ internal static class InventoryReport
             $"from {from} to {to} ({length}); total exposure {total}, from {frames} (the camera was exposing {duty} % of the time)",
             $"de la {from} pana la {to} ({length}); expunere totala {total}, din {frames} (aparatul a expus {duty} % din timp)");
     }
+
+    /// <summary>
+    /// The total exposure cell (R-086): the exposures of the timed frames added up, to the
+    /// second; the interval cell gives the same figure in minutes.
+    /// </summary>
+    /// <param name="c">The session's cadence, whose integration this is.</param>
+    /// <returns>
+    /// `2 h 54 min 30 s`, or an "unknown" sentence when no frame carries both a time and an
+    /// exposure.
+    /// </returns>
+    private static string Total(Cadence c) => c.TimedFrames == 0
+        ? T("unknown (the frames carry no time or no exposure)", "necunoscuta (cadrele nu au ora sau expunerea)")
+        : RunReport.DurationToTheSecond(c.IntegrationSeconds);
 
     /// <summary>A time of capture as HH:mm:ss, or "-".</summary>
     /// <param name="t">The time of capture; null when the frame has none.</param>
