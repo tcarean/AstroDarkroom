@@ -26,7 +26,7 @@ five `R086_` tests, all failing now (3 in `LightsCheck.Tests`, 2 in `LightsCheck
 | Same line, when no frame has a time and an exposure | (none) | `unknown (the frames carry no time or no exposure)` / `necunoscuta (cadrele nu au ora sau expunerea)` |
 | README, the window's Summary bullet | `- **Summary**: the report's sections, row by row, each verdict a coloured chip.` | `- **Summary**: the report's sections, row by row, each verdict a coloured chip. The SESSION card opens with the total exposure, in bold and a little larger.` |
 | README, the `--inventory` sample | starts with `lights` | first line under the title: `    total exposure     : 2 h 54 min 30 s` |
-| README, the sentence after the sample | ``exposure` lists each exposure and ISO the frames use; ...`` | before it: ``total exposure` is all the exposures of the night added up, to the second; `interval` gives the same total in minutes.`` |
+| README, the sentence after the sample | "`exposure` lists each exposure and ISO the frames use; ..." | before it: "`total exposure` is all the exposures of the night added up, to the second; `interval` gives the same total in minutes." |
 
 ## Steps
 

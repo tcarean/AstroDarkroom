@@ -54,5 +54,6 @@ computes nothing (ADR 0008).
   first row) and `R086_TheTotalExposureRowIsBoldAndLarger` (the look, rendered).
 - The six golden texts with session lines gain one line each, and so does the README's
   `--inventory` sample.
-- No figure moves: the line formats the integration V-001 records (10470.4 s), and nothing in
-  `docs/validation.json` changes.
+- No figure moves: the line formats the integration V-001 records (10470.4 s), and no case of
+  `docs/validation.json` changes for it. (V-014 was re-recorded the same day for another reason:
+  the owner changed its session folder; `docs/validation.md`, History, 2026-11-07, evening.)

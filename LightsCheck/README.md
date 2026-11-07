@@ -290,8 +290,8 @@ raws of the Veil night:
       3  DSC_0003.NEF          23:40:14     120.2   1600   2.8   135 mm    23 s
 ```
 
-`total exposure` is all the exposures of the night added up, to the second; `interval` gives the
-same total in minutes. `exposure` lists each exposure and ISO the frames use; that night frame 75
+`total exposure` is the exposures of the frames that carry a time of capture added up, to the
+second; `interval` gives the same total in minutes. `exposure` lists each exposure and ISO the frames use; that night frame 75
 was exposed for 133.2 s. `pause` is the time between the end of the previous exposure and the start of this one:
 with manual dithering, the pause in which you moved the mount. The time comes from the EXIF of a
 raw (the camera's clock) and from the `DATE-OBS` of a FITS (UTC, as Siril writes it).

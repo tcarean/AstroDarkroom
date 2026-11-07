@@ -194,8 +194,10 @@ public class WindowSmokeTests
         await _sta.InvokeAsync(async () =>
         {
             await vm.OpenAsync(f.Root);
+            using BindingErrors errors = new();
             SummaryView view = new() { DataContext = vm };
             Render(view, h: 1400, name: "tab-summary-total");
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
 
             List<TextBlock> texts = VisualDescendants(view).OfType<TextBlock>().ToList();
             TextBlock label = Assert.Single(texts, t => t.Text == "expunere totala");
