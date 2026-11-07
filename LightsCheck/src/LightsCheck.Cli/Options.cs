@@ -71,6 +71,23 @@ internal sealed class Options
         : RunMode.Series;
 
     /// <summary>
+    /// The words the arrow options take for a key. The usage prints them as the defaults, so the
+    /// help follows <see cref="ArrowKeys.Default"/> (R-040).
+    /// </summary>
+    /// <param name="a">The key.</param>
+    /// <returns>
+    /// The English and the Romanian word: left and stanga, right and dreapta, up and sus, down
+    /// and jos.
+    /// </returns>
+    internal static (string En, string Ro) ArrowWords(Arrow a) => a switch
+    {
+        Arrow.Left => ("left", "stanga"),
+        Arrow.Right => ("right", "dreapta"),
+        Arrow.Up => ("up", "sus"),
+        _ => ("down", "jos"),
+    };
+
+    /// <summary>
     /// Reads the command line. No argument, <c>-h</c> or <c>--help</c> sets
     /// <see cref="Help"/>; the first wrong argument stops the reading and sets
     /// <see cref="Error"/> to a message naming it, in the current language. Never throws for a

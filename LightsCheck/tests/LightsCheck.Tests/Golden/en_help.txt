@@ -17,7 +17,8 @@ Usage: lightscheck <session folder> [--out DIR] [--threads N] [--pixel UM] [--ea
   --pixel UM    the pixel size in microns; without it, the files' XPIXSZ, else the raw's 35 mm-
                 equivalent focal length, else 3.92 (Nikon D3300).
   --east left|right  the SynScan arrow that moves the mount east (default right); the other is west.
-  --north up|down    the SynScan arrow that moves the mount north (default up); the other is south.
+  --north up|down    the SynScan arrow that moves the mount north (default down); the other is south.
+                     The defaults are those of a Star Adventurer GTi with the SynScan Pro app.
   --inventory   the frames' metadata only (no decoding): time, exposure, ISO, pauses.
   --frame N     measures one frame only (1 = the first in lights\).
   --lang en|ro  the language of the texts: en (English, the default) or ro (Romanian).

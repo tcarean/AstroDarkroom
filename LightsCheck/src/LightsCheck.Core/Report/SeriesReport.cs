@@ -210,7 +210,7 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// The SynScan arrows of a signed move, `←, ↓`, for the CSV; empty otherwise (R-038, R-040).
+    /// The SynScan arrows of a signed move, `←, ↑`, for the CSV; empty otherwise (R-038, R-040).
     /// </summary>
     /// <param name="m">The mount's move before the frame; null when there was none.</param>
     /// <param name="keys">
