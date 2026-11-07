@@ -29,6 +29,25 @@ namespace DarksCheck.Wpf.Tests;
 public class MainViewModelTests
 {
     [Fact]
+    public async Task R071_ARefaVerdictOfCheck3IsARedChip()
+    {
+        // twelve darks cooling towards a plateau far under the master: most frames off it, check 3 reads REFA (ADR 0038)
+        (int X, int Y, double Adu)[] hot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 300.0)).ToArray();
+        using SessionFixture f = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = hot, HotFactor = 0.72 + 0.6 * Math.Exp(-i / 6.0) });
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        Assert.Equal(Verdict.Redo, vm.Result!.Verdicts.Drift.Verdict);
+
+        RowVm verdict = vm.Sections.Single(s => s.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[^1];
+        Assert.Equal("verdict", verdict.Label);
+        Assert.True(verdict.HasVerdict);
+        Assert.Equal("REFA", verdict.Verdict);
+        Assert.StartsWith("aparatul inca se racea la ultimul cadru", verdict.Rest, StringComparison.Ordinal);
+        Assert.Equal(VerdictPalette.Bad, VerdictPalette.For(verdict.Verdict));
+        Assert.Equal(VerdictPalette.For("EROARE"), VerdictPalette.For(verdict.Verdict));
+    }
+
+    [Fact]
     public async Task R071_TheFramesOffThePlateauAreMarkedInTheTableAndTheChart()
     {
         // twelve darks approaching a plateau: the first two are more than two degrees under it (R-023)

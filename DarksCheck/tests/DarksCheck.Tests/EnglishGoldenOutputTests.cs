@@ -59,6 +59,14 @@ public partial class EnglishGoldenOutputTests
     }
 
     [Fact]
+    public void R093_Redo_InEnglish()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice, HotFactor = 0.72 + 0.6 * Math.Exp(-i / 6.0) });
+
+        Check("en_redo.txt", true, [s.Root, "--threads", "2"], s.Root, null);
+    }
+
+    [Fact]
     public void R093_Lights_InEnglish()
     {
         using SessionFixture s = new SessionFixture()

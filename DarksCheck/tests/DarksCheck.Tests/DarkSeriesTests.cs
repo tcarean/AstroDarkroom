@@ -166,14 +166,13 @@ public partial class DarkSeriesTests
         Assert.Contains(" in ultimul. Daca ar continua, s-ar opri cu 0.", check3.Rows[0].Value, StringComparison.Ordinal);
         Assert.Contains(" grade peste master (platoul, la 1.", check3.Rows[0].Value, StringComparison.Ordinal);
         Assert.Contains(" din master; doua treimi din drum iau ", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Contains(" min); ultimul cadru e inca cu 0.", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.EndsWith(" grade sub el", check3.Rows[0].Value, StringComparison.Ordinal);
+        Assert.Matches(@" min\); ultimul cadru e (cu 0\.\d grade sub platou|la platou)$", check3.Rows[0].Value);
         Assert.DoesNotContain("+", check3.Rows[0].Value, StringComparison.Ordinal);
         Assert.StartsWith("2 cadre (1, 2) sunt la mai mult de 2.0 grade de platou (pixelii fierbinti sub 0.8", check3.Rows[1].Value, StringComparison.Ordinal);
         Assert.Contains("; fara ele masterul ar fi cu 0.", check3.Rows[1].Value, StringComparison.Ordinal);
         Assert.EndsWith(", dar cu 10 % mai mult zgomot", check3.Rows[1].Value, StringComparison.Ordinal);
-        Assert.StartsWith("OK: seria s-a stabilizat (ultimul cadru e cu 0.", check3.Rows[2].Value, StringComparison.Ordinal);
-        Assert.Contains(" grade sub platou, sub 1.0) si toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); incalzirea de 3.", check3.Rows[2].Value, StringComparison.Ordinal);
+        Assert.Matches(@"^OK: seria s-a stabilizat \(ultimul cadru e (cu 0\.\d grade sub platou|la platou), mai putin de 1\.0\) si toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt \(intre 0\.7 si 1\.4\); incalzirea de 3\.", check3.Rows[2].Value);
+        Assert.True(r.Darks.Warming.Cooling == false, "a climbing series is not cooling");
         Assert.EndsWith("cadrele de aruncat sunt in randul de mai sus", check3.Rows[2].Value, StringComparison.Ordinal);
 
         // the table: the degrees from the plateau per frame, the note on the frames off it
@@ -220,7 +219,7 @@ public partial class DarkSeriesTests
         Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
         string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[^1].Value;
         Assert.StartsWith("ATENTIE: aparatul inca se incalzea la ultimul cadru (cu ", verdict, StringComparison.Ordinal);
-        Assert.Contains(" grade sub platou, peste 1.0; platoul e ghicit din curba): masterul amesteca temperaturi diferite; continua seria", verdict, StringComparison.Ordinal);
+        Assert.Contains(" grade sub platou, mai mult de 1.0; platoul e ghicit din curba): masterul amesteca temperaturi diferite; continua seria", verdict, StringComparison.Ordinal);
         Assert.DoesNotContain("+", verdict, StringComparison.Ordinal);
         Assert.True(w.TauAtGridTop);
         Assert.Contains("seria e prea scurta ca sa se vada cat de repede se incalzeste (doua treimi din drum ar lua cel putin ", DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[0].Value, StringComparison.Ordinal);
@@ -250,16 +249,17 @@ public partial class DarkSeriesTests
         Warming w = r.Darks.Warming;
         Assert.True(w.HasFit);
         Assert.True(w.FirstRatio > w.LastRatio, $"{w.FirstRatio} -> {w.LastRatio}");
+        Assert.True(w.Cooling);
         Assert.InRange(w.OffPlateauFrames.Count, 7, 11);
         Assert.True(r.Verdicts.Drift.MostlyOff);
         Assert.Equal(Verdict.Redo, r.Verdicts.Drift.Verdict);
         ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
         Assert.StartsWith("aparatul s-a racit pe toata seria: pixelii fierbinti scad de la 1.", check3.Rows[0].Value, StringComparison.Ordinal);
         Assert.Contains(" grade sub master (platoul, la 0.", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.EndsWith(" grade deasupra lui", check3.Rows[0].Value, StringComparison.Ordinal);
+        Assert.EndsWith(" grade peste platou", check3.Rows[0].Value, StringComparison.Ordinal);
         string verdict = check3.Rows[2].Value;
         Assert.StartsWith("REFA: aparatul inca se racea la ultimul cadru (cu ", verdict, StringComparison.Ordinal);
-        Assert.Contains(" grade deasupra platoului, peste 1.0): a pornit mai cald decat locul in care a stat; ", verdict, StringComparison.Ordinal);
+        Assert.Contains(" grade peste platou, mai mult de 1.0): a pornit mai cald decat locul in care a stat; ", verdict, StringComparison.Ordinal);
         Assert.Matches(@"; (7|8|9|10|11) din 12 cadre sunt la peste 2\.0 grade de platou, deci masterul nu apartine niciunei temperaturi; refa seria dupa ce aparatul a stat vreo \d+ min in locul unde se trag dark-urile \(de trei ori cele \d+ min ale seriei\)$", verdict);
         int tau = (int)Math.Round(w.TauMinutes);
         int rest = (int)Math.Ceiling(3 * w.TauMinutes / 5) * 5;
@@ -277,7 +277,7 @@ public partial class DarkSeriesTests
         Assert.Equal(Verdict.Redo, rw.Verdicts.Drift.Verdict);
         string warm = DarkReport.Sections(rw).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value;
         Assert.StartsWith("REFA: aparatul inca se incalzea la ultimul cadru (cu ", warm, StringComparison.Ordinal);
-        Assert.Contains(" grade sub platou, peste 1.0): masterul amesteca temperaturi diferite; ", warm, StringComparison.Ordinal);
+        Assert.Contains(" grade sub platou, mai mult de 1.0): masterul amesteca temperaturi diferite; ", warm, StringComparison.Ordinal);
         Assert.Contains(" sunt la peste 2.0 grade de platou, deci masterul nu apartine niciunei temperaturi; refa seria mai lunga: primele cadre sunt incalzirea; 1 cadru (1) e prea departe de master", warm, StringComparison.Ordinal);
         Assert.EndsWith("): seria a pornit rece; arunca-l", warm, StringComparison.Ordinal);
 

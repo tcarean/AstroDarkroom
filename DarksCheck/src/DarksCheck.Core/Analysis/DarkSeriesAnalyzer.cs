@@ -304,6 +304,9 @@ internal sealed record BandingFigures(string Name, double RowStd, double ColStd,
 /// <param name="FitScale">The fit's rms residual, as a ratio.</param>
 /// <param name="PlateauCelsius">The master's degrees to the plateau, negative under it.</param>
 /// <param name="SettleCelsius">The degrees from the fitted last frame to the plateau.</param>
+/// <param name="Cooling">True when the series cooled: the fitted curve falls to its plateau, or,
+/// without a fit, the last frame's ratio is under the first's; the one direction every row of
+/// check 3 names (ADR 0038).</param>
 /// <param name="OffPlateauFrames">The indices (<see cref="FrameInfo.Index"/>) of the frames
 /// outside the band.</param>
 /// <param name="OffPlateauLow">The band's lower bound, as a ratio to the master.</param>
@@ -314,10 +317,10 @@ internal sealed record BandingFigures(string Name, double RowStd, double ColStd,
 /// left.</param>
 internal sealed record Warming(
     double FirstRatio, double LastRatio, double DeltaCelsius, double Minutes, int Pixels,
-    double Plateau, double TauMinutes, bool TimeFromStamps, bool TauAtGridTop, double FitScale, double PlateauCelsius, double SettleCelsius,
+    double Plateau, double TauMinutes, bool TimeFromStamps, bool TauAtGridTop, double FitScale, double PlateauCelsius, double SettleCelsius, bool Cooling,
     IReadOnlyList<int> OffPlateauFrames, double OffPlateauLow, double OffPlateauHigh, double MasterWithoutOffCelsius, double NoiseFactorWithoutOff)
 {
-    internal static readonly Warming None = new(double.NaN, double.NaN, double.NaN, double.NaN, 0, double.NaN, double.NaN, false, false, double.NaN, double.NaN, double.NaN, [], double.NaN, double.NaN, double.NaN, double.NaN);
+    internal static readonly Warming None = new(double.NaN, double.NaN, double.NaN, double.NaN, 0, double.NaN, double.NaN, false, false, double.NaN, double.NaN, double.NaN, false, [], double.NaN, double.NaN, double.NaN, double.NaN);
 
     internal bool HasFit => !double.IsNaN(Plateau);
 }
@@ -1046,7 +1049,7 @@ internal static class DarkSeriesAnalyzer
         double first = ok[0].AmpRatioMedian, last = ok[^1].AmpRatioMedian;
         double dT = first > 0 && last > 0 ? nz.Degrees(last / first) : double.NaN;
         double minutes = ok[0].Info.Timestamp is DateTime t0 && ok[^1].Info.Timestamp is DateTime t1 ? (t1 - t0).TotalMinutes : double.NaN;
-        Warming w = Warming.None with { FirstRatio = first, LastRatio = last, DeltaCelsius = dT, Minutes = minutes, Pixels = pixels };
+        Warming w = Warming.None with { FirstRatio = first, LastRatio = last, DeltaCelsius = dT, Minutes = minutes, Pixels = pixels, Cooling = dT < 0 };
         if (ok.Length < Th.WarmingFitMinFrames)
         {
             return w;
@@ -1093,6 +1096,8 @@ internal static class DarkSeriesAnalyzer
             FitScale = rms,
             PlateauCelsius = nz.Degrees(1 / plateau),
             SettleCelsius = settle,
+            // the fitted curve falls to its plateau: the sign of the degrees left, not the noisy first frame
+            Cooling = settle < 0,
             OffPlateauFrames = off,
             OffPlateauLow = low,
             OffPlateauHigh = high,

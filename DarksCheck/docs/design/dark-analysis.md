@@ -277,11 +277,12 @@ the reference settings themselves (`AtReference`: ISO `Th.NormIso` and `Th.NormE
 by those words and any other set, a factor of 1 at ISO 800 and 60 s included, by its factor.
 `WarmingChartNote` is the sentence the window
 puts under its warming chart: the plateau and the band of the frames to discard, when there
-is a fit. Check 3's rows take the camera's direction from the plateau against the first frame's
-ratio (`PlateauRow`, `Drift`: the plateau under it is a series that cooled), print every
-distance to the plateau unsigned with "above" or "below" (`FromMaster` for the plateau against
-the master, `FromPlateau` for the master against the plateau), and give the `REFA` advice of a
-cooling series as three times `TauMinutes` rounded up to a multiple of five (ADR 0038).
+is a fit. Check 3's rows take the camera's direction from `Warming.Cooling`, set once in
+`WarmingOf` (the fitted curve falls to its plateau: `SettleCelsius` negative; without a fit,
+`DeltaCelsius` negative), print every distance to the plateau unsigned with "above" or "below"
+(`FromMaster` for the plateau against the master, `FromPlateau` for the master and for the
+last frame against the plateau, "at the plateau" within 0.05 °C), and give the `REFA` advice
+of a cooling series as three times `TauMinutes` rounded up to a multiple of five (ADR 0038).
 Every side text, check 2's, the note's and the ADU scale section's, names a side
 with its preposition (`SideWithPreposition`: `latura de sus`, `latura din dreapta`). A frame
 whose hot pixels do not show at all (a ratio at or under 0) is off the plateau in `WarmingOf`,

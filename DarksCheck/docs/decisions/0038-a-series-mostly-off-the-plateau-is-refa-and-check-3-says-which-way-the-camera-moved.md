@@ -35,7 +35,8 @@ a warming one is taken longer, since every series warms itself (ADR 0017). The `
 fierbinti` row goes, and the `platou` row opens with the direction and its figures (`aparatul
 s-a racit pe toata seria: pixelii fierbinti scad de la 1.34 din master in primul cadru la 0.85
 in ultimul`), says where the camera would settle against the master, and puts the last frame
-above or below the plateau; the verdict rows do the same, with no signed degree anywhere, and
+above or below the plateau; the verdict rows do the same, with no signed degree anywhere, the
+direction read once from the fitted curve (`Warming.Cooling`, so no two rows can disagree), and
 a cooling series names its cause (`a pornit mai cald decat locul in care a stat`); the chart's
 note says a falling curve is the camera cooling. The owner chose the rule and the row's fate
 in chat on 2026-11-07 (the kit's rule "Decisions").

@@ -159,7 +159,7 @@ The start of the report on Smida:
     verdict            : OK: no edge and no corner differs from the centre by more than 1.0 ADU-eq (the most +0.09, at the top-left, on dark minus bias); no frame has more light; no side has constant light above 0.15 ADU-eq
 
   3. THE CAMERA'S WARMING DURING THE SERIES
-    plateau            : the camera warmed the whole series: the hot pixels rise from 0.83 of the master in the first frame to 1.07 in the last. Left to run, it would settle 0.8 degrees above the master (the plateau, at 1.10 of the master; two thirds of the way take 15 min); the last frame is still 0.2 degrees below it
+    plateau            : the camera warmed the whole series: the hot pixels rise from 0.83 of the master in the first frame to 1.07 in the last. Left to run, it would settle 0.8 degrees above the master (the plateau, at 1.10 of the master; two thirds of the way take 15 min); the last frame is 0.2 degrees below the plateau
     to discard         : 2 frames (1, 2) are more than 2.0 degrees from the plateau (the hot pixels below 0.87 or above 1.38 of the master; the plateau 1.10); without them the master would be 0.7 degrees below the plateau, but with 5 % more noise
     verdict            : OK: the series settled (the last frame is 0.2 degrees below the plateau, under 1.0) and every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); the warming of 2.2 degrees over 38 min is at the start (the degrees reckoned with the rule that the thermal signal doubles every 6 degrees); the frames to discard are in the row above
 ```
