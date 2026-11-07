@@ -6,7 +6,8 @@ GTi driven from the SynScan app. It asks for the focal length, the pixel size, t
 step (0-8, the number the app shows between the arrows), the target's declination and the wanted
 dither, and prints the image scale, the image speed on each axis, the press time on each axis
 and the RA press times for declinations 0 to 75. The defaults are the owner's Nikon D3300
-(3.92 µm) on the Samyang 135 mm, at step 1.
+(3.92 µm) on the Samyang 135 mm, at step 1. The arrows it names are the ones the owner tested on
+their SynScan Pro app: `→` east, `←` west, `↓` north, `↑` south.
 
 One interactive console script in Romanian, Python 3 standard library only (`math`, `sys`). Not
 a kit project: no `scripts/verify.ps1`, no tests, no `docs/`, no `.claude/settings.json`, so no
@@ -27,15 +28,16 @@ gate and no Claude Code hook runs here. The rules below are kept by hand.
   ```
 
   Expected, in order:
+  - once, at the start: `Săgețile din SynScan Pro: → est, ← vest (RA); ↓ nord, ↑ sud (Dec).`;
   - round 1, the defaults at dec 41.269: `Scala imaginii: 5,99"/pixel`,
     `Deplasare la treapta 1 (1x sideral):`, `Dec: 2,51 px/s`, `RA (la dec 41,269°): 1,89 px/s`
     with one space after the colon, `Dec:  6,0 s` with the backlash note that names
     `Settings > Backlash`, `RA:   7,9 s`, the table 6,0 / 6,2 / 6,9 / 8,4 / 11,9 / 23,1 s, and
-    the closing test `~19 px`;
+    the closing test `10 s cu → (est) și 10 s cu ← (vest)` ... `~19 px`;
   - round 2: the declination prompt shows `[41,269]`; `inf` gets `Nu e un număr valid`; step 2
     prints `8x sideral`; at dec 89.95 `Dec:  0,4 s`,
     `RA:   456,3 s - prea mult, urcă la treapta 3 (16x) sau folosește Dec` followed by
-    `(spre est, peste 1x motorul se inversează: + backlash)`, the under-1-s warning ending
+    `(cu → spre est, peste 1x motorul se inversează: + backlash)`, the under-1-s warning ending
     `Coboară la treapta 1 (1x).`, and a closing test that asks for a target farther from the pole;
   - round 3, focal 0.1 (an absurd scale, 8085,59"/px, to reach the path where an axis does not
     move): `0.0001` and `9` each get
@@ -69,6 +71,10 @@ gate and no Claude Code hook runs here. The rules below are kept by hand.
   move the image); `text_secunde` adds "prea mult" above `SECUNDE_MAX` (60 s). The advice then
   names the next step up (`sfat_dec`; `sfat_ra` adds Dec as the way out); a press under 1 s
   names the next step down, because the app's Wi-Fi latency is then a large part of the press.
+- Arrows: `SAGEATA_EST, SAGEATA_VEST = "→", "←"` and `SAGEATA_NORD, SAGEATA_SUD = "↓", "↑"`, the
+  owner's test, reported on 2026-11-07 (Facts below). Left and right turn RA, up and down Dec.
+  The start line names all four; the RA note above 1x names `→`, the press against the
+  tracking; the closing test names `→` and `←`.
 
 ## What the manuals say, and what the script still assumes
 
@@ -91,9 +97,9 @@ section).
    the RA motor and west doubles it, so the image moves at 1x either way and nothing reverses on
    RA. Above 1x east reverses the RA motor, on the press and again on the release, so RA also
    loses time to backlash; the RA backlash note shows only above 1x. The closing note's test
-   checks this at step 1: 10 s east and 10 s west should each move a star by the printed pixels.
-   If west moves nothing and east twice as much, the app sets the axis speed instead, and the RA
-   texts change.
+   checks this at step 1: 10 s east and 10 s west (`→` and `←`) should each move a star by the
+   printed pixels. If west moves nothing and east twice as much, the app sets the axis speed
+   instead, and the RA texts change.
 3. DEC backlash is large on this mount: on the Veil session of 2026-10-06, 47 pauses gave only 38
    visible moves (LightsCheck, `docs/decisions/0007`), and a pattern that reverses DEC every time
    moves less than planned. The manual (pp. 21-22) describes Settings > Backlash: when an axis
@@ -154,18 +160,19 @@ chat assumed EQ mode, the Wi-Fi link and step 2 = 8x.
 - It matters more on Dec (the chat's reasoning, not Sky-Watcher's words): on RA the tracking takes
   up the slack in a few seconds, and at steps 0-1 the axis does not even reverse; Dec has no
   tracking, so the gears stay where the last press left them.
-- UP rather than DOWN is a convention; what counts is always the same direction. Celestron's logic
-  is to align with the directions of the GOTO's final approach: against the load, and with the
-  tracking on the tracking axis. Sky-Watcher's final GOTO direction was not found, so that reason
-  is not confirmed for SynScan, and the chat could not check whether RIGHT is the tracking
-  direction. Checked on 2026-10-12: an east press is against the tracking (the V4 manual's note on
-  rates 0/1, p. 5; PHD2's developer: at a 0.5x guide speed the RA motor runs at 1.5x to move west
-  and at 0.5x to move east; PHD2's log-analysis guide: at 1x or less the RA drive slows or pauses
-  and never reverses), so east stops the RA motor at step 1 and reverses it above 1x. That RIGHT
-  is east rests only on the owner's reading of the Veil session (Facts below): no Sky-Watcher
+- UP rather than DOWN is a convention; what counts is always the same direction (on the owner's
+  app UP is south: Facts below). Celestron's logic is to align with the directions of the GOTO's
+  final approach: against the load, and with the tracking on the tracking axis. Sky-Watcher's
+  final GOTO direction was not found, so that reason is not confirmed for SynScan, and the chat
+  could not check whether RIGHT is the tracking direction. Checked on 2026-10-12: an east press is
+  against the tracking (the V4 manual's note on rates 0/1, p. 5; PHD2's developer: at a 0.5x guide
+  speed the RA motor runs at 1.5x to move west and at 0.5x to move east; PHD2's log-analysis
+  guide: at 1x or less the RA drive slows or pauses and never reverses), so east stops the RA
+  motor at step 1 and reverses it above 1x. That RIGHT is east rested only on the owner's reading
+  of the Veil session until the owner's test, reported on 2026-11-07 (Facts below): no Sky-Watcher
   document says which way RIGHT turns RA, and both the forum default that LightsCheck first took
-  and an EQMOD user on Stargazers Lounge say right = west. RIGHT is against the tracking only if
-  `→` is east, which is unverified.
+  and an EQMOD user on Stargazers Lounge say right = west. On the owner's app `→` is east, so
+  there RIGHT is against the tracking.
 - A dither stores nothing in the model, so the rule's reason does not apply, and a dither that
   always ends with RIGHT and UP walks the frame in one direction, the opposite of a dither.
 
@@ -280,17 +287,24 @@ same check in its `docs/validation.md` (History, 2026-10-12).
 - The pauses before 63 and 65 moved the camera only 16" and 26" (3 and 4 px) along Dec; their
   press times are not known.
 
-## Facts from the rest of the repo, for when the script grows
+## Facts: the owner's arrow test, and the rest of the repo
 
-- On the owner's SynScan `→` moves the mount east and `↑` north (LightsCheck
-  `docs/decisions/0014`; a forum default with left = east was wrong for this app). This is the
-  owner's reading of the Veil session, not a measurement; checked on 2026-10-12, no source
-  confirms or refutes it. The app's manual (2023) and the V4 hand-control manual say only that
-  left/right turn RA and up/down Dec, and the app's manual lists no setting that reverses the
-  buttons. Two tests settle it: by day, with the camera lowered from the pole, `→` at step 8 for
-  2-3 s swings the lens toward the east or the west horizon; at night, a lone `→` press between
-  two frames shows in LightsCheck's dithering cell for the next frame, whose letter (`E` or `V`)
-  comes from the plate solve, not from the arrow setting.
+- The owner tested the arrows of the SynScan Pro app driving their Star Adventurer GTi and gave
+  the result on 2026-11-07: `→` moves the mount east, `←` west, `↓` north and `↑` south. The
+  script's `SAGEATA_*` constants hold them. Before that test, LightsCheck's
+  `docs/decisions/0014` had `→` east, from the owner's reading of the Veil session, and `↑`
+  north, kept from the forum default of its `docs/decisions/0013` (left east, up north): east was
+  right and north the other way round, so that forum default was wrong on both axes for this
+  app. The app's manual (2023) and the V4 hand-control manual say only that left/right turn RA
+  and up/down Dec, and the app's manual lists no setting that reverses the buttons, so the senses
+  are those of this mount with this app. The side of the meridian the test was made on is not
+  recorded: on a German equatorial mount the Dec arrows can swap north and south after a
+  meridian flip, and whether SynScan Pro makes up for it is not known. Two ways to check that
+  side, or another mount or app: by day, with the lens pointed well away from the pole, `↓` at
+  step 8 for 2-3 s tilts the lens toward the pole if `↓` is north, once on a target east of the
+  meridian and once on one west of it; at night, a lone press between two frames shows in
+  LightsCheck's dithering cell for the next frame, whose letter (`E` or `W`, `V` in Romanian;
+  `N` or `S`) comes from the plate solve, not from the arrow setting.
 - 10-20 px is a DSLR rule of thumb, not a measurement. LightsCheck's walking-noise verdict uses
   the same kind of threshold: 10 px or more, random, on both axes (its `docs/decisions/0007`).
 
@@ -301,6 +315,11 @@ same check in its `docs/validation.md` (History, 2026-10-12).
   The advice names the step to move to.
 - 2026-10-11, the owner: the Dec backlash note says that SynScan can compensate it (Settings >
   Backlash), after the Veil DEC presses that moved nothing.
+- 2026-11-07, the owner: the arrows they tested on their SynScan Pro (`→` east, `←` west, `↓`
+  north, `↑` south) are the script's defaults. The texts were approved in chat, the old one
+  beside the new where there was one: a new line at the start names all four, the RA note above
+  1x reads `(cu → spre est, ...)` and the closing test `10 s cu → (est) și 10 s cu ← (vest)`.
+  The arrows are constants, not asked at each round.
 
 ## Invariants (each one fixed a bug reproduced on 2026-10-11)
 
@@ -330,6 +349,9 @@ same check in its `docs/validation.md` (History, 2026-10-12).
   messages are in English.
 - Numbers go out with a decimal comma through `fmt` (fixed decimals) and `fmt_scurt` (`g`);
   answers take a comma or a point.
+- A text that names an arrow takes it from `SAGEATA_EST`, `SAGEATA_VEST`, `SAGEATA_NORD` or
+  `SAGEATA_SUD`, never the symbol itself, so another mount or app changes them in one place in
+  the script (the expected lines in Commands quote them too).
 - Standard library only; no packages.
 - LF line endings and UTF-8 without BOM, as the repository's `.gitattributes` (`* text=auto
   eol=lf`) keeps every file.
@@ -356,10 +378,10 @@ same check in its `docs/validation.md` (History, 2026-10-12).
 - The defaults (135 mm, 3.92 µm) give 5.99"/px; the plate solves of the Veil session measure
   6.198"/px (130.1 mm at 3.91 µm). Changing `IMPLICIT_FOCALA_MM` changes the expected outputs of
   the checks above too.
-- `→` = east on the owner's app is unverified (Facts below); naming the arrow to press (an idea
-  below) needs one of its two tests first.
-- Ideas not done: the backlash time as an input, the declination in degrees and minutes, naming
-  the arrow to press, a dither pattern that never reverses DEC.
+- The arrow test reported on 2026-11-07 does not say on which side of the meridian it was made;
+  after a meridian flip the Dec arrows may swap north and south (Facts above).
+- Ideas not done: the backlash time as an input, the declination in degrees and minutes, a
+  dither pattern that never reverses DEC.
 
 ## Git
 
