@@ -54,9 +54,9 @@ public class DustAnalyzerTests
         {
             bool inBand = Math.Abs(map.GalacticLatitude[i]) < Thresholds.BandGalacticLatitudeDeg;
             if (map.Classes[i] == PatchClass.Dust)
-                Assert.True(L[i] < map.BandLevel[i] - Thresholds.DustDepthLstar || L[i] < map.SkyModel[i] - Thresholds.DustDepthLstar);
+                Assert.True(L[i] < map.BandLevel[i] - map.NoiseThreshold || L[i] < map.SkyModel[i] - map.NoiseThreshold);
             if (map.Classes[i] == PatchClass.BrightCloud)
-                Assert.True(inBand && L[i] > map.BandLevel[i] + Thresholds.BrightCloudLstar);
+                Assert.True(inBand && L[i] > map.BandLevel[i] + map.BrightThreshold);
             if (map.Classes[i] == PatchClass.Sky)
                 Assert.False(inBand);
         }
@@ -64,6 +64,10 @@ public class DustAnalyzerTests
         Assert.Contains(PatchClass.BrightCloud, map.Classes);
         Assert.Contains(PatchClass.Peak, map.Classes);
         Assert.InRange(map.FractionOf(PatchClass.Peak), 0.0005, 0.02);
+        // The depth and the height are multiples of the sky's noise, the sky path's figure (ADR 0086).
+        Assert.False(double.IsNaN(map.SkySigma));
+        Assert.Equal(Thresholds.BandDustK * map.SkySigma, map.NoiseThreshold, 9);
+        Assert.Equal(Thresholds.BandBrightK * map.SkySigma, map.BrightThreshold, 9);
 
         // The dust blob (0.05 on a 0.35 band) and the bright blob (0.6): the patches inside them.
         Assert.Equal(PatchClass.Dust, map.Classes[WcsFixtures.DustPatchIndex(map)]);

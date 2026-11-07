@@ -8,6 +8,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- With a WCS, the dust and the bright clouds of the Milky Way band are no longer a fixed 5 and
+  10 L\* from the band around them but 4 and 8 times the sky's own unevenness, the same figure
+  the path without a WCS uses (R-044, ADR 0086): on the reference frame the dust class is the
+  same share of the frame at a background of 0.10 as at 0.17 (10 %), where the fixed depth found
+  half of the Great Rift on the darker stretch; at 0.17 the figures barely move (dust L\* 7.9
+  to 8.1). The report and the map say the depth in L\* and the factor.
+
 - Without a WCS, the Great Rift and the Pipe count as dust (R-044, ADR 0085): the sky is now
   modelled as the middle of each zone instead of its lower quarter, and a patch is dust when
   3 times the sky's own unevenness under that model instead of 4. On the Smida Milky Way frame

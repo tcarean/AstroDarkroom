@@ -103,7 +103,8 @@ internal static class WcsFixtures
     /// dark blob (0.05, radius 80 px: with its edge patches about 10 % of the frame, over the
     /// `DustClassMinFraction` a dust class needs to decide the verdict) on the plane, a bright
     /// blob (0.6, radius 40 px) in the band, and one 32 px patch at 1.0 inside the bright blob,
-    /// the peak. The WCS is on the source.
+    /// the peak, a ripple of 0.01 on the sky and the band, and pixel noise (0.3 of 255). The
+    /// WCS is on the source.
     /// </summary>
     internal static Raster BandScene(bool withDust = true) => BandScene(OnThePlane(), withDust);
 
@@ -126,8 +127,17 @@ internal static class WcsFixtures
             if (db <= 40 * 40) return 0.6f;
             // Without the dust blob the band sits at the sky's level too: a band that is only
             // brighter than the sky has mixed patches on its edge that read as dust by a hair.
-            return inBand[y * 512 + x] && withDust ? 0.35f : 0.25f;
+            float level = inBand[y * 512 + x] && withDust ? 0.35f : 0.25f;
+            // A gentle ripple, about 1.5 L* either way, the unevenness a real sky has at the
+            // patch scale: the band path scales its depth and height by the sky's noise on the
+            // patches (ADR 0086), and on a flat scene that sigma is 0, so the band patches at
+            // the strip's smoothed edges would be bright clouds by rounding alone (measured on
+            // 2026-11-07: sigma 0.69 L* with the ripple, thresholds 2.8 and 5.5 L*, the bright
+            // class the bright blob's patches; without it 0.01 L* and 42 band patches bright).
+            return level + (float)(0.01 * Math.Sin(x / 37.0) * Math.Cos(y / 53.0));
         });
+        // And a little pixel noise, as every sky has.
+        r = SyntheticRasters.AddNoise(r, 0.3 / 255, 24);
         r.Source = new SourceInfo { Path = "banda.fit", Format = "FITS", Wcs = wcs };
         return r;
     }

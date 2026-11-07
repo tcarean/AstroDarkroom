@@ -319,11 +319,14 @@ two paths. The report says which path it took and why, and gives each class's sh
 - **The band path**, on a plate-solved FITS (a WCS with `CTYPE` `RA---TAN` and `CD`, `PC` with
   `CDELT`, or `CDELT` with `CROTA2`; SIP terms are ignored) or with `--wcs`. The band of the
   Milky Way is galactic latitude |b| under 10 degrees, and the sky is modelled from the patches
-  outside it. A patch is **dust** when it lies 5 L\* under the band's local level (a median over
-  about 480 px) or under the modelled sky, that is, darker than the band would be there; a
-  **bright cloud** when it lies 10 L\* over the band's local level; a **peak** when it is among
-  the brightest 0.1 % of the patches; **band** for the rest of the band, and outside it for a
-  patch 10 L\* over the modelled sky; **sky** for the rest outside the band. The path needs the
+  outside it. A patch is **dust** when it lies under the band's local level (a median over
+  about 480 px) or under the modelled sky by 4 times the sky's noise, that is, darker than the
+  band would be there; a **bright cloud** when it lies 8 times the noise over the band's local
+  level; a **peak** when it is among the brightest 0.1 % of the patches; **band** for the rest
+  of the band, and outside it for a patch 8 times the noise over the modelled sky; **sky** for
+  the rest outside the band. The sky's noise is the same figure on both paths, measured on the
+  32 px patches, so the depth follows the stretch (about 4.5 L\* on the reference frame at a
+  background of 0.17, 3 L\* at 0.10). The path needs the
   band and the sky outside it to hold at least 10 % of the patches each, and a frame spanning at
   least 20 degrees of galactic latitude, the band's width: it is made for wide Milky Way frames,
   where the band is a strip with sky beside it.

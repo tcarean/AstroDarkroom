@@ -189,19 +189,26 @@ namespace AstroPhotoAnalyzer
         internal const double DustClassMinFraction = 0.05;
 
         /// <summary>
-        /// On the band path, dust is a patch at least this many L* units under the band's local
-        /// level (or under the modelled sky); the sky path uses SkyNoiseK instead (ADR 0033).
-        /// "Darker than the band would be there", not "dark in general". On the
-        /// reference image the dust-sky difference measured on the Great Rift is 3-6 L*; with 4,
-        /// 5, 6 the dust is 11, 9, 8 % of the frame. 5 is the middle.
+        /// On the band path, dust is a patch at least this many sigmas of the sky's noise under
+        /// the band's local level (or under the modelled sky): "darker than the band would be
+        /// there", not "dark in general". The noise is DustMap.SkySigma, the same figure the sky
+        /// path scales its thresholds by (DustAnalyzer.SkyNoise), measured on the image, so the
+        /// depth follows the stretch: until ADR 0086 it was a fixed 5 L*, which found 9.4 % of
+        /// the reference frame at a background of 0.17 but 5.7 % at 0.10. With 4 sigmas (4.5 L*
+        /// at 0.17, 3.0 at 0.10, 4.7 on the Smida frame of 2026-08-12) the class is 10.3, 10.1
+        /// and 9.9 % of the frame, every patch of the 5 L* class at 0.17 kept and 92 % of the
+        /// class that class; 3 sigmas give 12.4 to 12.6 %, over the catalogue-checked 9.4 % of
+        /// ADR 0025. Measured on 2026-11-06 (ADR 0086).
         /// </summary>
-        internal const double DustDepthLstar = 5;
+        internal const double BandDustK = 4;
 
         /// <summary>
-        /// A bright cloud is a band patch this many L* units over the band's local level: twice
-        /// the dust's depth.
+        /// A bright cloud is a band patch this many sigmas of the sky's noise over the band's
+        /// local level (outside the band, a patch as much over the modelled sky is band): twice
+        /// the dust's depth, as the 10 L* of before ADR 0086 were twice the 5; 2.4 % of the
+        /// reference frame at 0.17 (2.0 before), 3.1 % at 0.10 (1.4 before).
         /// </summary>
-        internal const double BrightCloudLstar = 10;
+        internal const double BandBrightK = 8;
 
         /// <summary>
         /// The peaks: the brightest this many (a fraction) of the frame's patches, the core and

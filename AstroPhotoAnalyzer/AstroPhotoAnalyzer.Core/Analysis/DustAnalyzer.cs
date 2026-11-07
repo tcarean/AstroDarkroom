@@ -24,10 +24,11 @@
 // CLASSES, relatively, not by an absolute threshold, on one of two paths:
 //   - with a WCS and with the Milky Way's band in the frame (ADR 0026): the band is geometry,
 //     from the galactic latitude; the sky is a smooth model from the patches OUTSIDE the band;
-//     the band's local level is a median over a window; the dust is a patch DustDepthLstar under
-//     the local level (or under the modelled sky), the bright clouds BrightCloudLstar over the
-//     local level, the peaks the brightest PeakFraction of the patches, the band also every
-//     patch outside it BrightCloudLstar over the modelled sky, the sky the rest outside the band;
+//     the band's local level is a median over a window; the dust is a patch BandDustK sigmas of
+//     the sky's noise (SkyNoise, the same figure as on the sky path) under the local level (or
+//     under the modelled sky), the bright clouds BandBrightK sigmas over the local level, the
+//     peaks the brightest PeakFraction of the patches, the band also every patch outside it
+//     BandBrightK sigmas over the modelled sky, the sky the rest outside the band;
 //   - otherwise (no WCS, a frame without the band or wholly inside it, or a frame spanning under
 //     BandMinLatitudeSpanDeg degrees of galactic latitude, deep-sky in the band; ADR 0033,
 //     ADR 0037): the sky is a smooth model from ALL the patches, with the SkyModelPercentile
@@ -177,12 +178,16 @@ namespace AstroPhotoAnalyzer
         internal float[] BandLevel;
 
         /// <summary>
-        /// On the sky path: the sky's noise, the robust sigma of every patch's residual from the
-        /// modelled sky after one clipping pass; NoiseThreshold = SkyNoiseK x sigma, the distance
-        /// in L* from the modelled sky from which a patch is nebula (upwards) or dust (downwards);
+        /// The sky's noise on both paths (DustAnalyzer.SkyNoise): the robust sigma of every
+        /// patch's residual from the median-cell model over all the patches, after one clipping
+        /// pass. On the sky path NoiseThreshold = SkyNoiseK x sigma, the distance in L* from the
+        /// modelled sky from which a patch is nebula (upwards) or dust (downwards), and
         /// BrightThreshold, in L* over the modelled sky, from which it is bright nebula (infinity
-        /// when the nebula's tail holds fewer than two patches, and then there is none). NaN on
-        /// the band path.
+        /// when the nebula's tail holds fewer than two patches, and then there is none). On the
+        /// band path NoiseThreshold = BandDustK x sigma, the depth under the band's local level
+        /// (or under the modelled sky) from which a patch is dust, and BrightThreshold =
+        /// BandBrightK x sigma, the height over the local level from which it is a bright cloud
+        /// (outside the band, over the modelled sky, from which it is band).
         /// </summary>
         internal double SkySigma = double.NaN, NoiseThreshold = double.NaN, BrightThreshold = double.NaN;
 
@@ -486,7 +491,10 @@ namespace AstroPhotoAnalyzer
             float[] level = Smooth(MedianFilter(L, cols, rows, Thresholds.BandLocalWindowPatches), cols, rows, Thresholds.BandLocalSmoothPatches);
             float peak = PeakLevel(L);
 
-            double k = Thresholds.DustDepthLstar, kb = Thresholds.BrightCloudLstar;
+            // The depth and the height in sigmas of the sky's noise, the sky path's figure, so
+            // that they follow the stretch (ADR 0086); a fixed 5 and 10 L* before.
+            double sigma = SkyNoise(L, cols, rows, out _, out _);
+            double k = Thresholds.BandDustK * sigma, kb = Thresholds.BandBrightK * sigma;
             var cls = map.Classes;
             for (int i = 0; i < n; i++)
             {
@@ -502,6 +510,37 @@ namespace AstroPhotoAnalyzer
             map.BandLevel = level;
             map.Method = DustMethod.Band;
             map.SkyReason = SkyReason.None;
+            map.SkySigma = sigma;
+            map.NoiseThreshold = k;
+            map.BrightThreshold = kb;
+        }
+
+        /// <summary>
+        /// The sky's noise, the one figure both paths scale their thresholds by: the robust
+        /// sigma (1.4826 x MAD) of every patch's residual from the median-cell model over ALL
+        /// the patches (SkyModel at SkyModelPercentile, no band), after one clipping pass that
+        /// drops the residuals over SkyNoiseClipK sigmas about the median (an object inflates
+        /// the MAD). Measured on 32 px patches, it is the sky's unevenness at that scale, not
+        /// pixel noise (ADR 0085, ADR 0086).
+        /// </summary>
+        /// <param name="L">The L* of each patch, in the map's row order.</param>
+        /// <param name="cols">The grid's columns.</param>
+        /// <param name="rows">The grid's rows.</param>
+        /// <param name="model">
+        /// The median-cell model the residuals were taken from, an L* per patch.
+        /// </param>
+        /// <param name="resid">Each patch's residual from the model, in L*.</param>
+        /// <returns>The sigma, in L*; 0 on a posterised sky.</returns>
+        static double SkyNoise(float[] L, int cols, int rows, out float[] model, out float[] resid)
+        {
+            int n = cols * rows;
+            model = SkyModel(L, new bool[n], cols, rows, Thresholds.SkyModelPercentile);
+            resid = new float[n];
+            for (int i = 0; i < n; i++) resid[i] = L[i] - model[i];
+            double sigma = Stats.RobustSigma(resid, out double med);
+            float[] kept = resid.Where(v => Math.Abs(v - med) <= Thresholds.SkyNoiseClipK * sigma).ToArray();
+            if (kept.Length > 0) sigma = Stats.RobustSigma(kept, out _);
+            return sigma;
         }
 
         /// <summary>
@@ -530,13 +569,7 @@ namespace AstroPhotoAnalyzer
         static void ClassifyBySky(DustMap map, float[] L, SkyReason reason)
         {
             int cols = map.Cols, rows = map.Rows, n = cols * rows;
-            float[] sky = SkyModel(L, new bool[n], cols, rows, Thresholds.SkyModelPercentile);
-            var resid = new float[n];
-            for (int i = 0; i < n; i++) resid[i] = L[i] - sky[i];
-
-            double sigma = Stats.RobustSigma(resid, out double med);
-            float[] kept = resid.Where(v => Math.Abs(v - med) <= Thresholds.SkyNoiseClipK * sigma).ToArray();
-            if (kept.Length > 0) sigma = Stats.RobustSigma(kept, out _);
+            double sigma = SkyNoise(L, cols, rows, out float[] sky, out float[] resid);
 
             double noise = Thresholds.SkyNoiseK * sigma;
             float peak = PeakLevel(L);

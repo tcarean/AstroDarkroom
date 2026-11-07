@@ -110,4 +110,5 @@ the one measurement on both paths.
   the sky's noise (`known-limitations.md`). No real frame is one cell wide; no test guards the
   scene's dust share.
 - The band path keeps its absolute `DustDepthLstar`, which the 0.10 stretch showed to find
-  less of the Rift on a darker stretch: a task of its own, if wanted.
+  less of the Rift on a darker stretch: a task of its own, if wanted. (Restated 2026-11-07:
+  done the next day by ADR 0086, which scales the depth by the sky's noise.)

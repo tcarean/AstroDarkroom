@@ -26,8 +26,8 @@ All empirical, most from the reference image. Change one, change its comment.
 | `SkyNoiseClipK` / `SkyNoiseK` | 3 / 3 | the sky's patch noise: robust sigma of patch minus model after one clipping pass at the first; nebula is over the model by the second times that sigma, dust under it by as much (the bright-nebula threshold is the Otsu split of the nebula residuals, no constant); the second was 4 until ADR 0085 |
 | `BrightClassMinTailFraction` | 0.05 | the Otsu split of the nebula residuals leaves at least this share of them above: a few star patches far over a faint nebula would otherwise be the upper class and leave the bright class empty |
 | `DustClassMinFraction` | 0.05 | the dust class decides the verdict only from this share of the patches; under it (cores, artefacts) the darkest sky stands (the owner's choice, ADR 0033) |
-| `DustDepthLstar` | 5 | a dust patch is this many L\* under the band's local level or under the sky model |
-| `BrightCloudLstar` | 10 | a bright-cloud patch is this many L\* over the band's local level |
+| `BandDustK` | 4 | on the band path, a dust patch is this many sigmas of the sky's noise (`SkySigma`, the sky path's figure) under the band's local level or under the sky model; a fixed 5 L\* until ADR 0086, which found half the Rift on a darker stretch |
+| `BandBrightK` | 8 | a bright-cloud patch is this many sigmas of the sky's noise over the band's local level (outside the band, a band patch as much over the sky model): twice the dust's depth, as 10 L\* were twice 5 |
 | `PeakFraction` | 0.001 | the peaks: the brightest patches by this fraction |
 | `BandLocalWindowPatches` / `BandLocalSmoothPatches` | 15 / 2 | the band's local level: median window, then smoothing radius |
 | `SkyModelCellPatches` / `SkyModelCellMinPatches` / `SkyModelSmoothPatches` | 20 / 20 / 3 | the sky model: cell size, patches a cell needs, smoothing radius |

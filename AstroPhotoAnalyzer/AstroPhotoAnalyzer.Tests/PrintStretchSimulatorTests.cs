@@ -359,7 +359,8 @@ public class PrintStretchSimulatorTests
         Assert.Contains(s.Clouds, c => c.Name.StartsWith("LDN "));
         Assert.Equal(s.Clouds.OrderBy(c => c.Lstar).Select(c => c.Name), s.Clouds.Select(c => c.Name));
         Assert.StartsWith("cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e ", s.DustDescription);
-        Assert.EndsWith(" din cadru, dalele cu 5 L* mai intunecate decat banda din jur sau decat cerul)", s.DustDescription);
+        Assert.Contains(" din cadru, dalele cu ", s.DustDescription);
+        Assert.EndsWith(" L* mai intunecate decat banda din jur sau decat cerul (de 4 ori zgomotul cerului))", s.DustDescription);
         Assert.StartsWith("cerul din afara benzii Caii Lactee, la peste 10 grade de ea", s.SkyDescription);
         Assert.Null(s.MethodNote);
         Assert.StartsWith("praf ", s.ClassFractions);
