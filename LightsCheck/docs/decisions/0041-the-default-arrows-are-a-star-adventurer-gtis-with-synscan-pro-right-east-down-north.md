@@ -11,8 +11,8 @@ Veil session: `→` east, `↑` north. Nothing had tested either key: the SynSca
 that left and right turn RA and up and down DEC, and the notes DitherCalculator keeps of
 2026-10-12 found no source for `→` east (a forum default and an EQMOD user say right is west).
 On 2026-11-07 the owner tested the pair LightsCheck is used with, the SynScan Pro app driving a
-Star Adventurer GTi: `→` moves the mount east, `←` west, `↓` north, `↑` south. East was right,
-north the other way round. The sense letters of a cell (E or W, N or S) come from the plate
+Star Adventurer GTi, on a target west of the meridian: `→` moves the mount east, `←` west, `↓`
+north, `↑` south. East was right, north the other way round. The sense letters of a cell (E or W, N or S) come from the plate
 solve and were never in question (ADR 0013, and the four solved frames of `docs/validation.md`,
 History, 2026-10-12); only the arrow written beside them follows the setting.
 
@@ -52,6 +52,8 @@ senses and every figure stay. The goldens `help.txt` and `en_help.txt` change th
 and gain the one line. V-011's five cells with a DEC part are re-worded, re-measured on a copy of
 the Veil session's root with its solved FITS (`docs/validation.md`, History, 2026-11-07). A
 window without a settings file starts at `↓` north; one with a file keeps both arrows the file
-holds. The tips that ADR 0038 decided gain the pair's name. Not tested: whether the DEC arrows
-keep their sense after a meridian flip, when the camera goes to the other side of the mount;
-nothing is written about it until it is.
+holds. The tips that ADR 0038 decided gain the pair's name. The test was on a target west of
+the meridian (the owner's word, recorded the same day in DitherCalculator's `CLAUDE.md`). East
+of it, where the camera goes to the other side of the mount, the DEC arrows may swap north and
+south; that side is not tested, and the README says so and how to check it. The tips and
+`--help` do not name the side.

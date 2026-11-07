@@ -240,11 +240,13 @@ frames of the runs whose streak reaches 3 px, the ones whose streak would show:
   the solve and gives the same senses. Without a solve the cell is `RA 17 px`.
 - Which arrow moves the mount east and which north depends on the mount and the app. The
   defaults are those of a Star Adventurer GTi driven by the SynScan Pro app, tested on that
-  pair: `→` moves the mount east and `←` west, `↓` moves it north and `↑` south. With another
-  mount or app, press one arrow alone between two frames of a session with a plate-solved FITS
-  at the root: the next frame's cell gives the sense on the sky, which comes from the solve, not
-  from the arrows. Change them with `--east` and `--north`, or with the EAST and NORTH selectors
-  of the window.
+  pair with a target west of the meridian: `→` moves the mount east and `←` west, `↓` moves it
+  north and `↑` south. East of the meridian the camera sits on the other side of the mount, and
+  the DEC arrows may swap north and south; that side is not tested yet. To check a side, or
+  another mount or app, press one arrow alone between two frames of a session with a
+  plate-solved FITS at the root: the next frame's cell gives the sense on the sky, which comes
+  from the solve, not from the arrows. Change them with `--east` and `--north`, or with the EAST
+  and NORTH selectors of the window.
 - `same spot` says which consecutive frame within 10 px of the run's first it is, out of how many,
   from which frame: `7/10 from 61` is the seventh of ten frames that stayed at the spot of frame
   61. Such runs make walking noise, but the frame stays good and in the stack: the cure is to

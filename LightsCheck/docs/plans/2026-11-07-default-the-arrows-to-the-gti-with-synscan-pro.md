@@ -121,6 +121,10 @@ north and "`→` east unverified"; your test settles both.
   comment in `Report/` was touched. V-008 and V-011 failed as recorded; V-014 failed because its
   session changed since its recording (three frames out of `lights\`, no `darks\`, a solved stack
   at the root), not because of this branch, and is left to the owner.
+- The meridian question was answered the same day in another session (DitherCalculator,
+  681d83c1 on `main`): the test was on a target west of the meridian, and the east side is not
+  tested. The README, R-040, ADR 0041 and the CHANGELOG say so; the tips and `--help`, whose
+  words were approved without it, do not.
 - The review of the branch found no bug. It found two tests left on the default words
   (`--north down`, `--nord jos`, which no longer show the option acting), two loose sentences
   in ADR 0041, the stored-setting case the CHANGELOG did not cover (a file written when only EAST

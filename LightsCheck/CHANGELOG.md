@@ -45,7 +45,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 ### Changed
 
 - The default SynScan arrows are those of a Star Adventurer GTi driven by the SynScan Pro app,
-  as tested on that pair: `→` east and `↓` north, so `←` west and `↑` south (R-040, ADR 0041).
+  as tested on that pair with a target west of the meridian: `→` east and `↓` north, so `←` west
+  and `↑` south (R-040, ADR 0041). East of the meridian the DEC arrows may swap; not tested yet.
   Until now `↑` was north, so a DEC move named with the default arrows now shows the other
   arrow; the sense on the sky (N or S) and every figure stay. `--help` and the EAST and NORTH
   tips say whose defaults they are. A window that has stored its arrows keeps both, since it
