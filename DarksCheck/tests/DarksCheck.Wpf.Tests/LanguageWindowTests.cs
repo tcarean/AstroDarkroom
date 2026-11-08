@@ -39,7 +39,7 @@ public partial class LanguageWindowTests
 
     // Words that only Romanian text holds; the paths of the synthetic sessions are temp folders and
     // the file names DSC_nnnn, so none of these can come from them.
-    [GeneratedRegex(@"\b(cadre|cadru|cadrele|fata de|dark-uri|dark-urile|sesiunii|sesiune|NEMASURAT|ATENTIE|REFA|EROARE|Rezumat|Raport|Alege|pixeli|fierbinti|lumina|verificarea|biblioteca|partener|partenerul|eticheta|zgomot|masurat|niciun|niciunul|amandoua|scadere)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(cadre|cadru|cadrele|fata de|dark-uri|dark-urile|sesiunii|sesiune|NEMASURAT|ATENTIE|REFA|EROARE|Rezumat|Raport|Alege|pixeli|fierbinti|lumina|verificarea|biblioteca|partener|partenerul|eticheta|zgomot|masurat|niciun|niciunul|amandoua|scadere|Potrivire)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex RomanianWord();
 
     [Theory]
@@ -103,6 +103,7 @@ public partial class LanguageWindowTests
                 Render(window);
                 TabControl tabs = Descendants(window).OfType<TabControl>().Single();
                 Assert.Equal("Summary", ((TabItem)tabs.Items[0]).Header);
+                Assert.Equal("Match with lights", ((TabItem)tabs.Items[4]).Header);
                 texts.AddRange(tabs.Items.OfType<TabItem>().Select(t => t.Header as string ?? ""));
                 texts.AddRange(TextsOf(window));
 
@@ -351,6 +352,7 @@ public partial class LanguageWindowTests
                 Assert.Contains(english ? $"the average value of the master's hot pixels at places {places} per megapixel, counting from the hottest" : $"valoarea medie a pixelilor fierbinti din master de pe locurile {places} pe fiecare megapixel, numarand de la cel mai fierbinte", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "The warmer the sensor, the higher the index." : "Cu cat senzorul a fost mai cald, cu atat indexul e mai mare.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "if the session has no darks, they are compared directly with the darks of the partner." : "daca sesiunea nu are dark-uri, se compara direct cu dark-urile partenerului.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "The partner holds for the open folder only: it is not kept after you close the program and is dropped when you open another folder." : "Partenerul tine doar pentru folderul deschis: nu se pastreaza dupa ce inchizi programul si se pierde cand deschizi alt folder.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "(idx- when the index cannot be measured)" : "(idx- cand indexul nu se poate masura)", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "Analyses the open folder again, with the chosen lights, the partner and the settings of now" : "Analizeaza din nou folderul deschis, cu lights-urile alese, partenerul si setarile de acum", all, StringComparison.Ordinal);
                 Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
@@ -380,14 +382,15 @@ public partial class LanguageWindowTests
                 MainViewModel vm = new();
                 FrameworkElement window = (FrameworkElement)new MainWindow(vm).Content;
                 Render(window);
-                List<string> texts = [.. TextsOf(window), vm.MaxFramesTip, vm.IsoFactorTip, vm.DoublingTip];
+                List<string> texts = [.. TextsOf(window), vm.MaxFramesTip, vm.IsoFactorTip, vm.DoublingTip, .. Descendants(window).OfType<TabControl>().Single().Items.OfType<TabItem>().Select(t => t.Header as string ?? "")];
 
                 // the scenes reached their variants, so the words below were looked at
                 string all = string.Join("\n", texts);
                 Assert.Contains(english ? "the program reads and measures the biases, the darks and the lights, then works out the index and the label." : "programul citeste si masoara bias-urile, dark-urile si lights-urile, apoi socoteste indexul si eticheta.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "How many frames are read at the same time; blank = half the cores of the processor" : "Cate cadre se citesc in acelasi timp; gol = jumatate din nucleele procesorului", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "SIGNAL / ISO STOP" : "SEMNAL / TREAPTA ISO", all, StringComparison.Ordinal);
-                Assert.Contains(english ? "only some are read, evenly spaced (one in two, for example)" : "se citesc doar unele, la distante egale (de exemplu unul din doua)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "only some are read, evenly spaced (one in two, for example). The lights are all measured." : "se citesc doar unele, la distante egale (de exemplu unul din doua). Lights-urile se masoara toate.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "Match with lights" : "Potrivire cu lights", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "2 = the signal doubles at every stop (D3300)" : "2 = semnalul se dubleaza la fiecare treapta (D3300)", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "(what the sensor gathers from its own heat)" : "(ce aduna senzorul din caldura lui)", all, StringComparison.Ordinal);
                 Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();

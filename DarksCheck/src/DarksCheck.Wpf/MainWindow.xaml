@@ -171,7 +171,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TabItem Header="{l:T En='Hot pixels', Ro='Pixeli fierbinti'}">
           <local:HotPixelsView />
         </TabItem>
-        <TabItem Header="Lights">
+        <TabItem Header="{l:T En='Match with lights', Ro='Potrivire cu lights'}">
           <local:LightsView />
         </TabItem>
         <TabItem Header="Index">

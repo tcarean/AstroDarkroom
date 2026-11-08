@@ -891,16 +891,12 @@ public partial class DarkSeriesTests
         using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
         {
             List<string> texts = [DarkReport.PlateauColumnTip];
-            List<string> lightSkips = [];
             foreach (DarkSeriesResult r in new[] { Run(climbing), Run(cooling), Run(blind), Run(leak), Run(edge), Run(bare), DarkSeriesRun.Run(capped.Root, new DarkOptions(Threads: 2, MaxFrames: 2)) })
             {
                 texts.Add(DarkReport.FrameTableHeader(r));
                 texts.Add(DarkReport.WarmingChartNote(r));
                 texts.AddRange(DarkReport.FrameRows(r).Select(row => row.Note ?? row.Skipped ?? row.Error ?? ""));
-                lightSkips.AddRange(DarkReport.LightRows(r).Select(row => row.Skipped ?? ""));
             }
-
-            texts.AddRange(lightSkips);
 
             texts.Add(Assert.ThrowsAny<Exception>(() => DarkSeriesRun.Run(broken.Dir, new DarkOptions(Threads: 2))).Message);
             texts.Add(Run(badBiases).BiasError ?? "");
@@ -923,7 +919,6 @@ public partial class DarkSeriesTests
             Assert.Contains(english ? "no bias could be read" : "niciun bias nu s-a putut citi", all, StringComparison.Ordinal);
             Assert.Contains(english ? "no light could be read" : "niciun light nu s-a putut citi", all, StringComparison.Ordinal);
             Assert.Contains(english ? "none of the partner's darks could be read" : "niciun dark al partenerului nu s-a putut citi", all, StringComparison.Ordinal);
-            Assert.Contains(lightSkips, t => t.StartsWith(english ? "skipped (over 2 frames only one in 3 is read)" : "sarit (peste 2 cadre se citeste doar unul din 3)", StringComparison.Ordinal));
             List<string> left = texts.Where(t => method.IsMatch(t)).Select(t => $"'{method.Match(t).Value}' in: {t}").ToList();
             Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
         }
@@ -1182,6 +1177,64 @@ public partial class DarkSeriesTests
         Assert.Equal(1, h.FramesHotHistogram[3]);
         Assert.InRange(h.QuietTemporalStd, 2.0, 4.0);
         Assert.True(h.HotTemporalStd > h.QuietTemporalStd, "the flickering pixel lifts the hot pixels' temporal sigma");
+    }
+
+    [Fact]
+    public void R031_TheStabilityRowCarriesItsFourStatementsAsLines()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = i < 3 ? [(10, 10, 60), (20, 20, 60)] : [(10, 10, 60)] });
+        DarkSeriesResult r = Run(s);
+        ReportRow stability = DarkReport.Sections(r).Single(x => x.Title.StartsWith("5.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "stabilitate");
+        IReadOnlyList<string> lines = Assert.IsAssignableFrom<IReadOnlyList<string>>(stability.Lines);
+        Assert.Equal(4, lines.Count);
+        // the console prints the four joined by "; ", the window one under the other (R-071)
+        Assert.Equal(string.Join("; ", lines), stability.Value);
+        Assert.Equal("1 din 2 se vad (peste jumatate din prag) in toate cele 6 cadre", lines[0]);
+        Assert.Equal("1 lipsesc din 2 sau mai multe", lines[1]);
+        Assert.Matches(@"^de la un cadru la altul variaza cu [0-9.]+ ADU, ceilalti pixeli cu [0-9.]+$", lines[2]);
+        Assert.Matches(@"^[0-9]+( de)? pixeli verzi G1 sar intre doua niveluri \(RTS: variaza de peste 6 ori cat zgomotul unui cadru, [0-9.]+\)$", lines[3]);
+        Assert.Null(stability.Table);
+        Assert.True(stability.Summary);
+
+        // a single frame: one unmeasured line, nothing to split
+        using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 1, Hot = SyntheticDark.OnePerLevel });
+        ReportRow single = DarkReport.Sections(Run(one)).Single(x => x.Title.StartsWith("5.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "stabilitate");
+        Assert.Null(single.Lines);
+        Assert.Equal("NEMASURAT: stabilitatea cere cel putin 2 cadre", single.Value);
+    }
+
+    [Fact]
+    public void R024_TheNoiseCurveRowCarriesItsPointsAsATable()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(10, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
+        DarkSeriesResult r = Run(s);
+        ReportRow curve = DarkReport.Sections(r).Single(x => x.Title.StartsWith("8.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "zgomot dupa medie");
+        ReportTable t = Assert.IsType<ReportTable>(curve.Table);
+        Assert.Equal(["cadre", "masurat", "se astepta"], t.Header);
+        Assert.Equal(r.Darks.Noise.Curve.Select(p => RunReport.Frames(p.N)), t.Rows.Select(row => row[0]));
+        NoisePoint first = r.Darks.Noise.Curve[0];
+        Assert.Equal(["1 cadru", RunReport.F(first.Measured, 2), RunReport.F(first.Expected, 2)], t.Rows[0]);
+        // the console's line holds the same figures, point by point
+        Assert.StartsWith($"1 cadru: {RunReport.F(first.Measured, 2)} (se astepta {RunReport.F(first.Expected, 2)}); 2 cadre: ", curve.Value, StringComparison.Ordinal);
+        Assert.Equal("pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul", t.Note);
+        Assert.Null(curve.Lines);
+
+        // a single frame: unmeasured, no table
+        using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 1, Hot = SyntheticDark.OnePerLevel });
+        ReportRow single = DarkReport.Sections(Run(one)).Single(x => x.Title.StartsWith("8.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "zgomot dupa medie");
+        Assert.Null(single.Table);
+        Assert.StartsWith("NEMASURAT: ", single.Value, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R030_CheckFivesCountRowsLeaveTheSummaryToTheHotPixelsTab()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice });
+        IReadOnlyList<ReportSection> sections = DarkReport.Sections(Run(s));
+        ReportSection five = sections.Single(x => x.Title.StartsWith("5.", StringComparison.Ordinal));
+        Assert.Equal(["pixeli peste prag", "pe culori, peste 20", "cat de fierbinti", "stabilitate", "verdict"], five.Rows.Select(row => row.Label));
+        Assert.Equal([false, false, false, true, true], five.Rows.Select(row => row.Summary));
+        Assert.All(sections.Where(x => x != five).SelectMany(x => x.Rows), row => Assert.True(row.Summary));
     }
 
     [Fact]

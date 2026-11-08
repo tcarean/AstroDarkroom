@@ -24,9 +24,9 @@ Usage: darkscheck <session folder or folder of darks> [--against DIR] [--lights 
                 darkscheck-biases.csv, darkscheck-lights.csv, darkscheck-map-dark.png, ...).
   --threads N   how many frames are read at the same time (default: half the
                 cores of the processor).
-  --max-frames N  how many frames are held in memory (default 60, 48 MB each at 24 MP) and how many lights are measured;
+  --max-frames N  how many frames of a group are held in memory (default 60, 48 MB each at 24 MP);
                 if there are more, only some are read, evenly spaced (one in two, for
-                example), and the rest are in the table as skipped.
+                example), and the rest are in the table as skipped; every light is measured.
   --inventory   only what the files say, without reading the pixels: the time, the
                 exposure and the ISO of each frame, how often the frames were taken and
                 the gaps between them, whether the darks match the lights.

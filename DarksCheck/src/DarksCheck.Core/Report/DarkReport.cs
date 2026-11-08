@@ -74,11 +74,7 @@ internal static class DarkReport
             foreach (LightTableRow f in LightRows(r))
             {
                 string name = Trim20(f.FileName);
-                if (f.Skipped is not null)
-                {
-                    w.WriteLine($"    {f.Index,3}  {name,-20}  {f.Skipped}");
-                }
-                else if (f.Error is not null)
+                if (f.Error is not null)
                 {
                     w.WriteLine($"    {f.Index,3}  {name,-20}  {T("error", "eroare")}: {f.Error}");
                 }
@@ -217,10 +213,12 @@ internal static class DarkReport
             ]),
             new(T("5. HOT PIXELS", "5. PIXELI FIERBINTI"),
             [
-                new(T("above the threshold", "pixeli peste prag"), Levels(d)),
-                new(T($"by colour, above {F(Th.HotAdu, 0)}", $"pe culori, peste {F(Th.HotAdu, 0)}"), PerPlane(d, Th.HotLevelIndex)),
-                new(T("how hot", "cat de fierbinti"), Percentiles(d.Hot, n, eq)),
-                new(T("stability", "stabilitate"), Stability(d, rp)),
+                // the three count rows stay on the Pixeli fierbinti tab; the Rezumat's card keeps the
+                // stability and the verdict (R-071, ADR 0041)
+                new(T("above the threshold", "pixeli peste prag"), Levels(d)) { Summary = false },
+                new(T($"by colour, above {F(Th.HotAdu, 0)}", $"pe culori, peste {F(Th.HotAdu, 0)}"), PerPlane(d, Th.HotLevelIndex)) { Summary = false },
+                new(T("how hot", "cat de fierbinti"), Percentiles(d.Hot, n, eq)) { Summary = false },
+                StabilityRow(d, rp),
                 new("verdict", T(
                     $"OK (informative): {d.Hot.Hot} pixels above {F(Th.HotAdu, 0)} {eq} in {F(mpx, mpx < 1 ? 2 : 1)} Mpx",
                     $"OK (informativ): {RoCount(d.Hot.Hot)}pixeli peste {F(Th.HotAdu, 0)} {eq} in {F(mpx, mpx < 1 ? 2 : 1)} Mpx")),
@@ -240,9 +238,7 @@ internal static class DarkReport
             ]),
             new(T("8. HOW MANY DARKS ARE ENOUGH", "8. CATE DARK-URI AJUNG"),
             [
-                new(T("noise when averaged", "zgomot dupa medie"), Curve(d.Noise) + T(
-                    $"  [{ScaleReport.PlaneWords(g)}, the central {d.Noise.CropPx} px, ADU; measured from one frame to the next]",
-                    $"  [{ScaleReport.PlaneWords(g)}, centrul de {d.Noise.CropPx} px, ADU; masurat de la un cadru la altul]")),
+                CurveRow(d.Noise, g),
                 new("master", Enough(d, v.Enough), double.IsNaN(v.Enough.MasterNoise) ? null : [$"{F(v.Enough.MasterNoise, 2)} ADU"]),
                 new("verdict", EnoughVerdictText(v.Enough)),
             ]),
@@ -269,20 +265,12 @@ internal static class DarkReport
         }
 
         List<ReportRow> rows = [];
-        LightFigures[] bad = l.Frames.Where(f => f.Error is not null && !f.Skipped).ToArray();
+        LightFigures[] bad = l.Frames.Where(f => f.Error is not null).ToArray();
         if (bad.Length > 0)
         {
             rows.Add(new(T("WARNING", "ATENTIE"), T(
                 $"{bad.Length} {(bad.Length == 1 ? "light could not be read" : "lights could not be read")} (the first: {bad[0].Info.FileName}: {bad[0].Error}); {(bad.Length == 1 ? "it is" : "they are")} in the lights table",
                 $"{RoCount(bad.Length)}{(bad.Length == 1 ? "light nu s-a putut citi" : "lights nu s-au putut citi")} (primul: {bad[0].Info.FileName}: {bad[0].Error}); {(bad.Length == 1 ? "e" : "sunt")} in tabelul de lights")));
-        }
-
-        int skipped = l.Frames.Count(f => f.Skipped);
-        if (skipped > 0)
-        {
-            rows.Add(new(T("skipped lights", "lights sarite"), T(
-                $"{skipped} of {l.Frames.Count} (over the maximum number of frames; {l.Used} used)",
-                $"{skipped} din {l.Frames.Count} (peste numarul maxim de cadre; s-au folosit {l.Used})")));
         }
 
         if (l.AssumedSettings > 0)
@@ -297,12 +285,10 @@ internal static class DarkReport
         rows.Add(new(T("hot pixels", "pixeli fierbinti"), T(
             $"{seen} in the lights at the same place, in at least {l.PersistentThreshold} of {RunReport.Frames(l.Used)} ({(one ? "a single pixel" : "single pixels")}, not part of a star, brighter than {(one ? "its" : "their")} surroundings by more than {F(Th.LightHotSigmas, 0)} times the noise there)",
             $"{seen} in lights in acelasi loc, in cel putin {l.PersistentThreshold} din {RunReport.Frames(l.Used)} ({(one ? "un pixel singur, nu parte dintr-o stea, mai luminos" : "pixeli singuri, nu parte dintr-o stea, mai luminosi")} decat imprejurimea cu peste {RoCount(F(Th.LightHotSigmas, 0))}ori zgomotul ei)")));
-        string above = T("above", "peste");
-        string of = T("of", "din");
-        rows.Add(new(T("in the dark master", "in masterul dark"), string.Join("; ", l.Overlap.Select(o => $"{above} {F(o.LevelAdu, 0)}: {o.Both} {of} {l.Persistent}" + (l.Persistent > 0 ? $" ({F(100.0 * o.Both / l.Persistent, 0)} %)" : "")))
-            + T($"  [how many of these pixels are in the dark master too, above each threshold in {eq}]", $"  [cati dintre acesti pixeli sunt si in masterul dark, peste fiecare prag in {eq}]")));
-        rows.Add(new(T("master in lights", "masterul in lights"), string.Join("; ", l.Overlap.Select(o => $"{above} {F(o.LevelAdu, 0)}: {o.Both} {of} {o.DarkCount}" + (o.DarkCount > 0 ? $" ({F(100.0 * o.Both / o.DarkCount, 0)} %)" : "")))
-            + T("  [how many of the master's pixels above each threshold show in the lights too]", "  [cati dintre pixelii masterului de peste fiecare prag se vad si in lights]")));
+        rows.Add(OverlapRow(T("in the dark master", "in masterul dark"), l.Overlap, _ => l.Persistent,
+            T($"how many of these pixels are in the dark master too, above each threshold in {eq}", $"cati dintre acesti pixeli sunt si in masterul dark, peste fiecare prag in {eq}")));
+        rows.Add(OverlapRow(T("master in lights", "masterul in lights"), l.Overlap, o => o.DarkCount,
+            T("how many of the master's pixels above each threshold show in the lights too", "cati dintre pixelii masterului de peste fiecare prag se vad si in lights")));
         string hot = $"{F(Th.HotAdu, 0)} {eq}";
         rows.Add(new(T("not in the master", "lipsesc din master"), l.Missed switch
         {
@@ -321,8 +307,67 @@ internal static class DarkReport
             : T(
                 $"in the lights, the hot pixels are on average {F(m.Ratio, 2)} times what they are in the dark ({over}; in the first {F(l.RatioFirst, 2)}, in the last {F(l.RatioLast, 2)}; on {Pixels(l.AmpPixels)})",
                 $"in lights, pixelii fierbinti sunt in medie de {F(m.Ratio, 2)} ori cat in dark ({over}; in primul {F(l.RatioFirst, 2)}, in ultimul {F(l.RatioLast, 2)}; pe {Pixels(l.AmpPixels)})")));
+        // both indexes, each on its own row (R-056): the darks' tag (the partner's, when the darks
+        // are the partner's, R-054), the lights' equivalent tag
+        rows.Add(new(r.DarksFromPartner is null ? T("index darks", "index dark-uri") : T("index partner", "index partener"), r.Index.Tag));
+        if (LightsLike(r) is (string tag, string about))
+        {
+            rows.Add(new("index lights", tag + about));
+        }
+
         rows.Add(new("verdict", MatchText(m, partner: false, T("in the lights", "in lights"))));
         return rows;
+    }
+
+    /// <summary>
+    /// One overlap row of check 9 (R-051): the console's line, the levels joined by "; " and the
+    /// note in brackets, and the same figures as a table for the window.
+    /// </summary>
+    /// <param name="label">The row's label.</param>
+    /// <param name="overlap">The overlap at each hot level.</param>
+    /// <param name="of">The total a level's shared count is read against: the persistent pixels,
+    /// or the master's pixels above the level.</param>
+    /// <param name="note">What the row shows, without brackets.</param>
+    /// <returns>The row, with its table.</returns>
+    private static ReportRow OverlapRow(string label, IReadOnlyList<OverlapAtLevel> overlap, Func<OverlapAtLevel, int> of, string note)
+    {
+        string above = T("above", "peste");
+        string ofWord = T("of", "din");
+        List<string> parts = [];
+        List<IReadOnlyList<string>> cells = [];
+        foreach (OverlapAtLevel o in overlap)
+        {
+            int total = of(o);
+            string share = total > 0 ? $"{F(100.0 * o.Both / total, 0)} %" : "";
+            parts.Add($"{above} {F(o.LevelAdu, 0)}: {o.Both} {ofWord} {total}" + (total > 0 ? $" ({share})" : ""));
+            cells.Add([$"{above} {F(o.LevelAdu, 0)}", $"{o.Both} {ofWord} {total}", share]);
+        }
+
+        return new(label, string.Join("; ", parts) + "  [" + note + "]")
+        {
+            Table = new([T("threshold", "prag"), T("pixels", "pixeli"), T("share", "procent")], cells, note),
+        };
+    }
+
+    /// <summary>
+    /// The lights' equivalent index (R-064) as its tag and the parenthesis that follows it in
+    /// check 9's <c>index lights</c> row and INDEX's <c>lights</c> row: the ratio to the dark and
+    /// the degrees.
+    /// </summary>
+    /// <param name="r">The run's result.</param>
+    /// <returns>The tag (<c>idx157</c>) and the parenthesis with its leading space; null without
+    /// lights or when the lights' index is not measured.</returns>
+    private static (string Tag, string About)? LightsLike(DarkSeriesResult r)
+    {
+        if (r.Lights is not LightsAnalysis l || double.IsNaN(r.LightsIndex))
+        {
+            return null;
+        }
+
+        string warmth = Warmth(l.LightsOverDark.DeltaCelsius, "", T("it", "el"));
+        return (IndexFigures.TagFor(r.LightsIndex), T(
+            $" ({F(l.LightsOverDark.Ratio, 2)} times the dark{warmth})",
+            $" (de {F(l.LightsOverDark.Ratio, 2)} ori cat dark-ul{warmth})"));
     }
 
     /// <summary>
@@ -346,13 +391,9 @@ internal static class DarkReport
                 + (r.DarksFromPartnerLabel is string partnerLabel ? T($"; label {partnerLabel}", $"; eticheta {partnerLabel}") : "")),
             new(T("label", "eticheta"), r.Label),
         ];
-        if (r.Lights is LightsAnalysis l && !double.IsNaN(r.LightsIndex))
+        if (LightsLike(r) is (string tag, string about))
         {
-            string like = F(Math.Round(r.LightsIndex, MidpointRounding.AwayFromZero), 0);
-            string warmth = Warmth(l.LightsOverDark.DeltaCelsius, "", T("it", "el"));
-            rows.Add(new("lights", T(
-                $"like a dark of idx{like} ({F(l.LightsOverDark.Ratio, 2)} times the dark{warmth})",
-                $"ca un dark cu idx{like} (de {F(l.LightsOverDark.Ratio, 2)} ori cat dark-ul{warmth})")));
+            rows.Add(new("lights", T("like a dark of ", "ca un dark cu ") + tag + about));
         }
 
         if (r.PartnerError is not null)
@@ -384,9 +425,13 @@ internal static class DarkReport
             string lvl = F(Th.PartnerOverlapAdu, 0);
             string ownShare = p.OwnHot50 > 0 ? $" ({F(100.0 * p.OwnHot50InPartner50 / p.OwnHot50, 0)} %)" : "";
             string partnerShare = p.PartnerHot50 > 0 ? $" ({F(100.0 * p.PartnerHot50InOwn20 / p.PartnerHot50, 0)} %)" : "";
-            rows.Add(new(T("shared pixels", "pixeli comuni"), T(
-                $"{p.OwnHot50InPartner50} of the session's {p.OwnHot50} above {lvl} ADU-eq are above {lvl} at the partner too{ownShare}; {p.PartnerHot50InOwn20} of the partner's {p.PartnerHot50} above {lvl} are above {F(Th.HotAdu, 0)} in the session{partnerShare}",
-                $"{p.OwnHot50InPartner50} din {p.OwnHot50} ai sesiunii peste {lvl} ADU-eq sunt peste {lvl} si la partener{ownShare}; {p.PartnerHot50InOwn20} din {p.PartnerHot50} ai partenerului peste {lvl} sunt peste {F(Th.HotAdu, 0)} in sesiune{partnerShare}")));
+            // two statements, one under the other in the window (R-063)
+            string[] shared =
+            [
+                T($"{p.OwnHot50InPartner50} of the session's {p.OwnHot50} above {lvl} ADU-eq are above {lvl} at the partner too{ownShare}", $"{p.OwnHot50InPartner50} din {p.OwnHot50} ai sesiunii peste {lvl} ADU-eq sunt peste {lvl} si la partener{ownShare}"),
+                T($"{p.PartnerHot50InOwn20} of the partner's {p.PartnerHot50} above {lvl} are above {F(Th.HotAdu, 0)} in the session{partnerShare}", $"{p.PartnerHot50InOwn20} din {p.PartnerHot50} ai partenerului peste {lvl} sunt peste {F(Th.HotAdu, 0)} in sesiune{partnerShare}"),
+            ];
+            rows.Add(new(T("shared pixels", "pixeli comuni"), string.Join("; ", shared)) { Lines = shared });
             if (p.LightsOverPartner.Verdict != MatchVerdict.Unmeasured)
             {
                 // lights over the partner, through the session's darks: (lights / dark) x (dark /
@@ -615,7 +660,7 @@ internal static class DarkReport
     /// empty without lights.
     /// </summary>
     /// <param name="r">The run's result; not null.</param>
-    /// <returns>One row per light in file order; a skipped or failed light has its reason and empty
+    /// <returns>One row per light in file order; a failed light has its reason and empty
     /// cells.</returns>
     internal static IReadOnlyList<LightTableRow> LightRows(DarkSeriesResult r)
     {
@@ -629,19 +674,13 @@ internal static class DarkReport
         List<LightTableRow> rows = [];
         foreach (LightFigures f in l.Frames)
         {
-            if (f.Skipped)
-            {
-                rows.Add(new(f.Info.Index, f.Info.FileName, f.Error, null, "", "", "", "", "", "", "", ""));
-                continue;
-            }
-
             if (f.Error is not null)
             {
-                rows.Add(new(f.Info.Index, f.Info.FileName, null, f.Error, "", "", "", "", "", "", "", ""));
+                rows.Add(new(f.Info.Index, f.Info.FileName, f.Error, "", "", "", "", "", "", "", ""));
                 continue;
             }
 
-            rows.Add(new(f.Info.Index, f.Info.FileName, null, null, Time(f.Info.Timestamp), F(f.SkyMedian[rp], 1), F(f.LocalSigma[rp], 2), f.Candidates.ToString(CultureInfo.InvariantCulture), f.IsolatedHot.ToString(CultureInfo.InvariantCulture), Ratio(f.AmpRatioMedian), Ratio(f.AmpRatioQ25), Ratio(f.AmpRatioQ75)));
+            rows.Add(new(f.Info.Index, f.Info.FileName, null, Time(f.Info.Timestamp), F(f.SkyMedian[rp], 1), F(f.LocalSigma[rp], 2), f.Candidates.ToString(CultureInfo.InvariantCulture), f.IsolatedHot.ToString(CultureInfo.InvariantCulture), Ratio(f.AmpRatioMedian), Ratio(f.AmpRatioQ25), Ratio(f.AmpRatioQ75)));
         }
 
         return rows;
@@ -1499,18 +1538,20 @@ internal static class DarkReport
     /// </summary>
     /// <param name="d">The dark series.</param>
     /// <param name="rp">The reference plane.</param>
-    /// <returns>The row's value, in the run's language.</returns>
-    private static string Stability(DarkSeriesAnalysis d, int rp)
+    /// <returns>The row's statements, in the run's language: one unmeasured line, or four (how
+    /// many show in every frame, how many miss two or more, how much they vary against the quiet
+    /// pixels, the RTS candidates).</returns>
+    private static IReadOnlyList<string> Stability(DarkSeriesAnalysis d, int rp)
     {
         HotStability h = d.Hot;
         if (h.Hot == 0)
         {
-            return T("UNMEASURED: no hot pixel", "NEMASURAT: niciun pixel fierbinte");
+            return [T("UNMEASURED: no hot pixel", "NEMASURAT: niciun pixel fierbinte")];
         }
 
         if (d.Used < 2)
         {
-            return T("UNMEASURED: the stability needs at least 2 frames", "NEMASURAT: stabilitatea cere cel putin 2 cadre");
+            return [T("UNMEASURED: the stability needs at least 2 frames", "NEMASURAT: stabilitatea cere cel putin 2 cadre")];
         }
 
         string plane = d.PlaneNames[rp];
@@ -1518,9 +1559,28 @@ internal static class DarkReport
         string rts = h.RtsCandidates == 1
             ? T($"1 {(green ? "green " : "")}pixel {plane} jumps", $"1 pixel {(green ? "verde " : "")}{plane} sare")
             : T($"{h.RtsCandidates} {(green ? "green " : "")}pixels {plane} jump", $"{RoCount(h.RtsCandidates)}pixeli {(green ? "verzi " : "")}{plane} sar");
-        return T(
-            $"{h.Always} of {h.Hot} show (above half the threshold) in all {RunReport.Frames(d.Used)}, {h.Flicker} are missing from 2 or more; from one frame to the next they vary by {F(h.HotTemporalStd, 2)} ADU, the other pixels by {F(h.QuietTemporalStd, 2)}; {rts} between two levels (RTS: they vary more than {F(Th.RtsSigmaFactor, 0)} times the noise of one frame, {F(d.Noise.SigmaFrame, 2)})",
-            $"{h.Always} din {h.Hot} se vad (peste jumatate din prag) in toate cele {RunReport.Frames(d.Used)}, {h.Flicker} lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu {F(h.HotTemporalStd, 2)} ADU, ceilalti pixeli cu {F(h.QuietTemporalStd, 2)}; {rts} intre doua niveluri (RTS: variaza de peste {RoCount(F(Th.RtsSigmaFactor, 0))}ori cat zgomotul unui cadru, {F(d.Noise.SigmaFrame, 2)})");
+        return
+        [
+            T($"{h.Always} of {h.Hot} show (above half the threshold) in all {RunReport.Frames(d.Used)}", $"{h.Always} din {h.Hot} se vad (peste jumatate din prag) in toate cele {RunReport.Frames(d.Used)}"),
+            T($"{h.Flicker} are missing from 2 or more", $"{h.Flicker} lipsesc din 2 sau mai multe"),
+            T($"from one frame to the next they vary by {F(h.HotTemporalStd, 2)} ADU, the other pixels by {F(h.QuietTemporalStd, 2)}", $"de la un cadru la altul variaza cu {F(h.HotTemporalStd, 2)} ADU, ceilalti pixeli cu {F(h.QuietTemporalStd, 2)}"),
+            T($"{rts} between two levels (RTS: they vary more than {F(Th.RtsSigmaFactor, 0)} times the noise of one frame, {F(d.Noise.SigmaFrame, 2)})", $"{rts} intre doua niveluri (RTS: variaza de peste {RoCount(F(Th.RtsSigmaFactor, 0))}ori cat zgomotul unui cadru, {F(d.Noise.SigmaFrame, 2)})"),
+        ];
+    }
+
+    /// <summary>
+    /// The <c>stabilitate</c> row of check 5 (R-031): the statements of <see cref="Stability"/>
+    /// joined by "; " for the console and carried as lines for the window; one unmeasured line
+    /// stands alone.
+    /// </summary>
+    /// <param name="d">The dark series.</param>
+    /// <param name="rp">The reference plane.</param>
+    /// <returns>The row.</returns>
+    private static ReportRow StabilityRow(DarkSeriesAnalysis d, int rp)
+    {
+        IReadOnlyList<string> lines = Stability(d, rp);
+        string label = T("stability", "stabilitate");
+        return lines.Count == 1 ? new(label, lines[0]) : new(label, string.Join("; ", lines)) { Lines = lines };
     }
 
     /// <summary>
@@ -1607,6 +1667,28 @@ internal static class DarkReport
         return nv.Curve.Count == 0
             ? T("UNMEASURED: there are fewer than 2 frames", "NEMASURAT: sunt mai putin de 2 cadre")
             : string.Join("; ", nv.Curve.Select(p => $"{RunReport.Frames(p.N)}: {F(p.Measured, 2)} ({expected} {F(p.Expected, 2)})"));
+    }
+
+    /// <summary>
+    /// The <c>zgomot dupa medie</c> row of check 8 (R-024): the console's line, the points joined
+    /// by "; " and the note in brackets, and the same points as a table for the window; without a
+    /// curve the unmeasured line alone, the note still in brackets.
+    /// </summary>
+    /// <param name="nv">The noise-against-n figures.</param>
+    /// <param name="g">The reference plane's name.</param>
+    /// <returns>The row, with its table when there is a curve.</returns>
+    private static ReportRow CurveRow(NoiseVsN nv, string g)
+    {
+        string note = T(
+            $"{ScaleReport.PlaneWords(g)}, the central {nv.CropPx} px, ADU; measured from one frame to the next",
+            $"{ScaleReport.PlaneWords(g)}, centrul de {nv.CropPx} px, ADU; masurat de la un cadru la altul");
+        return new(T("noise when averaged", "zgomot dupa medie"), Curve(nv) + "  [" + note + "]")
+        {
+            Table = nv.Curve.Count == 0 ? null : new(
+                [T("frames", "cadre"), T("measured", "masurat"), T("expected", "se astepta")],
+                nv.Curve.Select(p => (IReadOnlyList<string>)[RunReport.Frames(p.N), F(p.Measured, 2), F(p.Expected, 2)]).ToList(),
+                note),
+        };
     }
 
     /// <summary>

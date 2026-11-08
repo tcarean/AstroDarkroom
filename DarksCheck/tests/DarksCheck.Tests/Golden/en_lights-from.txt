@@ -39,7 +39,7 @@ Copyright (C) 2026 Tudor Carean
     above the threshold: above 10: 20; above 20: 20; above 50: 20; above 100: 20; above 500: 0  [the master's pixels, ADU above the black, all colours]
     by colour, above 20: R 20  G1 0  G2 0  B 0
     how hot            : on average 120 ADU; 80 % of them between 118 and 121; the hottest 1 % above 121 (of 20 pixels)
-    stability          : 20 of 20 show (above half the threshold) in all 4 frames, 0 are missing from 2 or more; from one frame to the next they vary by 2.23 ADU, the other pixels by 2.38; 0 green pixels G1 jump between two levels (RTS: they vary more than 6 times the noise of one frame, 3.01)
+    stability          : 20 of 20 show (above half the threshold) in all 4 frames; 0 are missing from 2 or more; from one frame to the next they vary by 2.23 ADU, the other pixels by 2.38; 0 green pixels G1 jump between two levels (RTS: they vary more than 6 times the noise of one frame, 3.01)
     verdict            : OK (informative): 20 pixels above 20 ADU in 0.05 Mpx
 
   6. FIXED PATTERN: WHAT IS THE SAME IN EVERY FRAME
@@ -62,6 +62,8 @@ Copyright (C) 2026 Tudor Carean
     master in lights   : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)  [how many of the master's pixels above each threshold show in the lights too]
     not in the master  : none: every hot pixel of the lights is above 20 ADU in the master too
     lights against dark: in the lights, the hot pixels are on average 1.30 times what they are in the dark (over the 3 frames; in the first 1.33, in the last 1.30; on 20 pixels)
+    index darks        : idx121
+    index lights       : idx157 (1.30 times the dark, that is 2.3 degrees warmer than it)
     verdict            : WARNING: subtract the dark with -opt (-opt: Siril multiplies it so that it matches the lights); in the lights the hot pixels are 1.30 times what they are in the dark, between 0.7 and 1.4: the dark is colder by 2.3 degrees
 
   INDEX

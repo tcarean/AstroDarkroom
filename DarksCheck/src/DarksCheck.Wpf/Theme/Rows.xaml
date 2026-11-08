@@ -29,8 +29,43 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <ResourceDictionary Source="Dark.xaml" />
   </ResourceDictionary.MergedDictionaries>
 
+  <!-- A row's figures as a small table (R-024, R-051): the core's column names over its rows,
+       the columns sized together, and the core's note under them. -->
+  <DataTemplate x:Key="ReportTable">
+    <StackPanel Grid.IsSharedSizeScope="True" Margin="0,2,0,0">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn0" />
+          <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn1" />
+          <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn2" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Grid.Column="0" Style="{StaticResource Muted}" Text="{Binding Header[0]}" Margin="0,0,22,2" />
+        <TextBlock Grid.Column="1" Style="{StaticResource Muted}" Text="{Binding Header[1]}" TextAlignment="Right" Margin="0,0,22,2" />
+        <TextBlock Grid.Column="2" Style="{StaticResource Muted}" Text="{Binding Header[2]}" TextAlignment="Right" Margin="0,0,0,2" />
+      </Grid>
+      <ItemsControl ItemsSource="{Binding Rows}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn0" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn1" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn2" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="{Binding [0]}" Margin="0,0,22,1" />
+              <TextBlock Grid.Column="1" Text="{Binding [1]}" TextAlignment="Right" Margin="0,0,22,1" />
+              <TextBlock Grid.Column="2" Text="{Binding [2]}" TextAlignment="Right" Margin="0,0,0,1" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock Style="{StaticResource Muted}" Text="{Binding Note}" TextWrapping="Wrap" Margin="0,4,0,0" />
+    </StackPanel>
+  </DataTemplate>
+
   <!-- A report row (R-071): the label, the verdict chip when the row carries a verdict word,
-       and the rest of the text. Shared by every tab that lists rows. -->
+       and the rest of the text: its statements one under the other, or its table when it has
+       one. Shared by every tab that lists rows. -->
   <DataTemplate x:Key="ReportRow">
     <Grid Margin="0,0,0,8">
       <Grid.ColumnDefinitions>
@@ -42,8 +77,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <ContentControl Grid.Column="1" Content="{Binding Verdict}" ContentTemplate="{StaticResource VerdictChip}"
                       Margin="0,0,10,0" VerticalAlignment="Top"
                       Visibility="{Binding HasVerdict, Converter={StaticResource BoolToVis}}" />
-      <!-- the rest of the text, the row's bold parts (the masters' noise, the light found, ADR 0016) as bold runs -->
-      <TextBlock Grid.Column="2" local:Emphasis.Text="{Binding Rest}" local:Emphasis.Bold="{Binding Bold}" TextWrapping="Wrap" />
+      <StackPanel Grid.Column="2">
+        <!-- the statements, one under the other, the row's bold parts (the masters' noise, the light found, ADR 0016) as bold runs -->
+        <ItemsControl ItemsSource="{Binding Lines}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <TextBlock local:Emphasis.Text="{Binding}" local:Emphasis.Bold="{Binding DataContext.Bold, RelativeSource={RelativeSource AncestorType=ItemsControl}}" TextWrapping="Wrap" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <ContentControl Content="{Binding Table}" ContentTemplate="{StaticResource ReportTable}" Focusable="False"
+                        Visibility="{Binding HasTable, Converter={StaticResource BoolToVis}}" />
+      </StackPanel>
     </Grid>
   </DataTemplate>
 

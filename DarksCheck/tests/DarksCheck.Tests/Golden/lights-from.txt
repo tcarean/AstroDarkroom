@@ -39,7 +39,7 @@ Copyright (C) 2026 Tudor Carean
     pixeli peste prag  : peste 10: 20; peste 20: 20; peste 50: 20; peste 100: 20; peste 500: 0  [pixeli ai masterului, ADU peste negru, toate culorile]
     pe culori, peste 20: R 20  G1 0  G2 0  B 0
     cat de fierbinti   : in medie 120 ADU; 80 % dintre ei intre 118 si 121; cei mai fierbinti 1 % peste 121 (din 20 de pixeli)
-    stabilitate        : 20 din 20 se vad (peste jumatate din prag) in toate cele 4 cadre, 0 lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu 2.23 ADU, ceilalti pixeli cu 2.38; 0 pixeli verzi G1 sar intre doua niveluri (RTS: variaza de peste 6 ori cat zgomotul unui cadru, 3.01)
+    stabilitate        : 20 din 20 se vad (peste jumatate din prag) in toate cele 4 cadre; 0 lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu 2.23 ADU, ceilalti pixeli cu 2.38; 0 pixeli verzi G1 sar intre doua niveluri (RTS: variaza de peste 6 ori cat zgomotul unui cadru, 3.01)
     verdict            : OK (informativ): 20 de pixeli peste 20 ADU in 0.05 Mpx
 
   6. MODEL FIX: CE E LA FEL IN TOATE CADRELE
@@ -62,6 +62,8 @@ Copyright (C) 2026 Tudor Carean
     masterul in lights : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [cati dintre pixelii masterului de peste fiecare prag se vad si in lights]
     lipsesc din master : niciunul: toti pixelii fierbinti din lights sunt peste 20 ADU si in master
     lights fata de dark: in lights, pixelii fierbinti sunt in medie de 1.30 ori cat in dark (pe cele 3 cadre; in primul 1.33, in ultimul 1.30; pe 20 de pixeli)
+    index dark-uri     : idx121
+    index lights       : idx157 (de 1.30 ori cat dark-ul, adica cu 2.3 grade mai calde decat el)
     verdict            : ATENTIE: scade dark-ul cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); in lights pixelii fierbinti sunt de 1.30 ori cat in dark, intre 0.7 si 1.4: dark-ul e mai rece cu 2.3 grade
 
   INDEX

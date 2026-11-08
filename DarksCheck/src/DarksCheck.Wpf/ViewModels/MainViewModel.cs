@@ -35,10 +35,25 @@ namespace DarksCheck.Wpf;
 /// <param name="Verdict">The leading verdict word; null when the row carries none.</param>
 /// <param name="Bold">The substrings of <paramref name="Rest"/> the window draws bold (ADR 0016);
 /// empty for none.</param>
-public sealed record RowVm(string Label, string Value, string Rest, string? Verdict, IReadOnlyList<string> Bold)
+/// <param name="Lines">The statements drawn one under the other (R-031, R-063): the core's lines,
+/// or <paramref name="Rest"/> alone; empty for a row drawn as a table.</param>
+/// <param name="Table">The row's figures as a table under its label, in place of its text
+/// (R-024, R-051); null for none.</param>
+public sealed record RowVm(string Label, string Value, string Rest, string? Verdict, IReadOnlyList<string> Bold, IReadOnlyList<string> Lines, TableVm? Table)
 {
     public bool HasVerdict => Verdict is not null;
+
+    public bool HasTable => Table is not null;
 }
+
+/// <summary>
+/// A row's table as the window draws it (R-071): the core's column names, cells and note, in
+/// the report's language.
+/// </summary>
+/// <param name="Header">The column names.</param>
+/// <param name="Rows">The rows, one formatted cell per column.</param>
+/// <param name="Note">What the table shows, said under it.</param>
+public sealed record TableVm(IReadOnlyList<string> Header, IReadOnlyList<IReadOnlyList<string>> Rows, string Note);
 
 /// <summary>One check of the report as a card: its title and its rows, the core's.</summary>
 /// <param name="Title">The section's title as the report prints it.</param>
@@ -79,7 +94,6 @@ public sealed record FrameRowVm(int Index, string FileName, string? Skipped, str
 /// <summary>One light of the lights table (R-071): the console's cells as they are.</summary>
 /// <param name="Index">The light's number, as the console shows it.</param>
 /// <param name="FileName">The file's name.</param>
-/// <param name="Skipped">Why the light was not read; null when it was.</param>
 /// <param name="Error">Why the light could not be measured; null when it was.</param>
 /// <param name="Time">The shot's time cell.</param>
 /// <param name="Sky">The sky level cell.</param>
@@ -89,12 +103,12 @@ public sealed record FrameRowVm(int Index, string FileName, string? Skipped, str
 /// <param name="Amp">The amplitude ratio cell against the dark master.</param>
 /// <param name="Q25">The ratio's first quartile cell.</param>
 /// <param name="Q75">The ratio's third quartile cell.</param>
-public sealed record LightRowVm(int Index, string FileName, string? Skipped, string? Error, string Time, string Sky, string LocalSigma, string Candidates, string Isolated, string Amp, string Q25, string Q75)
+public sealed record LightRowVm(int Index, string FileName, string? Error, string Time, string Sky, string LocalSigma, string Candidates, string Isolated, string Amp, string Q25, string Q75)
 {
     /// <summary>The table row of the core as the window binds it.</summary>
     /// <param name="r">The core's row of the lights table.</param>
     /// <returns>The row, its cells unchanged.</returns>
-    internal static LightRowVm From(LightTableRow r) => new(r.Index, r.FileName, r.Skipped, r.Error, r.Time, r.Sky, r.LocalSigma, r.Candidates, r.Isolated, r.Amp, r.Q25, r.Q75);
+    internal static LightRowVm From(LightTableRow r) => new(r.Index, r.FileName, r.Error, r.Time, r.Sky, r.LocalSigma, r.Candidates, r.Isolated, r.Amp, r.Q25, r.Q75);
 }
 
 /// <summary>
@@ -155,7 +169,6 @@ public sealed class MainViewModel : ObservableObject
         _maxFramesText = s.MaxFrames ?? Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture);
         _isoFactorText = s.IsoFactor ?? Normalisation.Default.IsoFactorPerStop.ToString("0.##", CultureInfo.InvariantCulture);
         _doublingText = s.Doubling ?? Normalisation.Default.DoublingCelsius.ToString("0.##", CultureInfo.InvariantCulture);
-        _partner = string.IsNullOrWhiteSpace(s.Partner) ? null : s.Partner;
     }
 
     public string Banner => VersionInfo.Banner;
@@ -177,7 +190,8 @@ public sealed class MainViewModel : ObservableObject
     public bool HasFolder => !string.IsNullOrEmpty(_folder);
 
     /// <summary>
-    /// The partner folder of `--against` (R-073), remembered between runs; null for none.
+    /// The partner folder of `--against` (R-073); null for none. Not stored, and dropped when
+    /// another folder is opened, like the lights folder (ADR 0041).
     /// </summary>
     public string? Partner
     {
@@ -190,7 +204,6 @@ public sealed class MainViewModel : ObservableObject
                 Log.Info("partner=" + LogText.Str(v));
                 Raise(nameof(HasPartner));
                 Raise(nameof(PartnerText));
-                SaveSettings();
                 if (HasResult)
                 {
                     Status = WindowTexts.PartnerChanged;
@@ -451,13 +464,22 @@ public sealed class MainViewModel : ObservableObject
         CancellationTokenSource cts = new();
         _cts = cts;
         int run = ++_runs;
-        if (HasLightsFrom && HasFolder && !SameFolder(folder, _folder))
+        if (HasFolder && !SameFolder(folder, _folder))
         {
-            // the chosen lights go with the folder they were chosen for (R-122, ADR 0039); a rerun
-            // of the same folder, the problem card's included, keeps them, and so does the first
-            // folder opened after the choice
-            Log.Info("another folder: the chosen lights are dropped");
-            LightsFrom = null;
+            // the chosen lights and the partner go with the folder they were chosen for (R-122,
+            // ADR 0039; R-073, ADR 0041); a rerun of the same folder, the problem card's included,
+            // keeps them, and so does the first folder opened after the choice
+            if (HasLightsFrom)
+            {
+                Log.Info("another folder: the chosen lights are dropped");
+                LightsFrom = null;
+            }
+
+            if (HasPartner)
+            {
+                Log.Info("another folder: the partner is dropped");
+                Partner = null;
+            }
         }
 
         Folder = folder;
@@ -630,7 +652,7 @@ public sealed class MainViewModel : ObservableObject
     }
 
     /// <summary>Stores the four setting texts as typed and the partner.</summary>
-    private void SaveSettings() => UserSettings.Save(new StoredSettings(_threadsText, _maxFramesText, _isoFactorText, _doublingText, _partner));
+    private void SaveSettings() => UserSettings.Save(new StoredSettings(_threadsText, _maxFramesText, _isoFactorText, _doublingText));
 
     /// <summary>Whether two folder paths name the same folder: made full, trailing separators off, case ignored (Windows).</summary>
     /// <param name="a">One path; blank for none.</param>
@@ -697,7 +719,10 @@ public sealed class MainViewModel : ObservableObject
 
         HeaderLine = DarkReport.HeaderLine(r);
         IReadOnlyList<ReportSection> sections = DarkReport.Sections(r);
-        Sections = sections.Select(s => new SectionVm(s.Title, s.Rows.Select(Row).ToList())).ToList();
+        // the Rezumat's cards: check 9 right under the session card, then the rest in the console's
+        // order, each card with the rows the core marks for the Rezumat (R-071, ADR 0041)
+        Sections = sections.Where(IsLightsCheck).Concat(sections.Where(s => !IsLightsCheck(s)))
+            .Select(s => new SectionVm(s.Title, s.Rows.Where(row => row.Summary).Select(Row).ToList())).ToList();
         HotRows = Rows(sections, "5.");
         LightRows = Rows(sections, "9.");
         IndexRows = Rows(sections, "INDEX");
@@ -774,8 +799,14 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>A report row of the core as the window binds it.</summary>
     /// <param name="r">The core's row.</param>
-    /// <returns>The row with its label, value, rest, verdict and bold parts.</returns>
-    private static RowVm Row(ReportRow r) => new(r.Label, r.Value, r.Rest, r.Verdict, r.BoldParts);
+    /// <returns>The row with its label, value, rest, verdict, bold parts, lines and table; a row
+    /// with a table has no lines, the table standing in for the text.</returns>
+    private static RowVm Row(ReportRow r) => new(r.Label, r.Value, r.Rest, r.Verdict, r.BoldParts, r.Table is not null ? [] : r.Lines ?? [r.Rest], r.Table is null ? null : new TableVm(r.Table.Header, r.Table.Rows, r.Table.Note));
+
+    /// <summary>Whether a section is check 9, the lights against the dark, which the Rezumat puts first.</summary>
+    /// <param name="s">The section.</param>
+    /// <returns>True for the section whose title starts with "9.".</returns>
+    private static bool IsLightsCheck(ReportSection s) => s.Title.StartsWith("9.", StringComparison.Ordinal);
 
     /// <summary>
     /// The rows of every section whose title starts with the given text, in order.

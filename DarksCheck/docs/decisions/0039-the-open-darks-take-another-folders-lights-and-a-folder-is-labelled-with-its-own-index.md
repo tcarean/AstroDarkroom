@@ -1,7 +1,7 @@
 # 0039. The open darks take another folder's lights, and a folder is labelled with its own index
 
 Date: 2026-11-07
-Status: accepted 2026-11-07
+Status: accepted 2026-11-07; the partner staying remembered superseded by 0041
 Supersedes: 0011 in part (the label of a session whose darks are the partner's)
 
 ## Context

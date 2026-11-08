@@ -37,7 +37,7 @@ Copyright (C) 2026 Tudor Carean
     pixeli peste prag  : peste 10: 20; peste 20: 20; peste 50: 20; peste 100: 20; peste 500: 0  [pixeli ai masterului, ADU peste negru, toate culorile]
     pe culori, peste 20: R 20  G1 0  G2 0  B 0
     cat de fierbinti   : in medie 116 ADU; 80 % dintre ei intre 114 si 117; cei mai fierbinti 1 % peste 118 (din 20 de pixeli)
-    stabilitate        : 20 din 20 se vad (peste jumatate din prag) in toate cele 12 cadre, 0 lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu 18.80 ADU, ceilalti pixeli cu 2.95; 0 pixeli verzi G1 sar intre doua niveluri (RTS: variaza de peste 6 ori cat zgomotul unui cadru, 3.01)
+    stabilitate        : 20 din 20 se vad (peste jumatate din prag) in toate cele 12 cadre; 0 lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu 18.80 ADU, ceilalti pixeli cu 2.95; 0 pixeli verzi G1 sar intre doua niveluri (RTS: variaza de peste 6 ori cat zgomotul unui cadru, 3.01)
     verdict            : OK (informativ): 20 de pixeli peste 20 ADU in 0.05 Mpx
 
   6. MODEL FIX: CE E LA FEL IN TOATE CADRELE

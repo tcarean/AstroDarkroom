@@ -66,7 +66,7 @@ internal sealed record StackNoise(double SkyAdu, double SkySigmaAdu, int Lights,
         List<double> sky = [], sigma = [];
         foreach (LightFigures f in lights.Frames)
         {
-            if (f.Error is null && !f.Skipped && referencePlane < f.SkyMedian.Count && !double.IsNaN(f.SkyMedian[referencePlane]))
+            if (f.Error is null && referencePlane < f.SkyMedian.Count && !double.IsNaN(f.SkyMedian[referencePlane]))
             {
                 sky.Add(f.SkyMedian[referencePlane]);
                 sigma.Add(f.SkySigma[referencePlane]);

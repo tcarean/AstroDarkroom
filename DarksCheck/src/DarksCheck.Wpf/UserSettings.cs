@@ -22,8 +22,9 @@ using NLog;
 namespace DarksCheck.Wpf;
 
 /// <summary>
-/// The window's stored settings as text, exactly as typed or chosen (R-075): the thread count,
-/// the frame cap, the gain per ISO stop, the degrees per doubling, the partner folder.
+/// The window's stored settings as text, exactly as typed (R-075): the thread count, the frame
+/// cap, the gain per ISO stop, the degrees per doubling. The partner and the lights folder are
+/// not stored (ADR 0041); an older file's `partner` key is ignored.
 /// </summary>
 /// <param name="Threads">The thread count as typed; null when never stored.</param>
 /// <param name="MaxFrames">The cap on frames held in memory as typed; null when never
@@ -31,12 +32,11 @@ namespace DarksCheck.Wpf;
 /// <param name="IsoFactor">The signal factor per ISO stop as typed; null when never stored.</param>
 /// <param name="Doubling">The degrees Celsius per doubling of the dark current as typed; null when
 /// never stored.</param>
-/// <param name="Partner">The partner folder's path; null when none.</param>
-public sealed record StoredSettings(string? Threads, string? MaxFrames, string? IsoFactor, string? Doubling, string? Partner);
+public sealed record StoredSettings(string? Threads, string? MaxFrames, string? IsoFactor, string? Doubling);
 
 /// <summary>
 /// The window's settings that outlive a run (R-075):
-/// <c>%LOCALAPPDATA%\DarksCheck\settings.json</c>, the five strings of
+/// <c>%LOCALAPPDATA%\DarksCheck\settings.json</c>, the four strings of
 /// <see cref="StoredSettings"/>, which the view-model parses with the invariant culture and falls
 /// back from. This class stores and fetches text and judges nothing: a missing or unreadable file
 /// gives nulls, a failed write is ignored. The tests point <see cref="Path"/> at a file of their
@@ -55,7 +55,7 @@ public static class UserSettings
     /// <summary>
     /// The stored strings, null each when the file is missing, unreadable or lacks them.
     /// </summary>
-    /// <returns>The settings; never null, all five null when the file is missing, unreadable or not
+    /// <returns>The settings; never null, all four null when the file is missing, unreadable or not
     /// JSON.</returns>
     public static StoredSettings Load()
     {
@@ -63,15 +63,15 @@ public static class UserSettings
         {
             if (!File.Exists(FilePath))
             {
-                return new StoredSettings(null, null, null, null, null);
+                return new StoredSettings(null, null, null, null);
             }
 
-            return JsonSerializer.Deserialize<StoredSettings>(File.ReadAllText(FilePath), Json) ?? new StoredSettings(null, null, null, null, null);
+            return JsonSerializer.Deserialize<StoredSettings>(File.ReadAllText(FilePath), Json) ?? new StoredSettings(null, null, null, null);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
         {
             Log.Debug(e, "the settings " + FilePath + " could not be read; the defaults are used");
-            return new StoredSettings(null, null, null, null, null);
+            return new StoredSettings(null, null, null, null);
         }
     }
 
@@ -79,7 +79,7 @@ public static class UserSettings
     /// Writes the settings as indented JSON, creating the folder; a write the file system refuses
     /// is ignored.
     /// </summary>
-    /// <param name="settings">The five strings to store; not null.</param>
+    /// <param name="settings">The four strings to store; not null.</param>
     public static void Save(StoredSettings settings)
     {
         try

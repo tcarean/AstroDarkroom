@@ -24,9 +24,9 @@ Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--
                 darkscheck-biases.csv, darkscheck-lights.csv, darkscheck-map-dark.png, ...).
   --threads N   cate cadre se citesc in acelasi timp (implicit jumatate din
                 nucleele procesorului).
-  --max-frames N  cate cadre se tin in memorie (implicit 60, 48 MB fiecare la 24 MP) si cate lights se masoara;
+  --max-frames N  cate cadre dintr-un grup se tin in memorie (implicit 60, 48 MB fiecare la 24 MP);
                 daca sunt mai multe, se citesc doar unele, la distante egale (de exemplu
-                unul din doua), iar restul apar in tabel ca sarite.
+                unul din doua), iar restul apar in tabel ca sarite; lights-urile se masoara toate.
   --inventory   doar ce scrie in fisiere, fara sa citeasca pixelii: ora, expunerea si
                 ISO-ul fiecarui cadru, cat de des s-au facut cadrele si pauzele dintre
                 ele, daca dark-urile se potrivesc cu lights-urile.

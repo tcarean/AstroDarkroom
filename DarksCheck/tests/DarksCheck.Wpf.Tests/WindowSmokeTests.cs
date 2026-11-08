@@ -83,6 +83,11 @@ public class WindowSmokeTests
         el.Measure(new Size(w, h));
         el.Arrange(new Rect(0, 0, w, h));
         el.UpdateLayout();
+        if (name is not null && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DARKSCHECK_DUMP_SCREENS")))
+        {
+            // the rows' runs are rebuilt at DataBind priority (Emphasis): a PNG for the eye waits for them
+            el.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+        }
 
         RenderTargetBitmap bmp = new(w, h, 96, 96, PixelFormats.Pbgra32);
         bmp.Render(el);
