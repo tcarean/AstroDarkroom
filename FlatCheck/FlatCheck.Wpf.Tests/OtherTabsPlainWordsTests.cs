@@ -66,7 +66,7 @@ public class OtherTabsPlainWordsTests
     {
         using var _ = Ui.Use(UiLanguage.English);
         var row = SessionMessages.HistogramGuideRows().Single(r => r.Shape == "the vertical line");
-        Assert.Equal("The typical level at the middle of the frame, the one figure that decides. On the "
+        Assert.Equal("The average level at the middle of the frame, the one figure that decides. On the "
                      + "brightest channel it is the very number in the verdict pill above.", row.Meaning);
     }
 }
