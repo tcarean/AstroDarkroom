@@ -177,7 +177,8 @@ public class WindowLoggingTests
 
         StoredSettings s = UserSettings.Load();
 
-        Assert.Null(s.Partner);
+        Assert.Null(s.Threads);
+        Assert.Null(s.MaxFrames);
         LogCapture.Captured line = Assert.Single(capture.Events);
         Assert.Equal("Window", line.Logger);
         Assert.Equal(LogLevel.Debug, line.Level);

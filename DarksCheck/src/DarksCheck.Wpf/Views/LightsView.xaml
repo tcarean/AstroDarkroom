@@ -69,8 +69,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TextBlock Grid.Column="7" Style="{StaticResource Cell}" Text="{Binding Amp}" />
         <TextBlock Grid.Column="8" Style="{StaticResource Cell}" Text="{Binding Q25}" />
         <TextBlock Grid.Column="9" Style="{StaticResource Cell}" Text="{Binding Q75}" />
-        <TextBlock Grid.Column="10" Style="{StaticResource LeftCell}" Foreground="{StaticResource MutedBr}" TextTrimming="CharacterEllipsis" Text="{Binding Skipped}" ToolTip="{Binding Skipped}"
-                   Visibility="{Binding Skipped, Converter={StaticResource NotNullToVis}}" />
         <TextBlock Grid.Column="10" Style="{StaticResource LeftCell}" Foreground="{StaticResource BadBr}" TextTrimming="CharacterEllipsis" Text="{Binding Error}" ToolTip="{Binding Error}"
                    Visibility="{Binding Error, Converter={StaticResource NotNullToVis}}" />
       </Grid>

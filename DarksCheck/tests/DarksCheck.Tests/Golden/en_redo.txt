@@ -37,7 +37,7 @@ Copyright (C) 2026 Tudor Carean
     above the threshold: above 10: 20; above 20: 20; above 50: 20; above 100: 20; above 500: 0  [the master's pixels, ADU above the black, all colours]
     by colour, above 20: R 20  G1 0  G2 0  B 0
     how hot            : usually 116 ADU; 80 % of them between 114 and 117; the hottest 1 % above 118 (of 20 pixels)
-    stability          : 20 of 20 show (above half the threshold) in all 12 frames, 0 are missing from 2 or more; from one frame to the next they vary by 18.80 ADU, the other pixels by 2.95; 0 green pixels G1 jump between two levels (RTS: they vary more than 6 times the noise of one frame, 3.01)
+    stability          : 20 of 20 show (above half the threshold) in all 12 frames; 0 are missing from 2 or more; from one frame to the next they vary by 18.80 ADU, the other pixels by 2.95; 0 green pixels G1 jump between two levels (RTS: they vary more than 6 times the noise of one frame, 3.01)
     verdict            : OK (informative): 20 pixels above 20 ADU in 0.05 Mpx
 
   6. FIXED PATTERN: WHAT IS THE SAME IN EVERY FRAME

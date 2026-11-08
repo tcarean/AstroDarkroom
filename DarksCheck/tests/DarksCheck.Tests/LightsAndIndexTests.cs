@@ -186,7 +186,7 @@ public class LightsAndIndexTests
     }
 
     [Fact]
-    public void R053_ALightThatCannotBeDecodedIsAnErrorASkippedOneIsNot()
+    public void R053_ALightThatCannotBeDecodedIsAnErrorAndEveryLightIsReadWhateverTheCap()
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i));
         File.WriteAllBytes(Path.Combine(s.LightsDir, "light_0003.fit"), new byte[100]);
@@ -199,13 +199,15 @@ public class LightsAndIndexTests
         Assert.Contains("light_0004.fit        eroare: dimensiune diferita: 128 x 96 fata de 256 x 192", stdout, StringComparison.Ordinal);
         Assert.Matches(@"pixeli fierbinti   : (18 |19 |20 de )pixeli fierbinti se vad in lights in acelasi loc, in cel putin 3 din 3 cadre \(pixeli singuri, nu parte dintr-o stea, mai luminosi decat imprejurimea cu peste 6 ori zgomotul ei\)", stdout);
 
-        // the cap: one light in two is decoded, the others are skipped, no error
+        // the cap of R-027 is the darks' and the biases': every light is read (R-050, ADR 0041)
         using SessionFixture capped = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i));
         DarkSeriesResult r = Run(capped, maxFrames: 3);
         Assert.False(r.HasErrors);
-        Assert.Equal(3, r.Lights!.Used);
-        Assert.Equal(2, r.Lights.Frames.Count(f => f.Skipped));
-        Assert.Contains("lights sarite      : 2 din 5 (peste numarul maxim de cadre; s-au folosit 3)", Report(r), StringComparison.Ordinal);
+        Assert.Equal(3, r.Darks.Used);
+        Assert.Equal(5, r.Lights!.Used);
+        Assert.All(r.Lights.Frames, f => Assert.Null(f.Error));
+        Assert.DoesNotContain("sarit", Report(r).Split("TABEL PE LIGHTS")[1], StringComparison.Ordinal);
+        Assert.DoesNotContain("lights sarite", Report(r), StringComparison.Ordinal);
 
         // no light decodes: check 9 says why, the run exits 1
         using SessionFixture none = new SessionFixture().WithDarkSeries(6, Dark).WithLights(2, i => Light(i));
@@ -231,14 +233,65 @@ public class LightsAndIndexTests
         Assert.Contains("-> scris: " + path, stdout, StringComparison.Ordinal);
         string[] csv = File.ReadAllLines(path);
         Assert.Equal(5, csv.Length);
-        Assert.StartsWith("index,file,time,exposure_s,iso,error,skipped,R_sky_median,R_sky_sigma,R_local_sigma,", csv[0], StringComparison.Ordinal);
+        Assert.StartsWith("index,file,time,exposure_s,iso,error,R_sky_median,R_sky_sigma,R_local_sigma,", csv[0], StringComparison.Ordinal);
         Assert.EndsWith(",candidates,isolated_hot,amp_ratio_median,amp_ratio_q25,amp_ratio_q75", csv[0], StringComparison.Ordinal);
         int columns = csv[0].Split(',').Length;
         Assert.All(csv.Skip(1), row => Assert.Equal(columns, row.Split(',').Length));
-        Assert.StartsWith("1,\"light_0001.fit\",2026-08-12 23:38:53,120,400,\"\",\"\",500,", csv[1], StringComparison.Ordinal);
+        Assert.StartsWith("1,\"light_0001.fit\",2026-08-12 23:38:53,120,400,\"\",500,", csv[1], StringComparison.Ordinal);
         Assert.Matches(",2[0-9],(0\\.9|1\\.0)[0-9]*,0\\.[0-9]+,1\\.[0-9]+$", csv[1]);
         Assert.StartsWith("2,\"light_0002.fit\",,,,\"", csv[2], StringComparison.Ordinal);
-        Assert.EndsWith("\",\"\"" + new string(',', columns - 7), csv[2], StringComparison.Ordinal);
+        Assert.EndsWith("\"" + new string(',', columns - 6), csv[2], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R056_Check9NamesBothIndexesAndCarriesTheOverlapAsTables()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, 1.3));
+        DarkSeriesResult r = Run(s);
+        LightsAnalysis l = r.Lights!;
+        ReportSection nine = DarkReport.Sections(r).Single(x => x.Title.StartsWith("9.", StringComparison.Ordinal));
+        ReportSection index = DarkReport.Sections(r).Single(x => x.Title == "INDEX");
+        Assert.Equal(["pixeli fierbinti", "in masterul dark", "masterul in lights", "lipsesc din master", "lights fata de dark", "index dark-uri", "index lights", "verdict"], nine.Rows.Select(row => row.Label));
+
+        // the two indexes, each on its own row: the darks' tag, and the lights' equivalent tag with the INDEX row's parenthesis
+        Assert.Equal(r.Index.Tag, nine.Rows[5].Value);
+        string like = Math.Round(r.LightsIndex, MidpointRounding.AwayFromZero).ToString(CultureInfo.InvariantCulture);
+        Assert.StartsWith("idx" + like + " (de 1.30 ori cat dark-ul, adica cu 2.3 grade mai calde decat el)", nine.Rows[6].Value, StringComparison.Ordinal);
+        Assert.Equal("ca un dark cu " + nine.Rows[6].Value, index.Rows.Single(row => row.Label == "lights").Value);
+        Assert.Null(nine.Rows[5].Table);
+        Assert.Null(nine.Rows[6].Lines);
+
+        // the overlap rows: the console's line as before, the same figures as a table for the window
+        foreach ((ReportRow row, Func<OverlapAtLevel, int> of) in new[] { (nine.Rows[1], (Func<OverlapAtLevel, int>)(o => l.Persistent)), (nine.Rows[2], o => o.DarkCount) })
+        {
+            ReportTable t = Assert.IsType<ReportTable>(row.Table);
+            Assert.Equal(["prag", "pixeli", "procent"], t.Header);
+            Assert.Equal(l.Overlap.Count, t.Rows.Count);
+            for (int i = 0; i < l.Overlap.Count; i++)
+            {
+                OverlapAtLevel o = l.Overlap[i];
+                Assert.Equal([$"peste {RunReport.F(o.LevelAdu, 0)}", $"{o.Both} din {of(o)}", $"{RunReport.F(100.0 * o.Both / of(o), 0)} %"], t.Rows[i]);
+            }
+
+            Assert.StartsWith($"peste 10: {l.Overlap[0].Both} din {of(l.Overlap[0])} ({RunReport.F(100.0 * l.Overlap[0].Both / of(l.Overlap[0]), 0)} %); peste 20: ", row.Value, StringComparison.Ordinal);
+            Assert.Null(row.Lines);
+        }
+
+        Assert.StartsWith("cati dintre acesti pixeli sunt si in masterul dark, peste fiecare prag in ADU", nine.Rows[1].Table!.Note, StringComparison.Ordinal);
+        Assert.Equal("cati dintre pixelii masterului de peste fiecare prag se vad si in lights", nine.Rows[2].Table!.Note);
+        Assert.Contains("    index dark-uri     : " + r.Index.Tag + Environment.NewLine + "    index lights       : idx" + like + " (", Report(r), StringComparison.Ordinal);
+
+        // the darks are the partner's (R-054): the row says so
+        using SessionFixture alone = new SessionFixture().WithLights(4, i => Light(i, 1.3)).WithBiases(3);
+        using SessionFixture partner = new SessionFixture().WithDarkSeries(5, Dark, inSubfolder: false);
+        DarkSeriesResult taken = Run(alone, partner.Root);
+        ReportSection nineAlone = DarkReport.Sections(taken).Single(x => x.Title.StartsWith("9.", StringComparison.Ordinal));
+        Assert.Equal(taken.Index.Tag, nineAlone.Rows.Single(row => row.Label == "index partener").Value);
+        Assert.Contains(nineAlone.Rows, row => row.Label == "index lights");
+
+        // without lights: the one unmeasured verdict row, as before
+        using SessionFixture darks = new SessionFixture().WithDarkSeries(6, Dark);
+        Assert.Equal(["verdict"], DarkReport.Sections(Run(darks)).Single(x => x.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Select(row => row.Label));
     }
 
     [Fact]
@@ -384,7 +437,7 @@ public class LightsAndIndexTests
     {
         // the variants the fixtures reach: lights at the dark's temperature, warmer (-opt), colder (cosmetic
         // correction only), far warmer (they do not match) and without the dark's hot pixels, lights without an
-        // ISO, a cap that skips lights, lights against a partner, darks against a partner without lights, lights
+        // ISO, lights against a partner, darks against a partner without lights, lights
         // that take the partner's darks as their own, a session without lights
         static SyntheticDark PartnerDark(int i, double factor) => new() { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = factor };
         using SessionFixture same = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i));
@@ -401,7 +454,7 @@ public class LightsAndIndexTests
         using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
         {
             List<string> texts = [];
-            foreach (DarkSeriesResult r in new[] { Run(same), Run(warmer), Run(colder), Run(far), Run(none), Run(noIso), Run(same, maxFrames: 3), Run(same, hotter.Root), Run(darks, warm.Root), Run(alone, hotter.Root), Run(darks) })
+            foreach (DarkSeriesResult r in new[] { Run(same), Run(warmer), Run(colder), Run(far), Run(none), Run(noIso), Run(same, hotter.Root), Run(darks, warm.Root), Run(alone, hotter.Root), Run(darks) })
             {
                 foreach (ReportSection section in DarkReport.Sections(r).Where(x => x.Title.StartsWith("9.", StringComparison.Ordinal) || x.Title == "INDEX"))
                 {
@@ -418,7 +471,7 @@ public class LightsAndIndexTests
             Assert.Contains(english ? "it is too cold and misses the faint ones" : "e prea rece si ii pierde pe cei slabi", all, StringComparison.Ordinal);
             Assert.Contains(english ? "the dark's hot pixels do not show" : "nu se vad pixelii fierbinti ai dark-ului", all, StringComparison.Ordinal);
             Assert.Contains(english ? "the darks' were taken" : "s-au luat cele ale dark-urilor", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "(over the maximum number of frames; " : "(peste numarul maxim de cadre; ", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "index lights" : "index lights", all, StringComparison.Ordinal);
             Assert.Contains(english ? "times what they are at the partner, at the same settings" : "ori cat la partener, la aceleasi setari", all, StringComparison.Ordinal);
             Assert.Contains(english ? "(worked out through the session's darks)" : "(socotit prin dark-urile sesiunii)", all, StringComparison.Ordinal);
             Assert.Contains(english ? "WARNING: subtract the partner with -opt" : "ATENTIE: scade partenerul cu -opt", all, StringComparison.Ordinal);
@@ -608,6 +661,22 @@ public class LightsAndIndexTests
         Assert.Contains("    lights / partener  : pixelii fierbinti sunt in lights de 0.5", report, StringComparison.Ordinal);
         Assert.Contains("    verdict partener   : ATENTIE: foloseste partenerul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.5", report, StringComparison.Ordinal);
         Assert.Contains("partenerul e mai cald cu 6.", report, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R063_TheSharedPixelsRowCarriesItsTwoStatementsAsLines()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark);
+        using SessionFixture p = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 2 }, inSubfolder: false);
+        DarkSeriesResult r = Run(s, p.Root);
+        PartnerAnalysis partner = r.Partner!;
+        ReportRow shared = DarkReport.Sections(r).Single(x => x.Title == "INDEX").Rows.Single(row => row.Label == "pixeli comuni");
+        IReadOnlyList<string> lines = Assert.IsAssignableFrom<IReadOnlyList<string>>(shared.Lines);
+        Assert.Equal(2, lines.Count);
+        Assert.Equal(string.Join("; ", lines), shared.Value);
+        Assert.Equal($"{partner.OwnHot50InPartner50} din {partner.OwnHot50} ai sesiunii peste 50 ADU-eq sunt peste 50 si la partener (100 %)", lines[0]);
+        Assert.Equal($"{partner.PartnerHot50InOwn20} din {partner.PartnerHot50} ai partenerului peste 50 sunt peste 20 in sesiune (100 %)", lines[1]);
+        Assert.Null(shared.Table);
     }
 
     [Fact]

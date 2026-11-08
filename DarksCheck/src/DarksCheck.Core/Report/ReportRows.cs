@@ -22,7 +22,9 @@ namespace DarksCheck.Core;
 /// window binds it (ADR 0009): <see cref="Verdict"/> is the word the value opens with when
 /// it is one of the verdict words of either language (OK, WARNING or UNMEASURED; OK, ATENTIE or
 /// NEMASURAT), or WARNING / ATENTIE when that is the row's label (the warnings about frames that
-/// failed); <see cref="Rest"/> is the value without a leading word.
+/// failed); <see cref="Rest"/> is the value without a leading word. A row may also carry its
+/// statements as <see cref="Lines"/>, its figures as a <see cref="Table"/>, and whether the
+/// Rezumat's card shows it (<see cref="Summary"/>); the console prints the value alone.
 /// </summary>
 /// <param name="Label">The row's label, in the run's language.</param>
 /// <param name="Value">The row's text, in the run's language, often opening with a verdict
@@ -33,6 +35,24 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
 {
     // Both languages' words, so a row is read the same whatever language wrote it (ADR 0021).
     private static readonly string[] Words = ["NEMASURAT", "UNMEASURED", "ATENTIE", "WARNING", "REFA", "REDO", "OK"];
+
+    /// <summary>
+    /// The value's statements, for the window to show one under the other (R-031, R-063); null
+    /// when the value is one statement. The value holds them joined by "; " for the console.
+    /// </summary>
+    internal IReadOnlyList<string>? Lines { get; init; }
+
+    /// <summary>
+    /// The value's figures as a small table for the window (R-024, R-051); null when the row has
+    /// none. The console prints the value and never the table.
+    /// </summary>
+    internal ReportTable? Table { get; init; }
+
+    /// <summary>
+    /// Whether the Rezumat's card of the row's check shows the row (R-071): false for the rows of
+    /// check 5 that only the Pixeli fierbinti tab shows, true for every other row.
+    /// </summary>
+    internal bool Summary { get; init; } = true;
 
     /// <summary>
     /// The value's substrings the window renders bold (ADR 0016): the masters' noise and the light
@@ -83,6 +103,16 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
     }
 }
 
+/// <summary>
+/// A row's figures as a small table the window draws under the row's label (R-071): the column
+/// names, the rows of formatted cells, and the note said under it, the bracket hint of the
+/// console's line without its brackets.
+/// </summary>
+/// <param name="Header">The column names, in the run's language.</param>
+/// <param name="Rows">The rows, each with one formatted cell per column.</param>
+/// <param name="Note">What the table shows, said under it; empty for none.</param>
+internal sealed record ReportTable(IReadOnlyList<string> Header, IReadOnlyList<IReadOnlyList<string>> Rows, string Note);
+
 /// <summary>A titled group of rows: one check of the report, or its INDEX block.</summary>
 /// <param name="Title">The section's title, as the console prints it ("2. LIGHT LEAKS AND
 /// GRADIENT").</param>
@@ -116,12 +146,11 @@ internal sealed record ReportSection(string Title, IReadOnlyList<ReportRow> Rows
 internal sealed record DarkTableRow(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string Plateau, string Light, string Side, string Above, string? Note = null);
 
 /// <summary>
-/// One light of the lights table, every cell already formatted; Skipped or Error set when the light
-/// has no figures.
+/// One light of the lights table, every cell already formatted; Error set when the light has no
+/// figures (every light is read, R-050).
 /// </summary>
 /// <param name="Index">The light's number, from 1.</param>
 /// <param name="FileName">The file's name.</param>
-/// <param name="Skipped">Why the light was skipped (the frame cap), or null.</param>
 /// <param name="Error">Why the light could not be decoded, or null.</param>
 /// <param name="Time">The time of day, HH:mm:ss, or "-".</param>
 /// <param name="Sky">The sky's median above the black on the reference plane, in ADU.</param>
@@ -132,4 +161,4 @@ internal sealed record DarkTableRow(int Index, string FileName, string? Skipped,
 /// "-".</param>
 /// <param name="Q25">The first quartile of that ratio, or "-".</param>
 /// <param name="Q75">The third quartile of that ratio, or "-".</param>
-internal sealed record LightTableRow(int Index, string FileName, string? Skipped, string? Error, string Time, string Sky, string LocalSigma, string Candidates, string Isolated, string Amp, string Q25, string Q75);
+internal sealed record LightTableRow(int Index, string FileName, string? Error, string Time, string Sky, string LocalSigma, string Candidates, string Isolated, string Amp, string Q25, string Q75);

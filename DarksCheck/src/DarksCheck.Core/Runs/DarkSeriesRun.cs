@@ -27,8 +27,8 @@ namespace DarksCheck.Core;
 /// </summary>
 /// <param name="Threads">How many frames are decoded in parallel; 0 or less takes half the
 /// processor count (at least 1).</param>
-/// <param name="MaxFrames">How many frames of a group are held in memory at most, and how many
-/// lights are measured; above it one frame in k is taken.</param>
+/// <param name="MaxFrames">How many frames of a group of darks or biases are held in memory at
+/// most; above it one frame in k is taken. The lights are all measured (R-050).</param>
 /// <param name="Against">The partner folder of darks (a library or a session), or null for
 /// none.</param>
 /// <param name="IsoFactorPerStop">The gain factor per ISO stop of the normalisation (2 by
@@ -109,7 +109,7 @@ internal sealed record DarkSeriesResult(
     internal bool HasErrors => Inventory.HasErrors
         || Darks.Frames.Any(f => f.Error is not null && !f.Skipped)
         || (Biases?.Frames.Any(f => f.Error is not null && !f.Skipped) ?? false) || BiasError is not null
-        || (Lights?.Frames.Any(f => f.Error is not null && !f.Skipped) ?? false) || LightsError is not null
+        || (Lights?.Frames.Any(f => f.Error is not null) ?? false) || LightsError is not null
         || PartnerError is not null || (Partner?.Failed ?? 0) > 0;
 }
 
@@ -286,7 +286,7 @@ internal static class DarkSeriesRun
         {
             try
             {
-                lights = LightsAnalyzer.Analyze(inv.Session.Lights, darks, threads, options.MaxFrames, Phase(T("Measuring the lights", "Se masoara lights-urile"), progress), cancel);
+                lights = LightsAnalyzer.Analyze(inv.Session.Lights, darks, threads, Phase(T("Measuring the lights", "Se masoara lights-urile"), progress), cancel);
             }
             catch (InvalidOperationException e)
             {

@@ -165,8 +165,8 @@ internal static class WindowTexts
         $"cati dintre ei nu au niciun vecin care sa iasa si el peste {RoCount(RunReport.F(Th.LightIsolationSigmas, 0))}ori zgomotul: pixeli fierbinti, nu stele");
 
     internal static string MaxFramesTip => T(
-        $"How many frames are held in memory (48 MB each at 24 MP) and how many lights are measured; if there are more, only some are read, evenly spaced (one in two, for example). Default {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.",
-        $"Cate cadre se tin in memorie (48 MB fiecare la 24 MP) si cate lights se masoara; daca sunt mai multe, se citesc doar unele, la distante egale (de exemplu unul din doua). Implicit {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.");
+        $"How many frames of a group are held in memory (48 MB each at 24 MP); if there are more, only some are read, evenly spaced (one in two, for example). The lights are all measured. Default {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.",
+        $"Cate cadre dintr-un grup se tin in memorie (48 MB fiecare la 24 MP); daca sunt mai multe, se citesc doar unele, la distante egale (de exemplu unul din doua). Lights-urile se masoara toate. Implicit {Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture)}.");
 
     internal static string IsoFactorTip => T(
         $"How many times the signal grows at every ISO stop; with it every frame is worked out at ISO {RunReport.F(Th.NormIso, 0)}, so that they can be compared. {RunReport.F(Normalisation.Default.IsoFactorPerStop, 0)} = the signal doubles at every stop (D3300)",
