@@ -33,7 +33,7 @@ public class ValidationTests
 {
     [Theory]
     [MemberData(nameof(Cases))]
-    public void ValidationCase_MatchesRecordedFigures(string id, string kind, string session, string against, string expectedJson, string toleranceJson)
+    public void ValidationCase_MatchesRecordedFigures(string id, string kind, string session, string against, string lights, string expectedJson, string toleranceJson)
     {
         string? folder = TestData.Large(session);
         if (folder is null)
@@ -53,10 +53,28 @@ public class ValidationTests
             }
         }
 
+        // the lights of another folder (R-055), given to the run as --lights is
+        string? lightsFrom = null;
+        if (lights.Length > 0)
+        {
+            lightsFrom = TestData.Large(lights);
+            if (lightsFrom is null)
+            {
+                Console.WriteLine($"{id}: lights {lights} are absent under DARKSCHECK_TESTDATA_LARGE; nothing checked");
+                return;
+            }
+        }
+
         using JsonDocument expected = JsonDocument.Parse(expectedJson);
         using JsonDocument tolerance = JsonDocument.Parse(toleranceJson);
         JsonElement e = expected.RootElement;
         JsonElement t = tolerance.RootElement;
+        if (e.ValueKind == JsonValueKind.Null)
+        {
+            // a case /validate has not measured yet (the kit's /new-feature, step 2): nothing to compare
+            Console.WriteLine($"{id}: no figures recorded yet; nothing checked");
+            return;
+        }
         switch (kind)
         {
             case "inventory":
@@ -66,7 +84,7 @@ public class ValidationTests
                 CheckDarks(DarkSeriesRun.Run(folder, new DarkOptions()), e, t);
                 break;
             case "match":
-                CheckMatch(DarkSeriesRun.Run(folder, new DarkOptions(Against: partner)), e, t);
+                CheckMatch(DarkSeriesRun.Run(folder, new DarkOptions(Against: partner, LightsFrom: lightsFrom)), e, t);
                 break;
             default:
                 Assert.Fail($"{id}: unknown kind {kind}");
@@ -269,9 +287,9 @@ public class ValidationTests
     private static void AssertWithin(string what, double expected, double actual, double tolerance)
         => Assert.True(Math.Abs(expected - actual) <= tolerance, $"{what}: expected {expected} +- {tolerance}, measured {actual}");
 
-    public static TheoryData<string, string, string, string, string, string> Cases()
+    public static TheoryData<string, string, string, string, string, string, string> Cases()
     {
-        TheoryData<string, string, string, string, string, string> data = [];
+        TheoryData<string, string, string, string, string, string, string> data = [];
         // From the source tree, not the build output's copy: `dotnet test --no-build` after an
         // edit of the figures would otherwise compare the stale copy.
         string path = Path.Combine(TestData.FindRepoRoot(), "docs", "validation.json");
@@ -283,6 +301,7 @@ public class ValidationTests
                 c.GetProperty("kind").GetString()!,
                 c.GetProperty("session").GetString()!,
                 c.TryGetProperty("against", out JsonElement against) ? against.GetString()! : "",
+                c.TryGetProperty("lights", out JsonElement lights) ? lights.GetString()! : "",
                 c.GetProperty("expected").GetRawText(),
                 c.GetProperty("tolerance").GetRawText());
         }

@@ -94,6 +94,38 @@ internal static class WindowTexts
         "The partner has changed: press \"Analyse again\" to compare it with the session.",
         "Partenerul s-a schimbat: apasa \"Analizeaza din nou\" ca sa-l compari cu sesiunea.");
 
+    internal static string ChooseLightsTitle => T(
+        "Choose the folder of lights (a session, or a folder with the lights in it)",
+        "Alege folderul de lights (o sesiune, sau un folder cu lights-urile in el)");
+
+    internal static string NoLightsFrom => T(
+        "(none: the open folder's lights)",
+        "(niciunul: lights-urile folderului deschis)");
+
+    internal static string LightsFromChanged => T(
+        "The lights have changed: press \"Analyse again\" to compare them with the darks.",
+        "Lights-urile s-au schimbat: apasa \"Analizeaza din nou\" ca sa le compari cu dark-urile.");
+
+    /// <summary>The sentence of the Lights tab's card (R-122): what choosing another folder's lights does.</summary>
+    internal static string LightsFromLead => T(
+        "Do these darks fit the lights of another session? Choose that session (its lights\\ is taken) or a folder with the "
+        + "lights in it: the program compares them with the open darks, as if they sat in this folder's lights\\, and the "
+        + "folder's own lights are left out. The choice holds for this folder only and is not kept.",
+        "Se potrivesc dark-urile astea cu lights-urile altei sesiuni? Alege sesiunea aceea (se ia lights\\ al ei) sau un folder cu "
+        + "lights-urile in el: programul le compara cu dark-urile deschise, ca si cum ar sta in lights\\ al folderului asta, iar "
+        + "lights-urile proprii ale folderului raman deoparte. Alegerea tine doar pentru folderul asta si nu se pastreaza.");
+
+    /// <summary>The text under the label of a folder with lights and no darks of its own (R-066).</summary>
+    internal static string IndexLeadLights => T(
+        "This folder has no darks of its own, so its label is the lights': what dark they are like, read through the partner's "
+        + "darks (the lights row under INDEX). The warmer the sensor was when the lights were shot, the higher the number. "
+        + "The partner's own index and label stand on its row. You copy the label and rename the folder yourself; the program "
+        + "writes and renames nothing in the photo folders.",
+        "Folderul asta nu are dark-uri ale lui, asa ca eticheta e a lights-urilor: cu ce dark seamana, citit prin dark-urile "
+        + "partenerului (randul lights de sub INDEX). Cu cat senzorul a fost mai cald cand s-au facut lights-urile, cu atat numarul e mai mare. "
+        + "Indexul si eticheta partenerului stau pe randul lui. Eticheta o copiezi si redenumesti tu folderul; programul "
+        + "nu scrie si nu redenumeste nimic in folderele cu poze.");
+
     internal static string LabelCopied => T(
         "The label is in the clipboard; rename the folder with it if you wish.",
         "Eticheta e in clipboard; redenumeste folderul cu ea daca vrei.");

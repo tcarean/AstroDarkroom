@@ -1,7 +1,7 @@
 # 0011. A session without darks takes the partner's darks as its own
 
 Date: 2026-10-16
-Status: accepted 2026-10-16
+Status: accepted 2026-10-16; the label of the session whose darks are the partner's superseded by 0039
 
 ## Context
 

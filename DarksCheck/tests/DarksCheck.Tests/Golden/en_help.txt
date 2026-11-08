@@ -1,8 +1,8 @@
 darkscheck <version>
 Copyright (C) 2026 Tudor Carean
 
-Usage: darkscheck <session folder or folder of darks> [--against DIR] [--out DIR] [--threads N] [--max-frames N]
-       darkscheck <folder> --inventory
+Usage: darkscheck <session folder or folder of darks> [--against DIR] [--lights DIR] [--out DIR] [--threads N] [--max-frames N]
+       darkscheck <folder> --inventory [--lights DIR]
 
   The Siril session folder: the darks are taken from darks\ (or from the folder
   itself, when there is no darks\ and no other session subfolder), the biases
@@ -17,6 +17,8 @@ Usage: darkscheck <session folder or folder of darks> [--against DIR] [--out DIR
   --against DIR another folder of darks (a library or a session): its index and by how
                 many degrees the session's darks are warmer or colder than it; a
                 session with lights but no darks takes its darks as its own.
+  --lights DIR  the lights of another folder (a session, from its lights\, or a folder
+                of lights): compared with the open darks instead of the ones in lights\.
   --out DIR     writes into DIR the report, a CSV with every figure for the darks,
                 the biases and the lights, and the maps (darkscheck-report.txt, darkscheck-darks.csv,
                 darkscheck-biases.csv, darkscheck-lights.csv, darkscheck-map-dark.png, ...).

@@ -126,7 +126,11 @@ they are now.
   five bounds of `Th.Match*` as guides named by what to do with the dark, `0.9 asa cum e`,
   `0.7 cu -opt`, `0.4 doar cosmetic`); a frame without a figure is `NaN` and the chart
   leaves a gap;
-- `Label` and `Tag` are the result's; `Partner` is the folder of `--against`.
+- `Label` and `Tag` are the result's `Label` and `LabelTag` (the tag the label ends with,
+  decided in `DarkSeriesRun`: the darks' index tag, or the lights' for a folder whose darks are
+  the partner's, R-066); `IndexLead`, the text under the label, is `WindowTexts.IndexLead` or,
+  for such a folder, `IndexLeadLights`, raised with the result; `Partner` is the folder of
+  `--against`.
 
 The problem card has a second button, `Alege partener...` (R-077): `MainWindow.ChoosePartnerAndRerun`
 runs the partner dialog and, when a folder was chosen (the same one again included), `RerunAsync`;
@@ -134,6 +138,17 @@ a cancelled dialog does nothing. So a session with lights and no darks goes from
 to its run without choosing the folder again. `Export(dir)` calls `DarkOutputs.WriteAll`, which refuses a folder inside the session or the
 partner as `--out` does, and shows the paths or the error in `Status`. `LabelCopied` sets the
 status line after the window put the label in the clipboard.
+
+The Lights tab's first card, `LIGHTS-URI DIN ALT FOLDER` (R-122, ADR 0039), is the partner
+card's twin for `--lights`: `LightsFrom` on the view-model (blank is null; `HasLightsFrom`,
+`LightsFromText` with `WindowTexts.NoLightsFrom` for none; `Status = LightsFromChanged` when a
+result is shown), reaching the core as `DarkOptions.LightsFrom` through `Options`. Unlike the
+partner it is not stored: `SaveSettings` does not know it, and `OpenAsync` drops it when the
+folder opened differs from the one open (`SameFolder`: full paths, case ignored) and one was
+open, so a rerun, the problem card's run and the first open after the choice keep it. The
+card's buttons go through `LightsView`'s code-behind to `MainWindow.ChooseLightsFromView`
+(the `OpenFolderDialog` titled `ChooseLightsTitle`, starting in the current choice when it
+exists), `ClearLightsFromView` and `RerunFromView`; the lead is `WindowTexts.LightsFromLead`.
 
 ## The settings (`UserSettings`)
 

@@ -28,6 +28,20 @@ darks in `potrivire`; a lights-only inventory without a partner prints `(lipsa)`
 and `NEMASURAT: nu exista darks`. The sentence that refuses a lights-only run without a
 partner is `RunReport.LightsOnlyNeedsPartner`, the same in the console and the window.
 
+`Open(path, allowLightsOnly, lightsFrom)` takes the lights from another folder since ADR 0039
+(R-055). `ChosenLights` resolves `lightsFrom` first, before the darks are even listed, so a bad
+folder is refused at once and once: the full path must exist (`DirectoryNotFoundException`),
+its `lights\` is taken when that holds frames, else the folder itself, which must hold frames
+(`InvalidOperationException`); both messages open with `lights-urile alese: ` / `the chosen
+lights: `, as the partner's open with `partenerul: `. The result replaces `LightsDir` and
+`Lights` whatever the folder's own `lights\` holds, and `ChosenLightsRoot` keeps the folder as
+given, made full (`LightsChosen` true), for the `lights` row, which prints the full path and
+`alese de tine` (`InventoryReport.ChosenLightsLine`), and for `DarkOutputs.WriteAll`, which
+refuses `--out` inside it as it does inside the session and the partner
+(`DarkOutputs.OutFolder`). A folder without darks and with the flag is lights-only whether its
+own `lights\` holds frames or the lights were chosen. `InventoryRun.Run(folder, lightsFrom)` and
+`DarkOptions.LightsFrom` carry it; the log's `opened` line adds `chosenLights=`.
+
 ## The metadata
 
 `FrameInfo.Read` opens a file through `ImageLoader.LoadInfo` (no pixels: tens of milliseconds
@@ -72,11 +86,11 @@ banner, the copyright, the warranty lines of `--help` and the shared formatters 
 attributes `Directory.Build.props` sets. `Program.Run(args, stdout, stderr)` is the console
 behind `Main`: banner first, then `--lang` ("The interface language" below), then the options, then one run. `Options.Parse(args)` walks the
 arguments once and returns an `Options` with `Folder`, `Inventory`, `Out`, `Threads`,
-`MaxFrames`, `Against`, `Help` and `Error`: the first word that is not an option is the
+`MaxFrames`, `Against`, `Lights`, `Help` and `Error`: the first word that is not an option is the
 folder, a second one is an error, an option that takes a value reads the next argument
 (`<option> expects a value` when there is none) and parses it with the invariant culture
-(`--threads` and `--max-frames` as positive integers, `--out` and `--against` as non-blank
-paths; no option takes a decimal today), the first problem fills `Error` and parsing stops;
+(`--threads` and `--max-frames` as positive integers, `--out`, `--against` and `--lights` as
+non-blank paths; no option takes a decimal today), the first problem fills `Error` and parsing stops;
 after the loop two more checks fill it: no folder given (`the session folder or the folder of darks
 is missing`) and `--inventory` with `--out` or `--against`. `Program.Run` prints `Error` as
 `ERROR: <message>` (`EROARE:` in Romanian) on stderr and exits 1, prints the usage for `Help` (the usage text is
@@ -87,10 +101,12 @@ defaults (`dark-analysis.md`, "The records of the run"). Without options it is t
 `DarkSeriesRun` (`docs/design/dark-analysis.md`), with the progress written on stderr as one
 rewritten line by a synchronous `IProgress` (a `Progress<T>` would post to the thread pool and
 could print after the report) and wiped before the report or an error; `--inventory` is the
-metadata-only run; `--out`, `--threads`, `--max-frames` and `--against` are passed through
-(neither `--out` nor `--against` goes with `--inventory`); before the run the partner folder is opened and
-`--out` is checked against the session's root and the partner's, so a wrong folder costs no
-decoding. The exceptions
+metadata-only run, which takes `--lights` too; `--out`, `--threads`, `--max-frames`, `--against`
+and `--lights` are passed through (`DarkOptions.LightsFrom` for the last; neither `--out` nor
+`--against` goes with `--inventory`); before the run the partner folder is opened, the session
+is opened with the chosen lights when `--lights` is given (a bad lights folder fails here), and
+`--out` is checked against the session's root, the partner's and the chosen lights' folder
+(`DarkOutputs.OutFolder`), so a wrong folder costs no decoding. The exceptions
 a bad folder or a frame can raise, the `AggregateException` of a parallel loop included, are
 turned into `ERROR:` on stderr and exit 1. `Main` runs `Program.Run` between the diagnostic log's
 first and last lines (`LogSetup.Apply` and `LogSetup.Close`, each guarded, so a log that cannot be

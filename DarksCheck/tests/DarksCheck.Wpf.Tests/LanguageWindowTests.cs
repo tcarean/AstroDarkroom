@@ -290,6 +290,11 @@ public partial class LanguageWindowTests
                 // the scenes reached their variants, so the words below were looked at
                 string all = string.Join("\n", texts);
                 Assert.Contains(english ? "EACH LIGHT AGAINST THE DARK" : "FIECARE LIGHT FATA DE DARK", all, StringComparison.Ordinal);
+                // the card of the lights from another folder (R-122)
+                Assert.Contains(english ? "LIGHTS FROM ANOTHER FOLDER" : "LIGHTS-URI DIN ALT FOLDER", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "(none: the open folder's lights)" : "(niciunul: lights-urile folderului deschis)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "The choice holds for this folder only and is not kept." : "Alegerea tine doar pentru folderul asta si nu se pastreaza.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "Choose lights..." : "Alege lights-urile...", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "The first lights of the night usually sit lower, because the camera is still cold." : "Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "0.4 cosmetic only" : "0.4 doar cosmetic", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "how bright the sky is in the light: the average value of the pixels, above the black, in ADU" : "cat de luminos e cerul in light: valoarea medie a pixelilor, peste negru, in ADU", all, StringComparison.Ordinal);
@@ -347,7 +352,7 @@ public partial class LanguageWindowTests
                 Assert.Contains(english ? "The warmer the sensor, the higher the index." : "Cu cat senzorul a fost mai cald, cu atat indexul e mai mare.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "if the session has no darks, they are compared directly with the darks of the partner." : "daca sesiunea nu are dark-uri, se compara direct cu dark-urile partenerului.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "(idx- when the index cannot be measured)" : "(idx- cand indexul nu se poate masura)", all, StringComparison.Ordinal);
-                Assert.Contains(english ? "Analyses the open folder again, with the current partner and settings" : "Analizeaza din nou folderul deschis, cu partenerul si setarile de acum", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "Analyses the open folder again, with the chosen lights, the partner and the settings of now" : "Analizeaza din nou folderul deschis, cu lights-urile alese, partenerul si setarile de acum", all, StringComparison.Ordinal);
                 Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
                 List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
                 Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));

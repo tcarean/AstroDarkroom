@@ -23,7 +23,7 @@ namespace DarksCheck.Tests;
 /// <summary>Check 9 (the lights against the dark), the index, the label and the matching, on synthetic frames with known answers (R-050 to R-065).</summary>
 public class LightsAndIndexTests
 {
-    private static DarkSeriesResult Run(SessionFixture s, string? against = null, int maxFrames = Th.MaxFramesInMemory) => DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2, MaxFrames: maxFrames, Against: against));
+    private static DarkSeriesResult Run(SessionFixture s, string? against = null, int maxFrames = Th.MaxFramesInMemory, string? lightsFrom = null) => DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2, MaxFrames: maxFrames, Against: against, LightsFrom: lightsFrom));
 
     /// <summary>Darks with the twenty lattice hot pixels of 120 ADU.</summary>
     private static SyntheticDark Dark(int i) => new() { Seed = 100 + i, Hot = SyntheticLight.Lattice };
@@ -706,7 +706,9 @@ public class LightsAndIndexTests
         Assert.False(b.HasErrors);
         Assert.Equal(a.Darks.Used, b.Darks.Used);
         Assert.Equal(a.Index.Index, b.Index.Index, 1e-9);
-        Assert.Equal(Path.GetFileName(library.Root) + "-" + b.Index.Tag, b.Label);
+        // the session's label is its own, on the lights' index (R-066, ADR 0039); the partner keeps its label on its row
+        Assert.Equal(Path.GetFileName(alone.Root) + "-" + IndexFigures.TagFor(b.LightsIndex), b.Label);
+        Assert.Equal(Path.GetFileName(library.Root) + "-" + b.Index.Tag, b.DarksFromPartnerLabel);
         Assert.Equal(a.Lights!.Persistent, b.Lights!.Persistent);
         Assert.Equal(a.Lights.LightsOverDark.Ratio, b.Lights.LightsOverDark.Ratio, 1e-9);
         Assert.Equal(a.Lights.LightsOverDark.Verdict, b.Lights.LightsOverDark.Verdict);
@@ -755,5 +757,140 @@ public class LightsAndIndexTests
         (_, string help, _) = Cli.Run("--help");
         Assert.Contains("[--against DIR]", help, StringComparison.Ordinal);
         Assert.Contains("--against DIR alt folder de dark-uri", help, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R055_LightsFromAnotherFolderAreMeasuredAgainstTheOpenDarks()
+    {
+        // the same lights once in the session's lights\, once in another session given to the library as --lights
+        using SessionFixture with = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, biases: 3).WithLights(4, i => Light(i, 1.3));
+        using SessionFixture library = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);
+        using SessionFixture other = new SessionFixture().WithLights(4, i => Light(i, 1.3));
+        DarkSeriesResult a = Run(with);
+        DarkSeriesResult b = Run(library, lightsFrom: other.Root);
+        DarkSeriesResult c = Run(library, lightsFrom: other.LightsDir);
+
+        foreach (DarkSeriesResult r in new[] { b, c })
+        {
+            Assert.False(r.HasErrors);
+            Assert.Equal(other.LightsDir, r.Inventory.Session.LightsDir);
+            Assert.Equal(4, r.Inventory.Session.Lights.Count);
+            Assert.Equal(a.Index.Index, r.Index.Index, 1e-9);
+            Assert.Equal(Path.GetFileName(library.Root) + "-" + r.Index.Tag, r.Label);
+            Assert.Equal(a.Lights!.Persistent, r.Lights!.Persistent);
+            Assert.Equal(a.Lights.LightsOverDark.Ratio, r.Lights.LightsOverDark.Ratio, 1e-9);
+            Assert.Equal(a.Lights.LightsOverDark.Verdict, r.Lights.LightsOverDark.Verdict);
+            Assert.Equal(a.LightsIndex, r.LightsIndex, 1e-9);
+            Assert.Equal(Verdict.Ok, r.Inventory.Match.DarksVsLights);
+
+            string report = Report(r);
+            Assert.Contains("    darks              : . (5 cadre .fit)", report, StringComparison.Ordinal);
+            Assert.Contains($"    lights             : {other.LightsDir} (4 cadre .fit; alese de tine)", report, StringComparison.Ordinal);
+            Assert.Contains("    verdict            : ATENTIE: scade dark-ul cu -opt", report, StringComparison.Ordinal);
+            Assert.Contains("    lights             : ca un dark cu idx", report, StringComparison.Ordinal);
+            Assert.Contains("  TABEL PE LIGHTS", report, StringComparison.Ordinal);
+        }
+
+        // the folder's own lights are left out: colder lights given to the session that holds warmer ones
+        using SessionFixture cold = new SessionFixture().WithLights(4, i => Light(i, 1.0));
+        DarkSeriesResult d = Run(with, lightsFrom: cold.Root);
+        Assert.Equal(cold.LightsDir, d.Inventory.Session.LightsDir);
+        Assert.Equal(MatchVerdict.Direct, d.Lights!.LightsOverDark.Verdict);
+        Assert.InRange(d.Lights.LightsOverDark.Ratio, 0.95, 1.05);
+
+        // a folder that does not exist or holds no frame is refused with its own words
+        DirectoryNotFoundException missing = Assert.Throws<DirectoryNotFoundException>(() => Run(library, lightsFrom: Path.Combine(other.Root, "nu-exista")));
+        Assert.StartsWith("lights-urile alese: nu gasesc folderul ", missing.Message, StringComparison.Ordinal);
+        using TempWorkspace empty = new();
+        InvalidOperationException none = Assert.Throws<InvalidOperationException>(() => Run(library, lightsFrom: empty.Dir));
+        Assert.StartsWith($"lights-urile alese: niciun light in {empty.Dir} (raw: ", none.Message, StringComparison.Ordinal);
+
+        // a session with lights and no darks still needs its partner, whichever lights it is given
+        InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => Run(other, lightsFrom: cold.Root));
+        Assert.Equal(RunReport.LightsOnlyNeedsPartner(other.Root), e.Message);
+    }
+
+    [Fact]
+    public void R055_LightsTakesAFolderAndIsRefusedBeforeDecoding()
+    {
+        using SessionFixture library = new SessionFixture().WithDarkSeries(3, Dark, inSubfolder: false);
+        using SessionFixture other = new SessionFixture().WithLights(2, i => Light(i, 1.3));
+
+        (int code, _, string stderr) = Cli.Run(library.Root, "--lights");
+        Assert.Equal(1, code);
+        Assert.Contains("EROARE: --lights cere o valoare", stderr, StringComparison.Ordinal);
+        (int code1, _, string stderr1) = Cli.Run(library.Root, "--lights", " ");
+        Assert.Equal(1, code1);
+        Assert.Contains("EROARE: --lights cere un folder de lights", stderr1, StringComparison.Ordinal);
+
+        // refused at once, before the darks are decoded: no progress line on stderr
+        (int code2, string stdout2, string stderr2) = Cli.Run(library.Root, "--lights", Path.Combine(other.Root, "nu-exista"));
+        Assert.Equal(1, code2);
+        Assert.Contains("EROARE: lights-urile alese: nu gasesc folderul ", stderr2, StringComparison.Ordinal);
+        Assert.DoesNotContain("Se citesc", stderr2, StringComparison.Ordinal);
+        Assert.DoesNotContain("=== DARK-URI", stdout2, StringComparison.Ordinal);
+
+        // the inventory lists the given lights; --out inside their folder is refused like inside the session
+        (int code3, string stdout3, _) = Cli.Run(library.Root, "--inventory", "--lights", other.Root);
+        Assert.Equal(0, code3);
+        Assert.Contains($"    lights             : {other.LightsDir} (2 cadre .fit; alese de tine)", stdout3, StringComparison.Ordinal);
+        Assert.Contains("  LIGHTS", stdout3, StringComparison.Ordinal);
+        Assert.Contains("light_0002.fit", stdout3, StringComparison.Ordinal);
+        (int code4, _, string stderr4) = Cli.Run(library.Root, "--lights", other.Root, "--out", Path.Combine(other.LightsDir, "rapoarte"));
+        Assert.Equal(1, code4);
+        Assert.Contains("EROARE: --out nu poate fi folderul lights-urilor alese sau unul din el", stderr4, StringComparison.Ordinal);
+
+        // --out elsewhere writes the lights CSV about the chosen lights, and the darks CSV about the library
+        using TempWorkspace outDir = new();
+        (int code5, string stdout5, _) = Cli.Run(library.Root, "--threads", "2", "--lights", other.Root, "--out", outDir.Dir);
+        Assert.Equal(0, code5);
+        Assert.Contains("    -> scris: " + Path.Combine(outDir.Dir, "darkscheck-lights.csv"), stdout5, StringComparison.Ordinal);
+        string lightsCsv = File.ReadAllText(Path.Combine(outDir.Dir, "darkscheck-lights.csv"));
+        Assert.Contains("light_0001.fit", lightsCsv, StringComparison.Ordinal);
+        Assert.Contains("light_0002.fit", lightsCsv, StringComparison.Ordinal);
+        Assert.Equal(2, lightsCsv.Split('\n').Count(l => l.Contains(".fit", StringComparison.Ordinal)));
+        Assert.Contains("    lights             : " + other.LightsDir + " (2 cadre .fit; alese de tine)", File.ReadAllText(Path.Combine(outDir.Dir, "darkscheck-report.txt")), StringComparison.Ordinal);
+
+        (_, string help, _) = Cli.Run("--help");
+        Assert.Contains("[--lights DIR]", help, StringComparison.Ordinal);
+        Assert.Contains("--lights DIR  lights-urile din alt folder", help, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R066_ASessionWithoutDarksIsLabelledWithItsLightsIndexAndThePartnerKeepsItsOwn()
+    {
+        using SessionFixture alone = new SessionFixture().WithLights(4, i => Light(i, 1.3)).WithBiases(3);
+        using SessionFixture library = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);
+        DarkSeriesResult b = Run(alone, library.Root);
+
+        Assert.False(double.IsNaN(b.LightsIndex));
+        string like = Math.Round(b.LightsIndex, MidpointRounding.AwayFromZero).ToString(CultureInfo.InvariantCulture);
+        Assert.Equal(Path.GetFileName(alone.Root) + "-idx" + like, b.Label);
+        Assert.NotEqual(b.Index.Tag, "idx" + like);
+
+        string report = Report(b);
+        Assert.Contains("    eticheta           : " + b.Label, report, StringComparison.Ordinal);
+        Assert.Contains($"    dark-uri (partener): {b.Index.Tag} (", report, StringComparison.Ordinal);
+        Assert.Contains($"); eticheta {Path.GetFileName(library.Root)}-{b.Index.Tag}", report, StringComparison.Ordinal);
+        Assert.Contains($"    lights             : ca un dark cu idx{like} (", report, StringComparison.Ordinal);
+        Assert.DoesNotContain($"    eticheta           : {Path.GetFileName(library.Root)}", report, StringComparison.Ordinal);
+        Assert.Equal("idx" + like, b.LabelTag);
+
+        // the same session given other lights (R-055), at the partner's level: its own lights are left out,
+        // and the label follows the chosen lights' index
+        using SessionFixture same = new SessionFixture().WithLights(4, i => Light(i, 1.0));
+        DarkSeriesResult c = Run(alone, library.Root, lightsFrom: same.Root);
+        Assert.Equal(library.Root, c.DarksFromPartner);
+        Assert.Equal(same.LightsDir, c.Inventory.Session.LightsDir);
+        Assert.Equal(MatchVerdict.Direct, c.Lights!.LightsOverDark.Verdict);
+        Assert.Equal(Path.GetFileName(alone.Root) + "-" + IndexFigures.TagFor(c.LightsIndex), c.Label);
+        Assert.Equal(IndexFigures.TagFor(c.LightsIndex), c.LabelTag);
+        Assert.Equal(Path.GetFileName(library.Root) + "-" + c.Index.Tag, c.DarksFromPartnerLabel);
+
+        // a session with darks keeps the darks' label, and so does a library given lights (R-061)
+        using SessionFixture with = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }).WithLights(4, i => Light(i, 1.3));
+        DarkSeriesResult a = Run(with);
+        Assert.Equal(Path.GetFileName(with.Root) + "-" + a.Index.Tag, a.Label);
+        Assert.DoesNotContain("; eticheta ", Report(a), StringComparison.Ordinal);
     }
 }

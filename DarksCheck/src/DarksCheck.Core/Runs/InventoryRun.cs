@@ -63,11 +63,13 @@ internal static class InventoryRun
     /// without decoding pixels.
     /// </summary>
     /// <param name="folder">The session folder or the library folder.</param>
+    /// <param name="lightsFrom">The folder to take the lights from instead of the folder's own
+    /// <c>lights/</c> (R-055), or null.</param>
     /// <returns>The inventory; a file that could not be read is listed with its error.</returns>
-    internal static Inventory Run(string folder)
+    internal static Inventory Run(string folder, string? lightsFrom = null)
     {
-        using RunClock clock = RunClock.Start(Log, "inventory", "folder=" + folder);
-        SessionFolder session = SessionFolder.Open(folder, allowLightsOnly: true);
+        using RunClock clock = RunClock.Start(Log, "inventory", "folder=" + folder + " lightsFrom=" + LogText.Str(lightsFrom));
+        SessionFolder session = SessionFolder.Open(folder, allowLightsOnly: true, lightsFrom);
         clock.Lap("open");
         FrameInfo[] darks = ReadAll(session.Darks);
         clock.Lap("darks");

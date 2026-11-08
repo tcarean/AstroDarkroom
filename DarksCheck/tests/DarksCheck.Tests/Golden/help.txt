@@ -1,8 +1,8 @@
 darkscheck <versiune>
 Copyright (C) 2026 Tudor Carean
 
-Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--out DIR] [--threads N] [--max-frames N]
-          darkscheck <folder> --inventory
+Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--lights DIR] [--out DIR] [--threads N] [--max-frames N]
+          darkscheck <folder> --inventory [--lights DIR]
 
   Folderul sesiunii Siril: dark-urile se iau din darks\ (sau direct din folder,
   daca nu exista darks\ si nici alt subfolder de sesiune), bias-urile din biases\
@@ -17,6 +17,8 @@ Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--
   --against DIR alt folder de dark-uri (o biblioteca sau o sesiune): indexul lui si cu
                 cate grade sunt dark-urile sesiunii mai calde sau mai reci decat el; o
                 sesiune cu lights dar fara dark-uri ia dark-urile lui drept ale ei.
+  --lights DIR  lights-urile din alt folder (o sesiune, din lights\ al ei, sau un folder
+                de lights): se compara cu dark-urile deschise, in locul celor din lights\.
   --out DIR     scrie in DIR raportul, cate un CSV cu toate cifrele pe dark-uri, pe
                 bias-uri si pe lights si hartile (darkscheck-report.txt, darkscheck-darks.csv,
                 darkscheck-biases.csv, darkscheck-lights.csv, darkscheck-map-dark.png, ...).

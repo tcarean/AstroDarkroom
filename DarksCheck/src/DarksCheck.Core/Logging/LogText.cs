@@ -191,7 +191,8 @@ internal static class LogText
         return "root=" + s.Root + " kind=" + kind
             + " darks=" + s.DarksDir + " (" + Int(s.Darks.Count) + " frames, " + Kind(s.Darks) + ")"
             + " biases=" + Str(s.BiasesDir) + " (" + Int(s.Biases.Count) + ")"
-            + " lights=" + Str(s.LightsDir) + " (" + Int(s.Lights.Count) + ")";
+            + " lights=" + Str(s.LightsDir) + " (" + Int(s.Lights.Count) + ")"
+            + " chosenLights=" + Str(s.ChosenLightsRoot);
     }
 
     /// <summary>

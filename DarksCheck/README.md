@@ -69,6 +69,13 @@ in the console, **Choose partner...** in the window (see "A session without dark
 Without a partner such a folder is refused with a message that says what to give;
 `--inventory` lists it all the same, its `darks` row reading `(none)`.
 
+The question can also be asked darks first: do the open darks fit the lights of another
+session? `--lights <folder>` in the console, **Choose lights...** on the window's Lights tab.
+The folder is a session, whose `lights\` is taken, or a folder with the lights in it; those
+lights replace the open folder's own in the run (check 1, check 9, the lights table and the
+lights CSV), and the darks' index and label stay the open folder's. The choice holds for the
+open folder only: it is not kept between runs and is dropped when another folder is opened.
+
 - An empty `darks\` is an error, never a fall-back to the root of the session, where
   `result.fit` and the other results of the stacking sit. A folder with `biases\` or `flats\`
   but neither `darks\` nor a `lights\` with frames is refused with a message naming the
@@ -81,14 +88,17 @@ Without a partner such a folder is refused with a message that says what to give
 ## The console
 
 ```
-darkscheck <session folder or folder of darks> [--against DIR] [--out DIR] [--threads N] [--max-frames N] [--lang en|ro]
-darkscheck <folder> --inventory [--lang en|ro]
+darkscheck <session folder or folder of darks> [--against DIR] [--lights DIR] [--out DIR] [--threads N] [--max-frames N] [--lang en|ro]
+darkscheck <folder> --inventory [--lights DIR] [--lang en|ro]
 darkscheck --help [--lang en|ro]
 ```
 
 - No option: decodes the frames and prints the report (below).
 - `--against DIR`: another folder of darks, a library or a session, to compare the session with;
   a session without darks takes its darks as its own.
+- `--lights DIR`: the lights of another folder, a session (its `lights\`) or a folder of lights,
+  compared with the open darks instead of the ones in `lights\`; a folder that does not exist or
+  holds no frame is refused before anything is decoded.
 - `--out DIR`: also writes the report, a CSV file per group of frames and the maps into DIR.
 - `--threads N`: how many frames are decoded at once; half the cores by default.
 - `--max-frames N`: how many frames are held in memory and how many lights are measured; 60 by
@@ -408,14 +418,34 @@ either.
 
 **A session without darks.** With a partner, the partner's darks take the place of the
 session's: checks 2 to 8 run on them (so you also learn how good the library is), check 9
-compares the lights with their master, and the index and the label are the partner's. The report
-says so: its `darks` row reads `(none; the darks of the partner ... are used)` and its darks line
-`=== DARKS (the partner's, ...)`; the rows `partner`, `darks / partner`, `shared pixels` and
-`lights / partner` are left out, since there is nothing left to compare the partner with; and
-`darkscheck-darks.csv` and the maps of `--out` describe the partner's darks. The Veil session of
-2026-10-06 (87 lights, no darks) against the library reads lights / dark 0.43 over the 44 lights
-measured (the cap of 60 takes one in two): the library ran 7.2 degrees warmer than the night,
-good for a cosmetic correction only.
+compares the lights with their master, and the index shown is the partner's, on the row
+`darks (partner)`, with the partner's label at its end. The label on the `label` row, and the big
+one on the window's Index tab, stays the session's own: its folder's name and the index its
+lights ask for, the number of the `lights` row (`like a dark of idx29`), so you can name the
+session's folder with it. The report says so: its `darks` row reads `(none; the darks of the
+partner ... are used)` and its darks line `=== DARKS (the partner's, ...)`; the rows `partner`,
+`darks / partner`, `shared pixels` and `lights / partner` are left out, since there is nothing
+left to compare the partner with; and `darkscheck-darks.csv` and the maps of `--out` describe
+the partner's darks. The Veil session of 2026-10-06 (87 lights, no darks) against the library
+reads lights / dark 0.43 over the 44 lights measured (the cap of 60 takes one in two): the
+library ran 7.2 degrees warmer than the night, good for a cosmetic correction only; its label
+reads `2026-10-06-3h-idx29`.
+
+### The lights of another session: `--lights`
+
+The same question asked darks first: open the library (or a session with darks) and give the
+lights of another session with `--lights <folder>`, or choose them with **Choose lights...** on
+the window's Lights tab. The folder is a session, whose `lights\` is taken, or a folder with the
+lights in it. Those lights replace the open folder's own in the whole run: the session row
+`lights` names them and says they were chosen by you, check 1 compares the darks' settings with
+theirs, check 9, the lights table and `darkscheck-lights.csv` describe them, and the `lights`
+row of `INDEX` says what dark they are like; the darks' index and label are the open folder's
+and do not change. The figures are the ones the same lights give from the folder's own
+`lights\`: the library with the Veil lights reads the 0.43 above, on the same 3933 pixels. A
+lights folder that does not exist or holds no frame is refused with `ERROR` before anything is
+decoded, and `--out` cannot point inside it. A folder with lights and no darks still needs its
+partner, whichever lights it is given. In the window the choice holds for the open folder only:
+it is not kept between runs and is dropped when you open another folder.
 
 ### FITS frames
 
@@ -497,15 +527,20 @@ tabs:
 - **Hot pixels**: the rows of check 5 and the chart of check 8: how much noise is left after the
   mean of more and more frames, against a dotted line of what a random noise would leave (4 times
   the frames, half the noise); hold the mouse over a point to see its figures.
-- **Lights**: the rows of check 9, the chart of every light against the dark (how hot the
-  master's hot pixels are in it) with the bounds as lines (0.9 and 1.1 green, as it is; 0.7 and
-  1.4 amber, with -opt; 0.4 red, cosmetic only), and the lights table.
+- **Lights**: first the card **Lights from another folder**, the window's `--lights`:
+  **Choose lights...** (a session, or a folder with the lights in it), **Lights of the open
+  folder** and **Analyse again**, for the question "do the open darks fit that session's
+  lights?"; the choice holds for the open folder only and is dropped when you open another.
+  Then the rows of check 9, the chart of every light against the dark (how hot the master's hot
+  pixels are in it) with the bounds as lines (0.9 and 1.1 green, as it is; 0.7 and 1.4 amber,
+  with -opt; 0.4 red, cosmetic only), and the lights table.
 - **Index**: the label in large type with **Copy label** (it goes to the clipboard, and you
   rename the folder yourself), the INDEX rows, and the partner: **Choose partner...** (a library
   or another session), **No partner** and **Analyse again**. A partner chosen after a run
   applies to the next one. A session without darks opened without a partner shows the problem
   card with **Choose partner...**: choose the library and the analysis runs again with its
-  darks.
+  darks; the label shown is then the session's own, on its lights' index, and the text under
+  it says so.
 - **ADU scale explained**: the rows and the paragraphs of the report's last section.
 - **Report**: the console's text, the same to the byte.
 
@@ -526,7 +561,8 @@ default, and the field says it is invalid. The console always runs with a gain o
 per doubling.
 
 **Write the files...** writes the files of `--out` into a folder you choose; the dialog opens in
-the session folder, which is refused, as is the partner's, so choose a folder outside both.
+the session folder, which is refused, as are the partner's and the chosen lights' folder, so
+choose a folder outside them.
 **About** (F1) shows the version, the licence and the six third-party components the program
 ships, LibRaw's three libraries listed apart from it, with where their licence texts are. It is
 never taller than the screen it opens on: on a screen too low for it, such as a 1080-line screen

@@ -75,7 +75,7 @@ internal static class InventoryReport
         [
             new("darks", noDarks ? (partner is null ? None : T($"(none; the darks of the partner {partner} are used)", $"(lipsa; se folosesc dark-urile partenerului {partner})")) : FolderLine(s.Root, s.DarksDir, s.Darks)),
             new("biases", s.BiasesDir is null ? None : FolderLine(s.Root, s.BiasesDir, s.Biases)),
-            new("lights", s.LightsDir is null ? None : FolderLine(s.Root, s.LightsDir, s.Lights)),
+            new("lights", s.LightsDir is null ? None : s.LightsChosen ? ChosenLightsLine(s.LightsDir, s.Lights) : FolderLine(s.Root, s.LightsDir, s.Lights)),
             new(T("camera", "aparat"), Distinct(inv.Darks.Concat(inv.PartnerDarks ?? []).Concat(inv.Biases).Concat(inv.Lights).Select(f => f.Camera))),
         ];
         if (noDarks && partner is null)
@@ -184,6 +184,20 @@ internal static class InventoryReport
         string rel = dir == root ? "." : Path.GetRelativePath(root, dir) + "\\";
         string ext = frames.Count > 0 ? Path.GetExtension(frames[0]) : "";
         return $"{rel} ({RunReport.Frames(frames.Count)} {ext})";
+    }
+
+    /// <summary>
+    /// The `lights` row for lights chosen from another folder (R-055): the folder's full path,
+    /// since it is not under the session, the count and the extension, and that it was the
+    /// owner's choice.
+    /// </summary>
+    /// <param name="dir">The folder the lights were listed in, full.</param>
+    /// <param name="frames">The lights.</param>
+    /// <returns>The line, as "E:\...\lights (87 frames .NEF; chosen by you)".</returns>
+    private static string ChosenLightsLine(string dir, IReadOnlyList<string> frames)
+    {
+        string ext = frames.Count > 0 ? Path.GetExtension(frames[0]) : "";
+        return $"{dir} ({RunReport.Frames(frames.Count)} {ext}; " + T("chosen by you", "alese de tine") + ")";
     }
 
     /// <summary>The distinct non-blank values joined by " / ".</summary>

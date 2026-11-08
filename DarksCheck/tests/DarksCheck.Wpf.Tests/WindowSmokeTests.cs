@@ -240,6 +240,29 @@ public class WindowSmokeTests
         });
     }
 
+    /// <summary>A library given another session's lights: the Lights tab draws its card with the chosen folder, check 9 and the table (R-122, R-055).</summary>
+    [Fact]
+    public async Task R122_ALibraryWithChosenLightsRendersTheLightsTab()
+    {
+        using TestSettings.Own _ = new();
+        using SessionFixture f = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);
+        using SessionFixture s = WindowFixture.Session(lights: 3);
+        MainViewModel vm = new();
+
+        await _sta.InvokeAsync(async () =>
+        {
+            vm.LightsFrom = s.LightsDir;
+            await vm.OpenAsync(f.Root);
+            Assert.True(vm.HasResult);
+            Assert.Equal(3, vm.Lights.Count);
+
+            using BindingErrors errors = new();
+            Render(new LightsView { DataContext = vm }, h: 1000, name: "tab-lights-from");
+            Render(new IndexView { DataContext = vm }, name: "tab-index-lights-from");
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+        });
+    }
+
     /// <summary>A series with frames off the plateau: the tinted rows, the bold `platou` cells and the notes under them render without a binding error (R-071, R-023).</summary>
     [Fact]
     public async Task R071_TheFramesOffThePlateauRenderWithTheirNotes()

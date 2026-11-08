@@ -87,6 +87,19 @@ public class GoldenOutputTests
     }
 
     [Fact]
+    public void LightsFrom_MatchesTheGoldenText()
+    {
+        // a library opened as the folder, given the lights of another session, 1.3 x warmer than its darks (R-055)
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);
+        using SessionFixture other = new SessionFixture()
+            .WithLights(3, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.3, Stars = SyntheticLight.ThreeStars });
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2", "--lights", other.Root);
+        Assert.Contains("Se masoara lights-urile: 3 / 3", stderr, StringComparison.Ordinal);
+        string actual = Scrub(stdout, s.Root).Replace(other.Root, "<lights>", StringComparison.Ordinal).Replace(Path.GetFileName(other.Root), "<lights>", StringComparison.Ordinal);
+        Compare("lights-from.txt", actual + "--- stderr ---\n(progresul, omis)\n--- exit " + code + " ---\n");
+    }
+
+    [Fact]
     public void Help_MatchesTheGoldenText()
     {
         (int code, string stdout, string stderr) = Cli.Run("--help");

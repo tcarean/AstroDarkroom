@@ -15,16 +15,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Windows;
 using System.Windows.Controls;
 
 namespace DarksCheck.Wpf;
 
 /// <summary>
-/// The Lights tab: check 9, the report's rows, the lights-over-dark ratio per light and the lights
-/// table; the code-behind only loads the XAML.
+/// The Lights tab: the lights of another folder (R-122), check 9, the report's rows, the
+/// lights-over-dark ratio per light and the lights table; the code-behind loads the XAML and
+/// hands the card's buttons to the window, which owns the dialogs.
 /// </summary>
 public partial class LightsView : UserControl
 {
     /// <summary>The tab, its bindings resolved against the main view-model it inherits.</summary>
     public LightsView() => InitializeComponent();
+
+    private MainWindow? Owner => Window.GetWindow(this) as MainWindow;
+
+    /// <summary>The lights button: the window asks for the folder of lights.</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
+    private void ChooseLights(object sender, RoutedEventArgs e) => Owner?.ChooseLightsFromView();
+
+    /// <summary>The clear button: the window goes back to the open folder's lights.</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
+    private void ClearLights(object sender, RoutedEventArgs e) => Owner?.ClearLightsFromView();
+
+    /// <summary>The rerun button: the window runs the same folder again.</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
+    private void Rerun(object sender, RoutedEventArgs e) => Owner?.RerunFromView();
 }

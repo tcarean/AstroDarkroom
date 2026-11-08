@@ -89,6 +89,16 @@ public partial class EnglishGoldenOutputTests
     }
 
     [Fact]
+    public void R093_LightsFrom_InEnglish()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);
+        using SessionFixture other = new SessionFixture()
+            .WithLights(3, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.3, Stars = SyntheticLight.ThreeStars });
+
+        Check("en_lights-from.txt", true, [s.Root, "--threads", "2", "--lights", other.Root], s.Root, null, other.Root);
+    }
+
+    [Fact]
     public void R093_Help_InEnglish()
     {
         Check("en_help.txt", false, ["--help"], "", null);
@@ -98,17 +108,17 @@ public partial class EnglishGoldenOutputTests
     /// Runs the scenario in both languages, compares the English run with its golden and with the
     /// Romanian run.
     /// </summary>
-    private static void Check(string golden, bool progressOmitted, string[] args, string root, string? partner)
+    private static void Check(string golden, bool progressOmitted, string[] args, string root, string? partner, string? lights = null)
     {
         (int en, string enOut, string enErr) = Cli.Run([.. args, "--lang", "en"]);
         (int ro, string roOut, string roErr) = Cli.Run([.. args, "--lang", "ro"]);
 
-        string enText = Scrub(enOut, root, partner) + "--- stderr ---\n" + (progressOmitted ? "(progress, omitted)\n" : enErr) + "--- exit " + en + " ---\n";
-        string roText = Scrub(roOut, root, partner) + (progressOmitted ? "" : Scrub(roErr, root, partner));
+        string enText = Scrub(enOut, root, partner, lights) + "--- stderr ---\n" + (progressOmitted ? "(progress, omitted)\n" : enErr) + "--- exit " + en + " ---\n";
+        string roText = Scrub(roOut, root, partner, lights) + (progressOmitted ? "" : Scrub(roErr, root, partner, lights));
         Compare(golden, enText);
 
         Assert.Equal(ro, en);
-        Assert.Equal(Numbers(roText), Numbers(Scrub(enOut, root, partner) + (progressOmitted ? "" : Scrub(enErr, root, partner))));
+        Assert.Equal(Numbers(roText), Numbers(Scrub(enOut, root, partner, lights) + (progressOmitted ? "" : Scrub(enErr, root, partner, lights))));
         string[] found = RomanianWords.Where(w => Regex.IsMatch(enText, @"(?<![\w-])" + Regex.Escape(w) + @"(?![\w-])")).ToArray();
         Assert.True(found.Length == 0, "Romanian words in the English output: " + string.Join(", ", found));
     }
@@ -117,7 +127,7 @@ public partial class EnglishGoldenOutputTests
     private static List<string> Numbers(string text) => [.. NumberPattern().Matches(text).Select(m => m.Value).Order(StringComparer.Ordinal)];
 
     /// <summary>The version line and the folders, which differ per build and per machine.</summary>
-    private static string Scrub(string text, string root, string? partner)
+    private static string Scrub(string text, string root, string? partner, string? lights = null)
     {
         string[] lines = text.Split('\n');
         if (lines.Length > 0 && lines[0].StartsWith("darkscheck ", StringComparison.Ordinal))
@@ -129,6 +139,11 @@ public partial class EnglishGoldenOutputTests
         if (partner is not null)
         {
             joined = joined.Replace(partner, "<partner>", StringComparison.Ordinal).Replace(Path.GetFileName(partner), "<partner>", StringComparison.Ordinal);
+        }
+
+        if (lights is not null)
+        {
+            joined = joined.Replace(lights, "<lights>", StringComparison.Ordinal).Replace(Path.GetFileName(lights), "<lights>", StringComparison.Ordinal);
         }
 
         return root.Length == 0 ? joined : joined.Replace(root, "<session>", StringComparison.Ordinal).Replace(Path.GetFileName(root), "<session>", StringComparison.Ordinal);

@@ -35,7 +35,9 @@ namespace DarksCheck.Core;
 /// default).</param>
 /// <param name="DoublingCelsius">The degrees Celsius per doubling of the dark current, of the
 /// normalisation.</param>
-internal sealed record DarkOptions(int Threads = 0, int MaxFrames = Th.MaxFramesInMemory, string? Against = null, double IsoFactorPerStop = 2, double DoublingCelsius = Th.DoublingCelsius)
+/// <param name="LightsFrom">The folder to take the lights from instead of the session's
+/// <c>lights/</c> (R-055): a session or a folder of lights; null for the session's own.</param>
+internal sealed record DarkOptions(int Threads = 0, int MaxFrames = Th.MaxFramesInMemory, string? Against = null, double IsoFactorPerStop = 2, double DoublingCelsius = Th.DoublingCelsius, string? LightsFrom = null)
 {
     internal int EffectiveThreads => Threads > 0 ? Threads : Math.Max(1, Environment.ProcessorCount / 2);
 }
@@ -75,6 +77,12 @@ internal sealed record RunProgress(string Phase, int Done, int Total);
 /// null.</param>
 /// <param name="DarksFromPartner">The partner's root when its darks stand in for a session without
 /// darks (R-054), else null.</param>
+/// <param name="DarksFromPartnerLabel">The partner's own label (R-061) when its darks stand in
+/// for the session's, whose <paramref name="Label"/> is then the lights' (R-066); else
+/// null.</param>
+/// <param name="LabelTag">The tag <paramref name="Label"/> ends with: the darks' index tag, or
+/// the lights' equivalent index tag for a session whose darks are the partner's (R-066); the
+/// window shows it beside the label without deciding it.</param>
 internal sealed record DarkSeriesResult(
     Inventory Inventory,
     DarkSeriesAnalysis Darks,
@@ -90,7 +98,9 @@ internal sealed record DarkSeriesResult(
     string? LightsError,
     PartnerAnalysis? Partner,
     string? PartnerError,
-    string? DarksFromPartner = null)
+    string? DarksFromPartner = null,
+    string? DarksFromPartnerLabel = null,
+    string LabelTag = "")
 {
     /// <summary>
     /// A frame that could not be read or decoded, in any group, or a partner that could not be
@@ -137,15 +147,17 @@ internal static class DarkSeriesRun
         ArgumentNullException.ThrowIfNull(options);
         int threads = options.EffectiveThreads;
         using RunClock clock = RunClock.Start(Log, "darks", "folder=" + folder + " threads=" + LogText.Int(threads) + " maxFrames=" + LogText.Int(options.MaxFrames)
-            + " against=" + LogText.Str(options.Against) + " isoFactor=" + LogText.Num(options.IsoFactorPerStop) + " doubling=" + LogText.Num(options.DoublingCelsius));
-        Inventory inv = InventoryRun.Run(folder);
+            + " against=" + LogText.Str(options.Against) + " lightsFrom=" + LogText.Str(options.LightsFrom) + " isoFactor=" + LogText.Num(options.IsoFactorPerStop) + " doubling=" + LogText.Num(options.DoublingCelsius));
+        Inventory inv = InventoryRun.Run(folder, options.LightsFrom);
         Normalisation nz = new(options.IsoFactorPerStop, options.DoublingCelsius);
 
         // A session with lights and no darks takes the partner's darks as its own (R-054, ADR
         // 0011): they fill the stack, take checks 2 to 8, check 9 and INDEX, and the match of
         // check 1 reads their settings; the partner rows of INDEX are then meaningless and skipped.
+        // The label stays the session's own, on the lights' index (R-066, ADR 0039); the partner's
+        // label goes on the partner's row.
         IReadOnlyList<string> darkPaths = inv.Session.Darks;
-        SessionFolder labelSession = inv.Session;
+        SessionFolder? partnerSessionUsed = null;
         string? darksFromPartner = null;
         if (!inv.Session.HasDarks)
         {
@@ -167,7 +179,7 @@ internal static class DarkSeriesRun
 
             FrameInfo[] partnerDarks = InventoryRun.ReadAll(partnerSession.Darks);
             darkPaths = partnerSession.Darks;
-            labelSession = partnerSession;
+            partnerSessionUsed = partnerSession;
             darksFromPartner = partnerSession.Root;
             inv = inv with { Match = MatchAnalyzer.Analyze(partnerDarks, inv.Biases, inv.Lights), DarksFromPartner = partnerSession.Root, PartnerDarks = partnerDarks };
             Log.Info("the partner's darks stand in for the session's (R-054): " + partnerSession.Root + ", " + LogText.Int(partnerDarks.Length) + " darks");
@@ -256,12 +268,16 @@ internal static class DarkSeriesRun
 
         DarkVerdicts verdicts = DarkVerdictAnalyzer.Judge(darks, biases, dc, refPlane);
         IndexFigures index = IndexAnalyzer.RankIndex(darks.MedianMaster, darks.Black, darks.White, darks.Norm, darks.Width, darks.Height);
-        string label = IndexAnalyzer.Label(labelSession, index);
+        // A session without darks is labelled on its lights' index, known only after the lights
+        // (R-066); its partner's own label is kept for the partner's row.
+        string? partnerLabel = partnerSessionUsed is null ? null : IndexAnalyzer.Label(partnerSessionUsed, index);
+        string labelTag = partnerSessionUsed is null ? index.Tag : IndexFigures.TagFor(double.NaN);
+        string label = IndexAnalyzer.Label(inv.Session, labelTag);
         clock.Lap("verdicts");
         if (Log.IsDebugEnabled)
         {
             Log.Debug("verdicts: " + LogText.Figures(verdicts));
-            Log.Debug("index: " + LogText.Figures(index) + " label=" + label);
+            Log.Debug("index: " + LogText.Figures(index) + " label=" + label + " partnerLabel=" + LogText.Str(partnerLabel));
         }
 
         LightsAnalysis? lights = null;
@@ -312,7 +328,14 @@ internal static class DarkSeriesRun
         }
 
         double lightsIndex = lights is null ? double.NaN : IndexAnalyzer.EquivalentIndex(index, lights.LightsOverDark);
-        DarkSeriesResult result = new(inv, darks, biases, biasError, dc, verdicts, refPlane, index, label, lightsIndex, lights, lightsError, partner, partnerError, darksFromPartner);
+        if (partnerSessionUsed is not null)
+        {
+            labelTag = IndexFigures.TagFor(lightsIndex);
+            label = IndexAnalyzer.Label(inv.Session, labelTag);
+            Log.Info("the session's label is its lights' (R-066): " + label);
+        }
+
+        DarkSeriesResult result = new(inv, darks, biases, biasError, dc, verdicts, refPlane, index, label, lightsIndex, lights, lightsError, partner, partnerError, darksFromPartner, partnerLabel, labelTag);
         clock.Done(Outcome(result));
         return result;
     }
