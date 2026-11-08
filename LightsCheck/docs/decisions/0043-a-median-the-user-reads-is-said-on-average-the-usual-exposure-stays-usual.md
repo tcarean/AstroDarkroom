@@ -40,5 +40,6 @@ way)` of the pixel-size field keeps its word, which means "normally" there.
 The golden console texts change on the SUMMARY focus row, the FOCUS rows and verdict, the
 how-far row and the wide-stars and clouds reasons, and nowhere else; R-036, R-077, R-078, R-079
 and R-081 quote the new words, `PlainWords` checks every tab against the shorter list, and the
-lists of Romanian words an English text never holds gain `medie`. A new text naming a median uses
-`on average` / `in medie`.
+lists of Romanian words an English text never holds gain `medie`. V-010's first `cat de mult`
+cell reads `in medie`, at the owner's word (`docs/validation.md`). A new text naming a median
+uses `on average` / `in medie`.
