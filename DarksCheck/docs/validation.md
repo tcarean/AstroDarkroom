@@ -230,3 +230,10 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   Every other figure of V-007 stayed. The owner set the new value the same day
   (`2026-10-06-3h-idx29`, "trebuie sa primeasca eticheta ei"); the twelve cases re-run after it:
   `Passed: 12, Total: 12, Duration: 7 m 11 s`; no figure moved outside its tolerance.
+- 2026-11-08: after `usually` became `on average` (R-081, R-082, ADR 0040: words only, in
+  `Report/DarkReport.cs` and `Report/ScaleReport.cs`; no formula or constant changed), the twelve
+  cases run with `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 12, Passed: 12,
+  Total time: 11.3068 Minutes`. Ten were measured, and no figure moved outside its tolerance.
+  V-008 and V-011 were not measured: their folders are no longer at the recorded paths (both now
+  sit under `Flats and Darks/Darks/stricate/`), so the test printed `nothing checked`;
+  `validation.json` is left as it is.

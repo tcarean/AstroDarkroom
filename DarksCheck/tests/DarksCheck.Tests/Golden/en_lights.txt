@@ -30,15 +30,15 @@ Copyright (C) 2026 Tudor Carean
     verdict            : OK: every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); there are fewer than 6 frames, so no plateau
 
   4. THE NOISE OF EACH FRAME
-    against the master : R 2.64 .. 2.75; G1 2.64 .. 2.71 (usually 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]
+    against the master : R 2.64 .. 2.75; G1 2.64 .. 2.71 (on average 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]
     read noise         : UNMEASURED: the session has no biases
     random banding     : horizontal: the rows differ from one another by 0.242 ADU, 1.0 times what the noise alone would give; vertical: 1.0 times (1 means no banding)
-    verdict            : OK: no frame has noise more than 1.5 times the usual (2.66 ADU)
+    verdict            : OK: no frame has noise more than 1.5 times the average noise (2.66 ADU)
 
   5. HOT PIXELS
     above the threshold: above 10: 20; above 20: 20; above 50: 20; above 100: 20; above 500: 0  [the master's pixels, ADU above the black, all colours]
     by colour, above 20: R 20  G1 0  G2 0  B 0
-    how hot            : usually 120 ADU; 80 % of them between 118 and 121; the hottest 1 % above 121 (of 20 pixels)
+    how hot            : on average 120 ADU; 80 % of them between 118 and 121; the hottest 1 % above 121 (of 20 pixels)
     stability          : 20 of 20 show (above half the threshold) in all 4 frames, 0 are missing from 2 or more; from one frame to the next they vary by 2.23 ADU, the other pixels by 2.38; 0 green pixels G1 jump between two levels (RTS: they vary more than 6 times the noise of one frame, 3.01)
     verdict            : OK (informative): 20 pixels above 20 ADU in 0.05 Mpx
 
@@ -61,7 +61,7 @@ Copyright (C) 2026 Tudor Carean
     in the dark master : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)  [how many of these pixels are in the dark master too, above each threshold in ADU]
     master in lights   : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)  [how many of the master's pixels above each threshold show in the lights too]
     not in the master  : none: every hot pixel of the lights is above 20 ADU in the master too
-    lights against dark: in the lights, the hot pixels are usually 1.30 times what they are in the dark (over the 5 frames; in the first 1.33, in the last 1.32; on 20 pixels)
+    lights against dark: in the lights, the hot pixels are on average 1.30 times what they are in the dark (over the 5 frames; in the first 1.33, in the last 1.32; on 20 pixels)
     verdict            : WARNING: subtract the dark with -opt (-opt: Siril multiplies it so that it matches the lights); in the lights the hot pixels are 1.30 times what they are in the dark, between 0.7 and 1.4: the dark is colder by 2.3 degrees
 
   INDEX
@@ -120,7 +120,7 @@ Copyright (C) 2026 Tudor Carean
     shows when you stretch a dark sky hard.
 
     Against the sky: on a light of this session the sky is at 500.0 ADU above the black, so 1
-    ADU is 0.20 % of the sky, about as much as a flat is usually off. In the stack of the 5
+    ADU is 0.20 % of the sky, about as much as a flat is off on average. In the stack of the 5
     lights the noise per pixel falls to 3.40 ADU if you make it with the mean (4.02 with the
     median). Two noises go into this figure. The lights' noise (6.3 ADU on one light) falls the
     more lights you add. The dark master's noise (1.87 ADU) does not fall, because the same
@@ -131,7 +131,7 @@ Copyright (C) 2026 Tudor Carean
     obvious above 1.0 ADU-eq (the threshold of the analysis made by hand). Constant light on a
     side counts above 0.15 ADU-eq, and only if it is more than 3 times what the measurement can
     be off by. Light on a single frame counts above 0.1 ADU-eq, and only if it is more than 5
-    times what a frame usually differs from the others. The last two thresholds say 'this is
+    times what a frame differs from the others on average. The last two thresholds say 'this is
     real light, measured', not 'it shows in the image': at 0.15 ADU in the file it would barely
     show, at 1.0 ADU it shows. The remedy is the same in both cases: cover the viewfinder and
     take the series again.
