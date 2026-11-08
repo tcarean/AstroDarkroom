@@ -42,6 +42,21 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The window's Summary tab puts check 9, how well the dark fits the lights, right under the
+  session card, then checks 2 to 8 and INDEX; its hot-pixel card keeps only the stability and
+  the verdict (the Hot pixels tab shows the rest); the stability's four statements and the
+  shared pixels' two stand one under the other, and the overlap of check 9 and the noise curve
+  of check 8 are drawn as tables (R-071, ADR 0041). The console's report keeps its order.
+- Check 9 names both indexes on rows of their own, `index darks` and `index lights`, before its
+  verdict, in the console and the window (R-056, ADR 0041).
+- Every light is measured: the frame cap (`--max-frames`, `MAX FRAMES`) bounds the darks and
+  the biases alone, so a session of 87 lights reads all 87 where 44 were read before (R-050,
+  ADR 0041).
+- The window's fifth tab is `Match with lights` (`Potrivire cu lights`), no longer `Lights`.
+- The partner of the Index tab holds for the open folder only, like the lights folder: not kept
+  in `settings.json` between starts, dropped when another folder is opened (R-073, R-075,
+  ADR 0041).
+
 - The label of a session with lights and no darks of its own is the session's: its folder's name
   and the lights' index, what dark they are like, read through the partner's darks (R-066, ADR
   0039). The partner's index and label now stand once, on the `darks (partner)` row, where the
@@ -268,6 +283,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   partner the folder is refused with a sentence naming what to give, and the window's problem
   card offers `Alege partener...`; `--inventory` lists such a folder with `darks: (lipsa)`.
   V-007 runs the Veil lights of 2026-10-06 against the 2026-10-10 library.
+
+### Removed
+
+- The `skipped lights` row of check 9 and the `skipped` column of `darkscheck-lights.csv`: no
+  light is skipped any more (ADR 0041).
 
 ### Fixed
 

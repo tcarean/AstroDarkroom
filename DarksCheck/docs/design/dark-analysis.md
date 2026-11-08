@@ -258,7 +258,7 @@ turns a match's degrees into the clause of the INDEX rows (`adica cu 7.5 grade m
 partenerul`; `la aceeasi temperatura` under `Th.SameTemperatureCelsius`; none for a ratio that
 gives no degrees); `DarkOutputs.LightsCsv`
 writes `darkscheck-lights.csv` beside the darks' and biases' writers, with the columns `index,
-file, time, exposure_s, iso, error, skipped`, then per plane `<P>_sky_median, <P>_sky_sigma,
+file, time, exposure_s, iso, error`, then per plane `<P>_sky_median, <P>_sky_sigma,
 <P>_local_sigma`, then `candidates, isolated_hot, amp_ratio_median, amp_ratio_q25,
 amp_ratio_q75`. How the two analyzers work is in `lights-and-index.md`.
 
@@ -304,6 +304,20 @@ need are properties of the records, not of the window: `ResidualFigures.RowBandi
 `NoiseVerdict.OutlierLimitAdu`. `DarkOutputs.MapRaster` is the grey raster of a binned map (each block a
 `MapScale` square stretched from the 1st to the 99th percentile), what `WriteMap` encodes as
 PNG and what the window shows as an image.
+
+A `ReportRow` may carry more than its line (ADR 0041): `Lines`, the statements the window
+shows one under the other, which the value holds joined by `; ` (`StabilityRow`: the four
+statements of `Stability`, or its one unmeasured line without `Lines`; INDEX's `pixeli comuni`
+row: its two); `Table`, a `ReportTable(Header, Rows, Note)` of formatted cells the window draws
+under the label while the console prints the value alone (`OverlapRow` for the two overlap rows
+of check 9, one row per hot level, `peste 10`, `20 din 20`, `100 %`; `CurveRow` for check 8's
+`zgomot dupa medie`, one row per n with the frames, the measured and the expected noise; the
+note is the value's bracket hint without its brackets); and `Summary`, false on check 5's three
+count rows, which the Rezumat's card leaves to the Pixeli fierbinti tab. Check 9 ends with
+`index dark-uri` (`index partener` when the darks are the partner's), the darks' tag, and
+`index lights`, the lights' equivalent tag with the parenthesis INDEX's `lights` row also uses,
+both from `LightsLike` (`IndexFigures.TagFor` on `LightsIndex`; null, and no row, when it is
+not measured), then the verdict (R-056).
 
 ## Measured
 

@@ -101,8 +101,8 @@ darkscheck --help [--lang en|ro]
   holds no frame is refused before anything is decoded.
 - `--out DIR`: also writes the report, a CSV file per group of frames and the maps into DIR.
 - `--threads N`: how many frames are decoded at once; half the cores by default.
-- `--max-frames N`: how many frames are held in memory and how many lights are measured; 60 by
-  default.
+- `--max-frames N`: how many frames of a group (darks, biases) are held in memory; 60 by
+  default. Every light is measured.
 - `--inventory`: the metadata of the frames only, without decoding them; it does not go with
   `--out` or `--against`.
 - `--lang en|ro`: the language of the texts, English by default.
@@ -127,8 +127,8 @@ English, `OK`, `ATENTIE`, `REFA` and `NEMASURAT` in Romanian.
 `darkscheck <folder>` reads the biases, if there are any, then the darks, `--threads N` at a
 time (the progress goes to stderr: `Reading the darks: 3 / 20`), and holds them in memory as 16-bit
 mosaics, 48 MB a frame at 24 MP. Above 60 frames, or the cap `--max-frames N` sets, it decodes
-one file in k and lists the others as `skipped`, which is not an error. Then it reads the lights
-one by one, under the same cap, without keeping them. It prints the session's lines, one section
+one file in k and lists the others as `skipped`, which is not an error. Then it reads every
+light, one by one, without keeping them, so the cap does not apply to them. It prints the session's lines, one section
 per check, each with its figures and a `verdict` row that starts with `OK`, `WARNING`, `REDO`
 (check 3 only: the series is to be taken again) or `UNMEASURED`, then `INDEX`, the frames
 table, the lights table and `ADU SCALE EXPLAINED`.
@@ -427,7 +427,7 @@ partner ... are used)` and its darks line `=== DARKS (the partner's, ...)`; the 
 `darks / partner`, `shared pixels` and `lights / partner` are left out, since there is nothing
 left to compare the partner with; and `darkscheck-darks.csv` and the maps of `--out` describe
 the partner's darks. The Veil session of 2026-10-06 (87 lights, no darks) against the library
-reads lights / dark 0.43 over the 44 lights measured (the cap of 60 takes one in two): the
+reads lights / dark 0.43 over its 87 lights (every light is measured): the
 library ran 7.2 degrees warmer than the night, good for a cosmetic correction only; its label
 reads `2026-10-06-3h-idx29`.
 
@@ -514,8 +514,12 @@ by default. Without a folder it asks for one at start: a Siril session folder (t
 `darkscheck <folder>`, with a progress bar and a **Stop** button, and the result fills eight
 tabs:
 
-- **Summary**: the session's lines, then every check as a card of rows, its verdict a coloured
-  chip (green `OK`, amber `WARNING`, grey `UNMEASURED`) with the rest of the text beside it.
+- **Summary**: the session's lines, then check 9, how well the dark fits the lights, right
+  under them (with the darks' and the lights' indexes on rows of their own and the overlap at
+  each threshold as a table), then checks 2 to 8 and INDEX, every check as a card of rows, its
+  verdict a coloured chip (green `OK`, amber `WARNING`, grey `UNMEASURED`) with the rest of the
+  text beside it. The hot-pixel card keeps only the stability, one statement per line, and the
+  verdict; the rest is on the Hot pixels tab. The noise after averaging is a table.
 - **Frames**: the frames table, every column header with an explanation under the mouse, and
   beside it three charts, frame by frame: the hot pixels against the master (the warming, with
   the plateau and the two bounds of check 3), how much each frame differs from the master (with
@@ -527,7 +531,7 @@ tabs:
 - **Hot pixels**: the rows of check 5 and the chart of check 8: how much noise is left after the
   mean of more and more frames, against a dotted line of what a random noise would leave (4 times
   the frames, half the noise); hold the mouse over a point to see its figures.
-- **Lights**: first the card **Lights from another folder**, the window's `--lights`:
+- **Match with lights**: first the card **Lights from another folder**, the window's `--lights`:
   **Choose lights...** (a session, or a folder with the lights in it), **Lights of the open
   folder** and **Analyse again**, for the question "do the open darks fit that session's
   lights?"; the choice holds for the open folder only and is dropped when you open another.
@@ -537,25 +541,27 @@ tabs:
 - **Index**: the label in large type with **Copy label** (it goes to the clipboard, and you
   rename the folder yourself), the INDEX rows, and the partner: **Choose partner...** (a library
   or another session), **No partner** and **Analyse again**. A partner chosen after a run
-  applies to the next one. A session without darks opened without a partner shows the problem
+  applies to the next one; it holds for the open folder only: it is not kept when you close the
+  program and is dropped when you open another folder, like the lights folder. A session
+  without darks opened without a partner shows the problem
   card with **Choose partner...**: choose the library and the analysis runs again with its
   darks; the label shown is then the session's own, on its lights' index, and the text under
   it says so.
 - **ADU scale explained**: the rows and the paragraphs of the report's last section.
 - **Report**: the console's text, the same to the byte.
 
-With `--lang ro` the tabs are Rezumat, Cadre, Harti, Pixeli fierbinti, Lights, Index, Explicatii
-scara ADU and Raport. A screen reader such as Narrator reaches what each tab shows, not only the
+With `--lang ro` the tabs are Rezumat, Cadre, Harti, Pixeli fierbinti, Potrivire cu lights,
+Index, Explicatii scara ADU and Raport. A screen reader such as Narrator reaches what each tab shows, not only the
 tabs' names.
 
 The top bar holds four settings: `THREADS`, how many frames are read at the same time (empty =
-half the cores); `MAX FRAMES`, how many frames are held in memory and how many lights are
-measured (60 by default); `SIGNAL / ISO STOP`, how many times the signal grows at every ISO stop,
+half the cores); `MAX FRAMES`, how many frames of a group are held in memory (60 by default;
+every light is measured); `SIGNAL / ISO STOP`, how many times the signal grows at every ISO stop,
 so that every frame is worked out at ISO 400 (2 = it doubles at every stop, the D3300's); and
 `DEGREES / DOUBLING`, by how many degrees more the dark current doubles, from which the report's
-degrees are worked out (6). The four and the partner are
-read when a folder is opened and remembered between starts in
-`%LOCALAPPDATA%\DarksCheck\settings.json`, the only file the window writes outside the folder
+degrees are worked out (6). The four are read when a folder is opened and remembered between
+starts in `%LOCALAPPDATA%\DarksCheck\settings.json` (the partner and the chosen lights are not:
+they hold for the open folder), the only file the window writes outside the folder
 you export to besides its log ("Logs" below); a value that is not a positive number with `.` as its decimal separator means the
 default, and the field says it is invalid. The console always runs with a gain of 2 and 6 degrees
 per doubling.

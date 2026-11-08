@@ -1,7 +1,7 @@
 # 0008. The lights are read one by one with an isolated hot-pixel detector, and two masters match on the pixels hot in both
 
 Date: 2026-10-16
-Status: accepted 2026-10-16
+Status: accepted 2026-10-16; the frame cap on the lights superseded by 0041
 
 ## Context
 

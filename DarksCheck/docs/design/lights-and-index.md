@@ -21,8 +21,8 @@ and the file `darkscheck-lights.csv` are described with the rest of the run in
 master, black, white, size, normalisation and plane names). The lights are never stacked:
 `FrameStack.DecodeOne` decodes one file (`dark-analysis.md`, "The stack"), `Measure` reduces
 it to a `LightFigures` and the mosaic is dropped, with the same forced collection per frame as
-the stack. `threads` lights are in flight at once; above the frame cap only every k-th is
-decoded and the others are listed as skipped, the same rule as the darks. A light of another
+the stack. `threads` lights are in flight at once, and every light is read: the frame cap of
+the darks does not apply, since no light is kept (ADR 0041). A light of another
 size than the darks, or one that fails to decode, is listed with its error. A FITS light has no
 black level of its own and takes the darks' black (the pedestal is the camera's); a raw brings
 libraw's. A light that does not say its ISO or its exposure is taken at the darks'
