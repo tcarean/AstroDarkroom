@@ -29,7 +29,7 @@ internal static class PlainWords
     private static readonly Regex MethodWords = new(
         @"\b(median|medians|mean|sigma|mpx|registered|unregistered|correlated|distinct|isolated|coverage|radius|consecutive|sign|span|threshold"
         + @"|penalty|coherent|coherence|integration|arcmin|decoding"
-        + @"|mediana|mediane|medie|inregistrat|inregistrate|neinregistrat|neinregistrate|corelat|distincte|izolate|acoperire|raza|fierbinti|semn|intindere|pragul"
+        + @"|mediana|mediane|inregistrat|inregistrate|neinregistrat|neinregistrate|corelat|distincte|izolate|acoperire|raza|fierbinti|semn|intindere|pragul"
         + @"|penalizare|coerent|coerenta|integrare|prag|consecutiv|decodeaza)\b",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 

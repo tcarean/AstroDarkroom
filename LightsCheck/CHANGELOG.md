@@ -83,34 +83,33 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (ADU above the black level)`, each note says what the figure is in each frame and what moves
   it, and a new line above the charts says that each point is a frame, in the order they were
   shot, and what the colours of the first two charts mean.
-- The Frames tab and the reasons a frame is flagged speak in plain words (R-079, ADR 0034),
-  wherever the reasons are printed: on the Frames and Rejected tabs and in the console's REJECTED
-  section and frame table. A reason names the class its figure gives
-  (`elongation 1.76 (from 1.60 the frame is bad)`), compares the stars' width and count with the
-  session's usual ones (`wide stars: ...`, `too few stars: ...`), says the sky background jumps
-  against the neighbouring frames, that Siril takes a satellite or plane trail out when stacking,
-  and that a frame could not be aligned. The column tooltips, the cut-outs' caption and wait note,
-  and the line under each cut-out (`width (FWHM)`, the angle in degrees) are rewritten the same
-  way; the Romanian plural of trails reads `3 dare`. The Frames table's reasons column widens
-  from 280 to 560 px, so the reason of a trailed frame, bad or marginal, shows whole in either
-  language; a longer one is still whole in its tooltip and on the Rejected tab. Every figure is
-  unchanged.
-- The Summary tab, the console's session lines (`--inventory` too) and its sections SUMMARY,
-  FOCUS, EXPOSURE AND NOISE, DEW, TRAILED FRAMES and DRIFT AND ROTATION speak in plain words
-  (R-078, ADR 0033): `the stars' width (FWHM)` and `typically` for the median, `total exposure`
-  for the integration, `extra noise` for the penalty, `the light around the stars (halo)`, the
-  polar error as how far the mount's axis is off the pole and its cost as how far it moves the
-  stars, angles in `'`, `(when shot)` and the lens's mount named as one, and a legend under the
-  noise rows labelled `what it means`. Every figure is unchanged.
-- The Dithering tab and the console's DITHERING section speak in plain words (R-077, ADR 0032):
-  `frames aligned` for registered, `how close the frames are` for coverage, `different spots`,
-  `frames alone`, `area of the positions`, `hot pixels per million pixels`, `typically` for the
-  median move, and no sigma or Mpx; the captions under the map and the charts and the five
+- The Frames tab and the reasons a frame is flagged speak in plain words (R-079, ADRs 0034 and
+  0043), wherever the reasons are printed: on the Frames and Rejected tabs and in the console's
+  REJECTED section and frame table. A reason names the class its figure gives (`elongation 1.76
+  (from 1.60 the frame is bad)`), compares the stars' width and count with the session's average
+  ones (`wide stars: ...`, `too few stars: ...`), says the sky background jumps against the
+  neighbouring frames, that Siril takes a satellite or plane trail out when stacking, and that a
+  frame could not be aligned. The column tooltips, the cut-outs' caption and wait note, and the line
+  under each cut-out (`width (FWHM)`, the angle in degrees) are rewritten the same way; the Romanian
+  plural of trails reads `3 dare`. The Frames table's reasons column widens from 280 to 560 px, so
+  the reason of a trailed frame, bad or marginal, shows whole in either language; a longer one is
+  still whole in its tooltip and on the Rejected tab. Every figure is unchanged.
+- The Summary tab, the console's session lines (`--inventory` too) and its sections SUMMARY, FOCUS,
+  EXPOSURE AND NOISE, DEW, TRAILED FRAMES and DRIFT AND ROTATION speak in plain words (R-078, ADRs
+  0033 and 0043): `the stars' width (FWHM)` and `on average` for the median, `total exposure` for
+  the integration, `extra noise` for the penalty, `the light around the stars (halo)`, the polar
+  error as how far the mount's axis is off the pole and its cost as how far it moves the stars,
+  angles in `'`, `(when shot)` and the lens's mount named as one, and a legend under the noise rows
+  labelled `what it means`. Every figure is unchanged.
+- The Dithering tab and the console's DITHERING section speak in plain words (R-077, ADRs 0032 and
+  0043): `frames aligned` for registered, `how close the frames are` for coverage, `different
+  spots`, `frames alone`, `area of the positions`, `hot pixels per million pixels`, `on average` for
+  the median move, and no sigma or Mpx; the captions under the map and the charts and the five
   paragraphs under the card are rewritten the same way, and the Summary rows that share a piece
   (`trailed frames`, `trail direction`, `drift over one exposure`, `dithering`) follow. The
   explanation no longer says a 3"/min drift stays under a pixel for a whole session at 20 mm: it is
-  0.15 px per 2-minute exposure there, against about 1 px at 135 mm. Every figure is unchanged;
-  the validation case V-010 records the tables' new words, its figures kept.
+  0.15 px per 2-minute exposure there, against about 1 px at 135 mm. Every figure is unchanged; the
+  validation case V-010 records the tables' new words, its figures kept.
 - When libraw cannot be loaded, the error names Microsoft's Visual C++ runtime, missing or too
   old, as the likely cause, with Microsoft's link to its latest version,
   `https://aka.ms/vc14/vc_redist.x64.exe`, instead of advice on where the DLLs sit and how to

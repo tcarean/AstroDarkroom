@@ -282,7 +282,7 @@ Beside the rows, the report gives the window shapes it cannot derive from prose 
 `DitherTables` builds the five `ReportTable`s (how often, how far, direction, how close the
 frames are, runs) from the same `DitherAnalysis` figures the `DitherRows` print, through the
 helpers both use (`SizeWord`, `FramesWord`, `TimesWord`, `PausesRow`, `LongestRow`, `HowOften`
-for the no-move words, `TypicallyWord` before the median move, and `NearestWords`,
+for the no-move words, `AverageWord` before the median move, and `NearestWords`,
 `AloneWords` and `AreaWords`, which `DitherScalarRows` shares too) so a wording lives once;
 the runs table has its own `RunRows` and `MinutesCell` beside the rows' `Runs` and `Minutes`,
 which differ in shape, not in words. Every one of these texts is in plain words (R-077):

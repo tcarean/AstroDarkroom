@@ -101,7 +101,7 @@ plain terms below.
 | apropierea cadrelor / locuri diferite / zona pozitiilor | how close the frames are / different spots / area of the positions |
 | grup (de cadre la rand) / acelasi loc | run (of frames in a row) / same spot |
 | cadre singure | frames alone |
-| de obicei (the median move) / tarie (of the fixed pattern) | typically / strength |
+| in medie (a median: the move, the stars' width and elongation) / tarie (of the fixed pattern) | on average / strength |
 | aliniere polara / rotatie de camp | polar alignment / field rotation |
 | pattern fix / pixeli calzi | fixed pattern / hot pixels |
 | aliniat (DITHERING), nu s-a putut alinia (the reasons); inregistrat (elsewhere, until its rewrite) | aligned, could not be aligned; registered |
@@ -111,7 +111,7 @@ plain terms below.
 | cele la limita raman in stiva, la alegerea ta | the marginal ones stay in the stack, your choice |
 | eroarea periodica / jocul din angrenaje (backlash) | periodic error / the play in the gears (backlash) |
 | de la 1.60 cadrul e slab / de la 1.35 cadrul e la limita | from 1.60 the frame is bad / from 1.35 the frame is marginal |
-| stele late / prea putine stele / latimea obisnuita din sesiune | wide stars / too few stars / the session's usual width |
+| stele late / prea putine stele / latimea medie din sesiune / din cate are in medie un cadru | wide stars / too few stars / the session's average width / of a frame's average count |
 | fondul cerului sare cu ... fata de cadrele vecine (se semnaleaza de la ...) | the sky background jumps by ... against the neighbouring frames (flagged from ...) |
 | dara / dare de satelit sau avion (Siril o / le scoate la stivuire) | satellite or plane trail / trails (Siril takes it / them out when stacking) |
 | cadrul dinainte / cadrul de referinta / nivelul de negru | the frame before / the reference frame / the black level |

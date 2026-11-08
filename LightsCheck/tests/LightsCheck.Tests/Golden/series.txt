@@ -13,7 +13,7 @@ Copyright (C) 2026 Tudor Carean
     scara              : 1 px = 5.99" pe cer; pixelul are 3.92 um (scris in fisier (XPIXSZ)); cadrele sunt aliniate dupa cadrul 1
 
   REZUMAT
-    focus              : BUN - latimea stelelor (FWHM) e de obicei 3.25 px = 19.4" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (-0 %): focusul a tinut toata sesiunea
+    focus              : BUN - latimea stelelor (FWHM) e in medie 3.25 px = 19.4" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (-0 %): focusul a tinut toata sesiunea
     expunere           : BUNA - cerul pe verde: 2000 -> 2000 ADU; cel mai slab e canalul B: shot/citire 10.0 (bine e de la 10), zgomotul de citire adauga 5 %
     roua               : NU - latimea stelelor -0 %, lumina din jurul stelelor (halo) +0.001
     cadre miscate      : 2 slabe, 0 la limita, 6 bune (din 8); RA e axa Y a imaginii, DEC axa X (aflat din directia darelor: presupunem ca le-a facut urmarirea, deci sunt pe RA)
@@ -22,10 +22,10 @@ Copyright (C) 2026 Tudor Carean
     de scos din stiva  : 2 cadre (lista e la RESPINSE); raman 6 cadre, adica 12 min de expunere
 
   FOCUS
-    latimea stelelor (FWHM): 3.25 px = 19.4" (de obicei, pe cadrele bune)
+    latimea stelelor (FWHM): 3.25 px = 19.4" (in medie, pe cadrele bune)
     primele / ultimele 3 cadre bune: 3.25 px / 3.25 px (-0 %): focusul a tinut
-    in centru / la mijloc / la margine: latimea stelelor 3.25 / 3.25 / 3.24 px (de obicei, pe cadrele bune)
-    verdict            : BUN - latimea stelelor (FWHM) e de obicei 3.25 px = 19.4" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (-0 %): focusul a tinut toata sesiunea
+    in centru / la mijloc / la margine: latimea stelelor 3.25 / 3.25 / 3.24 px (in medie, pe cadrele bune)
+    verdict            : BUN - latimea stelelor (FWHM) e in medie 3.25 px = 19.4" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (-0 %): focusul a tinut toata sesiunea
 
   EXPUNERE SI ZGOMOT
     fondul cerului (cadrele bune, primele -> ultimele): 2000 -> 2000 ADU pe verde, peste nivelul de negru (+0 %)
@@ -55,7 +55,7 @@ Copyright (C) 2026 Tudor Carean
     pauze de peste 5 s : 3; miscari de cel putin 5 px: 3; pauze dupa care cadrul a ramas pe loc: 0; miscari fara pauza inainte: 0; cadre aliniate: 8 din 8
     cat de des         : la fiecare 2 cadre: 2 ori
     cel mai lung sir fara miscare: cadrele 1-2 (2 cadre la rand, 4 min)
-    cat de mult        : de obicei 15.32 px = 91.7"; 5-10 px: 0; 10-20 px: 2; 20+ px: 1
+    cat de mult        : in medie 15.32 px = 91.7"; 5-10 px: 0; 10-20 px: 2; 20+ px: 1
     directie           : doar pe X: 2; doar pe Y: 1; pe ambele: 0; pe X spre + / spre -: 2 / 0; pe Y spre + / spre -: 0 / 1; RA e axa Y a imaginii, DEC axa X (aflat din directia darelor: presupunem ca le-a facut urmarirea, deci sunt pe RA)
     apropierea cadrelor: jumatate din cadre au alt cadru la cel mult 0.6 px; cu alt cadru la sub 3 px: 8, la sub 5: 8, la sub 10: 8; cadre singure (la 10 px sau mai mult de oricare altul): 0
     locuri diferite    : 4 la 5 px, 4 la 10 px; zona pozitiilor 40 px pe X, 16 px pe Y

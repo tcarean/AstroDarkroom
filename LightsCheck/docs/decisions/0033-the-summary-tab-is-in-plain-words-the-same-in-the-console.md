@@ -1,7 +1,7 @@
 # 0033. The Summary tab is in plain words, the same in the console
 
 Date: 2026-11-02
-Status: accepted 2026-11-02
+Status: accepted 2026-11-02; `de obicei` for the median superseded by 0043
 
 ## Context
 

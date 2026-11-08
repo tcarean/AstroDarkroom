@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Border Style="{StaticResource Card}">
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="{local:T En='THE STARS\' WIDTH (FWHM, px)', Ro='LATIMEA STELELOR (FWHM, px)'}" />
-          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap" Text="{local:T En='How wide the stars are in each frame, typically. They come out wider when the focus slips or the air is unsteady (seeing); a trailed frame stands higher too, since its stars are stretched.', Ro='Cat de late sunt stelele in fiecare cadru, de obicei. Ies mai late cand se pierde focusul sau cand aerul e agitat (seeing); un cadru miscat iese si el mai sus, fiindca stelele lui sunt intinse.'}" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap" Text="{local:T En='How wide the stars of each frame are, on average. They come out wider when the focus slips or the air is unsteady (seeing); a trailed frame stands higher too, since its stars are stretched.', Ro='Cat de late sunt stelele fiecarui cadru, in medie. Ies mai late cand se pierde focusul sau cand aerul e agitat (seeing); un cadru miscat iese si el mai sus, fiindca stelele lui sunt intinse.'}" />
           <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
             <local:SeriesChart Height="180" Points="{Binding FwhmPoints}" />
           </Border>
