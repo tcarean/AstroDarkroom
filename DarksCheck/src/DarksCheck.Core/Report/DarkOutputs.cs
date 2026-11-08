@@ -257,7 +257,7 @@ internal static class DarkOutputs
         ArgumentNullException.ThrowIfNull(l);
         ArgumentNullException.ThrowIfNull(planeNames);
         StringBuilder sb = new();
-        List<string> head = ["index", "file", "time", "exposure_s", "iso", "error", "skipped"];
+        List<string> head = ["index", "file", "time", "exposure_s", "iso", "error"];
         foreach (string p in planeNames)
         {
             head.AddRange([$"{p}_sky_median", $"{p}_sky_sigma", $"{p}_local_sigma"]);
@@ -267,7 +267,7 @@ internal static class DarkOutputs
         sb.AppendLine(string.Join(",", head));
         foreach (LightFigures f in l.Frames)
         {
-            List<string> row = [f.Info.Index.ToString(CultureInfo.InvariantCulture), Q(f.Info.FileName), f.Info.Timestamp is DateTime t ? t.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : "", N(f.Info.ExposureSeconds), N(f.Info.Iso), Q(f.Skipped ? "" : f.Error ?? ""), Q(f.Skipped ? f.Error ?? "" : "")];
+            List<string> row = [f.Info.Index.ToString(CultureInfo.InvariantCulture), Q(f.Info.FileName), f.Info.Timestamp is DateTime t ? t.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : "", N(f.Info.ExposureSeconds), N(f.Info.Iso), Q(f.Error ?? "")];
             if (f.Error is null)
             {
                 for (int p = 0; p < f.SkyMedian.Count; p++)

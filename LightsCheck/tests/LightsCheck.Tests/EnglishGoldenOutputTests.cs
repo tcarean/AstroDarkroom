@@ -122,7 +122,7 @@ public class EnglishGoldenOutputTests
         "nedeterminat", "NEDETERMINAT", "pauz", "expunere", "obiectiv", "aparat", "grade", "Folosire",
         "implicit", "pozitii", "acoperire", "intindere", "aliniere", "perechi", "scara", "verde",
         "BUN", "LA LIMITA", "SLAB", "necitit", "inregistr", "Acest program",
-        "aliniat", "singure", "locuri", "pozitiilor", "tarie", "apropier", "obicei", "niciodata", "alunec", "dunga", "dungi",
+        "aliniat", "singure", "locuri", "pozitiilor", "tarie", "apropier", "obicei", "medie", "niciodata", "alunec", "dunga", "dungi",
         "latimea", "montura", "fotografiere", "totala", "nivelul", "inseamna", "rotit", "deviata", "gasite", "lumina", "ramane",
         "alinia", "comune", "obisnuit", "semnaleaza", "vecine", "putine", "stivuire", "satelit", "referinta", "adica", "ceata", "scoate",
         "in stiva",

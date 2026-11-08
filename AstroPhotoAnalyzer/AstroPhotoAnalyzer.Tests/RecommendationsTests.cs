@@ -176,16 +176,29 @@ public class RecommendationsTests
     {
         // The dark scene's plateau is measured on every clean tile among the 5000 positions (419
         // of them): the because gives the share of the frame with a visible step and the
-        // threshold, then the typical plateau with the tiles, their share of the frame and the
-        // noise left on them, so that the reader can tell it apart from the denoise section's
-        // median, taken on other tiles.
+        // threshold, then the average plateau, named as an average (ADR 0087), with the tiles,
+        // their share of the frame and the noise left on them, so that the reader can tell it
+        // apart from the denoise section's median, taken on other tiles.
         var a = Run(Scenes.DarkSky(), new Parameters { TargetAspect = 50.0 / 35.0, ViewingDistanceM = 1.5 });
 
         Recommendation banding = Assert.Single(Of(a, Topic.Format), r => r.Text.StartsWith("Pe 8 biti pot aparea trepte vizibile in cer (banding)"));
         // The share and the threshold carry Fmt.Strong's marks, bold in the window's Raport tab
         // and stripped from the text report (R-112).
-        Assert.Matches(@"^la \d+ dpi, zonele plate, fara nicio trecere de ton, mai late de 1\.0 mm acopera \*\*\d+\.\d\d %\*\* din cadru \(prag \*\*0\.10 %\*\*\); in cele \d+ (de )?zone mici de cer neted \(\d+\.\d % din cadru\), o zona plata are de obicei \d+\.\d px = \d+\.\d\d mm, iar zgomotul ramas acolo e de \d+\.\d\d niveluri$", banding.Because);
+        Assert.Matches(@"^la \d+ dpi, zonele plate, fara nicio trecere de ton, mai late de 1\.0 mm acopera \*\*\d+\.\d\d %\*\* din cadru \(prag \*\*0\.10 %\*\*\); in cele \d+ (de )?zone mici de cer neted \(\d+\.\d % din cadru\), o zona plata are in medie \d+\.\d px = \d+\.\d\d mm, iar zgomotul ramas acolo e de \d+\.\d\d niveluri$", banding.Because);
         Assert.DoesNotContain("**", a.ReportBody);
+    }
+
+    [Fact]
+    public void R091_TheJpegBecauseNamesTheAverageLevelOfTheChangedValues()
+    {
+        // The level of the values JPEG changes by over 2 levels is their mean, so it is said as
+        // an average, not as the level "most" of them sit around (ADR 0087); on the dark scene
+        // it is under 64, in the dark sky.
+        var a = Run(Scenes.DarkSky(), new Parameters { TargetAspect = 50.0 / 35.0, ViewingDistanceM = 1.5 });
+
+        Recommendation jpeg = Assert.Single(Of(a, Topic.Format), r => r.Text.StartsWith("Daca laboratorul primeste doar JPEG"));
+        Assert.Matches(@"; \d+\.\d % din valori se schimba cu mai mult de 2 niveluri, la un nivel mediu de \d+ \(in cerul intunecat, unde JPEG-ul se descurca cel mai prost\)$", jpeg.Because);
+        Assert.DoesNotContain("mai ales", jpeg.Because);
     }
 
     [Fact]

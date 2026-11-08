@@ -136,12 +136,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The Exposure, Histogram, Synthetic and Split tabs' explanations, and the sentences the console
   shares with them (the exposure's reading, verdicts and refusal, the equalisation's caveat, the
   synthetic flat's caveat and depth notes, the comparison's and the split's row notes), are in
-  plain words (R-123, ADR 0084): the typical level, the middle of the frame, the colour channels,
-  burnt pixels and saturation; no median, distribution, CFA, Bayer, gamma, clipping, SNR, radial,
-  gradient, sector, tile, rank or extrapolation. The labels stay. The goldens that print those
-  sentences, parity ones included, were recaptured for the text lines alone, every figure unchanged.
-  The same goes for the note above the Histogram tab's list of files and the console's `--rainbow`
-  help line.
+  plain words (R-123, ADR 0084): the average level (ADR 0093), the middle of the frame, the
+  colour channels, burnt pixels and saturation; no median, distribution, CFA, Bayer, gamma,
+  clipping, SNR, radial, gradient, sector, tile, rank or extrapolation. The labels stay. The
+  goldens that print those sentences, parity ones included, were recaptured for the text lines
+  alone, every figure unchanged. The same goes for the note above the Histogram tab's list of
+  files and the console's `--rainbow` help line.
 - When LibRaw cannot be loaded, a raw is refused with a message that names Microsoft's Visual C++
   runtime, missing or too old, as the likely cause, and ends with Microsoft's link to its latest
   x64 package, `https://aka.ms/vc14/vc_redist.x64.exe`, in English or Romanian (R-124, ADR 0085).

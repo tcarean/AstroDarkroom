@@ -201,10 +201,11 @@ public class MainViewModelTests
         Assert.StartsWith("=== DARK-URI: cadre citite 6 din 6", vm.HeaderLine, StringComparison.Ordinal);
         Assert.Equal(InventoryReport.HeaderRows(r.Inventory).Select(row => row.Label), vm.SessionRows.Take(InventoryReport.HeaderRows(r.Inventory).Count).Select(row => row.Label));
 
-        // one card per check, the rows the core wrote, the verdict as a chip with the rest beside it
-        Assert.Equal(DarkReport.Sections(r).Select(s => s.Title), vm.Sections.Select(s => s.Title));
-        Assert.Equal(["2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "4. ZGOMOTUL FIECARUI CADRU", "5. PIXELI FIERBINTI", "6. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "7. PIXELI MORTI SI SATURATI", "8. CATE DARK-URI AJUNG", "9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE", "INDEX"], vm.Sections.Select(s => s.Title));
-        RowVm verdict = vm.Sections[0].Rows[^1];
+        // one card per check, the rows the core wrote, the verdict as a chip with the rest beside it; check 9 right
+        // under the session card, then checks 2 to 8 and INDEX (ADR 0041), while the console keeps the checks' order
+        Assert.Equal(["9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE", "2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "4. ZGOMOTUL FIECARUI CADRU", "5. PIXELI FIERBINTI", "6. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "7. PIXELI MORTI SI SATURATI", "8. CATE DARK-URI AJUNG", "INDEX"], vm.Sections.Select(s => s.Title));
+        Assert.Equal(["2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "4. ZGOMOTUL FIECARUI CADRU", "5. PIXELI FIERBINTI", "6. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "7. PIXELI MORTI SI SATURATI", "8. CATE DARK-URI AJUNG", "9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE", "INDEX"], DarkReport.Sections(r).Select(s => s.Title));
+        RowVm verdict = vm.Sections[1].Rows[^1];
         Assert.Equal("verdict", verdict.Label);
         Assert.True(verdict.HasVerdict);
         Assert.Equal("OK", verdict.Verdict);
@@ -241,10 +242,32 @@ public class MainViewModelTests
         Assert.Equal([Th.MatchDirectLow, Th.MatchDirectHigh, Th.MatchOptLow, Th.MatchOptHigh, Th.MatchCosmeticLow], vm.LightGuides.Select(g => g.Value));
         Assert.Equal(VerdictPalette.Warn, vm.LightPoints[1].Colour);
 
-        // the hot-pixel, lights and index rows are the sections' rows
-        Assert.Equal(vm.Sections[3].Rows, vm.HotRows);
-        Assert.Equal(vm.Sections[7].Rows, vm.LightRows);
-        Assert.Equal(vm.Sections[8].Rows, vm.IndexRows);
+        // the hot-pixel, lights and index rows are the sections' rows; the Rezumat's check 5 card keeps only the
+        // stability and the verdict, the Pixeli fierbinti tab all five (R-071, ADR 0041)
+        Assert.Equal(["pixeli peste prag", "pe culori, peste 20", "cat de fierbinti", "stabilitate", "verdict"], vm.HotRows.Select(row => row.Label));
+        Assert.Equal(["stabilitate", "verdict"], vm.Sections[4].Rows.Select(row => row.Label));
+        Assert.Equal(vm.HotRows.TakeLast(2).Select(row => row.Value), vm.Sections[4].Rows.Select(row => row.Value));
+        Assert.Equal(vm.LightRows.Select(row => row.Value), vm.Sections[0].Rows.Select(row => row.Value));
+        Assert.Equal(vm.IndexRows.Select(row => row.Value), vm.Sections[^1].Rows.Select(row => row.Value));
+
+        // a row's lines and table reach the view as the core gave them (R-031, R-024, R-051, R-063)
+        RowVm stability = vm.HotRows.Single(row => row.Label == "stabilitate");
+        Assert.Equal(4, stability.Lines.Count);
+        Assert.Equal(string.Join("; ", stability.Lines), stability.Rest);
+        Assert.Null(stability.Table);
+        RowVm hotVerdict = vm.HotRows.Single(row => row.Label == "verdict");
+        Assert.Equal([hotVerdict.Rest], hotVerdict.Lines);
+        RowVm curve = vm.Sections.Single(s => s.Title.StartsWith("8.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "zgomot dupa medie");
+        Assert.Equal(["cadre", "masurat", "se astepta"], curve.Table!.Header);
+        Assert.Equal(r.Darks.Noise.Curve.Count, curve.Table.Rows.Count);
+        RowVm overlap = vm.LightRows.Single(row => row.Label == "in masterul dark");
+        Assert.Equal(["prag", "pixeli", "procent"], overlap.Table!.Header);
+        Assert.Equal(4, overlap.Table.Rows.Count);
+        Assert.StartsWith("cati dintre acesti pixeli", overlap.Table.Note, StringComparison.Ordinal);
+        Assert.Empty(overlap.Lines);
+        Assert.Empty(curve.Lines);
+        Assert.Contains(vm.LightRows, row => row.Label == "index dark-uri" && row.Value == r.Index.Tag);
+        Assert.Contains(vm.LightRows, row => row.Label == "index lights");
 
         // R-078: the tab "Explicatii scara ADU" shows the core's scale rows and paragraphs, nothing reworded
         Assert.Equal(ScaleReport.Rows(r).Select(row => row.Label), vm.ScaleRows.Select(row => row.Label));
@@ -253,7 +276,11 @@ public class MainViewModelTests
         Assert.Equal("EXPLICATII SCARA ADU", vm.ScaleTitle);
 
         // R-071 / ADR 0016: every row carries the core's bold parts, and the emphasis splits the text where they are
-        Assert.Equal(DarkReport.Sections(r).SelectMany(s => s.Rows).Select(row => row.BoldParts), vm.Sections.SelectMany(s => s.Rows).Select(row => row.Bold));
+        foreach (SectionVm card in vm.Sections)
+        {
+            Assert.Equal(DarkReport.Sections(r).Single(s => s.Title == card.Title).Rows.Where(row => row.Summary).Select(row => row.BoldParts), card.Rows.Select(row => row.Bold));
+        }
+
         Assert.Equal(ScaleReport.Rows(r).Select(row => row.BoldParts), vm.ScaleRows.Select(row => row.Bold));
         RowVm master = vm.Sections.Single(s => s.Title.StartsWith("8.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "master");
         Assert.Single(master.Bold);
@@ -305,7 +332,7 @@ public class MainViewModelTests
     }
 
     [Fact]
-    public async Task R073_ThePartnerIsRememberedAndReachesTheRun()
+    public async Task R073_ThePartnerReachesTheRunAndIsNeitherRememberedNorKeptForAnotherFolder()
     {
         using TestSettings.Own own = new();
         using SessionFixture f = WindowFixture.Session();
@@ -317,8 +344,10 @@ public class MainViewModelTests
         vm.Partner = p.Root;
         Assert.True(vm.HasPartner);
         Assert.Equal(p.Root, vm.PartnerText);
-        Assert.Equal(p.Root, UserSettings.Load().Partner);
-        Assert.Equal(p.Root, new MainViewModel().Partner);
+        // not stored (R-075, ADR 0041): a new window starts without it, and the settings file never names it
+        vm.ThreadsText = "2";
+        Assert.False(new MainViewModel().HasPartner);
+        Assert.DoesNotContain(Path.GetFileName(p.Root), File.ReadAllText(own.FilePath), StringComparison.Ordinal);
 
         await vm.OpenAsync(f.Root);
         Assert.NotNull(vm.Result!.Partner);
@@ -334,7 +363,17 @@ public class MainViewModelTests
         Assert.NotNull(vm.Result.Partner);
         await vm.RerunAsync();
         Assert.Null(vm.Result!.Partner);
-        Assert.Null(UserSettings.Load().Partner);
+
+        // a partner is kept for a rerun of the same folder and dropped when another folder is opened, like the lights folder (R-122)
+        vm.Partner = p.Root;
+        await vm.RerunAsync();
+        Assert.True(vm.HasPartner);
+        Assert.NotNull(vm.Result!.Partner);
+        using SessionFixture other = WindowFixture.Session(lights: 2);
+        await vm.OpenAsync(other.Root);
+        Assert.False(vm.HasPartner);
+        Assert.Equal(WindowTexts.NoPartner, vm.PartnerText);
+        Assert.Null(vm.Result!.Partner);
     }
 
     [Fact]

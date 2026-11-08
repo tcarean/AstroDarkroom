@@ -256,6 +256,30 @@ public class ExposureReportTests
         Assert.Contains("nu se stie ce culoare are", s);
     }
 
+    /// <summary>
+    /// The level the histograms' vertical line marks is the average level, in both languages,
+    /// in the reading and in the two captions (R-123, ADR 0093): never the typical one.
+    /// </summary>
+    [Theory]
+    [InlineData(true, "the average level", "the centre's average level")]
+    [InlineData(false, "nivelul mediu", "nivelul mediu al centrului")]
+    public void R123_TheHistogramsLevelIsCalledTheAverageLevel(bool english, string reading, string caption)
+    {
+        using var _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        var typical = new System.Text.RegularExpressions.Regex(
+            @"(?<!\w)(typical level|nivel\w* tipic)(?!\w)",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        string clipped = ExposureReport.HistogramReading(Clipped());
+        string vignetted = ExposureReport.HistogramReading(Vignetted());
+
+        Assert.Contains(reading, clipped, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(reading, vignetted, StringComparison.OrdinalIgnoreCase);
+        foreach (bool preview in new[] { true, false })
+            Assert.Contains(caption, ExposureReport.HistogramCaption(preview));
+        foreach (string text in new[] { clipped, vignetted, ExposureReport.HistogramCaption(true), ExposureReport.HistogramCaption(false) })
+            Assert.DoesNotMatch(typical, text);
+    }
+
     [Fact]
     public void TheSkyReadingUsesTheSkyBand()
     {

@@ -1,7 +1,7 @@
 # 0034. The Frames tab and the reasons are in plain words
 
 Date: 2026-11-02
-Status: accepted 2026-11-02
+Status: accepted 2026-11-02; the session's usual width and count superseded by 0043
 
 ## Context
 

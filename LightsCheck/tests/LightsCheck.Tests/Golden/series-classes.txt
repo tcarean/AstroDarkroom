@@ -14,7 +14,7 @@ Copyright (C) 2026 Tudor Carean
     scara              : 1 px = 5.99" pe cer; pixelul are 3.92 um (scris in fisier (XPIXSZ)); cadrele sunt aliniate dupa cadrul 1
 
   REZUMAT
-    focus              : BUN - latimea stelelor (FWHM) e de obicei 3.25 px = 19.5" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (+0 %): focusul a tinut toata sesiunea
+    focus              : BUN - latimea stelelor (FWHM) e in medie 3.25 px = 19.5" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (+0 %): focusul a tinut toata sesiunea
     expunere           : LA LIMITA - cerul pe verde: 2000 -> 2001 ADU; cel mai slab e canalul B: shot/citire 10.0 (bine e de la 10), zgomotul de citire adauga 5 %
     roua               : NU - latimea stelelor +0 %, lumina din jurul stelelor (halo) +0.000
     cadre miscate      : 2 slabe, 3 la limita, 7 bune, 1 necitite (din 13); nu se stie care axa e RA
@@ -23,10 +23,10 @@ Copyright (C) 2026 Tudor Carean
     de scos din stiva  : 3 cadre (lista e la RESPINSE); raman 10 cadre, adica 20 min de expunere
 
   FOCUS
-    latimea stelelor (FWHM): 3.25 px = 19.5" (de obicei, pe cadrele bune)
+    latimea stelelor (FWHM): 3.25 px = 19.5" (in medie, pe cadrele bune)
     primele / ultimele 3 cadre bune: 3.25 px / 3.25 px (+0 %): focusul a tinut
-    in centru / la mijloc / la margine: latimea stelelor 3.24 / 3.25 / 3.25 px (de obicei, pe cadrele bune)
-    verdict            : BUN - latimea stelelor (FWHM) e de obicei 3.25 px = 19.5" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (+0 %): focusul a tinut toata sesiunea
+    in centru / la mijloc / la margine: latimea stelelor 3.24 / 3.25 / 3.25 px (in medie, pe cadrele bune)
+    verdict            : BUN - latimea stelelor (FWHM) e in medie 3.25 px = 19.5" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (+0 %): focusul a tinut toata sesiunea
 
   EXPUNERE SI ZGOMOT
     fondul cerului (cadrele bune, primele -> ultimele): 2000 -> 2001 ADU pe verde, peste nivelul de negru (+0 %)
@@ -56,7 +56,7 @@ Copyright (C) 2026 Tudor Carean
     pauze de peste 5 s : 5; miscari de cel putin 5 px: 4; pauze dupa care cadrul a ramas pe loc: 1; miscari fara pauza inainte: 0; cadre aliniate: 12 din 13
     cat de des         : la fiecare 2 cadre: 2 ori; la fiecare 4 cadre: 1 data
     cel mai lung sir fara miscare: cadrele 7-10 (4 cadre la rand, 8 min)
-    cat de mult        : de obicei 21.41 px = 128.2"; 5-10 px: 0; 10-20 px: 2; 20+ px: 2
+    cat de mult        : in medie 21.41 px = 128.2"; 5-10 px: 0; 10-20 px: 2; 20+ px: 2
     directie           : doar pe X: 3; doar pe Y: 1; pe ambele: 0; pe X spre + / spre -: 3 / 0; pe Y spre + / spre -: 0 / 1; nu se stie care axa e RA
     apropierea cadrelor: jumatate din cadre au alt cadru la cel mult 0.5 px; cu alt cadru la sub 3 px: 12, la sub 5: 12, la sub 10: 12; cadre singure (la 10 px sau mai mult de oricare altul): 0
     locuri diferite    : 5 la 5 px, 5 la 10 px; zona pozitiilor 81 px pe X, 16 px pe Y
@@ -77,8 +77,8 @@ Copyright (C) 2026 Tudor Carean
       1  DSC_0001.fit          20:35:03   120.0 s  bun        1.01   3.25      40   2000      -      -     0.0     0.0  -                                           -               
       2  DSC_0002.fit          20:37:04   120.0 s  bun        1.01   3.25      40   2000    1 s    0.5     0.5     0.2  -                                           -               
       3  DSC_0003.fit          20:39:34   120.0 s  la limita   1.49   4.10      40   2000   30 s   11.5    12.0    -0.0  -                                           -               alungire 1.49 (de la 1.35 cadrul e la limita), dara la -90 de grade
-      4  DSC_0004.fit          20:41:35   120.0 s  la limita   1.00   4.62      40   2000    1 s    0.6    12.5     0.3  -                                           -               stele late: latimea (FWHM) 4.62 px, peste 4.23, adica de 1.3 ori latimea obisnuita din sesiune
-      5  DSC_0005.fit          20:44:05   120.0 s  la limita   1.01   3.25      20   2000   30 s   15.3    12.0   -15.0  -                                           -               prea putine stele: 20, sub 24 (60 % din cate are de obicei un cadru): nori sau ceata
+      4  DSC_0004.fit          20:41:35   120.0 s  la limita   1.00   4.62      40   2000    1 s    0.6    12.5     0.3  -                                           -               stele late: latimea (FWHM) 4.62 px, peste 4.23, adica de 1.3 ori latimea medie din sesiune
+      5  DSC_0005.fit          20:44:05   120.0 s  la limita   1.01   3.25      20   2000   30 s   15.3    12.0   -15.0  -                                           -               prea putine stele: 20, sub 24 (60 % din cate are in medie un cadru): nori sau ceata
       6  DSC_0006.fit          20:46:06   120.0 s  bun        1.01   3.25      40   2600    1 s    0.5    12.5   -15.0  -                                           -               fondul cerului sare cu +30 % fata de cadrele vecine (se semnaleaza de la 8 %)
       7  DSC_0007.fit          20:48:36   120.0 s  SLAB       1.76   4.60      40   2001   30 s   27.5    40.0   -15.0  -                                           -               alungire 1.76 (de la 1.60 cadrul e slab), dara la 90 de grade
       8  DSC_0008.fit          20:50:37   120.0 s  bun        1.01   3.25      40   2000    1 s    0.6    40.5   -15.3  -                                           -               

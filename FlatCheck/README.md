@@ -1126,7 +1126,7 @@ The window's guide "How to read the histograms" says:
 | what you see | what it means |
 |---|---|
 | two curves on each channel | The pale, wide one is the whole frame; the solid, narrow one is only the middle of the frame (20 %), where the verdict is taken from. Each is drawn to its own full height, so the HEIGHTS are not compared with each other; the positions on the axis are. |
-| the vertical line | The typical level at the middle of the frame, the one figure that decides. On the brightest channel it is the very number in the verdict pill above. |
+| the vertical line | The average level at the middle of the frame, the one figure that decides. On the brightest channel it is the very number in the verdict pill above. |
 | the green band | The target, from exactly the same thresholds as the verdict. It moves when you tick **Sky flat**: a sky flat MUST sit lower, because the sky fades continuously, and the master comes out clean from the number of frames, not from the exposure. |
 | the yellow and red bands | The same scale further on: yellow "acceptable, but", red too low or too high. On a sky flat there is no yellow on the left: there the target starts right at the too-low threshold. |
 | the red stripe on the right | The last 2 % before saturation: there the burnt pixels are counted. If any part of the solid curve reaches that stripe, the verdict is TOO HIGH, however well the middle figure sits: there the vignetting information is lost, exactly where the signal is largest. |

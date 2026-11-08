@@ -28,7 +28,6 @@ namespace DarksCheck.Core;
 /// </summary>
 /// <param name="Info">The light's metadata.</param>
 /// <param name="Error">Why it has no figures, in the run's language; null when it decoded.</param>
-/// <param name="Skipped">True when the frame cap left it out.</param>
 /// <param name="AssumedSettings">True when the light does not say its ISO or its exposure and
 /// was read at the darks' settings.</param>
 /// <param name="SkyMedian">Per CFA position, the median of the plane (every 4th row and
@@ -46,7 +45,7 @@ namespace DarksCheck.Core;
 /// pixels.</param>
 /// <param name="AmpRatioQ25">The 25th percentile of those ratios; NaN likewise.</param>
 /// <param name="AmpRatioQ75">The 75th percentile of those ratios; NaN likewise.</param>
-internal sealed record LightFigures(FrameInfo Info, string? Error, bool Skipped, bool AssumedSettings, IReadOnlyList<double> SkyMedian, IReadOnlyList<double> SkySigma, IReadOnlyList<double> LocalSigma, int Candidates, int IsolatedHot, double AmpRatioMedian, double AmpRatioQ25, double AmpRatioQ75);
+internal sealed record LightFigures(FrameInfo Info, string? Error, bool AssumedSettings, IReadOnlyList<double> SkyMedian, IReadOnlyList<double> SkySigma, IReadOnlyList<double> LocalSigma, int Candidates, int IsolatedHot, double AmpRatioMedian, double AmpRatioQ25, double AmpRatioQ75);
 
 /// <summary>
 /// At one level of the dark master: how many pixels the master has above it, and how many of those
@@ -116,21 +115,22 @@ internal static class LightsAnalyzer
     /// </summary>
     private static readonly Logger Log = LogManager.GetLogger(nameof(LightsAnalyzer));
 
-    /// <summary>Reads the lights one by one against the dark master.</summary>
+    /// <summary>
+    /// Reads the lights one by one against the dark master: every light, whatever the frame cap
+    /// of the darks says, since each is measured and dropped (R-050, ADR 0041).
+    /// </summary>
     /// <param name="paths">The lights' files, in order; not null.</param>
     /// <param name="darks">The darks' figures, with the median master; not null.</param>
     /// <param name="threads">How many lights are decoded at once; below 1 counts as 1.</param>
-    /// <param name="maxFrames">The frame cap: above it every k-th light is read.</param>
     /// <param name="progress">Told (done, total) after each light; null for none.</param>
     /// <param name="cancel">Stops the reading; the cancellation is thrown.</param>
     /// <returns>Check 9's figures.</returns>
     /// <exception cref="InvalidOperationException">No light decoded.</exception>
-    internal static LightsAnalysis Analyze(IReadOnlyList<string> paths, DarkSeriesAnalysis darks, int threads, int maxFrames, IProgress<(int Done, int Total)>? progress = null, CancellationToken cancel = default)
+    internal static LightsAnalysis Analyze(IReadOnlyList<string> paths, DarkSeriesAnalysis darks, int threads, IProgress<(int Done, int Total)>? progress = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(darks);
         int w = darks.Width, h = darks.Height, n = paths.Count;
-        int step = n > maxFrames ? (int)Math.Ceiling(n / (double)maxFrames) : 1;
         float[] excess = new float[w * h];
         for (int i = 0; i < excess.Length; i++)
         {
@@ -156,20 +156,13 @@ internal static class LightsAnalyzer
         Parallel.For(0, n, po, i =>
         {
             string path = paths[i];
-            if (i % step != 0)
-            {
-                frames[i] = new LightFigures(FrameInfo.Read(i + 1, path), FrameStack.SkippedReason(maxFrames, step), true, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
-                progress?.Report((Interlocked.Increment(ref done), n));
-                return;
-            }
-
             Stopwatch one = Stopwatch.StartNew();
             try
             {
                 (StackFrame frame, double black, double white) = FrameStack.DecodeOne(i + 1, path, w, h);
                 if (frame.Pixels is null)
                 {
-                    frames[i] = new LightFigures(frame.Info, frame.Error, false, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
+                    frames[i] = new LightFigures(frame.Info, frame.Error, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
                 }
                 else
                 {
@@ -195,7 +188,7 @@ internal static class LightsAnalyzer
                 if (frame.Pixels is not null && Log.IsDebugEnabled)
                 {
                     Log.Debug("light " + LogText.Int(i + 1) + "/" + LogText.Int(n) + " " + path + " measured in " + LogText.Ms(one.ElapsedMilliseconds)
-                        + "; working set " + LogText.WorkingSet() + "; " + LogText.Figures(frames[i], "Info", "Error", "Skipped"));
+                        + "; working set " + LogText.WorkingSet() + "; " + LogText.Figures(frames[i], "Info", "Error"));
                 }
             }
             catch (Exception e) when (e is not OperationCanceledException)
@@ -203,7 +196,7 @@ internal static class LightsAnalyzer
                 long ms = one.ElapsedMilliseconds;
                 FrameInfo info = FrameInfo.Read(i + 1, path, out Exception? metadata);
                 FrameStack.LogFailed(Log, i + 1, n, path, ms, e, info, metadata);
-                frames[i] = new LightFigures(info, e.Message, false, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
+                frames[i] = new LightFigures(info, e.Message, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
             }
 
             progress?.Report((Interlocked.Increment(ref done), n));
@@ -264,13 +257,13 @@ internal static class LightsAnalyzer
     }
 
     /// <summary>
-    /// ": file: error; file: error" for the first three lights that failed (not the skipped ones).
+    /// ": file: error; file: error" for the first three lights that failed.
     /// </summary>
     /// <param name="frames">The lights' figures.</param>
     /// <returns>The errors, with a leading ": ", or an empty string.</returns>
     private static string FirstErrors(LightFigures[] frames)
     {
-        string[] errors = frames.Where(f => f.Error is not null && !f.Skipped).Take(3).Select(f => f.Info.FileName + ": " + f.Error).ToArray();
+        string[] errors = frames.Where(f => f.Error is not null).Take(3).Select(f => f.Info.FileName + ": " + f.Error).ToArray();
         return errors.Length == 0 ? "" : ": " + string.Join("; ", errors);
     }
 
@@ -378,7 +371,7 @@ internal static class LightsAnalyzer
         }
 
         bool any = ratio.Length > 0;
-        LightFigures f = new(frame.Info, null, false, assumed, skyMedian, skySigma, localSigma, candidates, isolated.Count,
+        LightFigures f = new(frame.Info, null, assumed, skyMedian, skySigma, localSigma, candidates, isolated.Count,
             any ? Planes.Median(ratio) : double.NaN, any ? Planes.Percentile(ratio, 25) : double.NaN, any ? Planes.Percentile(ratio, 75) : double.NaN);
         return (f, isolated);
     }

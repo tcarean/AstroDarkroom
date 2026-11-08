@@ -66,7 +66,25 @@ public class OtherTabsPlainWordsTests
     {
         using var _ = Ui.Use(UiLanguage.English);
         var row = SessionMessages.HistogramGuideRows().Single(r => r.Shape == "the vertical line");
-        Assert.Equal("The typical level at the middle of the frame, the one figure that decides. On the "
+        Assert.Equal("The average level at the middle of the frame, the one figure that decides. On the "
                      + "brightest channel it is the very number in the verdict pill above.", row.Meaning);
+    }
+
+    /// <summary>The level the vertical line marks is the average level in both languages, and
+    /// no guide calls a level typical (R-123, ADR 0093).</summary>
+    [Theory]
+    [InlineData(true, "The average level at the middle of the frame")]
+    [InlineData(false, "Nivelul mediu din mijlocul cadrului")]
+    public void R123_TheGuidesCallTheLevelTheAverageLevel(bool english, string start)
+    {
+        using var _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        var typical = new System.Text.RegularExpressions.Regex(
+            @"(?<!\w)(typical level|nivel\w* tipic)(?!\w)",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        string shape = english ? "the vertical line" : "linia verticala";
+        Assert.StartsWith(start, SessionMessages.HistogramGuideRows().Single(r => r.Shape == shape).Meaning);
+        foreach (string text in Texts())
+            Assert.DoesNotMatch(typical, text);
     }
 }

@@ -111,8 +111,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Grid.Column="2" Style="{StaticResource Head}" Text="{local:T En='time', Ro='ora'}" />
           <TextBlock Grid.Column="3" Style="{StaticResource Head}" Text="{local:T En='exposure', Ro='expunere'}" ToolTip="{local:T En='how long the frame was exposed, in seconds', Ro='cat timp a fost expus cadrul, in secunde'}" />
           <TextBlock Grid.Column="4" Style="{StaticResource Head}" Text="{local:T En='class', Ro='clasa'}" />
-          <TextBlock Grid.Column="5" Style="{StaticResource Head}" Text="{local:T En='elong.', Ro='alung.'}" ToolTip="{local:T En='how elongated the stars are, typically (1 = round)', Ro='cat de alungite sunt stelele, de obicei (1 = rotunde)'}" />
-          <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="FWHM" ToolTip="{local:T En='the stars\' width (FWHM), typically, in px', Ro='latimea stelelor (FWHM), de obicei, in px'}" />
+          <TextBlock Grid.Column="5" Style="{StaticResource Head}" Text="{local:T En='elong.', Ro='alung.'}" ToolTip="{local:T En='how elongated the stars are, on average (1 = round)', Ro='cat de alungite sunt stelele, in medie (1 = rotunde)'}" />
+          <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="FWHM" ToolTip="{local:T En='the stars\' width (FWHM), on average, in px', Ro='latimea stelelor (FWHM), in medie, in px'}" />
           <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="{local:T En='stars', Ro='stele'}" />
           <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="{local:T En='bg', Ro='fond'}" ToolTip="{local:T En='the sky background on green, in ADU above the black level', Ro='fondul cerului pe verde, in ADU peste nivelul de negru'}" />
           <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="{local:T En='pause', Ro='pauza'}" ToolTip="{local:T En='how many seconds passed since the end of the frame before', Ro='cate secunde au trecut de la sfarsitul cadrului dinainte'}" />

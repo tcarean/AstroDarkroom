@@ -466,7 +466,7 @@ internal static class SeriesAnalyzer
 
         // The session's usual exposure (R-085): the value most frames carry, to a tenth of a
         // second, the longer on a tie. A frame under ExposureShortFraction of it is bad and
-        // counts for nothing (its stars stay out of the usual count, its sky out of the jumps);
+        // counts for nothing (its stars stay out of the average count, its sky out of the jumps);
         // one with any other exposure is noted and judged like the rest.
         double? usualExposure = frames.Select(f => f.Info.ExposureSeconds).Where(e => e is > 0).Select(e => Math.Round(e!.Value, 1))
             .GroupBy(e => e).OrderByDescending(g => g.Count()).ThenByDescending(g => g.Key).Select(g => (double?)g.Key).FirstOrDefault();

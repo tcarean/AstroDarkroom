@@ -67,7 +67,7 @@ The heights measured at four work areas are in ADR 0027.
 `MainViewModel` has every property the XAML binds, the window's own sentences included
 (`WindowTexts`, which quote every threshold they name from `Th`, so a tooltip never says a
 number the core no longer uses). Its constructor reads `UserSettings.Load` into the four
-setting texts and the partner; the three numeric fields carry `*IsValid` flags that
+setting texts; the three numeric fields carry `*IsValid` flags that
 `Theme/Rows.xaml`'s `SettingField` style turns into a red border and a tooltip while the text
 is not a positive number. `OpenAsync(folder)` cancels a run in flight,
 clears the result, builds `DarkOptions` from the texts (`Options`: a text that is not a
@@ -90,14 +90,23 @@ they are now.
 - the SESIUNE card takes `InventoryReport.HeaderRows` and `DarkReport.HeaderRows`, with
   `DarkReport.HeaderLine` as its subtitle; every other card
   takes a `ReportSection` of `DarkReport.Sections` as a `SectionVm` of `RowVm(Label, Value,
-  Rest, Verdict)`, the chip being `Verdict` and the text `Rest`, both read in the core
-  (`ReportRow`); `HotRows`, `LightRows` and `IndexRows` are the rows of the sections whose
-  title starts with `5.`, `9.` and `INDEX`, for the tabs that show one check beside a chart;
-- the shared `ReportRow` template draws the rest of a row's text through `Emphasis`, an
-  attached property in `Presentation/` that rebuilds the `TextBlock`'s inlines from `Rest` and
-  `RowVm.Bold` (`Emphasis.Segments`: every occurrence of every bold substring that stands as a figure of its
-  own, longest first, never overlapping; the rebuild is deferred to the end of the binding
-  pass so the two properties cost one) as plain and bold runs (ADR 0016);
+  Rest, Verdict, Bold, Lines, Table)`, the chip being `Verdict` and the text `Rest`, both read
+  in the core (`ReportRow`), `Lines` the core's `ReportRow.Lines` or `Rest` alone (empty for a
+  row with a table), `Table` the core's `ReportRow.Table` as a `TableVm(Header, Rows, Note)` or
+  null; the Rezumat's cards are
+  the sections with the one whose title starts with `9.` moved first (`IsLightsCheck`), each
+  holding only the rows whose `ReportRow.Summary` is true (ADR 0041); `HotRows`, `LightRows`
+  and `IndexRows` are all the rows of the sections whose title starts with `5.`, `9.` and
+  `INDEX`, for the tabs that show one check beside a chart;
+- the shared `ReportRow` template draws each of a row's `Lines` as a wrapped `TextBlock`, one
+  under the other, through `Emphasis`, an attached property in `Presentation/` that rebuilds
+  the `TextBlock`'s inlines from the line and `RowVm.Bold` (`Emphasis.Segments`: every
+  occurrence of every bold substring that stands as a figure of its own, longest first, never
+  overlapping; the rebuild is deferred to the end of the binding pass so the two properties
+  cost one) as plain and bold runs (ADR 0016), or, for a row with one, its `Table` in place
+  of the text through the `ReportTable` template: a header grid and one grid per row, three `Auto`
+  columns in one `Grid.IsSharedSizeScope` so they line up, the figures right-aligned, the
+  core's note in the muted style under them;
 - the tab `Explicatii scara ADU` (`ScaleView`) binds `ScaleRows` (`ScaleReport.Rows` as
   `RowVm`, the `ReportRow` template) and `ScaleParagraphs` (`ScaleReport.Paragraphs`, one
   wrapped `TextBlock` each) under `ScaleTitle`, the core's title;
@@ -139,24 +148,26 @@ to its run without choosing the folder again. `Export(dir)` calls `DarkOutputs.W
 partner as `--out` does, and shows the paths or the error in `Status`. `LabelCopied` sets the
 status line after the window put the label in the clipboard.
 
-The Lights tab's first card, `LIGHTS-URI DIN ALT FOLDER` (R-122, ADR 0039), is the partner
-card's twin for `--lights`: `LightsFrom` on the view-model (blank is null; `HasLightsFrom`,
-`LightsFromText` with `WindowTexts.NoLightsFrom` for none; `Status = LightsFromChanged` when a
-result is shown), reaching the core as `DarkOptions.LightsFrom` through `Options`. Unlike the
-partner it is not stored: `SaveSettings` does not know it, and `OpenAsync` drops it when the
-folder opened differs from the one open (`SameFolder`: full paths, case ignored) and one was
-open, so a rerun, the problem card's run and the first open after the choice keep it. The
+The Potrivire cu lights tab's first card, `LIGHTS-URI DIN ALT FOLDER` (R-122, ADR 0039), is
+the partner card's twin for `--lights`: `LightsFrom` on the view-model (blank is null;
+`HasLightsFrom`, `LightsFromText` with `WindowTexts.NoLightsFrom` for none;
+`Status = LightsFromChanged` when a result is shown), reaching the core as
+`DarkOptions.LightsFrom` through `Options`. Neither it nor the partner is stored (ADR 0041):
+`SaveSettings` knows the four settings alone, and `OpenAsync` drops both when the folder
+opened differs from the one open (`SameFolder`: full paths, case ignored) and one was open, so
+a rerun, the problem card's run and the first open after the choice keep them. The
 card's buttons go through `LightsView`'s code-behind to `MainWindow.ChooseLightsFromView`
 (the `OpenFolderDialog` titled `ChooseLightsTitle`, starting in the current choice when it
 exists), `ClearLightsFromView` and `RerunFromView`; the lead is `WindowTexts.LightsFromLead`.
 
 ## The settings (`UserSettings`)
 
-`StoredSettings(Threads, MaxFrames, IsoFactor, Doubling, Partner)`, five strings as typed or
-chosen, in `%LOCALAPPDATA%\DarksCheck\settings.json`, written on every change through
+`StoredSettings(Threads, MaxFrames, IsoFactor, Doubling)`, four strings as typed, in
+`%LOCALAPPDATA%\DarksCheck\settings.json`, written on every change through
 `System.Text.Json` with the path unescaped; a missing or unreadable file gives nulls, a failed
 write is swallowed, and both leave a Debug line with their exception in the diagnostic log; the
-class judges nothing. `UserSettings.Path` lets the tests point at a
+class judges nothing; a file written before ADR 0041 keeps a `partner` key, which the
+deserializer ignores. `UserSettings.Path` lets the tests point at a
 file of their own, and `TestSettings` does so for the whole run before any test
 (`ModuleInitializer`); a test that reads the file back takes `TestSettings.Own`, a fresh file
 restored on dispose.
@@ -186,7 +197,7 @@ ERROR bad, NEMASURAT / UNMEASURED neutral). The window still finds the maps' row
 labels `master dark`,
 `master bias` and `dark - bias` and the sections by their `5.`, `9.` and `INDEX` prefixes,
 which the report keeps the same in both languages. `LanguageWindowTests` render every tab in an
-English scope and look for Romanian words, and the Cadre, Harti, Pixeli fierbinti, Lights and Index
+English scope and look for Romanian words, and the Cadre, Harti, Pixeli fierbinti, Potrivire cu lights and Index
 tabs and the empty window's start screen and top bar in both languages for the method's words of
 R-083 to R-088, the list `PlainWords.cs` that the core's tests share, linked like the fixtures.
 

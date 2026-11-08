@@ -335,10 +335,10 @@ namespace FlatCheck
             // 3. how far it still is to the top - or that there is no room left at all
             if (r.CentreClipPct > Th.ExpoClip)
                 s.Add(T($"The centre already reaches saturation ({r.CentreClipPct:F3} % of its pixels), "
-                        + "so TOO HIGH whatever the typical level: that is exactly where the vignetting "
+                        + "so TOO HIGH whatever the average level: that is exactly where the vignetting "
                         + "information is lost, where the signal is largest.",
                         $"Centrul atinge deja saturatia ({r.CentreClipPct:F3} % din pixelii lui), "
-                        + "deci PREA SUS oricare ar fi nivelul tipic: acolo se pierde exact informatia "
+                        + "deci PREA SUS oricare ar fi nivelul mediu: acolo se pierde exact informatia "
                         + "de vignetare, unde semnalul e cel mai mare."));
             else if (c.CentreP99Pct > 0)
                 s.Add(T($"The brightest 1 % of the centre reaches {c.CentreP99Pct:F1} % of saturation, "
@@ -349,10 +349,10 @@ namespace FlatCheck
             // 4. why the curve in the background is wide
             double drop = cen - c.MedianPct;
             if (drop > 0.5)
-                s.Add(T($"The typical level over the whole frame is {drop:F1} points below the centre: that is "
+                s.Add(T($"The average level over the whole frame is {drop:F1} points below the centre: that is "
                         + "the vignetting, not underexposure, and the wide curve in the background shows it. If "
                         + "you expose by it, you burn the centre.",
-                        $"Nivelul tipic pe tot cadrul e cu {drop:F1} puncte sub centru: aceea e "
+                        $"Nivelul mediu pe tot cadrul e cu {drop:F1} puncte sub centru: aceea e "
                         + "vignetarea, nu subexpunere, si curba lata din fundal o arata. Daca "
                         + "expui dupa ea, arzi centrul."));
 
@@ -615,21 +615,21 @@ namespace FlatCheck
         internal static string HistogramCaption(bool preview)
             => preview
                 ? T("The horizontal axis is in % of 255. Pale curve = the whole frame, solid curve = "
-                    + "the centre (20 %), vertical line = the centre's typical level. NO target band: on "
+                    + "the centre (20 %), vertical line = the centre's average level. NO target band: on "
                     + "the camera's screen there is no target, nor could there be one. The red "
                     + "stripe on the right = pixels at 255, that is where the SCREEN saturates, not "
                     + "the sensor.",
                     "Axa orizontala e in % din 255. Curba palida = tot cadrul, curba plina = "
-                    + "centrul (20 %), linia verticala = nivelul tipic al centrului. FARA banda tinta: pe "
+                    + "centrul (20 %), linia verticala = nivelul mediu al centrului. FARA banda tinta: pe "
                     + "ecranul aparatului nu exista o tinta, si nici n-ar putea exista. Dunga "
                     + "rosie din dreapta = pixeli la 255, adica aici se satureaza ECRANUL, nu "
                     + "senzorul.")
                 : T("The horizontal axis is in percent of saturation (the sensor's useful range). Pale "
                     + "curve = the whole channel, solid curve = the centre (20 %), vertical line = the centre's "
-                    + "typical level, that is the figure that decides. Green band = the target, red stripe on the "
+                    + "average level, that is the figure that decides. Green band = the target, red stripe on the "
                     + $"right = burnt pixels, above {Th.ExpoClipWhite * 100:F0} % of saturation.",
                     "Axa orizontala e in procente din saturatie (intervalul util al senzorului). Curba "
-                    + "palida = tot canalul, curba plina = centrul (20 %), linia verticala = nivelul tipic "
+                    + "palida = tot canalul, curba plina = centrul (20 %), linia verticala = nivelul mediu "
                     + "al centrului, adica cifra care decide. Banda verde = tinta, dunga rosie din "
                     + $"dreapta = pixeli arsi, peste {Th.ExpoClipWhite * 100:F0} % din saturatie.");
 

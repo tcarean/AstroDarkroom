@@ -11,9 +11,9 @@ VERDICT: PROBLEMA
    - Trimite laboratorului un TIFF pe 8 biti, cu compresie LZW, fara pierderi (0.2 MB). Trecerea de la 16 la 8 biti doar rotunjeste valorile; nu se pierde nimic.
      fiindca: la rotunjire, un pixel se muta in medie cu 0.26 dintr-un nivel si cel mult cu 0.50 (o rotunjire nu poate muta mai mult de jumatate de nivel)
    - Daca laboratorul primeste doar JPEG: calitate 100, cu culoarea pastrata la rezolutie intreaga (setarea 4:4:4) (0.1 MB).
-     fiindca: fata de original, JPEG-ul schimba un pixel in medie cu 0.58 niveluri si cel mult cu 3.5; 0.4 % din valori se schimba cu mai mult de 2 niveluri, mai ales in jurul nivelului 28 (in cerul intunecat, unde JPEG-ul se descurca cel mai prost)
+     fiindca: fata de original, JPEG-ul schimba un pixel in medie cu 0.58 niveluri si cel mult cu 3.5; 0.4 % din valori se schimba cu mai mult de 2 niveluri, la un nivel mediu de 28 (in cerul intunecat, unde JPEG-ul se descurca cel mai prost)
    ! Pe 8 biti pot aparea trepte vizibile in cer (banding): trimite fisierul pe 16 biti daca laboratorul il primeste, sau adauga putin zgomot la export (dither).
-     fiindca: la 26 dpi, zonele plate, fara nicio trecere de ton, mai late de 1.0 mm acopera 8.38 % din cadru (prag 0.10 %); in cele 419 zone mici de cer neted (8.4 % din cadru), o zona plata are de obicei 2.2 px = 2.13 mm, iar zgomotul ramas acolo e de 0.30 niveluri
+     fiindca: la 26 dpi, zonele plate, fara nicio trecere de ton, mai late de 1.0 mm acopera 8.38 % din cadru (prag 0.10 %); in cele 419 zone mici de cer neted (8.4 % din cadru), o zona plata are in medie 2.2 px = 2.13 mm, iar zgomotul ramas acolo e de 0.30 niveluri
 
 2. Fundalul si hartia  [PROBLEMA]
    !! Cerul e mai intunecat decat negrul hartiei: cerul si praful ar iesi cu ACELASI negru. Refa stretch-ul din datele liniare pana la fundalul 0.16 (in simulare: praful la L* 15.5, cerul la L* 16.1; praful ajunge exact pe negru la 0.106).
@@ -87,7 +87,7 @@ Anexa C. Export
   q90            0.0 MB       0.560       7.3   1.82    3.33     0.7 %            36
   rotunjirea de la 16 la 8 biti: in medie 0.262, cel mult 0.500, p99.9 0.499 niveluri
   umbre ridicate (gamma 1.9), niveluri 8..120: pornind din 16 biti 75 folosite / 0 lipsa; pornind din 8 biti 52 folosite / 24 lipsa
-  zone plate pe cerul trecut pe 8 biti: de obicei 2.2 px, in 419 zone mici de cer neted din 5000 de locuri incercate (8.4 % din cadru, zgomot ramas 0.30 niveluri); la 26 dpi, zone plate mai late de 1.0 mm pe 8.38 % din cadru
+  zone plate pe cerul trecut pe 8 biti: in medie 2.2 px, in 419 zone mici de cer neted din 5000 de locuri incercate (8.4 % din cadru, zgomot ramas 0.30 niveluri); la 26 dpi, zone plate mai late de 1.0 mm pe 8.38 % din cadru
 
 Anexa D. Rezolutie si marime
   stele: 64 masurate; latimea stelelor (FWHM) 3.06 px (un sfert sub 3.05, un sfert peste 3.08); pe latime incap ~167 de stele una langa alta

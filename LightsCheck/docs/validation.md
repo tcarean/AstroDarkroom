@@ -99,6 +99,14 @@ drift instead of editing the figures.
 
 ## History
 
+- 2026-11-08: a median the user reads is said `on average` / `in medie` (ADR 0043); no figure
+  of the analysis changed. At the owner's word the same day, before the run, V-010's first
+  `cat de mult` cell became `in medie` (was `de obicei`), its `13.29 px = 81.2"` and its
+  `measuredOn` kept. All 14 cases re-run with `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`:
+  `Failed: 2, Passed: 12, Skipped: 0, Total: 14, Duration: 14 m 35 s`. V-010 passed with its new
+  word. V-008 (`polarErrorMax: the frame yielded no figure (null)`) and V-011 (`frame 2: cell
+  'RA 5 px', expected 'RA 5 px ← V'`) failed as recorded since 2026-10-27, the Veil session of
+  2026-10-06 still holding no solved FITS at its root.
 - 2026-11-07, evening: the session lines open with the total exposure to the second (R-086,
   ADR 0042); no figure of the analysis changed. All 14 cases re-run with
   `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Failed: 3, Passed: 11, Skipped: 0, Total:
