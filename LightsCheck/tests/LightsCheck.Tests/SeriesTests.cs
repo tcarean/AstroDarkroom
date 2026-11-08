@@ -353,7 +353,7 @@ public class SeriesTests
 
         if (!english)
         {
-            Assert.Contains("    verdict            : BUN - latimea stelelor (FWHM) e de obicei 3.25 px = 19.4\" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (-0 %): focusul a tinut toata sesiunea", patternSummary, StringComparison.Ordinal);
+            Assert.Contains("    verdict            : BUN - latimea stelelor (FWHM) e in medie 3.25 px = 19.4\" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (-0 %): focusul a tinut toata sesiunea", patternSummary, StringComparison.Ordinal);
         }
     }
 
@@ -633,10 +633,10 @@ public class SeriesTests
         ReportRow focus = SeriesReport.FocusRows(r)[^1];
         Assert.Equal("verdict", focus.Label);
         Assert.Equal("BUN", focus.Verdict);
-        Assert.StartsWith("latimea stelelor (FWHM) e de obicei 3.25 px", focus.Value, StringComparison.Ordinal);
+        Assert.StartsWith("latimea stelelor (FWHM) e in medie 3.25 px", focus.Value, StringComparison.Ordinal);
         using StringWriter sw = new();
         SeriesReport.Write(r, sw);
-        Assert.Contains("    verdict            : BUN - latimea stelelor (FWHM) e de obicei 3.25 px = 19.4\" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (-0 %): focusul a tinut toata sesiunea", sw.ToString(), StringComparison.Ordinal);
+        Assert.Contains("    verdict            : BUN - latimea stelelor (FWHM) e in medie 3.25 px = 19.4\" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (-0 %): focusul a tinut toata sesiunea", sw.ToString(), StringComparison.Ordinal);
 
         IReadOnlyList<ReportParagraph> paragraphs = SeriesReport.RejectedExplanation;
         Assert.True(paragraphs.Count >= 3, "fewer than three paragraphs");
@@ -649,7 +649,7 @@ public class SeriesTests
         Assert.Equal(["o miscare la fiecare", "de cate ori"], t[0].Columns);
         Assert.Equal(["2 cadre | 2 ori"], Rows(t[0]));
         Assert.Equal(["cat de mare", "cate miscari"], t[1].Columns);
-        Assert.Equal(["de obicei | 15.32 px = 91.7\"", "5-10 px | 0", "10-20 px | 2", "20+ px | 1"], Rows(t[1]));
+        Assert.Equal(["in medie | 15.32 px = 91.7\"", "5-10 px | 0", "10-20 px | 2", "20+ px | 1"], Rows(t[1]));
         Assert.Equal(["axa", "doar pe ea", "spre +", "spre -"], t[2].Columns);
         Assert.Equal(["X = DEC | 2 | 2 | 0", "Y = RA | 1 | 0 | 1", "pe ambele | 0 |  | "], Rows(t[2]));
         Assert.Equal(["distanta", "cu alt cadru mai aproape", "locuri diferite", "grupuri de 3+ cadre la rand"], t[3].Columns);

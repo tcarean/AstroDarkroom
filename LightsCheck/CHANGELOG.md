@@ -48,6 +48,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- A median the user reads is said `on average` instead of `typically` or `usual` (`in medie`
+  instead of `de obicei` or `obisnuit`), in the window and in the console: the stars' width and
+  elongation, the FOCUS rows and verdict, the dither move, the wide-stars and clouds reasons
+  (ADR 0043). Every figure stays; the usual exposure keeps its word, being the one most frames
+  carry.
 - The default SynScan arrows are those of a Star Adventurer GTi driven by the SynScan Pro app,
   as tested on that pair with a target west of the meridian: `→` east and `↓` north, so `←` west
   and `↑` south (R-040, ADR 0041). East of the meridian the DEC arrows may swap; not tested yet.

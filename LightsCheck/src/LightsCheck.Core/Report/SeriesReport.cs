@@ -267,7 +267,7 @@ internal static class SeriesReport
     internal static IReadOnlyList<ReportParagraph> RejectedExplanation => IsRomanian
     ?
     [
-        new($"Alungirea spune de cate ori sunt stelele mai lungi decat late, de obicei, intr-un cadru (1 = rotunde). De la {RunReport.F(Th.ElongationBad, 2)} cadrul e slab si iese din stiva.", false),
+        new($"Alungirea spune de cate ori sunt stelele unui cadru mai lungi decat late, in medie (1 = rotunde). De la {RunReport.F(Th.ElongationBad, 2)} cadrul e slab si iese din stiva.", false),
         new($"Intre {RunReport.F(Th.ElongationMarginal, 2)} si {RunReport.F(Th.ElongationBad, 2)} cadrul e la limita si ramane in stiva, daca nu hotarasti altfel. Cadrele la limita sunt pe randul 'la limita' din CADRE MISCATE, pe tabul Rezumat, iar pe tabul Cadre au clasa galbena.", false),
         new("Dara e directia in care s-au intins stelele in timpul expunerii, data ca unghi fata de orizontala imaginii. Cand se stie care axa a imaginii e RA si stelele cadrului s-au intins toate cam in aceeasi directie, motivul spune si pe ce axa a monturii cade dara.", false),
         new("O dara pe RA vine de la urmarire: eroarea periodica a monturii, o viteza de urmarire gresita sau jocul din angrenaje (backlash) pe RA. O dara pe DEC vine de la alinierea polara, de la vant sau de la o atingere a monturii. Una oblica vine de la amandoua sau de la o lovitura.", true),
@@ -275,7 +275,7 @@ internal static class SeriesReport
     ]
     :
     [
-        new($"The elongation says how many times longer than wide the stars are, typically, in a frame (1 = round). From {RunReport.F(Th.ElongationBad, 2)} the frame is bad and leaves the stack.", false),
+        new($"The elongation says how many times longer than wide the stars of a frame are, on average (1 = round). From {RunReport.F(Th.ElongationBad, 2)} the frame is bad and leaves the stack.", false),
         new($"Between {RunReport.F(Th.ElongationMarginal, 2)} and {RunReport.F(Th.ElongationBad, 2)} the frame is marginal and stays in the stack unless you decide otherwise. The marginal frames are on the 'marginal' row of TRAILED FRAMES, on the Summary tab, and on the Frames tab their class is yellow.", false),
         new("The trail is the direction the stars were stretched in during the exposure, given as an angle to the image's horizontal. When it is known which image axis is RA and the frame's stars were all stretched about the same way, the reason also says which mount axis the trail falls on.", false),
         new("A trail on RA comes from the tracking: the mount's periodic error, a wrong tracking rate or the play in the gears (backlash) on RA. A trail on DEC comes from the polar alignment, the wind or a touch on the mount. An oblique one comes from both, or from a knock.", true),
@@ -388,12 +388,12 @@ internal static class SeriesReport
         SeriesAnalysis s = r.Series;
         (string fv, string ft) = Focus(s, r);
         string held = s.FocusHeld is bool fh ? (fh ? T("the focus held", "focusul a tinut") : T("the focus changed", "focusul s-a schimbat")) : T("too few good frames", "prea putine cadre bune");
-        string typically = T("(typically, on the good frames)", "(de obicei, pe cadrele bune)");
+        string average = T("(on average, on the good frames)", "(in medie, pe cadrele bune)");
         return
         [
-            new(T("the stars' width (FWHM)", "latimea stelelor (FWHM)"), $"{Px(s.SessionFwhm, r)} {typically}"),
+            new(T("the stars' width (FWHM)", "latimea stelelor (FWHM)"), $"{Px(s.SessionFwhm, r)} {average}"),
             new(T($"first / last {s.Fwhm.Count.ToString(Inv)} good frames", $"primele / ultimele {RoCount(s.Fwhm.Count)}cadre bune"), $"{Opt(s.Fwhm.First, 2)} px / {Opt(s.Fwhm.Last, 2)} px{ChangeWord(s.Fwhm)}: {held}"),
-            new(T("in the centre / in the middle / at the edge", "in centru / la mijloc / la margine"), T($"the stars' width {ZoneMedians(r)} {typically}", $"latimea stelelor {ZoneMedians(r)} {typically}")),
+            new(T("in the centre / in the middle / at the edge", "in centru / la mijloc / la margine"), T($"the stars' width {ZoneMedians(r)} {average}", $"latimea stelelor {ZoneMedians(r)} {average}")),
             new("verdict", ft, fv),
         ];
     }
@@ -852,7 +852,7 @@ internal static class SeriesReport
             PausesRow(r, d),
             new(HowOftenLabel, HowOften(d)),
             LongestRow(r, d),
-            new(HowFarLabel, $"{TypicallyWord} {Px(d.MedianMove, r)}; " + string.Join("; ", d.Sizes.Select(c => $"{SizeWord(c)}: {c.Count.ToString(Inv)}"))),
+            new(HowFarLabel, $"{AverageWord} {Px(d.MedianMove, r)}; " + string.Join("; ", d.Sizes.Select(c => $"{SizeWord(c)}: {c.Count.ToString(Inv)}"))),
             new(DirectionLabel, T(
                 $"on X only: {d.MovesOnXOnly.ToString(Inv)}; on Y only: {d.MovesOnYOnly.ToString(Inv)}; on both: {d.MovesOnBoth.ToString(Inv)}; on X towards + / towards -: {d.MovesXPlus.ToString(Inv)} / {d.MovesXMinus.ToString(Inv)}; on Y towards + / towards -: {d.MovesYPlus.ToString(Inv)} / {d.MovesYMinus.ToString(Inv)}; {AxisLine(s)}",
                 $"doar pe X: {d.MovesOnXOnly.ToString(Inv)}; doar pe Y: {d.MovesOnYOnly.ToString(Inv)}; pe ambele: {d.MovesOnBoth.ToString(Inv)}; pe X spre + / spre -: {d.MovesXPlus.ToString(Inv)} / {d.MovesXMinus.ToString(Inv)}; pe Y spre + / spre -: {d.MovesYPlus.ToString(Inv)} / {d.MovesYMinus.ToString(Inv)}; {AxisLine(s)}")),
@@ -1051,7 +1051,7 @@ internal static class SeriesReport
     private static string CoverageLabel => T("how close the frames are", "apropierea cadrelor");
 
     /// <summary>The word before the median move, in the how-far row and as the table's first row.</summary>
-    private static string TypicallyWord => T("typically", "de obicei");
+    private static string AverageWord => T("on average", "in medie");
 
     /// <summary>
     /// How close half the frames have another frame: the median distance to the nearest other
@@ -1115,7 +1115,7 @@ internal static class SeriesReport
             often.Add([HowOften(d), "-"]);   // "no move" or "a single move", the console's words
         }
 
-        List<IReadOnlyList<string>> sizes = [[TypicallyWord, Px(d.MedianMove, r)]];
+        List<IReadOnlyList<string>> sizes = [[AverageWord, Px(d.MedianMove, r)]];
         sizes.AddRange(d.Sizes.Select(c => (IReadOnlyList<string>)[SizeWord(c), c.Count.ToString(Inv)]));
         List<IReadOnlyList<string>> runs = [.. RunRows(d.RunsMid, Th.CoverageMid, r), .. RunRows(d.RunsLoose, Th.CoverageLoose, r)];
         return
@@ -1263,8 +1263,8 @@ internal static class SeriesReport
         {
             FlagKind.Trailed => T($"elongation {RunReport.F(f.Value, 2)} (from {RunReport.F(f.Threshold, 2)} the frame is bad){TrailSuffix(f)}", $"alungire {RunReport.F(f.Value, 2)} (de la {RunReport.F(f.Threshold, 2)} cadrul e slab){TrailSuffix(f)}"),
             FlagKind.MarginalTrail => T($"elongation {RunReport.F(f.Value, 2)} (from {RunReport.F(f.Threshold, 2)} the frame is marginal){TrailSuffix(f)}", $"alungire {RunReport.F(f.Value, 2)} (de la {RunReport.F(f.Threshold, 2)} cadrul e la limita){TrailSuffix(f)}"),
-            FlagKind.Soft => T($"wide stars: width (FWHM) {RunReport.F(f.Value, 2)} px, over {RunReport.F(f.Threshold, 2)}, that is {RunReport.F(Th.SoftFwhmFactor, 1)} times the session's usual width", $"stele late: latimea (FWHM) {RunReport.F(f.Value, 2)} px, peste {RunReport.F(f.Threshold, 2)}, adica de {RunReport.F(Th.SoftFwhmFactor, 1)} ori latimea obisnuita din sesiune"),
-            FlagKind.Clouds => T($"too few stars: {RunReport.F(f.Value, 0)}, under {RunReport.F(f.Threshold, 0)} ({RunReport.F(100 * Th.CloudStarFraction, 0)} % of a frame's usual count): clouds or haze", $"prea putine stele: {RunReport.F(f.Value, 0)}, sub {RunReport.F(f.Threshold, 0)} ({RunReport.F(100 * Th.CloudStarFraction, 0)} % din cate are de obicei un cadru): nori sau ceata"),
+            FlagKind.Soft => T($"wide stars: width (FWHM) {RunReport.F(f.Value, 2)} px, over {RunReport.F(f.Threshold, 2)}, that is {RunReport.F(Th.SoftFwhmFactor, 1)} times the session's average width", $"stele late: latimea (FWHM) {RunReport.F(f.Value, 2)} px, peste {RunReport.F(f.Threshold, 2)}, adica de {RunReport.F(Th.SoftFwhmFactor, 1)} ori latimea medie din sesiune"),
+            FlagKind.Clouds => T($"too few stars: {RunReport.F(f.Value, 0)}, under {RunReport.F(f.Threshold, 0)} ({RunReport.F(100 * Th.CloudStarFraction, 0)} % of a frame's average count): clouds or haze", $"prea putine stele: {RunReport.F(f.Value, 0)}, sub {RunReport.F(f.Threshold, 0)} ({RunReport.F(100 * Th.CloudStarFraction, 0)} % din cate are in medie un cadru): nori sau ceata"),
             FlagKind.BackgroundJump => T($"the sky background jumps by {Signed(f.Value, 0)} % against the neighbouring frames (flagged from {RunReport.F(f.Threshold, 0)} %)", $"fondul cerului sare cu {Signed(f.Value, 0)} % fata de cadrele vecine (se semnaleaza de la {RunReport.F(f.Threshold, 0)} %)") + ExposureSuffix(f),
             FlagKind.Trails => Count((int)f.Value, ("satellite or plane trail (Siril takes it out when stacking)", "dara de satelit sau avion (Siril o scoate la stivuire)"), ("satellite or plane trails (Siril takes them out when stacking)", "dare de satelit sau avion (Siril le scoate la stivuire)")),
             FlagKind.Unreadable => T("could not be read", "nu s-a putut citi") + (f.Detail is null ? "" : ": " + f.Detail),
@@ -1364,8 +1364,8 @@ internal static class SeriesReport
             : T("too few good frames to see whether it changed", "prea putine cadre bune ca sa se vada daca s-a schimbat");
         string first = Opt(s.Fwhm.First, 2), last = Opt(s.Fwhm.Last, 2);
         return (s.FocusHeld is false ? T("WARNING", "ATENTIE") : T("GOOD", "BUN"), T(
-            $"the stars' width (FWHM) is typically {Px(s.SessionFwhm, r)} on the good frames; {first} px at the start and {last} px at the end{ChangeWord(s.Fwhm)}: {held}",
-            $"latimea stelelor (FWHM) e de obicei {Px(s.SessionFwhm, r)} pe cadrele bune; {first} px la inceput si {last} px la sfarsit{ChangeWord(s.Fwhm)}: {held}"));
+            $"the stars' width (FWHM) is on average {Px(s.SessionFwhm, r)} on the good frames; {first} px at the start and {last} px at the end{ChangeWord(s.Fwhm)}: {held}",
+            $"latimea stelelor (FWHM) e in medie {Px(s.SessionFwhm, r)} pe cadrele bune; {first} px la inceput si {last} px la sfarsit{ChangeWord(s.Fwhm)}: {held}"));
     }
 
     /// <summary>

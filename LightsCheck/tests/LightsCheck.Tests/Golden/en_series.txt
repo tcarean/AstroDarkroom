@@ -13,7 +13,7 @@ Copyright (C) 2026 Tudor Carean
     scale              : 1 px = 5.99" on the sky; the pixel is 3.92 um (written in the file (XPIXSZ)); the frames are aligned on frame 1
 
   SUMMARY
-    focus              : GOOD - the stars' width (FWHM) is typically 3.25 px = 19.4" on the good frames; 3.25 px at the start and 3.25 px at the end (-0 %): the focus held the whole session
+    focus              : GOOD - the stars' width (FWHM) is on average 3.25 px = 19.4" on the good frames; 3.25 px at the start and 3.25 px at the end (-0 %): the focus held the whole session
     exposure           : GOOD - the sky on green: 2000 -> 2000 ADU; the weakest is channel B: shot/read 10.0 (good from 10), the read noise adds 5 %
     dew                : NO - the stars' width -0 %, the light around the stars (halo) +0.001
     trailed frames     : 2 bad, 0 marginal, 6 good (of 8); RA is the image's Y axis, DEC the X axis (found from the direction of the trails: we assume the tracking made them, so they lie on RA)
@@ -22,10 +22,10 @@ Copyright (C) 2026 Tudor Carean
     leave out of stack : 2 frames (the list is under REJECTED); 6 frames stay, that is 12 min of exposure
 
   FOCUS
-    the stars' width (FWHM): 3.25 px = 19.4" (typically, on the good frames)
+    the stars' width (FWHM): 3.25 px = 19.4" (on average, on the good frames)
     first / last 3 good frames: 3.25 px / 3.25 px (-0 %): the focus held
-    in the centre / in the middle / at the edge: the stars' width 3.25 / 3.25 / 3.24 px (typically, on the good frames)
-    verdict            : GOOD - the stars' width (FWHM) is typically 3.25 px = 19.4" on the good frames; 3.25 px at the start and 3.25 px at the end (-0 %): the focus held the whole session
+    in the centre / in the middle / at the edge: the stars' width 3.25 / 3.25 / 3.24 px (on average, on the good frames)
+    verdict            : GOOD - the stars' width (FWHM) is on average 3.25 px = 19.4" on the good frames; 3.25 px at the start and 3.25 px at the end (-0 %): the focus held the whole session
 
   EXPOSURE AND NOISE
     sky background (good frames, first -> last): 2000 -> 2000 ADU on green, above the black level (+0 %)
@@ -55,7 +55,7 @@ Copyright (C) 2026 Tudor Carean
     pauses over 5 s    : 3; moves of at least 5 px: 3; pauses after which the frame stayed put: 0; moves without a pause before: 0; frames aligned: 8 of 8
     how often          : every 2 frames: 2 times
     longest stretch without a move: frames 1-2 (2 frames in a row, 4 min)
-    how far            : typically 15.32 px = 91.7"; 5-10 px: 0; 10-20 px: 2; 20+ px: 1
+    how far            : on average 15.32 px = 91.7"; 5-10 px: 0; 10-20 px: 2; 20+ px: 1
     direction          : on X only: 2; on Y only: 1; on both: 0; on X towards + / towards -: 2 / 0; on Y towards + / towards -: 0 / 1; RA is the image's Y axis, DEC the X axis (found from the direction of the trails: we assume the tracking made them, so they lie on RA)
     how close the frames are: half the frames have another frame within 0.6 px; with another frame under 3 px: 8, under 5: 8, under 10: 8; frames alone (10 px or more from any other): 0
     different spots    : 4 within 5 px, 4 within 10 px; area of the positions 40 px on X, 16 px on Y

@@ -113,7 +113,8 @@ varies a kit rule names it.
   everyday words, no part of the method named (no median, mean, sigma, registered, coverage,
   radius, distinct, isolated, consecutive). A term stays where the astrophotographer knows the
   figure by it (dithering, walking noise, drift, dark, flat, stack, fixed pattern, FWHM, ADU, RA,
-  DEC, plate solve), and so do the chips' verdict words. The numbers stay read from
+  DEC, plate solve), and so do the chips' verdict words; a median is said `on average` (`in
+  medie`, ADR 0043). The numbers stay read from
   `Thresholds.cs`. A text rewrite is shown to the owner first, original and proposal side by
   side, and made only on their yes. The same register in chat with the owner.
 - **Copied files stay copies** (ADR 0003, ADR 0018). A file under `src/LightsCheck.Core/Imaging/`
