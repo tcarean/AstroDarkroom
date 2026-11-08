@@ -275,9 +275,9 @@ namespace FlatCheck.Wpf
 
             (T("the vertical line",
                "linia verticala"),
-             T("The typical level at the middle of the frame, the one figure that decides. On the "
+             T("The average level at the middle of the frame, the one figure that decides. On the "
              + "brightest channel it is the very number in the verdict pill above.",
-               "Nivelul tipic din mijlocul cadrului, singura cifra care decide. Pe canalul cel mai "
+               "Nivelul mediu din mijlocul cadrului, singura cifra care decide. Pe canalul cel mai "
              + "luminos e chiar numarul din pastila de verdict de sus.")),
 
             (T("the green band",

@@ -1,7 +1,7 @@
 # 0084. The Exposure, Histogram, Synthetic and Split explanations are in plain words, the same in the console
 
 Date: 2026-11-01
-Status: accepted 2026-11-01
+Status: accepted 2026-11-01; the words the typical level superseded by 0093
 
 ## Context
 
