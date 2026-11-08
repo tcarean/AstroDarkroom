@@ -502,6 +502,11 @@ public class MainViewModelTests
         Assert.Contains(vm.LightRows, row => row.Label == "verdict" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("foloseste dark-ul doar pentru corectia cosmetica", StringComparison.Ordinal));
         Assert.Equal(Path.GetFileName(library.Root) + "-" + vm.Result.Index.Tag, vm.Label);
 
+        // the export never writes into the folder the lights were chosen from (R-055, the rule "Read-only input")
+        vm.Export(Path.Combine(s.LightsDir, "rapoarte"));
+        Assert.StartsWith("EROARE: --out nu poate fi folderul lights-urilor alese sau unul din el", vm.Status, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(Path.Combine(s.LightsDir, "rapoarte")));
+
         // choosing or clearing after a run only says so; the next run of the same folder takes the change
         vm.LightsFrom = s.Root;
         Assert.Equal(WindowTexts.LightsFromChanged, vm.Status);

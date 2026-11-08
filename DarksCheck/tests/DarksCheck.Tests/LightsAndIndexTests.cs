@@ -877,14 +877,14 @@ public class LightsAndIndexTests
         Assert.Equal("idx" + like, b.LabelTag);
 
         // the same session given other lights (R-055), at the partner's level: its own lights are left out,
-        // and the label follows the chosen lights' index, the partner's own
+        // and the label follows the chosen lights' index
         using SessionFixture same = new SessionFixture().WithLights(4, i => Light(i, 1.0));
         DarkSeriesResult c = Run(alone, library.Root, lightsFrom: same.Root);
         Assert.Equal(library.Root, c.DarksFromPartner);
         Assert.Equal(same.LightsDir, c.Inventory.Session.LightsDir);
         Assert.Equal(MatchVerdict.Direct, c.Lights!.LightsOverDark.Verdict);
         Assert.Equal(Path.GetFileName(alone.Root) + "-" + IndexFigures.TagFor(c.LightsIndex), c.Label);
-        Assert.Equal(c.Index.Tag, c.LabelTag);
+        Assert.Equal(IndexFigures.TagFor(c.LightsIndex), c.LabelTag);
         Assert.Equal(Path.GetFileName(library.Root) + "-" + c.Index.Tag, c.DarksFromPartnerLabel);
 
         // a session with darks keeps the darks' label, and so does a library given lights (R-061)

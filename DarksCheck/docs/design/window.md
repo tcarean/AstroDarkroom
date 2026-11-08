@@ -126,10 +126,11 @@ they are now.
   five bounds of `Th.Match*` as guides named by what to do with the dark, `0.9 asa cum e`,
   `0.7 cu -opt`, `0.4 doar cosmetic`); a frame without a figure is `NaN` and the chart
   leaves a gap;
-- `Label` is the result's and `Tag` the label's own tag (the darks' `Index.Tag`, or
-  `IndexFigures.TagFor(LightsIndex)` for a folder whose darks are the partner's, R-066);
-  `IndexLead`, the text under the label, is `WindowTexts.IndexLead` or, for such a folder,
-  `IndexLeadLights`, raised with the result; `Partner` is the folder of `--against`.
+- `Label` and `Tag` are the result's `Label` and `LabelTag` (the tag the label ends with,
+  decided in `DarkSeriesRun`: the darks' index tag, or the lights' for a folder whose darks are
+  the partner's, R-066); `IndexLead`, the text under the label, is `WindowTexts.IndexLead` or,
+  for such a folder, `IndexLeadLights`, raised with the result; `Partner` is the folder of
+  `--against`.
 
 The problem card has a second button, `Alege partener...` (R-077): `MainWindow.ChoosePartnerAndRerun`
 runs the partner dialog and, when a folder was chosen (the same one again included), `RerunAsync`;
