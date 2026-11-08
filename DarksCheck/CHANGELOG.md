@@ -78,6 +78,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the darks' header for a FITS without a black (`the average value of frame 1`) and the Cadre
   tab's guide line (`1.5 times the average noise`).
 
+- `Usually` (`de obicei`) is `on average` (`in medie`) too wherever it stands for a typical value
+  (ADR 0040), the figures unchanged: check 4's `against the master` row and its verdict (`1.5
+  times the average noise`), check 5's `how hot` row, check 9's rows `not in the master` and
+  `lights against dark`, two sentences of the ADU scale tab and the hint of the Lights tab's
+  `noise` column. The Lights chart's `The first lights of the night usually sit lower` stays: it
+  means most nights, not an average.
+
 - The Lights tab and the console's lights table speak plain words, in English and Romanian (R-086,
   ADR 0034), the figures unchanged: the columns `sigma`, `candidates`, `isolated`, `ampl.`, `q25`
   and `q75` are `noise`, `bright`, `single`, `hot`, `low` and `high` (`zgomot`, `luminosi`,

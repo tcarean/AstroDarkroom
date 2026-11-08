@@ -136,7 +136,7 @@ public class LightsAndIndexTests
             Assert.True(l.Frames[i].AmpRatioQ25 < l.Frames[i].AmpRatioMedian && l.Frames[i].AmpRatioMedian < l.Frames[i].AmpRatioQ75);
         }
 
-        Assert.Contains($"lights fata de dark: in lights, pixelii fierbinti sunt de obicei de {l.LightsOverDark.Ratio.ToString("0.00", CultureInfo.InvariantCulture)} ori cat in dark (pe cele 5 cadre; in primul {l.RatioFirst.ToString("0.00", CultureInfo.InvariantCulture)}, in ultimul {l.RatioLast.ToString("0.00", CultureInfo.InvariantCulture)}; pe 20 de pixeli)", Report(Run(s)), StringComparison.Ordinal);
+        Assert.Contains($"lights fata de dark: in lights, pixelii fierbinti sunt in medie de {l.LightsOverDark.Ratio.ToString("0.00", CultureInfo.InvariantCulture)} ori cat in dark (pe cele 5 cadre; in primul {l.RatioFirst.ToString("0.00", CultureInfo.InvariantCulture)}, in ultimul {l.RatioLast.ToString("0.00", CultureInfo.InvariantCulture)}; pe 20 de pixeli)", Report(Run(s)), StringComparison.Ordinal);
 
         // lights at ISO 800 with twice the amplitude are at the same temperature as darks at ISO 400
         using SessionFixture iso = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i, 2.0), iso: 800);

@@ -330,7 +330,7 @@ The end of the report's sections on Smida:
     in the dark master : above 10: 85 of 86 (99 %); above 20: 85 of 86 (99 %); above 50: 70 of 86 (81 %); above 100: 16 of 86 (19 %)  [how many of these pixels are in the dark master too, above each threshold in ADU-eq]
     master in lights   : above 10: 85 of 2283 (4 %); above 20: 85 of 443 (19 %); above 50: 70 of 111 (63 %); above 100: 16 of 24 (67 %)  [how many of the master's pixels above each threshold show in the lights too]
     not in the master  : 1 hot pixel of the lights is under 20 ADU-eq in the master (it has 3 ADU-eq there)
-    lights against dark: in the lights, the hot pixels are usually 1.00 times what they are in the dark (over the 32 frames; in the first 0.72, in the last 0.94; on 443 pixels)
+    lights against dark: in the lights, the hot pixels are on average 1.00 times what they are in the dark (over the 32 frames; in the first 0.72, in the last 0.94; on 443 pixels)
     verdict            : OK: the dark can be subtracted as it is; in the lights the hot pixels are 1.00 times what they are in the dark, between 0.9 and 1.1: the dark is at the same temperature
 
   INDEX

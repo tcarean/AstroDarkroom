@@ -1,7 +1,7 @@
 # 0030. The Rezumat tab is in plain words, approved part by part
 
 Date: 2026-11-02
-Status: accepted 2026-11-02; the words of the no-frame messages superseded by 0031; the word obisnuita of the index superseded by 0035
+Status: accepted 2026-11-02; the words of the no-frame messages superseded by 0031; the word obisnuita of the index superseded by 0035; the word de obicei for the median of the frames superseded by 0040
 
 ## Context
 
