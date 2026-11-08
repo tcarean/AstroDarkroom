@@ -48,11 +48,6 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
-- A median the user reads is said `on average` instead of `typically` or `usual` (`in medie`
-  instead of `de obicei` or `obisnuit`), in the window and in the console: the stars' width and
-  elongation, the FOCUS rows and verdict, the dither move, the wide-stars and clouds reasons
-  (ADR 0043). Every figure stays; the usual exposure keeps its word, being the one most frames
-  carry.
 - The default SynScan arrows are those of a Star Adventurer GTi driven by the SynScan Pro app,
   as tested on that pair with a target west of the meridian: `→` east and `↓` north, so `←` west
   and `↑` south (R-040, ADR 0041). East of the meridian the DEC arrows may swap; not tested yet.
@@ -92,7 +87,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   wherever the reasons are printed: on the Frames and Rejected tabs and in the console's REJECTED
   section and frame table. A reason names the class its figure gives
   (`elongation 1.76 (from 1.60 the frame is bad)`), compares the stars' width and count with the
-  session's usual ones (`wide stars: ...`, `too few stars: ...`), says the sky background jumps
+  session's average ones (`wide stars: ...`, `too few stars: ...`), says the sky background jumps
   against the neighbouring frames, that Siril takes a satellite or plane trail out when stacking,
   and that a frame could not be aligned. The column tooltips, the cut-outs' caption and wait note,
   and the line under each cut-out (`width (FWHM)`, the angle in degrees) are rewritten the same
@@ -102,15 +97,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   unchanged.
 - The Summary tab, the console's session lines (`--inventory` too) and its sections SUMMARY,
   FOCUS, EXPOSURE AND NOISE, DEW, TRAILED FRAMES and DRIFT AND ROTATION speak in plain words
-  (R-078, ADR 0033): `the stars' width (FWHM)` and `typically` for the median, `total exposure`
+  (R-078, ADR 0033): `the stars' width (FWHM)` and `on average` for the median, `total exposure`
   for the integration, `extra noise` for the penalty, `the light around the stars (halo)`, the
   polar error as how far the mount's axis is off the pole and its cost as how far it moves the
   stars, angles in `'`, `(when shot)` and the lens's mount named as one, and a legend under the
   noise rows labelled `what it means`. Every figure is unchanged.
 - The Dithering tab and the console's DITHERING section speak in plain words (R-077, ADR 0032):
   `frames aligned` for registered, `how close the frames are` for coverage, `different spots`,
-  `frames alone`, `area of the positions`, `hot pixels per million pixels`, `typically` for the
-  median move, and no sigma or Mpx; the captions under the map and the charts and the five
+  `frames alone`, `area of the positions`, `hot pixels per million pixels`, `on average` for
+  the median move, and no sigma or Mpx; the captions under the map and the charts and the five
   paragraphs under the card are rewritten the same way, and the Summary rows that share a piece
   (`trailed frames`, `trail direction`, `drift over one exposure`, `dithering`) follow. The
   explanation no longer says a 3"/min drift stays under a pixel for a whole session at 20 mm: it is

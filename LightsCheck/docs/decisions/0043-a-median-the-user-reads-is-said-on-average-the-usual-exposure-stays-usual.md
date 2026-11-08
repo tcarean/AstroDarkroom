@@ -2,18 +2,20 @@
 
 Date: 2026-11-08
 Status: accepted 2026-11-08
-Supersedes: 0033 in part (`de obicei` for the median)
+Supersedes: 0033 in part (`de obicei` for the median); 0034 in part (the session's usual width and count)
 
 ## Context
 
-The plain-words rewrite (ADRs 0032 to 0036) named every median the user reads `typically` or
-`usual` (`de obicei`, `obisnuit`), since `median` and `mean` name the method and the test helper
-`PlainWords` also refused the Romanian `medie`. On 2026-11-08 the owner asked to say `average`
-(`in medie`) wherever these words mean a value the frames have on average: anyone understands an
-average. Nine texts carry such a figure, all of them medians: the stars' width and elongation of
-a frame (its stars' median), the session's width and star count (the median over the good, or
-all, frames), the zones' widths and the median dither move. Shown side by side the same day, the
-nine rewrites were approved as proposed.
+The plain-words rewrite (ADRs 0032 to 0036) named the medians of the tabs and of the console's
+sections `typically` or `usual` (`de obicei`, `obisnuit`), since `median` and `mean` name the
+method and the test helper `PlainWords` also refused the Romanian `medie`. On 2026-11-08 the
+owner asked to say `average` (`in medie`) wherever these words mean a value the frames have on
+average: anyone understands an average. Nine texts carry such a figure, all of them medians: the
+stars' width and elongation of a frame (its stars' median), the session's width and star count
+(the median over the good, or all, frames), the zones' widths and the median dither move. Shown
+side by side the same day, the nine rewrites were approved as proposed. The `--frame` report of
+one frame, never rewritten in plain words, says `median`; the request named only `typically` and
+`usual`, so it stays.
 
 ## Decision
 
@@ -35,7 +37,8 @@ way)` of the pixel-size field keeps its word, which means "normally" there.
 
 ## Consequences
 
-The golden console texts change on the FOCUS rows and verdict, the how-far row and the wide-stars
-and clouds reasons, and nowhere else; R-036, R-077, R-078, R-079 and R-081 quote the new words,
-and `PlainWords` checks every tab against the shorter list. A new text naming a median uses
+The golden console texts change on the SUMMARY focus row, the FOCUS rows and verdict, the
+how-far row and the wide-stars and clouds reasons, and nowhere else; R-036, R-077, R-078, R-079
+and R-081 quote the new words, `PlainWords` checks every tab against the shorter list, and the
+lists of Romanian words an English text never holds gain `medie`. A new text naming a median uses
 `on average` / `in medie`.

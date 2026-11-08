@@ -525,7 +525,7 @@ public class WindowLanguageTests
         "Inchide", "LICENTA", "TERTE", "nimic", "decupaj", "pozitii", "acoperire", "intindere", "aliniere", "perechi", "scara",
         "verde", "BUN", "LA LIMITA", "SLAB", "necitit", "inregistr", "Acest program", "grila", "Scris", "Unealta", "Verificare",
         "Folderul", "Analiza", "sesiun", "centru", "stanga", "dreapta",
-        "MUTAT", "DINAINTE", "aliniat", "singure", "locuri", "pozitiilor", "tarie", "apropier", "obicei", "niciodata", "alunec",
+        "MUTAT", "DINAINTE", "aliniat", "singure", "locuri", "pozitiilor", "tarie", "apropier", "obicei", "medie", "niciodata", "alunec",
         "dunga", "dungi", "Bara ", "latimea", "montura", "fotografiere", "totala", "nivelul", "inseamna", "rotit", "deviata",
         "gasite", "lumina", "ramane",
         "alinia", "comune", "obisnuit", "semnaleaza", "vecine", "putine", "stivuire", "satelit", "referinta", "adica", "ceata", "scoate",

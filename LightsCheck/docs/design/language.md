@@ -101,7 +101,7 @@ plain terms below.
 | apropierea cadrelor / locuri diferite / zona pozitiilor | how close the frames are / different spots / area of the positions |
 | grup (de cadre la rand) / acelasi loc | run (of frames in a row) / same spot |
 | cadre singure | frames alone |
-| in medie (the median move) / tarie (of the fixed pattern) | on average / strength |
+| in medie (a median: the move, the stars' width and count) / tarie (of the fixed pattern) | on average / strength |
 | aliniere polara / rotatie de camp | polar alignment / field rotation |
 | pattern fix / pixeli calzi | fixed pattern / hot pixels |
 | aliniat (DITHERING), nu s-a putut alinia (the reasons); inregistrat (elsewhere, until its rewrite) | aligned, could not be aligned; registered |
