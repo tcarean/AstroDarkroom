@@ -60,7 +60,9 @@ in chat on 2026-11-07 (the kit's rule "Decisions").
 R-023 rewritten; R-025 and R-071 name `REFA` among the verdict words; `ReportRow` and
 `VerdictPalette` read it; the three verdict words become four in the README and the design
 notes. The goldens lose one line, the removed row. The owner's 2 °C set is validation case
-V-011, the one real `REFA`; the other darks cases keep `Ok`. The owner's practice changes with
+V-011, the one real `REFA`; the other darks cases keep `Ok`. (Restated 2026-11-08: V-011 left
+the validation at the owner's word, its folder moved out of the library; no real `REFA` set is
+validated now, ADR 0042.) The owner's practice changes with
 it: a camera brought out into cold air sits there for three time constants before the series
 starts (about 105 min for the 35 min of the 2 °C set), and a library is labelled by its index,
 not by the air's temperature, when the two disagree.
