@@ -31,8 +31,9 @@ average. Shown every use of those words, original and proposal side by side, the
    single profile's note `they usually differ by ~0.2 stops` / `de obicei difera cu ~0.2
    stopuri`.
 4. **The tests hold it**: `R123_TheHistogramsLevelIsCalledTheAverageLevel` checks the reading and
-   both captions in both languages, and `R123_TheVerticalLineRowIsTheRequirementsExample` the
-   guide's row.
+   both captions in both languages, `R123_TheGuidesCallTheLevelTheAverageLevel` the guide's row
+   in both and every window guide, and `R123_TheVerticalLineRowIsTheRequirementsExample` the
+   requirement's English example.
 
 ## Alternatives rejected
 
