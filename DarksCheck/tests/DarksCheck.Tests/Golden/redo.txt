@@ -28,15 +28,15 @@ Copyright (C) 2026 Tudor Carean
     verdict            : REFA: 7 din 12 cadre sunt la peste 2.0 grade de platou, deci masterul nu apartine niciunei temperaturi; refa seria dupa ce aparatul a stat vreo 35 min in locul unde se trag dark-urile (de trei ori cele 11 min ale seriei)
 
   4. ZGOMOTUL FIECARUI CADRU
-    fata de master     : R 2.91 .. 3.01; G1 2.88 .. 2.97 (de obicei 2.94); G2 2.91 .. 2.96; B 2.88 .. 2.97  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]
+    fata de master     : R 2.91 .. 3.01; G1 2.88 .. 2.97 (in medie 2.94); G2 2.91 .. 2.96; B 2.88 .. 2.97  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]
     zgomot de citire   : NEMASURAT: sesiunea nu are bias-uri
     benzi aleatoare    : orizontale: randurile difera intre ele cu 0.262 ADU, de 1.0 ori cat ar da zgomotul singur; verticale: de 1.0 ori (1 inseamna fara benzi)
-    verdict            : OK: niciun cadru nu are zgomotul de peste 1.5 ori mai mare decat de obicei (2.94 ADU)
+    verdict            : OK: niciun cadru nu are zgomotul de peste 1.5 ori zgomotul mediu (2.94 ADU)
 
   5. PIXELI FIERBINTI
     pixeli peste prag  : peste 10: 20; peste 20: 20; peste 50: 20; peste 100: 20; peste 500: 0  [pixeli ai masterului, ADU peste negru, toate culorile]
     pe culori, peste 20: R 20  G1 0  G2 0  B 0
-    cat de fierbinti   : de obicei 116 ADU; 80 % dintre ei intre 114 si 117; cei mai fierbinti 1 % peste 118 (din 20 de pixeli)
+    cat de fierbinti   : in medie 116 ADU; 80 % dintre ei intre 114 si 117; cei mai fierbinti 1 % peste 118 (din 20 de pixeli)
     stabilitate        : 20 din 20 se vad (peste jumatate din prag) in toate cele 12 cadre; 0 lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu 18.80 ADU, ceilalti pixeli cu 2.95; 0 pixeli verzi G1 sar intre doua niveluri (RTS: variaza de peste 6 ori cat zgomotul unui cadru, 3.01)
     verdict            : OK (informativ): 20 de pixeli peste 20 ADU in 0.05 Mpx
 
@@ -114,7 +114,7 @@ Copyright (C) 2026 Tudor Carean
     lumina e evidenta peste 1.0 ADU-eq (pragul din analiza facuta de mana). Lumina constanta pe
     o latura conteaza peste 0.15 ADU-eq, si doar daca e de peste 3 ori mai mare decat cat poate
     gresi masuratoarea. Lumina pe un singur cadru conteaza peste 0.1 ADU-eq, si doar daca e de
-    peste 5 ori mai mare decat cat difera de obicei un cadru de celelalte. Ultimele doua praguri
+    peste 5 ori mai mare decat cat difera in medie un cadru de celelalte. Ultimele doua praguri
     spun 'aici e lumina reala, masurata', nu 'se vede in imagine': la 0.15 ADU in fisier abia
     s-ar vedea, la 1.0 ADU se vede. Remediul e acelasi in ambele cazuri: acoperi vizorul si
     refaci seria.

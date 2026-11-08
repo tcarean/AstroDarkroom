@@ -847,7 +847,7 @@ public partial class DarkSeriesTests
             Assert.Contains(english ? "a single frame has nothing to be compared with" : "un singur cadru nu are cu ce fi comparat", all, StringComparison.Ordinal);
             Assert.Contains(english ? "pairs of biases taken one after the other" : "perechi de bias-uri luate unul dupa altul", all, StringComparison.Ordinal);
             Assert.Contains(english ? "the session has no biases" : "sesiunea nu are bias-uri", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "WARNING: 1 frame has noise more than 1.5 times the usual" : "ATENTIE: 1 cadru are zgomotul de peste 1.5 ori mai mare decat de obicei", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "WARNING: 1 frame has noise more than 1.5 times the average noise" : "ATENTIE: 1 cadru are zgomotul de peste 1.5 ori zgomotul mediu", all, StringComparison.Ordinal);
             Assert.Contains(english ? "the part that grows as the sensor warms" : "partea care creste cand senzorul se incalzeste", all, StringComparison.Ordinal);
             Assert.Contains(english ? "WARNING: fixed banding of " : "ATENTIE: benzi fixe de ", all, StringComparison.Ordinal);
             Assert.Contains(english ? "as it is the only one" : "fiind unul singur", all, StringComparison.Ordinal);
@@ -925,20 +925,20 @@ public partial class DarkSeriesTests
     }
 
     // R-082's words of the method in the summary, every section; the median only where check 8 names how a master is
-    // made; LightsAndIndexTests reads check 9 and INDEX with the same words; the Romanian list also holds obisnuit,
-    // whose place medie took (ADR 0035)
-    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|obisnuit\w*|abater\w*|offset\w*|brut\w*|extrapol\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|q25|q75|amplitudin\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|gradient\w*|deriv\w*|rezidual\w*|temporal\w*|glisant\w*|candidat\w*|rms|rang\w*|persistent\w*|izolat\w*|raport\w*|supracorect\w*|scaleaz\w*)\b|(?<!\bcu )\bmedian\w*|x eroarea|zgomot\w* alb|varf la varf|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    // made; LightsAndIndexTests reads check 9 and INDEX with the same words; the lists also hold obisnuit, de obicei
+    // and usual, whose place medie and average took (ADRs 0035 and 0040)
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|obisnuit\w*|abater\w*|offset\w*|brut\w*|extrapol\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|q25|q75|amplitudin\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|gradient\w*|deriv\w*|rezidual\w*|temporal\w*|glisant\w*|candidat\w*|rms|rang\w*|persistent\w*|izolat\w*|raport\w*|supracorect\w*|scaleaz\w*)\b|(?<!\bcu )\bmedian\w*|x eroarea|zgomot\w* alb|varf la varf|\bde obicei\b|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     internal static partial System.Text.RegularExpressions.Regex RomanianSummaryWords();
 
-    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|deviation\w*|offset\w*|raw ADU|extrapolat\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|q25|q75|amplitude\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gradient\w*|drift\w*|residual\w*|temporal\w*|candidate\w*|rms|rank\w*|persistent\w*|isolated|ratio\w*|overcorrect\w*|scales)\b|(?<!\bwith the )\bmedian\w*|x the error|white noise|peak to peak|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|deviation\w*|offset\w*|raw ADU|extrapolat\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|q25|q75|amplitude\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gradient\w*|drift\w*|residual\w*|temporal\w*|candidate\w*|rms|rank\w*|persistent\w*|isolated|ratio\w*|overcorrect\w*|scales)\b|(?<!\bwith the )\bmedian\w*|x the error|white noise|peak to peak|\busual\w*|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     internal static partial System.Text.RegularExpressions.Regex EnglishSummaryWords();
 
     // R-081's words of the method, whole words in any case; the median only where it names how a stack is made; the
-    // Romanian list also holds obisnuit, whose place medie took (ADR 0035)
-    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|obisnuit\w*|cuadratur\w*|radacin\w*|cuantiz\w*|normaliz\w*|abater\w*|offset\w*|castig\w*|brut\w*|petic\w*|supraestim\w*)\b|(?<![\w-])e-(?!\w)|(?<!\bcu )\bmedian\w*", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    // lists also hold obisnuit, de obicei and usual, whose place medie and average took (ADRs 0035 and 0040)
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|obisnuit\w*|de obicei|cuadratur\w*|radacin\w*|cuantiz\w*|normaliz\w*|abater\w*|offset\w*|castig\w*|brut\w*|petic\w*|supraestim\w*)\b|(?<![\w-])e-(?!\w)|(?<!\bcu )\bmedian\w*", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex RomanianMethodWords();
 
-    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|quadrature|square root|quanti[sz]\w*|normali[sz]\w*|deviation\w*|offset\w*|gain\w*|overestimat\w*|raw|patch\w*)\b|(?<![\w-])e-(?!\w)|(?<!\bwith the )\bmedian\w*", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|quadrature|square root|quanti[sz]\w*|normali[sz]\w*|deviation\w*|offset\w*|gain\w*|overestimat\w*|raw|patch\w*|usual\w*)\b|(?<![\w-])e-(?!\w)|(?<!\bwith the )\bmedian\w*", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex EnglishMethodWords();
 
     [Fact]

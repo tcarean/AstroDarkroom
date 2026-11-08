@@ -28,15 +28,15 @@ Copyright (C) 2026 Tudor Carean
     verdict            : REDO: 7 of 12 frames are more than 2.0 degrees from the plateau, so the master belongs to no temperature; take the series again after the camera has sat where it shoots for about 35 min (three times the 11 min of this series)
 
   4. THE NOISE OF EACH FRAME
-    against the master : R 2.91 .. 3.01; G1 2.88 .. 2.97 (usually 2.94); G2 2.91 .. 2.96; B 2.88 .. 2.97  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]
+    against the master : R 2.91 .. 3.01; G1 2.88 .. 2.97 (on average 2.94); G2 2.91 .. 2.96; B 2.88 .. 2.97  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]
     read noise         : UNMEASURED: the session has no biases
     random banding     : horizontal: the rows differ from one another by 0.262 ADU, 1.0 times what the noise alone would give; vertical: 1.0 times (1 means no banding)
-    verdict            : OK: no frame has noise more than 1.5 times the usual (2.94 ADU)
+    verdict            : OK: no frame has noise more than 1.5 times the average noise (2.94 ADU)
 
   5. HOT PIXELS
     above the threshold: above 10: 20; above 20: 20; above 50: 20; above 100: 20; above 500: 0  [the master's pixels, ADU above the black, all colours]
     by colour, above 20: R 20  G1 0  G2 0  B 0
-    how hot            : usually 116 ADU; 80 % of them between 114 and 117; the hottest 1 % above 118 (of 20 pixels)
+    how hot            : on average 116 ADU; 80 % of them between 114 and 117; the hottest 1 % above 118 (of 20 pixels)
     stability          : 20 of 20 show (above half the threshold) in all 12 frames; 0 are missing from 2 or more; from one frame to the next they vary by 18.80 ADU, the other pixels by 2.95; 0 green pixels G1 jump between two levels (RTS: they vary more than 6 times the noise of one frame, 3.01)
     verdict            : OK (informative): 20 pixels above 20 ADU in 0.05 Mpx
 
@@ -114,7 +114,7 @@ Copyright (C) 2026 Tudor Carean
     obvious above 1.0 ADU-eq (the threshold of the analysis made by hand). Constant light on a
     side counts above 0.15 ADU-eq, and only if it is more than 3 times what the measurement can
     be off by. Light on a single frame counts above 0.1 ADU-eq, and only if it is more than 5
-    times what a frame usually differs from the others. The last two thresholds say 'this is
+    times what a frame differs from the others on average. The last two thresholds say 'this is
     real light, measured', not 'it shows in the image': at 0.15 ADU in the file it would barely
     show, at 1.0 ADU it shows. The remedy is the same in both cases: cover the viewfinder and
     take the series again.

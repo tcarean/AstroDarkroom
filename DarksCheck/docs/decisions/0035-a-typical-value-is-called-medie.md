@@ -1,7 +1,7 @@
 # 0035. A typical value is called medie
 
 Date: 2026-11-06
-Status: accepted 2026-11-06
+Status: accepted 2026-11-06; the usual of check 4's verdict superseded by 0040
 Supersedes: 0028 in part (the word obisnuit of the dark current); 0030 in part (the word obisnuita of the index); 0031 in part (the word obisnuit of the noise guide line)
 
 ## Context

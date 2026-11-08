@@ -297,16 +297,16 @@ internal static class DarkReport
                 $"1 hot pixel of the lights is under {hot} in the master (it has {F(l.MissedDarkExcessMedian, 0)} {eq} there)",
                 $"1 pixel fierbinte din lights e sub {hot} in master (acolo are {F(l.MissedDarkExcessMedian, 0)} {eq})"),
             _ => T(
-                $"{l.Missed} hot pixels of the lights are under {hot} in the master (there they usually have {F(l.MissedDarkExcessMedian, 0)} {eq})",
-                $"{RoCount(l.Missed)}pixeli fierbinti din lights sunt sub {hot} in master (acolo au de obicei {F(l.MissedDarkExcessMedian, 0)} {eq})"),
+                $"{l.Missed} hot pixels of the lights are under {hot} in the master (there they have {F(l.MissedDarkExcessMedian, 0)} {eq} on average)",
+                $"{RoCount(l.Missed)}pixeli fierbinti din lights sunt sub {hot} in master (acolo au in medie {F(l.MissedDarkExcessMedian, 0)} {eq})"),
         }));
         MatchFigures m = l.LightsOverDark;
         string over = m.Pixels == 1 ? T("over the one frame", "pe singurul cadru") : T($"over the {RunReport.Frames(m.Pixels)}", $"pe cele {RunReport.Frames(m.Pixels)}");
         rows.Add(new(T("lights against dark", "lights fata de dark"), m.Verdict == MatchVerdict.Unmeasured
             ? T("UNMEASURED: the master has no hot pixel that is not saturated", "NEMASURAT: masterul nu are niciun pixel fierbinte care sa nu fie saturat")
             : T(
-                $"in the lights, the hot pixels are usually {F(m.Ratio, 2)} times what they are in the dark ({over}; in the first {F(l.RatioFirst, 2)}, in the last {F(l.RatioLast, 2)}; on {Pixels(l.AmpPixels)})",
-                $"in lights, pixelii fierbinti sunt de obicei de {F(m.Ratio, 2)} ori cat in dark ({over}; in primul {F(l.RatioFirst, 2)}, in ultimul {F(l.RatioLast, 2)}; pe {Pixels(l.AmpPixels)})")));
+                $"in the lights, the hot pixels are on average {F(m.Ratio, 2)} times what they are in the dark ({over}; in the first {F(l.RatioFirst, 2)}, in the last {F(l.RatioLast, 2)}; on {Pixels(l.AmpPixels)})",
+                $"in lights, pixelii fierbinti sunt in medie de {F(m.Ratio, 2)} ori cat in dark ({over}; in primul {F(l.RatioFirst, 2)}, in ultimul {F(l.RatioLast, 2)}; pe {Pixels(l.AmpPixels)})")));
         // both indexes, each on its own row (R-056): the darks' tag (the partner's, when the darks
         // are the partner's, R-054), the lights' equivalent tag
         rows.Add(new(r.DarksFromPartner is null ? T("index darks", "index dark-uri") : T("index partner", "index partener"), r.Index.Tag));
@@ -1429,7 +1429,7 @@ internal static class DarkReport
                 continue;
             }
 
-            parts.Add($"{d.PlaneNames[p]} {F(s.Min(), 2)} .. {F(s.Max(), 2)}" + (p == rp ? $" ({T("usually", "de obicei")} {F(Planes.Median([.. s.Select(x => (float)x)]), 2)})" : ""));
+            parts.Add($"{d.PlaneNames[p]} {F(s.Min(), 2)} .. {F(s.Max(), 2)}" + (p == rp ? $" ({T("on average", "in medie")} {F(Planes.Median([.. s.Select(x => (float)x)]), 2)})" : ""));
         }
 
         return parts.Count == 0 ? T("UNMEASURED", "NEMASURAT") : string.Join("; ", parts);
@@ -1485,11 +1485,11 @@ internal static class DarkReport
         {
             Verdict.Unmeasured => T("UNMEASURED", "NEMASURAT"),
             Verdict.Ok => T(
-                $"OK: no frame has noise more than {F(Th.NoiseOutlierFactor, 1)} times the usual ({F(v.MedianSigma, 2)} ADU)",
-                $"OK: niciun cadru nu are zgomotul de peste {F(Th.NoiseOutlierFactor, 1)} ori mai mare decat de obicei ({F(v.MedianSigma, 2)} ADU)"),
+                $"OK: no frame has noise more than {F(Th.NoiseOutlierFactor, 1)} times the average noise ({F(v.MedianSigma, 2)} ADU)",
+                $"OK: niciun cadru nu are zgomotul de peste {F(Th.NoiseOutlierFactor, 1)} ori zgomotul mediu ({F(v.MedianSigma, 2)} ADU)"),
             _ => T(
-                $"WARNING: {v.OutlierFrames.Count} {(v.OutlierFrames.Count == 1 ? "frame has" : "frames have")} noise more than {F(Th.NoiseOutlierFactor, 1)} times the usual ({F(v.MedianSigma, 2)} ADU): {frames}",
-                $"ATENTIE: {RoCount(v.OutlierFrames.Count)}{(v.OutlierFrames.Count == 1 ? "cadru are" : "cadre au")} zgomotul de peste {F(Th.NoiseOutlierFactor, 1)} ori mai mare decat de obicei ({F(v.MedianSigma, 2)} ADU): {frames}"),
+                $"WARNING: {v.OutlierFrames.Count} {(v.OutlierFrames.Count == 1 ? "frame has" : "frames have")} noise more than {F(Th.NoiseOutlierFactor, 1)} times the average noise ({F(v.MedianSigma, 2)} ADU): {frames}",
+                $"ATENTIE: {RoCount(v.OutlierFrames.Count)}{(v.OutlierFrames.Count == 1 ? "cadru are" : "cadre au")} zgomotul de peste {F(Th.NoiseOutlierFactor, 1)} ori zgomotul mediu ({F(v.MedianSigma, 2)} ADU): {frames}"),
         };
     }
 
@@ -1529,8 +1529,8 @@ internal static class DarkReport
         h.Hot == 0
             ? T("UNMEASURED: no hot pixel", "NEMASURAT: niciun pixel fierbinte")
             : T(
-                $"usually {F(h.P50 / n, 0)} {eq}; 80 % of them between {F(h.P10 / n, 0)} and {F(h.P90 / n, 0)}; the hottest 1 % above {F(h.P99 / n, 0)} (of {h.Hot} {(h.Hot == 1 ? "pixel" : "pixels")})",
-                $"de obicei {F(h.P50 / n, 0)} {eq}; 80 % dintre ei intre {F(h.P10 / n, 0)} si {F(h.P90 / n, 0)}; cei mai fierbinti 1 % peste {F(h.P99 / n, 0)} (din {RoCount(h.Hot)}{(h.Hot == 1 ? "pixel" : "pixeli")})");
+                $"on average {F(h.P50 / n, 0)} {eq}; 80 % of them between {F(h.P10 / n, 0)} and {F(h.P90 / n, 0)}; the hottest 1 % above {F(h.P99 / n, 0)} (of {h.Hot} {(h.Hot == 1 ? "pixel" : "pixels")})",
+                $"in medie {F(h.P50 / n, 0)} {eq}; 80 % dintre ei intre {F(h.P10 / n, 0)} si {F(h.P90 / n, 0)}; cei mai fierbinti 1 % peste {F(h.P99 / n, 0)} (din {RoCount(h.Hot)}{(h.Hot == 1 ? "pixel" : "pixeli")})");
 
     /// <summary>
     /// The <c>stabilitate</c> row of check 5: the hot pixels present in every frame, the flickering
