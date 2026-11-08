@@ -84,7 +84,7 @@ AstroPhotoAnalyzer.Wpf/
         MapWindow.xaml, PreviewWindow.xaml, CurveWindow.xaml, SoftProofWindow.xaml, OverlayWindows.xaml.cs,
         IccPickerWindow.xaml(.cs)
 
-AstroPhotoAnalyzer.Tests/              see testing.md; Golden/*.txt and *.en.txt; testdata/ (manifest, large/);
+AstroPhotoAnalyzer.Tests/              see testing.md; Golden/*.txt and *.en.txt; testdata/ (manifest, README; the large files outside git, ADR 0088);
                                        RunsInRomanian, LanguageTests, RomanianWords (language.md)
 AstroPhotoAnalyzer.Wpf.Tests/          StaFixture, WindowSmokeTests, CultureTests, ParameterFieldsTests, ViewModelTests, OverlayWindowTests, IccPickerTests,
                                        ProfileBarTests (the bar's profile and the settings, R-155, R-156),

@@ -1,5 +1,5 @@
 {
-  "$comment": "Every test data file outside git: the reference images, copied by hand into large/ beside this file, which git ignores (ADR 0004). Names are relative to large/ (or to the folder APA_TESTDATA_LARGE names, which nobody sets). scripts/check-testdata.ps1 verifies presence and SHA-256 (a missing large file is a warning locally); -Update rewrites this file with PowerShell JSON layout. The cases in docs/validation.json name these files. AstroPhotoAnalyzer has no repo fixtures: they are generated or hand-built in the tests.",
+  "$comment": "Every test data file outside git: the reference images and the lab's profiles, kept in E:/Photografie/Astro/code-testdata/AstroPhotoAnalyzer/ (ADR 0088). Names are relative to that folder, where TestData.LargeDir looks unless APA_TESTDATA_LARGE names another. scripts/check-testdata.ps1 verifies presence and SHA-256 in the folder APA_TESTDATA_LARGE names, which /validate sets (a missing large file is a warning locally); -Update rewrites this file with PowerShell JSON layout. The cases in docs/validation.json name these files. AstroPhotoAnalyzer has no repo fixtures: they are generated or hand-built in the tests.",
   "files": [
     {
       "name": "de_printat.png",

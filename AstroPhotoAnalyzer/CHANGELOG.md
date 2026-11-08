@@ -338,6 +338,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- The twelve large test files (the reference images and the lab's two profiles, 1.4 GB) moved
+  out of the repository's git-ignored `AstroPhotoAnalyzer.Tests/testdata/large/` to
+  `E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer`, where the validation tests now look
+  by default, from every worktree, so no task copies them any more (ADR 0088).
 - NLog 6.2.2 is the fourth third-party component, with its `NLog.Targets.AtomicFile` package so
   two windows writing one log lose no line (BSD-3-Clause, R-173, ADR 0069), at the version every
   tool of the suite ships. The core logs in `Runs/` and in the four files of `Input/` that read

@@ -20,9 +20,10 @@ using Xunit.Abstractions;
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// The star rule on the real frames of testdata/large, with and without stars (ADR 0054): a
-/// starless frame keeps under StarMinCount, a frame with stars keeps them, and on the aligned
-/// Rosetta pair the stars kept on the frame with stars sit where the two frames differ. Not in
+/// The star rule on the real frames of the large test data folder (TestData.LargeDir), with and
+/// without stars (ADR 0054): a starless frame keeps under StarMinCount, a frame with stars keeps
+/// them, and on the aligned Rosetta pair the stars kept on the frame with stars sit where the two
+/// frames differ. Not in
 /// the gate: trait Category=Validation, seconds per frame; a frame absent on this machine is
 /// reported and skipped (the pattern of ValidationTests, xUnit 2 having no dynamic skip).
 /// </summary>

@@ -6,8 +6,9 @@ ADR 0004), and is explained here. A number changes only after a re-measurement, 
 line under History saying the old value, the new value and why; never by editing the expected
 values to match (the kit's rule "No test edited to pass").
 
-The data is two images, copies made by hand in `AstroPhotoAnalyzer.Tests/testdata/large/`, which
-git ignores, listed with their SHA-256 in `AstroPhotoAnalyzer.Tests/testdata/manifest.json`:
+The data is the images below and the lab's two ICC profiles, kept outside the repository in
+`E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer` (ADR 0088), listed with their SHA-256 in
+`AstroPhotoAnalyzer.Tests/testdata/manifest.json`:
 
 - `de_printat.png`: the owner's Milky Way core, 5938 x 3888, 16-bit RGB PNG, 103 387 067 bytes,
   whose original is in `E:\Photografie\Claude`. No WCS: the classes are relative to the modelled
@@ -29,7 +30,9 @@ git ignores, listed with their SHA-256 in `AstroPhotoAnalyzer.Tests/testdata/man
   248 158 080 bytes, a WCS inside the band (b -14.6 to -3.6 over 9.6 x 6.4 degrees): the
   deep-sky frame the band path mistook for a Milky Way landscape (ADR 0037; V-013, V-014).
 
-On a machine or in a worktree without the copies, the cases print `NOT MEASURED` and pass.
+The tests read that folder from the main checkout and from every worktree (`TestData.LargeDir`;
+`APA_TESTDATA_LARGE` may name another); on a machine without it, the cases print `NOT MEASURED`
+and pass.
 
 ## How a case runs
 
@@ -213,6 +216,13 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
+- 2026-11-08 (ADR 0088, the large test data moves out of the repository): the twelve files of the
+  manifest moved from the main checkout's `AstroPhotoAnalyzer.Tests/testdata/large/` to
+  `E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer`, 1 368 MB before and after, the twelve
+  hashes of the manifest unchanged (`check-testdata.ps1` with `APA_TESTDATA_LARGE` naming the
+  folder: twelve `ok`). Run from a task's worktree with no copy and the variable unset, the
+  filter `Category=Validation` measured all sixteen cases and the eleven `StarPairTests` cases
+  (27 passed, none `NOT MEASURED`, 2.9 min); no figure moved, the files being the same bytes.
 - 2026-11-07 (ADR 0084, the gallery tabs fill their area and recompute themselves without a
   button, merged 2026-11-06 without a validation run; recorded the next day on
   `claude/Record-previewWidth-figures-of-ADR-0084`): the preview's stride at the presumed area

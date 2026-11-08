@@ -20,27 +20,34 @@ using System.Runtime.CompilerServices;
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// Where the test data outside git is (ADR 0004). Every fixture of the unit and golden tests is
-/// generated or hand-built in the test; the only stored data is the reference image,
-/// de_printat.png, a copy made by hand in AstroPhotoAnalyzer.Tests/testdata/large/, which git
-/// ignores, listed with its hash in testdata/manifest.json. APA_TESTDATA_LARGE may name another
-/// folder, as scripts/check-testdata.ps1 allows; nobody sets it. A validation case whose file is
-/// absent returns early with a message instead of failing: xUnit 2 has no dynamic skip, and the
-/// copy exists on one machine.
+/// Where the test data outside git is (ADR 0004, ADR 0088). Every fixture of the unit and golden
+/// tests is generated or hand-built in the test; the only stored data is the reference images
+/// and the lab's two ICC profiles, kept outside the repository in the owner's folder
+/// <see cref="DefaultLargeDir"/> and listed with their hashes in testdata/manifest.json.
+/// APA_TESTDATA_LARGE may name another folder, as scripts/check-testdata.ps1 allows. A
+/// validation case whose file is absent returns early with a message instead of failing:
+/// xUnit 2 has no dynamic skip, and the files exist on one machine.
 /// </summary>
 internal static class TestData
 {
+    /// <summary>
+    /// The folder the large files live in when APA_TESTDATA_LARGE is unset: the owner's folder
+    /// for sets kept for the tests alone, the same one from the main checkout and from every
+    /// worktree, so no task copies the files (ADR 0088). Absent on any other machine, where the
+    /// cases report themselves not measured.
+    /// </summary>
+    internal const string DefaultLargeDir = @"E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer";
+
     /// <summary>The project folder (the one holding AstroPhotoAnalyzer.sln), from this file's own path.</summary>
     internal static string RepoDir([CallerFilePath] string thisFile = "")
         => Path.GetDirectoryName(Path.GetDirectoryName(thisFile))!;
 
-    /// <summary>The folder the large files live in: APA_TESTDATA_LARGE, or testdata/large/ beside the manifest.</summary>
+    /// <summary>The folder the large files live in: APA_TESTDATA_LARGE when set, else <see cref="DefaultLargeDir"/>.</summary>
+    /// <returns>A folder path; it may not exist on this machine.</returns>
     internal static string LargeDir()
     {
         string? env = Environment.GetEnvironmentVariable("APA_TESTDATA_LARGE");
-        return string.IsNullOrEmpty(env)
-            ? Path.Combine(RepoDir(), "AstroPhotoAnalyzer.Tests", "testdata", "large")
-            : env;
+        return string.IsNullOrEmpty(env) ? DefaultLargeDir : env;
     }
 
     /// <summary>

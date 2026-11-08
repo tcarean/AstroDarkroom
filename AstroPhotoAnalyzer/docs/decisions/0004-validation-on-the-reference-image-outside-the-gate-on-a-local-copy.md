@@ -1,7 +1,7 @@
 # 0004. Validation on the reference image runs outside the gate, on a git-ignored copy
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; the copy in testdata/large/ superseded by 0088
 
 ## Context
 

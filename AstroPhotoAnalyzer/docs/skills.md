@@ -37,15 +37,17 @@ are in `kit.json`, not here.
 
 ## /validate
 
-- At step 1: the reference images are `de_printat.png` (V-001 to V-003 and V-005), a git-ignored copy in
-  `AstroPhotoAnalyzer.Tests/testdata/large/` of the owner's file in `E:\Photografie\Claude`
-  (ADR 0004), and `starless_rbf0.5_stretch0.17.fit` (V-004), the plate-solved FITS of ADR 0025,
-  copied from the folder `testdata/manifest.json` names, and the lab's two ICC profiles (V-006,
-  V-007; ADR 0030), from the page the manifest names, and the other frames the manifest lists
-  (the Rosetta, Orion and Andromeda pairs with and without stars, the Veil, the 0.1 stretch);
-  the manifest holds every hash. A
-  worktree has no copies: copy the images into the worktree's `testdata/large/` first, or every
-  case prints `NOT MEASURED`. A case runs the whole analysis on a 23 MP image, 10 to 15 s
+- At step 1: the reference images are `de_printat.png` (V-001 to V-003 and V-005), a copy of
+  the owner's file in `E:\Photografie\Claude` (ADR 0004), `starless_rbf0.5_stretch0.17.fit`
+  (V-004), the plate-solved FITS of ADR 0025, the lab's two ICC profiles (V-006, V-007; ADR
+  0030) and the other frames the manifest lists (the Rosetta, Orion and Andromeda pairs with and
+  without stars, the Veil, the 0.1 stretch); `testdata/manifest.json` names where each came from
+  and holds every hash. All twelve live in `E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer`
+  (ADR 0088), where the tests look from any worktree; copy nothing. `check-testdata.ps1` looks
+  there only when the variable names it, so run it as
+  `$env:APA_TESTDATA_LARGE = 'E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer'` followed
+  by the script, in one PowerShell call; without the variable it lists the twelve as absent. A
+  case runs the whole analysis on a 23 MP image, 10 to 15 s
   (the twelve cases together about 2.5 min; before ADR 0035 a case took up to 27 s). The
   filter `Category=Validation` also runs `StarPairTests` (ADR 0054): every starless frame under
   `StarMinCount` stars, every frame with stars kept, the Rosetta pair's kept stars in the
