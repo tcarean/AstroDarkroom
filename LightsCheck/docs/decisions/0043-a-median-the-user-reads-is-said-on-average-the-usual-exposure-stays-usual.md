@@ -6,25 +6,26 @@ Supersedes: 0033 in part (`de obicei` for the median); 0034 in part (the session
 
 ## Context
 
-The plain-words rewrite (ADRs 0032 to 0036) named the medians of the tabs and of the console's
-sections `typically` or `usual` (`de obicei`, `obisnuit`), since `median` and `mean` name the
-method and the test helper `PlainWords` also refused the Romanian `medie`. On 2026-11-08 the
-owner asked to say `average` (`in medie`) wherever these words mean a value the frames have on
-average: anyone understands an average. Nine texts carry such a figure, all of them medians: the
-stars' width and elongation of a frame (its stars' median), the session's width and star count
-(the median over the good, or all, frames), the zones' widths and the median dither move. Shown
-side by side the same day, the nine rewrites were approved as proposed. The `--frame` report of
-one frame, never rewritten in plain words, says `median`; the request named only `typically` and
-`usual`, so it stays.
+The plain-words rewrite (ADRs 0032 to 0036) named most medians of the tabs and of the console's
+sections `typically` or `usual` (`de obicei`, `obisnuit`), since `median` and `mean` name the method
+and the test helper `PlainWords` also refused the Romanian `medie`. On 2026-11-08 the owner asked to
+say `average` (`in medie`) wherever these words mean a value the frames have on average: anyone
+understands an average. Nine texts carry such a figure, all of them medians: the stars' width and
+elongation of a frame (its stars' median), the session's width and star count (the median over the
+good, or all, frames), the zones' widths and the median dither move. Shown side by side the same
+day, the nine rewrites were approved as proposed. The `--frame` report of one frame, never rewritten
+in plain words, says `median`; the request named only `typically` and `usual`.
 
 ## Decision
 
-A median the user reads is said `on average` / `in medie` (`the session's average width` /
-`latimea medie din sesiune`, `a frame's average count` / `din cate are in medie un cadru`); the
-figure stays the median, only its word changes. `PlainWords` no longer refuses `medie`; `median`,
-`mean`, `mediana` and `mediane` stay refused. The usual exposure of R-085 keeps `usual` /
-`obisnuita`, because it is the exposure most frames carry, not an average, and `Blank (the usual
-way)` of the pixel-size field keeps its word, which means "normally" there.
+A median the user reads is said `on average` / `in medie` (`the session's average width` / `latimea
+medie din sesiune`, `a frame's average count` / `din cate are in medie un cadru`); the figure stays
+the median, only its word changes. The `--frame` report keeps `median` until it is rewritten in
+plain words, and a median told another way (`half the frames have another frame within ...`) keeps
+its sentence. `PlainWords` no longer refuses `medie`; `median`, `mean`, `mediana` and `mediane` stay
+refused. The usual exposure of R-085 keeps `usual` / `obisnuita`, because it is the exposure most
+frames carry, not an average, and `Blank (the usual way)` of the pixel-size field keeps its word,
+which means "normally" there.
 
 ## Alternatives rejected
 
