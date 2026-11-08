@@ -11,7 +11,7 @@ VERDICT: CAUTION
    - Send the lab an 8-bit TIFF with LZW compression, which loses nothing (0.0 MB). The file is already 8-bit; there is nothing to convert.
      because: the file has 8 bits on each channel
    - If the lab takes only JPEG: quality 100, with the colour kept at full resolution (the 4:4:4 setting) (0.0 MB).
-     because: against the original, the JPEG changes a pixel by 0.08 levels on average and by 1.0 at most; 0.0 % of the values change by more than 2 levels, mostly around level 0
+     because: against the original, the JPEG changes a pixel by 0.08 levels on average and by 1.0 at most; 0.0 % of the values change by more than 2 levels, at an average level of 0
 
 2. The background and the paper  [OK]
    - The background is print-safe as it is; you can lower it down to 0.15 (then the dust would be at L* 15.1, the sky at L* 15.2).

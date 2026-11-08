@@ -339,7 +339,7 @@ shows it under the size table so the dpi column reads against physics rather tha
 levels and mean < 70 levels (`PlateauTile*` - the strict criterion of the other acceptance
 script). On each, the 8-bit quantised values: changes of value per row, averaged; the tile's
 plateau = 64 / (1 + changes), kept in `PlateauTilePx` (sorted). `PlateauPx` = mean over tiles
-(NaN without tiles), the typical step, for information; `PlateauMmAt(dpi)` = PlateauPx x
+(NaN without tiles), the average step, for information; `PlateauMmAt(dpi)` = PlateauPx x
 25.4 / dpi. The verdict (ADR 0060): `PlateauVisibleFramePctAt(dpi)` = 100 x (tiles with px x
 25.4 / dpi > `PlateauVisibleMm` (1.0)) / positions, and `PlateauVisibleAt(dpi)` when it passes
 `PlateauFlatFrameWarnPct` (0.1 %). The mean cannot decide: on a heavily denoised frame the many

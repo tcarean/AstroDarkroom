@@ -11,7 +11,7 @@ VERDICT: ATENTIE
    - Trimite laboratorului un TIFF pe 8 biti, cu compresie LZW, fara pierderi (0.0 MB). Fisierul e deja pe 8 biti; nu e nimic de convertit.
      fiindca: fisierul are 8 biti pe fiecare canal
    - Daca laboratorul primeste doar JPEG: calitate 100, cu culoarea pastrata la rezolutie intreaga (setarea 4:4:4) (0.0 MB).
-     fiindca: fata de original, JPEG-ul schimba un pixel in medie cu 0.08 niveluri si cel mult cu 1.0; 0.0 % din valori se schimba cu mai mult de 2 niveluri, mai ales in jurul nivelului 0
+     fiindca: fata de original, JPEG-ul schimba un pixel in medie cu 0.08 niveluri si cel mult cu 1.0; 0.0 % din valori se schimba cu mai mult de 2 niveluri, la un nivel mediu de 0
 
 2. Fundalul si hartia  [OK]
    - Fundalul e print-safe asa cum e; il poti cobori pana la 0.15 (atunci praful ar fi la L* 15.1, cerul la L* 15.2).

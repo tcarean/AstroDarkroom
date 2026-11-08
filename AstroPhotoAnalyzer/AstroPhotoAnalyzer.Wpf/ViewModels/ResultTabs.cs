@@ -604,8 +604,9 @@ namespace AstroPhotoAnalyzer.Wpf
                 + "and measures how long the runs of identical pixels are. Times the size of a pixel on paper at the reference row's dpi, the length "
                 + $"gives the width of the step on paper: over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm it shows as a contour. The verdict is how much of "
                 + $"the frame such areas cover: over {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} % it is a banding risk, and then send the file at 16 bits "
-                + "if the lab takes it, or add a little noise at the export (dither). The figure in the row is the usual width of a flat area, for "
-                + "information only: it cannot decide on its own, because after a strong denoise the many ordinary areas hide the few fully flat ones. "
+                + "if the lab takes it, or add a little noise at the export (dither). The figure in the row is the average width of a flat area, for "
+                + "information only: it cannot decide on its own, because after a strong denoise the many ordinary areas pull the average down and "
+                + "hide the few fully flat ones. "
                 + "n/a when no smooth sky is found. How much of the frame the measured areas cover and the noise left in them say where it was "
                 + "measured: after an AI denoise the only areas smooth enough can be a few patches the denoiser wiped, while the noise section, "
                 + "measured another way on other areas, can say the sky is fine; the two speak of different places.",
@@ -616,8 +617,9 @@ namespace AstroPhotoAnalyzer.Wpf
                 + "si masoara cat de lungi sunt sirurile de pixeli identici. Inmultita cu marimea unui pixel pe hartie la dpi-ul randului de referinta, "
                 + $"lungimea da latimea treptei pe hartie: peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm se vede ca un contur. Verdictul e cat din cadru "
                 + $"acopera astfel de zone: peste {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} % e risc de banding, si atunci trimite fisierul pe 16 biti "
-                + "daca laboratorul il primeste, sau adauga putin zgomot la export (dither). Cifra din rand e latimea obisnuita a unei zone plate, doar "
-                + "informativ: nu poate decide singura, pentru ca dupa un denoise puternic zonele obisnuite, multe, le ascund pe cele cateva complet plate. "
+                + "daca laboratorul il primeste, sau adauga putin zgomot la export (dither). Cifra din rand e latimea medie a unei zone plate, doar "
+                + "informativ: nu poate decide singura, pentru ca dupa un denoise puternic zonele obisnuite, multe, trag media in jos si le ascund "
+                + "pe cele cateva complet plate. "
                 + "n/a cand nu se gaseste cer neted. Cat din cadru acopera zonele masurate si zgomotul ramas in ele spun unde s-a masurat: dupa un "
                 + "denoise AI, singurele zone destul de netede pot fi cateva petice sterse de denoise, in timp ce sectiunea de zgomot, masurata altfel, "
                 + "pe alte zone, poate spune ca cerul e bine; cele doua vorbesc despre locuri diferite.");
@@ -685,11 +687,11 @@ namespace AstroPhotoAnalyzer.Wpf
                 new GuideParagraph
                 {
                     Lead = Tr.Pick($"> {count} lev / mean level.", $"> {count} niv / nivel mediu."),
-                    Text = Tr.Pick($"What percentage of the values change by more than {count} levels, and around which level (0..255) they lie, that is "
+                    Text = Tr.Pick($"What percentage of the values change by more than {count} levels, and at what level (0..255) they lie on average, that is "
                         + "where the compression strikes. A low level means the dark sky, where JPEG does worst and where the eye sees the squares on "
                         + "a smooth background; a high one means stars and edges, where the differences get lost in the detail. "
                         + $"Over {Fmt.F0(Thresholds.JpegOverThresholdWarnPct)} % of the values at quality 100: caution.",
-                        $"Cat la suta din valori se schimba cu mai mult de {count} niveluri, si in jurul carui nivel (0..255) stau, adica unde loveste "
+                        $"Cat la suta din valori se schimba cu mai mult de {count} niveluri, si la ce nivel (0..255) stau in medie, adica unde loveste "
                         + "compresia. Un nivel mic inseamna cerul intunecat, unde JPEG-ul se descurca cel mai prost si unde ochiul vede patratele pe un "
                         + "fundal neted; unul mare inseamna stele si margini, unde diferentele se pierd in detaliu. "
                         + $"Peste {Fmt.F0(Thresholds.JpegOverThresholdWarnPct)} % din valori la calitatea 100: atentie."),
