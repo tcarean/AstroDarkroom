@@ -8,6 +8,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The width of the flat areas on the 8-bit sky is called an average, which it is, instead of
+  what a flat area "usually" measures, in the Format recommendation, Appendix C and the Export
+  tab (R-091, ADR 0087).
 - With a WCS, the dust and the bright clouds of the Milky Way band are no longer a fixed 5 and
   10 L\* from the band around them but 4 and 8 times the sky's own unevenness, the same figure
   the path without a WCS uses (R-044, ADR 0086): on the reference frame the dust class is the

@@ -300,7 +300,7 @@ VERDICT: CAUTION
    - If the lab takes only JPEG: quality 100, with the colour kept at full resolution (the 4:4:4 setting) (12.5 MB).
      because: against the original, the JPEG changes a pixel by 0.60 levels on average and by 4.5 at most; 1.2 % of the values change by more than 2 levels, mostly around level 31 (in the dark sky, where JPEG does worst)
    - At 8 bits no visible steps appear in the sky: the flat areas cover too little of the frame to show.
-     because: at 151 dpi, flat areas, with no change of tone, wider than 1.0 mm cover 0.00 % of the frame (threshold 0.10 %); in the 20 small areas of smooth sky (0.4 % of the frame) a flat area is usually 2.7 px = 0.45 mm, and the noise left there is 0.32 levels
+     because: at 151 dpi, flat areas, with no change of tone, wider than 1.0 mm cover 0.00 % of the frame (threshold 0.10 %); in the 20 small areas of smooth sky (0.4 % of the frame) a flat area is on average 2.7 px = 0.45 mm, and the noise left there is 0.32 levels
 ```
 
 ## How the background is judged

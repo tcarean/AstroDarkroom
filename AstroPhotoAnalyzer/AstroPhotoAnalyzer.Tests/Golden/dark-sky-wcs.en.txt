@@ -13,7 +13,7 @@ VERDICT: PROBLEM
    - If the lab takes only JPEG: quality 100, with the colour kept at full resolution (the 4:4:4 setting) (0.1 MB).
      because: against the original, the JPEG changes a pixel by 0.58 levels on average and by 3.5 at most; 0.4 % of the values change by more than 2 levels, mostly around level 28 (in the dark sky, where JPEG does worst)
    ! At 8 bits visible steps may appear in the sky (banding): send the file at 16 bits if the lab takes it, or add a little noise at the export (dither).
-     because: at 26 dpi, flat areas, with no change of tone, wider than 1.0 mm cover 8.38 % of the frame (threshold 0.10 %); in the 419 small areas of smooth sky (8.4 % of the frame) a flat area is usually 2.2 px = 2.13 mm, and the noise left there is 0.30 levels
+     because: at 26 dpi, flat areas, with no change of tone, wider than 1.0 mm cover 8.38 % of the frame (threshold 0.10 %); in the 419 small areas of smooth sky (8.4 % of the frame) a flat area is on average 2.2 px = 2.13 mm, and the noise left there is 0.30 levels
 
 2. The background and the paper  [PROBLEM]
    !! The sky is darker than paper black: the sky and the dust would come out as the SAME black. Redo the stretch from the linear data up to a background of 0.16 (in the simulation: the dust at L* 15.5, the sky at L* 16.1; the dust reaches black exactly at 0.106).
@@ -87,7 +87,7 @@ Appendix C. Export
   q90            0.0 MB       0.560       7.3   1.82    3.33     0.7 %            36
   rounding from 16 to 8 bits: on average 0.262, at most 0.500, p99.9 0.499 levels
   shadows lifted (gamma 1.9), levels 8..120: starting from 16 bits 75 used / 0 missing; starting from 8 bits 52 used / 24 missing
-  flat areas on the sky taken to 8 bits: usually 2.2 px, in 419 small areas of smooth sky of 5000 places tried (8.4 % of the frame, noise left 0.30 levels); at 26 dpi, flat areas wider than 1.0 mm on 8.38 % of the frame
+  flat areas on the sky taken to 8 bits: on average 2.2 px, in 419 small areas of smooth sky of 5000 places tried (8.4 % of the frame, noise left 0.30 levels); at 26 dpi, flat areas wider than 1.0 mm on 8.38 % of the frame
 
 Appendix D. Resolution and size
   stars: 64 measured; the stars' width (FWHM) 3.06 px (a quarter under 3.05, a quarter over 3.08); ~167 stars fit side by side across the width
