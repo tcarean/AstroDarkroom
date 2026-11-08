@@ -34,8 +34,8 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
 - Window renders as PNGs without running it:
   `APA_DUMP_SCREENS=<dir> dotnet test AstroPhotoAnalyzer.Wpf.Tests --filter WindowSmokeTests`
 - Figures on the reference image (seconds per case, not in the gate): `/validate`, or
-  `dotnet test AstroPhotoAnalyzer.sln -c Release --filter "Category=Validation"`; the image is a
-  git-ignored copy in `AstroPhotoAnalyzer.Tests/testdata/large/` (ADR 0004)
+  `dotnet test AstroPhotoAnalyzer.sln -c Release --filter "Category=Validation"`; the images live
+  outside the repository in `E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer` (ADR 0088)
 - Test data hashes after an intentional change: `scripts/check-testdata.ps1 -Update`
 - Design notes a branch touched (the index and Covers paths are a gate step):
   `scripts/check-design.ps1 -Since main`
@@ -59,7 +59,7 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
 - `AstroPhotoAnalyzer.Wpf/` - the window, `net8.0-windows`, dark theme: `ParameterFields` in, eight
   tabs out. Formats, never decides; view-models are public and cannot expose a core type.
 - `AstroPhotoAnalyzer.Tests/` (core + console, portable; `Golden/` holds the console snapshots;
-  `testdata/manifest.json` hashes the reference image, which stays outside git) and
+  `testdata/manifest.json` hashes the reference images, which stay outside git) and
   `AstroPhotoAnalyzer.Wpf.Tests/` (window, Windows-only, one STA thread through `StaFixture`).
   Every other fixture is generated or hand-built in the tests.
 - `Icon/` - `make_icon.py` generates the icon both exes share. `Directory.Build.props` -
@@ -155,8 +155,8 @@ The kit's workflow in `.claude/rules/kit/process.md` applies. AstroPhotoAnalyzer
 - `R###_...` tests may live in either test project; `RepoInvariantTests` looks in both.
 - A release is tagged `astrophotoanalyzer-vX.Y.Z`, the name `scripts/release.ps1` prints.
 - The main checkout of the kit's rule "Worktrees" is the shared checkout `E:\Photografie\Code`.
-  A worktree has no copy of the reference image; a task that runs `/validate` copies it into the
-  worktree's `AstroPhotoAnalyzer.Tests/testdata/large/` (ADR 0004).
+  The reference images sit outside the repository, so a worktree's `/validate` reads them where
+  they are, with no copy (ADR 0088).
 
 ## Read before touching
 

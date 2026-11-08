@@ -504,9 +504,9 @@ repository, and is developed with Claude Code. What is where:
 - `docs/decisions/`: the decisions, one ADR each, with the alternatives rejected.
 - `docs/design/`: how the code works, area by area; the index is `docs/design/README.md`.
 - `docs/validation.md` and `docs/validation.json`: the figures measured on the reference images,
-  which stay out of git; the validation tests need a copy of them in
-  `AstroPhotoAnalyzer.Tests/testdata/large/`, and `AstroPhotoAnalyzer.Tests/testdata/manifest.json`
-  holds their hashes.
+  which stay out of git; the validation tests read them from
+  `E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer` (or the folder `APA_TESTDATA_LARGE`
+  names), and `AstroPhotoAnalyzer.Tests/testdata/manifest.json` holds their hashes.
 - `CHANGELOG.md`: the changes, version by version.
 
 The gate runs before every commit, through the git hooks and Claude Code's: the kit's shared

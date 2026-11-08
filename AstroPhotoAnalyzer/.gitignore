@@ -3,6 +3,7 @@
 artifacts/
 TestResults/
 StrykerOutput/
-# The reference image, copied here by hand; it never enters the repository (ADR 0004).
+# Where the reference images were copied until ADR 0088 moved them out of the repository; kept
+# so that a stray copy never enters it.
 AstroPhotoAnalyzer.Tests/testdata/large/
 .claude/settings.local.json
