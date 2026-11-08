@@ -189,6 +189,19 @@ public class RecommendationsTests
     }
 
     [Fact]
+    public void R091_TheJpegBecauseNamesTheAverageLevelOfTheChangedValues()
+    {
+        // The level of the values JPEG changes by over 2 levels is their mean, so it is said as
+        // an average, not as the level "most" of them sit around (ADR 0087); on the dark scene
+        // it is under 64, in the dark sky.
+        var a = Run(Scenes.DarkSky(), new Parameters { TargetAspect = 50.0 / 35.0, ViewingDistanceM = 1.5 });
+
+        Recommendation jpeg = Assert.Single(Of(a, Topic.Format), r => r.Text.StartsWith("Daca laboratorul primeste doar JPEG"));
+        Assert.Matches(@"; \d+\.\d % din valori se schimba cu mai mult de 2 niveluri, la un nivel mediu de \d+ \(in cerul intunecat, unde JPEG-ul se descurca cel mai prost\)$", jpeg.Because);
+        Assert.DoesNotContain("mai ales", jpeg.Because);
+    }
+
+    [Fact]
     public void R095_TheDenoiseBecauseAlwaysTellsTheShareOfTilesUnderTheBandingSigma()
     {
         // On a clean sky no tile is under 0.5 LSB, and the because says so all the same.

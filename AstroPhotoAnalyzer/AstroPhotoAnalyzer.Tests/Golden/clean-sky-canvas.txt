@@ -11,7 +11,7 @@ VERDICT: ATENTIE
    - Trimite laboratorului un TIFF pe 8 biti, cu compresie LZW, fara pierderi (0.3 MB). Trecerea de la 16 la 8 biti doar rotunjeste valorile; nu se pierde nimic.
      fiindca: la rotunjire, un pixel se muta in medie cu 0.25 dintr-un nivel si cel mult cu 0.50 (o rotunjire nu poate muta mai mult de jumatate de nivel)
    - Daca laboratorul primeste doar JPEG: calitate 100, cu culoarea pastrata la rezolutie intreaga (setarea 4:4:4) (0.2 MB).
-     fiindca: fata de original, JPEG-ul schimba un pixel in medie cu 0.61 niveluri si cel mult cu 3.5; 1.8 % din valori se schimba cu mai mult de 2 niveluri, mai ales in jurul nivelului 64 (in cerul intunecat, unde JPEG-ul se descurca cel mai prost)
+     fiindca: fata de original, JPEG-ul schimba un pixel in medie cu 0.61 niveluri si cel mult cu 3.5; 1.8 % din valori se schimba cu mai mult de 2 niveluri, la un nivel mediu de 64 (in cerul intunecat, unde JPEG-ul se descurca cel mai prost)
 
 2. Fundalul si hartia  [OK]
    - Fundalul e print-safe asa cum e; il poti cobori pana la 0.20 (atunci praful ar fi la L* 21.2, cerul la L* 21.2).

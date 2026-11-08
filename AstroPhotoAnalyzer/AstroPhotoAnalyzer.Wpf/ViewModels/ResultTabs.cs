@@ -687,11 +687,11 @@ namespace AstroPhotoAnalyzer.Wpf
                 new GuideParagraph
                 {
                     Lead = Tr.Pick($"> {count} lev / mean level.", $"> {count} niv / nivel mediu."),
-                    Text = Tr.Pick($"What percentage of the values change by more than {count} levels, and around which level (0..255) they lie, that is "
+                    Text = Tr.Pick($"What percentage of the values change by more than {count} levels, and at what level (0..255) they lie on average, that is "
                         + "where the compression strikes. A low level means the dark sky, where JPEG does worst and where the eye sees the squares on "
                         + "a smooth background; a high one means stars and edges, where the differences get lost in the detail. "
                         + $"Over {Fmt.F0(Thresholds.JpegOverThresholdWarnPct)} % of the values at quality 100: caution.",
-                        $"Cat la suta din valori se schimba cu mai mult de {count} niveluri, si in jurul carui nivel (0..255) stau, adica unde loveste "
+                        $"Cat la suta din valori se schimba cu mai mult de {count} niveluri, si la ce nivel (0..255) stau in medie, adica unde loveste "
                         + "compresia. Un nivel mic inseamna cerul intunecat, unde JPEG-ul se descurca cel mai prost si unde ochiul vede patratele pe un "
                         + "fundal neted; unul mare inseamna stele si margini, unde diferentele se pierd in detaliu. "
                         + $"Peste {Fmt.F0(Thresholds.JpegOverThresholdWarnPct)} % din valori la calitatea 100: atentie."),

@@ -82,7 +82,7 @@ namespace AstroPhotoAnalyzer
                 Verdict v = q100.Acceptable ? (q100.PctOverThreshold > Thresholds.JpegOverThresholdWarnPct ? Verdict.Attention : Verdict.Ok) : Verdict.Attention;
                 o.Add(new Recommendation(Topic.Format, v,
                     Tr.Pick($"If the lab takes only JPEG: quality 100, with the colour kept at full resolution (the 4:4:4 setting) ({Fmt.Mb(q100.Megabytes)}).", $"Daca laboratorul primeste doar JPEG: calitate 100, cu culoarea pastrata la rezolutie intreaga (setarea 4:4:4) ({Fmt.Mb(q100.Megabytes)})."),
-                    Tr.Pick($"against the original, the JPEG changes a pixel by {Fmt.F2(q100.MeanAbsError)} levels on average and by {Fmt.F1(q100.MaxError)} at most; {Fmt.Pct(q100.PctOverThreshold)} of the values change by more than {Fmt.F0(Thresholds.JpegErrorCountLevels)} levels, mostly around level {Fmt.F0(q100.MeanLevelOverThreshold)}", $"fata de original, JPEG-ul schimba un pixel in medie cu {Fmt.F2(q100.MeanAbsError)} niveluri si cel mult cu {Fmt.F1(q100.MaxError)}; {Fmt.Pct(q100.PctOverThreshold)} din valori se schimba cu mai mult de {Fmt.F0(Thresholds.JpegErrorCountLevels)} niveluri, mai ales in jurul nivelului {Fmt.F0(q100.MeanLevelOverThreshold)}")
+                    Tr.Pick($"against the original, the JPEG changes a pixel by {Fmt.F2(q100.MeanAbsError)} levels on average and by {Fmt.F1(q100.MaxError)} at most; {Fmt.Pct(q100.PctOverThreshold)} of the values change by more than {Fmt.F0(Thresholds.JpegErrorCountLevels)} levels, at an average level of {Fmt.F0(q100.MeanLevelOverThreshold)}", $"fata de original, JPEG-ul schimba un pixel in medie cu {Fmt.F2(q100.MeanAbsError)} niveluri si cel mult cu {Fmt.F1(q100.MaxError)}; {Fmt.Pct(q100.PctOverThreshold)} din valori se schimba cu mai mult de {Fmt.F0(Thresholds.JpegErrorCountLevels)} niveluri, la un nivel mediu de {Fmt.F0(q100.MeanLevelOverThreshold)}")
                     + (q100.PctOverThreshold > 0 && q100.MeanLevelOverThreshold < Thresholds.DarkLevelB ? Tr.Pick(" (in the dark sky, where JPEG does worst)", " (in cerul intunecat, unde JPEG-ul se descurca cel mai prost)") : "")));
 
                 // The qualities under 100 that fail are a fact of the Export tab, not a warning
@@ -92,12 +92,12 @@ namespace AstroPhotoAnalyzer
             if (q.PlateauKnown && size != null)
             {
                 // The verdict is the share of the frame in clean tiles whose plateau passes the
-                // visible length at the print's dpi (ADR 0060); the mean plateau is the typical
-                // step, told for information. Where it was measured matters: on an AI-denoised
-                // frame the only tiles clean enough are the patches the denoiser wiped, a few
-                // tenths of a percent of the frame at a sigma near zero, while the noise section's
-                // median says the sky is fine. The reader must see that the two speak of
-                // different places.
+                // visible length at the print's dpi (ADR 0060); the mean plateau is told for
+                // information, as an average (ADR 0087). Where it was measured matters: on an
+                // AI-denoised frame the only tiles clean enough are the patches the denoiser
+                // wiped, a few tenths of a percent of the frame at a sigma near zero, while the
+                // noise section's median says the sky is fine. The reader must see that the two
+                // speak of different places.
                 double flat = q.PlateauVisibleFramePctAt(size.Dpi);
                 string share = Fmt.Strong(Fmt.F2(flat) + " %"), limit = Fmt.Strong(Fmt.F2(Thresholds.PlateauFlatFrameWarnPct) + " %");
                 string steps = Tr.Pick($"at {Fmt.F0(size.Dpi)} dpi, flat areas, with no change of tone, wider than {Fmt.F1(Thresholds.PlateauVisibleMm)} mm cover {share} of the frame (threshold {limit})",

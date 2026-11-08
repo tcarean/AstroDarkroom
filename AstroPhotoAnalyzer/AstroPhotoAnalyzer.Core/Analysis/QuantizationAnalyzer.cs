@@ -21,7 +21,7 @@
 // value are. On paper a plateau becomes a contour; under ~1 mm it does not show. The tiles are
 // the strict ones (Thresholds.Plateau*): clean sky, no core, at every one of PlateauPositions
 // random positions. The verdict is the share of the frame in tiles whose plateau passes the
-// visible length at the print's dpi (ADR 0060): the mean plateau is the typical step, for
+// visible length at the print's dpi (ADR 0060): the mean plateau is the average step, for
 // information, and cannot decide, since on a heavily denoised frame the many ordinary tiles
 // drown the few fully flat ones.
 //
@@ -79,7 +79,7 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The mean length of the runs of identical values over the clean tiles, in pixels: the
-        /// typical step, for information; NaN without tiles.
+        /// average step, for information; NaN without tiles.
         /// </summary>
         internal double PlateauPx { get; init; }
         internal bool PlateauKnown => !double.IsNaN(PlateauPx);
