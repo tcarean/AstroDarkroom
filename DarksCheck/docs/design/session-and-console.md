@@ -86,7 +86,7 @@ banner, the copyright, the warranty lines of `--help` and the shared formatters 
 attributes `Directory.Build.props` sets. `Program.Run(args, stdout, stderr)` is the console
 behind `Main`: banner first, then `--lang` ("The interface language" below), then the options, then one run. `Options.Parse(args)` walks the
 arguments once and returns an `Options` with `Folder`, `Inventory`, `Out`, `Threads`,
-`MaxFrames`, `Against`, `Help` and `Error`: the first word that is not an option is the
+`MaxFrames`, `Against`, `Lights`, `Help` and `Error`: the first word that is not an option is the
 folder, a second one is an error, an option that takes a value reads the next argument
 (`<option> expects a value` when there is none) and parses it with the invariant culture
 (`--threads` and `--max-frames` as positive integers, `--out`, `--against` and `--lights` as

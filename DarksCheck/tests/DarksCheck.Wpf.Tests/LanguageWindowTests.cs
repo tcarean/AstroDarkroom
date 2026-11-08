@@ -352,7 +352,7 @@ public partial class LanguageWindowTests
                 Assert.Contains(english ? "The warmer the sensor, the higher the index." : "Cu cat senzorul a fost mai cald, cu atat indexul e mai mare.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "if the session has no darks, they are compared directly with the darks of the partner." : "daca sesiunea nu are dark-uri, se compara direct cu dark-urile partenerului.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "(idx- when the index cannot be measured)" : "(idx- cand indexul nu se poate masura)", all, StringComparison.Ordinal);
-                Assert.Contains(english ? "Analyses the open folder again, with the current partner and settings" : "Analizeaza din nou folderul deschis, cu partenerul si setarile de acum", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "Analyses the open folder again, with the chosen lights, the partner and the settings of now" : "Analizeaza din nou folderul deschis, cu lights-urile alese, partenerul si setarile de acum", all, StringComparison.Ordinal);
                 Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
                 List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
                 Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));

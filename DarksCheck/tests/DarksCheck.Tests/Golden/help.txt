@@ -2,7 +2,7 @@ darkscheck <versiune>
 Copyright (C) 2026 Tudor Carean
 
 Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--lights DIR] [--out DIR] [--threads N] [--max-frames N]
-          darkscheck <folder> --inventory
+          darkscheck <folder> --inventory [--lights DIR]
 
   Folderul sesiunii Siril: dark-urile se iau din darks\ (sau direct din folder,
   daca nu exista darks\ si nici alt subfolder de sesiune), bias-urile din biases\

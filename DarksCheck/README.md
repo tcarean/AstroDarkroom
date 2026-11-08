@@ -561,7 +561,8 @@ default, and the field says it is invalid. The console always runs with a gain o
 per doubling.
 
 **Write the files...** writes the files of `--out` into a folder you choose; the dialog opens in
-the session folder, which is refused, as is the partner's, so choose a folder outside both.
+the session folder, which is refused, as are the partner's and the chosen lights' folder, so
+choose a folder outside them.
 **About** (F1) shows the version, the licence and the six third-party components the program
 ships, LibRaw's three libraries listed apart from it, with where their licence texts are. It is
 never taller than the screen it opens on: on a screen too low for it, such as a 1080-line screen

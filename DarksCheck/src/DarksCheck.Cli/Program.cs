@@ -163,18 +163,23 @@ internal static class Program
             // a bad --against, --lights or --out is refused before the minutes of decoding, not
             // after (R-026, R-055, R-063)
             string? partnerRoot = o.Against is null ? null : SessionFolder.Open(o.Against).Root;
-            string? chosenLightsRoot = o.Lights is null ? null : SessionFolder.Open(o.Folder!, allowLightsOnly: true, o.Lights).ChosenLightsRoot;
-            if (o.Out is not null)
+            if (o.Lights is not null || o.Out is not null)
             {
-                DarkOutputs.CheckOutDir(SessionFolder.Open(o.Folder!, allowLightsOnly: true).Root, o.Out);
-                if (partnerRoot is not null)
+                // one open, with the chosen lights: a folder that is lights-only by those lights
+                // alone would otherwise be refused here as "lights\ but no darks\"
+                SessionFolder session = SessionFolder.Open(o.Folder!, allowLightsOnly: true, o.Lights);
+                if (o.Out is not null)
                 {
-                    DarkOutputs.CheckOutDir(partnerRoot, o.Out, DarkOutputs.OutFolder.Partner);
-                }
+                    DarkOutputs.CheckOutDir(session.Root, o.Out);
+                    if (partnerRoot is not null)
+                    {
+                        DarkOutputs.CheckOutDir(partnerRoot, o.Out, DarkOutputs.OutFolder.Partner);
+                    }
 
-                if (chosenLightsRoot is not null)
-                {
-                    DarkOutputs.CheckOutDir(chosenLightsRoot, o.Out, DarkOutputs.OutFolder.ChosenLights);
+                    if (session.ChosenLightsRoot is string chosenLightsRoot)
+                    {
+                        DarkOutputs.CheckOutDir(chosenLightsRoot, o.Out, DarkOutputs.OutFolder.ChosenLights);
+                    }
                 }
             }
 
@@ -272,7 +277,7 @@ internal static class Program
         if (Ui.Current == UiLanguage.Romanian)
         {
             w.WriteLine("Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--lights DIR] [--out DIR] [--threads N] [--max-frames N]");
-            w.WriteLine("          darkscheck <folder> --inventory");
+            w.WriteLine("          darkscheck <folder> --inventory [--lights DIR]");
             w.WriteLine();
             w.WriteLine("  Folderul sesiunii Siril: dark-urile se iau din darks\\ (sau direct din folder,");
             w.WriteLine("  daca nu exista darks\\ si nici alt subfolder de sesiune), bias-urile din biases\\");
@@ -308,7 +313,7 @@ internal static class Program
         else
         {
             w.WriteLine("Usage: darkscheck <session folder or folder of darks> [--against DIR] [--lights DIR] [--out DIR] [--threads N] [--max-frames N]");
-            w.WriteLine("       darkscheck <folder> --inventory");
+            w.WriteLine("       darkscheck <folder> --inventory [--lights DIR]");
             w.WriteLine();
             w.WriteLine("  The Siril session folder: the darks are taken from darks\\ (or from the folder");
             w.WriteLine("  itself, when there is no darks\\ and no other session subfolder), the biases");

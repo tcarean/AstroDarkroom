@@ -502,7 +502,13 @@ public class MainViewModelTests
         Assert.Contains(vm.LightRows, row => row.Label == "verdict" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("foloseste dark-ul doar pentru corectia cosmetica", StringComparison.Ordinal));
         Assert.Equal(Path.GetFileName(library.Root) + "-" + vm.Result.Index.Tag, vm.Label);
 
-        // clearing after a run only says so; the next run of the same folder has no lights
+        // choosing or clearing after a run only says so; the next run of the same folder takes the change
+        vm.LightsFrom = s.Root;
+        Assert.Equal(WindowTexts.LightsFromChanged, vm.Status);
+        Assert.Equal(s.LightsDir, vm.Result.Inventory.Session.LightsDir);
+        await vm.RerunAsync();
+        Assert.Null(vm.Status);
+        Assert.Equal(s.LightsDir, vm.Result!.Inventory.Session.LightsDir);
         vm.LightsFrom = null;
         Assert.Equal(WindowTexts.LightsFromChanged, vm.Status);
         Assert.True(vm.HasLights);

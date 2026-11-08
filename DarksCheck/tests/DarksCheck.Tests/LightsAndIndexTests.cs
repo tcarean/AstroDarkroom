@@ -840,6 +840,17 @@ public class LightsAndIndexTests
         Assert.Equal(1, code4);
         Assert.Contains("EROARE: --out nu poate fi folderul lights-urilor alese sau unul din el", stderr4, StringComparison.Ordinal);
 
+        // --out elsewhere writes the lights CSV about the chosen lights, and the darks CSV about the library
+        using TempWorkspace outDir = new();
+        (int code5, string stdout5, _) = Cli.Run(library.Root, "--threads", "2", "--lights", other.Root, "--out", outDir.Dir);
+        Assert.Equal(0, code5);
+        Assert.Contains("    -> scris: " + Path.Combine(outDir.Dir, "darkscheck-lights.csv"), stdout5, StringComparison.Ordinal);
+        string lightsCsv = File.ReadAllText(Path.Combine(outDir.Dir, "darkscheck-lights.csv"));
+        Assert.Contains("light_0001.fit", lightsCsv, StringComparison.Ordinal);
+        Assert.Contains("light_0002.fit", lightsCsv, StringComparison.Ordinal);
+        Assert.Equal(2, lightsCsv.Split('\n').Count(l => l.Contains(".fit", StringComparison.Ordinal)));
+        Assert.Contains("    lights             : " + other.LightsDir + " (2 cadre .fit; alese de tine)", File.ReadAllText(Path.Combine(outDir.Dir, "darkscheck-report.txt")), StringComparison.Ordinal);
+
         (_, string help, _) = Cli.Run("--help");
         Assert.Contains("[--lights DIR]", help, StringComparison.Ordinal);
         Assert.Contains("--lights DIR  lights-urile din alt folder", help, StringComparison.Ordinal);
@@ -863,6 +874,18 @@ public class LightsAndIndexTests
         Assert.Contains($"); eticheta {Path.GetFileName(library.Root)}-{b.Index.Tag}", report, StringComparison.Ordinal);
         Assert.Contains($"    lights             : ca un dark cu idx{like} (", report, StringComparison.Ordinal);
         Assert.DoesNotContain($"    eticheta           : {Path.GetFileName(library.Root)}", report, StringComparison.Ordinal);
+        Assert.Equal("idx" + like, b.LabelTag);
+
+        // the same session given other lights (R-055), at the partner's level: its own lights are left out,
+        // and the label follows the chosen lights' index, the partner's own
+        using SessionFixture same = new SessionFixture().WithLights(4, i => Light(i, 1.0));
+        DarkSeriesResult c = Run(alone, library.Root, lightsFrom: same.Root);
+        Assert.Equal(library.Root, c.DarksFromPartner);
+        Assert.Equal(same.LightsDir, c.Inventory.Session.LightsDir);
+        Assert.Equal(MatchVerdict.Direct, c.Lights!.LightsOverDark.Verdict);
+        Assert.Equal(Path.GetFileName(alone.Root) + "-" + IndexFigures.TagFor(c.LightsIndex), c.Label);
+        Assert.Equal(c.Index.Tag, c.LabelTag);
+        Assert.Equal(Path.GetFileName(library.Root) + "-" + c.Index.Tag, c.DarksFromPartnerLabel);
 
         // a session with darks keeps the darks' label, and so does a library given lights (R-061)
         using SessionFixture with = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }).WithLights(4, i => Light(i, 1.3));

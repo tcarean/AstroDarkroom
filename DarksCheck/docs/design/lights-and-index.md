@@ -90,7 +90,8 @@ stands before it (the lookbehind), and anything else, `night-idx67-b`, `night-id
 session with lights and no darks of its own (R-054) is labelled with its lights' equivalent
 index (R-066, ADR 0039): `DarkSeriesRun` first labels it on `TagFor(NaN)`, then, once the
 lights are measured, on `TagFor(lightsIndex)`; its `DarksDir` is the absent `<root>\darks`, so
-the parent, the session's own folder, names the label. The partner's own label,
+the parent, the session's own folder, names the label; the tag it ends with is carried as
+`DarkSeriesResult.LabelTag`, so the window shows it without deciding it. The partner's own label,
 `Label(partnerSession, index)`, is carried as `DarkSeriesResult.DarksFromPartnerLabel` and
 printed at the end of the `dark-uri (partener)` row, so the partner's index and label stand
 once, on the partner's row, and the `eticheta` row and the window's big label are the open

@@ -598,7 +598,7 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>
     /// Writes the report, the CSV files and the maps into <paramref name="dir"/> (R-074): the same
-    /// files as `--out`, refused inside the session or the partner. The written paths or the error
+    /// files as `--out`, refused inside the session, the partner or the chosen lights' folder (R-055). The written paths or the error
     /// go to the status line; nothing happens before a result.
     /// </summary>
     /// <param name="dir">The folder to write into.</param>
@@ -710,8 +710,8 @@ public sealed class MainViewModel : ObservableObject
         HotHeaderTip = DarkReport.HotColumnTip(r);
         LightTableNote = r.Lights is null ? "" : DarkReport.LightTableNote(r);
         Label = r.Label;
-        // the label's own tag: the darks' index, or the lights' for a folder without darks (R-066)
-        Tag = r.DarksFromPartner is null ? r.Index.Tag : IndexFigures.TagFor(r.LightsIndex);
+        // the label's own tag, decided by the core with the label (R-066)
+        Tag = r.LabelTag;
 
         DarkSeriesAnalysis d = r.Darks;
         int rp = r.ReferencePlane;

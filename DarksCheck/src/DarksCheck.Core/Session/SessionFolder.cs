@@ -167,7 +167,8 @@ internal sealed class SessionFolder
     {
         string prefix = T("the chosen lights: ", "lights-urile alese: ");
         ArgumentException.ThrowIfNullOrWhiteSpace(folder);
-        string root = Path.GetFullPath(folder);
+        // without a trailing separator, so the `lights` row and the log print the folder tidily
+        string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
         if (!Directory.Exists(root))
         {
             throw new DirectoryNotFoundException(prefix + T($"cannot find the folder {root}", $"nu gasesc folderul {root}"));

@@ -80,6 +80,9 @@ internal sealed record RunProgress(string Phase, int Done, int Total);
 /// <param name="DarksFromPartnerLabel">The partner's own label (R-061) when its darks stand in
 /// for the session's, whose <paramref name="Label"/> is then the lights' (R-066); else
 /// null.</param>
+/// <param name="LabelTag">The tag <paramref name="Label"/> ends with: the darks' index tag, or
+/// the lights' equivalent index tag for a session whose darks are the partner's (R-066); the
+/// window shows it beside the label without deciding it.</param>
 internal sealed record DarkSeriesResult(
     Inventory Inventory,
     DarkSeriesAnalysis Darks,
@@ -96,7 +99,8 @@ internal sealed record DarkSeriesResult(
     PartnerAnalysis? Partner,
     string? PartnerError,
     string? DarksFromPartner = null,
-    string? DarksFromPartnerLabel = null)
+    string? DarksFromPartnerLabel = null,
+    string LabelTag = "")
 {
     /// <summary>
     /// A frame that could not be read or decoded, in any group, or a partner that could not be
@@ -267,7 +271,8 @@ internal static class DarkSeriesRun
         // A session without darks is labelled on its lights' index, known only after the lights
         // (R-066); its partner's own label is kept for the partner's row.
         string? partnerLabel = partnerSessionUsed is null ? null : IndexAnalyzer.Label(partnerSessionUsed, index);
-        string label = partnerSessionUsed is null ? IndexAnalyzer.Label(inv.Session, index) : IndexAnalyzer.Label(inv.Session, IndexFigures.TagFor(double.NaN));
+        string labelTag = partnerSessionUsed is null ? index.Tag : IndexFigures.TagFor(double.NaN);
+        string label = IndexAnalyzer.Label(inv.Session, labelTag);
         clock.Lap("verdicts");
         if (Log.IsDebugEnabled)
         {
@@ -325,11 +330,12 @@ internal static class DarkSeriesRun
         double lightsIndex = lights is null ? double.NaN : IndexAnalyzer.EquivalentIndex(index, lights.LightsOverDark);
         if (partnerSessionUsed is not null)
         {
-            label = IndexAnalyzer.Label(inv.Session, IndexFigures.TagFor(lightsIndex));
+            labelTag = IndexFigures.TagFor(lightsIndex);
+            label = IndexAnalyzer.Label(inv.Session, labelTag);
             Log.Info("the session's label is its lights' (R-066): " + label);
         }
 
-        DarkSeriesResult result = new(inv, darks, biases, biasError, dc, verdicts, refPlane, index, label, lightsIndex, lights, lightsError, partner, partnerError, darksFromPartner, partnerLabel);
+        DarkSeriesResult result = new(inv, darks, biases, biasError, dc, verdicts, refPlane, index, label, lightsIndex, lights, lightsError, partner, partnerError, darksFromPartner, partnerLabel, labelTag);
         clock.Done(Outcome(result));
         return result;
     }
