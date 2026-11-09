@@ -54,8 +54,9 @@ public class EnglishOutputTests : IClassFixture<ParityGoldenTests.Fixtures>
         const int s = Size;
         string Out() => ws.PathTo("out.png");
         string Cfa(string file, double centre = 34000) => Flat(ws, file, FitsTestData.WithBayerMosaic(FitsTestData.Radial(s, s, center: centre)));
-        string Bayer(string file) => ws.WriteFile(file, FitsTestData.BuildFits(s, s,
-            FitsTestData.WithBayerMosaic(FitsTestData.Radial(s, s, center: 34000)), extraCards: FitsTestData.BayerCards("RGGB")));
+        // rowOrder null: a BAYERPAT without ROWORDER, the contrast of R-044; "BOTTOM-UP" is the header Siril writes
+        string Bayer(string file, string? rowOrder = null) => ws.WriteFile(file, FitsTestData.BuildFits(s, s,
+            FitsTestData.WithBayerMosaic(FitsTestData.Radial(s, s, center: 34000)), extraCards: FitsTestData.BayerCards("RGGB", rowOrder: rowOrder)));
         var radial = FitsTestData.Radial(s, s);
 
         switch (name)
@@ -76,9 +77,9 @@ public class EnglishOutputTests : IClassFixture<ParityGoldenTests.Fixtures>
                     .Select(i => (Func<int, int, double>)FitsTestData.WithLinearGradient(
                         TestImages.InvertedRadial(s, s, k: -0.5 + 0.2 * i), s, 0.6 - 0.1 * i)).ToArray()),
                     "--light", "--fov", "10", "-o", Out() };
-            case "histeq_cfa": return new[] { Bayer("raw_bayerpat.fit"), "--histeq", "-o", Out() };
+            case "histeq_cfa": return new[] { Bayer("raw_bayerpat.fit", "BOTTOM-UP"), "--histeq", "-o", Out() };
             case "histeq_mono": return new[] { Flat(ws, "flat.fit", radial), "--histeq", "-o", Out() };
-            case "histeq_rainbow": return new[] { Bayer("raw_bayerpat.fit"), "--histeq", "--rainbow", "-o", Out() };
+            case "histeq_rainbow": return new[] { Bayer("raw_bayerpat.fit", "BOTTOM-UP"), "--histeq", "--rainbow", "-o", Out() };
             case "expo_cfa": return new[] { Cfa("raw.fit"), "--expo" };
             case "expo_cfa_bayerpat": return new[] { Bayer("raw_bayerpat.fit"), "--expo" };
             case "expo_cfa_sky": return new[] { Cfa("raw.fit"), "--expo", "--sky" };

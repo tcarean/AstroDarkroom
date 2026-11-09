@@ -138,24 +138,28 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// The same mosaic read in the order of the ROWS IN THE FILE. BAYERPAT describes the top
-        /// left corner of the sensor, seen top down; Siril however writes the rows bottom up
-        /// (ROWORDER = 'BOTTOM-UP'), and FitsReader reads them in the file's order. On an EVEN
-        /// height, the first row in the file is an odd row of the sensor, so the mosaic's phase
-        /// moves by one row: RGGB becomes GBRG. On an odd height the bottom row has the same
-        /// parity as the top one and nothing changes. TOP-DOWN, no card, anything else: nothing.
+        /// The same mosaic as it lies in the RASTER, whose row 0 is the file's last row (R-130).
+        /// BAYERPAT describes the top left corner of the sensor, seen top down. Siril writes the
+        /// rows bottom up (ROWORDER = 'BOTTOM-UP'), so read the other way round the raster is the
+        /// sensor seen top down and the pattern applies as written, at any height. A file not
+        /// written bottom up (TOP-DOWN, no card, anything else) is read upside down against its
+        /// pattern: on an EVEN height, row 0 of the raster is an odd row of the sensor and the
+        /// mosaic's phase moves by one row, RGGB becomes GBRG; on an odd height the last row has
+        /// the first row's parity and nothing changes.
         ///
-        /// Measured on pp_flat_stacked.fit (6016x4016, Tokina, blue dusk sky): without the
-        /// correction --histeq named "G2" the position [1,0], which sat at a third of the green -
-        /// that is, exactly the red --expo sees on the source NEF, through libraw.
+        /// Measured on pp_flat_stacked.fit (6016x4016, Tokina, blue dusk sky), when the rows were
+        /// still read in file order: uncorrected, --histeq named "G2" the position [1,0], which
+        /// sat at a third of the green - that is, exactly the red --expo sees on the source NEF,
+        /// through libraw. Read with the file's first row last, R sits at [0,0], as on the NEF.
         /// </summary>
         /// <param name="rowOrder">The ROWORDER card's value, or null when there is none.</param>
         /// <param name="height">The frame's height in rows.</param>
-        /// <returns>The pattern in file row order; this one when nothing changes.</returns>
+        /// <returns>The pattern in the raster's row order; this one when nothing changes.</returns>
         internal CfaPattern ForRowOrder(string rowOrder, int height)
         {
-            if (string.IsNullOrEmpty(rowOrder)) return this;
-            if (!string.Equals(rowOrder.Trim(), "BOTTOM-UP", StringComparison.OrdinalIgnoreCase)) return this;
+            bool bottomUp = !string.IsNullOrEmpty(rowOrder)
+                && string.Equals(rowOrder.Trim(), "BOTTOM-UP", StringComparison.OrdinalIgnoreCase);
+            if (bottomUp) return this;
             return (height & 1) == 0 ? Shift(1, 0) : this;
         }
 

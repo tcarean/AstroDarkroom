@@ -331,7 +331,7 @@ public class RunsTests
     static string WriteCfaFlat(TempWorkspace ws)
         => ws.WriteFile("raw.fit", FitsTestData.BuildFits(Size, Size,
                FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000)),
-               extraCards: FitsTestData.BayerCards("RGGB")));
+               extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));
 
     [Fact]
     public void HistEqRun_ProducesTheSameRastersAsTheAnalyzer()

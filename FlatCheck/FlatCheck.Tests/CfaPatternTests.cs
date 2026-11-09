@@ -137,21 +137,25 @@ public class CfaPatternTests
     // ---------------------------------------------------------------- ROWORDER
 
     /// <summary>
-    /// BAYERPAT describes the sensor's top-left corner seen top-down, but Siril writes
-    /// the rows bottom-up and the reader takes them in file order. On an even height the
-    /// first row in the file is an odd sensor row, so the phase moves by one row; on an
-    /// odd height the bottom row has the same parity as the top one and nothing moves.
-    /// Measured on a real Siril master (6016x4016): without this, the position labelled
-    /// G2 sat at a third of the green level - it was the red channel of a blue sky.
+    /// BAYERPAT describes the sensor's top-left corner seen top-down. The reader puts the
+    /// file's first row last (R-130), so a BOTTOM-UP file, Siril's, comes out as the sensor
+    /// seen top-down and the pattern applies as written at any height. A TOP-DOWN or silent
+    /// file comes out upside down against its pattern: on an even height raster row 0 is an
+    /// odd sensor row and the phase moves by one row; on an odd height the last row has the
+    /// first row's parity and nothing moves (R-044). Measured on a real Siril master
+    /// (6016x4016): read in file order and unshifted, the position labelled G2 sat at a third
+    /// of the green level - it was the red channel of a blue sky.
     /// </summary>
     [Theory]
-    [InlineData("BOTTOM-UP", 4016, "GBRG")]
+    [InlineData("BOTTOM-UP", 4016, "RGGB")]
     [InlineData("BOTTOM-UP", 4015, "RGGB")]
-    [InlineData("bottom-up", 16, "GBRG")]
-    [InlineData("TOP-DOWN", 4016, "RGGB")]
-    [InlineData("", 4016, "RGGB")]
-    [InlineData(null, 4016, "RGGB")]
-    public void ForRowOrderMovesThePhaseOnlyForBottomUpEvenHeights(string rowOrder, int height, string expected)
+    [InlineData("bottom-up", 16, "RGGB")]
+    [InlineData("TOP-DOWN", 4016, "GBRG")]
+    [InlineData("TOP-DOWN", 4015, "RGGB")]
+    [InlineData("", 4016, "GBRG")]
+    [InlineData(null, 4016, "GBRG")]
+    [InlineData(null, 4015, "RGGB")]
+    public void R044_ForRowOrderMovesThePhaseOnlyForAFileNotWrittenBottomUpOfEvenHeight(string rowOrder, int height, string expected)
         => Assert.Equal(expected, CfaPattern.Parse("RGGB", "BAYERPAT").ForRowOrder(rowOrder, height).Letters);
 
     [Fact]

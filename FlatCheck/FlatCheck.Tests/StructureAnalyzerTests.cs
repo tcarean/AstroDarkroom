@@ -177,6 +177,28 @@ public class StructureAnalyzerTests
     }
 
     /// <summary>
+    /// The same shadow drawn in a FITS, in the file's upper rows, is reported in the lower
+    /// half of the frame, and a file whose last rows are the brightest has its brightest
+    /// corners at the top: the raster is the frame as Siril shows it, the file's first row at
+    /// the bottom (R-130, ADR 0094). This is the one test that ties the reader's row order to
+    /// what the user reads: a coordinate and a corner name.
+    /// </summary>
+    [Fact]
+    public void R130_AShadowInTheFilesFirstRows_IsReportedInTheLowerHalf_AndTheLastRowsAreTheTopCorners()
+    {
+        const int W = 1536, H = 1024;
+        var shadow = DustShadow(FitsTestData.Radial(W, H), 0.3 * W, 0.3 * H, 30, 0.05);
+        Func<int, int, double> brighterDown = (x, y) => shadow(x, y) * (1 + 0.1 * y / H);
+        var r = StructureAnalyzer.Analyze(FitsReader.Load(FitsTestData.BuildFits(W, H, brighterDown)));
+
+        Assert.True(r.LocalSpotFlagged);
+        Assert.InRange(r.LocalSpotX, 0.3 * 768 - 12, 0.3 * 768 + 12);
+        Assert.InRange(r.LocalSpotY, 0.7 * 512 - 12, 0.7 * 512 + 12);
+        Assert.True(r.Corners["stanga-sus"] > r.Corners["stanga-jos"], "the file's last rows are not at the top");
+        Assert.True(r.Corners["dreapta-sus"] > r.Corners["dreapta-jos"]);
+    }
+
+    /// <summary>
     /// And it still finds the shadow under a gradient: the gradient goes into the other
     /// four tests, the shadow into this one. Measured on 24 MP: 4.71 % with a 12 % ramp
     /// and 3 % noise on top, against 4.99 % on its own.
