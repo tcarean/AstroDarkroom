@@ -181,8 +181,10 @@ public class StructureAnalyzerTests
     /// shadow off centre, deterministic noise) read the right way up, upside down and mirrored
     /// left to right gives the same six figures (R-131): the geometry is built about the
     /// frame's centre, so the orientation a file is read in cannot move a figure. Two sizes:
-    /// one whose analysis raster leaves even tile leftovers, one that leaves odd ones both ways
-    /// (1580 x 1060 -> 790 x 530, tiles of 19: 790 = 41 x 19 + 11, 530 = 27 x 19 + 17).
+    /// 1536 x 1024 -> 768 x 512, even leftovers for the 40-tile grid (tiles of 19) and an odd one
+    /// for the 80-tile grid of the local spot (tiles of 9: 768 = 85 x 9 + 3); 1580 x 1060 -> 790
+    /// x 530, odd leftovers both ways for the 40-tile grid (790 = 41 x 19 + 11, 530 = 27 x 19 +
+    /// 17).
     /// </summary>
     [Theory]
     [InlineData(1536, 1024)]

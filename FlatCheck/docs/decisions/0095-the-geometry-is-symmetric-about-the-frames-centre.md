@@ -54,7 +54,9 @@ against 0.23 % with 2 % of noise on top).
 1. **The geometric centre.** `Metrics.Centre(n) = (n - 1) / 2`; `StructureAnalyzer`,
    `LightAnalyzer` and `FitCenter` build their geometry around it (R-014 amended).
 2. **Every pixel in the tilt fit.** `FitCenter` reads the whole raster; the sampling step is
-   gone. Not measurable in time on a 1504 x 1004 raster.
+   gone. Measured end to end on a 96 MB master, the console takes 4.2 s against 3.7 s before
+   this change, the full-pixel fit and the decimal sums of the ring fit together; the load of
+   the file is most of either figure.
 3. **Tile grids symmetric about the frame's centre.** `Img.BlockMeanCentred`: `H / k` tiles down
    and `W / k` across, the leftover split between the two edges, and when it is odd the boundary
    row or column counts half in each edge tile (a pixel's weight is its overlap with the tile).
@@ -68,9 +70,16 @@ against 0.23 % with 2 % of noise on top).
    `AzimuthalAsymmetry` use it.
 6. **The fixtures follow.** `FitsTestData.Radial`, `WithFourfold`, `WithEvenHarmonics` and
    `TestImages.InvertedRadial` are centred on the geometric centre, like the analysis.
-7. **`Img.Prepare` stays anchored at (0, 0)**: its 2x2 block mean follows the Bayer phase. On an
+7. **`Img.Prepare`'s 2x2 step stays anchored at (0, 0)**: it follows the Bayer phase. On an
    odd-sized frame one dropped row or column still sits at the far edge; every sensor the tool
-   has met is even-sized, and R-131 states the guarantee for even sizes.
+   has met is even-sized, and R-131 states the guarantee for even sizes. The further downsample
+   has no phase to keep and takes the centred grid (the review found that an anchored one
+   dropped a row on a 8256 x 5504 frame, whose half size 2752 leaves one over a factor of 3).
+   `CornerStats`' centre box is its own mirror on an odd analysis raster too, which an even
+   frame can give (526 x 518 prepares to 263 x 259).
+8. **A sector whose median is not a number is left out of the ring fit**: the decimal sums
+   cannot take a NaN, and a NaN median made the whole fit NaN before; the figures still fall
+   into the worst band on a frame that is NaN over more than a sector.
 
 Measured with the final code on the 15 masters: every figure equal to the last bit both ways up,
 no verdict differs (R-131).

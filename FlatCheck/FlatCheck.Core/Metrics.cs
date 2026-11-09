@@ -114,19 +114,23 @@ namespace FlatCheck
             // own mirror, and the tilt moved with the orientation of the file (R-131).
             var AtA = new double[6, 6];
             var Atb = new double[6];
+            var r = new double[6];
+            double cx0 = Centre(w), cy0 = Centre(h), halfW = w / 2.0, halfH = h / 2.0;
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                 {
-                    double xn = (x - Centre(w)) / (w / 2.0);
-                    double yn = (y - Centre(h)) / (h / 2.0);
+                    double xn = (x - cx0) / halfW;
+                    double yn = (y - cy0) / halfH;
                     double val = Math.Log(Math.Max(img.At(y, x), 1e-12));
-                    double[] r = { 1, xn, yn, xn * xn, yn * yn, xn * yn };
+                    r[0] = 1; r[1] = xn; r[2] = yn; r[3] = xn * xn; r[4] = yn * yn; r[5] = xn * yn;
                     for (int i = 0; i < 6; i++)
                     {
                         Atb[i] += r[i] * val;
-                        for (int j = 0; j < 6; j++) AtA[i, j] += r[i] * r[j];
+                        for (int j = i; j < 6; j++) AtA[i, j] += r[i] * r[j];   // the upper triangle; mirrored below
                     }
                 }
+            for (int i = 1; i < 6; i++)
+                for (int j = 0; j < i; j++) AtA[i, j] = AtA[j, i];
             double[] coef = Stats.Solve(AtA, Atb, 6);
             // The normal system depends only on the coordinates, not on the values, so it is
             // singular only on a degenerate raster. Then the tilt cannot be computed either:
@@ -367,11 +371,12 @@ namespace FlatCheck
         {
             int n = v.Count;
             var med = new List<double>(); var rows = new List<double[]>(); var wt = new List<double>();
-            // The sums below are taken in decimal, which adds exactly at this scale, so they do
-            // not depend on the order the pixels come in: the mirror of a raster walks the same
-            // pixels in another order, and a sum that differed in its last bit could tip the
-            // inlier cut below for one sector and move the model by 1e-4 in the corners
-            // (R-131). The medians, the weights and the solve are order-independent already.
+            // The sums below are taken in decimal: each term rounds to 15 significant digits and
+            // the sum carries 28, so at this scale the result does not depend on the order the
+            // pixels come in and is exactly sign-symmetric. The mirror of a raster walks the same
+            // pixels in another order, and a double sum that differed in its last bit tipped the
+            // inlier cut below for one sector and moved the model by 1e-4 in the corners (R-131).
+            // The medians, the weights and the solve are order-independent already.
             for (int k = 0; k < RingSectors; k++)
             {
                 var vals = new List<double>();
@@ -385,7 +390,12 @@ namespace FlatCheck
                     }
                 if (vals.Count < 8) continue;
                 int cnt = vals.Count;
-                med.Add(Stats.Percentile(vals, 50));
+                double sectorMedian = Stats.Percentile(vals, 50);
+                // A sector whose median is not a number (unexposed pixels some software marks
+                // NaN) is left out of the fit: the decimal sums below cannot take a NaN, and
+                // before them it made the whole fit NaN anyway.
+                if (!double.IsFinite(sectorMedian)) continue;
+                med.Add(sectorMedian);
                 rows.Add(new[] { 1.0, (double)sumC / cnt, (double)sumS / cnt, (double)sumC4 / cnt, (double)sumS4 / cnt });
                 wt.Add(cnt);
             }
@@ -525,7 +535,10 @@ namespace FlatCheck
                 ["stanga-jos"] = Med(h - bh, h, 0, bw),
                 ["dreapta-jos"] = Med(h - bh, h, w - bw, w),
             };
-            double ctr = Med(h / 2 - bh, h / 2 + bh, w / 2 - bw, w / 2 + bw);
+            // the centre box is its own mirror on an odd raster too: 2 bh rows, plus one when h
+            // is odd, centred on the middle row (R-131)
+            int cy0 = (h - h % 2) / 2 - bh, cx0 = (w - w % 2) / 2 - bw;
+            double ctr = Med(cy0, cy0 + 2 * bh + h % 2, cx0, cx0 + 2 * bw + w % 2);
             return (vals, ctr);
         }
 
@@ -703,7 +716,7 @@ namespace FlatCheck
         // Local background per tile (a low percentile = robust to stars/nebulosity).
         /// <summary>
         /// The local background of a light: a low percentile of each whole tile, with the tile's
-        /// centre. The partial tiles at the right and bottom are dropped.
+        /// centre. The grid is laid about the frame's centre; with an odd leftover the boundary row, or column, goes whole into both tiles it straddles (R-131).
         /// </summary>
         /// <param name="img">The light's analysis raster.</param>
         /// <param name="ntiles">How many tiles across the width; a tile is at least 4 px. The grid is laid about the frame's centre (R-131).</param>

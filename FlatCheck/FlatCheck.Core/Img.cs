@@ -108,13 +108,19 @@ namespace FlatCheck
                     double y0 = oy + ty * k, y1 = y0 + k, x0 = ox + tx * k, x1 = x0 + k;
                     int ya = (int)Math.Floor(y0), yb = (int)Math.Ceiling(y1);
                     int xa = (int)Math.Floor(x0), xb = (int)Math.Ceiling(x1);
-                    double s = 0;
+                    // the weighted terms are summed in sorted order, like BlockMean's values, so
+                    // the tile of a mirrored raster is the mirrored tile to the last bit
+                    var terms = new double[(yb - ya) * (xb - xa)];
+                    int i = 0;
                     for (int y = ya; y < yb; y++)
                     {
                         double wy = Math.Min(y + 1, y1) - Math.Max(y, y0);
                         for (int x = xa; x < xb; x++)
-                            s += wy * (Math.Min(x + 1, x1) - Math.Max(x, x0)) * a.At(y, x);
+                            terms[i++] = wy * (Math.Min(x + 1, x1) - Math.Max(x, x0)) * a.At(y, x);
                     }
+                    Array.Sort(terms);
+                    double s = 0;
+                    foreach (double v in terms) s += v;
                     o.Set(ty, tx, s / ((double)k * k));
                 }
             return o;
@@ -140,9 +146,14 @@ namespace FlatCheck
         /// <returns>The shrunk raster; never larger than half the input.</returns>
         internal static Img Prepare(Img data, int targetLong = 1200)
         {
+            // The 2x2 step stays anchored at (0, 0): it must follow the Bayer phase. The further
+            // downsample has no phase to keep and takes the centred grid, so a frame of even
+            // width and height prepares to the mirror of its mirror's raster whatever the
+            // leftover of the second step (R-131; a 8256 x 5504 frame halves to 4128 x 2752 and
+            // k = 3 leaves one row over, which an anchored grid dropped at the far edge).
             Img img = BlockMean(data, 2);
             int k = Math.Max(1, (int)(Math.Max(img.H, img.W) / (double)targetLong));
-            return BlockMean(img, k);
+            return BlockMeanCentred(img, k);
         }
 
         /// <summary>

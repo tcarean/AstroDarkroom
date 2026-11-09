@@ -35,8 +35,9 @@ public class LightAnalyzerTests
     /// A light with residual vignetting, a sky gradient and a nebulous blob gives the same radial
     /// and plane figures read the right way up, upside down and mirrored left to right (R-131):
     /// the background tiles are laid about the frame's centre and the fit is about it too. Two
-    /// sizes, one with even tile leftovers (512: 12 x 42 + 8) and one with odd ones (526 x 518:
-    /// tiles of 13, 526 = 40 x 13 + 6, 518 = 39 x 13 + 11).
+    /// sizes; the analyzer prepares the frame first, so the tiles are laid on 256 x 256 (tiles
+    /// of 6: 256 = 42 x 6 + 4, an even leftover) and on 263 x 259 (263 = 43 x 6 + 5, 259 = 43 x 6
+    /// + 1, odd leftovers both ways, on an odd raster).
     /// </summary>
     [Theory]
     [InlineData(512, 512)]

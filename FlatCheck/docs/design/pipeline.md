@@ -85,12 +85,13 @@ D3300 frame becomes 3000×2000 after the 2×2, then `k = (int)(3000/1200) = 2` �
 **1500×1000**, not 1200. Anything landing between 1200 and 2400 is left alone.
 This matches Python exactly, so it is parity-correct - just don't be surprised.
 `BlockMean` truncates partial blocks (`a.H / k`), dropping the last rows/columns; it must
-stay anchored at (0, 0), since the 2x2 step follows the Bayer phase. It sums each block's
+stay anchored at (0, 0) for the 2x2 step, which follows the Bayer phase. It sums each block's
 values in sorted order, so the mirror of a raster gives exactly the mirrored blocks: a block
 summed in raster order differed in its last bit between a frame and its mirror, and the ring
-fit's inlier cut tipped on that bit (R-131). The tile metrics use `BlockMeanCentred` instead,
-whose grid is laid about the frame's centre, the leftover rows and columns split between the two
-edges and the boundary row counted half in the edge tiles when the leftover is odd.
+fit's inlier cut tipped on that bit (R-131). `Prepare`'s further downsample and the tile metrics
+use `BlockMeanCentred` instead, whose grid is laid about the frame's centre, the leftover rows
+and columns split between the two edges and the boundary row counted half in the edge tiles
+when the leftover is odd; its weighted terms are summed in sorted order too.
 
 **`Percentile(list, p)`** - sorts a copy and interpolates linearly between the two
 neighbouring order statistics, matching `numpy.percentile`'s default. Returns 0 on
