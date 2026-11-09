@@ -126,3 +126,19 @@ of known issue 5, are ADR 0016 and ADR 0013.
   contrast), and `parity_expo_cfa_bottom_up`, Siril's header, is named `RGGB`, as its NEF would be.
   The real masters did move, by 0.05 to 0.58 points on 17 of 36 cases (`validation.md`, History):
   a C#-only call, like the rest, on real files the prototype never read this way up.
+- On 2026-11-09, later the same day, the geometry became symmetric about the frame's centre
+  (R-131, ADR 0095): the geometric centre `((w-1)/2, (h-1)/2)` instead of the index `(w/2, h/2)`,
+  every pixel in the tilt fit, tile grids laid about the centre, order-independent sums in the
+  ring fit and mirror-exact azimuths; the synthetic fixtures moved to the geometric centre with
+  it. The prototype's geometry was the index one, so this is a formula change the prototype never
+  had, and every parity golden that holds a structure or light figure changed, with the owner's
+  yes: the 15 structure scenarios (the corner spread, the azimuthal asymmetry, the residual, the
+  tilt, the worst tile and the local spot, the illumination offset and its coordinates; the
+  clean fixture reads corner spread 0.57 -> 0.00 %, residual 0.28 -> 0.05 %, offset 0.19 ->
+  0.00 %, what a perfect flat should read), the 11 `--light` scenarios (the radial and plane
+  components and the tiles used, from the centred background grid) and, in the `--expo`
+  scenarios, the one line that names a position of the frame. The figures of these scenarios are
+  no longer the prototype's; the depths, the verdict words outside the fixtures that sat on a
+  band's edge, and the `--expo` percentages are. A C#-only call, like the rest. From here on the
+  parity goldens pin the C# of 2026-11-09, and the confirmation they carry for the structure and
+  light figures is that of the symmetry tests (`R131_*`), not of the prototype.

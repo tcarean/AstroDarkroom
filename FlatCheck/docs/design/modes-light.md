@@ -18,7 +18,10 @@ or stack **calibrated with the flat but with no background extraction**, or a
 every dataset, and the mode refuses rather than guessing: read "The validity limit" below
 before touching anything here.
 
-`TileBackground` takes the 15th percentile inside each tile (a low percentile is
+`TileBackground` lays its tiles symmetric about the frame's centre, the leftover split
+between the two edges (with an odd leftover the boundary row goes whole into both tiles it
+straddles, since a percentile cannot weigh a pixel by half; R-131, ADR 0095), and takes the
+15th percentile inside each tile (a low percentile is
 robust to stars and nebulosity, which only add signal), giving a local background
 estimate. It then fits, simultaneously:
 

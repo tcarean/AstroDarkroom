@@ -109,9 +109,15 @@ Why each failed:
 
 ## 4. The final algorithm (specification, as of 2026-09-23)
 
-Inputs: the symmetrised raster `sym` (H×W), centre `(cx, cy) = (W/2, H/2)`, `nbins = 80`.
+Inputs: the symmetrised raster `sym` (H×W), centre `(cx, cy) = ((W−1)/2, (H−1)/2)` (the
+geometric centre since ADR 0095; the index `(W/2, H/2)` before), `nbins = 80`.
 For every pixel: `r = hypot(x − cx, y − cy)`, `θ = atan2(y − cy, x − cx)`,
-`bin = min(int(r / rmax · nbins), nbins − 1)`, `sector = min(int((θ + π)/(2π) · RingSectors), RingSectors − 1)`
+`bin = min(int(r / rmax · nbins), nbins − 1)`, `sector = min(int((θ + π)/(2π) · RingSectors), RingSectors − 1)`;
+since ADR 0095 `Metrics.Azimuth` computes the sector, `cos 2θ` and `sin 2θ` in the first quadrant
+from `|x − cx|`, `|y − cy|` and reflects them by the signs, so a pixel and its mirror land in
+mirror sectors with the same cosine and the negated sine, bit for bit (on the diagonals, which
+are sector boundaries, `atan2` on the full circle put a pixel in one sector one way up and in
+the neighbour the other way up)
 with `RingSectors = 24`. A bin with fewer than 8 pixels is skipped (unchanged rule).
 `rIns = min(cx, cy)`; a ring is **full** when its centre `(i + 0.5)/nbins · rmax < rIns`.
 
@@ -152,7 +158,11 @@ with `RingSectors = 24`. A bin with fewer than 8 pixels is skipped (unchanged ru
 
 Cost: under 0.2 s extra on a 1504×1004 raster (~30 rings × 3 solves of 5×5). Both
 implementations used the same arithmetic (normal equations, sequential sums), which is why
-the parity goldens of ADR 0047 pin the numbers to the last printed digit.
+the parity goldens of ADR 0047 pinned the numbers to the last printed digit until 2026-11-09;
+since then `RingFit` sums in `decimal`, exact at this scale and so independent of the order the
+pixels come in, because a sum that differed in its last bit between a frame and its mirror
+tipped the inlier cut for one sector and moved the model by 1e-4 in the corners (R-131, ADR
+0095). The parity goldens were recaptured then.
 
 The 2θ-only design this replaced (2026-09-17 to 2026-09-23) estimated `(a0, a2, b2)` per
 partial ring by LMedS over sector triples, smoothed `q` with a running median over 7 rings

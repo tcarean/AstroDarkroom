@@ -38,11 +38,12 @@ correctness bugs that used to live here were fixed in phase 8.
    still running. It is now a `static readonly` built by a static method, which the CLR
    publishes only when complete; `EncodingOnManyThreadsGivesTheSameBytesAsSerially` pins
    the determinism. Kept in this list so nobody reintroduces the lazy form.
-5. **The corner-spread metric has a non-zero floor.** ADR 0013 holds it: the analysis centre
-   is `(w/2, h/2)` while the true middle of pixel indices `0..w-1` is `(w-1)/2`, so even a
-   perfectly radial field reports a spread, fading as ~1/n and harmless at the analysis
-   raster; why it is not a bug to fix; and the test that pins it. The parity goldens pin the
-   convention now, so changing it would move every one of them for nothing.
+5. **The corner-spread metric had a non-zero floor until 2026-11-09.** The analysis centre was
+   the index `(w/2, h/2)` while the true middle of pixel indices `0..w-1` is `(w-1)/2`, so even
+   a perfectly radial fixture reported a spread, fading as ~1/n (ADR 0013 held it as harmless).
+   ADR 0095 moved the centre to the geometric one, and `FitsTestData.Radial` with it;
+   `CornerStats_OnACentredRadialField_SeesNoSpreadAtAnySize` pins the zero. Kept in this list
+   for the history of the figures: the parity goldens changed with it.
 6. **`RadialModel`'s `centers`/`prof` return values are discarded** by
    `StructureAnalyzer` - they fed the Python profile panel, which this port dropped.
 7. **Memory is still heavy**, though phase 8 halved the worst of it: `Percentile` now

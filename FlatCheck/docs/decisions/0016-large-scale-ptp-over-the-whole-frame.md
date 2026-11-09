@@ -1,7 +1,7 @@
 # 0016. LargeScalePtp runs over the whole frame, not the inscribed circle
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the top-left tile grid superseded by 0095
 
 ## Context
 
