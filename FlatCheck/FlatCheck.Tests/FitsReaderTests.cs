@@ -66,7 +66,7 @@ public class FitsReaderTests
     [InlineData(null)]
     public void R130_TheFirstRowOfTheFile_IsTheRasterLastRow_WhateverRowOrderSays(string rowOrder)
     {
-        string[] cards = rowOrder == null ? null : new[] { FitsTestData.Card("ROWORDER", "'" + rowOrder + "'") };
+        string[]? cards = rowOrder == null ? null : new[] { FitsTestData.Card("ROWORDER", "'" + rowOrder + "'") };
         byte[] fits = FitsTestData.BuildFits(4, 3, (x, y) => 1000 + y * 10 + x, extraCards: cards);
 
         var img = Load(fits);
