@@ -4,10 +4,10 @@ Copyright (C) 2026 Tudor Carean
 === EXPOSURE: <TMP>/raw_bayerpat.fit ===
     saturation (white): 65535   black : 0   source: auto-detected from max=34000 (use --sat/--black if it is wrong)
     GLOBAL median level per CFA channel (the R/G/B order from BAYERPAT):
-        G1 (CFA[0,0]):  44.4%  <- the brightest
-        B  (CFA[0,1]):  21.3%
-        R  (CFA[1,0]):  27.6%
-        G2 (CFA[1,1]):  44.4%
+        G1 (CFA[0,0]):  27.6%
+        B  (CFA[0,1]):  44.4%  <- the brightest
+        R  (CFA[1,0]):  44.4%
+        G2 (CFA[1,1]):  21.3%
     brightest channel, GLOBAL median      :  44.4%  (pulled down by the corners)
     brightest channel, CENTRE 20%         :  51.6%  <- THIS decides the exposure
     clipping in the centre (>=98% white)  : 0.000%

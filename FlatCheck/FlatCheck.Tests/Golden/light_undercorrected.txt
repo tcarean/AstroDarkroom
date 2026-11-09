@@ -6,7 +6,7 @@ Copyright (C) 2026 Tudor Carean
     camp acoperit           : necunoscut (headerul nu da nici focala, nici scara)
     (nu pot verifica daca testul se aplica; vezi --fov si README)
 
-    tile-uri folosite       : 1702 / 1764 (restul = nebulozitate/stele, respinse)
+    tile-uri folosite       : 1701 / 1764 (restul = nebulozitate/stele, respinse)
     gradient de cer (plan)  :  0.18 %  <- poluare luminoasa, IGNORA
     componenta radiala      : +45.74 %   [PROBLEMA]  <- ASTA e flat-ul
 

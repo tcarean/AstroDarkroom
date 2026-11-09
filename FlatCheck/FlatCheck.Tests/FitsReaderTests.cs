@@ -40,15 +40,15 @@ public class FitsReaderTests
     }
 
     [Fact]
-    public void Load_StoresPixelsRowMajor_WithTheFilesFirstRowLast()
+    public void Load_StoresPixelsRowMajor()
     {
-        // value encodes its own coordinates so a transpose would be obvious; the file's row
-        // y lands on raster row 2 - y (R-130)
+        // value encodes its own coordinates so a transpose would be obvious; the builder writes
+        // the file as Siril does and the reader undoes it, so the scene comes back as drawn
         var img = Load(FitsTestData.BuildFits(4, 3, (x, y) => 1000 + y * 10 + x));
 
         for (int y = 0; y < 3; y++)
             for (int x = 0; x < 4; x++)
-                Assert.Equal(1000 + (2 - y) * 10 + x, img.At(y, x), 6);
+                Assert.Equal(1000 + y * 10 + x, img.At(y, x), 6);
     }
 
     // ---------------------------------------------------------------- row order (R-130)
@@ -67,7 +67,7 @@ public class FitsReaderTests
     public void R130_TheFirstRowOfTheFile_IsTheRasterLastRow_WhateverRowOrderSays(string rowOrder)
     {
         string[]? cards = rowOrder == null ? null : new[] { FitsTestData.Card("ROWORDER", "'" + rowOrder + "'") };
-        byte[] fits = FitsTestData.BuildFits(4, 3, (x, y) => 1000 + y * 10 + x, extraCards: cards);
+        byte[] fits = FitsTestData.BuildFits(4, 3, (x, y) => 1000 + y * 10 + x, extraCards: cards, bottomUp: false);
 
         var img = Load(fits);
 
@@ -79,6 +79,20 @@ public class FitsReaderTests
         Img loaded = ImageLoader.Load(ws.WriteFile("rows.fit", fits)).Image;
         Assert.Equal(1020, loaded.At(0, 0), 6);
         Assert.Equal(1000, loaded.At(2, 0), 6);
+    }
+
+    /// <summary>
+    /// The same rule on a colour cube: the planes are averaged and the file's first row lands
+    /// last, in the branch that reads several planes (R-130).
+    /// </summary>
+    [Fact]
+    public void R130_ACubeIsAveragedOverItsPlanes_WithTheFilesFirstRowLast()
+    {
+        var img = Load(FitsTestData.BuildFitsCube(4, 3, 3, (x, y, p) => 1000 + y * 10 + x + p, bottomUp: false));
+
+        for (int y = 0; y < 3; y++)
+            for (int x = 0; x < 4; x++)
+                Assert.Equal(1000 + (2 - y) * 10 + x + 1, img.At(y, x), 6);   // the mean of p = 0, 1, 2
     }
 
     // ---------------------------------------------------------------- BITPIX

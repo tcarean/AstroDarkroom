@@ -7,12 +7,12 @@ Copyright (C) 2026 Tudor Carean
 
   INFORMATIV (nu sunt teste)
     vignetare centru->colt  : 1.46 stopuri (colt = 36% din centru)
-    offset centru iluminare :  0.45 %
-        varf iluminare = (128, 127)  vs  centru senzor = (128, 128)
+    offset centru iluminare :  0.18 %
+        varf iluminare = (128, 128)  vs  centru senzor = (128, 128)
         Cifra e doar orientativa: pe un obiectiv aproape fara vignetare creste mult
         fara ca eroarea sa creasca, iar cand punctul cel mai luminos iese din cadru e
         nedeterminata. Cat de mare e dezechilibrul spune "inclinare".
-    pete locale (praf etc.) : +0.21 % (mai luminos) la (16, 10)
+    pete locale (praf etc.) : +0.23 % (mai luminos) la (13, 13)
         Cea mai pronuntata pata mica, dupa ce se scot formele mari.
         Semnul spune ce fel: minus = mai intunecata decat imprejurimile (praf,
         condens, ceva in fata obiectivului), plus = mai luminoasa (scurgere de lumina, reflexie).
@@ -20,14 +20,14 @@ Copyright (C) 2026 Tudor Carean
 
   TESTE
     imprastiere 4 colturi   :  1.43 %   [PERFECT]
-        stanga-sus    : 100.00 % din media colturilor
-        dreapta-sus   : 100.72 % din media colturilor
-        stanga-jos    :  99.28 % din media colturilor
-        dreapta-jos   : 100.00 % din media colturilor
-    asimetrie azimutala max :  1.21 %   [PERFECT]
-    reziduu dupa model rad. :  1.20 %   [PERFECT]  <- CEL MAI IMPORTANT
-    inclinare (gradient)    :  1.55 %   [PERFECT]
-    pata maxima (o dala)    :  1.64 %   [PERFECT]
+        stanga-sus    :  99.28 % din media colturilor
+        dreapta-sus   : 100.00 % din media colturilor
+        stanga-jos    : 100.00 % din media colturilor
+        dreapta-jos   : 100.72 % din media colturilor
+    asimetrie azimutala max :  0.54 %   [PERFECT]
+    reziduu dupa model rad. :  0.53 %   [PERFECT]  <- CEL MAI IMPORTANT
+    inclinare (gradient)    :  0.70 %   [PERFECT]
+    pata maxima (o dala)    :  0.96 %   [PERFECT]
 
   SCARA celor cinci teste de abatere de mai sus
     sub 2 %      calitate perfecta

@@ -7,12 +7,12 @@ Copyright (C) 2026 Tudor Carean
 
   INFORMATIVE (not tests)
     vignetting to corner    : 0.76 stops (corner = 59% of centre)
-    illum. centre offset    :  7.56 %
-        illumination peak = (142, 127)  vs  sensor centre = (128, 128)
+    illum. centre offset    :  7.55 %
+        illumination peak = (142, 128)  vs  sensor centre = (128, 128)
         The figure is only indicative: on a lens with almost no vignetting it grows a lot
         without the error growing, and once the brightest point leaves the frame it reads
         undetermined. How large the imbalance is, "tilt" says.
-    local spots (dust etc.) : +0.13 % (brighter) at (241, 10)
+    local spots (dust etc.) : +0.13 % (brighter) at (16, 10)
         The most pronounced small spot, after the large shapes are taken out.
         The sign says which kind: minus = darker than its surroundings (dust,
         condensation, something in front of the lens), plus = brighter (light leak, reflection).
@@ -20,14 +20,14 @@ Copyright (C) 2026 Tudor Carean
 
   TESTS
     spread of the 4 corners : 12.00 %   [ACCEPTABLE]
-        top-left      :  94.27 % of the corners' mean
-        top-right     : 106.01 % of the corners' mean
-        bottom-left   :  94.01 % of the corners' mean
-        bottom-right  : 105.71 % of the corners' mean
-    max azimuthal asymmetry : 10.93 %   [ACCEPTABLE]
-    residual (radial model) : 10.40 %   [ACCEPTABLE]  <- THE MOST IMPORTANT
-    tilt (gradient)         : 12.47 %   [ACCEPTABLE]
-    worst spot (one tile)   :  6.23 %   [GOOD]
+        top-left      :  94.01 % of the corners' mean
+        top-right     : 105.71 % of the corners' mean
+        bottom-left   :  94.27 % of the corners' mean
+        bottom-right  : 106.01 % of the corners' mean
+    max azimuthal asymmetry : 10.82 %   [ACCEPTABLE]
+    residual (radial model) : 10.37 %   [ACCEPTABLE]  <- THE MOST IMPORTANT
+    tilt (gradient)         : 12.01 %   [ACCEPTABLE]
+    worst spot (one tile)   :  5.99 %   [GOOD]
 
   SCALE of the five deviation tests above
     under 2 %    perfect quality

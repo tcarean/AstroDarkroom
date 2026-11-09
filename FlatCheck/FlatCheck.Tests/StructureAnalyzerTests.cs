@@ -189,7 +189,7 @@ public class StructureAnalyzerTests
         const int W = 1536, H = 1024;
         var shadow = DustShadow(FitsTestData.Radial(W, H), 0.3 * W, 0.3 * H, 30, 0.05);
         Func<int, int, double> brighterDown = (x, y) => shadow(x, y) * (1 + 0.1 * y / H);
-        var r = StructureAnalyzer.Analyze(FitsReader.Load(FitsTestData.BuildFits(W, H, brighterDown)));
+        var r = StructureAnalyzer.Analyze(FitsReader.Load(FitsTestData.BuildFits(W, H, brighterDown, bottomUp: false)));
 
         Assert.True(r.LocalSpotFlagged);
         Assert.InRange(r.LocalSpotX, 0.3 * 768 - 12, 0.3 * 768 + 12);

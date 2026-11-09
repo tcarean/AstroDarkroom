@@ -14,13 +14,13 @@ Copyright (C) 2026 Tudor Carean
 
                               A                                     B                                     A / B (difference)
     vignetting centre->corner 0.76 stops                            0.46 stops                            0.30 stops [REDO]
-    illum. centre offset      0.44 %                                0.44 %                                0.44 %
-    local spots (dust etc.)   +0.10 % (brighter)                    +0.05 % (brighter)                    +0.04 % (brighter)
+    illum. centre offset      0.19 %                                0.19 %                                0.18 %
+    local spots (dust etc.)   +0.08 % (brighter)                    +0.05 % (brighter)                    +0.04 % (brighter)
     spread of the 4 corners   0.57 % [PERFECT]                      0.31 % [PERFECT]                      0.26 %
-    max azimuthal asymmetry   0.66 % [PERFECT]                      0.40 % [PERFECT]                      0.26 %
-    residual (radial model)   0.64 % [PERFECT]                      0.39 % [PERFECT]                      0.25 %
-    tilt (gradient)           0.86 % [PERFECT]                      0.53 % [PERFECT]                      0.33 %
-    worst spot (one tile)     0.67 % [PERFECT]                      0.37 % [PERFECT]                      0.30 %
+    max azimuthal asymmetry   0.29 % [PERFECT]                      0.18 % [PERFECT]                      0.11 %
+    residual (radial model)   0.28 % [PERFECT]                      0.17 % [PERFECT]                      0.11 %
+    tilt (gradient)           0.41 % [PERFECT]                      0.26 % [PERFECT]                      0.15 %
+    worst spot (one tile)     0.40 % [PERFECT]                      0.22 % [PERFECT]                      0.18 %
 
   THE DIFFERENCE'S VERDICT: REDO
     shape     : PERFECT: the five tests on the ratio, on their scale

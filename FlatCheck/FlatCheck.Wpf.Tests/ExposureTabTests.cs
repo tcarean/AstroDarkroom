@@ -335,7 +335,7 @@ public class ExposureTabTests
 
         Assert.Equal(new[] { "R", "G1", "G2", "B" }, vm.Histograms.Select(r => r.Label));
         Assert.Equal("CFA[0,1]", vm.Histograms[1].Position);
-        Assert.Equal("R", vm.Histograms.First(r => r.IsBrightest).Label);   // R and B tie; R is listed first
+        Assert.Equal("G1", vm.Histograms.First(r => r.IsBrightest).Label);
         Assert.Contains("RGGB", vm.ChannelOrder);
         Assert.Contains("BAYERPAT", vm.ChannelOrder);
     }
@@ -401,7 +401,7 @@ public class ExposureTabTests
         await vm.Pending;
 
         Assert.NotEmpty(vm.Reading);
-        Assert.Contains("R", vm.Reading);
+        Assert.Contains("G1", vm.Reading);
     }
 
     /// <summary>A debayered file has no mosaic left, so it gets one unnamed row.</summary>

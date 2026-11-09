@@ -7,12 +7,12 @@ Copyright (C) 2026 Tudor Carean
 
   INFORMATIVE (not tests)
     vignetting to corner    : 1.12 stops (corner = 46% of centre)
-    illum. centre offset    :  1.10 %
-        illumination peak = (60, 39)  vs  sensor centre = (60, 40)
+    illum. centre offset    :  0.45 %
+        illumination peak = (60, 40)  vs  sensor centre = (60, 40)
         The figure is only indicative: on a lens with almost no vignetting it grows a lot
         without the error growing, and once the brightest point leaves the frame it reads
         undetermined. How large the imbalance is, "tilt" says.
-    local spots (dust etc.) : +0.15 % (brighter) at (113, 17)
+    local spots (dust etc.) : +0.12 % (brighter) at (9, 15)
         The most pronounced small spot, after the large shapes are taken out.
         The sign says which kind: minus = darker than its surroundings (dust,
         condensation, something in front of the lens), plus = brighter (light leak, reflection).
@@ -20,14 +20,14 @@ Copyright (C) 2026 Tudor Carean
 
   TESTS
     spread of the 4 corners :  2.39 %   [GOOD]
-        top-left      :  99.76 % of the corners' mean
-        top-right     : 101.20 % of the corners' mean
-        bottom-left   :  98.80 % of the corners' mean
-        bottom-right  : 100.24 % of the corners' mean
-    max azimuthal asymmetry :  1.66 %   [PERFECT]
-    residual (radial model) :  1.96 %   [PERFECT]  <- THE MOST IMPORTANT
-    tilt (gradient)         :  2.68 %   [GOOD]
-    worst spot (one tile)   :  2.59 %   [GOOD]
+        top-left      :  98.80 % of the corners' mean
+        top-right     : 100.24 % of the corners' mean
+        bottom-left   :  99.76 % of the corners' mean
+        bottom-right  : 101.20 % of the corners' mean
+    max azimuthal asymmetry :  0.75 %   [PERFECT]
+    residual (radial model) :  1.19 %   [PERFECT]  <- THE MOST IMPORTANT
+    tilt (gradient)         :  1.41 %   [PERFECT]
+    worst spot (one tile)   :  1.68 %   [PERFECT]
 
   SCALE of the five deviation tests above
     under 2 %    perfect quality

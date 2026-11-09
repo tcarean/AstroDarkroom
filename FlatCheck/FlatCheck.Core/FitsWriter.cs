@@ -103,7 +103,7 @@ namespace FlatCheck
                     header.Add(card.PadRight(CardSize).Substring(0, CardSize));
                 }
             if (!hasRowOrder)
-                header.Insert(afterStructural, Text("ROWORDER", "BOTTOM-UP", "the first row of the file is the bottom of the frame"));
+                header.Insert(afterStructural, Text("ROWORDER", "BOTTOM-UP", "file row 0 is the bottom of the frame"));
             if (history != null)
                 foreach (string line in history)
                     foreach (string piece in Wrap(line, CardSize - 8))

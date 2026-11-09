@@ -7,12 +7,12 @@ Copyright (C) 2026 Tudor Carean
 
   INFORMATIV (nu sunt teste)
     vignetare centru->colt  : 0.76 stopuri (colt = 59% din centru)
-    offset centru iluminare :  7.56 %
-        varf iluminare = (142, 127)  vs  centru senzor = (128, 128)
+    offset centru iluminare :  7.55 %
+        varf iluminare = (142, 128)  vs  centru senzor = (128, 128)
         Cifra e doar orientativa: pe un obiectiv aproape fara vignetare creste mult
         fara ca eroarea sa creasca, iar cand punctul cel mai luminos iese din cadru e
         nedeterminata. Cat de mare e dezechilibrul spune "inclinare".
-    pete locale (praf etc.) : +0.13 % (mai luminos) la (241, 10)
+    pete locale (praf etc.) : +0.13 % (mai luminos) la (16, 10)
         Cea mai pronuntata pata mica, dupa ce se scot formele mari.
         Semnul spune ce fel: minus = mai intunecata decat imprejurimile (praf,
         condens, ceva in fata obiectivului), plus = mai luminoasa (scurgere de lumina, reflexie).
@@ -20,14 +20,14 @@ Copyright (C) 2026 Tudor Carean
 
   TESTE
     imprastiere 4 colturi   : 12.00 %   [ACCEPTABIL]
-        stanga-sus    :  94.27 % din media colturilor
-        dreapta-sus   : 106.01 % din media colturilor
-        stanga-jos    :  94.01 % din media colturilor
-        dreapta-jos   : 105.71 % din media colturilor
-    asimetrie azimutala max : 10.93 %   [ACCEPTABIL]
-    reziduu dupa model rad. : 10.40 %   [ACCEPTABIL]  <- CEL MAI IMPORTANT
-    inclinare (gradient)    : 12.47 %   [ACCEPTABIL]
-    pata maxima (o dala)    :  6.23 %   [BUN]
+        stanga-sus    :  94.01 % din media colturilor
+        dreapta-sus   : 105.71 % din media colturilor
+        stanga-jos    :  94.27 % din media colturilor
+        dreapta-jos   : 106.01 % din media colturilor
+    asimetrie azimutala max : 10.82 %   [ACCEPTABIL]
+    reziduu dupa model rad. : 10.37 %   [ACCEPTABIL]  <- CEL MAI IMPORTANT
+    inclinare (gradient)    : 12.01 %   [ACCEPTABIL]
+    pata maxima (o dala)    :  5.99 %   [BUN]
 
   SCARA celor cinci teste de abatere de mai sus
     sub 2 %      calitate perfecta
