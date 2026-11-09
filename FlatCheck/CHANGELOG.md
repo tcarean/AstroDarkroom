@@ -108,7 +108,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   conversion. The CFA positions of a Siril master are named as the sensor has them, `RGGB`
   for `RGGB` (R-044); a `BAYERPAT` without `ROWORDER` shifts by one row instead. The figures
   move a little with the orientation, since the model's centre and the tile grid sit on pixel
-  indices: 17 validation cases re-recorded by up to 0.3 points, no verdict changed
+  indices: 17 validation cases re-recorded, by 0.05 to 0.58 points, no verdict changed
   (`docs/validation.md`).
 - The depth verdict of the vignetting comparison comes from the lens's Adobe profile when the raw's
   lens ID or name found the lens and Adobe has a file for it (R-128, ADR 0090); the lensfun rows

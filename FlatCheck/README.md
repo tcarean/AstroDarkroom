@@ -419,9 +419,11 @@ treats the file as CFA and uses the brightest channel (it clips first, so it is 
 **The channels are named by colour, but only when the file says which is which.** On a raw the
 order comes from LibRaw; on a FITS, from the `BAYERPAT` card Siril writes at Conversion. The
 report then writes `R  (CFA[0,0])`, `G1 (CFA[0,1])` and so on. `BAYERPAT` describes the sensor
-read from the top down, but Siril writes the rows bottom-up (`ROWORDER = 'BOTTOM-UP'`), and on an
-even height that shifts the mosaic's phase by one row: on such a file `RGGB` reads as `GBRG`, so
-`R` lands at `CFA[1,0]`. The tool makes the shift itself, as Siril does when it debayers. With no
+read from the top down, and the tool reads a FITS the way Siril shows it, the file's first row at
+the bottom, so on the file Siril writes (`ROWORDER = 'BOTTOM-UP'`) the pattern applies as written:
+`RGGB` reads as `RGGB`, `R` at `CFA[0,0]`, the same as on the NEF. A file written top-down, or one
+without the card, is read upside down against its pattern, and on an even height that shifts the
+phase by one row: there `RGGB` reads as `GBRG`. With no
 source, the positions stay anonymous, `CFA[y,x]`. Nothing is guessed: the order differs from camera
 to camera (RGGB is the most common, but GBRG, GRBG and BGGR exist), and a label on the wrong
 channel would look measured. A D3300 reads `RGGB`. For the verdict it does not matter which is

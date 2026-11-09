@@ -61,9 +61,10 @@ internal static class FitsTestData
     /// <summary>
     /// The mosaic order, as Siril writes it on a frame passed through Conversion. The
     /// offsets are optional because Siril too writes them only when there is a crop.
-    /// ROWORDER is optional for another reason: Siril always writes it ('BOTTOM-UP'), but
-    /// most fixtures here do not want to test it, and without the card the reader moves
-    /// nothing - exactly as before it existed.
+    /// ROWORDER is optional for another reason: Siril always writes it ('BOTTOM-UP'), and a
+    /// fixture that stands for a Siril file passes it; without the card a frame of even height
+    /// is read against its pattern and the phase moves by one row (R-044), which is what the
+    /// two "BAYERPAT without ROWORDER" scenarios test.
     /// </summary>
     internal static string[] BayerCards(string pattern, int xOffset = 0, int yOffset = 0, string? rowOrder = null)
     {

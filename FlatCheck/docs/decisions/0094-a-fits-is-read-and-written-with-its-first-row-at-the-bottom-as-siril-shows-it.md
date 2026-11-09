@@ -55,8 +55,8 @@ keep every figure. The owner chose that.
    flat keeps its reference's row order and Siril shows it the way up it was analysed; a file with
    no `ROWORDER` card to copy gets `ROWORDER= 'BOTTOM-UP'`, a copied card is kept as it is.
 4. **The test fixtures are written as Siril writes a file**, the first row of the file at the
-   bottom (`FitsTestData.BuildFits`, `BuildFitsCube`, `BuildFitsWithEmptyPrimary`, with a
-   `bottomUp: false` escape for the tests of the flip itself), so every synthetic scene is read
+   bottom (`FitsTestData.BuildFits`, `BuildFitsCube`, `BuildFitsWithEmptyPrimary`; the first
+   two with a `bottomUp: false` escape for the tests of the flip itself), so every synthetic scene is read
    as it was drawn and the 39 parity goldens keep the figures the prototype confirmed. Only the
    17 validation cases, measured on real files, carry new figures: the 2026-11-09 ones, the old
    in their row's last column. A figure that changes by 0.3 points with the way a file is read
@@ -79,7 +79,7 @@ keep every figure. The owner chose that.
   orientation cannot move a figure. It would move the figures once more, by a small amount, and
   it is a formula change of its own, with its own validation; left as a follow-up, not mixed in.
 - **Recapture the parity goldens with the moved figures**, as the first version of this branch
-  did: 22 scenarios lost the prototype's confirmation for figures that had only moved because the
+  did: 21 scenarios lost the prototype's confirmation for figures that had only moved because the
   fixtures were still written top-down, against Siril's convention; `parity_structure_clean` read
   0.64 % where 0.28 % was confirmed, `parity_light_nebulosity` +36.66 % where +45.09 % was. Writing
   the fixtures as Siril does keeps all of it.

@@ -52,8 +52,9 @@ internal static class ParityFixtures
         File.WriteAllBytes(Path.Combine(dir, "raw_bayerpat.fit"),
             FitsTestData.BuildFits(Size, Size, rawCfa, extraCards: FitsTestData.BayerCards("RGGB")));
 
-        // And with ROWORDER 'BOTTOM-UP', as Siril actually writes it: on an even height the
-        // mosaic's phase moves by one row, and both implementations must move it.
+        // And with ROWORDER 'BOTTOM-UP', as Siril actually writes it: read with the file's first
+        // row last, the pattern applies as written, RGGB, where the silent file above reads GBRG
+        // (R-044). Until 2026-11-09 the shift went the other way, on this file alone.
         File.WriteAllBytes(Path.Combine(dir, "raw_bayerpat_bottomup.fit"),
             FitsTestData.BuildFits(Size, Size, rawCfa,
                 extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));

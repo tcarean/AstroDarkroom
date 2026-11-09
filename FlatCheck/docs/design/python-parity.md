@@ -120,7 +120,7 @@ of known issue 5, are ADR 0016 and ADR 0013.
 - On 2026-11-09 a FITS began to be read with the file's first row last, as Siril shows it
   (R-130, ADR 0094). The prototype read the file order; the fixtures are now written the way
   Siril writes a file (`FitsTestData.BuildFits`, bottom-up), so every scene is read as it was
-  drawn and the 37 parity goldens that hold figures are byte for byte what they were. Two changed,
+  drawn and 37 of the 39 parity goldens are byte for byte what they were. The other two changed,
   with the owner's yes, in their four position-name lines alone, every figure the same:
   `parity_expo_cfa_bayerpat`, a BAYERPAT without `ROWORDER`, is named `GBRG` at `[0,0]` (R-044's
   contrast), and `parity_expo_cfa_bottom_up`, Siril's header, is named `RGGB`, as its NEF would be.
