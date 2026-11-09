@@ -305,7 +305,7 @@ public class AdobeVerdictTests
 
     /// <summary>
     /// R-128 in the console: `--lens Tokina` is a search, so on the same master the nearest row
-    /// decides - the lensfun entry, PERFECT on depth - and the run keeps the shape's verdict,
+    /// decides - the lensfun entry, BUN on depth by 0.03 stopuri - and the run keeps the shape's verdict,
     /// exit 0, where the Adobe row would have made it ACCEPTABIL, exit 2.
     /// </summary>
     [Fact]
@@ -322,7 +322,7 @@ public class AdobeVerdictTests
         Assert.True(lensfunRow >= 0, output);
         Assert.Contains("<- cel mai apropiat, da verdictul", lines[lensfunRow + 1]);
         Assert.DoesNotContain("<- Adobe", output);
-        Assert.Contains("adancimea : PERFECT", output);
+        Assert.Contains("adancimea : BUN", output);     // +0.03 stopuri, on the PERFECT edge since the geometric centre of ADR 0095
         Assert.DoesNotContain("VERDICT: ACCEPTABIL", output);
         Assert.Equal(0, exit);
     }

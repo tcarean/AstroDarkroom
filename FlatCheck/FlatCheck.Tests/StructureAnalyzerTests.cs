@@ -43,8 +43,8 @@ public class StructureAnalyzerTests
 
         Assert.True(r.CentroidValid);
         Assert.True(r.CentroidOffsetPct < 1, "centroid offset was " + r.CentroidOffsetPct);
-        Assert.Equal(256, r.SensorCx, 6);
-        Assert.Equal(256, r.SensorCy, 6);
+        Assert.Equal(255.5, r.SensorCx, 6);
+        Assert.Equal(255.5, r.SensorCy, 6);
     }
 
     /// <summary>
@@ -177,6 +177,49 @@ public class StructureAnalyzerTests
     }
 
     /// <summary>
+    /// An asymmetric scene (vignetting, a gradient along x and a weaker one along y, a dust
+    /// shadow off centre, deterministic noise) read the right way up, upside down and mirrored
+    /// left to right gives the same six figures (R-131): the geometry is built about the
+    /// frame's centre, so the orientation a file is read in cannot move a figure. Two sizes:
+    /// one whose analysis raster leaves even tile leftovers, one that leaves odd ones both ways
+    /// (1580 x 1060 -> 790 x 530, tiles of 19: 790 = 41 x 19 + 11, 530 = 27 x 19 + 17).
+    /// </summary>
+    [Theory]
+    [InlineData(1536, 1024)]
+    [InlineData(1580, 1060)]
+    public void R131_TheFiguresAreTheSame_WhenTheRasterIsMirrored(int W, int H)
+    {
+        var shadow = DustShadow(FitsTestData.Radial(W, H), 0.3 * W, 0.3 * H, 30, 0.05);
+        Func<int, int, double> scene = (x, y) => shadow(x, y) * (1 + 0.06 * x / W) * (1 + 0.02 * y / H)
+            * (1 + 0.004 * (((x * 73856093) ^ (y * 19349663)) % 1000) / 1000.0);
+        Img img = TestImages.From(W, H, scene);
+        Img rows = TestImages.From(W, H, (x, y) => scene(x, H - 1 - y));
+        Img cols = TestImages.From(W, H, (x, y) => scene(W - 1 - x, y));
+
+        var a = StructureAnalyzer.Analyze(img);
+        var r = StructureAnalyzer.Analyze(rows);
+        var c = StructureAnalyzer.Analyze(cols);
+
+        foreach (var m in new[] { r, c })
+        {
+            var pairs = new (string name, double a, double b)[]
+            {
+                ("corners", a.CornerSpreadPct, m.CornerSpreadPct), ("azimuthal", a.AzimuthalMaxPct, m.AzimuthalMaxPct),
+                ("residual", a.ResidualPtpPct, m.ResidualPtpPct), ("tilt", a.TiltPct, m.TiltPct),
+                ("maxTile", a.MaxTilePct, m.MaxTilePct), ("localSpot", a.LocalSpotPct, m.LocalSpotPct),
+                ("stops", a.VignetteStops, m.VignetteStops),
+            };
+            string report = string.Join("; ", pairs.Select(p => $"{p.name} {p.a:0.000000000} vs {p.b:0.000000000}"));
+            Assert.True(pairs.All(p => Math.Abs(p.a - p.b) < 1e-9), report);
+        }
+        // the spot's position mirrors with the frame: tile centres rounded to a pixel, so within one
+        Assert.InRange(r.LocalSpotY + a.LocalSpotY, a.Height - 2, a.Height);
+        Assert.Equal(a.LocalSpotX, r.LocalSpotX);
+        Assert.InRange(c.LocalSpotX + a.LocalSpotX, a.Width - 2, a.Width);
+        Assert.Equal(a.LocalSpotY, c.LocalSpotY);
+    }
+
+    /// <summary>
     /// The same shadow drawn in a FITS, in the file's upper rows, is reported in the lower
     /// half of the frame, and a file whose last rows are the brightest has its brightest
     /// corners at the top: the raster is the frame as Siril shows it, the file's first row at
@@ -280,7 +323,7 @@ public class StructureAnalyzerTests
     {
         var r = StructureAnalyzer.Analyze(TestImages.From(N, N, FitsTestData.Radial(N, N, center: 30000)));
 
-        Assert.Equal(30000, r.RawMax, 6);          // the exact centre pixel
+        Assert.Equal(30000, r.RawMax, 0);          // the centre pixels, half a pixel from the geometric centre
         Assert.True(r.RawMedian < 30000);          // dragged down by the vignetted corners
     }
 

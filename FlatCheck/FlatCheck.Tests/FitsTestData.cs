@@ -226,11 +226,13 @@ internal static class FitsTestData
 
     /// <summary>
     /// The ideal flat: a purely radial field, centre <paramref name="center"/> ADU, falling
-    /// to center*(1-k) at the corner. Every structure metric should read ~0 on this.
+    /// to center*(1-k) at the corner. Every structure metric should read ~0 on this. Centred
+    /// on the geometric centre ((w-1)/2, (h-1)/2), where the analysis puts its centre (R-014);
+    /// until 2026-11-09 both sat on the index (w/2, h/2).
     /// </summary>
     internal static Func<int, int, double> Radial(int w, int h, double center = 30000, double k = 0.45)
     {
-        double cx = w / 2.0, cy = h / 2.0;
+        double cx = (w - 1) / 2.0, cy = (h - 1) / 2.0;
         double rmax = Math.Sqrt(cx * cx + cy * cy);
         return (x, y) =>
         {
@@ -263,7 +265,7 @@ internal static class FitsTestData
     /// </summary>
     internal static Func<int, int, double> WithFourfold(Func<int, int, double> b, int w, int h, double a, double phaseDeg = 20)
     {
-        double cx = w / 2.0, cy = h / 2.0, rmax = Math.Sqrt(cx * cx + cy * cy), phase = phaseDeg * Math.PI / 180;
+        double cx = (w - 1) / 2.0, cy = (h - 1) / 2.0, rmax = Math.Sqrt(cx * cx + cy * cy), phase = phaseDeg * Math.PI / 180;
         return (x, y) =>
         {
             double dx = x - cx, dy = y - cy;
@@ -281,7 +283,7 @@ internal static class FitsTestData
     /// </summary>
     internal static Func<int, int, double> WithEvenHarmonics(Func<int, int, double> b, int w, int h, double a2, double a4)
     {
-        double cx = w / 2.0, cy = h / 2.0, rmax = Math.Sqrt(cx * cx + cy * cy);
+        double cx = (w - 1) / 2.0, cy = (h - 1) / 2.0, rmax = Math.Sqrt(cx * cx + cy * cy);
         return (x, y) =>
         {
             double dx = x - cx, dy = y - cy;

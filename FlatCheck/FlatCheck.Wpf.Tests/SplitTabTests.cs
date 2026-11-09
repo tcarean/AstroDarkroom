@@ -74,7 +74,8 @@ public class SplitTabTests
     /// master into process/, prints a few lines. <paramref name="exitCodeFor"/> decides the
     /// exit code per part (1-based); a non-zero one writes no master.
     /// </summary>
-    internal static Func<string, string, SirilRunner> FakeSiril(List<Seen> seen, Func<int, int>? exitCodeFor = null, bool writeMaster = true)
+    internal static Func<string, string, SirilRunner> FakeSiril(List<Seen> seen, Func<int, int>? exitCodeFor = null, bool writeMaster = true,
+                                                                 Func<int, Func<int, int, double>>? scene = null)
         => (folder, script) => (onLine, ct) =>
         {
             seen.Add(new Seen(folder,
@@ -88,7 +89,7 @@ public class SplitTabTests
             {
                 Directory.CreateDirectory(Path.Combine(folder, "process"));
                 File.WriteAllBytes(Path.Combine(folder, "process", SirilSession.FlatMasterName),
-                    FitsTestData.BuildFits(Size, Size, FitsTestData.Radial(Size, Size, k: 0.40 + 0.05 * part)));
+                    FitsTestData.BuildFits(Size, Size, scene?.Invoke(part) ?? FitsTestData.Radial(Size, Size, k: 0.40 + 0.05 * part)));
                 // a read-only file left by the script itself: Delete() must still remove the folder
                 string locked = Path.Combine(folder, "process", "flat_.seq");
                 File.WriteAllText(locked, "x");
@@ -507,7 +508,10 @@ public class SplitTabTests
         using var f = Session(flats: 4);
         using var ws = new TempWorkspace();
         var seen = new List<Seen>();
-        var vm = Vm(f, ws, FakeSiril(seen));
+        // the parts carry gradients of 2 and 4 %, so their residual ranges differ from each other
+        // and from the whole master's: the shared range is then no map's own (on the clean radial
+        // parts the three ranges coincided once the geometry was centred, ADR 0095)
+        var vm = Vm(f, ws, FakeSiril(seen, scene: part => FitsTestData.WithLinearGradient(FitsTestData.Radial(Size, Size, k: 0.40 + 0.05 * part), Size, 0.02 * part)));
         await vm.StartAsync();
         byte[] before = vm.Maps[0].Png;
         Assert.Equal(RunReport.MapLegend(PngWriter.FixedRange(PngWriter.DefaultCapPct)), vm.MapLegend);

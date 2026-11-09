@@ -40,6 +40,81 @@ public class MetricsTests
             return 30000 * Math.Exp(-(dx * dx + dy * dy) / (2 * sigma * sigma));
         });
 
+    // ---------------------------------------------------------------- R-131: symmetry
+
+    static Img MirrorRows(Img a) => Make(a.W, a.H, (x, y) => a.At(a.H - 1 - y, x));
+    static Img MirrorCols(Img a) => Make(a.W, a.H, (x, y) => a.At(y, a.W - 1 - x));
+
+    /// <summary>
+    /// A 7 x 5 raster tiled by 2 leaves one column and one row over, so the centred grid starts
+    /// half a pixel in and the boundary pixels count half: with values equal to the column, the
+    /// three tiles across read 1, 3 and 5 (for example (0.5 * 0 + 1 + 0.5 * 2) / 2); with values
+    /// equal to the row, the two tiles down read 1 and 3 (R-131).
+    /// </summary>
+    [Fact]
+    public void R131_BlockMeanCentred_WithAnOddLeftover_CountsTheBoundaryPixelsHalf()
+    {
+        Img cols = Img.BlockMeanCentred(Make(7, 5, (x, y) => x), 2);
+        Img rows = Img.BlockMeanCentred(Make(7, 5, (x, y) => y), 2);
+
+        Assert.Equal((2, 3), (cols.H, cols.W));
+        Assert.Equal(new[] { 1.0, 3.0, 5.0 }, new[] { cols.At(0, 0), cols.At(0, 1), cols.At(0, 2) });
+        Assert.Equal(new[] { 1.0, 3.0, 5.0 }, new[] { cols.At(1, 0), cols.At(1, 1), cols.At(1, 2) });
+        Assert.Equal(1.0, rows.At(0, 0), 12);
+        Assert.Equal(3.0, rows.At(1, 2), 12);
+    }
+
+    /// <summary>With an even leftover the centred grid is the plain block mean shifted by half
+    /// the leftover: 10 x 6 by 4 leaves 2 and 2, so the tiles start at (1, 1).</summary>
+    [Fact]
+    public void R131_BlockMeanCentred_WithAnEvenLeftover_IsTheBlockMeanShiftedByHalfOfIt()
+    {
+        Img a = Make(10, 6, (x, y) => 100 + 7 * x + 13 * y);
+
+        Img centred = Img.BlockMeanCentred(a, 4);
+        Img shifted = Img.BlockMean(Make(8, 4, (x, y) => a.At(y + 1, x + 1)), 4);
+
+        Assert.Equal((1, 2), (centred.H, centred.W));
+        Assert.Equal(shifted.D, centred.D);
+    }
+
+    /// <summary>The centred grid is its own mirror: the tiles of a mirrored raster are the
+    /// mirrored tiles, whatever the leftover (23 x 17 by 5 leaves 3 and 2).</summary>
+    [Fact]
+    public void R131_BlockMeanCentred_IsItsOwnMirror()
+    {
+        Img a = Make(23, 17, (x, y) => 1000 + ((x * 73856093) ^ (y * 19349663)) % 977);
+        Img t = Img.BlockMeanCentred(a, 5);
+        Img tr = Img.BlockMeanCentred(MirrorRows(a), 5);
+        Img tc = Img.BlockMeanCentred(MirrorCols(a), 5);
+
+        for (int y = 0; y < t.H; y++)
+            for (int x = 0; x < t.W; x++)
+            {
+                Assert.Equal(t.At(y, x), tr.At(t.H - 1 - y, x), 9);
+                Assert.Equal(t.At(y, x), tc.At(y, t.W - 1 - x), 9);
+            }
+    }
+
+    /// <summary>The tilt fit reads every pixel around the geometric centre, so a mirrored
+    /// raster gives the mirrored vertex and the same tilt (R-131).</summary>
+    [Fact]
+    public void R131_FitCenter_OnAMirroredRaster_GivesTheMirroredVertexAndTheSameTilt()
+    {
+        var img = Make(301, 203, (x, y) => 30000 * Math.Exp(-((x - 120.3) * (x - 120.3) + (y - 70.7) * (y - 70.7)) / (2 * 90.0 * 90.0)) * (1 + 0.04 * x / 301.0));
+
+        var (cx, cy, tilt, _) = Metrics.FitCenter(img);
+        var (rx, ry, rtilt, _) = Metrics.FitCenter(MirrorRows(img));
+        var (kx, ky, ktilt, _) = Metrics.FitCenter(MirrorCols(img));
+
+        Assert.Equal(cx, rx, 9);
+        Assert.Equal(202 - cy, ry, 9);
+        Assert.Equal(tilt, rtilt, 9);
+        Assert.Equal(300 - cx, kx, 9);
+        Assert.Equal(cy, ky, 9);
+        Assert.Equal(tilt, ktilt, 9);
+    }
+
     // ---------------------------------------------------------------- FitCenter
 
     [Fact]
@@ -49,8 +124,8 @@ public class MetricsTests
 
         var (cx, cy, _, _) = Metrics.FitCenter(img);
 
-        Assert.Equal(64, cx, 1);
-        Assert.Equal(64, cy, 1);
+        Assert.Equal(63.5, cx, 1);
+        Assert.Equal(63.5, cy, 1);
     }
 
     [Fact]
@@ -84,8 +159,8 @@ public class MetricsTests
 
         var (cx, cy, _, _) = Metrics.FitCenter(img);
 
-        Assert.Equal(32, cx, 6);
-        Assert.Equal(16, cy, 6);
+        Assert.Equal(31.5, cx, 6);
+        Assert.Equal(15.5, cy, 6);
     }
 
     [Fact]
@@ -96,8 +171,8 @@ public class MetricsTests
 
         var (cx, cy, _, _) = Metrics.FitCenter(img);
 
-        Assert.Equal(64, cx, 6);
-        Assert.Equal(64, cy, 6);
+        Assert.Equal(63.5, cx, 6);
+        Assert.Equal(63.5, cy, 6);
     }
 
     // ------------------------------------------------------------ FitCenter: tilt
@@ -165,8 +240,8 @@ public class MetricsTests
 
         // the vertex is unusable, and says so instead of reporting a centred peak
         Assert.False(valid);
-        Assert.Equal(128, cx, 6);
-        Assert.Equal(128, cy, 6);
+        Assert.Equal(127.5, cx, 6);
+        Assert.Equal(127.5, cy, 6);
         // ...but the defect is still measured, and lands in the worst band
         Assert.InRange(tilt, 29.0, 31.5);
         Assert.Equal("REFA", Stats.ResidualVerdict(tilt));
@@ -204,7 +279,7 @@ public class MetricsTests
     {
         var img = Make(256, 256, FitsTestData.Radial(256, 256));
 
-        var (_, _, model) = Metrics.RadialModel(img, 128, 128);
+        var (_, _, model) = Metrics.RadialModel(img, 127.5, 127.5);
         var resid = Img.Divide(img, model);
         var vals = resid.D.ToList();
 
@@ -217,7 +292,7 @@ public class MetricsTests
     {
         var img = Make(256, 256, FitsTestData.Radial(256, 256));
 
-        var (centers, prof, _) = Metrics.RadialModel(img, 128, 128);
+        var (centers, prof, _) = Metrics.RadialModel(img, 127.5, 127.5);
 
         for (int i = 1; i < centers.Length; i++)
             Assert.True(centers[i] > centers[i - 1], "radii must increase");
@@ -230,7 +305,7 @@ public class MetricsTests
     {
         var img = Make(64, 32, FitsTestData.Radial(64, 32));
 
-        var (_, _, model) = Metrics.RadialModel(img, 32, 16);
+        var (_, _, model) = Metrics.RadialModel(img, 31.5, 15.5);
 
         Assert.Equal(img.W, model.W);
         Assert.Equal(img.H, model.H);
@@ -240,18 +315,20 @@ public class MetricsTests
     /// Radial bins holding fewer than 8 pixels are dropped, so a sparsely sampled radius
     /// never contributes a median built from one or two pixels. Exact counts, because a
     /// loose "fewer than nbins" assertion cannot tell the 8-pixel rule from no rule at
-    /// all - the counts below are the ones a numpy reimplementation of the binning gives.
+    /// all. The counts are for the geometric centre (n-1)/2 (R-014, 2026-11-09), where the
+    /// radii come in mirrored quadruples and more bins reach 8 pixels; on the index centre
+    /// n/2 a numpy reimplementation of the binning gave 3, 20, 57 and 73.
     /// </summary>
     [Theory]
-    [InlineData(8, 3)]      // 15 bins are non-empty, but only 3 reach 8 pixels
-    [InlineData(16, 20)]    // 39 non-empty
-    [InlineData(32, 57)]    // 67 non-empty
-    [InlineData(64, 73)]    // 79 non-empty
+    [InlineData(8, 6)]
+    [InlineData(16, 25)]
+    [InlineData(32, 60)]
+    [InlineData(64, 76)]
     public void RadialModel_DropsBinsWithFewerThanEightPixels(int n, int expectedKept)
     {
         var img = Make(n, n, FitsTestData.Radial(n, n));
 
-        var (centers, prof, _) = Metrics.RadialModel(img, n / 2.0, n / 2.0);
+        var (centers, prof, _) = Metrics.RadialModel(img, Metrics.Centre(n), Metrics.Centre(n));
 
         Assert.Equal(expectedKept, centers.Length);
         Assert.Equal(centers.Length, prof.Length);
@@ -262,7 +339,7 @@ public class MetricsTests
     {
         var img = Make(256, 256, FitsTestData.Radial(256, 256));
 
-        var (centers, _, _) = Metrics.RadialModel(img, 128, 128);
+        var (centers, _, _) = Metrics.RadialModel(img, 127.5, 127.5);
 
         Assert.Equal(80, centers.Length);
     }
@@ -283,21 +360,14 @@ public class MetricsTests
     }
 
     /// <summary>
-    /// The corner spread never reaches exactly zero, even on a perfectly radial scene,
-    /// and it is worth knowing why before reading a real number as signal.
-    ///
-    /// The analysis centre is (w/2, h/2), but pixel indices run 0..w-1, whose true middle
-    /// is (w-1)/2. That half-pixel offset makes the top-left corner sit fractionally
-    /// farther from the centre than the bottom-right, so a radial field reads slightly
-    /// darker there. The artifact scales as ~1/n: measured 2.88% at 100 px, 1.44% at 200,
-    /// 0.56% at 512, 0.28% at 1024 (values cross-checked against a numpy reimplementation).
-    ///
-    /// At the sizes the tool actually runs it is ~0.2%, far under the 1.5% OK threshold,
-    /// so it is harmless - but it is a floor on the metric, not noise, and on a small
-    /// enough frame it would swamp the threshold on its own.
+    /// On a radial field centred on the geometric centre the four corner boxes are exact mirrors
+    /// of each other, so the spread is zero to the last bit at every size (R-131). Until
+    /// 2026-11-09 the fixture and the analysis sat on the index (w/2, h/2), half a pixel off,
+    /// and the metric had a floor that halved as the frame doubled: 1.13 % at 256, 0.56 % at
+    /// 512, 0.28 % at 1024 (known issue 5, now closed).
     /// </summary>
     [Fact]
-    public void CornerStats_HasAHalfPixelCentringArtifact_ThatHalvesAsTheFrameDoubles()
+    public void CornerStats_OnACentredRadialField_SeesNoSpreadAtAnySize()
     {
         double Spread(int n)
         {
@@ -305,13 +375,9 @@ public class MetricsTests
             return (vals.Values.Max() - vals.Values.Min()) / vals.Values.Average() * 100;
         }
 
-        double at256 = Spread(256), at512 = Spread(512), at1024 = Spread(1024);
-
-        Assert.Equal(1.134, at256, 2);
-        Assert.Equal(0.564, at512, 2);
-        Assert.Equal(0.282, at1024, 2);
-        Assert.InRange(at256 / at512, 1.9, 2.1);
-        Assert.InRange(at512 / at1024, 1.9, 2.1);
+        Assert.Equal(0, Spread(256), 9);
+        Assert.Equal(0, Spread(512), 9);
+        Assert.Equal(0, Spread(1024), 9);
     }
 
     [Fact]
@@ -375,7 +441,7 @@ public class MetricsTests
     {
         var img = Make(256, 256, FitsTestData.Radial(256, 256));
 
-        var rings = Metrics.AzimuthalAsymmetry(img, 128, 128);
+        var rings = Metrics.AzimuthalAsymmetry(img, 127.5, 127.5);
 
         Assert.NotEmpty(rings);
         Assert.True(rings.Max(r => r.ptp) < 0.5, "max ptp was " + rings.Max(r => r.ptp));
@@ -387,7 +453,7 @@ public class MetricsTests
         var scene = FitsTestData.WithLinearGradient(FitsTestData.Radial(256, 256), 256, 0.20);
         var img = Make(256, 256, scene);
 
-        var rings = Metrics.AzimuthalAsymmetry(img, 128, 128);
+        var rings = Metrics.AzimuthalAsymmetry(img, 127.5, 127.5);
 
         Assert.True(rings.Max(r => r.ptp) > 5, "max ptp was " + rings.Max(r => r.ptp));
     }
@@ -402,7 +468,7 @@ public class MetricsTests
     {
         var img = Make(256, 256, FitsTestData.Radial(256, 256));
 
-        var rings = Metrics.AzimuthalAsymmetry(img, 128, 128);
+        var rings = Metrics.AzimuthalAsymmetry(img, 127.5, 127.5);
 
         Assert.Equal(10, rings.Count);
         Assert.Equal(0.1925, rings.First().r, 4);   // midpoint of [0.15, 0.235]
@@ -631,9 +697,9 @@ public class MetricsTests
         Assert.Equal(40, tw);
         Assert.Equal(40, th);
         Assert.Equal(bg.Length, tw * th);
-        Assert.Equal(2.5, bx[0], 9);     // (0 + 0.5) * 5
-        Assert.Equal(2.5, by[0], 9);
-        Assert.Equal(7.5, bx[1], 9);     // (1 + 0.5) * 5
+        Assert.Equal(2.0, bx[0], 9);     // (0 + 0.5) * 5 - 0.5: the middle pixel of 0..4, in pixel-index coordinates
+        Assert.Equal(2.0, by[0], 9);
+        Assert.Equal(7.0, bx[1], 9);     // (1 + 0.5) * 5 - 0.5
     }
 
     [Fact]
@@ -708,7 +774,9 @@ public class MetricsTests
     /// jumps from one bin to the next by an amount set by the gradient. The interpolated
     /// model inherited the jumps and `img / model` drew them as concentric rings that
     /// were not in the flat at all: reproduced on a synthetic frame that is nothing but
-    /// smooth vignetting times an 11 % ramp.
+    /// smooth vignetting times an 11 % ramp - a jump that was, as it turned out on
+    /// 2026-11-09, mostly the half-pixel offset of the index centre (R-014): on the geometric
+    /// centre the arcs balance and the raw profile is only 8x rougher than the symmetrised.
     ///
     /// Symmetrising kills the odd part - the whole gradient - before the profile is
     /// taken. Both halves are asserted, so the test says what it protects against and
@@ -726,16 +794,22 @@ public class MetricsTests
     {
         var tilted = Img.Prepare(Make(2400, 1600,
             FitsTestData.WithLinearGradient(FitsTestData.Radial(2400, 1600), 2400, 0.12)));
-        double cx = tilted.W / 2.0, cy = tilted.H / 2.0;
+        double cx = Metrics.Centre(tilted.W), cy = Metrics.Centre(tilted.H);
 
         var (_, rawProf, _) = Metrics.RadialModel(tilted, cx, cy);
         var (_, symProf, _) = Metrics.RadialModel(Img.Symmetrise(tilted), cx, cy);
 
         double raw = ProfileRoughnessPct(rawProf), sym = ProfileRoughnessPct(symProf);
 
-        // measured: 1.54 % raw, 0.02 % symmetrised
-        Assert.True(raw > 1.0, $"profilul brut ar trebui sa sara, dar a dat {raw:F3} %");
-        Assert.True(sym < 0.1, $"profilul simetrizat ar trebui neted, dar a dat {sym:F3} %");
+        // measured 2026-11-09 on the geometric centre: 0.093 % raw, 0.011 % symmetrised. On the
+        // index centre (w/2, h/2) the raw profile read 1.54 %: with the arcs left and right of a
+        // ring holding unequal pixel counts, the median fell on one mode of the bimodal ring or
+        // the other; the geometric centre balances the arcs exactly, so a pure gradient's
+        // median sits in the gap, and what the symmetrisation still removes is the fragility
+        // of that middle (8x rougher raw than symmetrised here, 0.32 % against 0.23 % with 2 %
+        // of noise on top).
+        Assert.True(raw > 5 * sym, $"the raw profile should be rougher than the symmetrised one, but read {raw:F3} % against {sym:F3} %");
+        Assert.True(sym < 0.05, $"the symmetrised profile should be smooth, but read {sym:F3} %");
     }
 
     /// <summary>
