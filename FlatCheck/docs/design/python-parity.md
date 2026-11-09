@@ -117,3 +117,18 @@ stays (pinned by `FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre` and
 
 The two conventions kept for parity, `LargeScalePtp`'s top-left grid and the half-pixel centre
 of known issue 5, are ADR 0016 and ADR 0013.
+- On 2026-11-09 a FITS began to be read with the file's first row last, as Siril shows it
+  (R-130, ADR 0094). The prototype read the file order, so this is the largest C#-only call
+  of the list, and the only one that moved figures. Recaptured, with the owner's yes: the 15
+  structure scenarios and the 7 `--light` ones, for their figures (the model's centre is the
+  index `(w/2, h/2)` and the tile grid starts at row 0, so the frame read the other way up sits
+  one analysis pixel differently against them; the fixtures, centred on the same index as the
+  model, exaggerate it: `parity_structure_clean` reads residual 0.64 % where 0.28 % was
+  confirmed, tilt 0.86 % for 0.41 %; the `--light` series move a tile or two of 1764 and the
+  mean by a hundredth), their `y` coordinates (mirrored: the clean peak `(128, 128)` is now
+  `(128, 127)`) and their corner lines (`top` and `bottom` values swapped); and the 12 `--expo`
+  scenarios for their four position lines, where `[0,·]` and `[1,·]` swap figures (the same
+  set) and `parity_expo_cfa_bayerpat`, a BAYERPAT without `ROWORDER`, is named `GBRG`. The
+  figures of these 22 scenarios are no longer the prototype's; the depths, the verdicts and the
+  `--expo` percentages are. The real masters moved by 0.05 to 0.58 points on 17 of 36 cases
+  (`validation.md`, History).

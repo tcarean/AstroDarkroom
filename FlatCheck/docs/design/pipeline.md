@@ -44,6 +44,15 @@ camera raw (`.nef`/`.cr2`/`.cr3`/`.arw`/`.dng`/`.raf`), where the extension **is
 what dispatches. A raw carries no FITS header, so `--light` sees an empty
 dictionary and lands in the guard's `Unknown` layer - runs, with a note (ADR 0020).
 
+**Row order.** Row 0 of every raster is the top of the frame as Siril shows it: a raw comes
+from libraw in the camera's orientation, and a FITS is read with the file's first row last,
+whatever `ROWORDER` says, because that is how Siril displays every FITS (R-130, ADR 0094). So
+`(x, y)` in a report, the corner names, the maps and the pictures are in Siril's orientation
+without any conversion downstream; `ROWORDER` only decides the Bayer phase (`modes-expo.md`).
+The figures are not quite independent of that choice: the model's centre is the index
+`(w/2, h/2)` and the tile grid starts at row 0, so the flip of 2026-11-09 moved the validation
+figures by up to 0.3 points (`validation.md`, History).
+
 
 ## The five modes
 

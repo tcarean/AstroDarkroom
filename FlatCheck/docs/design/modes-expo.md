@@ -25,14 +25,17 @@ and a raw's levels reach the analyzer as an `ExposureScale`.
 #### The channel order
 
 ADR 0023 holds it: a position is named only from `filters` + `cdesc` (libraw) or `BAYERPAT`
-(FITS, shifted by `XBAYROFF` / `YBAYROFF` through `CfaPattern.Shift`), moved by one row by
-`CfaPattern.ForRowOrder` when `ROWORDER = 'BOTTOM-UP'` and the height is even, else
-`CFA[y,x]`; the Tokina sky-flat finding, libraw's index-3 trap on Nikon (`FC` gives 0/1/3/2 into
-`"RGBG"`), and why no figure depends on a name. The mechanics behind the row shift: `BAYERPAT`
-describes the sensor's top-left corner seen top-down, `FitsReader` takes the rows in file order,
-so on a bottom-up file of even height the first row in the file is an odd sensor row. Guards:
-`CfaPatternTests`, `ABottomUpFrameOfEvenHeightShiftsTheOrderByOneRow`, the `expo cfa
-BOTTOM-UP` parity scenario.
+(FITS, shifted by `XBAYROFF` / `YBAYROFF` through `CfaPattern.Shift`), then put in the raster's
+row order by `CfaPattern.ForRowOrder`, else `CFA[y,x]`; the Tokina sky-flat finding, libraw's
+index-3 trap on Nikon (`FC` gives 0/1/3/2 into `"RGBG"`), and why no figure depends on a name.
+The mechanics behind the row rule (ADR 0094): `BAYERPAT` describes the sensor's top-left corner
+seen top-down, and `FitsReader` puts the file's first row last (R-130), so a `BOTTOM-UP` file,
+Siril's, comes out as the sensor seen top-down and keeps the pattern as written at any height,
+while a `TOP-DOWN` or silent file of even height has an odd sensor row at raster row 0 and the
+phase moves by one row (R-044). Until 2026-11-09 the rows were read in file order and the shift
+went the other way, on `BOTTOM-UP` alone. Guards: `CfaPatternTests`, the `R044_*` tests of
+`FitsReaderTests`, the `expo cfa BAYERPAT` and `expo cfa BOTTOM-UP` parity scenarios (the
+first without `ROWORDER`, named `GBRG`; the second with it, named `RGGB`).
 
 #### The histograms
 

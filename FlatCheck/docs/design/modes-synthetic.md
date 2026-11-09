@@ -45,6 +45,12 @@ note with `IsWarning` when the raw's focal / f-stop is far from the lens's profi
 `SyntheticFlatResult.LensProfiles` and `ProfileDepth.LensProfiles` carry the lens's whole
 profile list so the sentence can state the range.
 
+**The file's row order.** The synthetic flat is built on the raster, whose row 0 is the top of
+the frame as Siril shows it (R-130), and `FitsWriter` writes it from the last row to the first,
+so the file has the row order of the reference it took its cards from and Siril shows it the way
+up it was built; a reference with no `ROWORDER` card (a raw) gives a file that says
+`ROWORDER= 'BOTTOM-UP'` (ADR 0094).
+
 **The lens and the shot.** The same lens exists per mount in Adobe, so the mount is chosen
 by the reference frame's camera maker word (`INSTRUME` / libraw) and an exact name match
 beats partial ones; what still ties is listed and the exit code is 2. Focal from `FOCALLEN`

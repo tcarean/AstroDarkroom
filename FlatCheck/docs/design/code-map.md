@@ -47,7 +47,10 @@ a library extraction and not a copy is ADR 0011.
     ("data cut short"); the check runs for every HDU, the skipped ones too, and counts the data
     alone, so a last HDU without its padding to 2880 bytes is read (R-009). `LoadHeader` does
     not check the data area, so this is the one refusal the two reads do not share: the header
-    of such a file is intact and the Sintetic tab can still use it.
+    of such a file is intact and the Sintetic tab can still use it. `LoadFull` fills the raster
+    with the file's first row LAST, whatever `ROWORDER` says: row 0 of every raster is the top of
+    the frame as Siril shows it, the same as libraw's row 0 of a raw (R-130, ADR 0094), so no
+    report, map or picture converts a row.
   - `FitsWriter.cs` - the hand-rolled FITS writer, with one consumer: `--synthetic`. One primary
     2-D HDU, `BITPIX -32` or `16` (with `BZERO 32768`), the input's raw cards copied minus the
     structural ones it rewrites, `HISTORY` at the end. Writes into a `Stream` for the same
@@ -57,7 +60,9 @@ a library extraction and not a copy is ADR 0011.
     parsed dictionary, which loses comments and truncates strings at `/` (known issue 1).
     `LoadedFrame` also carries `Planes` (`NAXIS3`), so `SyntheticRun` can refuse a cube, and
     `Bitpix`, for the load line of the log (`--smooth` wrote the input's type back until its
-    removal, ADR 0080).
+    removal, ADR 0080). The rows go out from the raster's last to its first, the reader's order
+    undone, so the file keeps its reference's order and Siril shows it the way up it was
+    analysed; a file with no `ROWORDER` card to copy gets `ROWORDER= 'BOTTOM-UP'` (R-130).
   - `IFrameReader.cs` - the contract each input format implements: `Handles(path)` and
     `Load(path) -> LoadedFrame`. The only interface in the codebase, and the reason
     `ImageLoader` knows no reader's API.
@@ -90,7 +95,9 @@ a library extraction and not a copy is ADR 0011.
   - `CfaPattern.cs` - which colour each of the four Bayer positions is, or `null` when the
     file does not say: what it reads (libraw's `filters` + `cdesc`, or `BAYERPAT` with
     `XBAYROFF`/`YBAYROFF` and `ROWORDER`), why it is never guessed and why no figure depends on
-    it are ADR 0023.
+    it are ADR 0023. `ForRowOrder` answers for the raster `FitsReader` fills, the file's first
+    row last (R-130): a `BOTTOM-UP` file keeps `BAYERPAT` as written, a `TOP-DOWN` or silent one
+    of even height shifts it by one row (R-044, ADR 0094).
   - `Mosaic.cs` - the CFA rule shared by `--expo` and `--histeq`:
     `PositionOf(y, x)`, `CfaSpreadMin` (1.15) with `LooksCfa`, `Split` into the four
     position rasters, and `Label`/`ColourOf` over a `CfaPattern` (`Extract` and `Merge`,

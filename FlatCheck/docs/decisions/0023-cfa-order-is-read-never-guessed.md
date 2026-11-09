@@ -1,7 +1,7 @@
 # 0023. The CFA colour order is read from the file, never guessed, and only names channels
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the ROWORDER rule of the CFA order superseded by 0094
 
 ## Context
 

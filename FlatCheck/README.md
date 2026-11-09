@@ -102,7 +102,11 @@ flatcheck flats/DSC_0060.NEF --expo                             # is a raw flat 
 ```
 
 Every run prints a report and exits with a code that follows its verdict (see "Exit codes"); most
-modes also write a map, `flatcheck.png` unless `-o` names another file.
+modes also write a map, `flatcheck.png` unless `-o` names another file. The map, the pictures and
+every position the report prints, the `(x, y)` pairs and the corner names, show the frame the way
+Siril shows it, which is also the way the camera shows a raw: `(0, 0)` is the top-left corner of
+that view. A FITS is read with the file's first row at the bottom whatever `ROWORDER` says,
+exactly as Siril reads it; a raw as it comes from the camera.
 
 ## Which file to give it
 

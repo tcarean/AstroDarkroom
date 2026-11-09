@@ -12,6 +12,11 @@
 
 ## PNG output
 
+The map is drawn row 0 at the top, and row 0 of every raster is the top of the frame as Siril
+shows it (R-130, ADR 0094), so the map, the window's bitmaps (`RasterBitmaps`, the same bytes)
+and the histeq picture are the frame the way Siril and the camera show it; nothing is flipped
+here.
+
 `PngWriter.EncodeResidualMap` produces a diverging blue → white → red heat map, with white
 pinned at **1.0**. Pinning at 1.0 is valid for every caller: the structure residual is
 `img/model ≈ 1`, both attribution maps are centred on 1 (the residual of the combined
