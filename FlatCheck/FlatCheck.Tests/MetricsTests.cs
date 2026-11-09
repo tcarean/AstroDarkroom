@@ -274,6 +274,30 @@ public class MetricsTests
 
     // ---------------------------------------------------------------- RadialModel
 
+    /// <summary>
+    /// A sector of a ring whose pixels are NaN (unexposed pixels some software marks so) is left
+    /// out of the ring fit instead of making it throw: the decimal sums of the fit cannot take a
+    /// NaN, and the profile and the model stay numbers everywhere else.
+    /// </summary>
+    [Fact]
+    public void RadialModel_LeavesOutASectorWhoseMedianIsNotANumber_InsteadOfThrowing()
+    {
+        const int n = 512;
+        double c = Metrics.Centre(n), rmax = Math.Sqrt(2) * c;
+        var radial = FitsTestData.Radial(n, n);
+        var img = Make(n, n, (x, y) =>
+        {
+            double dx = x - c, dy = y - c, r = Math.Sqrt(dx * dx + dy * dy) / rmax, t = Math.Atan2(dy, dx);
+            // the whole first sector (-180 to -165 degrees) of the rings at 0.70 .. 0.80 of rmax
+            return r > 0.70 && r < 0.80 && t < -Math.PI + Math.PI / 12 ? double.NaN : radial(x, y);
+        });
+
+        var (_, prof, model) = Metrics.RadialModel(img, c, c);
+
+        Assert.All(prof, v => Assert.True(double.IsFinite(v), "a profile value is not a number"));
+        Assert.True(model.D.All(double.IsFinite), "the model has a value that is not a number");
+    }
+
     [Fact]
     public void RadialModel_OnAPerfectlyRadialField_LeavesAFlatResidual()
     {

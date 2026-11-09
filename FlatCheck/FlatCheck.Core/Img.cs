@@ -102,15 +102,16 @@ namespace FlatCheck
             int h = a.H / k, w = a.W / k;
             double oy = CentredOffset(a.H, k), ox = CentredOffset(a.W, k);
             var o = new Img(h, w);
+            // the weighted terms are summed in sorted order, like BlockMean's values, so the tile
+            // of a mirrored raster is the mirrored tile to the last bit; a tile spans at most
+            // k + 1 rows and columns when its edges fall on half pixels
+            var terms = new double[(k + 1) * (k + 1)];
             for (int ty = 0; ty < h; ty++)
                 for (int tx = 0; tx < w; tx++)
                 {
                     double y0 = oy + ty * k, y1 = y0 + k, x0 = ox + tx * k, x1 = x0 + k;
                     int ya = (int)Math.Floor(y0), yb = (int)Math.Ceiling(y1);
                     int xa = (int)Math.Floor(x0), xb = (int)Math.Ceiling(x1);
-                    // the weighted terms are summed in sorted order, like BlockMean's values, so
-                    // the tile of a mirrored raster is the mirrored tile to the last bit
-                    var terms = new double[(yb - ya) * (xb - xa)];
                     int i = 0;
                     for (int y = ya; y < yb; y++)
                     {
@@ -118,9 +119,9 @@ namespace FlatCheck
                         for (int x = xa; x < xb; x++)
                             terms[i++] = wy * (Math.Min(x + 1, x1) - Math.Max(x, x0)) * a.At(y, x);
                     }
-                    Array.Sort(terms);
+                    Array.Sort(terms, 0, i);
                     double s = 0;
-                    foreach (double v in terms) s += v;
+                    for (int t = 0; t < i; t++) s += terms[t];
                     o.Set(ty, tx, s / ((double)k * k));
                 }
             return o;
