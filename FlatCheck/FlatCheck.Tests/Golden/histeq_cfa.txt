@@ -6,10 +6,10 @@ cadru:      512 x 512, CFA (ordine RGGB, din BAYERPAT)
 afisare:    256 x 256 (nemicsorat), 65536 cosuri pe canal
 
 canal      interval intrare               niveluri folosite
-  R          11594 .. 21080                 256 / 256
-  G1         18760 .. 34000                 256 / 256
-  G2         18760 .. 34000                 256 / 256
-  B          9033 .. 16320                  256 / 256
+  R          18760 .. 34000                 256 / 256
+  G1         9033 .. 16320                  256 / 256
+  G2         11594 .. 21080                 256 / 256
+  B          18760 .. 34000                 256 / 256
 
 INFORMATIV: modul nu da verdict. Poza arata FORMA a ceea ce nu e uniform, nu si cat de mare e: fiecare treapta de gri primeste acelasi numar de pixeli, deci o ondulatie de 0.5 % si una de 10 % ies la fel, iar un flat perfect isi arata propriul zgomot la contrast maxim. Cifrele sunt in modul de structura.
 

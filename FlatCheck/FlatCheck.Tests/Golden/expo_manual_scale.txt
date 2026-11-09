@@ -4,10 +4,10 @@ Copyright (C) 2026 Tudor Carean
 === EXPUNERE: <TMP>/raw12bit.fit ===
     saturatie (white) : 4095   black : 150   sursa: --sat=4095
     nivel median GLOBAL per canal CFA (informativ; nu stiu care e R/G/B):
-        CFA[0,0]:  44.7%
-        CFA[0,1]:  74.4%  <- cel mai luminos
-        CFA[1,0]:  74.4%
-        CFA[1,1]:  33.7%
+        CFA[0,0]:  74.4%  <- cel mai luminos
+        CFA[0,1]:  33.7%
+        CFA[1,0]:  44.7%
+        CFA[1,1]:  74.4%
     canal cel mai luminos, mediana GLOBALA :  74.4%  (trasa in jos de colturi)
     canal cel mai luminos, CENTRU 20%      :  86.9%  <- ASTA decide expunerea
     clipping in centru (>=98% white)       : 0.000%

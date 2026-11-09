@@ -7,12 +7,12 @@ Copyright (C) 2026 Tudor Carean
 
   INFORMATIV (nu sunt teste)
     vignetare centru->colt  : 0.76 stopuri (colt = 59% din centru)
-    offset centru iluminare :  4.36 %
-        varf iluminare = (134, 134)  vs  centru senzor = (128, 128)
+    offset centru iluminare :  4.76 %
+        varf iluminare = (134, 121)  vs  centru senzor = (128, 128)
         Cifra e doar orientativa: pe un obiectiv aproape fara vignetare creste mult
         fara ca eroarea sa creasca, iar cand punctul cel mai luminos iese din cadru e
         nedeterminata. Cat de mare e dezechilibrul spune "inclinare".
-    pete locale (praf etc.) : +0.07 % (mai luminos) la (238, 10)
+    pete locale (praf etc.) : +0.11 % (mai luminos) la (241, 244)
         Cea mai pronuntata pata mica, dupa ce se scot formele mari.
         Semnul spune ce fel: minus = mai intunecata decat imprejurimile (praf,
         condens, ceva in fata obiectivului), plus = mai luminoasa (scurgere de lumina, reflexie).
@@ -20,14 +20,14 @@ Copyright (C) 2026 Tudor Carean
 
   TESTE
     imprastiere 4 colturi   : 10.10 %   [ACCEPTABIL]
-        stanga-sus    :  94.94 % din media colturilor
-        dreapta-sus   : 100.01 % din media colturilor
-        stanga-jos    : 100.01 % din media colturilor
-        dreapta-jos   : 105.04 % din media colturilor
-    asimetrie azimutala max :  6.39 %   [BUN]
-    reziduu dupa model rad. :  6.49 %   [BUN]  <- CEL MAI IMPORTANT
-    inclinare (gradient)    :  9.60 %   [BUN]
-    pata maxima (o dala)    :  4.92 %   [BUN]
+        stanga-sus    : 100.01 % din media colturilor
+        dreapta-sus   : 105.04 % din media colturilor
+        stanga-jos    :  94.94 % din media colturilor
+        dreapta-jos   : 100.01 % din media colturilor
+    asimetrie azimutala max :  7.00 %   [BUN]
+    reziduu dupa model rad. :  7.03 %   [BUN]  <- CEL MAI IMPORTANT
+    inclinare (gradient)    : 10.46 %   [ACCEPTABIL]
+    pata maxima (o dala)    :  5.10 %   [BUN]
 
   SCARA celor cinci teste de abatere de mai sus
     sub 2 %      calitate perfecta

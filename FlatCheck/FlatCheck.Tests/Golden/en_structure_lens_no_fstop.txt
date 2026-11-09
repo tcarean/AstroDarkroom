@@ -7,12 +7,12 @@ Copyright (C) 2026 Tudor Carean
 
   INFORMATIVE (not tests)
     vignetting to corner    : 0.75 stops (corner = 59% of centre)
-    illum. centre offset    :  0.46 %
-        illumination peak = (60, 40)  vs  sensor centre = (60, 40)
+    illum. centre offset    :  1.10 %
+        illumination peak = (60, 39)  vs  sensor centre = (60, 40)
         The figure is only indicative: on a lens with almost no vignetting it grows a lot
         without the error growing, and once the brightest point leaves the frame it reads
         undetermined. How large the imbalance is, "tilt" says.
-    local spots (dust etc.) : +0.09 % (brighter) at (7, 19)
+    local spots (dust etc.) : +0.09 % (brighter) at (113, 17)
         The most pronounced small spot, after the large shapes are taken out.
         The sign says which kind: minus = darker than its surroundings (dust,
         condensation, something in front of the lens), plus = brighter (light leak, reflection).
@@ -20,14 +20,14 @@ Copyright (C) 2026 Tudor Carean
 
   TESTS
     spread of the 4 corners :  1.38 %   [PERFECT]
-        top-left      :  99.31 % of the corners' mean
-        top-right     : 100.14 % of the corners' mean
-        bottom-left   :  99.86 % of the corners' mean
-        bottom-right  : 100.69 % of the corners' mean
-    max azimuthal asymmetry :  0.54 %   [PERFECT]
-    residual (radial model) :  0.76 %   [PERFECT]  <- THE MOST IMPORTANT
-    tilt (gradient)         :  1.00 %   [PERFECT]
-    worst spot (one tile)   :  1.00 %   [PERFECT]
+        top-left      :  99.86 % of the corners' mean
+        top-right     : 100.69 % of the corners' mean
+        bottom-left   :  99.31 % of the corners' mean
+        bottom-right  : 100.14 % of the corners' mean
+    max azimuthal asymmetry :  1.18 %   [PERFECT]
+    residual (radial model) :  1.34 %   [PERFECT]  <- THE MOST IMPORTANT
+    tilt (gradient)         :  1.87 %   [PERFECT]
+    worst spot (one tile)   :  1.52 %   [PERFECT]
 
   SCALE of the five deviation tests above
     under 2 %    perfect quality

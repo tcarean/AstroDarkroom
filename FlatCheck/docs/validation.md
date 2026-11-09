@@ -29,21 +29,21 @@ the second decimal is the check that the port and the notes describe the same th
 
 | ID | Master | Verdict | corners / azimuthal / residual / tilt / worst tile (%) | depth (stops) | earlier figure |
 | --- | --- | --- | --- | --- | --- |
-| V-001 | Nikkor 35 DX ISO400 sky | BUN | 4.00 / 3.75 / 4.00 / 1.75 / 3.24 | 0.63 | corner spread 4.00 % (2026-09, `thresholds.md`); residual 4.05 and local spot -0.38 % until 2026-11-06 (ADR 0091) |
-| V-002 | Nikkor 35 DX ISO800 sky | ACCEPTABIL | 10.96 / 5.27 / 7.17 / 7.97 / 5.79 | 0.62 | |
-| V-003 | Samyang ISO1600 f/2 sky | ACCEPTABIL | 10.53 / 6.39 / 8.38 / 11.14 / 5.44 | 0.60 | |
-| V-004 | Samyang ISO1600 sursa_neuniforma f/2 lcd | BUN | 3.49 / 2.67 / 2.98 / 4.04 / 2.36 | 0.63 | |
+| V-001 | Nikkor 35 DX ISO400 sky | BUN | 4.00 / 3.75 / 4.03 / 1.82 / 3.10 | 0.63 | corner spread 4.00 % (2026-09, `thresholds.md`); residual 4.05 and local spot -0.38 % until 2026-11-06 (ADR 0091); 4.00 / 3.75 / 4.00 / 1.75 / 3.24, 0.63 stops until 2026-11-09 (ADR 0094) |
+| V-002 | Nikkor 35 DX ISO800 sky | ACCEPTABIL | 10.96 / 5.25 / 7.23 / 7.88 / 5.72 | 0.62 | 10.96 / 5.26 / 7.17 / 7.97 / 5.79, 0.62 stops until 2026-11-09 (ADR 0094) |
+| V-003 | Samyang ISO1600 f/2 sky | ACCEPTABIL | 10.53 / 6.44 / 8.40 / 11.26 / 5.46 | 0.60 | 10.53 / 6.39 / 8.38 / 11.14 / 5.44, 0.60 stops until 2026-11-09 (ADR 0094); local spot -0.66 % until 2026-11-09 (ADR 0094, another spot of the same size) |
+| V-004 | Samyang ISO1600 sursa_neuniforma f/2 lcd | BUN | 3.49 / 2.72 / 3.04 / 4.15 / 2.38 | 0.63 | 3.49 / 2.67 / 2.98 / 4.04 / 2.36, 0.63 stops until 2026-11-09 (ADR 0094) |
 | V-005 | Samyang ISO1600 sursa_neuniforma f/2.8 | BUN | 6.09 / 7.11 / 6.61 / 7.82 / 4.15 | 0.18 | |
-| V-006 | Samyang ISO400 f/2 sky | BUN | 7.59 / 6.83 / 6.33 / 8.03 / 4.17 | 0.61 | |
+| V-006 | Samyang ISO400 f/2 sky | BUN | 7.59 / 6.93 / 6.41 / 8.15 / 4.17 | 0.61 | 7.59 / 6.83 / 6.33 / 8.03 / 4.17, 0.61 stops until 2026-11-09 (ADR 0094) |
 | V-007 | Samyang ISO400 f/2.8 sky | ACCEPTABIL | 12.62 / 7.05 / 9.99 / 12.36 / 6.51 | 0.15 | tilt 12.36 %, 12.62 / 7.05 / 6.05 (the 1.2.0 note in `thresholds.md`; the worst tile did not exist then) |
-| V-008 | Tokina monitor, diffuser close | BUN | 6.67 / 8.73 / 7.03 / 6.71 / 6.65 | 0.85 | residual 7.10 until 2026-11-06 (ADR 0091) |
-| V-009 | Tokina monitor, diffuser on the monitor | ACCEPTABIL | 16.41 / 10.74 / 12.27 / 11.77 / 12.60 | 0.78 | local spot +6.19 % (2026-09-16) |
-| V-010 | Tokina sky, no diffuser | ACCEPTABIL | 10.28 / 7.25 / 9.99 / 0.49 / 8.81 | 0.27 | residual 10.06 after the 4θ correction (2026-09-23 note) and until 2026-11-06 (ADR 0091); 0.27 stops |
-| V-011 | Tokina tablet, 15 frosted covers | BUN | 2.17 / 2.00 / 2.28 / 2.55 / 1.54 | 1.24 | 1.24 stops (2026-09-18 note) |
-| V-012 | Tokina tablet, 7 frosted covers | PERFECT | 1.58 / 1.60 / 1.42 / 1.64 / 0.95 | 1.26 | 1.26 stops, PERFECT |
-| V-013 | Tokina tablet, 3 sheets of paper, rotated in place | BUN | 1.18 / 2.03 / 2.86 / 0.58 / 2.65 | 0.76 | corners 1.2 %, tilt 0.6 %, 0.76 stops (2026-09-23 note); the note also gives residual 2.93 / worst tile 2.94 from the bench, against 2.86 / 2.65 here; not investigated on 2026-09-25 |
-| V-014 | Tokina tablet, 3 sheets of paper | BUN | 4.69 / 3.68 / 3.50 / 3.88 / 2.77 | 0.81 | 3.8 % residual, 0.81 stops |
-| V-015 | Tokina tablet, 4 sheets of paper | BUN | 2.46 / 5.79 / 4.93 / 3.10 / 4.07 | 0.80 | 5.1 % residual, 0.80 stops; 4.98 / 3.93 until 2026-11-06 (ADR 0091) |
+| V-008 | Tokina monitor, diffuser close | BUN | 6.67 / 8.83 / 7.14 / 6.90 / 6.52 | 0.85 | residual 7.10 until 2026-11-06 (ADR 0091); 6.67 / 8.73 / 7.03 / 6.71 / 6.65, 0.85 stops until 2026-11-09 (ADR 0094) |
+| V-009 | Tokina monitor, diffuser on the monitor | ACCEPTABIL | 16.41 / 10.59 / 12.26 / 11.67 / 12.44 | 0.78 | local spot +6.19 % (2026-09-16); 16.41 / 10.73 / 12.27 / 11.77 / 12.60, 0.78 stops until 2026-11-09 (ADR 0094); local spot +6.19 % until 2026-11-09 (ADR 0094, another spot of the same size) |
+| V-010 | Tokina sky, no diffuser | ACCEPTABIL | 10.28 / 7.24 / 10.05 / 0.50 / 8.47 | 0.27 | residual 10.06 after the 4θ correction (2026-09-23 note) and until 2026-11-06 (ADR 0091); 0.27 stops; 10.28 / 7.25 / 9.99 / 0.49 / 8.81, 0.27 stops until 2026-11-09 (ADR 0094); local spot -0.29 % until 2026-11-09 (ADR 0094, another spot of the same size) |
+| V-011 | Tokina tablet, 15 frosted covers | BUN | 2.17 / 1.99 / 2.27 / 2.64 / 1.57 | 1.24 | 1.24 stops (2026-09-18 note); 2.17 / 2.00 / 2.28 / 2.55 / 1.54, 1.24 stops until 2026-11-09 (ADR 0094) |
+| V-012 | Tokina tablet, 7 frosted covers | PERFECT | 1.57 / 1.79 / 1.58 / 1.93 / 1.02 | 1.26 | 1.26 stops, PERFECT; 1.57 / 1.60 / 1.42 / 1.64 / 0.95, 1.26 stops until 2026-11-09 (ADR 0094) |
+| V-013 | Tokina tablet, 3 sheets of paper, rotated in place | BUN | 1.18 / 2.18 / 2.84 / 0.73 / 2.69 | 0.76 | corners 1.2 %, tilt 0.6 %, 0.76 stops (2026-09-23 note); the note also gives residual 2.93 / worst tile 2.94 from the bench, against 2.86 / 2.65 here; not investigated on 2026-09-25; 1.18 / 2.03 / 2.86 / 0.58 / 2.65, 0.76 stops until 2026-11-09 (ADR 0094) |
+| V-014 | Tokina tablet, 3 sheets of paper | BUN | 4.69 / 3.80 / 3.54 / 4.05 / 2.87 | 0.81 | 3.8 % residual, 0.81 stops; 4.69 / 3.68 / 3.50 / 3.88 / 2.77, 0.81 stops until 2026-11-09 (ADR 0094) |
+| V-015 | Tokina tablet, 4 sheets of paper | BUN | 2.46 / 5.91 / 5.07 / 3.26 / 4.09 | 0.80 | 5.1 % residual, 0.80 stops; 4.98 / 3.93 until 2026-11-06 (ADR 0091); 2.46 / 5.79 / 4.93 / 3.10 / 4.07, 0.80 stops until 2026-11-09 (ADR 0094) |
 
 ### The sixth test with the raw beside the master (V-016 to V-030, V-049)
 
@@ -79,11 +79,11 @@ corner.
 
 | ID | Master | diff (stops) | corner error (%) | depth | shape | run | earlier figure (2026-09-18, `modes-synthetic.md`) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| V-036 | Tokina diffuser close | +0.186 | 13.8 | ACCEPTABIL | BUN | ACCEPTABIL | +0.19, 13.8 %, ACCEPTABIL |
+| V-036 | Tokina diffuser close | +0.186 | 13.8 | ACCEPTABIL | BUN | ACCEPTABIL | +0.19, 13.8 %, ACCEPTABIL; ratio residual 7.05 % until 2026-11-09 (ADR 0094), now 7.10 |
 | V-037 | Tokina sky | -0.395 | 31.5 | REFA | ACCEPTABIL | REFA | -0.39, 31.5 %, REFA |
-| V-038 | Tokina on the monitor | +0.115 | 8.3 | BUN | ACCEPTABIL | ACCEPTABIL | +0.12, 8.3 %, BUN |
-| V-039 | Tokina tablet, 7 covers | +0.592 | 50.8 | REFA | PERFECT (ratio residual 1.5 %) | REFA | +0.57 (before the crop correction of 2026-09-18) |
-| V-040 | Tokina paper, rotated in place | +0.099 | 7.1 | BUN | BUN | BUN | +0.14 vs Adobe in the 2026-09-23 note (its figure was on the bench, "not bad but not perfect") |
+| V-038 | Tokina on the monitor | +0.115 | 8.3 | BUN | ACCEPTABIL | ACCEPTABIL | +0.12, 8.3 %, BUN; ratio residual 12.25 % until 2026-11-09 (ADR 0094), now 12.23 |
+| V-039 | Tokina tablet, 7 covers | +0.592 | 50.8 | REFA | PERFECT (ratio residual 1.6 %) | REFA | +0.57 (before the crop correction of 2026-09-18); ratio residual 1.50 % until 2026-11-09 (ADR 0094), now 1.56 |
+| V-040 | Tokina paper, rotated in place | +0.099 | 7.1 | BUN | BUN | BUN | +0.14 vs Adobe in the 2026-09-23 note (its figure was on the bench, "not bad but not perfect"); ratio residual 2.83 % until 2026-11-09 (ADR 0094), now 2.78 |
 
 ### The Split tab on two real sessions (measured by hand, 2026-09-28)
 
@@ -179,6 +179,19 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 
 ## History
 
+- 2026-11-09: V-001, V-002, V-003, V-004, V-006, V-008, V-009, V-010, V-011, V-012, V-013,
+  V-014, V-015 and the ratio residual of V-036, V-038, V-039 and V-040 re-recorded after R-130 /
+  ADR 0094 (a FITS is read with the file's first row last, as Siril shows it), on
+  `claude/Show-every-FITS-as-Siril-shows-it` from main cdd7ffe6, with the 36 large files present
+  with their hashes: 44 run, 27 unchanged within tolerance, 17 drifted by 0.05 to 0.58 points,
+  no verdict changed, no depth moved past the thousandth. The figures move because the analysis
+  geometry is anchored on pixel indices (the radial model's centre at index `(w/2, h/2)`, half a
+  pixel below the geometric centre; the tile grid from row 0, its leftover rows at the far edge),
+  so the same frame read the other way up sits one analysis pixel (four sensor pixels)
+  differently against them. The largest moves: V-010's local spot is another spot of the same
+  size (-0.287 -> +0.290), its worst tile 8.809 -> 8.472, V-012's tilt 1.643 -> 1.930. The old
+  figures stay in each row's last column. A geometry symmetric under the flip (the geometric
+  centre, a centred tile grid) would end the dependence; it is a formula change of its own.
 - 2026-11-06: re-measured at the wrap-up of the signed-zero fix (R-129), on
   `claude/Fix-the-signed-zero-format` from main 28d2c226, which moved the signed formats of
   `Report/` to `Numbers.Signed` without touching a formula: the 36 large files present with

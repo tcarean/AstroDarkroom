@@ -8,11 +8,11 @@ Copyright (C) 2026 Tudor Carean
   INFORMATIVE (not tests)
     vignetting to corner    : 0.76 stops (corner = 59% of centre)
     illum. centre offset    : 33.48 %
-        illumination peak = (189, 128)  vs  sensor centre = (128, 128)
+        illumination peak = (189, 127)  vs  sensor centre = (128, 128)
         The figure is only indicative: on a lens with almost no vignetting it grows a lot
         without the error growing, and once the brightest point leaves the frame it reads
         undetermined. How large the imbalance is, "tilt" says.
-    local spots (dust etc.) : +0.13 % (brighter) at (241, 10)
+    local spots (dust etc.) : +0.16 % (brighter) at (241, 10)
         The most pronounced small spot, after the large shapes are taken out.
         The sign says which kind: minus = darker than its surroundings (dust,
         condensation, something in front of the lens), plus = brighter (light leak, reflection).
@@ -20,14 +20,14 @@ Copyright (C) 2026 Tudor Carean
 
   TESTS
     spread of the 4 corners : 57.82 %   [REDO]
-        top-left      :  71.13 % of the corners' mean
-        top-right     : 128.58 % of the corners' mean
-        bottom-left   :  71.34 % of the corners' mean
-        bottom-right  : 128.95 % of the corners' mean
-    max azimuthal asymmetry : 54.75 %   [REDO]
-    residual (radial model) : 52.01 %   [REDO]  <- THE MOST IMPORTANT
-    tilt (gradient)         : 62.04 %   [REDO]
-    worst spot (one tile)   : 29.43 %   [REDO]
+        top-left      :  71.34 % of the corners' mean
+        top-right     : 128.95 % of the corners' mean
+        bottom-left   :  71.13 % of the corners' mean
+        bottom-right  : 128.58 % of the corners' mean
+    max azimuthal asymmetry : 54.87 %   [REDO]
+    residual (radial model) : 52.38 %   [REDO]  <- THE MOST IMPORTANT
+    tilt (gradient)         : 62.51 %   [REDO]
+    worst spot (one tile)   : 29.62 %   [REDO]
 
   SCALE of the five deviation tests above
     under 2 %    perfect quality

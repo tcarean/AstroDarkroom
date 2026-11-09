@@ -7,22 +7,22 @@ Copyright (C) 2026 Tudor Carean
     camp diagonal           :  10.0 grade  (--fov)
 
     cadru                              radial   gradient cer     tile-uri
-    pp_light_00001.fit               +58.65 %      34.98 %    1643/1764
-    pp_light_00002.fit               +34.26 %      31.88 %    1647/1764
-    pp_light_00003.fit               +11.03 %      27.56 %    1637/1764
-    pp_light_00004.fit                -9.00 %      21.82 %    1624/1764
-    pp_light_00005.fit               -27.72 %      15.33 %    1619/1764
-    pp_light_00006.fit               -47.87 %       8.07 %    1623/1764
+    pp_light_00001.fit               +58.27 %      34.90 %    1650/1764
+    pp_light_00002.fit               +34.31 %      31.90 %    1644/1764
+    pp_light_00003.fit               +11.03 %      27.56 %    1639/1764
+    pp_light_00004.fit                -9.00 %      21.82 %    1623/1764
+    pp_light_00005.fit               -27.72 %      15.33 %    1620/1764
+    pp_light_00006.fit               -47.86 %       8.07 %    1622/1764
 
   SINTEZA PE SERIE
-    componenta radiala, medie :   +3.23 %
-    imprastiere (min .. max)  :  -47.87 .. +58.65 %
-    eroarea mediei            :   16.14 puncte   <- peste pragul de 2.00
+    componenta radiala, medie :   +3.17 %
+    imprastiere (min .. max)  :  -47.86 .. +58.27 %
+    eroarea mediei            :   16.10 puncte   <- peste pragul de 2.00
     corelatie cu grad. de cer :    0.98          <- peste pragul de 0.70
 
     VERDICT: NEDETERMINAT
     Media NU se poate citi ca eroare de flat:
-      - media e prea nesigura: eroarea ei (16.14) e mai mare chiar decat pragul de OK (2.00),
+      - media e prea nesigura: eroarea ei (16.10) e mai mare chiar decat pragul de OK (2.00),
         pentru ca cadrele difera prea mult intre ele. Un verdict aici ar fi
         o parere, nu o masuratoare.
       - cifra radiala se misca odata cu cerul (corelatie 0.98, pe un cer care

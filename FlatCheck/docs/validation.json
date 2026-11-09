@@ -6,15 +6,15 @@
       "kind": "structure",
       "master": "Nikkor 35mm DX/ISO400/f2.8-sky/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-11-06",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 4,
-        "azimuthalMaxPct": 3.75,
-        "residualPtpPct": 4.003,
-        "tiltPct": 1.748,
-        "maxTilePct": 3.242,
+        "azimuthalMaxPct": 3.755,
+        "residualPtpPct": 4.032,
+        "tiltPct": 1.818,
+        "maxTilePct": 3.097,
         "vignetteStops": 0.63,
-        "localSpotPct": 0.406,
+        "localSpotPct": 0.411,
         "verdict": "BUN"
       }
     },
@@ -23,15 +23,15 @@
       "kind": "structure",
       "master": "Nikkor 35mm DX/ISO800/f2.8-sky/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 10.963,
-        "azimuthalMaxPct": 5.265,
-        "residualPtpPct": 7.166,
-        "tiltPct": 7.966,
-        "maxTilePct": 5.792,
+        "azimuthalMaxPct": 5.254,
+        "residualPtpPct": 7.227,
+        "tiltPct": 7.883,
+        "maxTilePct": 5.718,
         "vignetteStops": 0.623,
-        "localSpotPct": 0.317,
+        "localSpotPct": 0.339,
         "verdict": "ACCEPTABIL"
       }
     },
@@ -40,15 +40,15 @@
       "kind": "structure",
       "master": "Samyang/ISO1600/f2.0-sky/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 10.528,
-        "azimuthalMaxPct": 6.39,
-        "residualPtpPct": 8.378,
-        "tiltPct": 11.144,
-        "maxTilePct": 5.44,
+        "azimuthalMaxPct": 6.436,
+        "residualPtpPct": 8.396,
+        "tiltPct": 11.259,
+        "maxTilePct": 5.455,
         "vignetteStops": 0.603,
-        "localSpotPct": -0.659,
+        "localSpotPct": -0.405,
         "verdict": "ACCEPTABIL"
       }
     },
@@ -57,15 +57,15 @@
       "kind": "structure",
       "master": "Samyang/ISO1600/sursa_neuniforma/f2.0-lcd/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 3.487,
-        "azimuthalMaxPct": 2.67,
-        "residualPtpPct": 2.98,
-        "tiltPct": 4.036,
-        "maxTilePct": 2.361,
+        "azimuthalMaxPct": 2.716,
+        "residualPtpPct": 3.035,
+        "tiltPct": 4.149,
+        "maxTilePct": 2.383,
         "vignetteStops": 0.63,
-        "localSpotPct": 0.217,
+        "localSpotPct": 0.206,
         "verdict": "BUN"
       }
     },
@@ -91,15 +91,15 @@
       "kind": "structure",
       "master": "Samyang/ISO400/f2.0-sky/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 7.593,
-        "azimuthalMaxPct": 6.831,
-        "residualPtpPct": 6.327,
-        "tiltPct": 8.028,
-        "maxTilePct": 4.173,
+        "azimuthalMaxPct": 6.93,
+        "residualPtpPct": 6.409,
+        "tiltPct": 8.146,
+        "maxTilePct": 4.167,
         "vignetteStops": 0.608,
-        "localSpotPct": 0.174,
+        "localSpotPct": 0.167,
         "verdict": "BUN"
       }
     },
@@ -125,15 +125,15 @@
       "kind": "structure",
       "master": "Tokina/ISO400/f2.8-monitor-difuzor-aproape/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-11-06",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 6.67,
-        "azimuthalMaxPct": 8.73,
-        "residualPtpPct": 7.034,
-        "tiltPct": 6.714,
-        "maxTilePct": 6.646,
+        "azimuthalMaxPct": 8.831,
+        "residualPtpPct": 7.14,
+        "tiltPct": 6.904,
+        "maxTilePct": 6.52,
         "vignetteStops": 0.852,
-        "localSpotPct": -0.384,
+        "localSpotPct": -0.383,
         "verdict": "BUN"
       }
     },
@@ -142,15 +142,15 @@
       "kind": "structure",
       "master": "Tokina/ISO400/f2.8-monitor-difuzor-pe-monitor/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 16.408,
-        "azimuthalMaxPct": 10.735,
-        "residualPtpPct": 12.273,
-        "tiltPct": 11.769,
-        "maxTilePct": 12.602,
+        "azimuthalMaxPct": 10.585,
+        "residualPtpPct": 12.258,
+        "tiltPct": 11.668,
+        "maxTilePct": 12.442,
         "vignetteStops": 0.779,
-        "localSpotPct": 6.192,
+        "localSpotPct": 5.938,
         "verdict": "ACCEPTABIL"
       }
     },
@@ -159,15 +159,15 @@
       "kind": "structure",
       "master": "Tokina/ISO400/f2.8-sky-no-difuser/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-11-06",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 10.279,
-        "azimuthalMaxPct": 7.254,
-        "residualPtpPct": 9.993,
-        "tiltPct": 0.49,
-        "maxTilePct": 8.809,
+        "azimuthalMaxPct": 7.242,
+        "residualPtpPct": 10.046,
+        "tiltPct": 0.5,
+        "maxTilePct": 8.472,
         "vignetteStops": 0.269,
-        "localSpotPct": -0.287,
+        "localSpotPct": 0.29,
         "verdict": "ACCEPTABIL"
       }
     },
@@ -176,15 +176,15 @@
       "kind": "structure",
       "master": "Tokina/ISO400/f2.8-tableta-lipita-coperti-15-foi/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 2.166,
-        "azimuthalMaxPct": 1.997,
-        "residualPtpPct": 2.277,
-        "tiltPct": 2.552,
-        "maxTilePct": 1.542,
+        "azimuthalMaxPct": 1.989,
+        "residualPtpPct": 2.27,
+        "tiltPct": 2.643,
+        "maxTilePct": 1.569,
         "vignetteStops": 1.243,
-        "localSpotPct": -0.302,
+        "localSpotPct": -0.277,
         "verdict": "BUN"
       }
     },
@@ -193,15 +193,15 @@
       "kind": "structure",
       "master": "Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 1.575,
-        "azimuthalMaxPct": 1.599,
-        "residualPtpPct": 1.418,
-        "tiltPct": 1.643,
-        "maxTilePct": 0.954,
+        "azimuthalMaxPct": 1.794,
+        "residualPtpPct": 1.578,
+        "tiltPct": 1.93,
+        "maxTilePct": 1.022,
         "vignetteStops": 1.257,
-        "localSpotPct": -0.306,
+        "localSpotPct": -0.295,
         "verdict": "PERFECT"
       }
     },
@@ -210,15 +210,15 @@
       "kind": "structure",
       "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi-rotiri-perfecte/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 1.176,
-        "azimuthalMaxPct": 2.033,
-        "residualPtpPct": 2.863,
-        "tiltPct": 0.584,
-        "maxTilePct": 2.651,
+        "azimuthalMaxPct": 2.177,
+        "residualPtpPct": 2.844,
+        "tiltPct": 0.73,
+        "maxTilePct": 2.688,
         "vignetteStops": 0.763,
-        "localSpotPct": -0.601,
+        "localSpotPct": -0.586,
         "verdict": "BUN"
       }
     },
@@ -227,15 +227,15 @@
       "kind": "structure",
       "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 4.691,
-        "azimuthalMaxPct": 3.681,
-        "residualPtpPct": 3.499,
-        "tiltPct": 3.876,
-        "maxTilePct": 2.766,
+        "azimuthalMaxPct": 3.802,
+        "residualPtpPct": 3.539,
+        "tiltPct": 4.052,
+        "maxTilePct": 2.868,
         "vignetteStops": 0.812,
-        "localSpotPct": 0.455,
+        "localSpotPct": 0.421,
         "verdict": "BUN"
       }
     },
@@ -244,15 +244,15 @@
       "kind": "structure",
       "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-4-foi/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-11-06",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 2.464,
-        "azimuthalMaxPct": 5.792,
-        "residualPtpPct": 4.93,
-        "tiltPct": 3.1,
-        "maxTilePct": 4.065,
+        "azimuthalMaxPct": 5.909,
+        "residualPtpPct": 5.069,
+        "tiltPct": 3.257,
+        "maxTilePct": 4.086,
         "vignetteStops": 0.802,
-        "localSpotPct": -0.616,
+        "localSpotPct": -0.591,
         "verdict": "BUN"
       }
     },
@@ -506,7 +506,7 @@
       "fstop": 2.8,
       "crop": 1.523,
       "tolerance": 0.02,
-      "measuredOn": "2026-11-06",
+      "measuredOn": "2026-11-09",
       "expected": {
         "profile": "Tokina AT-X 11-20mm F2.8 PRO DX 20 mm, f/2.8, infinit",
         "masterStops": 0.852,
@@ -514,7 +514,7 @@
         "depthDiffStops": 0.186,
         "depthErrorPct": 13.799,
         "depthVerdict": "ACCEPTABIL",
-        "ratioResidualPtpPct": 7.055,
+        "ratioResidualPtpPct": 7.099,
         "shapeVerdict": "BUN",
         "verdict": "ACCEPTABIL"
       }
@@ -552,7 +552,7 @@
       "fstop": 2.8,
       "crop": 1.523,
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "profile": "Tokina AT-X 11-20mm F2.8 PRO DX 20 mm, f/2.8, infinit",
         "masterStops": 0.779,
@@ -560,7 +560,7 @@
         "depthDiffStops": 0.115,
         "depthErrorPct": 8.328,
         "depthVerdict": "BUN",
-        "ratioResidualPtpPct": 12.252,
+        "ratioResidualPtpPct": 12.227,
         "shapeVerdict": "ACCEPTABIL",
         "verdict": "ACCEPTABIL"
       }
@@ -575,7 +575,7 @@
       "fstop": 2.8,
       "crop": 1.523,
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "profile": "Tokina AT-X 11-20mm F2.8 PRO DX 20 mm, f/2.8, infinit",
         "masterStops": 1.257,
@@ -583,7 +583,7 @@
         "depthDiffStops": 0.592,
         "depthErrorPct": 50.781,
         "depthVerdict": "REFA",
-        "ratioResidualPtpPct": 1.495,
+        "ratioResidualPtpPct": 1.562,
         "shapeVerdict": "PERFECT",
         "verdict": "REFA"
       }
@@ -598,7 +598,7 @@
       "fstop": 2.8,
       "crop": 1.523,
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "profile": "Tokina AT-X 11-20mm F2.8 PRO DX 20 mm, f/2.8, infinit",
         "masterStops": 0.763,
@@ -606,7 +606,7 @@
         "depthDiffStops": 0.099,
         "depthErrorPct": 7.111,
         "depthVerdict": "BUN",
-        "ratioResidualPtpPct": 2.833,
+        "ratioResidualPtpPct": 2.783,
         "shapeVerdict": "BUN",
         "verdict": "BUN"
       }
