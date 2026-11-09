@@ -14,20 +14,20 @@ Copyright (C) 2026 Tudor Carean
 
                               A                                     B                                     A / B (diferenta)
     vignetare centru -> colt  0.76 stopuri                          0.46 stopuri                          0.30 stopuri [REFA]
-    offset centru iluminare   0.19 %                                0.19 %                                0.18 %
-    pete locale (praf etc.)   +0.08 % (mai luminos)                 +0.05 % (mai luminos)                 +0.04 % (mai luminos)
-    imprastiere 4 colturi     0.57 % [PERFECT]                      0.31 % [PERFECT]                      0.26 %
-    asimetrie azimutala max   0.29 % [PERFECT]                      0.18 % [PERFECT]                      0.11 %
-    reziduu dupa model rad.   0.28 % [PERFECT]                      0.17 % [PERFECT]                      0.11 %
-    inclinare (gradient)      0.41 % [PERFECT]                      0.26 % [PERFECT]                      0.15 %
-    pata maxima (o dala)      0.40 % [PERFECT]                      0.22 % [PERFECT]                      0.18 %
+    offset centru iluminare   0.00 %                                0.00 %                                0.00 %
+    pete locale (praf etc.)   +0.06 % (mai luminos)                 +0.03 % (mai luminos)                 +0.02 % (mai luminos)
+    imprastiere 4 colturi     0.00 % [PERFECT]                      0.00 % [PERFECT]                      0.00 %
+    asimetrie azimutala max   0.03 % [PERFECT]                      0.02 % [PERFECT]                      0.01 %
+    reziduu dupa model rad.   0.05 % [PERFECT]                      0.03 % [PERFECT]                      0.02 %
+    inclinare (gradient)      0.00 % [PERFECT]                      0.00 % [PERFECT]                      0.00 %
+    pata maxima (o dala)      0.08 % [PERFECT]                      0.05 % [PERFECT]                      0.04 %
 
   VERDICTUL DIFERENTEI: REFA
     forma     : PERFECT: cele cinci teste pe raport, pe scara lor
                 (sub 2 % PERFECT, 2-10 BUN, 10-20 ACCEPTABIL, peste 20 REFA)
-    adancimea : REFA: 0.30 stopuri = 23.0 % eroare in coltul light-ului calibrat,
+    adancimea : REFA: 0.30 stopuri = 23.2 % eroare in coltul light-ului calibrat,
                 pe aceeasi scara (sub 0.03 stopuri PERFECT, sub 0.14 BUN, sub 0.26 ACCEPTABIL, peste REFA)
-                In coltul unui light calibrat cu acest master eroarea ar fi 23.0 %. Testul End-to-end,
+                In coltul unui light calibrat cu acest master eroarea ar fi 23.2 %. Testul End-to-end,
                 care masoara acelasi lucru direct in light, i-ar spune PROBLEMA (2 % OK, 5 % PROBLEMA).
                 Dar cele doua baze de profile difera intre ele cu 0.2 stopuri, adica 15 % in colt,
                 asa ca verdictul de aici nu poate fi mai fin de atat si ramane pe scara celor cinci teste.

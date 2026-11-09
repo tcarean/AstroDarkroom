@@ -3,31 +3,31 @@ Copyright (C) 2026 Tudor Carean
 
 === STRUCTURA: <TMP>/grad.fit ===
     dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)
-    median / max ADU   : 25760 / 30119
+    median / max ADU   : 25741 / 30115
 
   INFORMATIV (nu sunt teste)
     vignetare centru->colt  : 0.76 stopuri (colt = 59% din centru)
-    offset centru iluminare :  7.55 %
-        varf iluminare = (142, 128)  vs  centru senzor = (128, 128)
+    offset centru iluminare :  7.67 %
+        varf iluminare = (141, 128)  vs  centru senzor = (128, 128)
         Cifra e doar orientativa: pe un obiectiv aproape fara vignetare creste mult
         fara ca eroarea sa creasca, iar cand punctul cel mai luminos iese din cadru e
         nedeterminata. Cat de mare e dezechilibrul spune "inclinare".
-    pete locale (praf etc.) : +0.13 % (mai luminos) la (16, 10)
+    pete locale (praf etc.) : +0.07 % (mai luminos) la (238, 10)
         Cea mai pronuntata pata mica, dupa ce se scot formele mari.
         Semnul spune ce fel: minus = mai intunecata decat imprejurimile (praf,
         condens, ceva in fata obiectivului), plus = mai luminoasa (scurgere de lumina, reflexie).
         Peste 2 % urmeaza o atentionare; sub atat cifra e doar informativa.
 
   TESTE
-    imprastiere 4 colturi   : 12.00 %   [ACCEPTABIL]
-        stanga-sus    :  94.01 % din media colturilor
-        dreapta-sus   : 105.71 % din media colturilor
-        stanga-jos    :  94.27 % din media colturilor
-        dreapta-jos   : 106.01 % din media colturilor
-    asimetrie azimutala max : 10.82 %   [ACCEPTABIL]
-    reziduu dupa model rad. : 10.37 %   [ACCEPTABIL]  <- CEL MAI IMPORTANT
-    inclinare (gradient)    : 12.01 %   [ACCEPTABIL]
-    pata maxima (o dala)    :  5.99 %   [BUN]
+    imprastiere 4 colturi   : 11.44 %   [ACCEPTABIL]
+        stanga-sus    :  94.28 % din media colturilor
+        dreapta-sus   : 105.72 % din media colturilor
+        stanga-jos    :  94.28 % din media colturilor
+        dreapta-jos   : 105.72 % din media colturilor
+    asimetrie azimutala max : 10.96 %   [ACCEPTABIL]
+    reziduu dupa model rad. : 10.45 %   [ACCEPTABIL]  <- CEL MAI IMPORTANT
+    inclinare (gradient)    : 12.02 %   [ACCEPTABIL]
+    pata maxima (o dala)    :  5.84 %   [BUN]
 
   SCARA celor cinci teste de abatere de mai sus
     sub 2 %      calitate perfecta

@@ -9,12 +9,12 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 4,
-        "azimuthalMaxPct": 3.755,
-        "residualPtpPct": 4.032,
-        "tiltPct": 1.818,
-        "maxTilePct": 3.097,
+        "azimuthalMaxPct": 3.74,
+        "residualPtpPct": 4.132,
+        "tiltPct": 1.826,
+        "maxTilePct": 3.316,
         "vignetteStops": 0.63,
-        "localSpotPct": 0.411,
+        "localSpotPct": 0.415,
         "verdict": "BUN"
       }
     },
@@ -26,12 +26,12 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 10.963,
-        "azimuthalMaxPct": 5.254,
-        "residualPtpPct": 7.227,
-        "tiltPct": 7.883,
-        "maxTilePct": 5.718,
+        "azimuthalMaxPct": 5.278,
+        "residualPtpPct": 7.283,
+        "tiltPct": 7.982,
+        "maxTilePct": 5.779,
         "vignetteStops": 0.623,
-        "localSpotPct": 0.339,
+        "localSpotPct": 0.33,
         "verdict": "ACCEPTABIL"
       }
     },
@@ -43,12 +43,12 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 10.528,
-        "azimuthalMaxPct": 6.436,
-        "residualPtpPct": 8.396,
-        "tiltPct": 11.259,
-        "maxTilePct": 5.455,
+        "azimuthalMaxPct": 6.45,
+        "residualPtpPct": 8.432,
+        "tiltPct": 11.291,
+        "maxTilePct": 5.423,
         "vignetteStops": 0.603,
-        "localSpotPct": -0.405,
+        "localSpotPct": -0.614,
         "verdict": "ACCEPTABIL"
       }
     },
@@ -60,12 +60,12 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 3.487,
-        "azimuthalMaxPct": 2.716,
-        "residualPtpPct": 3.035,
-        "tiltPct": 4.149,
-        "maxTilePct": 2.383,
+        "azimuthalMaxPct": 2.655,
+        "residualPtpPct": 2.999,
+        "tiltPct": 3.997,
+        "maxTilePct": 2.366,
         "vignetteStops": 0.63,
-        "localSpotPct": 0.206,
+        "localSpotPct": 0.187,
         "verdict": "BUN"
       }
     },
@@ -94,12 +94,12 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 7.593,
-        "azimuthalMaxPct": 6.93,
-        "residualPtpPct": 6.409,
-        "tiltPct": 8.146,
-        "maxTilePct": 4.167,
+        "azimuthalMaxPct": 6.889,
+        "residualPtpPct": 6.363,
+        "tiltPct": 8.174,
+        "maxTilePct": 4.212,
         "vignetteStops": 0.608,
-        "localSpotPct": 0.167,
+        "localSpotPct": -0.178,
         "verdict": "BUN"
       }
     },
@@ -108,15 +108,15 @@
       "kind": "structure",
       "master": "Samyang/ISO400/f2.8-sky/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 12.615,
         "azimuthalMaxPct": 7.049,
-        "residualPtpPct": 9.992,
-        "tiltPct": 12.357,
-        "maxTilePct": 6.514,
+        "residualPtpPct": 10.017,
+        "tiltPct": 12.347,
+        "maxTilePct": 6.67,
         "vignetteStops": 0.148,
-        "localSpotPct": -0.286,
+        "localSpotPct": -0.317,
         "verdict": "ACCEPTABIL"
       }
     },
@@ -128,12 +128,12 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 6.67,
-        "azimuthalMaxPct": 8.831,
-        "residualPtpPct": 7.14,
-        "tiltPct": 6.904,
-        "maxTilePct": 6.52,
+        "azimuthalMaxPct": 8.838,
+        "residualPtpPct": 7.036,
+        "tiltPct": 6.979,
+        "maxTilePct": 6.419,
         "vignetteStops": 0.852,
-        "localSpotPct": -0.383,
+        "localSpotPct": -0.412,
         "verdict": "BUN"
       }
     },
@@ -145,12 +145,12 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 16.408,
-        "azimuthalMaxPct": 10.585,
-        "residualPtpPct": 12.258,
-        "tiltPct": 11.668,
-        "maxTilePct": 12.442,
+        "azimuthalMaxPct": 10.622,
+        "residualPtpPct": 12.246,
+        "tiltPct": 11.84,
+        "maxTilePct": 12.949,
         "vignetteStops": 0.779,
-        "localSpotPct": 5.938,
+        "localSpotPct": 6.308,
         "verdict": "ACCEPTABIL"
       }
     },
@@ -162,12 +162,12 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 10.279,
-        "azimuthalMaxPct": 7.242,
-        "residualPtpPct": 10.046,
-        "tiltPct": 0.5,
-        "maxTilePct": 8.472,
+        "azimuthalMaxPct": 7.225,
+        "residualPtpPct": 10.008,
+        "tiltPct": 0.541,
+        "maxTilePct": 8.547,
         "vignetteStops": 0.269,
-        "localSpotPct": 0.29,
+        "localSpotPct": -0.268,
         "verdict": "ACCEPTABIL"
       }
     },
@@ -179,12 +179,12 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 2.166,
-        "azimuthalMaxPct": 1.989,
-        "residualPtpPct": 2.27,
-        "tiltPct": 2.643,
-        "maxTilePct": 1.569,
+        "azimuthalMaxPct": 2.093,
+        "residualPtpPct": 2.399,
+        "tiltPct": 2.713,
+        "maxTilePct": 1.651,
         "vignetteStops": 1.243,
-        "localSpotPct": -0.277,
+        "localSpotPct": -0.312,
         "verdict": "BUN"
       }
     },
@@ -196,13 +196,13 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 1.575,
-        "azimuthalMaxPct": 1.794,
-        "residualPtpPct": 1.578,
-        "tiltPct": 1.93,
-        "maxTilePct": 1.022,
+        "azimuthalMaxPct": 1.719,
+        "residualPtpPct": 1.546,
+        "tiltPct": 2.001,
+        "maxTilePct": 1.053,
         "vignetteStops": 1.257,
-        "localSpotPct": -0.295,
-        "verdict": "PERFECT"
+        "localSpotPct": -0.327,
+        "verdict": "BUN"
       }
     },
     {
@@ -213,12 +213,12 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 1.176,
-        "azimuthalMaxPct": 2.177,
-        "residualPtpPct": 2.844,
-        "tiltPct": 0.73,
-        "maxTilePct": 2.688,
+        "azimuthalMaxPct": 2.122,
+        "residualPtpPct": 2.843,
+        "tiltPct": 0.526,
+        "maxTilePct": 2.427,
         "vignetteStops": 0.763,
-        "localSpotPct": -0.586,
+        "localSpotPct": -0.578,
         "verdict": "BUN"
       }
     },
@@ -230,12 +230,12 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 4.691,
-        "azimuthalMaxPct": 3.802,
-        "residualPtpPct": 3.539,
-        "tiltPct": 4.052,
-        "maxTilePct": 2.868,
+        "azimuthalMaxPct": 3.741,
+        "residualPtpPct": 3.464,
+        "tiltPct": 3.826,
+        "maxTilePct": 2.793,
         "vignetteStops": 0.812,
-        "localSpotPct": 0.421,
+        "localSpotPct": 0.444,
         "verdict": "BUN"
       }
     },
@@ -247,12 +247,12 @@
       "measuredOn": "2026-11-09",
       "expected": {
         "cornerSpreadPct": 2.464,
-        "azimuthalMaxPct": 5.909,
-        "residualPtpPct": 5.069,
-        "tiltPct": 3.257,
-        "maxTilePct": 4.086,
+        "azimuthalMaxPct": 5.872,
+        "residualPtpPct": 5.009,
+        "tiltPct": 3.319,
+        "maxTilePct": 4.054,
         "vignetteStops": 0.802,
-        "localSpotPct": -0.591,
+        "localSpotPct": -0.628,
         "verdict": "BUN"
       }
     },
@@ -438,10 +438,10 @@
       "master": "Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi/process/pp_flat_stacked.fit",
       "raw": "Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi/flats/DSC_0001.NEF",
       "tolerance": 0.02,
-      "measuredOn": "2026-11-02",
+      "measuredOn": "2026-11-09",
       "expected": {
         "masterStops": 1.257,
-        "shapeVerdict": "PERFECT",
+        "shapeVerdict": "BUN",
         "verdict": "REFA",
         "diffStops": 0.593,
         "decides": "Tokina atx-i 11-20mm f2.8 CF [NIKON CORPORATION]",
@@ -514,7 +514,7 @@
         "depthDiffStops": 0.186,
         "depthErrorPct": 13.799,
         "depthVerdict": "ACCEPTABIL",
-        "ratioResidualPtpPct": 7.099,
+        "ratioResidualPtpPct": 6.99,
         "shapeVerdict": "BUN",
         "verdict": "ACCEPTABIL"
       }
@@ -583,8 +583,8 @@
         "depthDiffStops": 0.592,
         "depthErrorPct": 50.781,
         "depthVerdict": "REFA",
-        "ratioResidualPtpPct": 1.562,
-        "shapeVerdict": "PERFECT",
+        "ratioResidualPtpPct": 1.552,
+        "shapeVerdict": "BUN",
         "verdict": "REFA"
       }
     },
@@ -606,7 +606,7 @@
         "depthDiffStops": 0.099,
         "depthErrorPct": 7.111,
         "depthVerdict": "BUN",
-        "ratioResidualPtpPct": 2.783,
+        "ratioResidualPtpPct": 2.829,
         "shapeVerdict": "BUN",
         "verdict": "BUN"
       }

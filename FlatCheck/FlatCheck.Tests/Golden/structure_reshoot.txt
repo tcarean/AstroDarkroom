@@ -3,31 +3,31 @@ Copyright (C) 2026 Tudor Carean
 
 === STRUCTURA: <TMP>/violent.fit ===
     dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)
-    median / max ADU   : 26369 / 32573
+    median / max ADU   : 26345 / 32548
 
   INFORMATIV (nu sunt teste)
     vignetare centru->colt  : 0.76 stopuri (colt = 59% din centru)
-    offset centru iluminare : 33.48 %
-        varf iluminare = (189, 128)  vs  centru senzor = (128, 128)
+    offset centru iluminare : 33.62 %
+        varf iluminare = (188, 127)  vs  centru senzor = (128, 128)
         Cifra e doar orientativa: pe un obiectiv aproape fara vignetare creste mult
         fara ca eroarea sa creasca, iar cand punctul cel mai luminos iese din cadru e
         nedeterminata. Cat de mare e dezechilibrul spune "inclinare".
-    pete locale (praf etc.) : +0.13 % (mai luminos) la (241, 10)
+    pete locale (praf etc.) : +0.09 % (mai luminos) la (238, 10)
         Cea mai pronuntata pata mica, dupa ce se scot formele mari.
         Semnul spune ce fel: minus = mai intunecata decat imprejurimile (praf,
         condens, ceva in fata obiectivului), plus = mai luminoasa (scurgere de lumina, reflexie).
         Peste 2 % urmeaza o atentionare; sub atat cifra e doar informativa.
 
   TESTE
-    imprastiere 4 colturi   : 57.82 %   [REFA]
-        stanga-sus    :  71.13 % din media colturilor
-        dreapta-sus   : 128.58 % din media colturilor
-        stanga-jos    :  71.34 % din media colturilor
-        dreapta-jos   : 128.95 % din media colturilor
-    asimetrie azimutala max : 54.75 %   [REFA]
-    reziduu dupa model rad. : 52.01 %   [REFA]  <- CEL MAI IMPORTANT
-    inclinare (gradient)    : 62.04 %   [REFA]
-    pata maxima (o dala)    : 29.43 %   [REFA]
+    imprastiere 4 colturi   : 57.28 %   [REFA]
+        stanga-sus    :  71.36 % din media colturilor
+        dreapta-sus   : 128.64 % din media colturilor
+        stanga-jos    :  71.36 % din media colturilor
+        dreapta-jos   : 128.64 % din media colturilor
+    asimetrie azimutala max : 54.74 %   [REFA]
+    reziduu dupa model rad. : 52.10 %   [REFA]  <- CEL MAI IMPORTANT
+    inclinare (gradient)    : 62.12 %   [REFA]
+    pata maxima (o dala)    : 28.90 %   [REFA]
 
   SCARA celor cinci teste de abatere de mai sus
     sub 2 %      calitate perfecta

@@ -7,9 +7,9 @@ afisare:    256 x 256 (nemicsorat), 65536 cosuri pe canal, culori false (tabelul
 
 canal      interval intrare               niveluri folosite
   R          11594 .. 21080                 256 / 256
-  G1         18760 .. 34000                 256 / 256
-  G2         18760 .. 34000                 256 / 256
-  B          9033 .. 16320                  256 / 256
+  G1         18700 .. 34000                 256 / 256
+  G2         18700 .. 34000                 256 / 256
+  B          8976 .. 16320                  256 / 256
 
 LEGENDA: culori false, tabelul rainbow din Siril pe un singur strat: magenta e nivelul cel mai jos, apoi albastru, cyan, verde, galben, iar rosu cel mai sus; culorile sunt doar o ordine, nu valori.
 INFORMATIV: modul nu da verdict. Poza arata FORMA a ceea ce nu e uniform, nu si cat de mare e: fiecare treapta de gri primeste acelasi numar de pixeli, deci o ondulatie de 0.5 % si una de 10 % ies la fel, iar un flat perfect isi arata propriul zgomot la contrast maxim. Cifrele sunt in modul de structura.

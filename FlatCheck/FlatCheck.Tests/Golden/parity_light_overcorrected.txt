@@ -6,9 +6,9 @@ Copyright (C) 2026 Tudor Carean
     camp acoperit           : necunoscut (headerul nu da nici focala, nici scara)
     (nu pot verifica daca testul se aplica; vezi --fov si README)
 
-    tile-uri folosite       : 1685 / 1764 (restul = nebulozitate/stele, respinse)
-    gradient de cer (plan)  :  0.17 %  <- poluare luminoasa, IGNORA
-    componenta radiala      : -44.40 %   [PROBLEMA]  <- ASTA e flat-ul
+    tile-uri folosite       : 1680 / 1764 (restul = nebulozitate/stele, respinse)
+    gradient de cer (plan)  :  0.00 %  <- poluare luminoasa, IGNORA
+    componenta radiala      : -44.22 %   [PROBLEMA]  <- ASTA e flat-ul
 
   INTERPRETARE
     Colturile au iesit mai luminoase decat centrul: flat-ul a corectat prea mult. Aproape intotdeauna

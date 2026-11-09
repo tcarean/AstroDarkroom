@@ -7,22 +7,22 @@ Copyright (C) 2026 Tudor Carean
     diagonal field          :  10.0 degrees  (--fov)
 
     frame                              radial   sky gradient     tiles
-    pp_light_00001.fit               +58.65 %      34.98 %    1643/1764
-    pp_light_00002.fit               +34.26 %      31.88 %    1647/1764
-    pp_light_00003.fit               +11.03 %      27.56 %    1637/1764
-    pp_light_00004.fit                -9.00 %      21.82 %    1624/1764
-    pp_light_00005.fit               -27.72 %      15.33 %    1619/1764
-    pp_light_00006.fit               -47.87 %       8.07 %    1623/1764
+    pp_light_00001.fit               +59.79 %      35.01 %    1628/1764
+    pp_light_00002.fit               +34.89 %      31.85 %    1628/1764
+    pp_light_00003.fit               +11.15 %      27.46 %    1624/1764
+    pp_light_00004.fit                -9.06 %      21.78 %    1628/1764
+    pp_light_00005.fit               -27.82 %      15.40 %    1626/1764
+    pp_light_00006.fit               -47.92 %       8.23 %    1636/1764
 
   SERIES SUMMARY
-    radial component, mean    :   +3.23 %
-    spread (min .. max)       :  -47.87 .. +58.65 %
-    error of the mean         :   16.14 points   <- above the threshold of 2.00
+    radial component, mean    :   +3.50 %
+    spread (min .. max)       :  -47.92 .. +59.79 %
+    error of the mean         :   16.33 points   <- above the threshold of 2.00
     correlation w. sky grad.  :    0.98          <- above the threshold of 0.70
 
     VERDICT: UNDETERMINED
     The mean can NOT be read as the flat error:
-      - the mean is too uncertain: its error (16.14) is larger even than the OK threshold (2.00),
+      - the mean is too uncertain: its error (16.33) is larger even than the OK threshold (2.00),
         because the frames differ too much from each other. A verdict here would be
         an opinion, not a measurement.
       - the radial figure moves together with the sky (correlation 0.98, on a sky

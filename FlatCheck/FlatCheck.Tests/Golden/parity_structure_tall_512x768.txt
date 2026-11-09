@@ -3,31 +3,31 @@ Copyright (C) 2026 Tudor Carean
 
 === STRUCTURA: <TMP>/tall.fit ===
     dimensiune analiza : 256 x 384 (dupa 2x2 + downsample)
-    median / max ADU   : 25944 / 30193
+    median / max ADU   : 25932 / 30188
 
   INFORMATIV (nu sunt teste)
-    vignetare centru->colt  : 0.75 stopuri (colt = 59% din centru)
-    offset centru iluminare :  9.70 %
+    vignetare centru->colt  : 0.76 stopuri (colt = 59% din centru)
+    offset centru iluminare :  9.80 %
         varf iluminare = (150, 192)  vs  centru senzor = (128, 192)
         Cifra e doar orientativa: pe un obiectiv aproape fara vignetare creste mult
         fara ca eroarea sa creasca, iar cand punctul cel mai luminos iese din cadru e
         nedeterminata. Cat de mare e dezechilibrul spune "inclinare".
-    pete locale (praf etc.) : -0.02 % (mai intunecat) la (28, 28)
+    pete locale (praf etc.) : +0.03 % (mai luminos) la (170, 10)
         Cea mai pronuntata pata mica, dupa ce se scot formele mari.
         Semnul spune ce fel: minus = mai intunecata decat imprejurimile (praf,
         condens, ceva in fata obiectivului), plus = mai luminoasa (scurgere de lumina, reflexie).
         Peste 2 % urmeaza o atentionare; sub atat cifra e doar informativa.
 
   TESTE
-    imprastiere 4 colturi   : 11.86 %   [ACCEPTABIL]
-        stanga-sus    :  94.08 % din media colturilor
-        dreapta-sus   : 105.66 % din media colturilor
-        stanga-jos    :  94.32 % din media colturilor
-        dreapta-jos   : 105.94 % din media colturilor
-    asimetrie azimutala max : 10.90 %   [ACCEPTABIL]
+    imprastiere 4 colturi   : 11.43 %   [ACCEPTABIL]
+        stanga-sus    :  94.29 % din media colturilor
+        dreapta-sus   : 105.71 % din media colturilor
+        stanga-jos    :  94.29 % din media colturilor
+        dreapta-jos   : 105.71 % din media colturilor
+    asimetrie azimutala max : 10.93 %   [ACCEPTABIL]
     reziduu dupa model rad. : 10.45 %   [ACCEPTABIL]  <- CEL MAI IMPORTANT
-    inclinare (gradient)    : 12.07 %   [ACCEPTABIL]
-    pata maxima (o dala)    :  6.16 %   [BUN]
+    inclinare (gradient)    : 12.02 %   [ACCEPTABIL]
+    pata maxima (o dala)    :  5.90 %   [BUN]
 
   SCARA celor cinci teste de abatere de mai sus
     sub 2 %      calitate perfecta

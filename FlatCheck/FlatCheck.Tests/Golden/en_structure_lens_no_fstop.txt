@@ -3,31 +3,31 @@ Copyright (C) 2026 Tudor Carean
 
 === STRUCTURE: <TMP>/ref.fit ===
     analysis size      : 120 x 80 (after 2x2 + downsample)
-    median / max ADU   : 26035 / 30000
+    median / max ADU   : 26000 / 30000
 
   INFORMATIVE (not tests)
-    vignetting to corner    : 0.75 stops (corner = 59% of centre)
-    illum. centre offset    :  0.46 %
-        illumination peak = (60, 40)  vs  sensor centre = (60, 40)
+    vignetting to corner    : 0.76 stops (corner = 59% of centre)
+    illum. centre offset    :  0.00 %
+        illumination peak = (60, 39)  vs  sensor centre = (60, 40)
         The figure is only indicative: on a lens with almost no vignetting it grows a lot
         without the error growing, and once the brightest point leaves the frame it reads
         undetermined. How large the imbalance is, "tilt" says.
-    local spots (dust etc.) : +0.09 % (brighter) at (7, 19)
+    local spots (dust etc.) : +0.13 % (brighter) at (10, 6)
         The most pronounced small spot, after the large shapes are taken out.
         The sign says which kind: minus = darker than its surroundings (dust,
         condensation, something in front of the lens), plus = brighter (light leak, reflection).
         Above 2 % a warning follows; below that the figure is informative only.
 
   TESTS
-    spread of the 4 corners :  1.38 %   [PERFECT]
-        top-left      :  99.31 % of the corners' mean
-        top-right     : 100.14 % of the corners' mean
-        bottom-left   :  99.86 % of the corners' mean
-        bottom-right  : 100.69 % of the corners' mean
-    max azimuthal asymmetry :  0.54 %   [PERFECT]
-    residual (radial model) :  0.76 %   [PERFECT]  <- THE MOST IMPORTANT
-    tilt (gradient)         :  1.00 %   [PERFECT]
-    worst spot (one tile)   :  1.00 %   [PERFECT]
+    spread of the 4 corners :  0.00 %   [PERFECT]
+        top-left      : 100.00 % of the corners' mean
+        top-right     : 100.00 % of the corners' mean
+        bottom-left   : 100.00 % of the corners' mean
+        bottom-right  : 100.00 % of the corners' mean
+    max azimuthal asymmetry :  0.05 %   [PERFECT]
+    residual (radial model) :  0.11 %   [PERFECT]  <- THE MOST IMPORTANT
+    tilt (gradient)         :  0.00 %   [PERFECT]
+    worst spot (one tile)   :  0.28 %   [PERFECT]
 
   SCALE of the five deviation tests above
     under 2 %    perfect quality

@@ -3,31 +3,31 @@ Copyright (C) 2026 Tudor Carean
 
 === STRUCTURA: <TMP>/grad_bun.fit ===
     dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)
-    median / max ADU   : 25713 / 30021
+    median / max ADU   : 25694 / 30019
 
   INFORMATIV (nu sunt teste)
     vignetare centru->colt  : 0.76 stopuri (colt = 59% din centru)
-    offset centru iluminare :  3.09 %
-        varf iluminare = (134, 128)  vs  centru senzor = (128, 128)
+    offset centru iluminare :  3.21 %
+        varf iluminare = (133, 127)  vs  centru senzor = (128, 128)
         Cifra e doar orientativa: pe un obiectiv aproape fara vignetare creste mult
         fara ca eroarea sa creasca, iar cand punctul cel mai luminos iese din cadru e
         nedeterminata. Cat de mare e dezechilibrul spune "inclinare".
-    pete locale (praf etc.) : +0.11 % (mai luminos) la (241, 244)
+    pete locale (praf etc.) : +0.07 % (mai luminos) la (238, 10)
         Cea mai pronuntata pata mica, dupa ce se scot formele mari.
         Semnul spune ce fel: minus = mai intunecata decat imprejurimile (praf,
         condens, ceva in fata obiectivului), plus = mai luminoasa (scurgere de lumina, reflexie).
         Peste 2 % urmeaza o atentionare; sub atat cifra e doar informativa.
 
   TESTE
-    imprastiere 4 colturi   :  5.33 %   [BUN]
-        stanga-sus    :  97.33 % din media colturilor
+    imprastiere 4 colturi   :  4.76 %   [BUN]
+        stanga-sus    :  97.62 % din media colturilor
         dreapta-sus   : 102.38 % din media colturilor
         stanga-jos    :  97.62 % din media colturilor
-        dreapta-jos   : 102.67 % din media colturilor
-    asimetrie azimutala max :  4.42 %   [BUN]
-    reziduu dupa model rad. :  4.23 %   [BUN]  <- CEL MAI IMPORTANT
+        dreapta-jos   : 102.38 % din media colturilor
+    asimetrie azimutala max :  4.51 %   [BUN]
+    reziduu dupa model rad. :  4.38 %   [BUN]  <- CEL MAI IMPORTANT
     inclinare (gradient)    :  5.00 %   [BUN]
-    pata maxima (o dala)    :  2.57 %   [BUN]
+    pata maxima (o dala)    :  2.48 %   [BUN]
 
   SCARA celor cinci teste de abatere de mai sus
     sub 2 %      calitate perfecta

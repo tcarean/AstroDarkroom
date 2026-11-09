@@ -14,20 +14,20 @@ Copyright (C) 2026 Tudor Carean
 
                               A                                     B                                     A / B (difference)
     vignetting centre->corner 0.76 stops                            0.46 stops                            0.30 stops [REDO]
-    illum. centre offset      0.19 %                                0.19 %                                0.18 %
-    local spots (dust etc.)   +0.08 % (brighter)                    +0.05 % (brighter)                    +0.04 % (brighter)
-    spread of the 4 corners   0.57 % [PERFECT]                      0.31 % [PERFECT]                      0.26 %
-    max azimuthal asymmetry   0.29 % [PERFECT]                      0.18 % [PERFECT]                      0.11 %
-    residual (radial model)   0.28 % [PERFECT]                      0.17 % [PERFECT]                      0.11 %
-    tilt (gradient)           0.41 % [PERFECT]                      0.26 % [PERFECT]                      0.15 %
-    worst spot (one tile)     0.40 % [PERFECT]                      0.22 % [PERFECT]                      0.18 %
+    illum. centre offset      0.00 %                                0.00 %                                0.00 %
+    local spots (dust etc.)   +0.06 % (brighter)                    +0.03 % (brighter)                    +0.02 % (brighter)
+    spread of the 4 corners   0.00 % [PERFECT]                      0.00 % [PERFECT]                      0.00 %
+    max azimuthal asymmetry   0.03 % [PERFECT]                      0.02 % [PERFECT]                      0.01 %
+    residual (radial model)   0.05 % [PERFECT]                      0.03 % [PERFECT]                      0.02 %
+    tilt (gradient)           0.00 % [PERFECT]                      0.00 % [PERFECT]                      0.00 %
+    worst spot (one tile)     0.08 % [PERFECT]                      0.05 % [PERFECT]                      0.04 %
 
   THE DIFFERENCE'S VERDICT: REDO
     shape     : PERFECT: the five tests on the ratio, on their scale
                 (under 2 % PERFECT, 2-10 GOOD, 10-20 ACCEPTABLE, over 20 REDO)
-    depth     : REDO: 0.30 stops = 23.0 % error in the corner of the calibrated light,
+    depth     : REDO: 0.30 stops = 23.2 % error in the corner of the calibrated light,
                 on the same scale (under 0.03 stops PERFECT, under 0.14 GOOD, under 0.26 ACCEPTABLE, over REDO)
-                In the corner of a light calibrated with this master the error would be 23.0 %. The End-to-end test,
+                In the corner of a light calibrated with this master the error would be 23.2 %. The End-to-end test,
                 which measures the same thing directly in the light, would call it PROBLEM (2 % OK, 5 % PROBLEM).
                 But the two profile databases differ from each other by 0.2 stops, that is 15 % in the corner,
                 so the verdict here cannot be finer than that and stays on the five tests' scale.
