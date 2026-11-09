@@ -51,7 +51,9 @@ whatever `ROWORDER` says, because that is how Siril displays every FITS (R-130, 
 without any conversion downstream; `ROWORDER` only decides the Bayer phase (`modes-expo.md`).
 The figures are not quite independent of that choice: the model's centre is the index
 `(w/2, h/2)` and the tile grid starts at row 0, so the flip of 2026-11-09 moved the validation
-figures by up to 0.3 points (`validation.md`, History).
+figures by up to 0.3 points (`validation.md`, History). The test fixtures are written as Siril
+writes a file (`FitsTestData.BuildFits`, bottom-up), so a synthetic scene is read as it was drawn
+and the goldens did not move.
 
 
 ## The five modes

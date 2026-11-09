@@ -37,7 +37,10 @@ Measured on the branch before deciding:
   to 3.82 %.
 - Flipping only at drawing and in the printed text would leave every figure as it was.
 
-The owner, shown both, chose the flip at load.
+The owner, shown both, chose the flip at load. A first version of the branch then recaptured
+the parity goldens with their moved figures; the code review pointed out that the test fixtures
+are synthetic files the tests write, so written as Siril writes a file they are read as drawn and
+keep every figure. The owner chose that.
 
 ## Decision
 
@@ -51,12 +54,14 @@ The owner, shown both, chose the flip at load.
 3. **`FitsWriter.Write` writes the raster from its last row to its first**, so the synthetic
    flat keeps its reference's row order and Siril shows it the way up it was analysed; a file with
    no `ROWORDER` card to copy gets `ROWORDER= 'BOTTOM-UP'`, a copied card is kept as it is.
-4. **The figures that moved are re-recorded, not kept.** The 17 validation cases carry the
-   2026-11-09 figures, the old ones in their row's last column; the 15 parity goldens whose
-   figures moved (the structure and light scenarios) are recaptured and `python-parity.md` says
-   that their figures are no longer the prototype's, and why. A figure that changes by 0.3 points
-   with the way a file is read was never precise to the third decimal; one orientation everywhere
-   is worth more than keeping those decimals.
+4. **The test fixtures are written as Siril writes a file**, the first row of the file at the
+   bottom (`FitsTestData.BuildFits`, `BuildFitsCube`, `BuildFitsWithEmptyPrimary`, with a
+   `bottomUp: false` escape for the tests of the flip itself), so every synthetic scene is read
+   as it was drawn and the 39 parity goldens keep the figures the prototype confirmed. Only the
+   17 validation cases, measured on real files, carry new figures: the 2026-11-09 ones, the old
+   in their row's last column. A figure that changes by 0.3 points with the way a file is read
+   was never precise to the third decimal; one orientation everywhere is worth more than
+   keeping those decimals on the real masters.
 
 ## Alternatives rejected
 
@@ -73,17 +78,22 @@ The owner, shown both, chose the flip at load.
 - **Make the geometry symmetric first** (the geometric centre, a centred tile grid), so that the
   orientation cannot move a figure. It would move the figures once more, by a small amount, and
   it is a formula change of its own, with its own validation; left as a follow-up, not mixed in.
+- **Recapture the parity goldens with the moved figures**, as the first version of this branch
+  did: 22 scenarios lost the prototype's confirmation for figures that had only moved because the
+  fixtures were still written top-down, against Siril's convention; `parity_structure_clean` read
+  0.64 % where 0.28 % was confirmed, `parity_light_nebulosity` +36.66 % where +45.09 % was. Writing
+  the fixtures as Siril does keeps all of it.
 
 ## Consequences
 
 - A genuine top-down camera file (SharpCap writes `TOP-DOWN`) is analysed upside down: exactly as
   Siril shows it, so the map and the report still match the screen. None has been met.
-- The validation figures of 17 cases and the parity goldens of 15 scenarios changed (the lines
-  and their causes are in `docs/validation.md` and `docs/design/python-parity.md`); in the
-  `--expo` goldens the `[0,·]` and `[1,·]` position lines swap their figures, the same set, and a
-  BAYERPAT fixture without `ROWORDER` is named `GBRG`. Fixtures that stand for Siril files now
-  carry Siril's `ROWORDER= 'BOTTOM-UP'`; the two "BAYERPAT without `ROWORDER`" scenarios stay
-  silent on purpose, as R-044's contrast.
+- The validation figures of 17 cases changed (`docs/validation.md`, History). Of the 87 goldens,
+  four change, each in its four position-name lines only, every figure the same: the two
+  `expo_cfa_bayerpat` (a BAYERPAT without `ROWORDER`, now named `GBRG` at `[0,0]`, R-044) and
+  `parity_expo_cfa_bayerpat` the same way, and `parity_expo_cfa_bottom_up`, whose `RGGB` is now
+  read as `RGGB`. Fixtures that stand for Siril files carry Siril's `ROWORDER= 'BOTTOM-UP'`; the
+  two "BAYERPAT without `ROWORDER`" scenarios stay silent on purpose, as R-044's contrast.
 - `RawReader` is unchanged: libraw's rows are the sensor's, top-down (checked with rawpy on the
   2026-11-08 NEFs against their Siril conversions).
 - Guards: `R130_*` in `FitsReaderTests` (the three states of the card, through the path-based
