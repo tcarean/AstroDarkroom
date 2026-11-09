@@ -61,9 +61,10 @@ internal static class FitsTestData
     /// <summary>
     /// The mosaic order, as Siril writes it on a frame passed through Conversion. The
     /// offsets are optional because Siril too writes them only when there is a crop.
-    /// ROWORDER is optional for another reason: Siril always writes it ('BOTTOM-UP'), but
-    /// most fixtures here do not want to test it, and without the card the reader moves
-    /// nothing - exactly as before it existed.
+    /// ROWORDER is optional for another reason: Siril always writes it ('BOTTOM-UP'), and a
+    /// fixture that stands for a Siril file passes it; without the card a frame of even height
+    /// is read against its pattern and the phase moves by one row (R-044), which is what the
+    /// two "BAYERPAT without ROWORDER" scenarios test.
     /// </summary>
     internal static string[] BayerCards(string pattern, int xOffset = 0, int yOffset = 0, string? rowOrder = null)
     {
@@ -129,11 +130,17 @@ internal static class FitsTestData
         return data.ToArray();
     }
 
-    /// <summary>A single-HDU 2-D image.</summary>
+    /// <summary>
+    /// A single-HDU 2-D image, written as Siril writes a file: the first row of the file is the
+    /// bottom of the frame, so <paramref name="pixel"/>(x, y) is the value FitsReader puts at
+    /// raster (y, x) once it has read the file (R-130, ADR 0094), and a scene is analysed as it
+    /// was drawn. <paramref name="bottomUp"/> false writes the rows in <paramref name="pixel"/>'s
+    /// order instead, for the tests of the reader's flip itself.
+    /// </summary>
     internal static byte[] BuildFits(
         int width, int height, Func<int, int, double> pixel,
         int bitpix = 16, double? bzero = null, double bscale = 1,
-        IEnumerable<string>? extraCards = null)
+        IEnumerable<string>? extraCards = null, bool bottomUp = true)
     {
         double bz = bzero ?? DefaultBzero(bitpix);
         var cards = new List<string>
@@ -147,15 +154,18 @@ internal static class FitsTestData
         var data = new List<byte>(width * height * Math.Abs(bitpix) / 8);
         for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
-                AppendSample(data, pixel(x, y), bitpix, bz, bscale);
+                AppendSample(data, pixel(x, bottomUp ? height - 1 - y : y), bitpix, bz, bscale);
 
         return HeaderBlocks(cards).Concat(PadToBlock(data)).ToArray();
     }
 
-    /// <summary>A plane-sequential colour cube (Siril writes NAXIS3 planes back to back).</summary>
+    /// <summary>
+    /// A plane-sequential colour cube (Siril writes NAXIS3 planes back to back), each plane
+    /// written bottom-up like <see cref="BuildFits"/> unless <paramref name="bottomUp"/> is false.
+    /// </summary>
     internal static byte[] BuildFitsCube(
         int width, int height, int planes, Func<int, int, int, double> pixel,
-        int bitpix = 16, double? bzero = null, double bscale = 1)
+        int bitpix = 16, double? bzero = null, double bscale = 1, bool bottomUp = true)
     {
         double bz = bzero ?? DefaultBzero(bitpix);
         var cards = new List<string>
@@ -169,13 +179,14 @@ internal static class FitsTestData
         for (int p = 0; p < planes; p++)
             for (int y = 0; y < height; y++)
                 for (int x = 0; x < width; x++)
-                    AppendSample(data, pixel(x, y, p), bitpix, bz, bscale);
+                    AppendSample(data, pixel(x, bottomUp ? height - 1 - y : y, p), bitpix, bz, bscale);
 
         return HeaderBlocks(cards).Concat(PadToBlock(data)).ToArray();
     }
 
     /// <summary>
-    /// Empty NAXIS=0 primary HDU followed by an IMAGE extension holding the data.
+    /// Empty NAXIS=0 primary HDU followed by an IMAGE extension holding the data, written
+    /// bottom-up like <see cref="BuildFits"/>.
     /// </summary>
     internal static byte[] BuildFitsWithEmptyPrimary(
         int width, int height, Func<int, int, double> pixel, int bitpix = 16, double? bzero = null)
@@ -195,7 +206,7 @@ internal static class FitsTestData
         var data = new List<byte>();
         for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
-                AppendSample(data, pixel(x, y), bitpix, bz, 1);
+                AppendSample(data, pixel(x, height - 1 - y), bitpix, bz, 1);
 
         return primary.Concat(ext).Concat(PadToBlock(data)).ToArray();
     }

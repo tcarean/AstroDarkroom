@@ -60,7 +60,9 @@ namespace FlatCheck
         /// (IEEE float) or 16 (short with BZERO 32768, rounded and clipped to 0..65535).
         /// <paramref name="cards"/> are the raw cards to copy (the structural ones are skipped),
         /// <paramref name="history"/> are the HISTORY lines to add. Any other BITPIX throws an
-        /// ArgumentException.
+        /// ArgumentException. The rows go out from the raster's last to its first, the order
+        /// Siril writes and the reader undoes (R-130), and a file with no ROWORDER card to copy
+        /// gets one saying BOTTOM-UP.
         /// </summary>
         /// <param name="s">Where the file's bytes go; flushed at the end, not closed.</param>
         /// <param name="img">The image; its values are written as they are (-32) or as ADU
@@ -88,13 +90,20 @@ namespace FlatCheck
                 header.Add(Number("BZERO", 32768, "offset data range to that of unsigned short"));
                 header.Add(Number("BSCALE", 1, "default scaling factor"));
             }
+            // The copied cards keep their ROWORDER, true of this file too since the rows go out
+            // in the order they came in; a file with none to copy says what it is (R-130).
+            int afterStructural = header.Count;
+            bool hasRowOrder = false;
             if (cards != null)
                 foreach (string card in cards)
                 {
                     string key = card.Length >= 8 ? card.Substring(0, 8).Trim() : card.Trim();
                     if (Structural.Contains(key)) continue;
+                    if (key == "ROWORDER") hasRowOrder = true;
                     header.Add(card.PadRight(CardSize).Substring(0, CardSize));
                 }
+            if (!hasRowOrder)
+                header.Insert(afterStructural, Text("ROWORDER", "BOTTOM-UP", "file row 0 is the bottom of the frame"));
             if (history != null)
                 foreach (string line in history)
                     foreach (string piece in Wrap(line, CardSize - 8))
@@ -109,21 +118,26 @@ namespace FlatCheck
             long dataBytes = (long)img.D.Length * bytesPer;
             var buf = new byte[Math.Min(dataBytes, 1 << 20)];
             int bp = 0;
-            foreach (double v in img.D)
-            {
-                if (bitpix == -32)
+            // From the raster's last row to its first: the reader puts the file's first row last
+            // (R-130), so the file keeps the order Siril writes and shows, and a round trip is
+            // the identity.
+            for (int y = img.H - 1; y >= 0; y--)
+                for (int x = 0; x < img.W; x++)
                 {
-                    int bits = BitConverter.SingleToInt32Bits((float)v);
-                    buf[bp++] = (byte)(bits >> 24); buf[bp++] = (byte)(bits >> 16);
-                    buf[bp++] = (byte)(bits >> 8); buf[bp++] = (byte)bits;
+                    double v = img.D[y * img.W + x];
+                    if (bitpix == -32)
+                    {
+                        int bits = BitConverter.SingleToInt32Bits((float)v);
+                        buf[bp++] = (byte)(bits >> 24); buf[bp++] = (byte)(bits >> 16);
+                        buf[bp++] = (byte)(bits >> 8); buf[bp++] = (byte)bits;
+                    }
+                    else
+                    {
+                        int u = (int)Math.Clamp(Math.Round(v), 0, 65535) - 32768;
+                        buf[bp++] = (byte)((u >> 8) & 0xFF); buf[bp++] = (byte)(u & 0xFF);
+                    }
+                    if (bp == buf.Length) { s.Write(buf, 0, bp); bp = 0; }
                 }
-                else
-                {
-                    int u = (int)Math.Clamp(Math.Round(v), 0, 65535) - 32768;
-                    buf[bp++] = (byte)((u >> 8) & 0xFF); buf[bp++] = (byte)(u & 0xFF);
-                }
-                if (bp == buf.Length) { s.Write(buf, 0, bp); bp = 0; }
-            }
             if (bp > 0) s.Write(buf, 0, bp);
 
             long pad = (BlockSize - dataBytes % BlockSize) % BlockSize;
@@ -155,6 +169,14 @@ namespace FlatCheck
         /// <returns>The 80-character card.</returns>
         static string Number(string key, long value, string comment)
             => Card(key, value.ToString(CultureInfo.InvariantCulture).PadLeft(20), comment);
+
+        /// <summary>A string card in the fixed format: the value quoted, left-aligned.</summary>
+        /// <param name="key">The keyword, at most 8 characters.</param>
+        /// <param name="value">The value, without quotes.</param>
+        /// <param name="comment">The comment; empty for none.</param>
+        /// <returns>The 80-character card.</returns>
+        static string Text(string key, string value, string comment)
+            => Card(key, ("'" + value.PadRight(8) + "'").PadRight(20), comment);
 
         /// <summary>A logical card (T or F) in the fixed format.</summary>
         /// <param name="key">The keyword, at most 8 characters.</param>

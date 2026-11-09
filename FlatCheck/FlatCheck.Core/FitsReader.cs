@@ -29,8 +29,9 @@ using static FlatCheck.Ui;
 namespace FlatCheck
 {
     /// <summary>
-    /// Reads a FITS file: the first HDU with a 2D image, its planes averaged into one raster,
-    /// the header's cards as a dictionary and as they stand, and the CFA order from BAYERPAT.
+    /// Reads a FITS file: the first HDU with a 2D image, its planes averaged into one raster
+    /// whose row 0 is the file's LAST row (the frame as Siril shows it, R-130), the header's
+    /// cards as a dictionary and as they stand, and the CFA order from BAYERPAT.
     /// </summary>
     internal sealed class FitsReader : IFrameReader
     {
@@ -161,8 +162,9 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Reads the whole file: the first HDU with a 2D image, its planes averaged, the header
-        /// as a dictionary and as raw cards, the CFA order from BAYERPAT, and the focal length
+        /// Reads the whole file: the first HDU with a 2D image, its planes averaged, its rows
+        /// with the file's first row last (R-130), the header as a dictionary and as raw cards,
+        /// the CFA order from BAYERPAT for that row order, and the focal length
         /// and camera. The ADU scale stays null: a FITS does not carry it. Throws
         /// InvalidDataException on a file that is not a FITS, whose header is cut or whose data
         /// area is shorter than the header declares (R-009), and an Exception when no HDU holds
@@ -178,8 +180,9 @@ namespace FlatCheck
             // through the Conversion tab, and does NOT write it on a debayered one - which is
             // exactly right: there is no mosaic left to name there. The offsets come in through
             // Shift, because an odd crop relative to the sensor shifts the mosaic's phase. And
-            // ROWORDER comes in through ForRowOrder: Siril writes the rows bottom up, we read them
-            // in the file's order, and on an even height that shifts the phase by one row.
+            // ROWORDER comes in through ForRowOrder: the rows are read with the file's first row
+            // last (R-130), so a BOTTOM-UP file is the sensor seen top-down and keeps its pattern,
+            // and a file not written bottom-up, of even height, moves the phase by one row.
             CfaPattern cfa = CfaPattern.Parse(HStr(hdr, "BAYERPAT", ""), "BAYERPAT")
                 ?.Shift(HInt(hdr, "YBAYROFF", 0), HInt(hdr, "XBAYROFF", 0))
                 ?.ForRowOrder(HStr(hdr, "ROWORDER", ""), img.H);
@@ -293,8 +296,8 @@ namespace FlatCheck
         /// </summary>
         /// <param name="raw">The whole file's bytes.</param>
         /// <returns>
-        /// The image (planes averaged, values BZERO + BSCALE * stored), the keywords, the raw
-        /// cards, NAXIS3 (1 for a 2D image) and BITPIX.
+        /// The image (planes averaged, values BZERO + BSCALE * stored, the file's first row
+        /// last, R-130), the keywords, the raw cards, NAXIS3 (1 for a 2D image) and BITPIX.
         /// </returns>
         internal static (Img Image, IReadOnlyDictionary<string, string> Header, IReadOnlyList<string> Cards, int Planes, int Bitpix)
             LoadFull(byte[] raw)
@@ -365,19 +368,25 @@ namespace FlatCheck
                         vals[i] = bzero + bscale * v;
                         p += bytesPer;
                     }
-                    // colour (n3 planes, Siril = plane-sequential) -> the mean over the planes
+                    // colour (n3 planes, Siril = plane-sequential) -> the mean over the planes.
+                    // The file's first row lands on the raster's LAST row, whatever ROWORDER
+                    // says: Siril shows every FITS that way up and uses the card only for the
+                    // Bayer phase (R-130, ADR 0094), so row 0 of the raster is the top of the
+                    // frame as Siril shows it, as it is for a raw read through libraw.
                     var img = new Img(n2, n1);
-                    if (n3 <= 1)
-                        Array.Copy(vals, img.D, n1 * n2);
-                    else
+                    long plane = (long)n1 * n2;
+                    for (int y = 0; y < n2; y++)
                     {
-                        long plane = (long)n1 * n2;
-                        for (long i = 0; i < plane; i++)
-                        {
-                            double s = 0;
-                            for (int c = 0; c < n3; c++) s += vals[c * plane + i];
-                            img.D[i] = s / n3;
-                        }
+                        long src = (long)y * n1, dst = (long)(n2 - 1 - y) * n1;
+                        if (n3 <= 1)
+                            Array.Copy(vals, src, img.D, dst, n1);
+                        else
+                            for (int x = 0; x < n1; x++)
+                            {
+                                double s = 0;
+                                for (int c = 0; c < n3; c++) s += vals[c * plane + src + x];
+                                img.D[dst + x] = s / n3;
+                            }
                     }
                     return (img, hdr, cards, n3, bitpix);
                 }

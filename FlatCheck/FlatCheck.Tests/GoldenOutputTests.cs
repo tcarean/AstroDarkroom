@@ -363,7 +363,7 @@ public class GoldenOutputTests
         using var ws = new TempWorkspace();
         var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
         string f = ws.WriteFile("raw_bayerpat.fit", FitsTestData.BuildFits(
-            Size, Size, scene, extraCards: FitsTestData.BayerCards("RGGB")));
+            Size, Size, scene, extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));
         string png = ws.PathTo("out.png");
 
         var (output, exit) = RunCli(ws, f, "--histeq", "-o", png);
@@ -400,7 +400,7 @@ public class GoldenOutputTests
         using var ws = new TempWorkspace();
         var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
         string f = ws.WriteFile("raw_bayerpat.fit", FitsTestData.BuildFits(
-            Size, Size, scene, extraCards: FitsTestData.BayerCards("RGGB")));
+            Size, Size, scene, extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));
         string png = ws.PathTo("out.png");
 
         var (output, exit) = RunCli(ws, f, "--histeq", "--rainbow", "-o", png);
@@ -476,18 +476,19 @@ public class GoldenOutputTests
 
         Assert.Equal(0, exit);
         Assert.Contains("ordinea R/G/B din BAYERPAT", output);
-        Assert.Contains("G1 (CFA[0,1]):", output);
+        Assert.Contains("B  (CFA[0,1]):", output);      // no ROWORDER: GBRG on an even height (R-044)
         AssertGolden("expo_cfa_bayerpat", output);
     }
 
     /// <summary>
     /// The same frame with the header Siril really writes - ROWORDER 'BOTTOM-UP' on an
-    /// even height - names [1,0] as R and [0,0] as a green. The numbers do not move (the
-    /// medians are per position, whatever they are called), so this pins only the two
-    /// labels; the golden file above stays the reference for the figures.
+    /// even height - is read with the file's first row last (R-130), so it is the sensor seen
+    /// top-down and BAYERPAT applies as written: [0,0] is R and [1,0] a green, as the camera
+    /// has them. The figures are per colour whatever the position is called, so this pins only
+    /// the two labels; the golden file above stays the reference for the figures.
     /// </summary>
     [Fact]
-    public void R044_Expo_OnABottomUpFrame_NamesTheChannelsByFileRowOrder()
+    public void R044_Expo_OnABottomUpFrame_NamesTheChannelsAsTheSensorHasThem()
     {
         using var ws = new TempWorkspace();
         var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
@@ -497,8 +498,8 @@ public class GoldenOutputTests
         var (output, exit) = RunCli(ws, f, "--expo");
 
         Assert.Equal(0, exit);
-        Assert.Contains("G1 (CFA[0,0]):", output);
-        Assert.Contains("R  (CFA[1,0]):", output);
+        Assert.Contains("R  (CFA[0,0]):", output);
+        Assert.Contains("G2 (CFA[1,0]):", output);
     }
 
     [Fact]

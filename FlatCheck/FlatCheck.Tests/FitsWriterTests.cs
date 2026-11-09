@@ -93,6 +93,56 @@ public class FitsWriterTests
         Assert.Equal("23", hdr["NAXIS2"]);
     }
 
+    /// <summary>
+    /// The reader puts the file's first row last (R-130), so the writer puts the raster's last
+    /// row first: the file keeps the order Siril writes and shows, and a round trip is the
+    /// identity. Checked on the bytes: the first sample of the data area is the raster's
+    /// bottom-left pixel, the last one its top-right.
+    /// </summary>
+    [Fact]
+    public void R130_TheFileIsWrittenFromTheRasterLastRowToItsFirst()
+    {
+        Img img = Ramp(4, 3);
+
+        byte[] fits = FitsWriter.Encode(img, -32, null, null);
+
+        int data = DataOffset(fits);
+        Assert.Equal((float)img.At(2, 0), ReadSingle(fits, data));
+        Assert.Equal((float)img.At(0, 3), ReadSingle(fits, data + 4 * 11));
+        Assert.Equal((float)img.At(1, 0), ReadSingle(fits, data + 4 * 4));
+    }
+
+    /// <summary>
+    /// A fresh file says ROWORDER 'BOTTOM-UP', the order it is written in; a copied card is
+    /// kept as it is and not doubled (R-130).
+    /// </summary>
+    [Fact]
+    public void R130_AFreshFileSaysBottomUp_AndACopiedRowOrderIsKept()
+    {
+        Img img = Ramp(4, 3);
+
+        var (_, fresh, freshCards, _, _) = FitsReader.LoadFull(FitsWriter.Encode(img, -32, null, null));
+        var (_, copied, copiedCards, _, _) = FitsReader.LoadFull(FitsWriter.Encode(img, -32,
+            new[] { FitsTestData.Card("ROWORDER", "'TOP-DOWN'") }, null));
+
+        Assert.Equal("BOTTOM-UP", fresh["ROWORDER"]);
+        Assert.Single(freshCards, c => c.StartsWith("ROWORDER"));
+        Assert.Equal("TOP-DOWN", copied["ROWORDER"]);
+        Assert.Single(copiedCards, c => c.StartsWith("ROWORDER"));
+    }
+
+    /// <summary>The first byte of the data area: the header's 80-byte cards up to END, rounded up to a 2880-byte block.</summary>
+    static int DataOffset(byte[] fits)
+    {
+        int cards = 0;
+        while (System.Text.Encoding.ASCII.GetString(fits, cards * 80, 8) != "END     ") cards++;
+        return (cards * 80 + 2879) / 2880 * 2880;
+    }
+
+    /// <summary>One big-endian IEEE single at <paramref name="at"/>.</summary>
+    static float ReadSingle(byte[] fits, int at)
+        => BitConverter.Int32BitsToSingle((fits[at] << 24) | (fits[at + 1] << 16) | (fits[at + 2] << 8) | fits[at + 3]);
+
     [Fact]
     public void SixteenBit_RoundTripsToHalfAnAdu_WithTheUnsignedOffset()
     {

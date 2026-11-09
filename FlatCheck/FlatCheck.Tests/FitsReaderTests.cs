@@ -42,12 +42,57 @@ public class FitsReaderTests
     [Fact]
     public void Load_StoresPixelsRowMajor()
     {
-        // value encodes its own coordinates so a transpose would be obvious
+        // value encodes its own coordinates so a transpose would be obvious; the builder writes
+        // the file as Siril does and the reader undoes it, so the scene comes back as drawn
         var img = Load(FitsTestData.BuildFits(4, 3, (x, y) => 1000 + y * 10 + x));
 
         for (int y = 0; y < 3; y++)
             for (int x = 0; x < 4; x++)
                 Assert.Equal(1000 + y * 10 + x, img.At(y, x), 6);
+    }
+
+    // ---------------------------------------------------------------- row order (R-130)
+
+    /// <summary>
+    /// Siril draws every FITS with the file's first row at the bottom, whatever ROWORDER says,
+    /// and uses the keyword only for the Bayer phase (measured 2026-10-26 through siril-cli,
+    /// ImageVisualCompare ADR 0039). The reader does the same, so row 0 of the raster is the top
+    /// of the frame as Siril shows it, for the three states of the card alike (ADR 0094). The
+    /// same through the path-based load, which every mode uses.
+    /// </summary>
+    [Theory]
+    [InlineData("BOTTOM-UP")]
+    [InlineData("TOP-DOWN")]
+    [InlineData(null)]
+    public void R130_TheFirstRowOfTheFile_IsTheRasterLastRow_WhateverRowOrderSays(string rowOrder)
+    {
+        string[]? cards = rowOrder == null ? null : new[] { FitsTestData.Card("ROWORDER", "'" + rowOrder + "'") };
+        byte[] fits = FitsTestData.BuildFits(4, 3, (x, y) => 1000 + y * 10 + x, extraCards: cards, bottomUp: false);
+
+        var img = Load(fits);
+
+        for (int y = 0; y < 3; y++)
+            for (int x = 0; x < 4; x++)
+                Assert.Equal(1000 + (2 - y) * 10 + x, img.At(y, x), 6);
+
+        using var ws = new TempWorkspace();
+        Img loaded = ImageLoader.Load(ws.WriteFile("rows.fit", fits)).Image;
+        Assert.Equal(1020, loaded.At(0, 0), 6);
+        Assert.Equal(1000, loaded.At(2, 0), 6);
+    }
+
+    /// <summary>
+    /// The same rule on a colour cube: the planes are averaged and the file's first row lands
+    /// last, in the branch that reads several planes (R-130).
+    /// </summary>
+    [Fact]
+    public void R130_ACubeIsAveragedOverItsPlanes_WithTheFilesFirstRowLast()
+    {
+        var img = Load(FitsTestData.BuildFitsCube(4, 3, 3, (x, y, p) => 1000 + y * 10 + x + p, bottomUp: false));
+
+        for (int y = 0; y < 3; y++)
+            for (int x = 0; x < 4; x++)
+                Assert.Equal(1000 + (2 - y) * 10 + x + 1, img.At(y, x), 6);   // the mean of p = 0, 1, 2
     }
 
     // ---------------------------------------------------------------- BITPIX
@@ -360,14 +405,17 @@ public class FitsReaderTests
 
     /// <summary>
     /// Siril writes BAYERPAT on a frame that came through the Conversion tab, so the
-    /// exposure mode can name the four positions instead of numbering them.
+    /// exposure mode can name the four positions instead of numbering them. The fixture
+    /// carries the header Siril really writes, ROWORDER 'BOTTOM-UP' included: without it an
+    /// even height reads the pattern shifted by one row (R-044), which is the next tests' job.
     /// </summary>
     [Fact]
     public void ACfaFitsCarriesTheMosaicOrder()
     {
         using var ws = new TempWorkspace();
         string path = ws.WriteFile("cfa.fit", FitsTestData.BuildFits(
-            16, 16, FitsTestData.Constant(500), extraCards: FitsTestData.BayerCards("RGGB")));
+            16, 16, FitsTestData.Constant(500),
+            extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));
 
         LoadedFrame f = new FitsReader().Load(path);
 
@@ -386,43 +434,54 @@ public class FitsReaderTests
         using var ws = new TempWorkspace();
         string path = ws.WriteFile("cfa.fit", FitsTestData.BuildFits(
             16, 16, FitsTestData.Constant(500),
-            extraCards: FitsTestData.BayerCards("RGGB", xOffset: 1)));
+            extraCards: FitsTestData.BayerCards("RGGB", xOffset: 1, rowOrder: "BOTTOM-UP")));
 
         Assert.Equal("GRBG", new FitsReader().Load(path).Cfa.Letters);
     }
 
     /// <summary>
-    /// The header Siril actually writes on a converted or stacked frame: BAYERPAT RGGB
-    /// and ROWORDER 'BOTTOM-UP'. Read in file order on an even height, the row parity
-    /// flips, so position [1,0] - which BAYERPAT calls G - is the real R. Measured on
-    /// pp_flat_stacked.fit (6016x4016): the channel labelled G2 sat at a third of the
-    /// green, exactly where --expo on the source NEF puts R.
+    /// The header Siril actually writes on a converted or stacked frame: BAYERPAT RGGB and
+    /// ROWORDER 'BOTTOM-UP'. Read with the file's first row last (R-130), the raster is the
+    /// sensor seen top-down, which is exactly what BAYERPAT describes, so the pattern applies as
+    /// written at any height (R-044). Measured on pp_flat_stacked.fit (6016x4016): read in file
+    /// order and unshifted, the channel labelled G2 sat at a third of the green, exactly where
+    /// --expo on the source NEF puts R; the flip puts R back at [0,0], where the NEF has it.
     /// </summary>
-    [Fact]
-    public void ABottomUpFrameOfEvenHeightShiftsTheOrderByOneRow()
+    [Theory]
+    [InlineData(16)]
+    [InlineData(15)]
+    public void R044_ABottomUpFrameKeepsBayerpatAsWritten_AtAnyHeight(int height)
     {
         using var ws = new TempWorkspace();
         string path = ws.WriteFile("cfa.fit", FitsTestData.BuildFits(
-            16, 16, FitsTestData.Constant(500),
+            16, height, FitsTestData.Constant(500),
             extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));
 
         CfaPattern cfa = new FitsReader().Load(path).Cfa;
 
-        Assert.Equal("GBRG", cfa.Letters);
-        Assert.Equal("R", cfa.Name(2));      // [1,0]
+        Assert.Equal("RGGB", cfa.Letters);
+        Assert.Equal("R", cfa.Name(0));      // [0,0]
         Assert.Equal("BAYERPAT", cfa.Source);
     }
 
-    /// <summary>On an odd height the bottom row has the top row's parity: no shift.</summary>
-    [Fact]
-    public void ABottomUpFrameOfOddHeightKeepsTheOrder()
+    /// <summary>
+    /// A file without the card, or saying TOP-DOWN, is read upside down against its own
+    /// BAYERPAT (as Siril shows it, R-130): on an even height raster row 0 is an odd sensor row
+    /// and the phase moves by one row; on an odd height the last row has the first row's parity
+    /// and nothing moves.
+    /// </summary>
+    [Theory]
+    [InlineData(16, null, "GBRG")]
+    [InlineData(16, "TOP-DOWN", "GBRG")]
+    [InlineData(15, null, "RGGB")]
+    public void R044_AFrameNotWrittenBottomUp_ShiftsTheOrderByOneRowOnAnEvenHeight(int height, string rowOrder, string expected)
     {
         using var ws = new TempWorkspace();
         string path = ws.WriteFile("cfa.fit", FitsTestData.BuildFits(
-            16, 15, FitsTestData.Constant(500),
-            extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));
+            16, height, FitsTestData.Constant(500),
+            extraCards: FitsTestData.BayerCards("RGGB", rowOrder: rowOrder)));
 
-        Assert.Equal("RGGB", new FitsReader().Load(path).Cfa.Letters);
+        Assert.Equal(expected, new FitsReader().Load(path).Cfa.Letters);
     }
 
     /// <summary>

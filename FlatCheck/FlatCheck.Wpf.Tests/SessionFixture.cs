@@ -116,15 +116,15 @@ internal sealed class SessionFixture : IDisposable
     /// An analysable raw flat: a FITS with a CFA mosaic, at the original ADU scale.
     ///
     /// With <paramref name="bayerPat"/> it also carries the colour order, as Siril writes it on
-    /// a frame passed through Conversion - then the channels are named R/G1/G2/B instead of
-    /// positions.
+    /// a frame passed through Conversion, with the ROWORDER 'BOTTOM-UP' Siril writes beside it -
+    /// then the channels are named R/G1/G2/B instead of positions, as the sensor has them (R-044).
     /// </summary>
     internal string WriteAnalysableRawFlat(string name, double centre = 34000, string? bayerPat = null)
     {
         WithFlats();
         string path = Path.Combine(FlatsDir, name);
         Write(path, FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: centre)),
-              bayerPat == null ? null : FitsTestData.BayerCards(bayerPat));
+              bayerPat == null ? null : FitsTestData.BayerCards(bayerPat, rowOrder: "BOTTOM-UP"));
         return path;
     }
 

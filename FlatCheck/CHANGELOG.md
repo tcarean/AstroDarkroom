@@ -101,6 +101,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- A FITS is read with the file's first row at the bottom, whatever `ROWORDER` says, as Siril
+  shows every FITS (R-130, ADR 0094): the maps, the histeq picture, the printed `(x, y)` and the
+  corner names of a Siril master are now the way up Siril and the camera show the frame (they
+  were upside down against them), and the same flat reads the same as a NEF and as its Siril
+  conversion. The CFA positions of a Siril master are named as the sensor has them, `RGGB`
+  for `RGGB` (R-044); a `BAYERPAT` without `ROWORDER` shifts by one row instead. The figures
+  move a little with the orientation, since the model's centre and the tile grid sit on pixel
+  indices: 17 validation cases re-recorded, by 0.05 to 0.58 points, no verdict changed
+  (`docs/validation.md`).
 - The depth verdict of the vignetting comparison comes from the lens's Adobe profile when the raw's
   lens ID or name found the lens and Adobe has a file for it (R-128, ADR 0090); the lensfun rows
   stay in the list for comparison. Of two Adobe names with the same figures (the Tokina AT-X 11-20
@@ -215,6 +224,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The synthetic flat is written from the raster's last row to its first, so Siril shows it the
+  way up it was built and the same way up as the lights it calibrates; a file with no
+  `ROWORDER` to copy says `BOTTOM-UP` (R-130).
 - A negative difference that rounds to zero no longer reads `-+0.00 stops` (R-129, ADR 0092): the profile
   rows, the comparison summary and the depth verdict of the structure report, the Split tab's
   difference cells, the ends of the map's scale in the legend and the mosaic's title, and the
