@@ -1336,7 +1336,11 @@ internal static class DarkReport
     private static string Drift(DriftVerdict v, Normalisation nz)
     {
         Warming w = v.Warming;
-        string within = T($"(between {F(Th.MatchOptLow, 1)} and {F(Th.MatchOptHigh, 1)})", $"(intre {F(Th.MatchOptLow, 1)} si {F(Th.MatchOptHigh, 1)})");
+        // an OK asks nothing of the owner, so it says the band in its own words and names no -opt;
+        // only the frames outside it are told what Siril could still do with them
+        string within = T(
+            $"no frame is too far from the master (the hot pixels of every frame are between {F(Th.MatchOptLow, 1)} and {F(Th.MatchOptHigh, 1)} of the master's)",
+            $"niciun cadru nu e prea departe de master (pixelii fierbinti ai fiecarui cadru sunt intre {F(Th.MatchOptLow, 1)} si {F(Th.MatchOptHigh, 1)} din ai masterului)");
         if (v.Verdict == Verdict.Unmeasured)
         {
             return T("UNMEASURED", "NEMASURAT");
@@ -1351,8 +1355,8 @@ internal static class DarkReport
             {
                 // an OK without an end is a short series: an end that is not positive has frames outside the band
                 return T(
-                    $"OK: every frame is close enough to the master for Siril to match it with -opt {within}; there are fewer than {Th.WarmingFitMinFrames} frames, so the end of the series is not measured",
-                    $"OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt {within}; sunt mai putin de {RoCount(Th.WarmingFitMinFrames)}cadre, deci sfarsitul seriei nu se masoara");
+                    $"OK: {within}; there are fewer than {Th.WarmingFitMinFrames} frames, so the end of the series is not measured",
+                    $"OK: {within}; sunt mai putin de {RoCount(Th.WarmingFitMinFrames)}cadre, deci sfarsitul seriei nu se masoara");
             }
 
             string rule = T(
@@ -1362,8 +1366,8 @@ internal static class DarkReport
                 ? T("the frames to discard are in the row above", "cadrele de aruncat sunt in randul de mai sus")
                 : T("no frame to discard", "niciun cadru de aruncat");
             return T(
-                $"OK: the master is close to the end of the series ({FromIt(w.MasterCelsius)}, under {limit}) and every frame is close enough to the master for Siril to match it with -opt {within}; {rule}; {off}",
-                $"OK: masterul e aproape de sfarsitul seriei ({FromIt(w.MasterCelsius)}, mai putin de {limit}) si toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt {within}; {rule}; {off}");
+                $"OK: the master is close to the end of the series ({FromIt(w.MasterCelsius)}, under {limit}) and {within}; {rule}; {off}",
+                $"OK: masterul e aproape de sfarsitul seriei ({FromIt(w.MasterCelsius)}, mai putin de {limit}) si {within}; {rule}; {off}");
         }
 
         List<string> parts = [];

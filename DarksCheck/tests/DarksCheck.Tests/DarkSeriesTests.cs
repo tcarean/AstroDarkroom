@@ -178,7 +178,7 @@ public partial class DarkSeriesTests
         Assert.Contains(" din master; sfarsitul seriei 1.0", check3.Rows[1].Value, StringComparison.Ordinal);
         Assert.Contains("; fara ele masterul ar fi cu 0.", check3.Rows[1].Value, StringComparison.Ordinal);
         Assert.EndsWith(" grade sub sfarsitul seriei, dar cu 10 % mai mult zgomot", check3.Rows[1].Value, StringComparison.Ordinal);
-        Assert.Matches(@"^OK: masterul e aproape de sfarsitul seriei \(cu 0\.\d grade sub el, mai putin de 1\.0\) si toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt \(intre 0\.7 si 1\.4\); gradele sunt socotite cu regula: semnalul termic se dubleaza la fiecare 6 grade; cadrele de aruncat sunt in randul de mai sus$", check3.Rows[2].Value);
+        Assert.Matches(@"^OK: masterul e aproape de sfarsitul seriei \(cu 0\.\d grade sub el, mai putin de 1\.0\) si niciun cadru nu e prea departe de master \(pixelii fierbinti ai fiecarui cadru sunt intre 0\.7 si 1\.4 din ai masterului\); gradele sunt socotite cu regula: semnalul termic se dubleaza la fiecare 6 grade; cadrele de aruncat sunt in randul de mai sus$", check3.Rows[2].Value);
 
         // the table: the degrees from the end of the series per frame, the note on the frames off it
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
@@ -205,7 +205,7 @@ public partial class DarkSeriesTests
             Assert.Contains(" at the end of the series (the average of the last 5 frames), that is 3.", en.Rows[0].Value, StringComparison.Ordinal);
             Assert.Matches(@" degrees in 22 min; the master is 0\.\d degrees below the end of the series$", en.Rows[0].Value);
             Assert.StartsWith("2 frames (1, 2) are more than 2.0 degrees from the end of the series (the hot pixels below 0.8", en.Rows[1].Value, StringComparison.Ordinal);
-            Assert.Matches(@"^OK: the master is close to the end of the series \(0\.\d degrees below it, under 1\.0\) and every frame is close enough to the master for Siril to match it with -opt \(between 0\.7 and 1\.4\); the degrees are reckoned with the rule that the thermal signal doubles every 6 degrees; the frames to discard are in the row above$", en.Rows[2].Value);
+            Assert.Matches(@"^OK: the master is close to the end of the series \(0\.\d degrees below it, under 1\.0\) and no frame is too far from the master \(the hot pixels of every frame are between 0\.7 and 1\.4 of the master's\); the degrees are reckoned with the rule that the thermal signal doubles every 6 degrees; the frames to discard are in the row above$", en.Rows[2].Value);
             Assert.Contains(", that is more than 2.0 degrees below the end of the series (1.0", DarkReport.FrameRows(r)[0].Note, StringComparison.Ordinal);
         }
     }
@@ -419,7 +419,8 @@ public partial class DarkSeriesTests
         Assert.Contains(" din master in primul cadru si la ", check3.Rows[0].Value, StringComparison.Ordinal);
         Assert.Matches(@" la sfarsitul seriei \(media ultimelor 5 cadre\), mai putin de 1\.0 grade intre ele; masterul e (la nivelul sfarsitului seriei|cu 0\.\d grade (sub|peste) sfarsitul seriei)$", check3.Rows[0].Value);
         Assert.StartsWith("niciun cadru nu e la mai mult de 2.0 grade de sfarsitul seriei (pixelii fierbinti intre ", check3.Rows[1].Value, StringComparison.Ordinal);
-        Assert.Matches(@"^OK: masterul e aproape de sfarsitul seriei \((la nivelul lui|cu 0\.\d grade (sub|peste) el), mai putin de 1\.0\) si toate cadrele ", check3.Rows[2].Value);
+        Assert.Matches(@"^OK: masterul e aproape de sfarsitul seriei \((la nivelul lui|cu 0\.\d grade (sub|peste) el), mai putin de 1\.0\) si niciun cadru nu e prea departe de master \(", check3.Rows[2].Value);
+        Assert.DoesNotContain("-opt", check3.Rows[2].Value, StringComparison.Ordinal);
         Assert.EndsWith("; niciun cadru de aruncat", check3.Rows[2].Value, StringComparison.Ordinal);
         Assert.All(DarkReport.FrameRows(r), row => Assert.Null(row.Note));
     }
@@ -440,7 +441,9 @@ public partial class DarkSeriesTests
         ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
         Assert.Equal("NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti", check3.Rows[0].Value);
         Assert.Equal("NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti", check3.Rows[1].Value);
-        Assert.Equal("OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); sunt mai putin de 6 cadre, deci sfarsitul seriei nu se masoara", check3.Rows[2].Value);
+        Assert.Equal("OK: niciun cadru nu e prea departe de master (pixelii fierbinti ai fiecarui cadru sunt intre 0.7 si 1.4 din ai masterului); sunt mai putin de 6 cadre, deci sfarsitul seriei nu se masoara", check3.Rows[2].Value);
+        // an OK asks nothing of the owner, so it does not name -opt (only the ATENTIE for a frame outside the band does)
+        Assert.DoesNotContain("-opt", check3.Rows[2].Value, StringComparison.Ordinal);
         Assert.All(DarkReport.FrameRows(r), row => Assert.Equal("-", row.End));
 
         using SessionFixture cold = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i == 0 ? 0.5 : 1.0 });

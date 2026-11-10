@@ -171,7 +171,7 @@ The start of the report on Smida:
   3. THE CAMERA'S WARMING DURING THE SERIES
     end of series      : the camera warmed during the series: the hot pixels rise from 0.83 of the master in the first frame to 1.07 at the end of the series (the average of the last 5 frames), that is 2.3 degrees in 38 min; the master is 0.6 degrees below the end of the series
     to discard         : 2 frames (1, 2) are more than 2.0 degrees from the end of the series (the hot pixels below 0.85 or above 1.35 of the master; the end of the series 1.07); without them the master would be 0.5 degrees below the end of the series, but with 5 % more noise
-    verdict            : OK: the master is close to the end of the series (0.6 degrees below it, under 1.0) and every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); the degrees are reckoned with the rule that the thermal signal doubles every 6 degrees; the frames to discard are in the row above
+    verdict            : OK: the master is close to the end of the series (0.6 degrees below it, under 1.0) and no frame is too far from the master (the hot pixels of every frame are between 0.7 and 1.4 of the master's); the degrees are reckoned with the rule that the thermal signal doubles every 6 degrees; the frames to discard are in the row above
 ```
 
 #### 2. Light leaks and differences across the frame

@@ -30,7 +30,7 @@ Copyright (C) 2026 Tudor Carean
   3. THE CAMERA'S WARMING DURING THE SERIES
     end of series      : UNMEASURED: there are fewer than 6 frames with hot pixels
     to discard         : UNMEASURED: there are fewer than 6 frames with hot pixels
-    verdict            : OK: every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); there are fewer than 6 frames, so the end of the series is not measured
+    verdict            : OK: no frame is too far from the master (the hot pixels of every frame are between 0.7 and 1.4 of the master's); there are fewer than 6 frames, so the end of the series is not measured
 
   4. THE NOISE OF EACH FRAME
     against the master : R 2.65 .. 2.71; G1 2.65 .. 2.72 (on average 2.69); G2 2.61 .. 2.71; B 2.62 .. 2.71  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]

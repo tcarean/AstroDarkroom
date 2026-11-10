@@ -27,7 +27,7 @@ Copyright (C) 2026 Tudor Carean
   3. INCALZIREA CAMEREI IN TIMPUL SERIEI
     sfarsitul seriei   : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
     de aruncat         : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
-    verdict            : OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); sunt mai putin de 6 cadre, deci sfarsitul seriei nu se masoara
+    verdict            : OK: niciun cadru nu e prea departe de master (pixelii fierbinti ai fiecarui cadru sunt intre 0.7 si 1.4 din ai masterului); sunt mai putin de 6 cadre, deci sfarsitul seriei nu se masoara
 
   4. ZGOMOTUL FIECARUI CADRU
     fata de master     : R 2.64 .. 2.75; G1 2.64 .. 2.71 (in medie 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]

@@ -52,7 +52,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   in 70 minutes read `WARNING` at "1.4 degrees above the plateau" and now read `OK`, 0.4
   degrees from where they ended. This replaces the plateau of the two older entries on check 3
   further down. A series whose last frame shows no hot pixel is no longer `UNMEASURED` as a
-  whole: its frames are judged like any others.
+  whole: its frames are judged like any others. An `OK` no longer names `-opt` (it read as
+  advice to use it): it says that no frame is too far from the master, the hot pixels of
+  every frame between 0.7 and 1.4 of the master's.
 - Check 9 also weighs what the mismatch leaves (R-067, ADR 0044): a new row `what is left` says
   how big a trace a plain subtraction leaves at a hot pixel against the noise of one light, and
   at how many pixels it passes the noise and 3 times the noise. A lights / dark ratio between
