@@ -1,4 +1,0 @@
-{
-  "$comment": "Every test data file outside git would be listed here with its SHA-256; MindfulnessReminder has none (ADR 0005): every test runs on fakes, and the application reads no file. scripts/check-testdata.ps1 reads this file and finds nothing to check. When a file is ever needed, it goes under large/ (git-ignored) with an entry here, and MINDFULNESS_TESTDATA_LARGE may name another folder.",
-  "files": []
-}

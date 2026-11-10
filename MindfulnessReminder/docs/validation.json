@@ -1,4 +1,0 @@
-{
-  "$comment": "Figures measured on real data, machine-readable, read by ValidationTests (trait Category=Validation, not in the gate) in the projects that have them. MindfulnessReminder has none (ADR 0005): the application has no numeric output and reads no data; the numbers in the code are constants pinned by unit tests. The list is empty so the kit's skills find the file and do nothing; RepoInvariantTests checks it parses and that case IDs are unique. docs/validation.md says what would become a case. When the first one is added, ValidationTests is written with it and kit.json's testFilter becomes Category!=Validation.",
-  "cases": []
-}
