@@ -3,31 +3,31 @@ Copyright (C) 2026 Tudor Carean
 
 === STRUCTURA: <TMP>/ref.fit ===
     dimensiune analiza : 120 x 80 (dupa 2x2 + downsample)
-    median / max ADU   : 26035 / 30000
+    median / max ADU   : 26000 / 30000
 
   INFORMATIV (nu sunt teste)
-    vignetare centru->colt  : 0.75 stopuri (colt = 59% din centru)
-    offset centru iluminare :  0.46 %
-        varf iluminare = (60, 40)  vs  centru senzor = (60, 40)
+    vignetare centru->colt  : 0.76 stopuri (colt = 59% din centru)
+    offset centru iluminare :  0.00 %
+        varf iluminare = (60, 39)  vs  centru senzor = (60, 40)
         Cifra e doar orientativa: pe un obiectiv aproape fara vignetare creste mult
         fara ca eroarea sa creasca, iar cand punctul cel mai luminos iese din cadru e
         nedeterminata. Cat de mare e dezechilibrul spune "inclinare".
-    pete locale (praf etc.) : +0.09 % (mai luminos) la (7, 19)
+    pete locale (praf etc.) : +0.13 % (mai luminos) la (10, 6)
         Cea mai pronuntata pata mica, dupa ce se scot formele mari.
         Semnul spune ce fel: minus = mai intunecata decat imprejurimile (praf,
         condens, ceva in fata obiectivului), plus = mai luminoasa (scurgere de lumina, reflexie).
         Peste 2 % urmeaza o atentionare; sub atat cifra e doar informativa.
 
   TESTE
-    imprastiere 4 colturi   :  1.38 %   [PERFECT]
-        stanga-sus    :  99.31 % din media colturilor
-        dreapta-sus   : 100.14 % din media colturilor
-        stanga-jos    :  99.86 % din media colturilor
-        dreapta-jos   : 100.69 % din media colturilor
-    asimetrie azimutala max :  0.54 %   [PERFECT]
-    reziduu dupa model rad. :  0.76 %   [PERFECT]  <- CEL MAI IMPORTANT
-    inclinare (gradient)    :  1.00 %   [PERFECT]
-    pata maxima (o dala)    :  1.00 %   [PERFECT]
+    imprastiere 4 colturi   :  0.00 %   [PERFECT]
+        stanga-sus    : 100.00 % din media colturilor
+        dreapta-sus   : 100.00 % din media colturilor
+        stanga-jos    : 100.00 % din media colturilor
+        dreapta-jos   : 100.00 % din media colturilor
+    asimetrie azimutala max :  0.05 %   [PERFECT]
+    reziduu dupa model rad. :  0.11 %   [PERFECT]  <- CEL MAI IMPORTANT
+    inclinare (gradient)    :  0.00 %   [PERFECT]
+    pata maxima (o dala)    :  0.28 %   [PERFECT]
 
   SCARA celor cinci teste de abatere de mai sus
     sub 2 %      calitate perfecta

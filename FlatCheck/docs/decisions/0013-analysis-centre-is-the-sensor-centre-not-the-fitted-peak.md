@@ -1,7 +1,7 @@
 # 0013. The analysis centre is the sensor centre, not the fitted illumination peak
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the index centre superseded by 0095
 
 ## Context
 

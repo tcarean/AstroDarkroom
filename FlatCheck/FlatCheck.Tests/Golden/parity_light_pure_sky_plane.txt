@@ -7,7 +7,7 @@ Copyright (C) 2026 Tudor Carean
     (nu pot verifica daca testul se aplica; vezi --fov si README)
 
     tile-uri folosite       : 1764 / 1764 (restul = nebulozitate/stele, respinse)
-    gradient de cer (plan)  : 21.28 %  <- poluare luminoasa, IGNORA
+    gradient de cer (plan)  : 21.19 %  <- poluare luminoasa, IGNORA
     componenta radiala      :  -0.00 %   [OK]  <- ASTA e flat-ul
 
   INTERPRETARE

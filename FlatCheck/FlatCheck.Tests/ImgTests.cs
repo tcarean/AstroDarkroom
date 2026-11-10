@@ -179,21 +179,21 @@ public class ImgTests
     }
 
     /// <summary>
-    /// On the fixture generator's radial field - centred on (w/2, h/2), half a pixel off
-    /// the rotation centre - symmetrising does perturb the values. It is the same
-    /// systematic half-pixel artefact as known issue 5 and it fades as ~1/n: measured
-    /// 2.81 % worst case on 64x48, 0.32 % on 512x512, and well under a tenth of that on
-    /// a real analysis raster. Pinned so that a future change of the centring convention
-    /// shows up here rather than as a mystery in the residual.
+    /// On the fixture generator's radial field, centred on the geometric centre like the
+    /// analysis (R-014), symmetrising changes nothing: the raster is its own 180-degree
+    /// rotation. Until 2026-11-09 both sat on the index (w/2, h/2), half a pixel off the
+    /// rotation centre, and symmetrising cost 2.81 % worst case on 64x48 and 0.32 % on
+    /// 512x512, the artefact of known issue 5 (closed by ADR 0095). Pinned so that a change of
+    /// the centring convention shows up here rather than as a mystery in the residual.
     /// </summary>
     [Fact]
-    public void Symmetrise_OnTheFixtureFieldCostsOnlyTheHalfPixelArtefact()
+    public void Symmetrise_OnTheFixtureFieldChangesNothing()
     {
         var small = TestImages.From(64, 48, FitsTestData.Radial(64, 48));
         var large = TestImages.From(512, 512, FitsTestData.Radial(512, 512));
 
-        Assert.InRange(WorstRelativeChangePct(small), 1.0, 4.0);
-        Assert.InRange(WorstRelativeChangePct(large), 0.1, 0.6);
+        Assert.Equal(0, WorstRelativeChangePct(small), 9);
+        Assert.Equal(0, WorstRelativeChangePct(large), 9);
     }
 
     static double WorstRelativeChangePct(Img a)

@@ -112,15 +112,18 @@ a library extraction and not a copy is ADR 0011.
   - `PreviewReader.cs` - the only file that names a `SixLabors.ImageSharp` type, the null on
     any failure and the swap point: ADR 0010.
   - `Thresholds.cs` - `Th`. Note it does **not** hold every threshold; see below.
-  - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean`, `Prepare`,
+  - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean` (each block summed in
+    sorted order, R-131), `BlockMeanCentred` and `CentredOffset` (the tile grid laid about the
+    frame's centre, half-weight boundary rows on an odd leftover, R-131), `Prepare`,
     `Divide`, `Symmetrise` (the mean of a raster and its 180° rotation, which is what the
     radial model is fed - see `RadialModel` under "Shared pipeline" in `pipeline.md`). `CropCentred` and `Rotate180`, which only the `--ratio` mode used, left with it
-    (ADR 0067); `LargeScalePtp` keeps its top-left grid for parity (ADR 0016). `TileMedians`, the third grid, which
+    (ADR 0067); `LargeScalePtp` kept the top-left grid of ADR 0016 until the centred one of ADR 0095. `TileMedians`, the third grid, which
     only `--smooth` used, left with it too (ADR 0080).
   - `Stats.cs` - numeric primitives: `Percentile`, `Interp`, `Solve`,
     `Verdict`, `Rank`, `Severity`, and the verdict vocabulary (`ResidualBands`,
     `NotApplicable`).
-  - `Metrics.cs` - the pure geometry and metrics: `FitCenter`, `RadialModel`,
+  - `Metrics.cs` - the pure geometry and metrics: `Centre` (the geometric centre of an axis,
+    R-014), `Azimuth` (mirror-exact sectors and harmonics, R-131), `FitCenter`, `RadialModel`,
     `CornerStats`, `AzimuthalAsymmetry`, `LargeScalePtp`, `MaxTileDeviation` (the worst
     tile - the fifth structure test), `LocalSpots` (the deepest compact spot after the
     large-scale structure is subtracted - informative, with a warning), `TileBackground`,

@@ -82,7 +82,7 @@ internal static class TestImages
     /// <summary>Background that RISES toward the edges - the over-correction signature.</summary>
     internal static Func<int, int, double> InvertedRadial(int w, int h, double center = 30000, double k = 0.45)
     {
-        double cx = w / 2.0, cy = h / 2.0;
+        double cx = (w - 1) / 2.0, cy = (h - 1) / 2.0;
         double rmax = Math.Sqrt(cx * cx + cy * cy);
         return (x, y) =>
         {

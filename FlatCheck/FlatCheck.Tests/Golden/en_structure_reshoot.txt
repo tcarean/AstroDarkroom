@@ -3,31 +3,31 @@ Copyright (C) 2026 Tudor Carean
 
 === STRUCTURE: <TMP>/violent.fit ===
     analysis size      : 256 x 256 (after 2x2 + downsample)
-    median / max ADU   : 26369 / 32573
+    median / max ADU   : 26345 / 32548
 
   INFORMATIVE (not tests)
     vignetting to corner    : 0.76 stops (corner = 59% of centre)
-    illum. centre offset    : 33.48 %
-        illumination peak = (189, 128)  vs  sensor centre = (128, 128)
+    illum. centre offset    : 33.62 %
+        illumination peak = (188, 127)  vs  sensor centre = (128, 128)
         The figure is only indicative: on a lens with almost no vignetting it grows a lot
         without the error growing, and once the brightest point leaves the frame it reads
         undetermined. How large the imbalance is, "tilt" says.
-    local spots (dust etc.) : +0.13 % (brighter) at (241, 10)
+    local spots (dust etc.) : +0.09 % (brighter) at (238, 10)
         The most pronounced small spot, after the large shapes are taken out.
         The sign says which kind: minus = darker than its surroundings (dust,
         condensation, something in front of the lens), plus = brighter (light leak, reflection).
         Above 2 % a warning follows; below that the figure is informative only.
 
   TESTS
-    spread of the 4 corners : 57.82 %   [REDO]
-        top-left      :  71.13 % of the corners' mean
-        top-right     : 128.58 % of the corners' mean
-        bottom-left   :  71.34 % of the corners' mean
-        bottom-right  : 128.95 % of the corners' mean
-    max azimuthal asymmetry : 54.75 %   [REDO]
-    residual (radial model) : 52.01 %   [REDO]  <- THE MOST IMPORTANT
-    tilt (gradient)         : 62.04 %   [REDO]
-    worst spot (one tile)   : 29.43 %   [REDO]
+    spread of the 4 corners : 57.28 %   [REDO]
+        top-left      :  71.36 % of the corners' mean
+        top-right     : 128.64 % of the corners' mean
+        bottom-left   :  71.36 % of the corners' mean
+        bottom-right  : 128.64 % of the corners' mean
+    max azimuthal asymmetry : 54.74 %   [REDO]
+    residual (radial model) : 52.10 %   [REDO]  <- THE MOST IMPORTANT
+    tilt (gradient)         : 62.12 %   [REDO]
+    worst spot (one tile)   : 28.90 %   [REDO]
 
   SCALE of the five deviation tests above
     under 2 %    perfect quality

@@ -24,10 +24,11 @@ Is the master flat radially symmetric? Runs on the final master.
 3. `CornerStats` → median of four 5% corner boxes and a central box. Reports
    vignetting in stops (informative only, *not* a test) and the spread between
    the four corners (a test - the corners should all be equal on a radial field).
-4. `RadialModel` around the sensor centre → residual `img / model`, then
+4. `RadialModel` around the sensor's geometric centre (R-014) → residual `img / model`, then
    `LargeScalePtp` of that residual (tile-averaged, `p95 - p5`, **whole frame**, ADR 0016) and
    `MaxTileDeviation` (the single worst tile, whole frame - what the 5% trims of the
-   residual throw away).
+   residual throw away), both on tiles laid symmetric about the frame's centre (R-131, ADR
+   0095), so the frame and its mirror give the same figures.
 5. `AzimuthalAsymmetry` → per-ring peak-to-peak across 12 sectors; the max is the
    metric.
 6. Verdict = the worst of the five tests - corner spread, azimuthal asymmetry,

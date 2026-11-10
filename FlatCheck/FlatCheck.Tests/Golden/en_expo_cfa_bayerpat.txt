@@ -4,7 +4,7 @@ Copyright (C) 2026 Tudor Carean
 === EXPOSURE: <TMP>/raw_bayerpat.fit ===
     saturation (white): 65535   black : 0   source: auto-detected from max=34000 (use --sat/--black if it is wrong)
     GLOBAL median level per CFA channel (the R/G/B order from BAYERPAT):
-        G1 (CFA[0,0]):  27.6%
+        G1 (CFA[0,0]):  27.5%
         B  (CFA[0,1]):  44.4%  <- the brightest
         R  (CFA[1,0]):  44.4%
         G2 (CFA[1,1]):  21.3%

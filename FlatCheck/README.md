@@ -150,7 +150,8 @@ a light leak, a tilted camera, ambient light, a diffusing sheet too close to the
 A good flat does not mean "it looks flat". It means "its deviation from radial symmetry is below
 the noise". That is a figure, and it can be measured.
 
-The radial model and the asymmetry are computed around **the centre of the sensor**, not around
+The radial model and the asymmetry are computed around **the centre of the sensor** (the frame's
+geometric centre, so a frame and its mirror image give the same figures), not around
 the fitted peak of the illumination: fitting the centre would absorb exactly the linear gradient
 being looked for, and the test would cancel itself. The radial profile is taken from the frame
 averaged with its own 180-degree rotation, which removes a gradient before the profile is drawn;

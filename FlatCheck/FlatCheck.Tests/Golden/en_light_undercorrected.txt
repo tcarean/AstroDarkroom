@@ -6,9 +6,9 @@ Copyright (C) 2026 Tudor Carean
     field covered           : unknown (the header gives neither the focal length nor the scale)
     (cannot check whether the test applies; see --fov and the README)
 
-    tiles used              : 1701 / 1764 (the rest = nebulosity/stars, rejected)
-    sky gradient (plane)    :  0.18 %  <- light pollution, IGNORE
-    radial component        : +45.74 %   [PROBLEM]  <- THIS is the flat
+    tiles used              : 1712 / 1764 (the rest = nebulosity/stars, rejected)
+    sky gradient (plane)    :  0.00 %  <- light pollution, IGNORE
+    radial component        : +45.57 %   [PROBLEM]  <- THIS is the flat
 
   INTERPRETATION
     The corners stayed darker than the centre: the flat did not remove all the vignetting.

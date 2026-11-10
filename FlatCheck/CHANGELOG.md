@@ -101,6 +101,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The structure and `--light` figures no longer depend on the way up a frame is read (R-131, ADR
+  0095): the radial model, the asymmetry and the tilt fit are built about the frame's geometric
+  centre `((w-1)/2, (h-1)/2)` instead of the index `(w/2, h/2)`, the tilt fit reads every pixel,
+  the tile grids of the residual, worst-tile, local-spot and `--light` background tests are laid
+  symmetric about the centre, and the sums a threshold follows are order-independent. A frame
+  and its mirror give the same figures to the last bit. The figures of the real masters moved
+  by up to about half a point against 2.3.0 (`docs/validation.md`), and one master's verdict,
+  PERFECT to GOOD, by a tilt of 2.001 % on the 2 % edge.
 - A FITS is read with the file's first row at the bottom, whatever `ROWORDER` says, as Siril
   shows every FITS (R-130, ADR 0094): the maps, the histeq picture, the printed `(x, y)` and the
   corner names of a Siril master are now the way up Siril and the camera show the frame (they

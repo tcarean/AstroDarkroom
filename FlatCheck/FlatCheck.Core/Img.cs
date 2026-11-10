@@ -64,17 +64,78 @@ namespace FlatCheck
             if (k <= 1) return a;
             int h = a.H / k, w = a.W / k;
             var o = new Img(h, w);
+            // The block's values are summed in sorted order, so the sum does not depend on the
+            // order the pixels come in: the mirror of a raster has the same four values in
+            // another order, and a sum that differed in its last bit tipped the inlier cut of
+            // the ring fit downstream for one sector, moving the model by 1e-4 (R-131).
+            var block = new double[k * k];
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                 {
-                    double s = 0;
+                    int i = 0;
                     for (int dy = 0; dy < k; dy++)
                         for (int dx = 0; dx < k; dx++)
-                            s += a.At(y * k + dy, x * k + dx);
+                            block[i++] = a.At(y * k + dy, x * k + dx);
+                    Array.Sort(block);
+                    double s = 0;
+                    foreach (double v in block) s += v;
                     o.Set(y, x, s / (k * k));
                 }
             return o;
         }
+
+        /// <summary>
+        /// The block mean on a grid laid symmetric about the raster's centre: <c>H / k</c> tiles
+        /// down and <c>W / k</c> across, the leftover rows and columns split between the two
+        /// edges, so that the row mirror or the column mirror of the raster gives the mirror of
+        /// the tiles (R-131). With an odd leftover the grid's edge falls at half a pixel and the
+        /// boundary row, or column, counts half in the edge tile: a pixel's weight is its overlap
+        /// with the tile, 1/2 or 1, and the weights of a tile sum to <c>k * k</c>. With an even
+        /// leftover it is <see cref="BlockMean(Img, int)"/> shifted by half the leftover.
+        /// </summary>
+        /// <param name="a">The raster to tile.</param>
+        /// <param name="k">The tile side in pixels; 1 or less returns <paramref name="a"/> itself.</param>
+        /// <returns>The tiles, <c>H / k</c> by <c>W / k</c>.</returns>
+        internal static Img BlockMeanCentred(Img a, int k)
+        {
+            if (k <= 1) return a;
+            int h = a.H / k, w = a.W / k;
+            double oy = CentredOffset(a.H, k), ox = CentredOffset(a.W, k);
+            var o = new Img(h, w);
+            // the weighted terms are summed in sorted order, like BlockMean's values, so the tile
+            // of a mirrored raster is the mirrored tile to the last bit; a tile spans at most
+            // k + 1 rows and columns when its edges fall on half pixels
+            var terms = new double[(k + 1) * (k + 1)];
+            for (int ty = 0; ty < h; ty++)
+                for (int tx = 0; tx < w; tx++)
+                {
+                    double y0 = oy + ty * k, y1 = y0 + k, x0 = ox + tx * k, x1 = x0 + k;
+                    int ya = (int)Math.Floor(y0), yb = (int)Math.Ceiling(y1);
+                    int xa = (int)Math.Floor(x0), xb = (int)Math.Ceiling(x1);
+                    int i = 0;
+                    for (int y = ya; y < yb; y++)
+                    {
+                        double wy = Math.Min(y + 1, y1) - Math.Max(y, y0);
+                        for (int x = xa; x < xb; x++)
+                            terms[i++] = wy * (Math.Min(x + 1, x1) - Math.Max(x, x0)) * a.At(y, x);
+                    }
+                    Array.Sort(terms, 0, i);
+                    double s = 0;
+                    for (int t = 0; t < i; t++) s += terms[t];
+                    o.Set(ty, tx, s / ((double)k * k));
+                }
+            return o;
+        }
+
+        /// <summary>
+        /// Where the centred grid of <see cref="BlockMeanCentred"/> starts along one axis: half
+        /// the leftover of <paramref name="n"/> pixels tiled by <paramref name="k"/>, a whole or a
+        /// half pixel.
+        /// </summary>
+        /// <param name="n">The raster's extent along the axis, in pixels.</param>
+        /// <param name="k">The tile side in pixels.</param>
+        /// <returns>The edge coordinate of the first tile, in pixels.</returns>
+        internal static double CentredOffset(int n, int k) => (n - n / k * k) / 2.0;
 
         /// <summary>
         /// The analysis raster: a 2x2 block mean (it kills the Bayer CFA, each quad averaged into
@@ -86,9 +147,14 @@ namespace FlatCheck
         /// <returns>The shrunk raster; never larger than half the input.</returns>
         internal static Img Prepare(Img data, int targetLong = 1200)
         {
+            // The 2x2 step stays anchored at (0, 0): it must follow the Bayer phase. The further
+            // downsample has no phase to keep and takes the centred grid, so a frame of even
+            // width and height prepares to the mirror of its mirror's raster whatever the
+            // leftover of the second step (R-131; a 8256 x 5504 frame halves to 4128 x 2752 and
+            // k = 3 leaves one row over, which an anchored grid dropped at the far edge).
             Img img = BlockMean(data, 2);
             int k = Math.Max(1, (int)(Math.Max(img.H, img.W) / (double)targetLong));
-            return BlockMean(img, k);
+            return BlockMeanCentred(img, k);
         }
 
         /// <summary>

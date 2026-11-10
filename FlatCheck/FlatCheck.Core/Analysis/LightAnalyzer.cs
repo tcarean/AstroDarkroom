@@ -77,7 +77,7 @@ namespace FlatCheck
         {
             Img img = Img.Prepare(raw);
             int h = img.H, w = img.W;
-            double cx = w / 2.0, cy = h / 2.0;
+            double cx = Metrics.Centre(w), cy = Metrics.Centre(h);
             double rCorner = Math.Sqrt(cx * cx + cy * cy);
 
             var (bg, bx, by, th, tw, _) = Metrics.TileBackground(img);

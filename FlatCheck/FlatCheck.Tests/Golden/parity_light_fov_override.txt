@@ -5,9 +5,9 @@ Copyright (C) 2026 Tudor Carean
     Astept un stack CALIBRAT cu flat, dar FARA background extraction.
     camp diagonal           :  10.0 grade  (--fov)
 
-    tile-uri folosite       : 1701 / 1764 (restul = nebulozitate/stele, respinse)
-    gradient de cer (plan)  :  0.18 %  <- poluare luminoasa, IGNORA
-    componenta radiala      : +45.74 %   [PROBLEMA]  <- ASTA e flat-ul
+    tile-uri folosite       : 1712 / 1764 (restul = nebulozitate/stele, respinse)
+    gradient de cer (plan)  :  0.00 %  <- poluare luminoasa, IGNORA
+    componenta radiala      : +45.57 %   [PROBLEMA]  <- ASTA e flat-ul
 
   INTERPRETARE
     Colturile au ramas mai intunecate decat centrul: flat-ul nu a scos toata vignetarea.

@@ -185,7 +185,7 @@ public class GoldenOutputTests
         Assert.Contains("2 - 10 %", output);
         Assert.Contains("10 - 20 %", output);
         Assert.Contains("peste 20 %", output);
-        Assert.Contains("reziduu dupa model rad. :  0.28 %   [PERFECT]  <- CEL MAI IMPORTANT", output);
+        Assert.Contains("reziduu dupa model rad. :  0.05 %   [PERFECT]  <- CEL MAI IMPORTANT", output);
         Assert.Contains("pata maxima (o dala)    :", output);
         Assert.Contains("Cel mai important e \"reziduu dupa model rad.\"", output);
     }
@@ -206,8 +206,8 @@ public class GoldenOutputTests
         var (output, _) = RunCli(ws, f, "-o", ws.PathTo("out.png"));
 
         Assert.Contains("INFORMATIV (nu sunt teste)", output);
-        Assert.Contains("offset centru iluminare :  0.19 %", output);
-        Assert.DoesNotContain("offset centru iluminare :  0.19 %   [", output);
+        Assert.Contains("offset centru iluminare :  0.00 %", output);
+        Assert.DoesNotContain("offset centru iluminare :  0.00 %   [", output);
         Assert.Contains("inclinare (gradient)    :", output);
     }
 
@@ -648,7 +648,7 @@ public class GoldenOutputTests
 
         AssertGolden("structure_with_profiles", output);
         Assert.Equal(3, exit);
-        Assert.Contains("forma     : BUN", output);
+        Assert.Contains("forma     : PERFECT", output);     // BUN until the geometric centre of ADR 0095: the half pixel made a 2.7 % tilt on this fixture
         Assert.Contains("adancimea : REFA", output);
         Assert.Contains("VERDICT: REFA", output);
         Assert.Contains("MAI MULT", output);

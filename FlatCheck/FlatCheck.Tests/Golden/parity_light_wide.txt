@@ -7,8 +7,8 @@ Copyright (C) 2026 Tudor Carean
     (nu pot verifica daca testul se aplica; vezi --fov si README)
 
     tile-uri folosite       : 1160 / 1176 (restul = nebulozitate/stele, respinse)
-    gradient de cer (plan)  :  0.14 %  <- poluare luminoasa, IGNORA
-    componenta radiala      : +45.89 %   [PROBLEMA]  <- ASTA e flat-ul
+    gradient de cer (plan)  :  0.00 %  <- poluare luminoasa, IGNORA
+    componenta radiala      : +45.76 %   [PROBLEMA]  <- ASTA e flat-ul
 
   INTERPRETARE
     Colturile au ramas mai intunecate decat centrul: flat-ul nu a scos toata vignetarea.

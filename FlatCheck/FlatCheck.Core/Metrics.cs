@@ -36,6 +36,45 @@ namespace FlatCheck
     /// </summary>
     internal static class Metrics
     {
+        /// <summary>
+        /// The geometric centre of a raster along one axis, <c>(n - 1) / 2</c>: pixel <c>i</c>
+        /// spans <c>[i, i + 1)</c>, so the row and column centres of a raster of <c>n</c> are
+        /// symmetric about this point, and a mirror of the raster leaves it in place. The radial
+        /// model, the azimuthal asymmetry and the tilt fit are built around it (R-014, R-131).
+        /// </summary>
+        /// <param name="n">The raster's extent along the axis, in pixels.</param>
+        /// <returns>The centre, in pixel-index coordinates.</returns>
+        internal static double Centre(int n) => (n - 1) / 2.0;
+
+        /// <summary>
+        /// The azimuth of a pixel about the centre, as a sector index and as cos 2t and sin 2t,
+        /// computed in the first quadrant from |dx| and |dy| and reflected by the signs of dx and
+        /// dy, so that the mirror of a pixel gets exactly the mirror sector, the same cos 2t and
+        /// the negated sin 2t, bit for bit. Atan2 and Cos taken on the full circle differ in
+        /// their last bits between a pixel and its mirror, and on the diagonals, which are
+        /// sector boundaries, a pixel fell in one sector one way up and in the neighbour the
+        /// other way up; the ring fit's inlier cut tipped on it and the model moved by 1e-4 in
+        /// the corners (R-131).
+        /// </summary>
+        /// <param name="dx">The pixel's x minus the centre's x.</param>
+        /// <param name="dy">The pixel's y minus the centre's y.</param>
+        /// <param name="sectors">How many equal sectors on the circle, a multiple of 4.</param>
+        /// <returns>The sector (0 at -180 degrees, counter-clockwise, as the full-circle
+        /// formula <c>floor((t + pi) / 2pi * sectors)</c> gave it away from the boundaries),
+        /// cos 2t and sin 2t.</returns>
+        internal static (int sector, double cos2, double sin2) Azimuth(double dx, double dy, int sectors)
+        {
+            double t0 = Math.Atan2(Math.Abs(dy), Math.Abs(dx));          // 0 .. pi/2
+            int perQuadrant = sectors / 4;
+            int q0 = Math.Min((int)(t0 / (Math.PI / 2) * perQuadrant), perQuadrant - 1);
+            // t = t0 in quadrant I (dx >= 0, dy >= 0), pi - t0 in II, -pi + t0 in III, -t0 in IV;
+            // the sectors count from -pi, so quadrant III holds 0 .. perQuadrant - 1
+            int sector = dx >= 0
+                ? (dy >= 0 ? sectors / 2 + q0 : sectors / 2 - 1 - q0)
+                : (dy >= 0 ? sectors - 1 - q0 : q0);
+            double sin2 = Math.Sin(2 * t0);
+            return (sector, Math.Cos(2 * t0), (dx >= 0) == (dy >= 0) ? sin2 : -sin2);
+        }
         // ========================================================= geometry
         /// <summary>
         /// The fit of a paraboloid on log(I). Two different things come out of the same fit:
@@ -71,27 +110,32 @@ namespace FlatCheck
         {
             int h = img.H, w = img.W;
             // normal equations for A=[1,xn,yn,xn^2,yn^2,xn*yn], 6 unknowns
-            int step = Math.Max(1, Math.Min(h, w) / 200);
+            // Every pixel, about the geometric centre: a sampling grid from index 0 is not its
+            // own mirror, and the tilt moved with the orientation of the file (R-131).
             var AtA = new double[6, 6];
             var Atb = new double[6];
-            for (int y = 0; y < h; y += step)
-                for (int x = 0; x < w; x += step)
+            var r = new double[6];
+            double cx0 = Centre(w), cy0 = Centre(h), halfW = w / 2.0, halfH = h / 2.0;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
                 {
-                    double xn = (x - w / 2.0) / (w / 2.0);
-                    double yn = (y - h / 2.0) / (h / 2.0);
+                    double xn = (x - cx0) / halfW;
+                    double yn = (y - cy0) / halfH;
                     double val = Math.Log(Math.Max(img.At(y, x), 1e-12));
-                    double[] r = { 1, xn, yn, xn * xn, yn * yn, xn * yn };
+                    r[0] = 1; r[1] = xn; r[2] = yn; r[3] = xn * xn; r[4] = yn * yn; r[5] = xn * yn;
                     for (int i = 0; i < 6; i++)
                     {
                         Atb[i] += r[i] * val;
-                        for (int j = 0; j < 6; j++) AtA[i, j] += r[i] * r[j];
+                        for (int j = i; j < 6; j++) AtA[i, j] += r[i] * r[j];   // the upper triangle; mirrored below
                     }
                 }
+            for (int i = 1; i < 6; i++)
+                for (int j = 0; j < i; j++) AtA[i, j] = AtA[j, i];
             double[] coef = Stats.Solve(AtA, Atb, 6);
             // The normal system depends only on the coordinates, not on the values, so it is
             // singular only on a degenerate raster. Then the tilt cannot be computed either:
             // NaN, which falls into the worst band, as everywhere in the tool.
-            if (coef == null) return (w / 2.0, h / 2.0, double.NaN, false);
+            if (coef == null) return (Centre(w), Centre(h), double.NaN, false);
             double b = coef[1], c = coef[2], d = coef[3], e = coef[4], f = coef[5];
             // The peak-to-peak amplitude of the linear term over the frame. |b| + |c| is its
             // value in the corner (where xn = yn = 1), and sinh makes the exact conversion from
@@ -99,12 +143,12 @@ namespace FlatCheck
             double tilt = 2 * Math.Sinh(Math.Abs(b) + Math.Abs(c)) * 100;
             // M = [[2d, f],[f, 2e]]; sol = M^-1 * [-b,-c]
             double det = 2 * d * 2 * e - f * f;
-            if (Math.Abs(det) < 1e-15) return (w / 2.0, h / 2.0, tilt, false);
+            if (Math.Abs(det) < 1e-15) return (Centre(w), Centre(h), tilt, false);
             double sx = ((-b) * (2 * e) - f * (-c)) / det;
             double sy = ((2 * d) * (-c) - f * (-b)) / det;
-            double cx = sx * (w / 2.0) + w / 2.0;
-            double cy = sy * (h / 2.0) + h / 2.0;
-            if (!(cx > 0 && cx < w && cy > 0 && cy < h)) return (w / 2.0, h / 2.0, tilt, false);
+            double cx = sx * (w / 2.0) + Centre(w);
+            double cy = sy * (h / 2.0) + Centre(h);
+            if (!(cx > 0 && cx < w && cy > 0 && cy < h)) return (Centre(w), Centre(h), tilt, false);
             return (cx, cy, tilt, true);
         }
 
@@ -244,11 +288,11 @@ namespace FlatCheck
                 {
                     double r = Math.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
                     int idx = Math.Min((int)(r / rmax * nbins), nbins - 1);
-                    double t = Math.Atan2(y - cy, x - cx);
+                    var (sec, cos2, sin2) = Azimuth(x - cx, y - cy, RingSectors);
                     binVals[idx].Add(img.At(y, x));
-                    binCos[idx].Add(Math.Cos(2 * t));
-                    binSin[idx].Add(Math.Sin(2 * t));
-                    binSector[idx].Add(Math.Min((int)((t + Math.PI) / (2 * Math.PI) * RingSectors), RingSectors - 1));
+                    binCos[idx].Add(cos2);
+                    binSin[idx].Add(sin2);
+                    binSector[idx].Add(sec);
                 }
             double rIns = Math.Min(cx, cy);
             var ringBins = new List<int>();
@@ -327,21 +371,32 @@ namespace FlatCheck
         {
             int n = v.Count;
             var med = new List<double>(); var rows = new List<double[]>(); var wt = new List<double>();
+            // The sums below are taken in decimal: each term rounds to 15 significant digits and
+            // the sum carries 28, so at this scale the result does not depend on the order the
+            // pixels come in and is exactly sign-symmetric. The mirror of a raster walks the same
+            // pixels in another order, and a double sum that differed in its last bit tipped the
+            // inlier cut below for one sector and moved the model by 1e-4 in the corners (R-131).
+            // The medians, the weights and the solve are order-independent already.
             for (int k = 0; k < RingSectors; k++)
             {
                 var vals = new List<double>();
-                double sumC = 0, sumS = 0, sumC4 = 0, sumS4 = 0;
+                decimal sumC = 0, sumS = 0, sumC4 = 0, sumS4 = 0;
                 for (int i = 0; i < n; i++)
                     if (sector[i] == k)
                     {
                         vals.Add(v[i]);
-                        sumC += c[i]; sumS += s[i];
-                        sumC4 += 2 * c[i] * c[i] - 1; sumS4 += 2 * s[i] * c[i];
+                        sumC += (decimal)c[i]; sumS += (decimal)s[i];
+                        sumC4 += (decimal)(2 * c[i] * c[i] - 1); sumS4 += (decimal)(2 * s[i] * c[i]);
                     }
                 if (vals.Count < 8) continue;
                 int cnt = vals.Count;
-                med.Add(Stats.Percentile(vals, 50));
-                rows.Add(new[] { 1.0, sumC / cnt, sumS / cnt, sumC4 / cnt, sumS4 / cnt });
+                double sectorMedian = Stats.Percentile(vals, 50);
+                // A sector whose median is not a number (unexposed pixels some software marks
+                // NaN) is left out of the fit: the decimal sums below cannot take a NaN, and
+                // before them it made the whole fit NaN anyway.
+                if (!double.IsFinite(sectorMedian)) continue;
+                med.Add(sectorMedian);
+                rows.Add(new[] { 1.0, (double)sumC / cnt, (double)sumS / cnt, (double)sumC4 / cnt, (double)sumS4 / cnt });
                 wt.Add(cnt);
             }
             int m = med.Count;
@@ -355,16 +410,17 @@ namespace FlatCheck
             var mean = new double[4];
             for (int j = 0; j < 4; j++)
             {
-                for (int p = 0; p < m; p++) mean[j] += rows[p][j + 1];
-                mean[j] /= m;
+                decimal sum = 0;
+                for (int p = 0; p < m; p++) sum += (decimal)rows[p][j + 1];
+                mean[j] = (double)sum / m;
             }
             var gram = new double[4, 4];
             for (int a = 0; a < 4; a++)
                 for (int b = 0; b < 4; b++)
                 {
-                    double sum = 0;
-                    for (int p = 0; p < m; p++) sum += (rows[p][a + 1] - mean[a]) * (rows[p][b + 1] - mean[b]);
-                    gram[a, b] = sum / m / 0.5;
+                    decimal sum = 0;
+                    for (int p = 0; p < m; p++) sum += (decimal)((rows[p][a + 1] - mean[a]) * (rows[p][b + 1] - mean[b]));
+                    gram[a, b] = (double)sum / m / 0.5;
                 }
             double det = Determinant(gram, 4);
             if (!(det >= RingFitMinDet)) return null;
@@ -375,15 +431,21 @@ namespace FlatCheck
             var res = new double[m];
             for (int round = 0; round < RingFitRounds; round++)
             {
-                var A = new double[5, 5]; var b = new double[5];
+                var dA = new decimal[5, 5]; var db = new decimal[5];
                 for (int p = 0; p < m; p++)
                 {
                     if (!inlier[p]) continue;
                     for (int a = 0; a < 5; a++)
                     {
-                        b[a] += wt[p] * rows[p][a] * med[p];
-                        for (int bb = 0; bb < 5; bb++) A[a, bb] += wt[p] * rows[p][a] * rows[p][bb];
+                        db[a] += (decimal)(wt[p] * rows[p][a] * med[p]);
+                        for (int bb = 0; bb < 5; bb++) dA[a, bb] += (decimal)(wt[p] * rows[p][a] * rows[p][bb]);
                     }
+                }
+                var A = new double[5, 5]; var b = new double[5];
+                for (int a = 0; a < 5; a++)
+                {
+                    b[a] = (double)db[a];
+                    for (int bb = 0; bb < 5; bb++) A[a, bb] = (double)dA[a, bb];
                 }
                 sol = Stats.Solve(A, b, 5);
                 if (sol == null) return null;
@@ -473,7 +535,10 @@ namespace FlatCheck
                 ["stanga-jos"] = Med(h - bh, h, 0, bw),
                 ["dreapta-jos"] = Med(h - bh, h, w - bw, w),
             };
-            double ctr = Med(h / 2 - bh, h / 2 + bh, w / 2 - bw, w / 2 + bw);
+            // the centre box is its own mirror on an odd raster too: 2 bh rows, plus one when h
+            // is odd, centred on the middle row (R-131)
+            int cy0 = (h - h % 2) / 2 - bh, cx0 = (w - w % 2) / 2 - bw;
+            double ctr = Med(cy0, cy0 + 2 * bh + h % 2, cx0, cx0 + 2 * bw + w % 2);
             return (vals, ctr);
         }
 
@@ -504,8 +569,7 @@ namespace FlatCheck
                     double dx = x - cx, dy = y - cy;
                     double r = Math.Sqrt(dx * dx + dy * dy);
                     if (r < edges[0] || r >= edges[nrings]) continue;
-                    double th = Math.Atan2(dy, dx);
-                    int s = Math.Min((int)((th + Math.PI) / (2 * Math.PI) * nsect), nsect - 1);
+                    int s = Azimuth(dx, dy, nsect).sector;
                     int ri = -1;
                     for (int i = 0; i < nrings; i++) if (r >= edges[i] && r < edges[i + 1]) { ri = i; break; }
                     if (ri >= 0) buckets[ri, s].Add(img.At(y, x));
@@ -549,12 +613,12 @@ namespace FlatCheck
         /// clean radial field stayed under 0.1% at the analysis resolution.
         /// </summary>
         /// <param name="resid">The residual raster (image / model), centred on 1.</param>
-        /// <param name="ntiles">How many tiles across the width.</param>
+        /// <param name="ntiles">How many tiles across the width. The grid is laid about the frame's centre (R-131).</param>
         /// <returns>The spread as a fraction (not percent); NaN with fewer than 10 tiles.</returns>
         internal static double LargeScalePtp(Img resid, int ntiles = 40)
         {
             int k = TileSize(resid, ntiles);
-            Img t = Img.BlockMean(resid, k);
+            Img t = Img.BlockMeanCentred(resid, k);
             if (t.D.Length < 10) return double.NaN;
             return Stats.Percentile(t.D, 95) - Stats.Percentile(t.D, 5);
         }
@@ -575,11 +639,11 @@ namespace FlatCheck
         /// report's warning.
         /// </summary>
         /// <param name="resid">The residual raster (image / model), centred on 1.</param>
-        /// <param name="ntiles">How many tiles across the width.</param>
+        /// <param name="ntiles">How many tiles across the width. The grid is laid about the frame's centre (R-131).</param>
         /// <returns>The largest |tile - 1|, as a fraction.</returns>
         internal static double MaxTileDeviation(Img resid, int ntiles = 40)
         {
-            Img t = Img.BlockMean(resid, TileSize(resid, ntiles));
+            Img t = Img.BlockMeanCentred(resid, TileSize(resid, ntiles));
             double worst = 0;
             foreach (double v in t.D) worst = Math.Max(worst, Math.Abs(v - 1.0));
             return worst;
@@ -619,7 +683,7 @@ namespace FlatCheck
         /// says too, that at wide apertures the dust is under the threshold.
         /// </summary>
         /// <param name="resid">The residual raster (image / model), centred on 1.</param>
-        /// <param name="ntiles">How many tiles across the width.</param>
+        /// <param name="ntiles">How many tiles across the width. The grid is laid about the frame's centre (R-131).</param>
         /// <param name="win">The neighbourhood's half side, in tiles.</param>
         /// <returns>
         /// The signed deviation as a fraction, and the spot tile's centre (x, y) in pixels of
@@ -628,7 +692,8 @@ namespace FlatCheck
         internal static (double dev, int x, int y) LocalSpots(Img resid, int ntiles = 80, int win = 3)
         {
             int k = TileSize(resid, ntiles);
-            Img t = Img.BlockMean(resid, k);
+            Img t = Img.BlockMeanCentred(resid, k);
+            double oy = Img.CentredOffset(resid.H, k), ox = Img.CentredOffset(resid.W, k);
             double worst = 0; int wx = win, wy = win;
             var nb = new List<double>((2 * win + 1) * (2 * win + 1));
             for (int y = win; y < t.H - win; y++)
@@ -644,16 +709,17 @@ namespace FlatCheck
                     // pick a different tile. Under 1e-12 the first in row order stays, in both.
                     if (Math.Abs(hp) > Math.Abs(worst) + 1e-12) { worst = hp; wx = x; wy = y; }
                 }
-            return (worst, (int)((wx + 0.5) * k), (int)((wy + 0.5) * k));
+            // The tile's centre, in pixel-index coordinates: the grid's edge coordinate less a half.
+            return (worst, (int)Math.Round((wx + 0.5) * k + ox - 0.5), (int)Math.Round((wy + 0.5) * k + oy - 0.5));
         }
 
         // Local background per tile (a low percentile = robust to stars/nebulosity).
         /// <summary>
         /// The local background of a light: a low percentile of each whole tile, with the tile's
-        /// centre. The partial tiles at the right and bottom are dropped.
+        /// centre. The grid is laid about the frame's centre; with an odd leftover the boundary row, or column, goes whole into both tiles it straddles (R-131).
         /// </summary>
         /// <param name="img">The light's analysis raster.</param>
-        /// <param name="ntiles">How many tiles across the width; a tile is at least 4 px.</param>
+        /// <param name="ntiles">How many tiles across the width; a tile is at least 4 px. The grid is laid about the frame's centre (R-131).</param>
         /// <param name="pct">The percentile taken per tile, 0..100.</param>
         /// <returns>
         /// Per tile, row-major: the background, the centre's x and y in pixels; then the grid's
@@ -664,20 +730,28 @@ namespace FlatCheck
             int h = img.H, w = img.W;
             int k = Math.Max(4, (int)(w / (double)ntiles));
             int hh = h / k, ww = w / k;
+            // The grid is laid about the frame's centre, like Img.BlockMeanCentred (R-131). A
+            // percentile cannot weigh a pixel by half, so with an odd leftover the boundary row,
+            // or column, goes whole into both tiles it straddles: the grid stays its own mirror.
+            double oy = Img.CentredOffset(h, k), ox = Img.CentredOffset(w, k);
             var bg = new double[hh * ww];
             var bx = new double[hh * ww];
             var by = new double[hh * ww];
             for (int ty = 0; ty < hh; ty++)
                 for (int tx = 0; tx < ww; tx++)
                 {
-                    var vals = new List<double>();
-                    for (int dy = 0; dy < k; dy++)
-                        for (int dx = 0; dx < k; dx++)
-                            vals.Add(img.At(ty * k + dy, tx * k + dx));
+                    int ya = (int)Math.Floor(oy + ty * k), yb = (int)Math.Ceiling(oy + (ty + 1) * k);
+                    int xa = (int)Math.Floor(ox + tx * k), xb = (int)Math.Ceiling(ox + (tx + 1) * k);
+                    var vals = new List<double>((yb - ya) * (xb - xa));
+                    for (int y = ya; y < yb; y++)
+                        for (int x = xa; x < xb; x++)
+                            vals.Add(img.At(y, x));
                     int idx = ty * ww + tx;
                     bg[idx] = Stats.Percentile(vals, pct);
-                    bx[idx] = (tx + 0.5) * k;
-                    by[idx] = (ty + 0.5) * k;
+                    // the tile's centre in pixel-index coordinates (pixel i spans [i, i + 1)),
+                    // so that the mirror of the grid is its own mirror about Metrics.Centre
+                    bx[idx] = ox + (tx + 0.5) * k - 0.5;
+                    by[idx] = oy + (ty + 0.5) * k - 0.5;
                 }
             return (bg, bx, by, hh, ww, k);
         }

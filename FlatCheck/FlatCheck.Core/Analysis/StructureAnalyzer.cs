@@ -36,7 +36,7 @@ namespace FlatCheck
         internal int Width, Height;                  // the analysis raster (after Prepare)
         internal double RawMedian, RawMax;           // on the original raster, informative
         internal double FitCx, FitCy;                // the fitted illumination vertex
-        internal double SensorCx, SensorCy;          // the sensor's centre (w/2, h/2)
+        internal double SensorCx, SensorCy;          // the sensor's centre, ((w-1)/2, (h-1)/2) (R-014)
         internal double CentroidOffsetPct;           // % of the half-diagonal, INFORMATIVE
         internal bool CentroidValid;                 // false => the fitted vertex is not usable
         internal double TiltPct;                     // the amplitude of the linear term, %
@@ -101,7 +101,7 @@ namespace FlatCheck
             // WARNING: the radial model and the asymmetry are computed around the SENSOR's
             // centre, not the fitted vertex. Centring on the vertex would absorb exactly the
             // linear gradient being looked for, and the test would cancel itself.
-            double cx = w / 2.0, cy = h / 2.0;
+            double cx = Metrics.Centre(w), cy = Metrics.Centre(h);
             // Two things come out of the same fit: the tilt, which is a test, and the vertex's
             // offset, which is only informative - it is not scale-invariant, and above a
             // threshold not even monotonic. See Metrics.FitCenter for why.

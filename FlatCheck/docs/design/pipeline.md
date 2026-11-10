@@ -17,7 +17,8 @@
 ADR 0013 holds it: for a photographic lens with no optical train a correct flat is a purely
 radial function centred on the optical axis, so any departure from radial symmetry is error and
 a number that can be measured; and the convention that follows, that the radial model and the
-azimuthal asymmetry are computed around the sensor centre `(w/2, h/2)`, never around the fitted
+azimuthal asymmetry are computed around the sensor's geometric centre `((w-1)/2, (h-1)/2)`
+(R-014; until 2026-11-09 the index `(w/2, h/2)`, half a pixel away, ADR 0095), never around the fitted
 illumination peak, which would absorb exactly the gradient the test exists to detect. `FitCenter`
 never supplies that centre; it supplies the tilt and the vertex offset, and why the offset is
 informative while the tilt is the test is ADR 0014.
@@ -49,11 +50,13 @@ from libraw in the camera's orientation, and a FITS is read with the file's firs
 whatever `ROWORDER` says, because that is how Siril displays every FITS (R-130, ADR 0094). So
 `(x, y)` in a report, the corner names, the maps and the pictures are in Siril's orientation
 without any conversion downstream; `ROWORDER` only decides the Bayer phase (`modes-expo.md`).
-The figures are not quite independent of that choice: the model's centre is the index
-`(w/2, h/2)` and the tile grid starts at row 0, so the flip of 2026-11-09 moved the validation
-figures by 0.05 to 0.58 points (`validation.md`, History). The test fixtures are written as Siril
-writes a file (`FitsTestData.BuildFits`, bottom-up), so a synthetic scene is read as it was drawn
-and the goldens did not move.
+Since ADR 0095 the figures do not depend on that choice (R-131): the geometry is built about the
+frame's centre, every tile grid is laid symmetric about it and the sums that feed a threshold
+are order-independent, so a raster and its row or column mirror give the same six figures to
+the last bit. Before it the index centre and the grids from row 0 moved the validation figures
+by 0.05 to 0.58 points when a frame was read the other way up (`validation.md`, History). The
+test fixtures are written as Siril writes a file (`FitsTestData.BuildFits`, bottom-up), so a
+synthetic scene is read as it was drawn.
 
 
 ## The five modes
@@ -81,7 +84,14 @@ Note the integer truncation of `k`: the ~1200 px target is loose. A 6000×4000
 D3300 frame becomes 3000×2000 after the 2×2, then `k = (int)(3000/1200) = 2` →
 **1500×1000**, not 1200. Anything landing between 1200 and 2400 is left alone.
 This matches Python exactly, so it is parity-correct - just don't be surprised.
-`BlockMean` truncates partial blocks (`a.H / k`), dropping the last rows/columns.
+`BlockMean` truncates partial blocks (`a.H / k`), dropping the last rows/columns; it must
+stay anchored at (0, 0) for the 2x2 step, which follows the Bayer phase. It sums each block's
+values in sorted order, so the mirror of a raster gives exactly the mirrored blocks: a block
+summed in raster order differed in its last bit between a frame and its mirror, and the ring
+fit's inlier cut tipped on that bit (R-131). `Prepare`'s further downsample and the tile metrics
+use `BlockMeanCentred` instead, whose grid is laid about the frame's centre, the leftover rows
+and columns split between the two edges and the boundary row counted half in the edge tiles
+when the leftover is odd; its weighted terms are summed in sorted order too.
 
 **`Percentile(list, p)`** - sorts a copy and interpolates linearly between the two
 neighbouring order statistics, matching `numpy.percentile`'s default. Returns 0 on
@@ -118,7 +128,12 @@ hard circular edge on the inscribed radius, on a frame that contained neither. T
 numbers barely moved at the time (`LargeScalePtp` was then restricted to the inscribed radius,
 where the median was already exact), but the map is the only place a *shape* is read, and it
 was lying. The measurement, why symmetrising rather than the ring mean, and the two tests that
-also assert the unfixed behaviour are ADR 0017.
+also assert the unfixed behaviour are ADR 0017. Measured again on 2026-11-09 with the geometric
+centre (ADR 0095): most of that jump was the index centre's half pixel, which left the two arcs
+of a ring with unequal pixel counts, so the median fell on one mode or the other; with the arcs
+balanced a pure gradient's raw profile is only 8x rougher than the symmetrised one (0.09 %
+against 0.01 %), and the symmetrisation stays for the fragility of a median that sits in a gap
+(0.32 % against 0.23 % with 2 % of noise on top).
 
 Symmetrising removes the *odd* part only. An *even* non-radial term - a saddle (`xy`) or a
 falloff steeper along one axis than the other (`x² - y²`), which is what a twilight sky leaves
@@ -164,7 +179,9 @@ invalid. Rings needing at least `nsect - 1` populated sectors.
 
 **`LargeScalePtp(resid, ntiles = 40)`** - block-means the residual into ~40-wide tiles
 over the **whole frame** and returns `p95 - p5`. Why the tiles, why the whole frame and no
-longer the inscribed circle, the figures, the golden moves and the tests are ADR 0016.
+longer the inscribed circle, the figures, the golden moves and the tests are ADR 0016. Since
+ADR 0095 the tiles come from `Img.BlockMeanCentred`: the grid is laid about the frame's centre,
+so the mirror of a frame gives the mirrored tiles (R-131).
 
 **`MaxTileDeviation(resid, ntiles = 40)`** - the same tile grid, `max |tile - 1|`, whole
 frame. Why it is the fifth test, and its floor, are ADR 0015 (and "Why a fifth test" under
@@ -176,6 +193,8 @@ neighbourhood (`win` tiles on each side), and the largest |difference| wins, wit
 position. The rest is ADR 0041: what a gradient and a shadow read, why the 3-tile border is
 skipped, the tie rule, the sign named in words and the threshold read from `Th.LocalSpotWarn`,
 what it can misread on two real masters, and why the round-or-elongated check stays manual.
+The grid is the centred one of ADR 0095 too, and the position reported is the tile's centre in
+pixel-index coordinates, rounded.
 
 **Verdict ladder** - `Verdict(val, ok, bad)` → `OK` / `SUSPECT` / `PROBLEMA`;
 `Rank` maps those to 0/1/2 and the mode verdict is the worst of its tests. Note

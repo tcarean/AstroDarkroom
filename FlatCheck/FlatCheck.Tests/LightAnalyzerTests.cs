@@ -31,6 +31,36 @@ public class LightAnalyzerTests
 {
     const int N = 512;
 
+    /// <summary>
+    /// A light with residual vignetting, a sky gradient and a nebulous blob gives the same radial
+    /// and plane figures read the right way up, upside down and mirrored left to right (R-131):
+    /// the background tiles are laid about the frame's centre and the fit is about it too. Two
+    /// sizes; the analyzer prepares the frame first, so the tiles are laid on 256 x 256 (tiles
+    /// of 6: 256 = 42 x 6 + 4, an even leftover) and on 263 x 259 (263 = 43 x 6 + 5, 259 = 43 x 6
+    /// + 1, odd leftovers both ways, on an odd raster).
+    /// </summary>
+    [Theory]
+    [InlineData(512, 512)]
+    [InlineData(526, 518)]
+    public void R131_TheLightFiguresAreTheSame_WhenTheRasterIsMirrored(int W, int H)
+    {
+        var radial = FitsTestData.Radial(W, H, k: 0.1);
+        Func<int, int, double> scene = (x, y) =>
+        {
+            double dx = x - 0.62 * W, dy = y - 0.4 * H;
+            double blob = 3000 * Math.Exp(-(dx * dx + dy * dy) / (2 * 0.06 * W * 0.06 * W));
+            return radial(x, y) * (1 + 0.05 * x / W) + blob + 0.5 * (((x * 73856093) ^ (y * 19349663)) % 1000);
+        };
+        var a = LightAnalyzer.Analyze(TestImages.From(W, H, scene));
+        var r = LightAnalyzer.Analyze(TestImages.From(W, H, (x, y) => scene(x, H - 1 - y)));
+        var c = LightAnalyzer.Analyze(TestImages.From(W, H, (x, y) => scene(W - 1 - x, y)));
+
+        Assert.Equal(a.RadPct, r.RadPct, 9);
+        Assert.Equal(a.PlanePct, r.PlanePct, 9);
+        Assert.Equal(a.RadPct, c.RadPct, 9);
+        Assert.Equal(a.PlanePct, c.PlanePct, 9);
+    }
+
     [Fact]
     public void BackgroundFallingTowardTheEdges_ReadsAsUnderCorrection()
     {
