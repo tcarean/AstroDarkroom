@@ -62,7 +62,7 @@ Copyright (C) 2026 Tudor Carean
     master in lights   : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)  [how many of the master's pixels above each threshold show in the lights too]
     not in the master  : none: every hot pixel of the lights is above 20 ADU in the master too
     lights against dark: in the lights, the hot pixels are on average 1.30 times what they are in the dark (over the 5 frames; in the first 1.33, in the last 1.32; on 20 pixels)
-    what is left       : the subtraction takes too little: a hot pixel keeps on average a rest of 5.57 of the noise of a light; at 20 of 20 the rest is over the noise, at 20 over 3 times the noise (the light's noise on the pixel's colour; with dithering the traces spread, without it they stay in the same place in the stack)
+    what is left       : the subtraction takes too little: a hot pixel keeps on average a rest of 5.57 times the noise of a light; at 20 of 20 the rest is over the noise, at 20 over 3 times the noise (the light's noise on the pixel's colour; with dithering the traces spread, without it they stay in the same place in the stack)
     index darks        : idx121
     index lights       : idx157 (1.30 times the dark, that is 2.3 degrees warmer than it)
     verdict            : WARNING: subtract the dark with -opt (-opt: Siril multiplies it so that it matches the lights); in the lights the hot pixels are 1.30 times what they are in the dark, between 0.7 and 1.4, and what the subtraction leaves is on average 5.57 times the noise of a light: the dark is colder by 2.3 degrees

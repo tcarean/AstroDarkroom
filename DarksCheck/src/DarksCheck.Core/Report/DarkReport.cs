@@ -353,16 +353,21 @@ internal static class DarkReport
 
         bool tooMuch = m.Ratio < 1;
         string strong = F(Th.TraceStrongFactor, 0);
+        // a trace under the noise is a part of it; from the noise up it is so many times the noise,
+        // as the -opt verdict under the row says it
+        string size = t.Median < 1
+            ? T($"{median} of the noise of a light", $"{median} din zgomotul unui light")
+            : T($"{median} times the noise of a light", $"{median} ori cat zgomotul unui light");
         string about = T(
             "(the light's noise on the pixel's colour; with dithering the traces spread, without it they stay in the same place in the stack)",
             "(zgomotul light-ului pe culoarea pixelului; cu dithering urmele se imprastie, fara el raman in acelasi loc in stack)");
         return tooMuch
             ? T(
-                $"the subtraction takes too much: a hot pixel keeps on average a hole of {median} of the noise of a light; at {t.AboveNoise} of {t.Pixels} the hole is over the noise, at {t.AboveStrong} over {strong} times the noise {about}",
-                $"scaderea ia prea mult: la un pixel fierbinte ramane in medie o gaura de {median} din zgomotul unui light; la {t.AboveNoise} din {t.Pixels} gaura trece de zgomot, la {t.AboveStrong} de {strong} ori zgomotul {about}")
+                $"the subtraction takes too much: a hot pixel keeps on average a hole of {size}; at {t.AboveNoise} of {t.Pixels} the hole is over the noise, at {t.AboveStrong} over {strong} times the noise {about}",
+                $"scaderea ia prea mult: la un pixel fierbinte ramane in medie o gaura de {size}; la {t.AboveNoise} din {t.Pixels} gaura trece de zgomot, la {t.AboveStrong} de {strong} ori zgomotul {about}")
             : T(
-                $"the subtraction takes too little: a hot pixel keeps on average a rest of {median} of the noise of a light; at {t.AboveNoise} of {t.Pixels} the rest is over the noise, at {t.AboveStrong} over {strong} times the noise {about}",
-                $"scaderea ia prea putin: la un pixel fierbinte ramane in medie un rest de {median} din zgomotul unui light; la {t.AboveNoise} din {t.Pixels} restul trece de zgomot, la {t.AboveStrong} de {strong} ori zgomotul {about}");
+                $"the subtraction takes too little: a hot pixel keeps on average a rest of {size}; at {t.AboveNoise} of {t.Pixels} the rest is over the noise, at {t.AboveStrong} over {strong} times the noise {about}",
+                $"scaderea ia prea putin: la un pixel fierbinte ramane in medie un rest de {size}; la {t.AboveNoise} din {t.Pixels} restul trece de zgomot, la {t.AboveStrong} de {strong} ori zgomotul {about}");
     }
 
     /// <summary>

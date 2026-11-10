@@ -262,7 +262,23 @@ public class LightsAndIndexTests
         Assert.Equal(MatchVerdict.WithOpt, l.LightsOverDark.Verdict);
         string report = Report(r);
         string median = t.Median.ToString("0.00", CultureInfo.InvariantCulture);
-        Assert.Contains($"    ce ramane          : scaderea ia prea mult: la un pixel fierbinte ramane in medie o gaura de {median} din zgomotul unui light; la 20 din 20 gaura trece de zgomot, la {t.AboveStrong} de 3 ori zgomotul (", report, StringComparison.Ordinal);
+        // from 1.00 up the trace is said in times the noise, as the verdict under it says it
+        Assert.Contains($"    ce ramane          : scaderea ia prea mult: la un pixel fierbinte ramane in medie o gaura de {median} ori cat zgomotul unui light; la 20 din 20 gaura trece de zgomot, la {t.AboveStrong} de 3 ori zgomotul (", report, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Contains($"    what is left       : the subtraction takes too much: a hot pixel keeps on average a hole of {median} times the noise of a light; at 20 of 20 the hole is over the noise, at {t.AboveStrong} over 3 times the noise (", Report(r), StringComparison.Ordinal);
+        }
+
+        // too little, and over the noise: a rest of so many times the noise
+        using SessionFixture warm = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, 1.3));
+        DarkSeriesResult rw = Run(warm);
+        string rest = rw.Lights!.Traces.Median.ToString("0.00", CultureInfo.InvariantCulture);
+        Assert.InRange(rw.Lights.Traces.Median, 3.5, 7.5);
+        Assert.Contains($"    ce ramane          : scaderea ia prea putin: la un pixel fierbinte ramane in medie un rest de {rest} ori cat zgomotul unui light; la 20 din 20 restul trece de zgomot, la ", Report(rw), StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Contains($"    what is left       : the subtraction takes too little: a hot pixel keeps on average a rest of {rest} times the noise of a light; at 20 of 20 the rest is over the noise, at ", Report(rw), StringComparison.Ordinal);
+        }
         Assert.Contains($" ori cat in dark, intre 0.7 si 1.4, iar ce ramane dupa scadere e in medie de {median} ori zgomotul unui light: dark-ul e mai cald cu ", report, StringComparison.Ordinal);
         Assert.Contains("    verdict            : ATENTIE: scade dark-ul cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); in lights pixelii fierbinti sunt de 0.8", report, StringComparison.Ordinal);
     }

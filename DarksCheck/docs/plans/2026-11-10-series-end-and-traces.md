@@ -283,16 +283,18 @@ Reused as they are: `Planes.Median`, `Normalisation.Degrees` and `NormOf`,
 - V-013 is a match case that records its darks' check 3 in a `drift` block
   (`ValidationTests.CheckMatch` reads it when present), not a second darks case. The trace
   figures are read on the cases that record them, so V-007 was left as it was.
-- V-007 fails, for a reason outside this task: since 2026-11-08 17:31 the Veil session of
+- V-007 failed, for a reason outside this task: since 2026-11-08 17:31 the Veil session of
   2026-10-06 has a `darks\` folder (the 7 °C library's frames), so it no longer runs as a
-  session without darks against the library. Left untouched; the owner decides what it becomes.
+  session without darks against the library. Reported, and removed at the owner's word the same
+  day (ADR 0045, a second commit); V-012 keeps its figures.
 - From the review of the diff: check 3 is `NEMASURAT` only without a first ratio, as R-023
   already said (a last frame without hot pixels had made the whole check unmeasured, and would
   have hidden a `REFA`); a distance that one decimal would print as the limit is printed with
   two (the leak set's master is 0.99 degrees from its end); tests for the band's clamp at
   0.7 .. 1.4 and for the `REFA` advice without minutes.
-- Not done, a wording for the owner to see first: from 1.00 up the `ce ramane` row could say
-  `de 5.57 ori zgomotul unui light` where it says `un rest de 5.57 din zgomotul unui light`.
+- A wording added after the owner saw it: from 1.00 up the `ce ramane` row says `un rest de
+  5.57 ori cat zgomotul unui light` where the first commit said `un rest de 5.57 din zgomotul
+  unui light` (the second commit).
 - The sentence above the lights' chart stays in the window's `WindowTexts`, taking the core's
   band; the figures and the band are the core's.
 - One commit for the two checks, not one per check: their words share `DarkReport.cs`, the

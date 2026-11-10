@@ -65,7 +65,7 @@ Copyright (C) 2026 Tudor Carean
     masterul in lights : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [cati dintre pixelii masterului de peste fiecare prag se vad si in lights]
     lipsesc din master : niciunul: toti pixelii fierbinti din lights sunt peste 20 ADU si in master
     lights fata de dark: in lights, pixelii fierbinti sunt in medie de 0.50 ori cat in dark (pe cele 3 cadre; in primul 0.51, in ultimul 0.50; pe 20 de pixeli)
-    ce ramane          : scaderea ia prea mult: la un pixel fierbinte ramane in medie o gaura de 18.31 din zgomotul unui light; la 20 din 20 gaura trece de zgomot, la 20 de 3 ori zgomotul (zgomotul light-ului pe culoarea pixelului; cu dithering urmele se imprastie, fara el raman in acelasi loc in stack)
+    ce ramane          : scaderea ia prea mult: la un pixel fierbinte ramane in medie o gaura de 18.31 ori cat zgomotul unui light; la 20 din 20 gaura trece de zgomot, la 20 de 3 ori zgomotul (zgomotul light-ului pe culoarea pixelului; cu dithering urmele se imprastie, fara el raman in acelasi loc in stack)
     index partener     : idx241
     index lights       : idx121 (de 0.50 ori cat dark-ul, adica cu 5.9 grade mai reci decat el)
     verdict            : ATENTIE: foloseste dark-ul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.50 ori cat in dark: dark-ul e mai cald cu 5.9 grade, ii vede pe toti, dar scazut ar scoate prea mult si ar lasa puncte negre
