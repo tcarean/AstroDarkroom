@@ -268,9 +268,9 @@ public class WindowSmokeTests
         });
     }
 
-    /// <summary>A series with frames off the plateau: the tinted rows, the bold `platou` cells and the notes under them render without a binding error (R-071, R-023).</summary>
+    /// <summary>A series with frames off its end: the tinted rows, the bold `sfarsit` cells and the notes under them render without a binding error (R-071, R-023).</summary>
     [Fact]
-    public async Task R071_TheFramesOffThePlateauRenderWithTheirNotes()
+    public async Task R071_TheFramesOffTheEndOfTheSeriesRenderWithTheirNotes()
     {
         using TestSettings.Own _ = new();
         (int X, int Y, double Adu)[] hot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 300.0)).ToArray();
@@ -290,7 +290,7 @@ public class WindowSmokeTests
             Assert.Equal(2, notes.Length);
             Grid row = (Grid)notes[0].Parent;
             Assert.Equal(vm.Frames[0].Note, row.ToolTip);
-            Assert.Equal(DarkReport.PlateauColumnTip, vm.PlateauHeaderTip);
+            Assert.Equal(DarkReport.EndColumnTip, vm.EndHeaderTip);
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
     }

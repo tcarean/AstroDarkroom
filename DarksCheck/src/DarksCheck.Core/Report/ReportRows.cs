@@ -121,8 +121,8 @@ internal sealed record ReportSection(string Title, IReadOnlyList<ReportRow> Rows
 
 /// <summary>
 /// One dark of the frames table, every cell already formatted; Skipped or Error set when the frame
-/// has no figures; Plateau is the frame's degrees from the plateau of R-023 (`-` without a fit) and
-/// Note the reason a frame off the plateau is one to discard (null for every other frame), printed
+/// has no figures; End is the frame's degrees from the end of the series of R-023 (`-` without an end) and
+/// Note the reason a frame off the end is one to discard (null for every other frame), printed
 /// after the last column and shown by the window in the attention colour.
 /// </summary>
 /// <param name="Index">The frame's number in the series, from 1.</param>
@@ -136,14 +136,14 @@ internal sealed record ReportSection(string Title, IReadOnlyList<ReportRow> Rows
 /// <param name="Bands">The row banding over the white noise.</param>
 /// <param name="Amp">The median of the master's hot pixels in this frame over the master, or
 /// "-".</param>
-/// <param name="Plateau">The degrees from the series' plateau, signed, or "-".</param>
+/// <param name="End">The degrees from the end of the series, signed, or "-".</param>
 /// <param name="Light">The light above the warming line of R-028, signed, in ADU-eq (ADU when the
 /// factor is 1), or "-".</param>
 /// <param name="Side">The offset of check 2's worst side from the centre, minus the bias's, signed,
 /// in ADU-eq, or "-".</param>
 /// <param name="Above">How many pixels of the reference plane lie above the hot level.</param>
-/// <param name="Note">Why a frame off the plateau is one to discard, or null.</param>
-internal sealed record DarkTableRow(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string Plateau, string Light, string Side, string Above, string? Note = null);
+/// <param name="Note">Why a frame off the end of the series is one to discard, or null.</param>
+internal sealed record DarkTableRow(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string End, string Light, string Side, string Above, string? Note = null);
 
 /// <summary>
 /// One light of the lights table, every cell already formatted; Error set when the light has no

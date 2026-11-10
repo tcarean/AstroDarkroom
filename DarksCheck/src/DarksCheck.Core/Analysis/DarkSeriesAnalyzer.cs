@@ -276,16 +276,14 @@ internal sealed record BinnedMap(string Name, IReadOnlyList<float> Values, int W
 internal sealed record BandingFigures(string Name, double RowStd, double ColStd, double RowP2p, double ColP2p);
 
 /// <summary>
-/// The warming of the series read from its hot pixels (R-023): the amplitude ratio to the master at
-/// the first and the last frame and the degrees between them; then the fit of the ratios on the
-/// time as `Plateau - drop x exp(-t / TauMinutes)` (NaN under <see cref="Th.WarmingFitMinFrames"/>
-/// frames; the time in minutes from the first frame when <see cref="TimeFromStamps"/>, else the
-/// frame's position; <see cref="TauAtGridTop"/> when the time constant sits at the top of the grid,
-/// three times the span, so the plateau is an extrapolation), its rms residual, the master's
-/// degrees to the plateau (negative under it), the degrees left between the fitted last frame and
-/// the plateau, the frames more than <see cref="Th.OffPlateauCelsius"/> from the plateau with the
-/// two bounds of that band, the master's degrees to the plateau without them and the factor by
-/// which the master's noise would grow without them (sqrt of frames over frames left).
+/// The warming of the series read from its hot pixels (R-023, ADR 0043): the amplitude ratio to the
+/// master at the first and the last frame and the degrees between them; then, with at least
+/// <see cref="Th.WarmingFitMinFrames"/> frames with a ratio, the end of the series (the median ratio
+/// of the last <see cref="Th.SeriesEndFrames"/> of them), the first frame's and the master's degrees
+/// from it, the frames more than <see cref="Th.OffEndCelsius"/> from it with the two bounds of that
+/// band, the master's degrees from the end without them and the factor by which the master's noise
+/// would grow without them (sqrt of frames over frames left). The time constant of the fit of
+/// <see cref="DarkSeriesAnalyzer.PlateauFit"/> is kept for the REFA advice of a cooling series only.
 /// </summary>
 /// <param name="FirstRatio">The first measured frame's amplitude ratio to the master.</param>
 /// <param name="LastRatio">The last measured frame's amplitude ratio to the master.</param>
@@ -294,35 +292,40 @@ internal sealed record BandingFigures(string Name, double RowStd, double ColStd,
 /// <param name="Minutes">The minutes from the first to the last; NaN without both stamps, 0
 /// under two measured frames.</param>
 /// <param name="Pixels">How many amplitude pixels the ratios are read on.</param>
-/// <param name="Plateau">The fitted plateau, as a ratio to the master; NaN without a
-/// fit.</param>
-/// <param name="TauMinutes">The fitted time constant, in minutes, or in frames when
-/// <paramref name="TimeFromStamps"/> is false.</param>
-/// <param name="TimeFromStamps">True when the time axis is the stamps' minutes.</param>
-/// <param name="TauAtGridTop">True when the time constant is the grid's top, three times the
-/// span.</param>
-/// <param name="FitScale">The fit's rms residual, as a ratio.</param>
-/// <param name="PlateauCelsius">The master's degrees to the plateau, negative under it.</param>
-/// <param name="SettleCelsius">The degrees from the fitted last frame to the plateau.</param>
-/// <param name="Cooling">True when the series cooled: the fitted curve falls to its plateau, or,
-/// without a fit, the last frame's ratio is under the first's; the one direction every row of
+/// <param name="Measured">How many frames have a ratio.</param>
+/// <param name="EndRatio">The end of the series, as a ratio to the master: the median ratio of
+/// the last <see cref="Th.SeriesEndFrames"/> frames with one; NaN under
+/// <see cref="Th.WarmingFitMinFrames"/> frames, or when that median is not positive.</param>
+/// <param name="FirstCelsius">The first frame's degrees from the end, negative under it; NaN
+/// without an end or when the first ratio is not positive.</param>
+/// <param name="MasterCelsius">The master's degrees from the end, positive when the master is
+/// above (warmer than) the end; NaN without an end.</param>
+/// <param name="Cooling">True when the series cooled: the end is under the first frame, or,
+/// without an end, the last frame's ratio is under the first's; the one direction every row of
 /// check 3 names (ADR 0038).</param>
-/// <param name="OffPlateauFrames">The indices (<see cref="FrameInfo.Index"/>) of the frames
-/// outside the band.</param>
-/// <param name="OffPlateauLow">The band's lower bound, as a ratio to the master.</param>
-/// <param name="OffPlateauHigh">The band's upper bound, as a ratio to the master.</param>
-/// <param name="MasterWithoutOffCelsius">The degrees from the plateau to the median ratio of
-/// the frames left; NaN when none is left.</param>
+/// <param name="OffEndFrames">The indices (<see cref="FrameInfo.Index"/>) of the frames outside
+/// the band, a ratio at or under 0 included; empty without an end.</param>
+/// <param name="OffEndLow">The band's lower bound, as a ratio to the master.</param>
+/// <param name="OffEndHigh">The band's upper bound, as a ratio to the master.</param>
+/// <param name="MasterWithoutOffCelsius">The degrees from the end to the median ratio of the
+/// frames left, negative under the end; NaN when none is left.</param>
 /// <param name="NoiseFactorWithoutOff">sqrt(frames measured / frames left); NaN when none is
 /// left.</param>
+/// <param name="TauMinutes">The fitted time constant, in minutes, or in frames when
+/// <paramref name="TimeFromStamps"/> is false; NaN when the fit cannot give one: no fit, a
+/// plateau or fitted last frame that is not positive, a curve that does not move the way the
+/// series did, or a time constant at the top of the grid.</param>
+/// <param name="TimeFromStamps">True when the fit's time axis is the stamps' minutes.</param>
 internal sealed record Warming(
-    double FirstRatio, double LastRatio, double DeltaCelsius, double Minutes, int Pixels,
-    double Plateau, double TauMinutes, bool TimeFromStamps, bool TauAtGridTop, double FitScale, double PlateauCelsius, double SettleCelsius, bool Cooling,
-    IReadOnlyList<int> OffPlateauFrames, double OffPlateauLow, double OffPlateauHigh, double MasterWithoutOffCelsius, double NoiseFactorWithoutOff)
+    double FirstRatio, double LastRatio, double DeltaCelsius, double Minutes, int Pixels, int Measured,
+    double EndRatio, double FirstCelsius, double MasterCelsius, bool Cooling,
+    IReadOnlyList<int> OffEndFrames, double OffEndLow, double OffEndHigh, double MasterWithoutOffCelsius, double NoiseFactorWithoutOff,
+    double TauMinutes, bool TimeFromStamps)
 {
-    internal static readonly Warming None = new(double.NaN, double.NaN, double.NaN, double.NaN, 0, double.NaN, double.NaN, false, false, double.NaN, double.NaN, double.NaN, false, [], double.NaN, double.NaN, double.NaN, double.NaN);
+    internal static readonly Warming None = new(double.NaN, double.NaN, double.NaN, double.NaN, 0, 0, double.NaN, double.NaN, double.NaN, false, [], double.NaN, double.NaN, double.NaN, double.NaN, double.NaN, false);
 
-    internal bool HasFit => !double.IsNaN(Plateau);
+    /// <summary>True when the series has an end to be read against.</summary>
+    internal bool HasEnd => !double.IsNaN(EndRatio);
 }
 
 /// <summary>Everything measured on a series of darks; the words are the report's.</summary>
@@ -1031,7 +1034,7 @@ internal static class DarkSeriesAnalyzer
 
     /// <summary>
     /// The warming of the series from its frames' amplitude ratios: first against last, then the
-    /// plateau fit and the frames off the plateau.
+    /// end of the series, the frames off it, and the time constant the REFA advice quotes.
     /// </summary>
     /// <param name="frames">Every frame's figures; those with a ratio are read, in order.</param>
     /// <param name="pixels">How many amplitude pixels the ratios are read on.</param>
@@ -1043,35 +1046,28 @@ internal static class DarkSeriesAnalyzer
         DarkFrameFigures[] ok = frames.Where(f => f.Error is null && !double.IsNaN(f.AmpRatioMedian)).ToArray();
         if (ok.Length < 2 || pixels == 0)
         {
-            return Warming.None with { Minutes = 0, Pixels = pixels };
+            return Warming.None with { Minutes = 0, Pixels = pixels, Measured = ok.Length };
         }
 
         double first = ok[0].AmpRatioMedian, last = ok[^1].AmpRatioMedian;
         double dT = first > 0 && last > 0 ? nz.Degrees(last / first) : double.NaN;
         double minutes = ok[0].Info.Timestamp is DateTime t0 && ok[^1].Info.Timestamp is DateTime t1 ? (t1 - t0).TotalMinutes : double.NaN;
-        Warming w = Warming.None with { FirstRatio = first, LastRatio = last, DeltaCelsius = dT, Minutes = minutes, Pixels = pixels, Cooling = dT < 0 };
+        Warming w = Warming.None with { FirstRatio = first, LastRatio = last, DeltaCelsius = dT, Minutes = minutes, Pixels = pixels, Measured = ok.Length, Cooling = dT < 0 };
         if (ok.Length < Th.WarmingFitMinFrames)
         {
             return w;
         }
 
-        (double[] t, bool stamps) = TimeAxis(ok);
-        double[] y = ok.Select(f => f.AmpRatioMedian).ToArray();
-        (double plateau, double drop, double tau, double rms) = PlateauFit(t, y);
-        if (double.IsNaN(plateau) || plateau <= 0)
+        // the end of the series: the median of the last frames that have a ratio (under the frame
+        // cap they are the last decoded ones); a median, so one odd frame does not move it
+        double end = Planes.Median(ok[^Th.SeriesEndFrames..].Select(f => (float)f.AmpRatioMedian).ToArray());
+        if (!(end > 0))
         {
             return w;
         }
 
-        double fittedLast = plateau - drop * Math.Exp(-t[^1] / tau);
-        if (fittedLast <= 0)
-        {
-            return w;
-        }
-
-        double settle = nz.Degrees(plateau / fittedLast);
-        double low = plateau * Math.Pow(2, -Th.OffPlateauCelsius / nz.DoublingCelsius);
-        double high = plateau * Math.Pow(2, Th.OffPlateauCelsius / nz.DoublingCelsius);
+        double low = end * Math.Pow(2, -Th.OffEndCelsius / nz.DoublingCelsius);
+        double high = end * Math.Pow(2, Th.OffEndCelsius / nz.DoublingCelsius);
         List<int> off = [];
         List<float> left = [];
         foreach (DarkFrameFigures f in ok)
@@ -1086,24 +1082,52 @@ internal static class DarkSeriesAnalyzer
             }
         }
 
-        double without = left.Count == 0 ? double.NaN : nz.Degrees(Planes.Median([.. left]) / plateau);
+        bool cooling = end < first;
+        (double tau, bool stamps) = TimeConstant(ok, cooling);
         return w with
         {
-            Plateau = plateau,
+            EndRatio = end,
+            FirstCelsius = first > 0 ? nz.Degrees(first / end) : double.NaN,
+            MasterCelsius = nz.Degrees(1 / end),
+            // the end against the first frame, the two figures the row prints, so it cannot name a
+            // direction its own figures contradict
+            Cooling = cooling,
+            OffEndFrames = off,
+            OffEndLow = low,
+            OffEndHigh = high,
+            MasterWithoutOffCelsius = left.Count == 0 ? double.NaN : nz.Degrees(Planes.Median([.. left]) / end),
+            NoiseFactorWithoutOff = left.Count == 0 ? double.NaN : Math.Sqrt((double)ok.Length / left.Count),
             TauMinutes = tau,
             TimeFromStamps = stamps,
-            TauAtGridTop = tau >= 3 * (t[^1] - t[0]) - 1e-9,
-            FitScale = rms,
-            PlateauCelsius = nz.Degrees(1 / plateau),
-            SettleCelsius = settle,
-            // the fitted curve falls to its plateau: the sign of the degrees left, not the noisy first frame
-            Cooling = settle < 0,
-            OffPlateauFrames = off,
-            OffPlateauLow = low,
-            OffPlateauHigh = high,
-            MasterWithoutOffCelsius = without,
-            NoiseFactorWithoutOff = left.Count == 0 ? double.NaN : Math.Sqrt((double)ok.Length / left.Count),
         };
+    }
+
+    /// <summary>
+    /// The time constant of the series for the REFA advice (R-023): the tau of
+    /// <see cref="PlateauFit"/> when the fit can be trusted for it, that is when its plateau and
+    /// its fitted last frame are positive, its curve moves the way the series did and its tau is
+    /// not the top of the grid, where the speed is a guess. No verdict and no other figure reads
+    /// the fit (ADR 0043).
+    /// </summary>
+    /// <param name="ok">The frames with a ratio, in order, at least
+    /// <see cref="Th.WarmingFitMinFrames"/>.</param>
+    /// <param name="cooling">Whether the series cooled.</param>
+    /// <returns>The time constant, NaN when the fit gives none, and whether its unit is the
+    /// stamps' minutes (else frames).</returns>
+    private static (double Tau, bool FromStamps) TimeConstant(DarkFrameFigures[] ok, bool cooling)
+    {
+        (double[] t, bool stamps) = TimeAxis(ok);
+        double[] y = ok.Select(f => f.AmpRatioMedian).ToArray();
+        (double plateau, double drop, double tau, _) = PlateauFit(t, y);
+        if (double.IsNaN(plateau) || plateau <= 0 || plateau - drop * Math.Exp(-(t[^1] - t[0]) / tau) <= 0)
+        {
+            return (double.NaN, stamps);
+        }
+
+        // the curve starts at plateau - drop: it falls when the drop is negative
+        bool falls = drop < 0;
+        bool atGridTop = tau >= 3 * (t[^1] - t[0]) - 1e-9;
+        return (falls == cooling && !atGridTop ? tau : double.NaN, stamps);
     }
 
     /// <summary>

@@ -169,9 +169,9 @@ The start of the report on Smida:
     verdict            : OK: no edge and no corner differs from the centre by more than 1.0 ADU-eq (the most +0.09, at the top-left, on dark minus bias); no frame has more light; no side has constant light above 0.15 ADU-eq
 
   3. THE CAMERA'S WARMING DURING THE SERIES
-    plateau            : the camera warmed the whole series: the hot pixels rise from 0.83 of the master in the first frame to 1.07 in the last. Left to run, it would settle 0.8 degrees above the master (the plateau, at 1.10 of the master; two thirds of the way take 15 min); the last frame is 0.2 degrees below the plateau
-    to discard         : 2 frames (1, 2) are more than 2.0 degrees from the plateau (the hot pixels below 0.87 or above 1.38 of the master; the plateau 1.10); without them the master would be 0.7 degrees below the plateau, but with 5 % more noise
-    verdict            : OK: the series settled (the last frame is 0.2 degrees below the plateau, under 1.0) and every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); the warming of 2.2 degrees over 38 min is at the start (the degrees reckoned with the rule that the thermal signal doubles every 6 degrees); the frames to discard are in the row above
+    end of series      : the camera warmed during the series: the hot pixels rise from 0.83 of the master in the first frame to 1.07 at the end of the series (the average of the last 5 frames), that is 2.3 degrees in 38 min; the master is 0.6 degrees below the end of the series
+    to discard         : 2 frames (1, 2) are more than 2.0 degrees from the end of the series (the hot pixels below 0.85 or above 1.35 of the master; the end of the series 1.07); without them the master would be 0.5 degrees below the end of the series, but with 5 % more noise
+    verdict            : OK: the master is close to the end of the series (0.6 degrees below it, under 1.0) and every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); the degrees are reckoned with the rule that the thermal signal doubles every 6 degrees; the frames to discard are in the row above
 ```
 
 #### 2. Light leaks and differences across the frame
@@ -219,37 +219,39 @@ ADU-eq and a top side at +0.20, which the verdict on the master alone had read a
 
 The amplitude of the master's hot pixels in every frame, against the master; the ratio of the
 last frame to the first gives the degrees by the rule "the dark current doubles every 6
-degrees". A camera warms itself as it takes frame after frame, on a curve that approaches a
-plateau: started cold, it begins about 10 degrees under the plateau and nears it with a time
-constant of 15 min outdoors (Smida) and 18 to 28 min indoors (the libraries). That is 2.2
+degrees". A camera warms itself as it takes frame after frame, fast at first and then ever
+more slowly: started cold, it begins about 10 degrees under where it ends up. That is 2.2
 degrees in 38 min on Smida and 2.8 to 3.6 degrees in 58 min on the libraries, even after 20
 minutes of frames thrown away first.
 
-From 6 frames up, `plateau` fits the curve and says which way the camera moved, from the hot
-pixels of the first frame to the last (a series that cools came in warmer than the place it
-sat in), where it would settle (the plateau, 0.8 to 1.4 degrees above the master, the median
-of the series, on the measured libraries, with the time two thirds of the way take) and how
-far above or below the plateau the last frame still was. `to discard`
-names the frames more than 2 degrees from the plateau (the cold start, with a dark current more
-than 21 % under the plateau's; 3 to 5 of 30 on the libraries, 2 of 20 on Smida), says where the
-master would be without them and how much its noise would grow (the square root of the frames
-over the frames left). You move them out of `darks\` yourself, since the program writes nothing
-into the folder, and you leave them when the noise costs more than the half degree is worth.
+From 6 frames up, the series is read against its end: the average of its last 5 frames, the
+temperature the camera actually reached. `end of series` says which way the camera moved, from
+the hot pixels of the first frame to that end (a series that cools came in warmer than the
+place it sat in), by how many degrees, and how far above or below the end the master sits (0.4
+to 0.7 degrees on the measured libraries). `to discard` names the frames more than 2 degrees
+from the end of the series (the cold start, with a dark current more than 21 % under the
+end's; up to 4 of 30 on the libraries, 2 of 20 on Smida), says where the master would be
+without them and how much its noise would grow (the square root of the frames over the frames
+left). You move them out of `darks\` yourself, since the program writes nothing into the
+folder, and you leave them when the noise costs more than the half degree is worth.
 
 The verdict is `REDO`, in red, when more than half the frames are more than 2 degrees from
-the plateau: the master, the median of the series, then belongs to no temperature, and the
-advice is to take the series again, after the camera has sat where it shoots for three times
-the series' time constant when it was cooling, or as a longer series when it was warming. The
-author's darks of 2026-11-07, taken at 2 °C right after the camera came out of the house,
-cooled 4 degrees in the hour and had 21 of 30 frames off the plateau, the master 83 % noisier
-without them. The verdict is `WARNING` when the series is still warming or cooling at its last
-frame (more than 1 degree to go: the master mixes temperatures, continue the series) or when a
+the end of the series: the master, the median of the series, then belongs to no temperature,
+and the advice is to take the series again, after the camera has sat where it shoots for three
+times the series' time constant when it was cooling, or as a longer series when it was
+warming. The verdict is `WARNING` when the master is more than 1 degree from the end of the
+series (the frames from the start pull it: discard them, or take a longer series) or when a
 frame leaves 0.7 to 1.4 of the master (the margin of Siril's `-opt`: the series started cold);
-the warm-up at the start is only stated. Under 6 frames no plateau is fitted and the verdict
-rests on the 0.7 to 1.4 margin alone. In the frames table the column `plateau` gives every
-frame's degrees from the plateau, and a frame to discard has its reason at the end of its row;
-in the window, the Frames tab shows that row, the value and the reason in the attention
-colour, and the chart has the plateau and the two bounds.
+the warm-up at the start is only stated. The author's darks of 2026-11-07, taken at 2 °C right
+after the camera came out of the house, cooled 4 degrees in the hour: the master sits 1.4
+degrees above the end and the first 10 of the 30 frames are to discard. A series is not judged
+against where it would settle if left to run: the author's darks of 2026-11-09 moved half a
+degree in 70 minutes, and a curve drawn through them put that place 1.4 degrees further, where
+the camera never got. Under 6 frames the end is not measured and the verdict rests on the 0.7
+to 1.4 margin alone. In the frames table the column `end` gives every frame's degrees from the
+end of the series, and a frame to discard has its reason at the end of its row; in the window,
+the Frames tab shows that row, the value and the reason in the attention colour, and the chart
+has the end of the series and the two bounds.
 
 #### Checks 4 to 8
 
@@ -301,6 +303,22 @@ The verdict, on the lights / dark ratio:
 | 0.4 to 0.7 | `WARNING: use the dark for the cosmetic correction only (-cc=dark: ...)` | the dark is much warmer: it finds every hot pixel, but subtracted it would take out too much and leave black dots |
 | other | `WARNING: they do not match` | too cold or too warm |
 
+The same ratio does not mean the same thing on a cold dark and on a warm one: a cold master
+has few hot pixels, and weak ones, so a dark that is 15 % off leaves little behind. The row
+`what is left` measures it. At every hot pixel of the master, a plain subtraction leaves the
+part of the pixel the ratio is off by (a hole when the dark takes too much, a rest when it
+takes too little); the row gives that trace against the noise of one light on the pixel's
+colour, as an average over the hot pixels, with how many pixels keep more than the noise and
+how many more than 3 times the noise. While the average trace is under the noise of a light,
+a ratio between 0.7 and 1.4 reads `OK: the dark can be subtracted as it is` too, and the
+verdict says so (`outside 0.9 .. 1.1, but what the subtraction leaves is on average under the
+noise of a light`); the traces only relax the verdict, they never make it harsher. The author's
+lights of 2026-11-08 read 0.85 of darks taken right after them: on 183 hot pixels the average
+trace is 0.73 of the noise, 55 pixels keep more than the noise and 7 more than 3 times it, and
+on those lights the dark can be taken as it is from 0.80 to 1.20. The reckoning is for one
+light and for dithered lights: with dithering the traces land in a different place of the sky
+in every frame, without it they stay on the same pixels of the stack.
+
 The degrees come from the doubling rule at 6 degrees. A ratio around zero (the lights do not
 show the master's hot pixels at all: in-camera noise reduction, another camera, a FITS turned
 another way) is `they do not match`, with its own sentence. A light that does not say its ISO
@@ -331,6 +349,9 @@ The end of the report's sections on Smida:
     master in lights   : above 10: 85 of 2283 (4 %); above 20: 85 of 443 (19 %); above 50: 70 of 111 (63 %); above 100: 16 of 24 (67 %)  [how many of the master's pixels above each threshold show in the lights too]
     not in the master  : 1 hot pixel of the lights is under 20 ADU-eq in the master (it has 3 ADU-eq there)
     lights against dark: in the lights, the hot pixels are on average 1.00 times what they are in the dark (over the 32 frames; in the first 0.72, in the last 0.94; on 443 pixels)
+    what is left       : after the subtraction nothing is left to see at the hot pixels: on average 0.00 of the noise of a light
+    index darks        : idx25
+    index lights       : idx25 (1.00 times the dark, that is at the same temperature)
     verdict            : OK: the dark can be subtracted as it is; in the lights the hot pixels are 1.00 times what they are in the dark, between 0.9 and 1.1: the dark is at the same temperature
 
   INDEX
@@ -344,7 +365,7 @@ The end of the report's sections on Smida:
 - **FRAMES TABLE**, one row per dark, on G1: the time, the mean above the black, `noise` (the
   frame's noise), `diff.` (how much the frame differs from the master), `bands` (how many times
   more the rows differ from one another than the noise alone would give), `hot` (the hot pixels
-  against the master, 1 = the same), `plateau` (degrees from the plateau of the series), `light`
+  against the master, 1 = the same), `end` (degrees from the end of the series), `light`
   (ADU-eq above what the warming explains; `-` under 6 frames), `side` (the side with the most constant
   light against the centre in that frame, after the bias when there are biases, glow included,
   in ADU-eq; the note names the side, and only its constant part is light), and the pixels above
@@ -358,10 +379,10 @@ The end of the report's sections on Smida:
 
 ```
   FRAMES TABLE
-     no  file                  time        mean   noise   diff.   bands      hot plateau   light    side   >20   [the green pixels G1; mean = how far the frame is above the black, ADU; ...
-      1  DSC_0034.NEF          00:48:53   -0.45    1.46    1.47     4.3    0.826    -2.5   +0.02   +0.03   115   to discard: the hot pixels are at 0.826 of the master, below 0.87, that is more than 2.0 degrees below the plateau (1.10)
-      2  DSC_0035.NEF          00:50:53   -0.47    1.46    1.47     4.3    0.846    -2.2   +0.00   +0.02   110   to discard: the hot pixels are at 0.846 of the master, below 0.87, that is more than 2.0 degrees below the plateau (1.10)
-      3  DSC_0036.NEF          00:52:53   -0.41    1.48    1.49     5.0    0.900    -1.7   +0.05   -0.03   125
+     no  file                  time        mean   noise   diff.   bands      hot     end   light    side   >20   [the green pixels G1; mean = how far the frame is above the black, ADU; ...
+      1  DSC_0034.NEF          00:48:53   -0.45    1.46    1.47     4.3    0.826    -2.3   +0.02   +0.03   115   to discard: the hot pixels are at 0.826 of the master, below 0.85, that is more than 2.0 degrees below the end of the series (1.07)
+      2  DSC_0035.NEF          00:50:53   -0.47    1.46    1.47     4.3    0.846    -2.1   +0.00   +0.02   110   to discard: the hot pixels are at 0.846 of the master, below 0.85, that is more than 2.0 degrees below the end of the series (1.07)
+      3  DSC_0036.NEF          00:52:53   -0.41    1.48    1.49     5.0    0.900    -1.5   +0.05   -0.03   125
 ```
 
 #### ADU scale explained
@@ -522,9 +543,9 @@ tabs:
   verdict; the rest is on the Hot pixels tab. The noise after averaging is a table.
 - **Frames**: the frames table, every column header with an explanation under the mouse, and
   beside it three charts, frame by frame: the hot pixels against the master (the warming, with
-  the plateau and the two bounds of check 3), how much each frame differs from the master (with
+  the end of the series and the two bounds of check 3), how much each frame differs from the master (with
   the line at 1.5 times the average noise) and the random banding (with the line at 1, no banding).
-  A frame to discard shows its `plateau` value in bold and its reason on a second line, in
+  A frame to discard shows its `end` value in bold and its reason on a second line, in
   yellow.
 - **Maps**: the three maps of check 2 (master dark, master bias, dark minus bias), the same as the
   PNG files of `--out`, each with its row of the report under it.
@@ -537,7 +558,10 @@ tabs:
   lights?"; the choice holds for the open folder only and is dropped when you open another.
   Then the rows of check 9, the chart of every light against the dark (how hot the master's hot
   pixels are in it) with the bounds as lines (0.9 and 1.1 green, as it is; 0.7 and 1.4 amber,
-  with -opt; 0.4 red, cosmetic only), and the lights table.
+  with -opt; 0.4 red, cosmetic only), and the lights table. When what the subtraction leaves is
+  under the noise of a light further out, the two green lines stand at the ends of that wider
+  band (0.80 and 1.20, say), the points inside it are green and the sentence above the chart
+  says so.
 - **Index**: the label in large type with **Copy label** (it goes to the clipboard, and you
   rename the folder yourself), the INDEX rows, and the partner: **Choose partner...** (a library
   or another session), **No partner** and **Analyse again**. A partner chosen after a run

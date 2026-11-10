@@ -51,8 +51,9 @@ public class GoldenOutputTests
     [Fact]
     public void Redo_MatchesTheGoldenText()
     {
-        // twelve darks cooling towards a plateau far under the master: most frames off it, check 3 REFA (ADR 0038)
-        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice, HotFactor = 0.72 + 0.6 * Math.Exp(-i / 6.0) });
+        // twelve darks cooling steeply: seven are more than two degrees above the end of the series, check 3 REFA
+        // (ADR 0038, ADR 0043)
+        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice, HotFactor = 0.35 + 1.45 * Math.Exp(-i / 6.0) });
         (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
         Assert.Contains("Se masoara dark-urile: 12 / 12", stderr, StringComparison.Ordinal);
         Compare("redo.txt", Scrub(stdout, s.Root) + "--- stderr ---\n(progresul, omis)\n--- exit " + code + " ---\n");

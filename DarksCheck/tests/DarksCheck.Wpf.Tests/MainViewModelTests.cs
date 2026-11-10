@@ -31,9 +31,10 @@ public class MainViewModelTests
     [Fact]
     public async Task R071_ARefaVerdictOfCheck3IsARedChip()
     {
-        // twelve darks cooling towards a plateau far under the master: most frames off it, check 3 reads REFA (ADR 0038)
+        // twelve darks cooling steeply: seven are more than two degrees above where the series ended, check 3 reads REFA
+        // (ADR 0038's limit against the end of the series, ADR 0043)
         (int X, int Y, double Adu)[] hot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 300.0)).ToArray();
-        using SessionFixture f = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = hot, HotFactor = 0.72 + 0.6 * Math.Exp(-i / 6.0) });
+        using SessionFixture f = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = hot, HotFactor = 0.35 + 1.45 * Math.Exp(-i / 6.0) });
         MainViewModel vm = new();
         await vm.OpenAsync(f.Root);
         Assert.Equal(Verdict.Redo, vm.Result!.Verdicts.Drift.Verdict);
@@ -42,46 +43,88 @@ public class MainViewModelTests
         Assert.Equal("verdict", verdict.Label);
         Assert.True(verdict.HasVerdict);
         Assert.Equal("REFA", verdict.Verdict);
-        Assert.StartsWith("aparatul inca se racea la ultimul cadru", verdict.Rest, StringComparison.Ordinal);
+        Assert.StartsWith("7 din 12 cadre sunt la peste 2.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi; ", verdict.Rest, StringComparison.Ordinal);
         Assert.Equal(VerdictPalette.Bad, VerdictPalette.For(verdict.Verdict));
         Assert.Equal(VerdictPalette.For("EROARE"), VerdictPalette.For(verdict.Verdict));
     }
 
     [Fact]
-    public async Task R071_TheFramesOffThePlateauAreMarkedInTheTableAndTheChart()
+    public async Task R071_TheFramesOffTheEndOfTheSeriesAreMarkedInTheTableAndTheChart()
     {
-        // twelve darks approaching a plateau: the first two are more than two degrees under it (R-023)
+        // twelve darks climbing to where the series ends: the first two are more than two degrees under it (R-023)
         (int X, int Y, double Adu)[] hot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 300.0)).ToArray();
         using SessionFixture f = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = hot, HotFactor = 1.2 - 0.4 * Math.Exp(-i / 3.0) });
         MainViewModel vm = new();
         await vm.OpenAsync(f.Root);
         DarkSeriesResult r = vm.Result!;
         Warming w = r.Darks.Warming;
-        Assert.Equal([1, 2], w.OffPlateauFrames);
+        Assert.Equal([1, 2], w.OffEndFrames);
 
-        // the table: the core's cells, the flag and the note on the frames off the plateau
+        // the table: the core's cells, the flag and the note on the frames off the end of the series
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
         Assert.Equal(rows.Select(FrameRowVm.From), vm.Frames);
         Assert.True(vm.Frames[0].Off);
-        Assert.Equal(rows[0].Plateau, vm.Frames[0].Plateau);
+        Assert.Equal(rows[0].End, vm.Frames[0].End);
         Assert.Equal(rows[0].Note, vm.Frames[0].Note);
         Assert.StartsWith("de aruncat: pixelii fierbinti sunt la ", vm.Frames[0].Note, StringComparison.Ordinal);
         Assert.False(vm.Frames[11].Off);
         Assert.Null(vm.Frames[11].Note);
 
-        // the chart: the frames off the plateau in the attention colour, guides at 1, the plateau and its two bounds
+        // the chart: the frames off the end in the attention colour, guides at 1, the end of the series and its two bounds
         Assert.Equal(VerdictPalette.Warn, vm.WarmingPoints[0].Colour);
         Assert.Equal(VerdictPalette.Accent, vm.WarmingPoints[11].Colour);
-        Assert.Equal([1.0, w.Plateau, w.OffPlateauLow, w.OffPlateauHigh], vm.WarmingGuides.Select(g => g.Value));
+        Assert.Equal([1.0, w.EndRatio, w.OffEndLow, w.OffEndHigh], vm.WarmingGuides.Select(g => g.Value));
+        Assert.Equal("sfarsitul seriei " + RunReport.F(w.EndRatio, 2), vm.WarmingGuides[1].Label);
         Assert.Equal(VerdictPalette.Warn, vm.WarmingGuides[2].Colour);
         Assert.Equal(DarkReport.WarmingChartNote(r), vm.WarmingNote);
-        Assert.Contains("platou", vm.WarmingNote, StringComparison.Ordinal);
+        Assert.Contains("Sfarsitul seriei (media ultimelor 5 cadre) e la ", vm.WarmingNote, StringComparison.Ordinal);
+        Assert.DoesNotContain("plato", vm.WarmingNote, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task R071_WithoutAFitTheWarmingChartKeepsTheOneGuide()
+    public async Task R067_TheLightsChartFollowsTheBandTheTracesAllow()
     {
-        // five darks: under the six the fit of R-023 needs
+        // a hundred hot pixels of 30 ADU, lights at 0.85 of the dark with a noise of 6: what a plain subtraction leaves is
+        // under the noise of a light, so the core widens the green band and the chart follows it (R-067, ADR 0044)
+        (int X, int Y, double Adu)[] weak = Enumerable.Range(0, 100).Select(k => (20 + 22 * (k % 10), 20 + 16 * (k / 10), 30.0)).ToArray();
+        using SessionFixture f = new SessionFixture()
+            .WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = weak })
+            .WithLights(5, i => new SyntheticLight { Seed = 300 + i, Hot = weak, HotFactor = 0.85 });
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        LightsAnalysis l = vm.Result!.Lights!;
+        TraceFigures t = l.Traces;
+        Assert.True(t.Relaxed);
+        Assert.True(t.Widened);
+
+        // each point takes the colour of the core's verdict for its own ratio, and the green lines the band's ends
+        Assert.Equal(l.Frames.Select(x => VerdictPalette.For(l.Judge(x.AmpRatioMedian))), vm.LightPoints.Select(p => p.Colour));
+        Assert.Contains(VerdictPalette.Good, vm.LightPoints.Select(p => p.Colour));
+        Assert.Equal([t.DirectLow, t.DirectHigh, Th.MatchOptLow, Th.MatchOptHigh, Th.MatchCosmeticLow], vm.LightGuides.Select(g => g.Value));
+        Assert.Equal(RunReport.F(t.DirectLow, 2) + " asa cum e", vm.LightGuides[0].Label);
+        Assert.Equal(RunReport.F(t.DirectHigh, 2) + " asa cum e", vm.LightGuides[1].Label);
+        Assert.Equal(WindowTexts.LightsChartLead(t), vm.LightsChartLead);
+        Assert.Contains($"Verde intre {RunReport.F(t.DirectLow, 2)} si {RunReport.F(t.DirectHigh, 2)}: dark-ul se poate scadea asa cum e (0.9 .. 1.1, largit pana unde ce ramane dupa scadere ajunge cat zgomotul unui light). Galben de acolo pana la 0.7 si 1.4: ", vm.LightsChartLead, StringComparison.Ordinal);
+
+        Assert.DoesNotMatch(PlainWords.RomanianTabWords(), vm.LightsChartLead);
+        // the verdict's chip is green and the new row is on the Lights tab
+        RowVm verdict = vm.LightRows[^1];
+        Assert.Equal("OK", verdict.Verdict);
+        Assert.Contains("ce ramane", vm.LightRows.Select(r => r.Label));
+
+        // a plain result keeps the plain band and its words
+        Assert.DoesNotContain("largit", WindowTexts.LightsChartLead(TraceFigures.None), StringComparison.Ordinal);
+        Assert.Contains("Verde intre 0.9 si 1.1: dark-ul se poate scadea asa cum e. Galben intre 0.7 si 1.4: ", WindowTexts.LightsChartLead(TraceFigures.None), StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Contains($"Green between {RunReport.F(t.DirectLow, 2)} and {RunReport.F(t.DirectHigh, 2)}: the dark can be subtracted as it is (0.9 .. 1.1, widened to where what the subtraction leaves reaches the noise of a light). Yellow from there to 0.7 and 1.4: ", WindowTexts.LightsChartLead(t), StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public async Task R071_WithoutAnEndTheWarmingChartKeepsTheOneGuide()
+    {
+        // five darks: under the six the end of the series of R-023 needs
         using SessionFixture f = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice });
         MainViewModel vm = new();
         await vm.OpenAsync(f.Root);

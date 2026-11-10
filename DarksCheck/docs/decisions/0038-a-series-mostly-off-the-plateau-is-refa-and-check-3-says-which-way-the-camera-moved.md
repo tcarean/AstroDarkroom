@@ -1,7 +1,7 @@
 # 0038. A series mostly off the plateau is REFA, and check 3 says which way the camera moved
 
 Date: 2026-11-07
-Status: accepted 2026-11-07
+Status: accepted 2026-11-07; the plateau as the reference of the REFA rule and of the rows superseded by 0043
 Supersedes: 0017 in part (the verdict levels of check 3 and its rows)
 
 ## Context

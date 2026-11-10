@@ -28,9 +28,9 @@ Copyright (C) 2026 Tudor Carean
     verdict            : OK: nicio margine si niciun colt nu difera de centru cu peste 1.0 ADU (cel mai mult -0.40, la stanga-sus, pe dark minus bias); lumina pe cadre nu s-a putut masura
 
   3. INCALZIREA CAMEREI IN TIMPUL SERIEI
-    platou             : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    sfarsitul seriei   : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
     de aruncat         : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
-    verdict            : OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); sunt mai putin de 6 cadre, deci fara platou
+    verdict            : OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); sunt mai putin de 6 cadre, deci sfarsitul seriei nu se masoara
 
   4. ZGOMOTUL FIECARUI CADRU
     fata de master     : R 2.65 .. 2.71; G1 2.65 .. 2.72 (in medie 2.69); G2 2.61 .. 2.71; B 2.62 .. 2.71  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]
@@ -65,6 +65,7 @@ Copyright (C) 2026 Tudor Carean
     masterul in lights : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [cati dintre pixelii masterului de peste fiecare prag se vad si in lights]
     lipsesc din master : niciunul: toti pixelii fierbinti din lights sunt peste 20 ADU si in master
     lights fata de dark: in lights, pixelii fierbinti sunt in medie de 0.50 ori cat in dark (pe cele 3 cadre; in primul 0.51, in ultimul 0.50; pe 20 de pixeli)
+    ce ramane          : scaderea ia prea mult: la un pixel fierbinte ramane in medie o gaura de 18.31 din zgomotul unui light; la 20 din 20 gaura trece de zgomot, la 20 de 3 ori zgomotul (zgomotul light-ului pe culoarea pixelului; cu dithering urmele se imprastie, fara el raman in acelasi loc in stack)
     index partener     : idx241
     index lights       : idx121 (de 0.50 ori cat dark-ul, adica cu 5.9 grade mai reci decat el)
     verdict            : ATENTIE: foloseste dark-ul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.50 ori cat in dark: dark-ul e mai cald cu 5.9 grade, ii vede pe toti, dar scazut ar scoate prea mult si ar lasa puncte negre
@@ -75,7 +76,7 @@ Copyright (C) 2026 Tudor Carean
     lights             : ca un dark cu idx121 (de 0.50 ori cat dark-ul, adica cu 5.9 grade mai reci decat el)
 
   TABEL PE CADRE
-     nr  fisier                ora        medie  zgomot    dif.   benzi   fierb.  platou  lumina  latura   >20   [pixelii verzi G1; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); platou = cu cate grade e cadrul fata de temperatura stabila a seriei; de aruncat = la peste 2.0 grade de ea (verificarea 3); lumina = lumina in plus fata de cat explica incalzirea, ADU; latura = latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)]
+     nr  fisier                ora        medie  zgomot    dif.   benzi   fierb. sfarsit  lumina  latura   >20   [pixelii verzi G1; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); sfarsit = cu cate grade e cadrul fata de sfarsitul seriei; de aruncat = la peste 2.0 grade de el (verificarea 3); lumina = lumina in plus fata de cat explica incalzirea, ADU; latura = latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)]
       1  DSC_0001.fit          00:48:53    0.11    3.02    2.65     1.0    0.998       -       -       -     0
       2  DSC_0002.fit          00:50:53    0.11    2.99    2.71     1.0    1.005       -       -       -     0
       3  DSC_0003.fit          00:52:53    0.09    3.02    2.72     1.0    0.993       -       -       -     0

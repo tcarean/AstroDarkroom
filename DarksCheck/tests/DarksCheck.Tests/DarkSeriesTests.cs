@@ -135,198 +135,313 @@ public partial class DarkSeriesTests
     }
 
     [Fact]
-    public void R023_TheSeriesIsFittedToAPlateauAndTheFramesOffItAreNamed()
+    public void R023_TheSeriesIsReadAgainstItsEndAndTheFramesOffItAreNamed()
     {
         // ten hot pixels of 300 ADU whose amplitude approaches 1.2 as 1.2 - 0.4 exp(-i / 3): the median
-        // frame (the master) sits near 1.135, so the plateau reads about 1.06 of the master and the
-        // first two frames are more than two degrees under it (their ratio under 1.06 x 0.79 = 0.84)
+        // frame (the master) sits near 1.135 and the last five frames near 1.18, so the end of the series reads
+        // about 1.04 of the master and the first two frames are more than two degrees under it (under 1.04 x 0.79)
         using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 1.2 - 0.4 * Math.Exp(-i / 3.0) });
         DarkSeriesResult r = Run(s);
         Warming w = r.Darks.Warming;
         Assert.Equal(10, w.Pixels);
+        Assert.Equal(12, w.Measured);
         Assert.InRange(w.FirstRatio, 0.68, 0.73);
         Assert.InRange(w.LastRatio, 1.03, 1.07);
         Assert.InRange(w.DeltaCelsius, 3.0, 4.0);
         Assert.Equal(22, w.Minutes, 0.01);
-        Assert.InRange(w.Plateau, 1.02, 1.10);
-        Assert.InRange(w.TauMinutes, 4, 9);
-        Assert.InRange(w.PlateauCelsius, -0.8, -0.2);
-        Assert.InRange(Math.Abs(w.SettleCelsius), 0, 0.3);
-        Assert.Equal([1, 2], w.OffPlateauFrames);
+        Assert.True(w.HasEnd);
+        Assert.InRange(w.EndRatio, 1.02, 1.06);
+        // the end is the median of the last five ratios, nothing fitted
+        float[] lastFive = r.Darks.Frames.Skip(7).Select(f => (float)f.AmpRatioMedian).ToArray();
+        Assert.Equal(Planes.Median(lastFive), w.EndRatio, 1e-9);
+        Assert.InRange(w.FirstCelsius, -3.8, -3.0);
+        Assert.InRange(w.MasterCelsius, -0.6, -0.15);
+        Assert.Equal(Th.DoublingCelsius * Math.Log2(1 / w.EndRatio), w.MasterCelsius, 1e-9);
+        Assert.Equal([1, 2], w.OffEndFrames);
         Assert.Equal(Math.Sqrt(12.0 / 10), w.NoiseFactorWithoutOff, 1e-9);
-        Assert.Equal(w.Plateau * Math.Pow(2, -Th.OffPlateauCelsius / Th.DoublingCelsius), w.OffPlateauLow, 1e-9);
-        Assert.Equal(w.Plateau * Math.Pow(2, Th.OffPlateauCelsius / Th.DoublingCelsius), w.OffPlateauHigh, 1e-9);
-        Assert.InRange(w.MasterWithoutOffCelsius, -0.7, -0.2);
+        Assert.Equal(w.EndRatio * Math.Pow(2, -Th.OffEndCelsius / Th.DoublingCelsius), w.OffEndLow, 1e-9);
+        Assert.Equal(w.EndRatio * Math.Pow(2, Th.OffEndCelsius / Th.DoublingCelsius), w.OffEndHigh, 1e-9);
+        Assert.InRange(w.MasterWithoutOffCelsius, -0.5, -0.05);
+        Assert.False(w.Cooling, "a climbing series is not cooling");
+        Assert.True(r.Verdicts.Drift.MasterNearEnd);
         Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
 
         ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
-        Assert.Equal(["platou", "de aruncat", "verdict"], check3.Rows.Select(x => x.Label));
-        Assert.StartsWith("aparatul s-a incalzit pe toata seria: pixelii fierbinti cresc de la 0.7", check3.Rows[0].Value, StringComparison.Ordinal);
+        Assert.Equal(["sfarsitul seriei", "de aruncat", "verdict"], check3.Rows.Select(x => x.Label));
+        Assert.StartsWith("aparatul s-a incalzit in timpul seriei: pixelii fierbinti cresc de la 0.7", check3.Rows[0].Value, StringComparison.Ordinal);
         Assert.Contains(" din master in primul cadru la 1.0", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Contains(" in ultimul. Daca ar continua, s-ar opri cu 0.", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Contains(" grade peste master (platoul, la 1.", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Contains(" din master; doua treimi din drum iau ", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Matches(@" min\); ultimul cadru e (cu 0\.\d grade sub platou|la platou)$", check3.Rows[0].Value);
+        Assert.Contains(" la sfarsitul seriei (media ultimelor 5 cadre), adica 3.", check3.Rows[0].Value, StringComparison.Ordinal);
+        Assert.Matches(@" grade in 22 min; masterul e cu 0\.\d grade sub sfarsitul seriei$", check3.Rows[0].Value);
         Assert.DoesNotContain("+", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.StartsWith("2 cadre (1, 2) sunt la mai mult de 2.0 grade de platou (pixelii fierbinti sub 0.8", check3.Rows[1].Value, StringComparison.Ordinal);
+        Assert.DoesNotContain("plato", string.Join(" ", check3.Rows.Select(x => x.Value)), StringComparison.Ordinal);
+        Assert.StartsWith("2 cadre (1, 2) sunt la mai mult de 2.0 grade de sfarsitul seriei (pixelii fierbinti sub 0.8", check3.Rows[1].Value, StringComparison.Ordinal);
+        Assert.Contains(" din master; sfarsitul seriei 1.0", check3.Rows[1].Value, StringComparison.Ordinal);
         Assert.Contains("; fara ele masterul ar fi cu 0.", check3.Rows[1].Value, StringComparison.Ordinal);
-        Assert.EndsWith(", dar cu 10 % mai mult zgomot", check3.Rows[1].Value, StringComparison.Ordinal);
-        Assert.Matches(@"^OK: seria s-a stabilizat \(ultimul cadru e (cu 0\.\d grade sub platou|la platou), mai putin de 1\.0\) si toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt \(intre 0\.7 si 1\.4\); incalzirea de 3\.", check3.Rows[2].Value);
-        Assert.True(r.Darks.Warming.Cooling == false, "a climbing series is not cooling");
-        Assert.EndsWith("cadrele de aruncat sunt in randul de mai sus", check3.Rows[2].Value, StringComparison.Ordinal);
+        Assert.EndsWith(" grade sub sfarsitul seriei, dar cu 10 % mai mult zgomot", check3.Rows[1].Value, StringComparison.Ordinal);
+        Assert.Matches(@"^OK: masterul e aproape de sfarsitul seriei \(cu 0\.\d grade sub el, mai putin de 1\.0\) si toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt \(intre 0\.7 si 1\.4\); gradele sunt socotite cu regula: semnalul termic se dubleaza la fiecare 6 grade; cadrele de aruncat sunt in randul de mai sus$", check3.Rows[2].Value);
 
-        // the table: the degrees from the plateau per frame, the note on the frames off it
+        // the table: the degrees from the end of the series per frame, the note on the frames off it
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
-        Assert.StartsWith("-3.", rows[0].Plateau, StringComparison.Ordinal);
+        Assert.StartsWith("-3.", rows[0].End, StringComparison.Ordinal);
         Assert.StartsWith("de aruncat: pixelii fierbinti sunt la 0.7", rows[0].Note, StringComparison.Ordinal);
         Assert.Contains(" sub 0.8", rows[0].Note, StringComparison.Ordinal);
-        Assert.Contains(", adica la peste 2.0 grade sub platou (1.0", rows[0].Note, StringComparison.Ordinal);
+        Assert.Contains(", adica la peste 2.0 grade sub sfarsitul seriei (1.0", rows[0].Note, StringComparison.Ordinal);
         Assert.NotNull(rows[1].Note);
         Assert.Null(rows[2].Note);
         Assert.Null(rows[11].Note);
-        Assert.StartsWith("-0.", rows[11].Plateau, StringComparison.Ordinal);
-        Assert.Contains("platou = cu cate grade e cadrul fata de temperatura stabila a seriei; de aruncat = la peste 2.0 grade de ea (verificarea 3)", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
-        Assert.Contains("platou", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
+        Assert.Matches(@"^[+-]0\.\d$", rows[11].End);
+        Assert.Contains("sfarsit = cu cate grade e cadrul fata de sfarsitul seriei; de aruncat = la peste 2.0 grade de el (verificarea 3)", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
+        Assert.Contains("sfarsit", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
         string line = DarkReport.FrameLine(rows[0]);
         Assert.EndsWith(rows[0].Note, line, StringComparison.Ordinal);
         Assert.DoesNotContain("de aruncat", DarkReport.FrameLine(rows[11]), StringComparison.Ordinal);
+
+        // in English
+        using (Ui.Use(UiLanguage.English))
+        {
+            ReportSection en = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
+            Assert.Equal(["end of series", "to discard", "verdict"], en.Rows.Select(x => x.Label));
+            Assert.StartsWith("the camera warmed during the series: the hot pixels rise from 0.7", en.Rows[0].Value, StringComparison.Ordinal);
+            Assert.Contains(" at the end of the series (the average of the last 5 frames), that is 3.", en.Rows[0].Value, StringComparison.Ordinal);
+            Assert.Matches(@" degrees in 22 min; the master is 0\.\d degrees below the end of the series$", en.Rows[0].Value);
+            Assert.StartsWith("2 frames (1, 2) are more than 2.0 degrees from the end of the series (the hot pixels below 0.8", en.Rows[1].Value, StringComparison.Ordinal);
+            Assert.Matches(@"^OK: the master is close to the end of the series \(0\.\d degrees below it, under 1\.0\) and every frame is close enough to the master for Siril to match it with -opt \(between 0\.7 and 1\.4\); the degrees are reckoned with the rule that the thermal signal doubles every 6 degrees; the frames to discard are in the row above$", en.Rows[2].Value);
+            Assert.Contains(", that is more than 2.0 degrees below the end of the series (1.0", DarkReport.FrameRows(r)[0].Note, StringComparison.Ordinal);
+        }
     }
 
     [Fact]
     public void R025_AFrameWithoutTheMastersHotPixelsIsMarkedToDiscard()
     {
-        // the plateau series of R023 with its seventh frame's hot pixels under the background: a ratio under 0, so no
-        // degrees, but the analysis puts it off the plateau, and the table says why and tints it
+        // the climbing series of R023 with its seventh frame's hot pixels under the background: a ratio under 0, so no
+        // degrees, but the analysis puts it off the end of the series, and the table says why and tints it
         using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i == 6 ? -0.5 : 1.2 - 0.4 * Math.Exp(-i / 3.0) });
         DarkSeriesResult r = Run(s);
         Warming w = r.Darks.Warming;
-        Assert.True(w.HasFit);
+        Assert.True(w.HasEnd);
         Assert.True(r.Darks.Frames[6].AmpRatioMedian <= 0, $"ratio {r.Darks.Frames[6].AmpRatioMedian}");
-        Assert.Contains(7, w.OffPlateauFrames);
+        Assert.Contains(7, w.OffEndFrames);
         DarkTableRow row = DarkReport.FrameRows(r)[6];
-        Assert.Equal("-", row.Plateau);
+        Assert.Equal("-", row.End);
         Assert.Equal("de aruncat: pixelii fierbinti ai masterului nu se vad in acest cadru", row.Note);
     }
 
     [Fact]
-    public void R023_ASeriesStillClimbingAtTheEndIsNotSettled()
+    public void R023_WhenTheLastFramesShowNoHotPixelsTheSeriesHasNoEnd()
     {
-        // a straight climb of 0.05 per frame: the fit extrapolates a plateau far above the last frame
+        // eight frames, the last three with their hot pixels under the background: the median of the last five ratios is
+        // not positive, so there is no end to read the series against
+        using SessionFixture s = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i >= 5 ? -0.5 : 1.0 });
+        DarkSeriesResult r = Run(s);
+        Warming w = r.Darks.Warming;
+        Assert.Equal(8, w.Measured);
+        Assert.False(w.HasEnd);
+        Assert.Empty(w.OffEndFrames);
+        ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
+        Assert.Equal("NEMASURAT: la sfarsitul seriei pixelii fierbinti ai masterului nu se vad", check3.Rows[0].Value);
+        Assert.Equal("NEMASURAT: la sfarsitul seriei pixelii fierbinti ai masterului nu se vad", check3.Rows[1].Value);
+        Assert.All(DarkReport.FrameRows(r), row => Assert.Equal("-", row.End));
+        // the verdict is still given: the three frames are outside what -opt corrects (R-023: NEMASURAT only under
+        // two frames or without a hot pixel)
+        Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
+        Assert.Equal([6, 7, 8], r.Verdicts.Drift.OutsideFrames);
+        Assert.StartsWith("ATENTIE: 3 cadre (6 .. 8) sunt prea departe de master ca Siril sa le potriveasca cu -opt (in afara 0.7 .. 1.4; ", check3.Rows[2].Value, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R023_ARefaWhoseSpeedTheSeriesDoesNotShowGivesTheAdviceWithoutMinutes()
+    {
+        // a straight fall of 0.12 per frame: the first seven of twelve frames are more than two degrees above the end
+        // (and the last one sits at the band's lower edge), and a straight line has no time constant to quote, so the
+        // advice names no minutes
+        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 2.2 - 0.12 * i });
+        DarkSeriesResult r = Run(s);
+        Warming w = r.Darks.Warming;
+        Assert.True(w.Cooling);
+        Assert.Equal([1, 2, 3, 4, 5, 6, 7], w.OffEndFrames.Take(7));
+        Assert.InRange(w.OffEndFrames.Count, 7, 8);
+        Assert.True(double.IsNaN(w.TauMinutes), $"tau {w.TauMinutes}");
+        Assert.Equal(Verdict.Redo, r.Verdicts.Drift.Verdict);
+        string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value;
+        Assert.Matches(@"^REFA: (7|8) din 12 cadre sunt la peste 2\.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi; aparatul a pornit mai cald decat locul in care a stat: refa seria dupa ce aparatul a stat mai mult in locul unde se trag dark-urile(;|$)", verdict);
+        Assert.DoesNotContain(" min ", verdict, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Matches(@"^REDO: (7|8) of 12 frames are more than 2\.0 degrees from the end of the series, so the master belongs to no temperature; the camera started warmer than the place it was in: take the series again after the camera has sat longer where it shoots(;|$)", DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value);
+        }
+    }
+
+    [Fact]
+    public void R023_ADistanceThatRoundsToTheLimitIsPrintedWithTwoDecimals()
+    {
+        // 0.987 degrees is under the limit of 1.0 and reads OK; printed as 1.0 it would stand beside "under 1.0"
+        Assert.Equal("cu 0.99 grade sub sfarsitul seriei", DarkReport.FromEnd(-0.987));
+        Assert.Equal("cu 1.04 grade peste sfarsitul seriei", DarkReport.FromEnd(1.04));
+        Assert.Equal("cu 0.99 grade sub el", DarkReport.FromIt(-0.987));
+        Assert.Equal("cu 0.6 grade sub sfarsitul seriei", DarkReport.FromEnd(-0.62));
+        Assert.Equal("cu 1.4 grade peste el", DarkReport.FromIt(1.42));
+        Assert.Equal("la nivelul sfarsitului seriei", DarkReport.FromEnd(0.04));
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("0.99 degrees below the end of the series", DarkReport.FromEnd(-0.987));
+            Assert.Equal("0.6 degrees below it", DarkReport.FromIt(-0.62));
+        }
+    }
+
+    [Fact]
+    public void R023_ASteadyClimbIsReadAgainstItsEndNotAgainstWhereItWouldSettle()
+    {
+        // a straight climb of 0.05 per frame: the series never settles, but its master is 0.6 degrees under its end
+        // and only the first frame is more than two degrees from it; the rule looks at the end reached (ADR 0043)
         using SessionFixture s = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 0.8 + 0.05 * i });
         DarkSeriesResult r = Run(s);
         Warming w = r.Darks.Warming;
-        Assert.True(w.SettleCelsius > Th.SettledCelsius, $"settle {w.SettleCelsius}");
-        Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
+        Assert.InRange(w.EndRatio, 1.06, 1.10);
+        Assert.InRange(w.MasterCelsius, -0.9, -0.4);
+        Assert.Equal([1], w.OffEndFrames);
+        Assert.True(double.IsNaN(w.TauMinutes), $"tau {w.TauMinutes}");
+        Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
         string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[^1].Value;
-        Assert.StartsWith("ATENTIE: aparatul inca se incalzea la ultimul cadru (cu ", verdict, StringComparison.Ordinal);
-        Assert.Contains(" grade sub platou, mai mult de 1.0; platoul e ghicit din curba): masterul amesteca temperaturi diferite; continua seria", verdict, StringComparison.Ordinal);
+        Assert.StartsWith("OK: masterul e aproape de sfarsitul seriei (cu 0.", verdict, StringComparison.Ordinal);
+        Assert.EndsWith("; cadrele de aruncat sunt in randul de mai sus", verdict, StringComparison.Ordinal);
         Assert.DoesNotContain("+", verdict, StringComparison.Ordinal);
-        Assert.True(w.TauAtGridTop);
-        Assert.Contains("seria e prea scurta ca sa se vada cat de repede se incalzeste (doua treimi din drum ar lua cel putin ", DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[0].Value, StringComparison.Ordinal);
     }
 
     [Fact]
     public void R023_AFrameOutsideTheOptMarginOfTheMasterFailsTheSpan()
     {
-        // the first frame at half the master's hot pixels, the other six flat: settled, but outside 0.7 .. 1.4
+        // the first frame at half the master's hot pixels, the other six flat: the master is at the end, but a frame is outside 0.7 .. 1.4
         using SessionFixture s = new SessionFixture().WithDarkSeries(7, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i == 0 ? 0.5 : 1.0 });
         DarkSeriesResult r = Run(s);
         Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
-        Assert.Equal([1], r.Darks.Warming.OffPlateauFrames);
+        Assert.True(r.Verdicts.Drift.MasterNearEnd);
+        Assert.Equal([1], r.Darks.Warming.OffEndFrames);
         string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[^1].Value;
         Assert.StartsWith("ATENTIE: 1 cadru (1) e prea departe de master ca Siril sa il potriveasca cu -opt (in afara 0.7 .. 1.4; cel mai departe 0.5", verdict, StringComparison.Ordinal);
         Assert.EndsWith("): seria a pornit rece; arunca-l", verdict, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void R023_ASeriesMostlyOffThePlateauIsRefa()
+    public void R023_AMasterMoreThanADegreeFromTheEndIsAtentie()
     {
-        // a cooling series, as the owner's darks of 2026-11-07 (ADR 0038): the hot pixels fall as 0.72 + 0.6 exp(-i / 6)
-        // towards a plateau far under the master, so more than half the frames are more than two degrees from it;
-        // the camera came out warm, and the advice is to let it sit for three time constants before the next series
-        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 0.72 + 0.6 * Math.Exp(-i / 6.0) });
+        // seven frames at 1.0, then five at 1.2: the median master sits with the first seven, 1.6 degrees under the end
+        // of the series, and no frame is two degrees from it; the remedy is a longer series
+        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i < 7 ? 1.0 : 1.2 });
         DarkSeriesResult r = Run(s);
         Warming w = r.Darks.Warming;
-        Assert.True(w.HasFit);
-        Assert.True(w.FirstRatio > w.LastRatio, $"{w.FirstRatio} -> {w.LastRatio}");
+        Assert.InRange(w.EndRatio, 1.18, 1.22);
+        Assert.InRange(w.MasterCelsius, -1.75, -1.4);
+        Assert.Empty(w.OffEndFrames);
+        Assert.False(r.Verdicts.Drift.MasterNearEnd);
+        Assert.False(r.Verdicts.Drift.MostlyOff);
+        Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
+        ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
+        Assert.Matches(@"^aparatul s-a incalzit in timpul seriei: pixelii fierbinti cresc de la (0\.9\d|1\.0\d) din master in primul cadru la 1\.[12]\d la sfarsitul seriei \(media ultimelor 5 cadre\), adica 1\.[4-7] grade in 22 min; masterul e cu 1\.[4-7] grade sub sfarsitul seriei$", check3.Rows[0].Value);
+        Assert.Matches(@"^ATENTIE: masterul e cu 1\.[4-7] grade sub sfarsitul seriei, mai mult de 1\.0: cadrele de la inceput, mai reci, il trag in jos; fa seria mai lunga$", check3.Rows[2].Value);
+
+        // the same the other way: the camera started warm, and the row says so
+        using SessionFixture cooling = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i < 7 ? 1.2 : 1.0 });
+        DarkSeriesResult rc = Run(cooling);
+        Assert.True(rc.Darks.Warming.Cooling);
+        Assert.InRange(rc.Darks.Warming.MasterCelsius, 1.4, 1.75);
+        Assert.Equal(Verdict.Warning, rc.Verdicts.Drift.Verdict);
+        string cold = DarkReport.Sections(rc).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value;
+        Assert.Matches(@"^ATENTIE: masterul e cu 1\.[4-7] grade peste sfarsitul seriei, mai mult de 1\.0: cadrele de la inceput, mai calde, il trag in sus \(aparatul a pornit mai cald decat locul in care a stat\); fa seria mai lunga$", cold);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Matches(@"^WARNING: the master is 1\.[4-7] degrees below the end of the series, more than 1\.0: the frames from the start, colder, pull it down; take a longer series$", DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value);
+            Assert.Matches(@"^WARNING: the master is 1\.[4-7] degrees above the end of the series, more than 1\.0: the frames from the start, warmer, pull it up \(the camera started warmer than the place it was in\); take a longer series$", DarkReport.Sections(rc).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value);
+        }
+    }
+
+    [Fact]
+    public void R023_ASeriesMostlyOffItsEndIsRefa()
+    {
+        // a cooling series steeper than the owner's darks of 2026-11-07: the hot pixels fall as 0.35 + 1.45 exp(-i / 6),
+        // so seven of the twelve frames are more than two degrees above where the series ended (ADR 0038's limit read
+        // against the end, ADR 0043); the camera came out warm, and the advice is to let it sit for three time constants
+        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 0.35 + 1.45 * Math.Exp(-i / 6.0) });
+        DarkSeriesResult r = Run(s);
+        Warming w = r.Darks.Warming;
+        Assert.True(w.HasEnd);
+        Assert.True(w.FirstRatio > w.EndRatio, $"{w.FirstRatio} -> {w.EndRatio}");
         Assert.True(w.Cooling);
-        Assert.InRange(w.OffPlateauFrames.Count, 7, 11);
+        Assert.Equal([1, 2, 3, 4, 5, 6, 7], w.OffEndFrames);
+        Assert.InRange(w.TauMinutes, 9, 16);
         Assert.True(r.Verdicts.Drift.MostlyOff);
         Assert.Equal(Verdict.Redo, r.Verdicts.Drift.Verdict);
         ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
-        Assert.StartsWith("aparatul s-a racit pe toata seria: pixelii fierbinti scad de la 1.", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Contains(" grade sub master (platoul, la 0.", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.EndsWith(" grade peste platou", check3.Rows[0].Value, StringComparison.Ordinal);
+        Assert.StartsWith("aparatul s-a racit in timpul seriei: pixelii fierbinti scad de la 1.9", check3.Rows[0].Value, StringComparison.Ordinal);
+        Assert.Matches(@"; masterul e cu 2\.\d grade peste sfarsitul seriei$", check3.Rows[0].Value);
         string verdict = check3.Rows[2].Value;
-        Assert.StartsWith("REFA: aparatul inca se racea la ultimul cadru (cu ", verdict, StringComparison.Ordinal);
-        Assert.Contains(" grade peste platou, mai mult de 1.0): a pornit mai cald decat locul in care a stat; ", verdict, StringComparison.Ordinal);
-        Assert.Matches(@"; (7|8|9|10|11) din 12 cadre sunt la peste 2\.0 grade de platou, deci masterul nu apartine niciunei temperaturi; refa seria dupa ce aparatul a stat vreo \d+ min in locul unde se trag dark-urile \(de trei ori cele \d+ min ale seriei\)$", verdict);
         int tau = (int)Math.Round(w.TauMinutes);
         int rest = (int)Math.Ceiling(3 * w.TauMinutes / 5) * 5;
-        Assert.EndsWith($"vreo {rest} min in locul unde se trag dark-urile (de trei ori cele {tau} min ale seriei)", verdict, StringComparison.Ordinal);
+        Assert.StartsWith($"REFA: 7 din 12 cadre sunt la peste 2.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi; aparatul a pornit mai cald decat locul in care a stat: refa seria dupa ce aparatul a stat vreo {rest} min in locul unde se trag dark-urile (de trei ori cele {tau} min ale seriei); 5 cadre (1 .. 3, 11, 12) sunt prea departe de master", verdict, StringComparison.Ordinal);
+        Assert.EndsWith("): seria a pornit calda; arunca-le", verdict, StringComparison.Ordinal);
         Assert.Equal("REFA", check3.Rows[2].Verdict);
         Assert.DoesNotContain("+", verdict, StringComparison.Ordinal);
+        Assert.DoesNotContain("plato", verdict, StringComparison.Ordinal);
 
-        // the chart's note names the falling curve
+        // the chart's note names the falling curve and the end of the series
         Assert.Contains("cand curba urca, aparatul se incalzeste in timpul seriei; cand coboara, se raceste (verificarea 3).", DarkReport.WarmingChartNote(r), StringComparison.Ordinal);
+        Assert.Contains(" Sfarsitul seriei (media ultimelor 5 cadre) e la 0.7", DarkReport.WarmingChartNote(r), StringComparison.Ordinal);
 
-        // a warming series mostly off its plateau: the same verdict, the advice is a longer series; its first
-        // frame is also under the -opt band, and that clause comes last
-        using SessionFixture warming = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 1.4 - 0.7 * Math.Exp(-i / 8.0) });
+        // a warming series mostly off its end (the hot pixels double every eight frames): the same verdict, the advice
+        // is a longer series, with no cause named; the frames outside the -opt band come last
+        using SessionFixture warming = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = Math.Pow(2, i / 8.0) });
         DarkSeriesResult rw = Run(warming);
+        Assert.Equal([1, 2, 3, 4, 5, 6, 7], rw.Darks.Warming.OffEndFrames);
         Assert.Equal(Verdict.Redo, rw.Verdicts.Drift.Verdict);
         string warm = DarkReport.Sections(rw).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value;
-        Assert.StartsWith("REFA: aparatul inca se incalzea la ultimul cadru (cu ", warm, StringComparison.Ordinal);
-        Assert.Contains(" grade sub platou, mai mult de 1.0): masterul amesteca temperaturi diferite; ", warm, StringComparison.Ordinal);
-        Assert.Contains(" sunt la peste 2.0 grade de platou, deci masterul nu apartine niciunei temperaturi; refa seria mai lunga: primele cadre sunt incalzirea; 1 cadru (1) e prea departe de master", warm, StringComparison.Ordinal);
-        Assert.EndsWith("): seria a pornit rece; arunca-l", warm, StringComparison.Ordinal);
+        Assert.StartsWith("REFA: 7 din 12 cadre sunt la peste 2.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi; refa seria mai lunga: primele cadre sunt incalzirea; 4 cadre (1, 2, 11, 12) sunt prea departe de master", warm, StringComparison.Ordinal);
 
         // in English
         using (Ui.Use(UiLanguage.English))
         {
             string en = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value;
-            Assert.StartsWith("REDO: the camera was still cooling at the last frame (", en, StringComparison.Ordinal);
-            Assert.Contains(" degrees above the plateau, more than 1.0): it started warmer than the place it was in; ", en, StringComparison.Ordinal);
-            Assert.EndsWith($"of 12 frames are more than 2.0 degrees from the plateau, so the master belongs to no temperature; take the series again after the camera has sat where it shoots for about {rest} min (three times the {tau} min of this series)", en, StringComparison.Ordinal);
-            Assert.StartsWith("the camera cooled the whole series: the hot pixels fall from 1.", DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[0].Value, StringComparison.Ordinal);
-            Assert.Contains("; take a longer series: the first frames are the warm-up; 1 frame (1) is too far from the master", DarkReport.Sections(rw).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value, StringComparison.Ordinal);
+            Assert.StartsWith($"REDO: 7 of 12 frames are more than 2.0 degrees from the end of the series, so the master belongs to no temperature; the camera started warmer than the place it was in: take the series again after the camera has sat where it shoots for about {rest} min (three times the {tau} min of this series); 5 frames (1 .. 3, 11, 12) are too far from the master", en, StringComparison.Ordinal);
+            Assert.StartsWith("the camera cooled during the series: the hot pixels fall from 1.9", DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[0].Value, StringComparison.Ordinal);
+            Assert.Contains("; take a longer series: the first frames are the warm-up; 4 frames (1, 2, 11, 12) are too far from the master", DarkReport.Sections(rw).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value, StringComparison.Ordinal);
         }
     }
 
     [Fact]
-    public void R023_AFlatSeriesHasNoFrameOffThePlateau()
+    public void R023_AFlatSeriesHasNoFrameOffItsEnd()
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(7, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot });
         DarkSeriesResult r = Run(s);
         Warming w = r.Darks.Warming;
-        Assert.InRange(w.Plateau, 0.97, 1.03);
-        Assert.Empty(w.OffPlateauFrames);
+        Assert.InRange(w.EndRatio, 0.97, 1.03);
+        Assert.Empty(w.OffEndFrames);
         Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
         ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
-        Assert.StartsWith("aparatul nu s-a incalzit: pixelii fierbinti au stat la ", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Contains(" din master, de la primul cadru (", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.EndsWith(", iar primul cadru e la mai putin de 1.0 grade de platou", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.StartsWith("niciun cadru nu e la mai mult de 2.0 grade de platou (pixelii fierbinti intre ", check3.Rows[1].Value, StringComparison.Ordinal);
+        Assert.StartsWith("aparatul a stat la aceeasi temperatura: pixelii fierbinti sunt la ", check3.Rows[0].Value, StringComparison.Ordinal);
+        Assert.Contains(" din master in primul cadru si la ", check3.Rows[0].Value, StringComparison.Ordinal);
+        Assert.Matches(@" la sfarsitul seriei \(media ultimelor 5 cadre\), mai putin de 1\.0 grade intre ele; masterul e (la nivelul sfarsitului seriei|cu 0\.\d grade (sub|peste) sfarsitul seriei)$", check3.Rows[0].Value);
+        Assert.StartsWith("niciun cadru nu e la mai mult de 2.0 grade de sfarsitul seriei (pixelii fierbinti intre ", check3.Rows[1].Value, StringComparison.Ordinal);
+        Assert.Matches(@"^OK: masterul e aproape de sfarsitul seriei \((la nivelul lui|cu 0\.\d grade (sub|peste) el), mai putin de 1\.0\) si toate cadrele ", check3.Rows[2].Value);
+        Assert.EndsWith("; niciun cadru de aruncat", check3.Rows[2].Value, StringComparison.Ordinal);
         Assert.All(DarkReport.FrameRows(r), row => Assert.Null(row.Note));
     }
 
     [Fact]
-    public void R023_UnderSixFramesThereIsNoPlateauAndTheVerdictRestsOnTheSpan()
+    public void R023_UnderSixFramesThereIsNoEndAndTheVerdictRestsOnTheSpan()
     {
-        // five frames climbing 0.8 → 1.2 of the master: the first-to-last degrees, no fit
+        // five frames climbing 0.8 → 1.2 of the master: the first-to-last degrees, no end of the series
         using SessionFixture s = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 0.8 + 0.4 * i / 4 });
         DarkSeriesResult r = Run(s);
         Warming w = r.Darks.Warming;
         Assert.InRange(w.DeltaCelsius, 3.0, 4.0);
         Assert.Equal(8, w.Minutes, 0.01);
-        Assert.True(double.IsNaN(w.Plateau));
-        Assert.Empty(w.OffPlateauFrames);
+        Assert.False(w.HasEnd);
+        Assert.True(double.IsNaN(w.EndRatio));
+        Assert.Empty(w.OffEndFrames);
         Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
         ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
         Assert.Equal("NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti", check3.Rows[0].Value);
         Assert.Equal("NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti", check3.Rows[1].Value);
-        Assert.Equal("OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); sunt mai putin de 6 cadre, deci fara platou", check3.Rows[2].Value);
-        Assert.All(DarkReport.FrameRows(r), row => Assert.Equal("-", row.Plateau));
+        Assert.Equal("OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); sunt mai putin de 6 cadre, deci sfarsitul seriei nu se masoara", check3.Rows[2].Value);
+        Assert.All(DarkReport.FrameRows(r), row => Assert.Equal("-", row.End));
 
         using SessionFixture cold = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i == 0 ? 0.5 : 1.0 });
         Assert.Equal(Verdict.Warning, Run(cold).Verdicts.Drift.Verdict);
@@ -363,7 +478,7 @@ public partial class DarkSeriesTests
         ReportRow litRow = DarkReport.Sections(r)[0].Rows.Single(x => x.Label == "lumina pe cadre");
         Assert.Contains($"{r.Darks.Noise.MasterNoise:F2} ADU", litRow.BoldParts);
         Assert.All(litRow.BoldParts, b => Assert.Contains(b, litRow.Value, StringComparison.Ordinal));
-        Assert.Contains("   fierb.  platou  lumina  latura   >20   [pixelii verzi G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
+        Assert.Contains("   fierb. sfarsit  lumina  latura   >20   [pixelii verzi G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
         Assert.Contains("lumina = lumina in plus fata de cat explica incalzirea, ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
         Assert.StartsWith("+0.", rows[6].Light, StringComparison.Ordinal);
@@ -552,7 +667,7 @@ public partial class DarkSeriesTests
         Assert.Equal([masterNoise], enough.BoldParts);
         Assert.Contains(masterNoise, enough.Value, StringComparison.Ordinal);
         Assert.Empty(sections[0].Rows.Single(x => x.Label == "master dark").BoldParts);
-        Assert.Contains("   fierb.  platou  lumina  latura   >20   [pixelii verzi G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
+        Assert.Contains("   fierb. sfarsit  lumina  latura   >20   [pixelii verzi G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
         Assert.Contains("latura = latura de sus fata de centru, dupa scaderea bias-ului (cu glow), ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
         // one frame, three regions of 256 synthetic pixels each: a noisy column, the band still in every frame
@@ -802,7 +917,8 @@ public partial class DarkSeriesTests
     public void R082_TheSummarysSessionHeaderAndChecks2To8AreInPlainWords(bool english)
     {
         // the variants the fixtures reach: lights and biases, a bare series, the eyepiece band of R029 with biases, a
-        // series climbing to a plateau, one still climbing at its end, one whose first frame is cold, a flat one, a
+        // series climbing to where it ends, one still climbing at its end, one whose master sits far under its end,
+        // one whose first frame is cold, a flat one, a
         // single frame, a noisy frame among quiet ones, a row banding fixed in every frame, ten quiet frames
         static double Band(int x, int y) => y < 64 ? 2 : 0;
         static SyntheticLight Light(int i) => new() { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.0, Stars = SyntheticLight.ThreeStars };
@@ -810,8 +926,9 @@ public partial class DarkSeriesTests
         using SessionFixture bare = new SessionFixture().WithDarkSeries(4, Plain);
         using SessionFixture leak = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = Band, Noise = 1 }, biases: 4);
         using SessionFixture edge = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = (x, y) => x < 32 ? 3 : 0 });
-        using SessionFixture plateau = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 1.2 - 0.4 * Math.Exp(-i / 3.0) });
+        using SessionFixture settling = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 1.2 - 0.4 * Math.Exp(-i / 3.0) });
         using SessionFixture climbing = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 0.8 + 0.05 * i });
+        using SessionFixture step = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i < 7 ? 1.0 : 1.2 });
         using SessionFixture cold = new SessionFixture().WithDarkSeries(7, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i == 0 ? 0.5 : 1.0 });
         using SessionFixture flat = new SessionFixture().WithDarkSeries(7, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot });
         using SessionFixture one = new SessionFixture().WithDarkSeries(1, Plain);
@@ -822,7 +939,7 @@ public partial class DarkSeriesTests
         using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
         {
             List<string> texts = [];
-            foreach (SessionFixture s in new[] { full, bare, leak, edge, plateau, climbing, cold, flat, one, noisy, rows, quiet })
+            foreach (SessionFixture s in new[] { full, bare, leak, edge, settling, climbing, step, cold, flat, one, noisy, rows, quiet })
             {
                 DarkSeriesResult r = Run(s);
                 texts.AddRange(InventoryReport.HeaderRows(r.Inventory).SelectMany(row => new[] { row.Label, row.Value }));
@@ -839,10 +956,10 @@ public partial class DarkSeriesTests
             // the scenes reached their variants, so the words below were looked at
             string all = string.Join("\n", texts);
             Assert.Contains(english ? "of constant light against the centre, which does not come from the bias" : "lumina constanta fata de centru, care nu vine din bias", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "the camera warmed the whole series: the hot pixels rise from " : "aparatul s-a incalzit pe toata seria: pixelii fierbinti cresc de la ", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "the camera was still warming at the last frame" : "aparatul inca se incalzea la ultimul cadru", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "the camera warmed during the series: the hot pixels rise from " : "aparatul s-a incalzit in timpul seriei: pixelii fierbinti cresc de la ", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "the frames from the start, colder, pull it down; take a longer series" : "cadrele de la inceput, mai reci, il trag in jos; fa seria mai lunga", all, StringComparison.Ordinal);
             Assert.Contains(english ? "too far from the master for Siril to match it with -opt" : "prea departe de master ca Siril sa il potriveasca cu -opt", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "the series did not warm" : "seria nu s-a incalzit", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "the camera stayed at the same temperature: the hot pixels are at " : "aparatul a stat la aceeasi temperatura: pixelii fierbinti sunt la ", all, StringComparison.Ordinal);
             Assert.Contains(english ? "light that got in or a level difference of the readout" : "lumina intrata sau o diferenta de nivel din citire", all, StringComparison.Ordinal);
             Assert.Contains(english ? "a single frame has nothing to be compared with" : "un singur cadru nu are cu ce fi comparat", all, StringComparison.Ordinal);
             Assert.Contains(english ? "pairs of biases taken one after the other" : "perechi de bias-uri luate unul dupa altul", all, StringComparison.Ordinal);
@@ -864,9 +981,9 @@ public partial class DarkSeriesTests
     [InlineData(true)]
     public void R083_TheFramesTablesWordsAreInPlainWords(bool english)
     {
-        // the variants the fixtures reach: a series that climbs to its plateau with frames to discard below it, one that
+        // the variants the fixtures reach: a series that climbs to its end with frames to discard below it, one that
         // comes down to it with frames above it, one with a frame whose hot pixels do not show, the eyepiece band of R029 with biases, an edge without biases, a short
-        // series without a plateau, a capped one with skipped darks and lights; and the messages when no dark, bias,
+        // series without an end, a capped one with skipped darks and lights; and the messages when no dark, bias,
         // light or partner dark can be read
         static double Band(int x, int y) => y < 64 ? 2 : 0;
         using SessionFixture climbing = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 1.2 - 0.4 * Math.Exp(-i / 3.0) });
@@ -890,7 +1007,7 @@ public partial class DarkSeriesTests
         System.Text.RegularExpressions.Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
         using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
         {
-            List<string> texts = [DarkReport.PlateauColumnTip];
+            List<string> texts = [DarkReport.EndColumnTip];
             foreach (DarkSeriesResult r in new[] { Run(climbing), Run(cooling), Run(blind), Run(leak), Run(edge), Run(bare), DarkSeriesRun.Run(capped.Root, new DarkOptions(Threads: 2, MaxFrames: 2)) })
             {
                 texts.Add(DarkReport.FrameTableHeader(r));
@@ -906,14 +1023,14 @@ public partial class DarkSeriesTests
             // the scenes reached their variants, so the words below were looked at
             string all = string.Join("\n", texts);
             Assert.Contains(english ? "to discard: the hot pixels are at " : "de aruncat: pixelii fierbinti sunt la ", all, StringComparison.Ordinal);
-            Assert.Contains(english ? ", that is more than 2.0 degrees above the plateau" : ", adica la peste 2.0 grade peste platou", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "The steady temperature of the series (the plateau) is at " : "Temperatura stabila a seriei (platoul) e la ", all, StringComparison.Ordinal);
+            Assert.Contains(english ? ", that is more than 2.0 degrees above the end of the series" : ", adica la peste 2.0 grade peste sfarsitul seriei", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "The end of the series (the average of the last 5 frames) is at " : "Sfarsitul seriei (media ultimelor 5 cadre) e la ", all, StringComparison.Ordinal);
             Assert.Contains(english ? "; when it falls, the camera cools (check 3)." : "; cand coboara, se raceste (verificarea 3).", all, StringComparison.Ordinal);
             Assert.Contains(english ? "to discard: the hot pixels of the master do not show in this frame" : "de aruncat: pixelii fierbinti ai masterului nu se vad in acest cadru", all, StringComparison.Ordinal);
             Assert.Contains(english ? ", once the bias is taken off (glow included)" : ", dupa scaderea bias-ului (cu glow)", all, StringComparison.Ordinal);
             Assert.Contains(english ? " (no biases, glow included)" : " (fara bias-uri, cu glow)", all, StringComparison.Ordinal);
             Assert.Contains(english ? "against the centre (UNMEASURED)" : "fata de centru (NEMASURAT)", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "the plateau cannot be found" : "nu se poate gasi platoul", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "the end of the series is not measured" : "sfarsitul seriei nu se masoara", all, StringComparison.Ordinal);
             Assert.Contains(english ? "frames only one in 3 is read)" : "cadre se citeste doar unul din 3)", all, StringComparison.Ordinal);
             Assert.Contains(english ? "no dark could be read" : "niciun dark nu s-a putut citi", all, StringComparison.Ordinal);
             Assert.Contains(english ? "no bias could be read" : "niciun bias nu s-a putut citi", all, StringComparison.Ordinal);

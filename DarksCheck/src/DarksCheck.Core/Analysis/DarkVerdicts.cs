@@ -86,26 +86,27 @@ internal sealed record LeakVerdict(Verdict Verdict, double OffsetAdu, MapRegion 
 }
 
 /// <summary>
-/// Check 3: the warming of the series and its plateau (R-023): whether the series has settled (the
-/// fitted curve within <see cref="Th.SettledCelsius"/> of the plateau at the last frame; true
-/// without a fit), the frames whose ratio to the master is outside <see cref="Th.MatchOptLow"/> ..
+/// Check 3: the warming of the series against its end (R-023, ADR 0043): whether the master is
+/// near the end of the series (within <see cref="Th.MasterNearEndCelsius"/>; true without an
+/// end), the frames whose ratio to the master is outside <see cref="Th.MatchOptLow"/> ..
 /// <see cref="Th.MatchOptHigh"/> and, of those, the ratio farthest from 1 (NaN when none).
 /// </summary>
-/// <param name="Verdict">Redo when <paramref name="MostlyOff"/>; else Ok when settled and no
-/// frame is outside; Unmeasured when the warming's first-to-last degrees are NaN.</param>
+/// <param name="Verdict">Redo when <paramref name="MostlyOff"/>; else Ok when the master is
+/// near the end and no frame is outside; Unmeasured without a first ratio (under two frames
+/// with one, or no hot pixel).</param>
 /// <param name="Warming">The series' warming.</param>
-/// <param name="Settled">True when the fitted last frame is within
-/// <see cref="Th.SettledCelsius"/> of the plateau, or without a fit.</param>
-/// <param name="MostlyOff">True when the frames off the plateau are more than
-/// <see cref="Th.RedoOffPlateauFraction"/> of <paramref name="FramesWithRatio"/> (ADR 0038); false
-/// without a fit, or with a plateau extrapolated from the top of the grid.</param>
+/// <param name="MasterNearEnd">True when the master is within
+/// <see cref="Th.MasterNearEndCelsius"/> of the end of the series, or without an end.</param>
+/// <param name="MostlyOff">True when the frames off the end are more than
+/// <see cref="Th.RedoOffEndFraction"/> of <paramref name="FramesWithRatio"/> (ADR 0038); false
+/// without an end.</param>
 /// <param name="FramesWithRatio">How many frames have an amplitude ratio (decoded, hot pixels
 /// measured).</param>
 /// <param name="OutsideFrames">The indices (<see cref="FrameInfo.Index"/>) of the frames
 /// outside the band.</param>
 /// <param name="FarthestRatio">The ratio of those farthest from 1 on the log scale; NaN when
 /// none.</param>
-internal sealed record DriftVerdict(Verdict Verdict, Warming Warming, bool Settled, bool MostlyOff, int FramesWithRatio, IReadOnlyList<int> OutsideFrames, double FarthestRatio);
+internal sealed record DriftVerdict(Verdict Verdict, Warming Warming, bool MasterNearEnd, bool MostlyOff, int FramesWithRatio, IReadOnlyList<int> OutsideFrames, double FarthestRatio);
 
 /// <summary>
 /// Check 4: the per-frame residual noise on the reference plane, the frames that stand out, the
@@ -214,13 +215,15 @@ internal static class DarkVerdictAnalyzer
         DarkFrameFigures[] withRatio = d.Frames.Where(f => f.Error is null && !double.IsNaN(f.AmpRatioMedian)).ToArray();
         DarkFrameFigures[] outside = withRatio.Where(f => f.AmpRatioMedian < Th.MatchOptLow || f.AmpRatioMedian > Th.MatchOptHigh).ToArray();
         double farthest = outside.Length == 0 ? double.NaN : outside.Select(f => f.AmpRatioMedian).MaxBy(x => x > 0 ? Math.Abs(Math.Log(x)) : double.PositiveInfinity);
-        bool settled = !wm.HasFit || double.IsNaN(wm.SettleCelsius) || Math.Abs(wm.SettleCelsius) <= Th.SettledCelsius;
-        // more than half the frames off the plateau: the median master is made of them (ADR 0038); a
-        // plateau guessed from a curve still climbing at the top of the grid condemns nothing
-        bool mostlyOff = wm.HasFit && !wm.TauAtGridTop && wm.OffPlateauFrames.Count > Th.RedoOffPlateauFraction * withRatio.Length;
+        // the master against where the series ended, not against where a curve says it would settle (ADR 0043)
+        bool nearEnd = !wm.HasEnd || Math.Abs(wm.MasterCelsius) <= Th.MasterNearEndCelsius;
+        // more than half the frames off the end of the series: the median master is made of them (ADR 0038)
+        bool mostlyOff = wm.HasEnd && wm.OffEndFrames.Count > Th.RedoOffEndFraction * withRatio.Length;
         DriftVerdict drift = new(
-            double.IsNaN(wm.DeltaCelsius) ? Verdict.Unmeasured : mostlyOff ? Verdict.Redo : settled && outside.Length == 0 ? Verdict.Ok : Verdict.Warning,
-            wm, settled, mostlyOff, withRatio.Length, outside.Select(f => f.Info.Index).ToArray(), farthest);
+            // unmeasured only without ratios to read (R-023); a last frame whose hot pixels do not show has no
+            // first-to-last degrees, and is judged as a frame outside the -opt band
+            double.IsNaN(wm.FirstRatio) ? Verdict.Unmeasured : mostlyOff ? Verdict.Redo : nearEnd && outside.Length == 0 ? Verdict.Ok : Verdict.Warning,
+            wm, nearEnd, mostlyOff, withRatio.Length, outside.Select(f => f.Info.Index).ToArray(), farthest);
 
         // 4. noise
         DarkFrameFigures[] ok = d.Frames.Where(f => f.Error is null).ToArray();

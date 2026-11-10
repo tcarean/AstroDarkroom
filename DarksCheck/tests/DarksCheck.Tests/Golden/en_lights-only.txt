@@ -28,9 +28,9 @@ Copyright (C) 2026 Tudor Carean
     verdict            : OK: no edge and no corner differs from the centre by more than 1.0 ADU (the most -0.40, at the top-left, on dark minus bias); the light per frame could not be measured
 
   3. THE CAMERA'S WARMING DURING THE SERIES
-    plateau            : UNMEASURED: there are fewer than 6 frames with hot pixels
+    end of series      : UNMEASURED: there are fewer than 6 frames with hot pixels
     to discard         : UNMEASURED: there are fewer than 6 frames with hot pixels
-    verdict            : OK: every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); there are fewer than 6 frames, so no plateau
+    verdict            : OK: every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); there are fewer than 6 frames, so the end of the series is not measured
 
   4. THE NOISE OF EACH FRAME
     against the master : R 2.65 .. 2.71; G1 2.65 .. 2.72 (on average 2.69); G2 2.61 .. 2.71; B 2.62 .. 2.71  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]
@@ -65,6 +65,7 @@ Copyright (C) 2026 Tudor Carean
     master in lights   : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)  [how many of the master's pixels above each threshold show in the lights too]
     not in the master  : none: every hot pixel of the lights is above 20 ADU in the master too
     lights against dark: in the lights, the hot pixels are on average 0.50 times what they are in the dark (over the 3 frames; in the first 0.51, in the last 0.50; on 20 pixels)
+    what is left       : the subtraction takes too much: a hot pixel keeps on average a hole of 18.31 of the noise of a light; at 20 of 20 the hole is over the noise, at 20 over 3 times the noise (the light's noise on the pixel's colour; with dithering the traces spread, without it they stay in the same place in the stack)
     index partner      : idx241
     index lights       : idx121 (0.50 times the dark, that is 5.9 degrees colder than it)
     verdict            : WARNING: use the dark for the cosmetic correction only (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); in the lights the hot pixels are 0.50 times what they are in the dark: the dark is warmer by 5.9 degrees, it sees them all, but subtracted it would take out too much and leave black dots
@@ -75,7 +76,7 @@ Copyright (C) 2026 Tudor Carean
     lights             : like a dark of idx121 (0.50 times the dark, that is 5.9 degrees colder than it)
 
   FRAMES TABLE
-     no  file                  time        mean   noise   diff.   bands      hot plateau   light    side   >20   [the green pixels G1; mean = how far the frame is above the black, ADU; noise = the noise of the frame, ADU; diff. = how much the frame differs from the master, ADU; bands = how many times more the rows differ from one another than the noise alone would give (1 = no banding); hot = the hot pixels against the master (1 = the same); plateau = how many degrees the frame is from the steady temperature of the series; to discard = more than 2.0 degrees from it (check 3); light = the light above what the warming explains, ADU; side = the side with the most constant light against the centre (UNMEASURED)]
+     no  file                  time        mean   noise   diff.   bands      hot     end   light    side   >20   [the green pixels G1; mean = how far the frame is above the black, ADU; noise = the noise of the frame, ADU; diff. = how much the frame differs from the master, ADU; bands = how many times more the rows differ from one another than the noise alone would give (1 = no banding); hot = the hot pixels against the master (1 = the same); end = how many degrees the frame is from the end of the series; to discard = more than 2.0 degrees from it (check 3); light = the light above what the warming explains, ADU; side = the side with the most constant light against the centre (UNMEASURED)]
       1  DSC_0001.fit          00:48:53    0.11    3.02    2.65     1.0    0.998       -       -       -     0
       2  DSC_0002.fit          00:50:53    0.11    2.99    2.71     1.0    1.005       -       -       -     0
       3  DSC_0003.fit          00:52:53    0.09    3.02    2.72     1.0    0.993       -       -       -     0

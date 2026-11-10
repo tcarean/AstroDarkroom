@@ -18,17 +18,17 @@ Copyright (C) 2026 Tudor Carean
   2. LIGHT LEAKS AND DIFFERENCES ACROSS THE FRAME
     master dark        : centre 0.00, corners 0.00 / 0.09 / -0.04 / 0.12 (top-left / top-right / bottom-left / bottom-right), edges top 0.01 bottom 0.03 left -0.02 right 0.04  [the green pixels G1, ADU above the black, mean of 12 frames, in squares of 32 px]
     light per frame    : no frame is brighter than its warming explains (threshold: above 0.1 ADU and more than 5 times the average spread of the frames, 0.01 ADU)
-    glow / constant    : at the bottom-right: glow -0.28 (grows as the sensor warms), constant +0.42 ADU (without biases there is no telling light from a level difference of the sensor's readout)
-    constant light     : without biases it cannot be told from a level difference of the readout: constant top +0.29, bottom +0.07, left +0.48, right +0.32 ADU
+    glow / constant    : at the bottom-right: glow -0.08 (grows as the sensor warms), constant +0.21 ADU (without biases there is no telling light from a level difference of the sensor's readout)
+    constant light     : without biases it cannot be told from a level difference of the readout: constant top +0.16, bottom -0.01, left +0.20, right +0.13 ADU
     verdict            : OK: no edge and no corner differs from the centre by more than 1.0 ADU (the most +0.12, at the bottom-right, on the dark master (no biases)); no frame has more light
 
   3. THE CAMERA'S WARMING DURING THE SERIES
-    plateau            : the camera cooled the whole series: the hot pixels fall from 1.37 of the master in the first frame to 0.85 in the last. Left to run, it would settle 2.3 degrees below the master (the plateau, at 0.77 of the master; two thirds of the way take 11 min); the last frame is 0.9 degrees above the plateau
-    to discard         : 7 frames (1 .. 7) are more than 2.0 degrees from the plateau (the hot pixels below 0.61 or above 0.96 of the master; the plateau 0.77); without them the master would be 1.2 degrees above the plateau, but with 55 % more noise
-    verdict            : REDO: 7 of 12 frames are more than 2.0 degrees from the plateau, so the master belongs to no temperature; take the series again after the camera has sat where it shoots for about 35 min (three times the 11 min of this series)
+    end of series      : the camera cooled during the series: the hot pixels fall from 1.93 of the master in the first frame to 0.71 at the end of the series (the average of the last 5 frames), that is 8.7 degrees in 22 min; the master is 3.0 degrees above the end of the series
+    to discard         : 7 frames (1 .. 7) are more than 2.0 degrees from the end of the series (the hot pixels below 0.56 or above 0.89 of the master; the end of the series 0.71); without them the master would be level with the end of the series, but with 55 % more noise
+    verdict            : REDO: 7 of 12 frames are more than 2.0 degrees from the end of the series, so the master belongs to no temperature; the camera started warmer than the place it was in: take the series again after the camera has sat where it shoots for about 40 min (three times the 12 min of this series); 5 frames (1 .. 3, 11, 12) are too far from the master for Siril to match them with -opt (outside 0.7 .. 1.4; the farthest 1.93): the series started warm; discard them
 
   4. THE NOISE OF EACH FRAME
-    against the master : R 2.91 .. 3.01; G1 2.88 .. 2.97 (on average 2.94); G2 2.91 .. 2.96; B 2.88 .. 2.97  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]
+    against the master : R 2.90 .. 2.99; G1 2.88 .. 2.97 (on average 2.94); G2 2.91 .. 2.96; B 2.88 .. 2.97  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]
     read noise         : UNMEASURED: the session has no biases
     random banding     : horizontal: the rows differ from one another by 0.262 ADU, 1.0 times what the noise alone would give; vertical: 1.0 times (1 means no banding)
     verdict            : OK: no frame has noise more than 1.5 times the average noise (2.94 ADU)
@@ -36,13 +36,13 @@ Copyright (C) 2026 Tudor Carean
   5. HOT PIXELS
     above the threshold: above 10: 20; above 20: 20; above 50: 20; above 100: 20; above 500: 0  [the master's pixels, ADU above the black, all colours]
     by colour, above 20: R 20  G1 0  G2 0  B 0
-    how hot            : on average 116 ADU; 80 % of them between 114 and 117; the hottest 1 % above 118 (of 20 pixels)
-    stability          : 20 of 20 show (above half the threshold) in all 12 frames; 0 are missing from 2 or more; from one frame to the next they vary by 18.80 ADU, the other pixels by 2.95; 0 green pixels G1 jump between two levels (RTS: they vary more than 6 times the noise of one frame, 3.01)
+    how hot            : on average 112 ADU; 80 % of them between 110 and 114; the hottest 1 % above 114 (of 20 pixels)
+    stability          : 20 of 20 show (above half the threshold) in all 12 frames; 0 are missing from 2 or more; from one frame to the next they vary by 45.34 ADU, the other pixels by 2.95; 0 green pixels G1 jump between two levels (RTS: they vary more than 6 times the noise of one frame, 3.01)
     verdict            : OK (informative): 20 pixels above 20 ADU in 0.05 Mpx
 
   6. FIXED PATTERN: WHAT IS THE SAME IN EVERY FRAME
     fixed banding      : the master's rows differ from one another by 0.168 ADU (1.04 between the brightest and the darkest, on R), the columns by 0.186 (1.32, on R)  [once the slow changes are taken out, over 101 rows or columns at a time]
-    glow               : -0.28 ADU at the bottom-right, the part that grows as the sensor warms (besides it, constant +0.42; on the dark master)
+    glow               : -0.08 ADU at the bottom-right, the part that grows as the sensor warms (besides it, constant +0.21; on the dark master)
     verdict            : OK: the fixed banding stays under 2.0 ADU between the brightest and the darkest row, and the edges under 1.0 from the centre
 
   7. DEAD AND SATURATED PIXELS
@@ -58,23 +58,23 @@ Copyright (C) 2026 Tudor Carean
     verdict            : UNMEASURED: the session has no lights
 
   INDEX
-    darks              : idx118 (117.5 ADU-eq: the average value of the hot pixels at places 2 .. 2, counting from the hottest, that is 5-20 per Mpx of 0.05 Mpx; worked out for ISO 400 and 120 s)
-    label              : <session>-idx118
+    darks              : idx114 (113.5 ADU-eq: the average value of the hot pixels at places 2 .. 2, counting from the hottest, that is 5-20 per Mpx of 0.05 Mpx; worked out for ISO 400 and 120 s)
+    label              : <session>-idx114
 
   FRAMES TABLE
-     no  file                  time        mean   noise   diff.   bands      hot plateau   light    side   >20   [the green pixels G1; mean = how far the frame is above the black, ADU; noise = the noise of the frame, ADU; diff. = how much the frame differs from the master, ADU; bands = how many times more the rows differ from one another than the noise alone would give (1 = no banding); hot = the hot pixels against the master (1 = the same); plateau = how many degrees the frame is from the steady temperature of the series; to discard = more than 2.0 degrees from it (check 3); light = the light above what the warming explains, ADU; side = the left side against the centre (no biases, glow included), ADU]
-      1  DSC_0001.fit          00:48:53    0.05    3.01    2.89     1.0    1.367    +5.0   -0.01   +0.22     0   to discard: the hot pixels are at 1.367 of the master, above 0.96, that is more than 2.0 degrees above the plateau (0.77)
-      2  DSC_0002.fit          00:50:53    0.05    2.99    2.88     1.0    1.283    +4.5   +0.00   +0.05     0   to discard: the hot pixels are at 1.283 of the master, above 0.96, that is more than 2.0 degrees above the plateau (0.77)
-      3  DSC_0003.fit          00:52:53    0.06    3.03    2.94     1.0    1.192    +3.8   +0.00   -0.01     0   to discard: the hot pixels are at 1.192 of the master, above 0.96, that is more than 2.0 degrees above the plateau (0.77)
-      4  DSC_0004.fit          00:54:53    0.06    3.00    2.94     1.0    1.119    +3.3   +0.00   -0.36     0   to discard: the hot pixels are at 1.119 of the master, above 0.96, that is more than 2.0 degrees above the plateau (0.77)
-      5  DSC_0005.fit          00:56:53    0.06    3.01    2.96     1.0    1.058    +2.8   +0.01   -0.32     0   to discard: the hot pixels are at 1.058 of the master, above 0.96, that is more than 2.0 degrees above the plateau (0.77)
-      6  DSC_0006.fit          00:58:53    0.06    3.01    2.97     1.0    1.022    +2.5   +0.01   +0.15     0   to discard: the hot pixels are at 1.022 of the master, above 0.96, that is more than 2.0 degrees above the plateau (0.77)
-      7  DSC_0007.fit          01:00:53    0.06    3.02    2.97     1.2    0.978    +2.1   +0.01   -0.29     0   to discard: the hot pixels are at 0.978 of the master, above 0.96, that is more than 2.0 degrees above the plateau (0.77)
-      8  DSC_0008.fit          01:02:53    0.05    2.97    2.93     0.9    0.943    +1.8   +0.00   +0.19     0
-      9  DSC_0009.fit          01:04:53    0.04    3.00    2.94     1.1    0.913    +1.5   -0.01   -0.04     0
-     10  DSC_0010.fit          01:06:53    0.03    3.02    2.92     0.9    0.871    +1.1   -0.02   +0.13     0
-     11  DSC_0011.fit          01:08:53    0.05    3.01    2.93     1.0    0.882    +1.2   -0.01   -0.20     0
-     12  DSC_0012.fit          01:10:53    0.06    3.05    2.95     0.9    0.854    +0.9   +0.01   +0.25     0
+     no  file                  time        mean   noise   diff.   bands      hot     end   light    side   >20   [the green pixels G1; mean = how far the frame is above the black, ADU; noise = the noise of the frame, ADU; diff. = how much the frame differs from the master, ADU; bands = how many times more the rows differ from one another than the noise alone would give (1 = no banding); hot = the hot pixels against the master (1 = the same); end = how many degrees the frame is from the end of the series; to discard = more than 2.0 degrees from it (check 3); light = the light above what the warming explains, ADU; side = the left side against the centre (no biases, glow included), ADU]
+      1  DSC_0001.fit          00:48:53    0.07    3.01    2.89     1.0    1.928    +8.7   -0.01   +0.22     0   to discard: the hot pixels are at 1.928 of the master, above 0.89, that is more than 2.0 degrees above the end of the series (0.71)
+      2  DSC_0002.fit          00:50:53    0.07    2.99    2.88     1.0    1.696    +7.6   +0.00   +0.05     0   to discard: the hot pixels are at 1.696 of the master, above 0.89, that is more than 2.0 degrees above the end of the series (0.71)
+      3  DSC_0003.fit          00:52:53    0.07    3.03    2.94     1.0    1.500    +6.5   +0.00   -0.01     0   to discard: the hot pixels are at 1.500 of the master, above 0.89, that is more than 2.0 degrees above the end of the series (0.71)
+      4  DSC_0004.fit          00:54:53    0.06    3.00    2.94     1.0    1.324    +5.4   +0.00   -0.36     0   to discard: the hot pixels are at 1.324 of the master, above 0.89, that is more than 2.0 degrees above the end of the series (0.71)
+      5  DSC_0005.fit          00:56:53    0.06    3.01    2.96     1.0    1.161    +4.3   +0.01   -0.32     0   to discard: the hot pixels are at 1.161 of the master, above 0.89, that is more than 2.0 degrees above the end of the series (0.71)
+      6  DSC_0006.fit          00:58:53    0.06    3.01    2.97     1.0    1.054    +3.4   +0.01   +0.15     0   to discard: the hot pixels are at 1.054 of the master, above 0.89, that is more than 2.0 degrees above the end of the series (0.71)
+      7  DSC_0007.fit          01:00:53    0.06    3.02    2.97     1.2    0.946    +2.5   +0.01   -0.29     0   to discard: the hot pixels are at 0.946 of the master, above 0.89, that is more than 2.0 degrees above the end of the series (0.71)
+      8  DSC_0008.fit          01:02:53    0.04    2.97    2.93     0.9    0.854    +1.6   +0.00   +0.19     0
+      9  DSC_0009.fit          01:04:53    0.03    3.00    2.94     1.1    0.787    +0.9   -0.01   -0.04     0
+     10  DSC_0010.fit          01:06:53    0.02    3.02    2.92     0.9    0.708    +0.0   -0.02   +0.13     0
+     11  DSC_0011.fit          01:08:53    0.04    3.01    2.93     1.0    0.676    -0.4   -0.01   -0.20     0
+     12  DSC_0012.fit          01:10:53    0.05    3.05    2.95     0.9    0.637    -0.9   +0.01   +0.25     0
 
   ADU SCALE EXPLAINED
     file               : values from 0 to 65535 ADU (16 bits); the camera's black is at 200 and the white at 65535, so 0 .. 65335 ADU are left for light
