@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- MapsView: the three binned maps of check 2 (the dark master, the bias master, dark minus
+<!-- MapsView: the three binned maps of check 3 (the dark master, the bias master, dark minus
      bias), each the same raster the PNG of the export holds, with the report's row under it. -->
 
 <UserControl x:Class="DarksCheck.Wpf.MapsView"

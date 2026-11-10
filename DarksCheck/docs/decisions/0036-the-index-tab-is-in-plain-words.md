@@ -1,7 +1,7 @@
 # 0036. The Index tab is in plain words
 
 Date: 2026-11-06
-Status: accepted 2026-11-06; the partner's sentence (kept after the program closes) superseded by 0041
+Status: accepted 2026-11-06; the partner's sentence (kept after the program closes) superseded by 0041; the hint of Analizeaza din nou superseded by 0048
 
 ## Context
 

@@ -20,7 +20,7 @@ using DarksCheck.Core;
 
 namespace DarksCheck.Tests;
 
-/// <summary>Checks 2 to 8 on synthetic darks with known answers (R-020 to R-041).</summary>
+/// <summary>Checks 3 to 9 on synthetic darks with known answers (R-020 to R-041).</summary>
 public partial class DarkSeriesTests
 {
     private static DarkSeriesResult Run(SessionFixture s) => DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2));
@@ -166,19 +166,19 @@ public partial class DarkSeriesTests
         Assert.True(r.Verdicts.Drift.MasterNearEnd);
         Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
 
-        ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
-        Assert.Equal(["sfarsitul seriei", "de aruncat", "verdict"], check3.Rows.Select(x => x.Label));
-        Assert.StartsWith("aparatul s-a incalzit in timpul seriei: pixelii fierbinti cresc de la 0.7", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Contains(" din master in primul cadru la 1.0", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Contains(" la sfarsitul seriei (media ultimelor 5 cadre), adica 3.", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Matches(@" grade in 22 min; masterul e cu 0\.\d grade sub sfarsitul seriei$", check3.Rows[0].Value);
-        Assert.DoesNotContain("+", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.DoesNotContain("plato", string.Join(" ", check3.Rows.Select(x => x.Value)), StringComparison.Ordinal);
-        Assert.StartsWith("2 cadre (1, 2) sunt la mai mult de 2.0 grade de sfarsitul seriei (pixelii fierbinti sub 0.8", check3.Rows[1].Value, StringComparison.Ordinal);
-        Assert.Contains(" din master; sfarsitul seriei 1.0", check3.Rows[1].Value, StringComparison.Ordinal);
-        Assert.Contains("; fara ele masterul ar fi cu 0.", check3.Rows[1].Value, StringComparison.Ordinal);
-        Assert.EndsWith(" grade sub sfarsitul seriei, dar cu 10 % mai mult zgomot", check3.Rows[1].Value, StringComparison.Ordinal);
-        Assert.Matches(@"^OK: masterul e aproape de sfarsitul seriei \(cu 0\.\d grade sub el, mai putin de 1\.0\) si niciun cadru nu e prea departe de master \(pixelii fierbinti ai fiecarui cadru sunt intre 0\.7 si 1\.4 din ai masterului\); gradele sunt socotite cu regula: semnalul termic se dubleaza la fiecare 6 grade; cadrele de aruncat sunt in randul de mai sus$", check3.Rows[2].Value);
+        ReportSection check4 = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming);
+        Assert.Equal(["sfarsitul seriei", "de aruncat", "verdict"], check4.Rows.Select(x => x.Label));
+        Assert.StartsWith("aparatul s-a incalzit in timpul seriei: pixelii fierbinti cresc de la 0.7", check4.Rows[0].Value, StringComparison.Ordinal);
+        Assert.Contains(" din master in primul cadru la 1.0", check4.Rows[0].Value, StringComparison.Ordinal);
+        Assert.Contains(" la sfarsitul seriei (media ultimelor 5 cadre), adica 3.", check4.Rows[0].Value, StringComparison.Ordinal);
+        Assert.Matches(@" grade in 22 min; masterul e cu 0\.\d grade sub sfarsitul seriei$", check4.Rows[0].Value);
+        Assert.DoesNotContain("+", check4.Rows[0].Value, StringComparison.Ordinal);
+        Assert.DoesNotContain("plato", string.Join(" ", check4.Rows.Select(x => x.Value)), StringComparison.Ordinal);
+        Assert.StartsWith("2 cadre (1, 2) sunt la mai mult de 2.0 grade de sfarsitul seriei (pixelii fierbinti sub 0.8", check4.Rows[1].Value, StringComparison.Ordinal);
+        Assert.Contains(" din master; sfarsitul seriei 1.0", check4.Rows[1].Value, StringComparison.Ordinal);
+        Assert.Contains("; fara ele masterul ar fi cu 0.", check4.Rows[1].Value, StringComparison.Ordinal);
+        Assert.EndsWith(" grade sub sfarsitul seriei, dar cu 10 % mai mult zgomot", check4.Rows[1].Value, StringComparison.Ordinal);
+        Assert.Matches(@"^OK: masterul e aproape de sfarsitul seriei \(cu 0\.\d grade sub el, mai putin de 1\.0\) si niciun cadru nu e prea departe de master \(pixelii fierbinti ai fiecarui cadru sunt intre 0\.7 si 1\.4 din ai masterului\); gradele sunt socotite cu regula: semnalul termic se dubleaza la fiecare 6 grade; cadrele de aruncat sunt in randul de mai sus$", check4.Rows[2].Value);
 
         // the table: the degrees from the end of the series per frame, the note on the frames off it
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
@@ -190,7 +190,7 @@ public partial class DarkSeriesTests
         Assert.Null(rows[2].Note);
         Assert.Null(rows[11].Note);
         Assert.Matches(@"^[+-]0\.\d$", rows[11].End);
-        Assert.Contains("sfarsit = cu cate grade e cadrul fata de sfarsitul seriei; de aruncat = la peste 2.0 grade de el (verificarea 3)", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
+        Assert.Contains("sfarsit = cu cate grade e cadrul fata de sfarsitul seriei; de aruncat = la peste 2.0 grade de el (verificarea 4)", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         Assert.Contains("sfarsit", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
         string line = DarkReport.FrameLine(rows[0]);
         Assert.EndsWith(rows[0].Note, line, StringComparison.Ordinal);
@@ -199,7 +199,7 @@ public partial class DarkSeriesTests
         // in English
         using (Ui.Use(UiLanguage.English))
         {
-            ReportSection en = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
+            ReportSection en = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming);
             Assert.Equal(["end of series", "to discard", "verdict"], en.Rows.Select(x => x.Label));
             Assert.StartsWith("the camera warmed during the series: the hot pixels rise from 0.7", en.Rows[0].Value, StringComparison.Ordinal);
             Assert.Contains(" at the end of the series (the average of the last 5 frames), that is 3.", en.Rows[0].Value, StringComparison.Ordinal);
@@ -237,15 +237,15 @@ public partial class DarkSeriesTests
         Assert.Equal(8, w.Measured);
         Assert.False(w.HasEnd);
         Assert.Empty(w.OffEndFrames);
-        ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
-        Assert.Equal("NEMASURAT: la sfarsitul seriei pixelii fierbinti ai masterului nu se vad", check3.Rows[0].Value);
-        Assert.Equal("NEMASURAT: la sfarsitul seriei pixelii fierbinti ai masterului nu se vad", check3.Rows[1].Value);
+        ReportSection check4 = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming);
+        Assert.Equal("NEMASURAT: la sfarsitul seriei pixelii fierbinti ai masterului nu se vad", check4.Rows[0].Value);
+        Assert.Equal("NEMASURAT: la sfarsitul seriei pixelii fierbinti ai masterului nu se vad", check4.Rows[1].Value);
         Assert.All(DarkReport.FrameRows(r), row => Assert.Equal("-", row.End));
         // the verdict is still given: the three frames are outside what -opt corrects (R-023: NEMASURAT only under
         // two frames or without a hot pixel)
         Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
         Assert.Equal([6, 7, 8], r.Verdicts.Drift.OutsideFrames);
-        Assert.StartsWith("ATENTIE: 3 cadre (6 .. 8) sunt prea departe de master ca Siril sa le potriveasca cu -opt (in afara 0.7 .. 1.4; ", check3.Rows[2].Value, StringComparison.Ordinal);
+        Assert.StartsWith("ATENTIE: 3 cadre (6 .. 8) sunt prea departe de master ca Siril sa le potriveasca cu -opt (in afara 0.7 .. 1.4; ", check4.Rows[2].Value, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -262,12 +262,12 @@ public partial class DarkSeriesTests
         Assert.InRange(w.OffEndFrames.Count, 7, 8);
         Assert.True(double.IsNaN(w.TauMinutes), $"tau {w.TauMinutes}");
         Assert.Equal(Verdict.Redo, r.Verdicts.Drift.Verdict);
-        string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value;
+        string verdict = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming).Rows[2].Value;
         Assert.Matches(@"^REFA: (7|8) din 12 cadre sunt la peste 2\.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi; aparatul a pornit mai cald decat locul in care a stat: refa seria dupa ce aparatul a stat mai mult in locul unde se trag dark-urile(;|$)", verdict);
         Assert.DoesNotContain(" min ", verdict, StringComparison.Ordinal);
         using (Ui.Use(UiLanguage.English))
         {
-            Assert.Matches(@"^REDO: (7|8) of 12 frames are more than 2\.0 degrees from the end of the series, so the master belongs to no temperature; the camera started warmer than the place it was in: take the series again after the camera has sat longer where it shoots(;|$)", DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value);
+            Assert.Matches(@"^REDO: (7|8) of 12 frames are more than 2\.0 degrees from the end of the series, so the master belongs to no temperature; the camera started warmer than the place it was in: take the series again after the camera has sat longer where it shoots(;|$)", DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming).Rows[2].Value);
         }
     }
 
@@ -301,7 +301,7 @@ public partial class DarkSeriesTests
         Assert.Equal([1], w.OffEndFrames);
         Assert.True(double.IsNaN(w.TauMinutes), $"tau {w.TauMinutes}");
         Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
-        string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[^1].Value;
+        string verdict = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming).Rows[^1].Value;
         Assert.StartsWith("OK: masterul e aproape de sfarsitul seriei (cu 0.", verdict, StringComparison.Ordinal);
         Assert.EndsWith("; cadrele de aruncat sunt in randul de mai sus", verdict, StringComparison.Ordinal);
         Assert.DoesNotContain("+", verdict, StringComparison.Ordinal);
@@ -316,7 +316,7 @@ public partial class DarkSeriesTests
         Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
         Assert.True(r.Verdicts.Drift.MasterNearEnd);
         Assert.Equal([1], r.Darks.Warming.OffEndFrames);
-        string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[^1].Value;
+        string verdict = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming).Rows[^1].Value;
         Assert.StartsWith("ATENTIE: 1 cadru (1) e prea departe de master ca Siril sa il potriveasca cu -opt (in afara 0.7 .. 1.4; cel mai departe 0.5", verdict, StringComparison.Ordinal);
         Assert.EndsWith("): seria a pornit rece; arunca-l", verdict, StringComparison.Ordinal);
     }
@@ -335,9 +335,9 @@ public partial class DarkSeriesTests
         Assert.False(r.Verdicts.Drift.MasterNearEnd);
         Assert.False(r.Verdicts.Drift.MostlyOff);
         Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
-        ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
-        Assert.Matches(@"^aparatul s-a incalzit in timpul seriei: pixelii fierbinti cresc de la (0\.9\d|1\.0\d) din master in primul cadru la 1\.[12]\d la sfarsitul seriei \(media ultimelor 5 cadre\), adica 1\.[4-7] grade in 22 min; masterul e cu 1\.[4-7] grade sub sfarsitul seriei$", check3.Rows[0].Value);
-        Assert.Matches(@"^ATENTIE: masterul e cu 1\.[4-7] grade sub sfarsitul seriei, mai mult de 1\.0: cadrele de la inceput, mai reci, il trag in jos; fa seria mai lunga$", check3.Rows[2].Value);
+        ReportSection check4 = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming);
+        Assert.Matches(@"^aparatul s-a incalzit in timpul seriei: pixelii fierbinti cresc de la (0\.9\d|1\.0\d) din master in primul cadru la 1\.[12]\d la sfarsitul seriei \(media ultimelor 5 cadre\), adica 1\.[4-7] grade in 22 min; masterul e cu 1\.[4-7] grade sub sfarsitul seriei$", check4.Rows[0].Value);
+        Assert.Matches(@"^ATENTIE: masterul e cu 1\.[4-7] grade sub sfarsitul seriei, mai mult de 1\.0: cadrele de la inceput, mai reci, il trag in jos; fa seria mai lunga$", check4.Rows[2].Value);
 
         // the same the other way: the camera started warm, and the row says so
         using SessionFixture cooling = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i < 7 ? 1.2 : 1.0 });
@@ -345,12 +345,12 @@ public partial class DarkSeriesTests
         Assert.True(rc.Darks.Warming.Cooling);
         Assert.InRange(rc.Darks.Warming.MasterCelsius, 1.4, 1.75);
         Assert.Equal(Verdict.Warning, rc.Verdicts.Drift.Verdict);
-        string cold = DarkReport.Sections(rc).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value;
+        string cold = DarkReport.Sections(rc).Single(x => x.Check == ReportCheck.Warming).Rows[2].Value;
         Assert.Matches(@"^ATENTIE: masterul e cu 1\.[4-7] grade peste sfarsitul seriei, mai mult de 1\.0: cadrele de la inceput, mai calde, il trag in sus \(aparatul a pornit mai cald decat locul in care a stat\); fa seria mai lunga$", cold);
         using (Ui.Use(UiLanguage.English))
         {
-            Assert.Matches(@"^WARNING: the master is 1\.[4-7] degrees below the end of the series, more than 1\.0: the frames from the start, colder, pull it down; take a longer series$", DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value);
-            Assert.Matches(@"^WARNING: the master is 1\.[4-7] degrees above the end of the series, more than 1\.0: the frames from the start, warmer, pull it up \(the camera started warmer than the place it was in\); take a longer series$", DarkReport.Sections(rc).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value);
+            Assert.Matches(@"^WARNING: the master is 1\.[4-7] degrees below the end of the series, more than 1\.0: the frames from the start, colder, pull it down; take a longer series$", DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming).Rows[2].Value);
+            Assert.Matches(@"^WARNING: the master is 1\.[4-7] degrees above the end of the series, more than 1\.0: the frames from the start, warmer, pull it up \(the camera started warmer than the place it was in\); take a longer series$", DarkReport.Sections(rc).Single(x => x.Check == ReportCheck.Warming).Rows[2].Value);
         }
     }
 
@@ -370,20 +370,20 @@ public partial class DarkSeriesTests
         Assert.InRange(w.TauMinutes, 9, 16);
         Assert.True(r.Verdicts.Drift.MostlyOff);
         Assert.Equal(Verdict.Redo, r.Verdicts.Drift.Verdict);
-        ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
-        Assert.StartsWith("aparatul s-a racit in timpul seriei: pixelii fierbinti scad de la 1.9", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Matches(@"; masterul e cu 2\.\d grade peste sfarsitul seriei$", check3.Rows[0].Value);
-        string verdict = check3.Rows[2].Value;
+        ReportSection check4 = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming);
+        Assert.StartsWith("aparatul s-a racit in timpul seriei: pixelii fierbinti scad de la 1.9", check4.Rows[0].Value, StringComparison.Ordinal);
+        Assert.Matches(@"; masterul e cu 2\.\d grade peste sfarsitul seriei$", check4.Rows[0].Value);
+        string verdict = check4.Rows[2].Value;
         int tau = (int)Math.Round(w.TauMinutes);
         int rest = (int)Math.Ceiling(3 * w.TauMinutes / 5) * 5;
         Assert.StartsWith($"REFA: 7 din 12 cadre sunt la peste 2.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi; aparatul a pornit mai cald decat locul in care a stat: refa seria dupa ce aparatul a stat vreo {rest} min in locul unde se trag dark-urile (de trei ori cele {tau} min ale seriei); 5 cadre (1 .. 3, 11, 12) sunt prea departe de master", verdict, StringComparison.Ordinal);
         Assert.EndsWith("): seria a pornit calda; arunca-le", verdict, StringComparison.Ordinal);
-        Assert.Equal("REFA", check3.Rows[2].Verdict);
+        Assert.Equal("REFA", check4.Rows[2].Verdict);
         Assert.DoesNotContain("+", verdict, StringComparison.Ordinal);
         Assert.DoesNotContain("plato", verdict, StringComparison.Ordinal);
 
         // the chart's note names the falling curve and the end of the series
-        Assert.Contains("cand curba urca, aparatul se incalzeste in timpul seriei; cand coboara, se raceste (verificarea 3).", DarkReport.WarmingChartNote(r), StringComparison.Ordinal);
+        Assert.Contains("cand curba urca, aparatul se incalzeste in timpul seriei; cand coboara, se raceste (verificarea 4).", DarkReport.WarmingChartNote(r), StringComparison.Ordinal);
         Assert.Contains(" Sfarsitul seriei (media ultimelor 5 cadre) e la 0.7", DarkReport.WarmingChartNote(r), StringComparison.Ordinal);
 
         // a warming series mostly off its end (the hot pixels double every eight frames): the same verdict, the advice
@@ -392,16 +392,16 @@ public partial class DarkSeriesTests
         DarkSeriesResult rw = Run(warming);
         Assert.Equal([1, 2, 3, 4, 5, 6, 7], rw.Darks.Warming.OffEndFrames);
         Assert.Equal(Verdict.Redo, rw.Verdicts.Drift.Verdict);
-        string warm = DarkReport.Sections(rw).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value;
+        string warm = DarkReport.Sections(rw).Single(x => x.Check == ReportCheck.Warming).Rows[2].Value;
         Assert.StartsWith("REFA: 7 din 12 cadre sunt la peste 2.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi; refa seria mai lunga: primele cadre sunt incalzirea; 4 cadre (1, 2, 11, 12) sunt prea departe de master", warm, StringComparison.Ordinal);
 
         // in English
         using (Ui.Use(UiLanguage.English))
         {
-            string en = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value;
+            string en = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming).Rows[2].Value;
             Assert.StartsWith($"REDO: 7 of 12 frames are more than 2.0 degrees from the end of the series, so the master belongs to no temperature; the camera started warmer than the place it was in: take the series again after the camera has sat where it shoots for about {rest} min (three times the {tau} min of this series); 5 frames (1 .. 3, 11, 12) are too far from the master", en, StringComparison.Ordinal);
-            Assert.StartsWith("the camera cooled during the series: the hot pixels fall from 1.9", DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[0].Value, StringComparison.Ordinal);
-            Assert.Contains("; take a longer series: the first frames are the warm-up; 4 frames (1, 2, 11, 12) are too far from the master", DarkReport.Sections(rw).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value, StringComparison.Ordinal);
+            Assert.StartsWith("the camera cooled during the series: the hot pixels fall from 1.9", DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming).Rows[0].Value, StringComparison.Ordinal);
+            Assert.Contains("; take a longer series: the first frames are the warm-up; 4 frames (1, 2, 11, 12) are too far from the master", DarkReport.Sections(rw).Single(x => x.Check == ReportCheck.Warming).Rows[2].Value, StringComparison.Ordinal);
         }
     }
 
@@ -423,7 +423,7 @@ public partial class DarkSeriesTests
         Assert.False(r.Verdicts.Drift.MostlyOff);
         Assert.False(r.Verdicts.Drift.MasterNearEnd);
         Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
-        string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value;
+        string verdict = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming).Rows[2].Value;
         Assert.Matches(@"^ATENTIE: masterul e cu 2\.\d grade peste sfarsitul seriei, mai mult de 1\.0: cadrele de la inceput, mai calde, il trag in sus \(aparatul a pornit mai cald decat locul in care a stat\); arunca cadrele din randul de mai sus$", verdict);
     }
 
@@ -436,14 +436,14 @@ public partial class DarkSeriesTests
         Assert.InRange(w.EndRatio, 0.97, 1.03);
         Assert.Empty(w.OffEndFrames);
         Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
-        ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
-        Assert.StartsWith("aparatul a stat la aceeasi temperatura: pixelii fierbinti sunt la ", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Contains(" din master in primul cadru si la ", check3.Rows[0].Value, StringComparison.Ordinal);
-        Assert.Matches(@" la sfarsitul seriei \(media ultimelor 5 cadre\), mai putin de 1\.0 grade intre ele; masterul e (la nivelul sfarsitului seriei|cu 0\.\d grade (sub|peste) sfarsitul seriei)$", check3.Rows[0].Value);
-        Assert.StartsWith("niciun cadru nu e la mai mult de 2.0 grade de sfarsitul seriei (pixelii fierbinti intre ", check3.Rows[1].Value, StringComparison.Ordinal);
-        Assert.Matches(@"^OK: masterul e aproape de sfarsitul seriei \((la nivelul lui|cu 0\.\d grade (sub|peste) el), mai putin de 1\.0\) si niciun cadru nu e prea departe de master \(", check3.Rows[2].Value);
-        Assert.DoesNotContain("-opt", check3.Rows[2].Value, StringComparison.Ordinal);
-        Assert.EndsWith("; niciun cadru de aruncat", check3.Rows[2].Value, StringComparison.Ordinal);
+        ReportSection check4 = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming);
+        Assert.StartsWith("aparatul a stat la aceeasi temperatura: pixelii fierbinti sunt la ", check4.Rows[0].Value, StringComparison.Ordinal);
+        Assert.Contains(" din master in primul cadru si la ", check4.Rows[0].Value, StringComparison.Ordinal);
+        Assert.Matches(@" la sfarsitul seriei \(media ultimelor 5 cadre\), mai putin de 1\.0 grade intre ele; masterul e (la nivelul sfarsitului seriei|cu 0\.\d grade (sub|peste) sfarsitul seriei)$", check4.Rows[0].Value);
+        Assert.StartsWith("niciun cadru nu e la mai mult de 2.0 grade de sfarsitul seriei (pixelii fierbinti intre ", check4.Rows[1].Value, StringComparison.Ordinal);
+        Assert.Matches(@"^OK: masterul e aproape de sfarsitul seriei \((la nivelul lui|cu 0\.\d grade (sub|peste) el), mai putin de 1\.0\) si niciun cadru nu e prea departe de master \(", check4.Rows[2].Value);
+        Assert.DoesNotContain("-opt", check4.Rows[2].Value, StringComparison.Ordinal);
+        Assert.EndsWith("; niciun cadru de aruncat", check4.Rows[2].Value, StringComparison.Ordinal);
         Assert.All(DarkReport.FrameRows(r), row => Assert.Null(row.Note));
     }
 
@@ -460,12 +460,12 @@ public partial class DarkSeriesTests
         Assert.True(double.IsNaN(w.EndRatio));
         Assert.Empty(w.OffEndFrames);
         Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
-        ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
-        Assert.Equal("NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti", check3.Rows[0].Value);
-        Assert.Equal("NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti", check3.Rows[1].Value);
-        Assert.Equal("OK: niciun cadru nu e prea departe de master (pixelii fierbinti ai fiecarui cadru sunt intre 0.7 si 1.4 din ai masterului); sunt mai putin de 6 cadre, deci sfarsitul seriei nu se masoara", check3.Rows[2].Value);
+        ReportSection check4 = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming);
+        Assert.Equal("NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti", check4.Rows[0].Value);
+        Assert.Equal("NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti", check4.Rows[1].Value);
+        Assert.Equal("OK: niciun cadru nu e prea departe de master (pixelii fierbinti ai fiecarui cadru sunt intre 0.7 si 1.4 din ai masterului); sunt mai putin de 6 cadre, deci sfarsitul seriei nu se masoara", check4.Rows[2].Value);
         // an OK asks nothing of the owner, so it does not name -opt (only the ATENTIE for a frame outside the band does)
-        Assert.DoesNotContain("-opt", check3.Rows[2].Value, StringComparison.Ordinal);
+        Assert.DoesNotContain("-opt", check4.Rows[2].Value, StringComparison.Ordinal);
         Assert.All(DarkReport.FrameRows(r), row => Assert.Equal("-", row.End));
 
         using SessionFixture cold = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i == 0 ? 0.5 : 1.0 });
@@ -500,7 +500,7 @@ public partial class DarkSeriesTests
         Assert.Contains(" ADU); scoate-le din darks\\ sau refa seria", text, StringComparison.Ordinal);
         Assert.Contains("    lumina pe cadre    : 2 cadre sunt mai luminoase decat ar explica incalzirea: 7: +0.", text, StringComparison.Ordinal);
         Assert.Contains("; cel mai luminat, +0.", text, StringComparison.Ordinal);
-        ReportRow litRow = DarkReport.Sections(r)[0].Rows.Single(x => x.Label == "lumina pe cadre");
+        ReportRow litRow = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Leaks).Rows.Single(x => x.Label == "lumina pe cadre");
         Assert.Contains($"{r.Darks.Noise.MasterNoise:F2} ADU", litRow.BoldParts);
         Assert.All(litRow.BoldParts, b => Assert.Contains(b, litRow.Value, StringComparison.Ordinal));
         Assert.Contains("   fierb. sfarsit  lumina  latura   >20   [pixelii verzi G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
@@ -528,6 +528,82 @@ public partial class DarkSeriesTests
         DarkReport.Write(rf, swf);
         Assert.Contains("    lumina pe cadre    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti", swf.ToString(), StringComparison.Ordinal);
         Assert.Contains("; lumina pe cadre nu s-a putut masura", swf.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R071_TheVerdictsOfChecks3And4CarryOneStatementPerLine()
+    {
+        // the console's words cut where its text has "; " outside brackets, so the window draws one statement per
+        // line; the value the console prints is the same (ADR 0047)
+        Assert.Equal(["a (b; c)", "d [e; f]", "g"], ReportRow.StatementsOf("a (b; c); d [e; f]; g"));
+        Assert.Equal(["one"], ReportRow.StatementsOf("one"));
+
+        // two lit frames: what check 3 found, then what to do with them
+        using SessionFixture lit = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = i >= 6 ? (x, y) => 0.6 : null });
+        ReportRow leak = VerdictRow(Run(lit), ReportCheck.Leaks);
+        Assert.Equal("ATENTIE", leak.Verdict);
+        AssertStatements(leak);
+        Assert.StartsWith("2 cadre au lumina in plus fata de restul seriei (7: +0.", leak.Lines![0], StringComparison.Ordinal);
+        Assert.Equal("scoate-le din darks\\ sau refa seria", leak.Lines[1]);
+
+        // a clean series: the OK on the map, then the frames
+        using SessionFixture clean = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i) });
+        ReportRow ok = VerdictRow(Run(clean), ReportCheck.Leaks);
+        Assert.Equal("OK", ok.Verdict);
+        AssertStatements(ok);
+        Assert.StartsWith("nicio margine si niciun colt nu difera de centru", ok.Lines![0], StringComparison.Ordinal);
+        Assert.Equal("niciun cadru nu are lumina in plus", ok.Lines[^1]);
+
+        // check 4 on a series that cooled steeply: the count, the advice and the frames -opt cannot match, each on a line
+        using SessionFixture cooling = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 0.35 + 1.45 * Math.Exp(-i / 6.0) });
+        DarkSeriesResult r = Run(cooling);
+        ReportRow redo = VerdictRow(r, ReportCheck.Warming);
+        Assert.Equal("REFA", redo.Verdict);
+        AssertStatements(redo);
+        Assert.Equal("7 din 12 cadre sunt la peste 2.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi", redo.Lines![0]);
+        Assert.StartsWith("aparatul a pornit mai cald decat locul in care a stat: refa seria", redo.Lines[1], StringComparison.Ordinal);
+        Assert.Contains(redo.Lines, line => line.Contains("(in afara 0.7 .. 1.4; cel mai departe ", StringComparison.Ordinal));
+        using (Ui.Use(UiLanguage.English))
+        {
+            ReportRow en = VerdictRow(r, ReportCheck.Warming);
+            AssertStatements(en);
+            Assert.Equal("7 of 12 frames are more than 2.0 degrees from the end of the series, so the master belongs to no temperature", en.Lines![0]);
+        }
+
+        // a verdict of one statement keeps one line: without hot pixels the warming is not measured
+        using SessionFixture none = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i });
+        ReportRow unmeasured = VerdictRow(Run(none), ReportCheck.Warming);
+        Assert.Equal("NEMASURAT", unmeasured.Verdict);
+        Assert.Null(unmeasured.Lines);
+    }
+
+    [Fact]
+    public void R025_TheSectionsCarryTheirCheckInTheRezumatsOrder()
+    {
+        // the console prints the checks as the Rezumat shows them, numbered as they stand; each section names its check,
+        // so nothing has to find one by its number (ADR 0046)
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, Plain);
+        DarkSeriesResult r = Run(s);
+        ReportCheck[] order = [ReportCheck.Lights, ReportCheck.Leaks, ReportCheck.Warming, ReportCheck.Noise, ReportCheck.HotPixels, ReportCheck.Pattern, ReportCheck.DeadSaturated, ReportCheck.Enough, ReportCheck.Index];
+        Assert.Equal(order, DarkReport.Sections(r).Select(x => x.Check));
+        Assert.Equal(["2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "IN"], DarkReport.Sections(r).Select(x => x.Title[..2]));
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal(order, DarkReport.Sections(r).Select(x => x.Check));
+            Assert.Equal(["2. HOW WELL THE DARK FITS THE LIGHTS", "3. LIGHT LEAKS AND DIFFERENCES ACROSS THE FRAME", "4. THE CAMERA'S WARMING DURING THE SERIES", "5. THE NOISE OF EACH FRAME", "6. HOT PIXELS", "7. FIXED PATTERN: WHAT IS THE SAME IN EVERY FRAME", "8. DEAD AND SATURATED PIXELS", "9. HOW MANY DARKS ARE ENOUGH", "INDEX"], DarkReport.Sections(r).Select(x => x.Title));
+        }
+    }
+
+    /// <summary>The verdict row of one check of the report.</summary>
+    private static ReportRow VerdictRow(DarkSeriesResult r, ReportCheck check) => DarkReport.Sections(r).Single(x => x.Check == check).Rows.Single(x => x.Label == "verdict");
+
+    /// <summary>A row carries two or more statements, which joined by "; " give its text, none cut further.</summary>
+    private static void AssertStatements(ReportRow row)
+    {
+        Assert.NotNull(row.Lines);
+        Assert.True(row.Lines.Count >= 2, row.Value);
+        Assert.Equal(row.Rest, string.Join("; ", row.Lines));
+        Assert.All(row.Lines, line => Assert.Equal([line], ReportRow.StatementsOf(line)));
     }
 
     [Fact]
@@ -672,9 +748,9 @@ public partial class DarkSeriesTests
         Assert.Contains(" ADU e ", text, StringComparison.Ordinal);
         Assert.Contains(" din zgomotul pe pixel al masterului dark (", text, StringComparison.Ordinal);
         Assert.True(top.ErrorAdu > 0 && top.ErrorAdu < 0.4, $"error {top.ErrorAdu}");
-        // the row and the verdict mark the light and the master's noise bold (ADR 0016); check 8's master row marks its noise
+        // the row and the verdict mark the light and the master's noise bold (ADR 0016); check 9's master row marks its noise
         IReadOnlyList<ReportSection> sections = DarkReport.Sections(r);
-        ReportRow constantRow = sections[0].Rows.Single(x => x.Label == "lumina constanta");
+        ReportRow constantRow = sections.Single(x => x.Check == ReportCheck.Leaks).Rows.Single(x => x.Label == "lumina constanta");
         string masterNoise = $"{r.Darks.Noise.MasterNoise:F2} ADU";
         Assert.Contains(masterNoise, constantRow.BoldParts);
         Assert.Contains(constantRow.BoldParts, b => b.StartsWith('+') && b.EndsWith(" ADU", StringComparison.Ordinal));
@@ -685,13 +761,13 @@ public partial class DarkSeriesTests
         Assert.Equal(top.LightAdu, double.Parse(ratio.Groups[1].Value, CultureInfo.InvariantCulture), 2);
         Assert.Equal(top.LightAdu / r.Darks.Noise.MasterNoise, double.Parse(ratio.Groups[2].Value, CultureInfo.InvariantCulture), 1);
         Assert.Equal(r.Darks.Noise.MasterNoise, double.Parse(ratio.Groups[3].Value, CultureInfo.InvariantCulture), 2);
-        ReportRow verdictRow = sections[0].Rows.Single(x => x.Label == "verdict");
+        ReportRow verdictRow = sections.Single(x => x.Check == ReportCheck.Leaks).Rows.Single(x => x.Label == "verdict");
         Assert.Contains(masterNoise, verdictRow.BoldParts);
         Assert.Contains("; adica +", verdictRow.Value, StringComparison.Ordinal);
-        ReportRow enough = sections.Single(s => s.Title.StartsWith("8.", StringComparison.Ordinal)).Rows.Single(x => x.Label == "master");
+        ReportRow enough = sections.Single(s => s.Check == ReportCheck.Enough).Rows.Single(x => x.Label == "master");
         Assert.Equal([masterNoise], enough.BoldParts);
         Assert.Contains(masterNoise, enough.Value, StringComparison.Ordinal);
-        Assert.Empty(sections[0].Rows.Single(x => x.Label == "master dark").BoldParts);
+        Assert.Empty(sections.Single(x => x.Check == ReportCheck.Leaks).Rows.Single(x => x.Label == "master dark").BoldParts);
         Assert.Contains("   fierb. sfarsit  lumina  latura   >20   [pixelii verzi G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
         Assert.Contains("latura = latura de sus fata de centru, dupa scaderea bias-ului (cu glow), ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
@@ -743,7 +819,7 @@ public partial class DarkSeriesTests
         {
             DarkSeriesResult r = Run(leak);
             Assert.NotNull(r.Verdicts.Leak.ConstantLight);
-            ReportRow verdict = DarkReport.Sections(r)[0].Rows.Single(x => x.Label == "verdict");
+            ReportRow verdict = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Leaks).Rows.Single(x => x.Label == "verdict");
             Assert.Matches(@"; that is, [+-][0-9.]+ ADU is [0-9.]+ times the dark master's noise per pixel \([0-9.]+ ADU\)", verdict.Value);
             Assert.DoesNotContain("; that is +", verdict.Value, StringComparison.Ordinal);
         }
@@ -939,7 +1015,7 @@ public partial class DarkSeriesTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void R082_TheSummarysSessionHeaderAndChecks2To8AreInPlainWords(bool english)
+    public void R082_TheSummarysSessionHeaderAndChecks3To9AreInPlainWords(bool english)
     {
         // the variants the fixtures reach: lights and biases, a bare series, the eyepiece band of R029 with biases, a
         // series climbing to where it ends, one still climbing at its end, one whose master sits far under its end,
@@ -970,8 +1046,8 @@ public partial class DarkSeriesTests
                 texts.AddRange(InventoryReport.HeaderRows(r.Inventory).SelectMany(row => new[] { row.Label, row.Value }));
                 texts.Add(DarkReport.HeaderLine(r));
                 texts.AddRange(DarkReport.HeaderRows(r).SelectMany(row => new[] { row.Label, row.Value }));
-                // checks 2 to 8, the parts approved so far (ADR 0030)
-                foreach (ReportSection section in DarkReport.Sections(r).Where(x => x.Title[0] is >= '2' and <= '8'))
+                // checks 3 to 9, the parts approved so far (ADR 0030)
+                foreach (ReportSection section in DarkReport.Sections(r).Where(x => x.Check is not ReportCheck.Lights and not ReportCheck.Index))
                 {
                     texts.Add(section.Title);
                     texts.AddRange(section.Rows.SelectMany(row => new[] { row.Label, row.Value }));
@@ -1050,7 +1126,7 @@ public partial class DarkSeriesTests
             Assert.Contains(english ? "to discard: the hot pixels are at " : "de aruncat: pixelii fierbinti sunt la ", all, StringComparison.Ordinal);
             Assert.Contains(english ? ", that is more than 2.0 degrees above the end of the series" : ", adica la peste 2.0 grade peste sfarsitul seriei", all, StringComparison.Ordinal);
             Assert.Contains(english ? "The end of the series (the average of the last 5 frames) is at " : "Sfarsitul seriei (media ultimelor 5 cadre) e la ", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "; when it falls, the camera cools (check 3)." : "; cand coboara, se raceste (verificarea 3).", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "; when it falls, the camera cools (check 4)." : "; cand coboara, se raceste (verificarea 4).", all, StringComparison.Ordinal);
             Assert.Contains(english ? "to discard: the hot pixels of the master do not show in this frame" : "de aruncat: pixelii fierbinti ai masterului nu se vad in acest cadru", all, StringComparison.Ordinal);
             Assert.Contains(english ? ", once the bias is taken off (glow included)" : ", dupa scaderea bias-ului (cu glow)", all, StringComparison.Ordinal);
             Assert.Contains(english ? " (no biases, glow included)" : " (fara bias-uri, cu glow)", all, StringComparison.Ordinal);
@@ -1066,8 +1142,8 @@ public partial class DarkSeriesTests
         }
     }
 
-    // R-082's words of the method in the summary, every section; the median only where check 8 names how a master is
-    // made; LightsAndIndexTests reads check 9 and INDEX with the same words; the lists also hold obisnuit, de obicei
+    // R-082's words of the method in the summary, every section; the median only where check 9 names how a master is
+    // made; LightsAndIndexTests reads check 2 and INDEX with the same words; the lists also hold obisnuit, de obicei
     // and usual, whose place medie and average took (ADRs 0035 and 0040)
     [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|obisnuit\w*|abater\w*|offset\w*|brut\w*|extrapol\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|q25|q75|amplitudin\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|gradient\w*|deriv\w*|rezidual\w*|temporal\w*|glisant\w*|candidat\w*|rms|rang\w*|persistent\w*|izolat\w*|raport\w*|supracorect\w*|scaleaz\w*)\b|(?<!\bcu )\bmedian\w*|x eroarea|zgomot\w* alb|varf la varf|\bde obicei\b|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     internal static partial System.Text.RegularExpressions.Regex RomanianSummaryWords();
@@ -1131,7 +1207,7 @@ public partial class DarkSeriesTests
         Assert.True(e.TooFew);
         Assert.InRange(e.FramesNeeded, 50, 65);
 
-        // a single frame is no series: unmeasured, never OK; the residual against its own median is zero by construction, so check 4 is unmeasured too
+        // a single frame is no series: unmeasured, never OK; the residual against its own median is zero by construction, so check 5 is unmeasured too
         using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 1, Hot = SyntheticDark.OnePerLevel });
         DarkSeriesResult single = Run(one);
         Assert.Equal(Verdict.Unmeasured, single.Verdicts.Enough.Verdict);
@@ -1326,7 +1402,7 @@ public partial class DarkSeriesTests
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = i < 3 ? [(10, 10, 60), (20, 20, 60)] : [(10, 10, 60)] });
         DarkSeriesResult r = Run(s);
-        ReportRow stability = DarkReport.Sections(r).Single(x => x.Title.StartsWith("5.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "stabilitate");
+        ReportRow stability = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.HotPixels).Rows.Single(row => row.Label == "stabilitate");
         IReadOnlyList<string> lines = Assert.IsAssignableFrom<IReadOnlyList<string>>(stability.Lines);
         Assert.Equal(4, lines.Count);
         // the console prints the four joined by "; ", the window one under the other (R-071)
@@ -1340,7 +1416,7 @@ public partial class DarkSeriesTests
 
         // a single frame: one unmeasured line, nothing to split
         using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 1, Hot = SyntheticDark.OnePerLevel });
-        ReportRow single = DarkReport.Sections(Run(one)).Single(x => x.Title.StartsWith("5.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "stabilitate");
+        ReportRow single = DarkReport.Sections(Run(one)).Single(x => x.Check == ReportCheck.HotPixels).Rows.Single(row => row.Label == "stabilitate");
         Assert.Null(single.Lines);
         Assert.Equal("NEMASURAT: stabilitatea cere cel putin 2 cadre", single.Value);
     }
@@ -1350,7 +1426,7 @@ public partial class DarkSeriesTests
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(10, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
         DarkSeriesResult r = Run(s);
-        ReportRow curve = DarkReport.Sections(r).Single(x => x.Title.StartsWith("8.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "zgomot dupa medie");
+        ReportRow curve = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows.Single(row => row.Label == "zgomot dupa medie");
         ReportTable t = Assert.IsType<ReportTable>(curve.Table);
         Assert.Equal(["cadre", "masurat", "se astepta"], t.Header);
         Assert.Equal(r.Darks.Noise.Curve.Select(p => RunReport.Frames(p.N)), t.Rows.Select(row => row[0]));
@@ -1363,20 +1439,20 @@ public partial class DarkSeriesTests
 
         // a single frame: unmeasured, no table
         using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 1, Hot = SyntheticDark.OnePerLevel });
-        ReportRow single = DarkReport.Sections(Run(one)).Single(x => x.Title.StartsWith("8.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "zgomot dupa medie");
+        ReportRow single = DarkReport.Sections(Run(one)).Single(x => x.Check == ReportCheck.Enough).Rows.Single(row => row.Label == "zgomot dupa medie");
         Assert.Null(single.Table);
         Assert.StartsWith("NEMASURAT: ", single.Value, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void R030_CheckFivesCountRowsLeaveTheSummaryToTheHotPixelsTab()
+    public void R030_TheHotPixelCountRowsLeaveTheSummaryToTheHotPixelsTab()
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice });
         IReadOnlyList<ReportSection> sections = DarkReport.Sections(Run(s));
-        ReportSection five = sections.Single(x => x.Title.StartsWith("5.", StringComparison.Ordinal));
-        Assert.Equal(["pixeli peste prag", "pe culori, peste 20", "cat de fierbinti", "stabilitate", "verdict"], five.Rows.Select(row => row.Label));
-        Assert.Equal([false, false, false, true, true], five.Rows.Select(row => row.Summary));
-        Assert.All(sections.Where(x => x != five).SelectMany(x => x.Rows), row => Assert.True(row.Summary));
+        ReportSection hot = sections.Single(x => x.Check == ReportCheck.HotPixels);
+        Assert.Equal(["pixeli peste prag", "pe culori, peste 20", "cat de fierbinti", "stabilitate", "verdict"], hot.Rows.Select(row => row.Label));
+        Assert.Equal([false, false, false, true, true], hot.Rows.Select(row => row.Summary));
+        Assert.All(sections.Where(x => x != hot).SelectMany(x => x.Rows), row => Assert.True(row.Summary));
     }
 
     [Fact]

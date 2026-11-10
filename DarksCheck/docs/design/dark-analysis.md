@@ -1,4 +1,4 @@
-# The dark series: the stack, the masters, checks 2 to 8
+# The dark series: the stack, the masters, checks 3 to 9
 
 **Covers:** `src/DarksCheck.Core/Analysis/Planes.cs`, `src/DarksCheck.Core/Analysis/FrameStack.cs`, `src/DarksCheck.Core/Analysis/Normalisation.cs`, `src/DarksCheck.Core/Analysis/DarkSeriesAnalyzer.cs`, `src/DarksCheck.Core/Analysis/BiasAnalyzer.cs`, `src/DarksCheck.Core/Analysis/DarkVerdicts.cs`, `src/DarksCheck.Core/Analysis/LeakAnalyzer.cs`, `src/DarksCheck.Core/Runs/DarkSeriesRun.cs`, `src/DarksCheck.Core/Report/DarkReport.cs`, `src/DarksCheck.Core/Report/ScaleReport.cs`, `src/DarksCheck.Core/Analysis/CameraFacts.cs`, `src/DarksCheck.Core/Analysis/StackNoise.cs`, `src/DarksCheck.Core/Report/ReportRows.cs`, `src/DarksCheck.Core/Report/DarkOutputs.cs`, `src/DarksCheck.Cli/runtimeconfig.template.json`.
 
@@ -104,7 +104,7 @@ is why a dark's value lies in its hot pixels (the report of 2026-10-11).
 
 ## The warming and the end of the series
 
-`DarkSeriesAnalyzer.WarmingOf` reads check 3 from every frame's amplitude ratio (the median,
+`DarkSeriesAnalyzer.WarmingOf` reads check 4 from every frame's amplitude ratio (the median,
 over the master's hot pixels under `Th.AmplitudeMaxFraction` of white, of the frame's
 amplitude over the master's). The `Warming` record keeps the first and last ratio, their
 degrees and how many frames have a ratio (`Measured`), then, when at least
@@ -132,7 +132,7 @@ within `Th.MasterNearEndCelsius`.
 ## The light and the glow
 
 `LeakAnalyzer` reads two per-frame figures against the frame's hot-pixel amplitude ratio
-(the warming of check 3), on which dark current, glow included, is proportional and light
+(the warming of check 4), on which dark current, glow included, is proportional and light
 from outside is not (ADR 0012). `FrameLightOf` takes the frames that have a ratio (at least
 `Th.LeakFitMinFrames`), fits the frame mean above black on the ratio by Theil-Sen (`TheilSen`:
 the slope is the median of the pairwise slopes, 0 under two distinct ratios; the intercept the
@@ -166,7 +166,7 @@ is the strongest side whose remainder passes `Th.LeakConstantAdu` and `Th.LeakCo
 times its error (ADR 0014); `WorstSide` is the side with the most light, which the frames
 table shows per frame (`latura`: the frame's side offset minus the bias's, over the
 normalisation). `DarkVerdictAnalyzer.Judge` keeps the verdict region's split
-beside the eight and lets check 6's glow be the glow part of that region.
+beside the eight and lets check 7's glow be the glow part of that region.
 
 ## The verdicts
 
@@ -217,7 +217,7 @@ the lights' share sigma / sqrt(N) plus the dark master's noise in quadrature (th
 subtracted from every light alike, so its noise does not average out);
 `ScaleReport.AgainstMasters` turns a light in raw ADU into the words and the bold parts of its
 ratio to the dark master's noise (`NoiseVsN.MasterNoise`) and to the stack's, used by the
-`ce s-a gasit` row and by check 2's `lumina pe cadre`, `lumina constanta` and
+`ce s-a gasit` row and by check 3's `lumina pe cadre`, `lumina constanta` and
 verdict rows in `DarkReport`. A `ReportRow` carries `Bold`, the value's substrings the window
 emphasises (ADR 0016); the console ignores it.
 
@@ -254,13 +254,13 @@ the lights over it (`IndexAnalyzer.Chain`), and the overlap of the two hot-pixel
 normalisation. Each group is released before the next is decoded. A
 failure of the lights or of the partner is an error carried in the result (`LightsError`,
 `PartnerError`), printed in its section, and does not stop the rest of the report. `DarkReport`
-writes section 9, `INDEX` (the index, the label, the lights' equivalent index, the partner's
+writes section 2, `INDEX` (the index, the label, the lights' equivalent index, the partner's
 lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; one `MatchText` words
 every match verdict, the lights' and the partner's, from where the set's hot pixels are (`in
 lights`, `in dark-urile sesiunii`) against the master (`in dark`, `la partener`), the lights'
 with their `TraceFigures`: a verdict the traces relaxed says the ratio is outside 0.9 .. 1.1 and
 why the dark is still taken as it is, an `-opt` one how much is left (R-067); `TraceRow` words
-the `ce ramane` row of section 9, a hole for a ratio under 1 and a rest for one over it, and
+the `ce ramane` row of section 2, a hole for a ratio under 1 and a rest for one over it, and
 gives none when the ratio is unmeasured or sits around zero; and `Warmth`
 turns a match's degrees into the clause of the INDEX rows (`adica cu 7.5 grade mai reci decat
 partenerul`; `la aceeasi temperatura` under `Th.SameTemperatureCelsius`; none for a ratio that
@@ -274,7 +274,9 @@ amp_ratio_q75`. How the two analyzers work is in `lights-and-index.md`.
 
 `DarkReport` builds the report as data first (ADR 0009): `HeaderLine` is the `=== DARK-URI`
 line, `HeaderRows` the rows under it (`1 ADU-eq`, `pasul valorilor`, the biases' warnings),
-`Sections` the nine `ReportSection(Title, Rows)` of checks 2 to 9 and INDEX, `FrameRows` and
+`Sections` the nine `ReportSection(Check, Title, Rows)` of checks 2 to 9 and INDEX, in the order
+the Rezumat shows them and numbered as they stand, each named by its `ReportCheck`, by which the
+window and the tests find it (ADR 0046), `FrameRows` and
 `LightRows` the two tables as `DarkTableRow` / `LightTableRow` of formatted cells, with
 `FrameTableHeader` and `LightTableHeader` as the header lines, each column name ending where its
 figures end (the file and the time, left-aligned, start where theirs start). `Write` prints exactly those:
@@ -290,7 +292,7 @@ the reference settings themselves (`AtReference`: ISO `Th.NormIso` and `Th.NormE
 by those words and any other set, a factor of 1 at ISO 800 and 60 s included, by its factor.
 `WarmingChartNote` is the sentence the window
 puts under its warming chart: the end of the series and the band of the frames to discard,
-when there is an end. Check 3's rows (`EndRow`, `OffEndRow`, `Drift`) take the camera's
+when there is an end. Check 4's rows (`EndRow`, `OffEndRow`, `Drift`) take the camera's
 direction from `Warming.Cooling`, set once in `WarmingOf` (the end under the first frame;
 without an end, `DeltaCelsius` negative), print every distance to the end unsigned with "above"
 or "below" (`FromEnd`, and `FromIt` where the sentence has just named the end; "level with"
@@ -301,7 +303,7 @@ ADR 0043); a series without an end says why by `NoEnd`, too few frames or hot pi
 show in its last ones. An `ATENTIE` for a master far from the end names the side: under it the
 colder frames of the start pull it down, above it the warmer ones pull it up and the cause is
 named.
-Every side text, check 2's, the note's and the ADU scale section's, names a side
+Every side text, check 3's, the note's and the ADU scale section's, names a side
 with its preposition (`SideWithPreposition`: `latura de sus`, `latura din dreapta`). A frame
 whose hot pixels do not show at all (a ratio at or under 0) is off the end in `WarmingOf`,
 and `FrameRows` gives it its own reason, with no degrees; `NoiseColumnTip` and `HotColumnTip`
@@ -321,12 +323,14 @@ PNG and what the window shows as an image.
 A `ReportRow` may carry more than its line (ADR 0041): `Lines`, the statements the window
 shows one under the other, which the value holds joined by `; ` (`StabilityRow`: the four
 statements of `Stability`, or its one unmeasured line without `Lines`; INDEX's `pixeli comuni`
-row: its two); `Table`, a `ReportTable(Header, Rows, Note)` of formatted cells the window draws
+row: its two; the verdicts of checks 3 and 4, through `ReportRow.WithStatements`, which cuts
+`Rest` with `StatementsOf` at every `; ` outside round and square brackets and sets `Lines` only
+for two or more, so the value and the console's text stay as they were, ADR 0047); `Table`, a `ReportTable(Header, Rows, Note)` of formatted cells the window draws
 under the label while the console prints the value alone (`OverlapRow` for the two overlap rows
-of check 9, one row per hot level, `peste 10`, `20 din 20`, `100 %`; `CurveRow` for check 8's
+of check 2, one row per hot level, `peste 10`, `20 din 20`, `100 %`; `CurveRow` for check 9's
 `zgomot dupa medie`, one row per n with the frames, the measured and the expected noise; the
-note is the value's bracket hint without its brackets); and `Summary`, false on check 5's three
-count rows, which the Rezumat's card leaves to the Pixeli fierbinti tab. Check 9 ends with
+note is the value's bracket hint without its brackets); and `Summary`, false on check 6's three
+count rows, which the Rezumat's card leaves to the Pixeli fierbinti tab. Check 2 ends with
 `index dark-uri` (`index partener` when the darks are the partner's), the darks' tag, and
 `index lights`, the lights' equivalent tag with the parenthesis INDEX's `lights` row also uses,
 both from `LightsLike` (`IndexFigures.TagFor` on `LightsIndex`; null, and no row, when it is

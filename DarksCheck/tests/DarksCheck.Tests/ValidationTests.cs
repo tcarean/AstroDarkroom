@@ -216,7 +216,7 @@ public class ValidationTests
         Assert.Equal(v.GetProperty("enough").GetString(), r.Verdicts.Enough.Verdict.ToString());
     }
 
-    /// <summary>Check 9, the index, the label and the partner (R-050 to R-064).</summary>
+    /// <summary>Check 2, the index, the label and the partner (R-050 to R-064).</summary>
     private static void CheckMatch(DarkSeriesResult r, JsonElement e, JsonElement t)
     {
         double index = t.GetProperty("index").GetDouble(), ratio = t.GetProperty("ratio").GetDouble(), counts = t.GetProperty("counts").GetDouble(), celsius = t.GetProperty("celsius").GetDouble();

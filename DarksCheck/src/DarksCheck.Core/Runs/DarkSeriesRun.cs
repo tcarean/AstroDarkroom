@@ -60,7 +60,7 @@ internal sealed record RunProgress(string Phase, int Done, int Total);
 /// <param name="BiasError">Why the biases could not be used (in the run's language), or null.</param>
 /// <param name="DarkCurrent">The dark current (darks minus biases), or null without usable
 /// biases.</param>
-/// <param name="Verdicts">The six verdicts of checks 2 to 8.</param>
+/// <param name="Verdicts">The six verdicts of checks 3 to 9.</param>
 /// <param name="ReferencePlane">The CFA position the maps and the single-plane figures are read on
 /// (G1 when the colour order is known).</param>
 /// <param name="Index">The darks' index (R-060).</param>
@@ -152,7 +152,7 @@ internal static class DarkSeriesRun
         Normalisation nz = new(options.IsoFactorPerStop, options.DoublingCelsius);
 
         // A session with lights and no darks takes the partner's darks as its own (R-054, ADR
-        // 0011): they fill the stack, take checks 2 to 8, check 9 and INDEX, and the match of
+        // 0011): they fill the stack, take checks 3 to 9, check 2 and INDEX, and the match of
         // check 1 reads their settings; the partner rows of INDEX are then meaningless and skipped.
         // The label stays the session's own, on the lights' index (R-066, ADR 0039); the partner's
         // label goes on the partner's row.

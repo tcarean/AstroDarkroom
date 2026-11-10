@@ -20,7 +20,7 @@ using System.Windows.Controls;
 namespace DarksCheck.Wpf;
 
 /// <summary>
-/// The Harti tab: the three binned maps of check 2, each with its report row; the code-behind only
+/// The Harti tab: the three binned maps of check 3, each with its report row; the code-behind only
 /// loads the XAML.
 /// </summary>
 public partial class MapsView : UserControl

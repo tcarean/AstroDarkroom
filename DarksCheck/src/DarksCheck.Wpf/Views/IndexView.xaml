@@ -59,8 +59,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <StackPanel Orientation="Horizontal" Margin="0,10,0,0" IsEnabled="{Binding IsIdle}">
             <Button Content="{l:T En='Choose partner...', Ro='Alege partener...'}" Click="ChoosePartner" />
             <Button Content="{l:T En='No partner', Ro='Fara partener'}" Click="ClearPartner" Margin="10,0,0,0" IsEnabled="{Binding HasPartner}" />
-            <Button Content="{l:T En='Analyse again', Ro='Analizeaza din nou'}" Click="Rerun" Margin="10,0,0,0" IsEnabled="{Binding HasFolder}"
-                    ToolTip="{l:T En='Analyses the open folder again, with the chosen lights, the partner and the settings of now', Ro='Analizeaza din nou folderul deschis, cu lights-urile alese, partenerul si setarile de acum'}" />
           </StackPanel>
         </StackPanel>
       </Border>

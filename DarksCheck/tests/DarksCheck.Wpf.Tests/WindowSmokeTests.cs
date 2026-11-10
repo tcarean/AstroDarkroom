@@ -245,7 +245,7 @@ public class WindowSmokeTests
         });
     }
 
-    /// <summary>A library given another session's lights: the Lights tab draws its card with the chosen folder, check 9 and the table (R-122, R-055).</summary>
+    /// <summary>A library given another session's lights: the Lights tab draws its card with the chosen folder, check 2 and the table (R-122, R-055).</summary>
     [Fact]
     public async Task R122_ALibraryWithChosenLightsRendersTheLightsTab()
     {

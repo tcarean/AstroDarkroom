@@ -154,10 +154,13 @@ internal static class DarkReport
         return rows;
     }
 
-    /// <summary>Checks 2 to 9 and INDEX, each as its titled rows, in the console's order.</summary>
+    /// <summary>
+    /// Checks 2 to 9 and INDEX, each as its titled rows, in the order the console prints them and the
+    /// Rezumat shows them, numbered as they stand (ADR 0046).
+    /// </summary>
     /// <param name="r">The run's result; not null.</param>
-    /// <returns>The nine sections (checks 2 to 9, then INDEX), titled as the console prints
-    /// them.</returns>
+    /// <returns>The nine sections (checks 2 to 9, then INDEX), each with its <see cref="ReportCheck"/>
+    /// and titled as the console prints it.</returns>
     internal static IReadOnlyList<ReportSection> Sections(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -193,25 +196,29 @@ internal static class DarkReport
         leak.Add(FrameLightRow(v.Leak, eq, n, masterNoise, stack));
         leak.Add(new("glow / constant", SplitRow(v.Leak, eq, n)));
         leak.Add(SidesRow(v.Leak, eq, n, masterNoise, stack));
-        leak.Add(LeakVerdictRow(v.Leak, eq, n, masterNoise));
+        // the verdict one statement per line in the window (ADR 0047)
+        leak.Add(LeakVerdictRow(v.Leak, eq, n, masterNoise).WithStatements());
 
+        // in the Rezumat's order, numbered as they stand: check 1 is the inventory's match, check 2 how well the
+        // dark fits the lights (ADR 0041, ADR 0046)
         return
         [
-            new(T("2. LIGHT LEAKS AND DIFFERENCES ACROSS THE FRAME", "2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU"), leak),
-            new(T("3. THE CAMERA'S WARMING DURING THE SERIES", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI"),
+            new(ReportCheck.Lights, T("2. HOW WELL THE DARK FITS THE LIGHTS", "2. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE"), LightsRows(r, eq)),
+            new(ReportCheck.Leaks, T("3. LIGHT LEAKS AND DIFFERENCES ACROSS THE FRAME", "3. SCURGERI DE LUMINA SI DIFERENTE PE CADRU"), leak),
+            new(ReportCheck.Warming, T("4. THE CAMERA'S WARMING DURING THE SERIES", "4. INCALZIREA CAMEREI IN TIMPUL SERIEI"),
             [
                 new(T("end of series", "sfarsitul seriei"), EndRow(d.Warming)),
                 new(T("to discard", "de aruncat"), OffEndRow(d.Warming)),
-                new("verdict", Drift(v.Drift, d.Normalisation)),
+                new ReportRow("verdict", Drift(v.Drift, d.Normalisation)).WithStatements(),
             ]),
-            new(T("4. THE NOISE OF EACH FRAME", "4. ZGOMOTUL FIECARUI CADRU"),
+            new(ReportCheck.Noise, T("5. THE NOISE OF EACH FRAME", "5. ZGOMOTUL FIECARUI CADRU"),
             [
                 new(T("against the master", "fata de master"), ResidualRange(d, rp) + T("  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]", "  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]")),
                 new(T("read noise", "zgomot de citire"), ReadNoise(r, rp)),
                 new(T("random banding", "benzi aleatoare"), Banding(v.Noise)),
                 new("verdict", Noise(v.Noise)),
             ]),
-            new(T("5. HOT PIXELS", "5. PIXELI FIERBINTI"),
+            new(ReportCheck.HotPixels, T("6. HOT PIXELS", "6. PIXELI FIERBINTI"),
             [
                 // the three count rows stay on the Pixeli fierbinti tab; the Rezumat's card keeps the
                 // stability and the verdict (R-071, ADR 0041)
@@ -223,32 +230,31 @@ internal static class DarkReport
                     $"OK (informative): {d.Hot.Hot} pixels above {F(Th.HotAdu, 0)} {eq} in {F(mpx, mpx < 1 ? 2 : 1)} Mpx",
                     $"OK (informativ): {RoCount(d.Hot.Hot)}pixeli peste {F(Th.HotAdu, 0)} {eq} in {F(mpx, mpx < 1 ? 2 : 1)} Mpx")),
             ]),
-            new(T("6. FIXED PATTERN: WHAT IS THE SAME IN EVERY FRAME", "6. MODEL FIX: CE E LA FEL IN TOATE CADRELE"),
+            new(ReportCheck.Pattern, T("7. FIXED PATTERN: WHAT IS THE SAME IN EVERY FRAME", "7. MODEL FIX: CE E LA FEL IN TOATE CADRELE"),
             [
                 new(T("fixed banding", "benzi fixe"), StructuredBanding(d)),
                 new("glow", Glow(v.Leak, v.Pattern, eq)),
                 new("verdict", Pattern(v.Pattern, eq)),
             ]),
-            new(T("7. DEAD AND SATURATED PIXELS", "7. PIXELI MORTI SI SATURATI"),
+            new(ReportCheck.DeadSaturated, T("8. DEAD AND SATURATED PIXELS", "8. PIXELI MORTI SI SATURATI"),
             [
                 new("master", T(
                     $"{v.DeadSat.Dead} {(v.DeadSat.Dead == 1 ? "dead pixel" : "dead pixels")} (below the black minus {F(Th.DeadBelowAdu, 0)} ADU), {v.DeadSat.Saturated} saturated (at the white, {F(d.White, 0)})",
                     $"{RoCount(v.DeadSat.Dead)}{(v.DeadSat.Dead == 1 ? "pixel mort" : "pixeli morti")} (sub negru minus {F(Th.DeadBelowAdu, 0)} ADU), {RoCount(v.DeadSat.Saturated)}{(v.DeadSat.Saturated == 1 ? "saturat" : "saturati")} (la alb, {F(d.White, 0)})")),
                 new("verdict", DeadSat(v.DeadSat)),
             ]),
-            new(T("8. HOW MANY DARKS ARE ENOUGH", "8. CATE DARK-URI AJUNG"),
+            new(ReportCheck.Enough, T("9. HOW MANY DARKS ARE ENOUGH", "9. CATE DARK-URI AJUNG"),
             [
                 CurveRow(d.Noise, g),
                 new("master", Enough(d, v.Enough), double.IsNaN(v.Enough.MasterNoise) ? null : [$"{F(v.Enough.MasterNoise, 2)} ADU"]),
                 new("verdict", EnoughVerdictText(v.Enough)),
             ]),
-            new(T("9. HOW WELL THE DARK FITS THE LIGHTS", "9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE"), LightsRows(r, eq)),
-            new("INDEX", IndexRows(r)),
+            new(ReportCheck.Index, "INDEX", IndexRows(r)),
         ];
     }
 
     /// <summary>
-    /// The rows of check 9 (R-050 onwards): the lights' warnings, the persistent hot pixels, their
+    /// The rows of check 2 (R-050 onwards): the lights' warnings, the persistent hot pixels, their
     /// overlap with the master in both directions, the misses, the amplitude and the verdict; a
     /// single unmeasured verdict row without lights.
     /// </summary>
@@ -325,7 +331,7 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The `ce ramane` row of check 9 (R-067): what a plain subtraction of the dark leaves at a hot
+    /// The `ce ramane` row of check 2 (R-067): what a plain subtraction of the dark leaves at a hot
     /// pixel, against the noise of a light, and at how many pixels it passes that noise. A ratio
     /// under 1 takes too much and leaves a hole, one over 1 too little and leaves a rest.
     /// </summary>
@@ -371,7 +377,7 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// One overlap row of check 9 (R-051): the console's line, the levels joined by "; " and the
+    /// One overlap row of check 2 (R-051): the console's line, the levels joined by "; " and the
     /// note in brackets, and the same figures as a table for the window.
     /// </summary>
     /// <param name="label">The row's label.</param>
@@ -402,7 +408,7 @@ internal static class DarkReport
 
     /// <summary>
     /// The lights' equivalent index (R-064) as its tag and the parenthesis that follows it in
-    /// check 9's <c>index lights</c> row and INDEX's <c>lights</c> row: the ratio to the dark and
+    /// check 2's <c>index lights</c> row and INDEX's <c>lights</c> row: the ratio to the dark and
     /// the degrees.
     /// </summary>
     /// <param name="r">The run's result.</param>
@@ -555,8 +561,8 @@ internal static class DarkReport
                 $"latura = latura {SideWithPreposition(w.Side)} fata de centru{(w.RemainderAdu is null ? " (fara bias-uri, cu glow)" : ", dupa scaderea bias-ului (cu glow)")}, {eq}")
             : T("side = the side with the most constant light against the centre (UNMEASURED)", "latura = latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)");
         return T(
-            $"[{ScaleReport.PlaneWords(r.Darks.PlaneNames[r.ReferencePlane])}; mean = how far the frame is above the black, ADU; noise = the noise of the frame, ADU; diff. = how much the frame differs from the master, ADU; bands = how many times more the rows differ from one another than the noise alone would give (1 = no banding); hot = the hot pixels against the master (1 = the same); end = how many degrees the frame is from the end of the series; to discard = more than {F(Th.OffEndCelsius, 1)} degrees from it (check 3); light = the light above what the warming explains, {eq}; {side}]",
-            $"[{ScaleReport.PlaneWords(r.Darks.PlaneNames[r.ReferencePlane])}; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); sfarsit = cu cate grade e cadrul fata de sfarsitul seriei; de aruncat = la peste {F(Th.OffEndCelsius, 1)} grade de el (verificarea 3); lumina = lumina in plus fata de cat explica incalzirea, {eq}; {side}]");
+            $"[{ScaleReport.PlaneWords(r.Darks.PlaneNames[r.ReferencePlane])}; mean = how far the frame is above the black, ADU; noise = the noise of the frame, ADU; diff. = how much the frame differs from the master, ADU; bands = how many times more the rows differ from one another than the noise alone would give (1 = no banding); hot = the hot pixels against the master (1 = the same); end = how many degrees the frame is from the end of the series; to discard = more than {F(Th.OffEndCelsius, 1)} degrees from it (check 4); light = the light above what the warming explains, {eq}; {side}]",
+            $"[{ScaleReport.PlaneWords(r.Darks.PlaneNames[r.ReferencePlane])}; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); sfarsit = cu cate grade e cadrul fata de sfarsitul seriei; de aruncat = la peste {F(Th.OffEndCelsius, 1)} grade de el (verificarea 4); lumina = lumina in plus fata de cat explica incalzirea, {eq}; {side}]");
     }
 
     /// <summary>
@@ -591,8 +597,8 @@ internal static class DarkReport
     /// read.
     /// </summary>
     internal static string EndColumnTip => T(
-        $"how many degrees the frame is from the end of the series ({EndWords}), by the hot pixels; a frame more than {F(Th.OffEndCelsius, 1)} degrees from it is one to discard and has its reason on the line under it (check 3)",
-        $"cu cate grade e cadrul fata de sfarsitul seriei ({EndWords}), dupa pixelii fierbinti; un cadru la peste {F(Th.OffEndCelsius, 1)} grade de el e de aruncat si are motivul pe randul de sub el (verificarea 3)");
+        $"how many degrees the frame is from the end of the series ({EndWords}), by the hot pixels; a frame more than {F(Th.OffEndCelsius, 1)} degrees from it is one to discard and has its reason on the line under it (check 4)",
+        $"cu cate grade e cadrul fata de sfarsitul seriei ({EndWords}), dupa pixelii fierbinti; un cadru la peste {F(Th.OffEndCelsius, 1)} grade de el e de aruncat si are motivul pe randul de sub el (verificarea 4)");
 
     /// <summary>
     /// What the end of the series is, for the texts that name it: the average of the last frames
@@ -613,8 +619,8 @@ internal static class DarkReport
         ArgumentNullException.ThrowIfNull(r);
         Warming w = r.Darks.Warming;
         string what = T(
-            "How hot the master's hot pixels are in each frame, against the master: when the curve climbs, the camera warms during the series; when it falls, the camera cools (check 3).",
-            "Cat de fierbinti sunt pixelii fierbinti ai masterului in fiecare cadru, fata de master: cand curba urca, aparatul se incalzeste in timpul seriei; cand coboara, se raceste (verificarea 3).");
+            "How hot the master's hot pixels are in each frame, against the master: when the curve climbs, the camera warms during the series; when it falls, the camera cools (check 4).",
+            "Cat de fierbinti sunt pixelii fierbinti ai masterului in fiecare cadru, fata de master: cand curba urca, aparatul se incalzeste in timpul seriei; cand coboara, se raceste (verificarea 4).");
         if (w.HasEnd)
         {
             return T(
@@ -938,10 +944,10 @@ internal static class DarkReport
         $"centru {F(r.Centre / n, 2)}, colturi {F(r.TopLeft / n, 2)} / {F(r.TopRight / n, 2)} / {F(r.BottomLeft / n, 2)} / {F(r.BottomRight / n, 2)} (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus {F(r.Top / n, 2)} jos {F(r.Bottom / n, 2)} stanga {F(r.Left / n, 2)} dreapta {F(r.Right / n, 2)}");
 
     /// <summary>
-    /// Check 2's verdict row: the words of <see cref="Leak"/>, with the constant light and the
+    /// Check 3's verdict row: the words of <see cref="Leak"/>, with the constant light and the
     /// master's noise marked bold when the verdict names them (ADR 0016).
     /// </summary>
-    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="l">Check 3's verdict.</param>
     /// <param name="eq">The unit word of the figures.</param>
     /// <param name="norm">The normalisation factor, which turns the constant light back into raw
     /// ADU.</param>
@@ -965,7 +971,7 @@ internal static class DarkReport
     /// The verdict's words; <paramref name="against"/> is the constant light's ratio to the
     /// master's noise, already worded, or empty.
     /// </summary>
-    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="l">Check 3's verdict.</param>
     /// <param name="eq">The unit word of the figures.</param>
     /// <param name="against">The constant light set against the masters' noise, already worded, or
     /// empty.</param>
@@ -1030,7 +1036,7 @@ internal static class DarkReport
     /// constants without biases; a side over the threshold against the masters' noise, bold
     /// (ADR 0016).
     /// </summary>
-    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="l">Check 3's verdict.</param>
     /// <param name="eq">The unit word of the figures.</param>
     /// <param name="norm">The normalisation factor, which turns the light back into raw
     /// ADU.</param>
@@ -1087,7 +1093,7 @@ internal static class DarkReport
     /// <summary>
     /// A side as it follows "latura" in Romanian, with its preposition ("de sus", "din dreapta"),
     /// or as it goes before "side" in English ("the top", "the right"): the words of every side text,
-    /// check 2's, the frames table's note and the ADU scale section's.
+    /// check 3's, the frames table's note and the ADU scale section's.
     /// </summary>
     /// <param name="s">The side.</param>
     /// <returns>The words, in the run's language.</returns>
@@ -1102,7 +1108,7 @@ internal static class DarkReport
     /// <summary>
     /// The words of R-021's brighter case, from R-029's cause of the verdict region.
     /// </summary>
-    /// <param name="l">Check 2's verdict; its split must be set for every cause but the
+    /// <param name="l">Check 3's verdict; its split must be set for every cause but the
     /// fallback.</param>
     /// <returns>The words of the cause, in the run's language.</returns>
     private static string CauseWords(LeakVerdict l)
@@ -1148,7 +1154,7 @@ internal static class DarkReport
     /// The row `lumina pe cadre` (R-028); with lit frames, the largest excess against the masters'
     /// noise, both bold (ADR 0016).
     /// </summary>
-    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="l">Check 3's verdict.</param>
     /// <param name="eq">The unit word of the figures.</param>
     /// <param name="norm">The normalisation factor, which turns the excess back into raw
     /// ADU.</param>
@@ -1184,7 +1190,7 @@ internal static class DarkReport
     /// Why the split (or the sides, which need <paramref name="minFrames"/> frames left) is
     /// unmeasured, or null when it is measured (R-028, R-029).
     /// </summary>
-    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="l">Check 3's verdict.</param>
     /// <param name="minFrames">How many frames must be left once the lit ones are dropped.</param>
     /// <returns>The UNMEASURED words (NEMASURAT in Romanian), or null.</returns>
     private static string? SplitUnmeasured(LeakVerdict l, int minFrames)
@@ -1215,7 +1221,7 @@ internal static class DarkReport
     /// The row `glow / constant` (R-029): the verdict region's split, with the raw ADU beside the
     /// equivalent when the two differ.
     /// </summary>
-    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="l">Check 3's verdict.</param>
     /// <param name="eq">The unit word of the figures.</param>
     /// <param name="norm">The normalisation factor; when not 1 the raw ADU are added.</param>
     /// <returns>The row's value, in the run's language.</returns>
@@ -1256,7 +1262,7 @@ internal static class DarkReport
             "NEMASURAT: la sfarsitul seriei pixelii fierbinti ai masterului nu se vad");
 
     /// <summary>
-    /// The `sfarsitul seriei` row of check 3: which way the camera moved, from the hot pixels of
+    /// The `sfarsitul seriei` row of check 4: which way the camera moved, from the hot pixels of
     /// the first frame to the end of the series, by how many degrees, and where the master sits
     /// against that end, never as a signed figure (ADR 0038, ADR 0043); a series that stayed
     /// within <see cref="Th.MasterNearEndCelsius"/> says so.
@@ -1295,7 +1301,7 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The `de aruncat` row of check 3: the frames more than Th.OffEndCelsius from the end of the
+    /// The `de aruncat` row of check 4: the frames more than Th.OffEndCelsius from the end of the
     /// series, the band's bounds, and where the master would sit without them.
     /// </summary>
     /// <param name="w">The series' warming.</param>
@@ -1325,10 +1331,10 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The verdict row of check 3: whether the master is near the end of the series, whether most
+    /// The verdict row of check 4: whether the master is near the end of the series, whether most
     /// frames are off it, and the frames outside the range -opt corrects.
     /// </summary>
-    /// <param name="v">Check 3's verdict.</param>
+    /// <param name="v">Check 4's verdict.</param>
     /// <param name="nz">The normalisation, whose doubling rule the words name.</param>
     /// <returns>The verdict's words, opening with OK, WARNING, REDO or UNMEASURED (OK, ATENTIE,
     /// REFA or NEMASURAT in Romanian).</returns>
@@ -1498,7 +1504,7 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The <c>fata de master</c> row of check 4: each plane's smallest and largest
+    /// The <c>fata de master</c> row of check 5: each plane's smallest and largest
     /// frame-minus-master sigma, with the median on the reference plane.
     /// </summary>
     /// <param name="d">The dark series.</param>
@@ -1527,7 +1533,7 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The <c>zgomot de citire</c> row of check 4: the biases' read noise per plane and the
+    /// The <c>zgomot de citire</c> row of check 5: the biases' read noise per plane and the
     /// temporal noise above it.
     /// </summary>
     /// <param name="r">The run's result.</param>
@@ -1553,10 +1559,10 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The <c>benzi aleatoare</c> row of check 4: the random row banding, its ratio to the white
+    /// The <c>benzi aleatoare</c> row of check 5: the random row banding, its ratio to the white
     /// noise, and the columns' ratio.
     /// </summary>
-    /// <param name="v">Check 4's verdict.</param>
+    /// <param name="v">Check 5's verdict.</param>
     /// <returns>The row's value, in the run's language.</returns>
     private static string Banding(NoiseVerdict v) =>
         double.IsNaN(v.RowBandingAdu)
@@ -1565,8 +1571,8 @@ internal static class DarkReport
                 $"horizontal: the rows differ from one another by {F(v.RowBandingAdu, 3)} ADU, {F(v.RowBandingRatio, 1)} times what the noise alone would give; vertical: {F(v.ColBandingRatio, 1)} times (1 means no banding)",
                 $"orizontale: randurile difera intre ele cu {F(v.RowBandingAdu, 3)} ADU, de {F(v.RowBandingRatio, 1)} ori cat ar da zgomotul singur; verticale: de {F(v.ColBandingRatio, 1)} ori (1 inseamna fara benzi)");
 
-    /// <summary>The verdict row of check 4.</summary>
-    /// <param name="v">Check 4's verdict.</param>
+    /// <summary>The verdict row of check 5.</summary>
+    /// <param name="v">Check 5's verdict.</param>
     /// <returns>The verdict's words, opening with OK, WARNING or UNMEASURED (OK, ATENTIE or
     /// NEMASURAT in Romanian).</returns>
     private static string Noise(NoiseVerdict v)
@@ -1585,7 +1591,7 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The <c>pixeli peste prag</c> row of check 5: how many master pixels lie above each hot
+    /// The <c>pixeli peste prag</c> row of check 6: how many master pixels lie above each hot
     /// level, all planes together.
     /// </summary>
     /// <param name="d">The dark series.</param>
@@ -1610,7 +1616,7 @@ internal static class DarkReport
         string.Join("  ", d.Master.Select(m => $"{m.Name} {m.Above[level]}"));
 
     /// <summary>
-    /// The <c>cat de fierbinti</c> row of check 5: the hot pixels' percentiles above the black.
+    /// The <c>cat de fierbinti</c> row of check 6: the hot pixels' percentiles above the black.
     /// </summary>
     /// <param name="h">The hot pixels' figures, in raw ADU.</param>
     /// <param name="n">The normalisation factor the percentiles are divided by.</param>
@@ -1624,7 +1630,7 @@ internal static class DarkReport
                 $"in medie {F(h.P50 / n, 0)} {eq}; 80 % dintre ei intre {F(h.P10 / n, 0)} si {F(h.P90 / n, 0)}; cei mai fierbinti 1 % peste {F(h.P99 / n, 0)} (din {RoCount(h.Hot)}{(h.Hot == 1 ? "pixel" : "pixeli")})");
 
     /// <summary>
-    /// The <c>stabilitate</c> row of check 5: the hot pixels present in every frame, the flickering
+    /// The <c>stabilitate</c> row of check 6: the hot pixels present in every frame, the flickering
     /// ones, their temporal noise and the RTS candidates.
     /// </summary>
     /// <param name="d">The dark series.</param>
@@ -1660,7 +1666,7 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The <c>stabilitate</c> row of check 5 (R-031): the statements of <see cref="Stability"/>
+    /// The <c>stabilitate</c> row of check 6 (R-031): the statements of <see cref="Stability"/>
     /// joined by "; " for the console and carried as lines for the window; one unmeasured line
     /// stands alone.
     /// </summary>
@@ -1675,7 +1681,7 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The <c>benzi fixe</c> row of check 6: the worst planes' row and column profiles of
+    /// The <c>benzi fixe</c> row of check 7: the worst planes' row and column profiles of
     /// the master.
     /// </summary>
     /// <param name="d">The dark series.</param>
@@ -1691,11 +1697,11 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The <c>glow</c> row of check 6: the glow at check 2's region, with the constant beside it
+    /// The <c>glow</c> row of check 7: the glow at check 3's region, with the constant beside it
     /// when the split is measured.
     /// </summary>
-    /// <param name="l">Check 2's verdict.</param>
-    /// <param name="p">Check 6's verdict.</param>
+    /// <param name="l">Check 3's verdict.</param>
+    /// <param name="p">Check 7's verdict.</param>
     /// <param name="eq">The unit word of the figures.</param>
     /// <returns>The row's value, in the run's language.</returns>
     private static string Glow(LeakVerdict l, PatternVerdict p, string eq)
@@ -1715,8 +1721,8 @@ internal static class DarkReport
                 $"{Signed(p.GlowAdu, 2)} {eq} la {RegionName(l.Where)} fata de centru ({source})");
     }
 
-    /// <summary>The verdict row of check 6.</summary>
-    /// <param name="p">Check 6's verdict.</param>
+    /// <summary>The verdict row of check 7.</summary>
+    /// <param name="p">Check 7's verdict.</param>
     /// <param name="eq">The unit word of the figures.</param>
     /// <returns>The verdict's words, opening with OK, WARNING or UNMEASURED (OK, ATENTIE or
     /// NEMASURAT in Romanian).</returns>
@@ -1736,8 +1742,8 @@ internal static class DarkReport
         };
     }
 
-    /// <summary>The verdict row of check 7.</summary>
-    /// <param name="v">Check 7's verdict.</param>
+    /// <summary>The verdict row of check 8.</summary>
+    /// <param name="v">Check 8's verdict.</param>
     /// <returns>The verdict's words, opening with OK or WARNING (OK or ATENTIE in
     /// Romanian).</returns>
     private static string DeadSat(DeadSatVerdict v) => v.Verdict == Verdict.Ok
@@ -1747,7 +1753,7 @@ internal static class DarkReport
             $"ATENTIE: {RoCount(v.Dead)}{(v.Dead == 1 ? "pixel mort" : "pixeli morti")}, {RoCount(v.Saturated)}{(v.Saturated == 1 ? "saturat" : "saturati")}");
 
     /// <summary>
-    /// The <c>zgomot dupa medie</c> row of check 8: the measured and the expected noise of the mean
+    /// The <c>zgomot dupa medie</c> row of check 9: the measured and the expected noise of the mean
     /// of n frames.
     /// </summary>
     /// <param name="nv">The noise-against-n figures.</param>
@@ -1761,7 +1767,7 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The <c>zgomot dupa medie</c> row of check 8 (R-024): the console's line, the points joined
+    /// The <c>zgomot dupa medie</c> row of check 9 (R-024): the console's line, the points joined
     /// by "; " and the note in brackets, and the same points as a table for the window; without a
     /// curve the unmeasured line alone, the note still in brackets.
     /// </summary>
@@ -1783,10 +1789,10 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The <c>master</c> row of check 8: the median master's noise and what it is computed from.
+    /// The <c>master</c> row of check 9: the median master's noise and what it is computed from.
     /// </summary>
     /// <param name="d">The dark series.</param>
-    /// <param name="e">Check 8's verdict.</param>
+    /// <param name="e">Check 9's verdict.</param>
     /// <returns>The row's value, in the run's language.</returns>
     private static string Enough(DarkSeriesAnalysis d, EnoughVerdict e)
     {
@@ -1810,8 +1816,8 @@ internal static class DarkReport
             $"{RunReport.Frames(e.Frames)} {(e.Frames == 1 ? "da" : "dau")} un master cu {F(e.MasterNoise, 2)} ADU de zgomot pe pixel ({basis}){half}");
     }
 
-    /// <summary>The verdict row of check 8.</summary>
-    /// <param name="e">Check 8's verdict.</param>
+    /// <summary>The verdict row of check 9.</summary>
+    /// <param name="e">Check 9's verdict.</param>
     /// <returns>The verdict's words, opening with OK, WARNING or UNMEASURED (OK, ATENTIE or
     /// NEMASURAT in Romanian).</returns>
     private static string EnoughVerdictText(EnoughVerdict e) => e.Verdict switch

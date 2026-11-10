@@ -218,9 +218,13 @@ public class AcceptanceTests
         Assert.Equal(0, code);
         Assert.Contains("Se masoara dark-urile: 4 / 4", stderr, StringComparison.Ordinal);
         Assert.Contains("=== DARK-URI: cadre citite 4 din 4, 256 x 192 px, valori de la 200 (negru) la 65535 ADU (alb) (FITS pe 16 biti, albul dedus din fisier, negrul luat din bias-uri), filtre de culoare RGGB ===", stdout, StringComparison.Ordinal);
-        foreach (string section in new[] { "  2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "  3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "  4. ZGOMOTUL FIECARUI CADRU", "  5. PIXELI FIERBINTI", "  6. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "  7. PIXELI MORTI SI SATURATI", "  8. CATE DARK-URI AJUNG", "  TABEL PE CADRE" })
+        // the checks in the Rezumat's order, numbered as they stand (ADR 0046)
+        int at = -1;
+        foreach (string section in new[] { "  2. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE", "  3. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "  4. INCALZIREA CAMEREI IN TIMPUL SERIEI", "  5. ZGOMOTUL FIECARUI CADRU", "  6. PIXELI FIERBINTI", "  7. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "  8. PIXELI MORTI SI SATURATI", "  9. CATE DARK-URI AJUNG", "  INDEX", "  TABEL PE CADRE" })
         {
-            Assert.Contains(section + "\n", stdout, StringComparison.Ordinal);
+            int found = stdout.IndexOf(section + "\n", StringComparison.Ordinal);
+            Assert.True(found > at, $"'{section.Trim()}' is missing or out of order");
+            at = found;
         }
 
         Assert.Contains("pixeli peste prag  : peste 10: 5; peste 20: 4; peste 50: 3; peste 100: 2; peste 500: 1  [pixeli ai masterului, ADU peste negru, toate culorile]", stdout, StringComparison.Ordinal);
@@ -253,7 +257,7 @@ public class AcceptanceTests
         }
 
         string report = File.ReadAllText(Path.Combine(outDir.Dir, "darkscheck-report.txt")).ReplaceLineEndings("\n");
-        Assert.Contains("  8. CATE DARK-URI AJUNG\n", report, StringComparison.Ordinal);
+        Assert.Contains("  9. CATE DARK-URI AJUNG\n", report, StringComparison.Ordinal);
         string[] csv = File.ReadAllLines(Path.Combine(outDir.Dir, "darkscheck-darks.csv"));
         Assert.Equal(4, csv.Length);
         Assert.StartsWith("index,file,time,exposure_s,iso,error,skipped,mean_above_black,R_median,", csv[0], StringComparison.Ordinal);

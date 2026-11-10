@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- LightsView: check 9, the lights against the dark: the report's rows, the lights-over-dark
+<!-- LightsView: check 2, the lights against the dark: the report's rows, the lights-over-dark
      ratio per light with the five verdict bounds as guide lines, and the lights table. -->
 
 <UserControl x:Class="DarksCheck.Wpf.LightsView"
@@ -92,8 +92,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <Button Content="{l:T En='Choose lights...', Ro='Alege lights-urile...'}" Click="ChooseLights" />
           <Button Content="{l:T En='Lights of the open folder', Ro='Lights-urile folderului'}" Click="ClearLights" Margin="10,0,0,0" IsEnabled="{Binding HasLightsFrom}"
                   ToolTip="{l:T En='Back to the lights of the open folder, if it has any', Ro='Inapoi la lights-urile folderului deschis, daca are'}" />
-          <Button Content="{l:T En='Analyse again', Ro='Analizeaza din nou'}" Click="Rerun" Margin="10,0,0,0" IsEnabled="{Binding HasFolder}"
-                  ToolTip="{l:T En='Analyses the open folder again, with the chosen lights, the partner and the settings of now', Ro='Analizeaza din nou folderul deschis, cu lights-urile alese, partenerul si setarile de acum'}" />
         </StackPanel>
       </StackPanel>
     </Border>
@@ -105,7 +103,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </Grid.ColumnDefinitions>
       <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,14,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="{l:T En='9. HOW WELL THE DARK FITS THE LIGHTS', Ro='9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE'}" />
+          <TextBlock Style="{StaticResource Heading}" Text="{l:T En='2. HOW WELL THE DARK FITS THE LIGHTS', Ro='2. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE'}" />
           <ItemsControl ItemsSource="{Binding LightRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
         </StackPanel>
       </Border>

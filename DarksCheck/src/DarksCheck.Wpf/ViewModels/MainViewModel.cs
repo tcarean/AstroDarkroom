@@ -191,7 +191,8 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>
     /// The partner folder of `--against` (R-073); null for none. Not stored, and dropped when
-    /// another folder is opened, like the lights folder (ADR 0041).
+    /// another folder is opened, like the lights folder (ADR 0041). Setting it runs nothing: the
+    /// window chooses through <see cref="ChoosePartnerAsync"/>.
     /// </summary>
     public string? Partner
     {
@@ -204,10 +205,6 @@ public sealed class MainViewModel : ObservableObject
                 Log.Info("partner=" + LogText.Str(v));
                 Raise(nameof(HasPartner));
                 Raise(nameof(PartnerText));
-                if (HasResult)
-                {
-                    Status = WindowTexts.PartnerChanged;
-                }
             }
         }
     }
@@ -218,7 +215,8 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>
     /// The folder the lights are taken from instead of the open folder's own (R-055, R-122):
-    /// null for the folder's own. Not stored, and dropped when another folder is opened.
+    /// null for the folder's own. Not stored, and dropped when another folder is opened. Setting it
+    /// runs nothing: the window chooses through <see cref="ChooseLightsFromAsync"/>.
     /// </summary>
     public string? LightsFrom
     {
@@ -231,10 +229,6 @@ public sealed class MainViewModel : ObservableObject
                 Log.Info("lightsFrom=" + LogText.Str(v));
                 Raise(nameof(HasLightsFrom));
                 Raise(nameof(LightsFromText));
-                if (HasResult)
-                {
-                    Status = WindowTexts.LightsFromChanged;
-                }
             }
         }
     }
@@ -326,8 +320,8 @@ public sealed class MainViewModel : ObservableObject
     public bool HasResult => _result is not null;
 
     /// <summary>
-    /// A line under the top bar: what was written, that the run was stopped, that the partner
-    /// changed.
+    /// A line under the top bar: what was written, that the run was stopped, that the label was
+    /// copied.
     /// </summary>
     public string? Status { get => _status; private set => Set(ref _status, value); }
 
@@ -608,7 +602,36 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>
     /// Runs the current folder again, with the settings and the partner as they are now.
     /// </summary>
+    /// <returns>The run; a completed task when no folder is open.</returns>
     public Task RerunAsync() => HasFolder ? OpenAsync(_folder) : Task.CompletedTask;
+
+    /// <summary>
+    /// The partner chosen on the Index tab or the problem card (R-073, R-077): set, then the open
+    /// folder runs again at once with it, the same folder chosen again included, and a clear too;
+    /// no button to press (ADR 0048). Without a folder open it is only set.
+    /// </summary>
+    /// <param name="folder">The partner folder; null or blank for none.</param>
+    /// <returns>The run; a completed task when no folder is open.</returns>
+    public Task ChoosePartnerAsync(string? folder)
+    {
+        Partner = folder;
+        Log.Info("partner chosen: " + (HasFolder ? "the folder runs again" : "no folder is open yet"));
+        return RerunAsync();
+    }
+
+    /// <summary>
+    /// The lights folder chosen on the Lights tab (R-122): set, then the open folder runs again at
+    /// once with those lights, the same folder chosen again included, and with its own after a
+    /// clear; no button to press (ADR 0048). Without a folder open it is only set.
+    /// </summary>
+    /// <param name="folder">The lights folder; null or blank for the open folder's own.</param>
+    /// <returns>The run; a completed task when no folder is open.</returns>
+    public Task ChooseLightsFromAsync(string? folder)
+    {
+        LightsFrom = folder;
+        Log.Info("lights chosen: " + (HasFolder ? "the folder runs again" : "no folder is open yet"));
+        return RerunAsync();
+    }
 
     /// <summary>Stops the run in flight, if any.</summary>
     public void CancelPending()
@@ -723,13 +746,12 @@ public sealed class MainViewModel : ObservableObject
 
         HeaderLine = DarkReport.HeaderLine(r);
         IReadOnlyList<ReportSection> sections = DarkReport.Sections(r);
-        // the Rezumat's cards: check 9 right under the session card, then the rest in the console's
-        // order, each card with the rows the core marks for the Rezumat (R-071, ADR 0041)
-        Sections = sections.Where(IsLightsCheck).Concat(sections.Where(s => !IsLightsCheck(s)))
-            .Select(s => new SectionVm(s.Title, s.Rows.Where(row => row.Summary).Select(Row).ToList())).ToList();
-        HotRows = Rows(sections, "5.");
-        LightRows = Rows(sections, "9.");
-        IndexRows = Rows(sections, "INDEX");
+        // the Rezumat's cards in the console's order, each with the rows the core marks for the Rezumat
+        // (R-071, ADR 0041, ADR 0046)
+        Sections = sections.Select(s => new SectionVm(s.Title, s.Rows.Where(row => row.Summary).Select(Row).ToList())).ToList();
+        HotRows = Rows(sections, ReportCheck.HotPixels);
+        LightRows = Rows(sections, ReportCheck.Lights);
+        IndexRows = Rows(sections, ReportCheck.Index);
         ScaleRows = ScaleReport.Rows(r).Select(Row).ToList();
         ScaleParagraphs = ScaleReport.Paragraphs(r);
         Frames = DarkReport.FrameRows(r).Select(FrameRowVm.From).ToList();
@@ -744,7 +766,7 @@ public sealed class MainViewModel : ObservableObject
 
         DarkSeriesAnalysis d = r.Darks;
         int rp = r.ReferencePlane;
-        IReadOnlyList<ReportRow> leak = sections[0].Rows;
+        IReadOnlyList<ReportRow> leak = sections.Single(s => s.Check == ReportCheck.Leaks).Rows;
         Maps =
         [
             new MapVm("MASTER DARK", Map(d.MeanMaps[rp]), Note(leak, "master dark"), WindowTexts.NoDarkMap),
@@ -810,20 +832,12 @@ public sealed class MainViewModel : ObservableObject
     /// with a table has no lines, the table standing in for the text.</returns>
     private static RowVm Row(ReportRow r) => new(r.Label, r.Value, r.Rest, r.Verdict, r.BoldParts, r.Table is not null ? [] : r.Lines ?? [r.Rest], r.Table is null ? null : new TableVm(r.Table.Header, r.Table.Rows, r.Table.Note));
 
-    /// <summary>Whether a section is check 9, the lights against the dark, which the Rezumat puts first.</summary>
-    /// <param name="s">The section.</param>
-    /// <returns>True for the section whose title starts with "9.".</returns>
-    private static bool IsLightsCheck(ReportSection s) => s.Title.StartsWith("9.", StringComparison.Ordinal);
-
-    /// <summary>
-    /// The rows of every section whose title starts with the given text, in order.
-    /// </summary>
+    /// <summary>The rows of one check's section, in order, all of them (the tabs show what the Rezumat leaves out).</summary>
     /// <param name="sections">The report's sections.</param>
-    /// <param name="titleStart">The start of the title, compared ordinally ("5.", "9.",
-    /// "INDEX").</param>
-    /// <returns>The rows as the window binds them; empty when no section matches.</returns>
-    private static List<RowVm> Rows(IReadOnlyList<ReportSection> sections, string titleStart) =>
-        sections.Where(s => s.Title.StartsWith(titleStart, StringComparison.Ordinal)).SelectMany(s => s.Rows).Select(Row).ToList();
+    /// <param name="check">The check whose rows are wanted.</param>
+    /// <returns>The rows as the window binds them; empty when no section is that check.</returns>
+    private static List<RowVm> Rows(IReadOnlyList<ReportSection> sections, ReportCheck check) =>
+        sections.Where(s => s.Check == check).SelectMany(s => s.Rows).Select(Row).ToList();
 
     /// <summary>The value of the first row with the given label.</summary>
     /// <param name="rows">The rows to search.</param>

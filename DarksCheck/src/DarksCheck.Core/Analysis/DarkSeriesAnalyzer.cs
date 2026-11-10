@@ -302,7 +302,7 @@ internal sealed record BandingFigures(string Name, double RowStd, double ColStd,
 /// above (warmer than) the end; NaN without an end.</param>
 /// <param name="Cooling">True when the series cooled: the end is under the first frame, or,
 /// without an end, the last frame's ratio is under the first's; the one direction every row of
-/// check 3 names (ADR 0038).</param>
+/// check 4 names (ADR 0038).</param>
 /// <param name="OffEndFrames">The indices (<see cref="FrameInfo.Index"/>) of the frames outside
 /// the band, a ratio at or under 0 included; empty without an end.</param>
 /// <param name="OffEndLow">The band's lower bound, as a ratio to the master.</param>
@@ -381,14 +381,14 @@ internal sealed record DarkSeriesAnalysis(
 }
 
 /// <summary>
-/// Checks 2 to 8 on a stack of darks, as the prototype did them (`prototype/analyze_darks.py`,
+/// Checks 3 to 9 on a stack of darks, as the prototype did them (`prototype/analyze_darks.py`,
 /// `supplementary.py`): the median and mean masters, every frame's figures and residual, the
 /// hot pixels and their stability, the noise curve, the binned maps, the structured banding
 /// and the warming of the series. Numbers only; the verdicts are <see cref="DarkVerdicts"/>.
 /// </summary>
 internal static class DarkSeriesAnalyzer
 {
-    /// <summary>Measures a stack of darks: checks 2 to 8's numbers.</summary>
+    /// <summary>Measures a stack of darks: checks 3 to 9's numbers.</summary>
     /// <param name="stack">The decoded darks; not null; at least one must have decoded.</param>
     /// <param name="threads">How many threads the loops take; below 1 counts as 1.</param>
     /// <param name="progress">Told (done, total) after each frame's figures; null for

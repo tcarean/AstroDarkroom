@@ -20,7 +20,7 @@ using System.Windows.Controls;
 namespace DarksCheck.Wpf;
 
 /// <summary>
-/// The Pixeli fierbinti tab: the rows of check 5 and the noise curve of check 8; the code-behind
+/// The Pixeli fierbinti tab: the rows of check 6 and the noise curve of check 9; the code-behind
 /// only loads the XAML.
 /// </summary>
 public partial class HotPixelsView : UserControl

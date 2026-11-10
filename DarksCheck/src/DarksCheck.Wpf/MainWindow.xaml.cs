@@ -87,21 +87,26 @@ public partial class MainWindow : Window
     /// <summary>The Index tab's copy button: puts the label in the clipboard.</summary>
     internal void CopyLabelFromView() => CopyLabel(this, new RoutedEventArgs());
 
-    /// <summary>The Index tab's partner button: asks for the partner folder.</summary>
+    /// <summary>The Index tab's partner button: asks for the partner folder; a choice runs the folder again.</summary>
     internal void ChoosePartnerFromView() => ChoosePartner(this, new RoutedEventArgs());
 
-    /// <summary>The Index tab's clear button: forgets the partner folder.</summary>
+    /// <summary>The Index tab's clear button: forgets the partner folder and runs the folder again (ADR 0048).</summary>
     internal void ClearPartnerFromView() => ClearPartner(this, new RoutedEventArgs());
 
-    /// <summary>The Lights tab's lights button (R-122): asks for the folder of lights.</summary>
+    /// <summary>The Lights tab's lights button (R-122): asks for the folder of lights; a choice runs the folder again.</summary>
     internal void ChooseLightsFromView() => ChooseLights();
 
-    /// <summary>The Lights tab's clear button (R-122): back to the open folder's own lights.</summary>
-    internal void ClearLightsFromView() => _vm.LightsFrom = null;
+    /// <summary>The Lights tab's clear button (R-122): back to the open folder's own lights, run again (ADR 0048).</summary>
+    internal void ClearLightsFromView()
+    {
+        Log.Info("lights cleared");
+        _ = _vm.ChooseLightsFromAsync(null);
+    }
 
     /// <summary>
     /// Asks for the folder of lights (R-055, R-122), starting in the current choice when it still
-    /// exists, and sets it on the view-model; a cancelled dialog changes nothing.
+    /// exists, and hands it to the view-model, which runs the folder again with it (ADR 0048); a
+    /// cancelled dialog changes nothing.
     /// </summary>
     private void ChooseLights()
     {
@@ -118,17 +123,7 @@ public partial class MainWindow : Window
         }
 
         Log.Info("lights dialog: chose " + dlg.FolderName);
-        _vm.LightsFrom = dlg.FolderName;
-    }
-
-    /// <summary>
-    /// The Index tab's rerun button: runs the same folder again with the settings and the partner
-    /// as they are now.
-    /// </summary>
-    internal void RerunFromView()
-    {
-        Log.Info("rerun pressed");
-        _ = _vm.RerunAsync();
+        _ = _vm.ChooseLightsFromAsync(dlg.FolderName);
     }
 
     /// <summary>
@@ -144,19 +139,19 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// The partner folder (R-073): a library or another session; the current one proposed.
+    /// The partner folder (R-073, R-077), from the Index tab or the problem card: a library or
+    /// another session, the current one proposed.
     /// </summary>
     /// <param name="sender">The button.</param>
     /// <param name="e">The click.</param>
     private void ChoosePartner(object sender, RoutedEventArgs e) => ChoosePartner();
 
     /// <summary>
-    /// Asks for the partner folder, starting in the current partner when it still exists, and sets
-    /// it on the view-model.
+    /// Asks for the partner folder, starting in the current partner when it still exists, and hands
+    /// it to the view-model, which runs the folder again with it, the same one again included (ADR
+    /// 0048); a cancelled dialog changes nothing.
     /// </summary>
-    /// <returns>True when a folder was chosen (the same one again counts); false when the dialog
-    /// was cancelled.</returns>
-    private bool ChoosePartner()
+    private void ChoosePartner()
     {
         Microsoft.Win32.OpenFolderDialog dlg = new() { Title = WindowTexts.ChoosePartnerTitle, Multiselect = false };
         if (_vm.Partner is string p && Directory.Exists(p))
@@ -167,31 +162,20 @@ public partial class MainWindow : Window
         if (dlg.ShowDialog(this) != true)
         {
             Log.Info("partner dialog: cancelled");
-            return false;
+            return;
         }
 
         Log.Info("partner dialog: chose " + dlg.FolderName);
-        _vm.Partner = dlg.FolderName;
-        return true;
+        _ = _vm.ChoosePartnerAsync(dlg.FolderName);
     }
 
-    /// <summary>Forgets the partner folder; the next run has none.</summary>
+    /// <summary>Forgets the partner folder and runs the folder again without it (ADR 0048).</summary>
     /// <param name="sender">The button.</param>
     /// <param name="e">The click.</param>
-    private void ClearPartner(object sender, RoutedEventArgs e) => _vm.Partner = null;
-
-    /// <summary>
-    /// The problem card's way out for a session without darks (R-077): choose the partner, run the
-    /// same folder again; a cancelled dialog does nothing.
-    /// </summary>
-    /// <param name="sender">The button.</param>
-    /// <param name="e">The click.</param>
-    private void ChoosePartnerAndRerun(object sender, RoutedEventArgs e)
+    private void ClearPartner(object sender, RoutedEventArgs e)
     {
-        if (ChoosePartner())
-        {
-            _ = _vm.RerunAsync();
-        }
+        Log.Info("partner cleared");
+        _ = _vm.ChoosePartnerAsync(null);
     }
 
     /// <summary>

@@ -18,48 +18,7 @@ Copyright (C) 2026 Tudor Carean
     1 ADU-eq           : 1 ADU din fisier: setul e facut chiar la setarile de referinta, ISO 400, 120.0 s
     pasul valorilor    : langa negru, valorile din fisier cresc din 1 in 1 ADU; primul cadru are 24 de valori diferite (pixelii verzi G1)
 
-  2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU
-    master dark        : centru 0.12, colturi -0.01 / -0.04 / -0.11 / 0.00 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus -0.02 jos 0.00 stanga -0.02 dreapta -0.01  [pixelii verzi G1, ADU peste negru, media a 4 cadre, pe patrate de 32 px]
-    master bias        : centru -0.11, colturi 0.16 / 0.02 / -0.08 / 0.15 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus 0.06 jos -0.05 stanga -0.02 dreapta 0.06  [pixelii verzi G1, ADU peste negru, media a 2 cadre]
-    dark - bias        : centru 0.23, colturi -0.17 / -0.05 / -0.04 / -0.14 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus -0.08 jos 0.05 stanga -0.01 dreapta -0.07; pixelul mediu -0.03, aproape toti (98 %) intre -0.31 si 0.23
-    lumina pe cadre    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
-    glow / constant    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
-    lumina constanta   : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
-    verdict            : OK: nicio margine si niciun colt nu difera de centru cu peste 1.0 ADU (cel mai mult -0.40, la stanga-sus, pe dark minus bias); lumina pe cadre nu s-a putut masura
-
-  3. INCALZIREA CAMEREI IN TIMPUL SERIEI
-    sfarsitul seriei   : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
-    de aruncat         : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
-    verdict            : OK: niciun cadru nu e prea departe de master (pixelii fierbinti ai fiecarui cadru sunt intre 0.7 si 1.4 din ai masterului); sunt mai putin de 6 cadre, deci sfarsitul seriei nu se masoara
-
-  4. ZGOMOTUL FIECARUI CADRU
-    fata de master     : R 2.65 .. 2.71; G1 2.65 .. 2.72 (in medie 2.69); G2 2.61 .. 2.71; B 2.62 .. 2.71  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]
-    zgomot de citire   : R 2.02  G1 2.03  G2 2.03  B 2.03 ADU (din 1 perechi de bias-uri luate unul dupa altul); zgomotul adaugat in timpul expunerii, peste cel de citire, pe pixelii verzi G1: ~2.23 ADU (vine din caldura senzorului si din pasul valorilor)
-    benzi aleatoare    : orizontale: randurile difera intre ele cu 0.238 ADU, de 1.0 ori cat ar da zgomotul singur; verticale: de 1.0 ori (1 inseamna fara benzi)
-    verdict            : OK: niciun cadru nu are zgomotul de peste 1.5 ori zgomotul mediu (2.69 ADU)
-
-  5. PIXELI FIERBINTI
-    pixeli peste prag  : peste 10: 20; peste 20: 20; peste 50: 20; peste 100: 20; peste 500: 0  [pixeli ai masterului, ADU peste negru, toate culorile]
-    pe culori, peste 20: R 20  G1 0  G2 0  B 0
-    cat de fierbinti   : in medie 240 ADU; 80 % dintre ei intre 238 si 240; cei mai fierbinti 1 % peste 241 (din 20 de pixeli)
-    stabilitate        : 20 din 20 se vad (peste jumatate din prag) in toate cele 4 cadre; 0 lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu 2.57 ADU, ceilalti pixeli cu 2.38; 0 pixeli verzi G1 sar intre doua niveluri (RTS: variaza de peste 6 ori cat zgomotul unui cadru, 3.01)
-    verdict            : OK (informativ): 20 de pixeli peste 20 ADU in 0.05 Mpx
-
-  6. MODEL FIX: CE E LA FEL IN TOATE CADRELE
-    benzi fixe         : randurile masterului difera intre ele cu 0.206 ADU (1.17 intre cel mai luminos si cel mai intunecat, pe R), coloanele cu 0.222 (1.45, pe R)  [dupa ce se scot variatiile lente, pe cate 101 randuri sau coloane]
-    glow               : -0.40 ADU la stanga-sus fata de centru (pe dark minus bias)
-    verdict            : OK: benzile fixe raman sub 2.0 ADU intre cel mai luminos si cel mai intunecat rand, iar marginile sub 1.0 fata de centru
-
-  7. PIXELI MORTI SI SATURATI
-    master             : 0 pixeli morti (sub negru minus 50 ADU), 0 saturati (la alb, 65535)
-    verdict            : OK: niciun pixel mort sau saturat pe master
-
-  8. CATE DARK-URI AJUNG
-    zgomot dupa medie  : 1 cadru: 3.01 (se astepta 3.01); 2 cadre: 2.14 (se astepta 2.13)  [pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul]
-    master             : 4 cadre dau un master cu 1.89 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 3.01); un master din 2 cadre facut cu mediana si unul din celelalte 2 facut cu media difera cu 3.03 ADU
-    verdict            : ATENTIE: doar 4 cadre; trebuie cel putin 10, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi 1.89 ADU)
-
-  9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE
+  2. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE
     pixeli fierbinti   : 20 de pixeli fierbinti se vad in lights in acelasi loc, in cel putin 3 din 3 cadre (pixeli singuri, nu parte dintr-o stea, mai luminosi decat imprejurimea cu peste 6 ori zgomotul ei)
     in masterul dark   : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [cati dintre acesti pixeli sunt si in masterul dark, peste fiecare prag in ADU]
     masterul in lights : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [cati dintre pixelii masterului de peste fiecare prag se vad si in lights]
@@ -70,13 +29,54 @@ Copyright (C) 2026 Tudor Carean
     index lights       : idx121 (de 0.50 ori cat dark-ul, adica cu 5.9 grade mai reci decat el)
     verdict            : ATENTIE: foloseste dark-ul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.50 ori cat in dark: dark-ul e mai cald cu 5.9 grade, ii vede pe toti, dar scazut ar scoate prea mult si ar lasa puncte negre
 
+  3. SCURGERI DE LUMINA SI DIFERENTE PE CADRU
+    master dark        : centru 0.12, colturi -0.01 / -0.04 / -0.11 / 0.00 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus -0.02 jos 0.00 stanga -0.02 dreapta -0.01  [pixelii verzi G1, ADU peste negru, media a 4 cadre, pe patrate de 32 px]
+    master bias        : centru -0.11, colturi 0.16 / 0.02 / -0.08 / 0.15 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus 0.06 jos -0.05 stanga -0.02 dreapta 0.06  [pixelii verzi G1, ADU peste negru, media a 2 cadre]
+    dark - bias        : centru 0.23, colturi -0.17 / -0.05 / -0.04 / -0.14 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus -0.08 jos 0.05 stanga -0.01 dreapta -0.07; pixelul mediu -0.03, aproape toti (98 %) intre -0.31 si 0.23
+    lumina pe cadre    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    glow / constant    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    lumina constanta   : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    verdict            : OK: nicio margine si niciun colt nu difera de centru cu peste 1.0 ADU (cel mai mult -0.40, la stanga-sus, pe dark minus bias); lumina pe cadre nu s-a putut masura
+
+  4. INCALZIREA CAMEREI IN TIMPUL SERIEI
+    sfarsitul seriei   : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    de aruncat         : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    verdict            : OK: niciun cadru nu e prea departe de master (pixelii fierbinti ai fiecarui cadru sunt intre 0.7 si 1.4 din ai masterului); sunt mai putin de 6 cadre, deci sfarsitul seriei nu se masoara
+
+  5. ZGOMOTUL FIECARUI CADRU
+    fata de master     : R 2.65 .. 2.71; G1 2.65 .. 2.72 (in medie 2.69); G2 2.61 .. 2.71; B 2.62 .. 2.71  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]
+    zgomot de citire   : R 2.02  G1 2.03  G2 2.03  B 2.03 ADU (din 1 perechi de bias-uri luate unul dupa altul); zgomotul adaugat in timpul expunerii, peste cel de citire, pe pixelii verzi G1: ~2.23 ADU (vine din caldura senzorului si din pasul valorilor)
+    benzi aleatoare    : orizontale: randurile difera intre ele cu 0.238 ADU, de 1.0 ori cat ar da zgomotul singur; verticale: de 1.0 ori (1 inseamna fara benzi)
+    verdict            : OK: niciun cadru nu are zgomotul de peste 1.5 ori zgomotul mediu (2.69 ADU)
+
+  6. PIXELI FIERBINTI
+    pixeli peste prag  : peste 10: 20; peste 20: 20; peste 50: 20; peste 100: 20; peste 500: 0  [pixeli ai masterului, ADU peste negru, toate culorile]
+    pe culori, peste 20: R 20  G1 0  G2 0  B 0
+    cat de fierbinti   : in medie 240 ADU; 80 % dintre ei intre 238 si 240; cei mai fierbinti 1 % peste 241 (din 20 de pixeli)
+    stabilitate        : 20 din 20 se vad (peste jumatate din prag) in toate cele 4 cadre; 0 lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu 2.57 ADU, ceilalti pixeli cu 2.38; 0 pixeli verzi G1 sar intre doua niveluri (RTS: variaza de peste 6 ori cat zgomotul unui cadru, 3.01)
+    verdict            : OK (informativ): 20 de pixeli peste 20 ADU in 0.05 Mpx
+
+  7. MODEL FIX: CE E LA FEL IN TOATE CADRELE
+    benzi fixe         : randurile masterului difera intre ele cu 0.206 ADU (1.17 intre cel mai luminos si cel mai intunecat, pe R), coloanele cu 0.222 (1.45, pe R)  [dupa ce se scot variatiile lente, pe cate 101 randuri sau coloane]
+    glow               : -0.40 ADU la stanga-sus fata de centru (pe dark minus bias)
+    verdict            : OK: benzile fixe raman sub 2.0 ADU intre cel mai luminos si cel mai intunecat rand, iar marginile sub 1.0 fata de centru
+
+  8. PIXELI MORTI SI SATURATI
+    master             : 0 pixeli morti (sub negru minus 50 ADU), 0 saturati (la alb, 65535)
+    verdict            : OK: niciun pixel mort sau saturat pe master
+
+  9. CATE DARK-URI AJUNG
+    zgomot dupa medie  : 1 cadru: 3.01 (se astepta 3.01); 2 cadre: 2.14 (se astepta 2.13)  [pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul]
+    master             : 4 cadre dau un master cu 1.89 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 3.01); un master din 2 cadre facut cu mediana si unul din celelalte 2 facut cu media difera cu 3.03 ADU
+    verdict            : ATENTIE: doar 4 cadre; trebuie cel putin 10, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi 1.89 ADU)
+
   INDEX
     dark-uri (partener): idx241 (240.5 ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s); eticheta <partener>-idx241
     eticheta           : <sesiune>-idx121
     lights             : ca un dark cu idx121 (de 0.50 ori cat dark-ul, adica cu 5.9 grade mai reci decat el)
 
   TABEL PE CADRE
-     nr  fisier                ora        medie  zgomot    dif.   benzi   fierb. sfarsit  lumina  latura   >20   [pixelii verzi G1; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); sfarsit = cu cate grade e cadrul fata de sfarsitul seriei; de aruncat = la peste 2.0 grade de el (verificarea 3); lumina = lumina in plus fata de cat explica incalzirea, ADU; latura = latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)]
+     nr  fisier                ora        medie  zgomot    dif.   benzi   fierb. sfarsit  lumina  latura   >20   [pixelii verzi G1; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); sfarsit = cu cate grade e cadrul fata de sfarsitul seriei; de aruncat = la peste 2.0 grade de el (verificarea 4); lumina = lumina in plus fata de cat explica incalzirea, ADU; latura = latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)]
       1  DSC_0001.fit          00:48:53    0.11    3.02    2.65     1.0    0.998       -       -       -     0
       2  DSC_0002.fit          00:50:53    0.11    2.99    2.71     1.0    1.005       -       -       -     0
       3  DSC_0003.fit          00:52:53    0.09    3.02    2.72     1.0    0.993       -       -       -     0

@@ -42,7 +42,18 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
-- Check 3 reads the series against its end, not against a fitted plateau (R-023, ADR 0043):
+- The checks are numbered in the order the Summary tab shows them, in the console too (R-025,
+  ADR 0046): after the session's lines (check 1), 2 is how well the dark fits the lights, then
+  3 light leaks, 4 the warming, 5 the noise, 6 hot pixels, 7 the fixed pattern, 8 dead and
+  saturated pixels, 9 how many darks, then INDEX. The console prints them in that order; the
+  tabs' headings and the hints that name a check say the new numbers. Old 2 .. 8 are new 3 .. 9
+  and old 9 is new 2; the entries below already use the new numbers.
+- On the Summary tab, the verdicts of checks 3 (light leaks) and 4 (warming) put each statement
+  on a line of its own, with the console's words (R-071, ADR 0047).
+- Choosing the lights on the Match with lights tab, or the partner on the Index tab, analyses the
+  open folder again at once, and so does clearing the choice; the two **Analyse again** buttons
+  are gone (R-073, R-122, ADR 0048).
+- Check 4 reads the series against its end, not against a fitted plateau (R-023, ADR 0043):
   the end of the series is the average of its last 5 frames, the frames more than 2 degrees
   from it are the ones to discard, `REDO` when more than half are, `WARNING` when the master is
   more than 1 degree from the end or a frame leaves 0.7 .. 1.4 of the master. The `plateau` row
@@ -50,12 +61,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   end of the series as its line, and no text names a plateau any more. A series that was still
   moving at its last frame is no longer flagged for that alone: darks that moved half a degree
   in 70 minutes read `WARNING` at "1.4 degrees above the plateau" and now read `OK`, 0.4
-  degrees from where they ended. This replaces the plateau of the two older entries on check 3
+  degrees from where they ended. This replaces the plateau of the two older entries on check 4
   further down. A series whose last frame shows no hot pixel is no longer `UNMEASURED` as a
   whole: its frames are judged like any others. An `OK` no longer names `-opt` (it read as
   advice to use it): it says that no frame is too far from the master, the hot pixels of
   every frame between 0.7 and 1.4 of the master's.
-- Check 9 also weighs what the mismatch leaves (R-067, ADR 0044): a new row `what is left` says
+- Check 2 also weighs what the mismatch leaves (R-067, ADR 0044): a new row `what is left` says
   how big a trace a plain subtraction leaves at a hot pixel against the noise of one light, and
   at how many pixels it passes the noise and 3 times the noise. A lights / dark ratio between
   0.7 and 1.4 whose average trace is under the noise of a light now reads `OK: the dark can be
@@ -63,12 +74,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   lights moves its two green lines and colours its points by that wider band. Ratios inside
   0.9 .. 1.1, the cosmetic-only and no-match verdicts and the partner's verdicts are unchanged.
 
-- The window's Summary tab puts check 9, how well the dark fits the lights, right under the
-  session card, then checks 2 to 8 and INDEX; its hot-pixel card keeps only the stability and
+- The window's Summary tab puts check 2, how well the dark fits the lights, right under the
+  session card, then checks 3 to 9 and INDEX; its hot-pixel card keeps only the stability and
   the verdict (the Hot pixels tab shows the rest); the stability's four statements and the
-  shared pixels' two stand one under the other, and the overlap of check 9 and the noise curve
-  of check 8 are drawn as tables (R-071, ADR 0041). The console's report keeps its order.
-- Check 9 names both indexes on rows of their own, `index darks` and `index lights`, before its
+  shared pixels' two stand one under the other, and the overlap of check 2 and the noise curve
+  of check 9 are drawn as tables (R-071, ADR 0041).
+- Check 2 names both indexes on rows of their own, `index darks` and `index lights`, before its
   verdict, in the console and the window (R-056, ADR 0041).
 - Every light is measured: the frame cap (`--max-frames`, `MAX FRAMES`) bounds the darks and
   the biases alone, so a session of 87 lights reads all 87 where 44 were read before (R-050,
@@ -84,14 +95,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   partner's label is appended; before, the big label on the Index tab and the `label` row were
   the partner's. The text under the label says so for such a session.
 
-- Check 3 says which way the camera moved and when the series is to be taken again (R-023, ADR
+- Check 4 says which way the camera moved and when the series is to be taken again (R-023, ADR
   0038): the `plateau` row opens with "the camera cooled the whole series" (or warmed), with the
   hot pixels of the first and the last frame, and the verdict is a red `REDO` (`REFA`) when more
   than half the frames are more than 2 degrees from the plateau, with the advice to let the
   camera sit for three time constants before a cooling series is taken again, or to take a
   warming one longer; no distance to the plateau is printed with a sign any more, a frame is
   "above" or "below" it, and a cooling series says it started warmer than the place it was in.
-  The `hot pixels` row of check 3 is gone, its figures in the `plateau` row; the window's chart
+  The `hot pixels` row of check 4 is gone, its figures in the `plateau` row; the window's chart
   note says what a falling curve means.
 - The texts around the report speak plain words, in English and Romanian (R-088, ADR 0037): the
   start screen says the program reads and measures the frames, the progress lines read `Reading
@@ -104,19 +115,18 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   under the label says the index in the INDEX row's words (`the average value of the master's hot
   pixels at places 5-20 per megapixel`) and that a warmer sensor gives a higher index, the
   partner's explanation says what is compared with what, the lights of a session without darks
-  directly with the partner's darks, and **Analyse again**'s hint says it analyses the open folder
-  again.
+  directly with the partner's darks.
 
 - A typical value is `average` (`medie`, `mediu`, `in medie`) wherever a text called it `usual`
   or `typical` (`obisnuit`) (ADR 0035), the figures unchanged: the `dark - bias` row (`the
-  average pixel`), check 2's frame light row (`the average spread of the frames`), the index
+  average pixel`), check 3's frame light row (`the average spread of the frames`), the index
   (`the average value of the hot pixels`), the dark current (`what a pixel gathers on average`),
   the darks' header for a FITS without a black (`the average value of frame 1`) and the Cadre
   tab's guide line (`1.5 times the average noise`).
 
 - `Usually` (`de obicei`) is `on average` (`in medie`) too wherever it stands for a typical value
-  (ADR 0040), the figures unchanged: check 4's `against the master` row and its verdict (`1.5
-  times the average noise`), check 5's `how hot` row, check 9's rows `not in the master` and
+  (ADR 0040), the figures unchanged: check 5's `against the master` row and its verdict (`1.5
+  times the average noise`), check 6's `how hot` row, check 2's rows `not in the master` and
   `lights against dark`, two sentences of the ADU scale tab and the hint of the Lights tab's
   `noise` column. The Lights chart's `The first lights of the night usually sit lower` stays: it
   means most nights, not an average.
@@ -130,7 +140,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   only` in either language.
 
 - The Pixeli fierbinti tab's own texts speak plain words, in English and Romanian (R-085, ADR
-  0033): the text under the rows says what they count and that check 5 never warns, the noise
+  0033): the text under the rows says what they count and that check 6 never warns, the noise
   chart is titled `HOW THE NOISE FALLS WITH MORE FRAMES`, its sentence explains the dotted line
   (`4 times the frames, half the noise`), and a point's hint reads `1 frame: measured 1.426,
   expected 1.514`.
@@ -153,12 +163,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The Rezumat tab and the console's report speak plain words, in English and Romanian (R-082,
   ADR 0030), the figures unchanged: the session card, the `=== DARK-URI` header (`frames read 20
   of 20`, `values from 150 (black) to 4095 ADU (white)`) and its rows, now `1 ADU-eq` and
-  `value step` (`pasul valorilor`), checks 2 to 9 and INDEX. Checks 2 and 3 are now titled `2. LIGHT
-  LEAKS AND DIFFERENCES ACROSS THE FRAME` and `3. THE CAMERA'S WARMING DURING THE SERIES`, whose
-  row `amplitude` is `hot pixels`; checks 4 and 6 `4. THE NOISE OF EACH FRAME` and `6. FIXED
-  PATTERN: WHAT IS THE SAME IN EVERY FRAME`; the rows of checks 4 to 8 say what a figure shows
+  `value step` (`pasul valorilor`), checks 2 to 9 and INDEX. Checks 3 and 4 are now titled `3. LIGHT
+  LEAKS AND DIFFERENCES ACROSS THE FRAME` and `4. THE CAMERA'S WARMING DURING THE SERIES`, whose
+  row `amplitude` is `hot pixels`; checks 5 and 7 `5. THE NOISE OF EACH FRAME` and `7. FIXED
+  PATTERN: WHAT IS THE SAME IN EVERY FRAME`; the rows of checks 5 to 9 say what a figure shows
   (`against the master`, `above the threshold`, `how hot`, `fixed banding`, `noise when
-  averaged`), without the formulas; check 9, `9. HOW WELL THE DARK FITS THE LIGHTS` (the Lights
+  averaged`), without the formulas; check 2, `2. HOW WELL THE DARK FITS THE LIGHTS` (the Lights
   tab's heading too), and INDEX say what a ratio means for the hot pixels (`in the lights the hot
   pixels are 1.30 times what they are in the dark`), what to do in Siril and the degrees in words
   (`7.5 degrees colder than the partner`). An error reads `+/-` instead of `±`.
@@ -167,7 +177,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   in plain words, in English and Romanian: each row and paragraph says what a figure means
   without the method's terms (no sigma, square root, quadrature, raw ADU or `e-`), the figures
   unchanged (R-080, R-081, ADR 0028). Three rows are renamed: `value step` (`pasul valorilor`),
-  `noise on one dark` (`zgomot pe un dark`) and `what was found` (`ce s-a gasit`). Check 2's
+  `noise on one dark` (`zgomot pe un dark`) and `what was found` (`ce s-a gasit`). Check 3's
   ratio to the lights stack reads the same way on the Summary tab.
 
 - When LibRaw cannot be loaded, every raw's error names Microsoft's Visual C++ runtime, missing
@@ -195,7 +205,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The projects target .NET 8 instead of .NET 9, so the Astro Darkroom suite ships one runtime
   (ADR 0018).
 
-- Check 3 judges the plateau of the series instead of the first frame against the last
+- Check 4 judges the plateau of the series instead of the first frame against the last
   (R-023, ADR 0017). The hot-pixel amplitude of every frame is fitted on the minutes as an
   approach to a plateau; the rows `platou` and `de aruncat` give the plateau, the time
   constant, how far under the plateau the master sits and which frames are more than two
@@ -217,7 +227,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   refused with `ERROR:` and exit 1 in the console and said in a message by the window. The
   figures are the same in both languages (R-090 to R-094, ADR 0021).
 
-- Check 2 tells a light leak from the sensor's glow by the warming of the series (R-028,
+- Check 3 tells a light leak from the sensor's glow by the warming of the series (R-028,
   R-029, ADR 0012). The row `lumina pe cadre` fits every frame's mean on the hot pixels'
   amplitude ratio (Theil-Sen, three clipping passes) and names the frames that carry light
   over it (5 scales and 0.1 ADU-eq), which make the verdict `ATENTIE` with the advice to take
@@ -225,25 +235,25 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   part that grows with the warming and the constant part, and with biases into the readout
   offset the biases hold and what remains; the verdict's words follow the cause (glow, leak,
   readout offset, or undecidable without biases; the split needs the series to have warmed by
-  0.1 of amplitude ratio, and shows the raw ADU beside the equivalent); check 6's `glow` row
+  0.1 of amplitude ratio, and shows the raw ADU beside the equivalent); check 7's `glow` row
   shows the glow part;
   `TABEL PE CADRE`, the Cadre tab and the darks CSV carry every frame's excess light, and the
   CSV the four corners' offsets. Measured on the owner's deliberate leak set of 2026-10-20,
   which the old check read as `OK`.
 - The masters' noise beside every light found (R-024, R-029, R-080, ADR 0016): the scale
   section's row `zgomot in master` gives the dark master's per-pixel noise and the lights
-  stack's (mean and median); check 2's `lumina constanta`, `lumina pe cadre`, its verdict and
+  stack's (mean and median); check 3's `lumina constanta`, `lumina pe cadre`, its verdict and
   the scale's `gasit` state each light in raw ADU as a fraction of those noises; the window
   shows the noises and the light found in bold, through a per-row list of emphasised figures
   the console ignores.
 - A help on the ADU scale, computed on the open set (R-078, R-080, ADR 0015): the tab
   `Explicatii scara ADU` and the section `EXPLICATII SCARA ADU` at the end of the report show
   the file's scale, the normalisation, the quantisation step, the read noise, the dark
-  current, the checks' thresholds in raw ADU on this set, what check 2 found, the lights' sky
+  current, the checks' thresholds in raw ADU on this set, what check 3 found, the lights' sky
   and the stack's noise, the saturation, in ADU, ADU-eq and electrons (the D3300's published
   gain from photonstophotos.net, with its provenance), and four paragraphs on why a fraction
   of an ADU in the master matters.
-- Check 2 also names the light that is in every frame (R-029, ADR 0014): with biases, the row
+- Check 3 also names the light that is in every frame (R-029, ADR 0014): with biases, the row
   `lumina constanta` reads the four sides (an edge with its two corners) after the bias, with
   the error of each, and a side over 0.15 ADU-eq and three times its error makes the verdict
   `ATENTIE: lumina constanta in toate cadrele: ... scurgere de lumina (ocular, montura)`; the
@@ -263,7 +273,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   in exposure and ISO and whether the bias is a bias, and one table per group with a row per
   frame (time, exposure, ISO, the pause before it). A frame that cannot be read is listed with
   its error and the run exits 1. `--inventory` names this metadata-only run.
-- Checks 2 to 8 on the darks and the biases (R-020 to R-041, ADR 0007): `darkscheck <folder>`
+- Checks 3 to 9 on the darks and the biases (R-020 to R-041, ADR 0007): `darkscheck <folder>`
   decodes the biases and the darks into memory, builds the median and mean masters, and
   prints a section per check with its figures and a verdict line: light leaks and gradient
   (the binned dark, bias and dark-minus-bias maps in nine regions), thermal drift (the
@@ -278,7 +288,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (60 by default; above it every k-th frame is read). A FITS without a black level takes the
   biases' median as black. V-003 checks the Smida darks against the Python prototype's figures;
   V-004 pins the 2026-10-10 library run (the prototype has only its master, regions and warming).
-- Check 9, the index and the matching (R-050 to R-065, ADR 0008): the lights are decoded one
+- Check 2, the index and the matching (R-050 to R-065, ADR 0008): the lights are decoded one
   by one and searched for isolated hot pixels (6 sigma over the median of the eight same-colour
   neighbours, no immediate neighbour over 3 sigma), the pixels persistent in 80 % of the lights
   are compared with the master's hot pixels both ways, and the lights' amplitude at the
@@ -294,8 +304,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   console, started on a folder from the command line or chosen at start, with progress and a
   stop button; seven tabs: Rezumat (every check as a card of the report's rows with the
   verdict as a coloured chip), Cadre (the frames table with the warming, residual sigma and
-  banding charts), Harti (the three binned maps), Pixeli fierbinti (check 5 and the noise
-  curve over its expected line), Lights (check 9, the ratio per light with the verdict bounds,
+  banding charts), Harti (the three binned maps), Pixeli fierbinti (check 6 and the noise
+  curve over its expected line), Lights (check 2, the ratio per light with the verdict bounds,
   the lights table), Index (the label with a copy button, the INDEX rows, the partner folder
   of `--against`), Raport (the console's text, identical whatever the Windows culture); the
   export writes the same files as `--out`. Four settings in the top bar, threads, frame cap,
@@ -306,7 +316,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - A session with lights and no darks (R-002 refined, R-054, R-077, ADR 0011): opened with
   `--against DIR` or the window's partner, the partner's darks stand in for the session's,
-  taking checks 2 to 8, check 9 against the session's lights and INDEX; the report says whose
+  taking checks 3 to 9, check 2 against the session's lights and INDEX; the report says whose
   darks they are and drops the rows that would compare the partner with itself. Without a
   partner the folder is refused with a sentence naming what to give, and the window's problem
   card offers `Alege partener...`; `--inventory` lists such a folder with `darks: (lipsa)`.
@@ -314,7 +324,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Removed
 
-- The `skipped lights` row of check 9 and the `skipped` column of `darkscheck-lights.csv`: no
+- The `skipped lights` row of check 2 and the `skipped` column of `darkscheck-lights.csv`: no
   light is skipped any more (ADR 0041).
 
 ### Fixed

@@ -51,7 +51,7 @@ public class GoldenOutputTests
     [Fact]
     public void Redo_MatchesTheGoldenText()
     {
-        // twelve darks cooling steeply: seven are more than two degrees above the end of the series, check 3 REFA
+        // twelve darks cooling steeply: seven are more than two degrees above the end of the series, check 4 REFA
         // (ADR 0038, ADR 0043)
         using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice, HotFactor = 0.35 + 1.45 * Math.Exp(-i / 6.0) });
         (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");

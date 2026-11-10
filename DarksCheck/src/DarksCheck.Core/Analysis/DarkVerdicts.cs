@@ -31,7 +31,7 @@ internal enum MapRegion
 }
 
 /// <summary>
-/// Check 2: the largest edge or corner offset from the centre, in ADU equivalent, on the
+/// Check 3: the largest edge or corner offset from the centre, in ADU equivalent, on the
 /// dark-minus-bias map when there is one, else on the dark master (R-021); the frames' excess light
 /// over the warming (R-028, null under <see cref="Th.LeakFitMinFrames"/> frames); the eight
 /// regions' glow / constant splits and the verdict region's own (R-029, empty and null when
@@ -86,7 +86,7 @@ internal sealed record LeakVerdict(Verdict Verdict, double OffsetAdu, MapRegion 
 }
 
 /// <summary>
-/// Check 3: the warming of the series against its end (R-023, ADR 0043): whether the master is
+/// Check 4: the warming of the series against its end (R-023, ADR 0043): whether the master is
 /// near the end of the series (within <see cref="Th.MasterNearEndCelsius"/>; true without an
 /// end), the frames whose ratio to the master is outside <see cref="Th.MatchOptLow"/> ..
 /// <see cref="Th.MatchOptHigh"/> and, of those, the ratio farthest from 1 (NaN when none).
@@ -109,7 +109,7 @@ internal sealed record LeakVerdict(Verdict Verdict, double OffsetAdu, MapRegion 
 internal sealed record DriftVerdict(Verdict Verdict, Warming Warming, bool MasterNearEnd, bool MostlyOff, int FramesWithRatio, IReadOnlyList<int> OutsideFrames, double FarthestRatio);
 
 /// <summary>
-/// Check 4: the per-frame residual noise on the reference plane, the frames that stand out, the
+/// Check 5: the per-frame residual noise on the reference plane, the frames that stand out, the
 /// read noise and the temporal noise over it (dark current and quantisation), the banding against
 /// white noise (R-022).
 /// </summary>
@@ -138,18 +138,18 @@ internal sealed record NoiseVerdict(Verdict Verdict, double MedianSigma, IReadOn
 }
 
 /// <summary>
-/// Check 6: the structured banding of the master and the glow at its edges: R-029's glow part of
+/// Check 7: the structured banding of the master and the glow at its edges: R-029's glow part of
 /// the verdict region, or the whole offset when the split is unmeasured (R-040).
 /// </summary>
 /// <param name="Verdict">Ok when the banding is within <see cref="Th.BandingAdu"/> and the
 /// offset within <see cref="Th.LeakAdu"/>; Unmeasured when either is NaN.</param>
 /// <param name="BandingP2pAdu">The largest row or column peak to peak over the four positions,
 /// in ADU equivalent.</param>
-/// <param name="GlowAdu">The glow of the verdict region, or check 2's offset, in ADU
+/// <param name="GlowAdu">The glow of the verdict region, or check 3's offset, in ADU
 /// equivalent.</param>
 internal sealed record PatternVerdict(Verdict Verdict, double BandingP2pAdu, double GlowAdu);
 
-/// <summary>Check 7: dead and saturated pixels on the master (R-032).</summary>
+/// <summary>Check 8: dead and saturated pixels on the master (R-032).</summary>
 /// <param name="Verdict">Ok when there are none of either.</param>
 /// <param name="Dead">The master's pixels more than <see cref="Th.DeadBelowAdu"/> under black,
 /// over the four positions.</param>
@@ -157,7 +157,7 @@ internal sealed record PatternVerdict(Verdict Verdict, double BandingP2pAdu, dou
 internal sealed record DeadSatVerdict(Verdict Verdict, int Dead, int Saturated);
 
 /// <summary>
-/// Check 8: whether the frames are enough: at least <see cref="Th.MinDarks"/>, and the median
+/// Check 9: whether the frames are enough: at least <see cref="Th.MinDarks"/>, and the median
 /// master's noise under the quantisation step; the frames that would do both (R-024).
 /// </summary>
 /// <param name="Verdict">Ok when there are enough frames and the noise is under
@@ -171,13 +171,13 @@ internal sealed record DeadSatVerdict(Verdict Verdict, int Dead, int Saturated);
 /// <param name="TooFew">True under <see cref="Th.MinDarks"/> frames.</param>
 internal sealed record EnoughVerdict(Verdict Verdict, int Frames, double MasterNoise, int QuantStep, int FramesNeeded, bool TooFew);
 
-/// <summary>The six verdicts of checks 2, 3, 4, 6, 7 and 8 on a dark series.</summary>
-/// <param name="Leak">Check 2.</param>
-/// <param name="Drift">Check 3.</param>
-/// <param name="Noise">Check 4.</param>
-/// <param name="Pattern">Check 6.</param>
-/// <param name="DeadSat">Check 7.</param>
-/// <param name="Enough">Check 8.</param>
+/// <summary>The six verdicts of checks 3, 4, 5, 7, 8 and 9 on a dark series.</summary>
+/// <param name="Leak">Check 3.</param>
+/// <param name="Drift">Check 4.</param>
+/// <param name="Noise">Check 5.</param>
+/// <param name="Pattern">Check 7.</param>
+/// <param name="DeadSat">Check 8.</param>
+/// <param name="Enough">Check 9.</param>
 internal sealed record DarkVerdicts(LeakVerdict Leak, DriftVerdict Drift, NoiseVerdict Noise, PatternVerdict Pattern, DeadSatVerdict DeadSat, EnoughVerdict Enough);
 
 /// <summary>
@@ -233,7 +233,7 @@ internal static class DarkVerdictAnalyzer
         double? read = b is null || double.IsNaN(b.ReadNoise[refPlane]) ? null : b.ReadNoise[refPlane];
         double? overRead = read is double rn && !double.IsNaN(d.Noise.TemporalSigma) ? Math.Sqrt(Math.Max(d.Noise.TemporalSigma * d.Noise.TemporalSigma - rn * rn, 0)) : null;
         // One frame has no residual against its own median (it is zero by construction):
-        // check 4 is unmeasured, as checks 3 and 8 are.
+        // check 5 is unmeasured, as checks 4 and 9 are.
         bool series = residual.Length >= 2;
         double rowAdu = series ? Med(ok.Select(f => f.Residuals[refPlane].RowStd)) : double.NaN;
         double rowRatio = series ? Med(ok.Select(f => f.Residuals[refPlane].RowExpected > 0 ? f.Residuals[refPlane].RowStd / f.Residuals[refPlane].RowExpected : double.NaN)) : double.NaN;

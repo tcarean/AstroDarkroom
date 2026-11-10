@@ -3,8 +3,9 @@
 Quality check for the dark frames of a DSLR astrophotography session (the author's Nikon
 D3300, Siril workflow). It reads a Siril session folder (`darks/` required, `biases/` and
 `lights/` optional) or a bare folder of darks (a library), repeats the nine checks of the hand
-analysis of the Smida session of 2026-08-12 (metadata and cadence, light leaks, thermal drift,
-noise, hot pixels, fixed pattern, dead pixels, how many darks, the lights against the dark),
+analysis of the Smida session of 2026-08-12, numbered 1 to 9 in the order the report shows them
+(metadata and cadence, the lights against the dark, light leaks, thermal drift, noise, hot
+pixels, fixed pattern, dead pixels, how many darks; ADR 0046),
 and computes the index: a number for how warm the sensor ran, on darks, on a library and on
 lights, so a library master can be matched to a session, with the label the owner puts in the
 folder name. Two applications, a console (`darkscheck.exe`) and a WPF window

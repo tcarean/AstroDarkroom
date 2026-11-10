@@ -402,7 +402,7 @@ internal static class ScaleReport
     }
 
     /// <summary>
-    /// The <c>what was found</c> row (<c>ce s-a gasit</c>): check 2's constant light, the largest
+    /// The <c>what was found</c> row (<c>ce s-a gasit</c>): check 3's constant light, the largest
     /// light on a frame and the map offset over the threshold, each in ADU-eq, ADU in the file and
     /// electrons when known, set against the masters' noise.
     /// </summary>

@@ -20,7 +20,7 @@ using DarksCheck.Core;
 
 namespace DarksCheck.Tests;
 
-/// <summary>Check 9 (the lights against the dark), the index, the label and the matching, on synthetic frames with known answers (R-050 to R-065).</summary>
+/// <summary>Check 2 (the lights against the dark), the index, the label and the matching, on synthetic frames with known answers (R-050 to R-065).</summary>
 public class LightsAndIndexTests
 {
     private static DarkSeriesResult Run(SessionFixture s, string? against = null, int maxFrames = Th.MaxFramesInMemory, string? lightsFrom = null) => DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2, MaxFrames: maxFrames, Against: against, LightsFrom: lightsFrom));
@@ -221,7 +221,7 @@ public class LightsAndIndexTests
             StringComparison.Ordinal);
         Assert.Contains($"    verdict            : OK: dark-ul se poate scadea asa cum e; in lights pixelii fierbinti sunt de {ratio} ori cat in dark, in afara 0.9 .. 1.1, dar ce ramane dupa scadere e in medie sub zgomotul unui light ({median} din el; pe aceste lights, asa e {band}): dark-ul e mai {(factor < 1 ? "cald" : "rece")} cu ", report, StringComparison.Ordinal);
         // the new words name no part of the method (ADR 0028)
-        foreach (ReportRow row in DarkReport.Sections(r).Single(x => x.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Where(x => x.Label is "ce ramane" or "verdict"))
+        foreach (ReportRow row in DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Lights).Rows.Where(x => x.Label is "ce ramane" or "verdict"))
         {
             Assert.DoesNotMatch(PlainWords.RomanianTabWords(), row.Value);
         }
@@ -353,7 +353,7 @@ public class LightsAndIndexTests
         Assert.Null(r.LightsError);
         Assert.True(double.IsNaN(r.LightsIndex));
         string report = Report(r);
-        Assert.Contains("  9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE\n    verdict            : NEMASURAT: sesiunea nu are lights", report.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+        Assert.Contains("  2. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE\n    verdict            : NEMASURAT: sesiunea nu are lights", report.ReplaceLineEndings("\n"), StringComparison.Ordinal);
         Assert.DoesNotContain("ca un dark cu idx", report, StringComparison.Ordinal);
         Assert.DoesNotContain("TABEL PE LIGHTS", report, StringComparison.Ordinal);
     }
@@ -382,7 +382,7 @@ public class LightsAndIndexTests
         Assert.DoesNotContain("sarit", Report(r).Split("TABEL PE LIGHTS")[1], StringComparison.Ordinal);
         Assert.DoesNotContain("lights sarite", Report(r), StringComparison.Ordinal);
 
-        // no light decodes: check 9 says why, the run exits 1
+        // no light decodes: check 2 says why, the run exits 1
         using SessionFixture none = new SessionFixture().WithDarkSeries(6, Dark).WithLights(2, i => Light(i));
         foreach (string f in Directory.GetFiles(none.LightsDir))
         {
@@ -417,12 +417,12 @@ public class LightsAndIndexTests
     }
 
     [Fact]
-    public void R056_Check9NamesBothIndexesAndCarriesTheOverlapAsTables()
+    public void R056_Check2NamesBothIndexesAndCarriesTheOverlapAsTables()
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, 1.3));
         DarkSeriesResult r = Run(s);
         LightsAnalysis l = r.Lights!;
-        ReportSection nine = DarkReport.Sections(r).Single(x => x.Title.StartsWith("9.", StringComparison.Ordinal));
+        ReportSection nine = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Lights);
         ReportSection index = DarkReport.Sections(r).Single(x => x.Title == "INDEX");
         Assert.Equal(["pixeli fierbinti", "in masterul dark", "masterul in lights", "lipsesc din master", "lights fata de dark", "ce ramane", "index dark-uri", "index lights", "verdict"], nine.Rows.Select(row => row.Label));
 
@@ -458,13 +458,13 @@ public class LightsAndIndexTests
         using SessionFixture alone = new SessionFixture().WithLights(4, i => Light(i, 1.3)).WithBiases(3);
         using SessionFixture partner = new SessionFixture().WithDarkSeries(5, Dark, inSubfolder: false);
         DarkSeriesResult taken = Run(alone, partner.Root);
-        ReportSection nineAlone = DarkReport.Sections(taken).Single(x => x.Title.StartsWith("9.", StringComparison.Ordinal));
+        ReportSection nineAlone = DarkReport.Sections(taken).Single(x => x.Check == ReportCheck.Lights);
         Assert.Equal(taken.Index.Tag, nineAlone.Rows.Single(row => row.Label == "index partener").Value);
         Assert.Contains(nineAlone.Rows, row => row.Label == "index lights");
 
         // without lights: the one unmeasured verdict row, as before
         using SessionFixture darks = new SessionFixture().WithDarkSeries(6, Dark);
-        Assert.Equal(["verdict"], DarkReport.Sections(Run(darks)).Single(x => x.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Select(row => row.Label));
+        Assert.Equal(["verdict"], DarkReport.Sections(Run(darks)).Single(x => x.Check == ReportCheck.Lights).Rows.Select(row => row.Label));
     }
 
     [Fact]
@@ -606,7 +606,7 @@ public class LightsAndIndexTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void R082_Check9AndTheIndexAreInPlainWords(bool english)
+    public void R082_Check2AndTheIndexAreInPlainWords(bool english)
     {
         // the variants the fixtures reach: lights at the dark's temperature, warmer (-opt), colder (cosmetic
         // correction only), far warmer (they do not match) and without the dark's hot pixels, lights without an
@@ -629,7 +629,7 @@ public class LightsAndIndexTests
             List<string> texts = [];
             foreach (DarkSeriesResult r in new[] { Run(same), Run(warmer), Run(colder), Run(far), Run(none), Run(noIso), Run(same, hotter.Root), Run(darks, warm.Root), Run(alone, hotter.Root), Run(darks) })
             {
-                foreach (ReportSection section in DarkReport.Sections(r).Where(x => x.Title.StartsWith("9.", StringComparison.Ordinal) || x.Title == "INDEX"))
+                foreach (ReportSection section in DarkReport.Sections(r).Where(x => x.Check == ReportCheck.Lights || x.Title == "INDEX"))
                 {
                     texts.Add(section.Title);
                     texts.AddRange(section.Rows.SelectMany(row => new[] { row.Label, row.Value }));

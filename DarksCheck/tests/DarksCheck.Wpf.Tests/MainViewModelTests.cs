@@ -29,9 +29,9 @@ namespace DarksCheck.Wpf.Tests;
 public class MainViewModelTests
 {
     [Fact]
-    public async Task R071_ARefaVerdictOfCheck3IsARedChip()
+    public async Task R071_ARefaVerdictOfCheck4IsARedChip()
     {
-        // twelve darks cooling steeply: seven are more than two degrees above where the series ended, check 3 reads REFA
+        // twelve darks cooling steeply: seven are more than two degrees above where the series ended, check 4 reads REFA
         // (ADR 0038's limit against the end of the series, ADR 0043)
         (int X, int Y, double Adu)[] hot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 300.0)).ToArray();
         using SessionFixture f = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = hot, HotFactor = 0.35 + 1.45 * Math.Exp(-i / 6.0) });
@@ -39,11 +39,15 @@ public class MainViewModelTests
         await vm.OpenAsync(f.Root);
         Assert.Equal(Verdict.Redo, vm.Result!.Verdicts.Drift.Verdict);
 
-        RowVm verdict = vm.Sections.Single(s => s.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[^1];
+        RowVm verdict = vm.Sections.Single(s => s.Title.StartsWith("4.", StringComparison.Ordinal)).Rows[^1];
         Assert.Equal("verdict", verdict.Label);
         Assert.True(verdict.HasVerdict);
         Assert.Equal("REFA", verdict.Verdict);
         Assert.StartsWith("7 din 12 cadre sunt la peste 2.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi; ", verdict.Rest, StringComparison.Ordinal);
+        // one statement per line, the chip beside the first (ADR 0047): the words are the console's, cut at its "; "
+        Assert.Equal("7 din 12 cadre sunt la peste 2.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi", verdict.Lines[0]);
+        Assert.True(verdict.Lines.Count >= 2, "the REFA verdict has more than one statement");
+        Assert.Equal(verdict.Rest, string.Join("; ", verdict.Lines));
         Assert.Equal(VerdictPalette.Bad, VerdictPalette.For(verdict.Verdict));
         Assert.Equal(VerdictPalette.For("EROARE"), VerdictPalette.For(verdict.Verdict));
     }
@@ -245,16 +249,25 @@ public class MainViewModelTests
         Assert.StartsWith("=== DARK-URI: cadre citite 6 din 6", vm.HeaderLine, StringComparison.Ordinal);
         Assert.Equal(InventoryReport.HeaderRows(r.Inventory).Select(row => row.Label), vm.SessionRows.Take(InventoryReport.HeaderRows(r.Inventory).Count).Select(row => row.Label));
 
-        // one card per check, the rows the core wrote, the verdict as a chip with the rest beside it; check 9 right
-        // under the session card, then checks 2 to 8 and INDEX (ADR 0041), while the console keeps the checks' order
-        Assert.Equal(["9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE", "2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "4. ZGOMOTUL FIECARUI CADRU", "5. PIXELI FIERBINTI", "6. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "7. PIXELI MORTI SI SATURATI", "8. CATE DARK-URI AJUNG", "INDEX"], vm.Sections.Select(s => s.Title));
-        Assert.Equal(["2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "4. ZGOMOTUL FIECARUI CADRU", "5. PIXELI FIERBINTI", "6. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "7. PIXELI MORTI SI SATURATI", "8. CATE DARK-URI AJUNG", "9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE", "INDEX"], DarkReport.Sections(r).Select(s => s.Title));
+        // one card per check, the rows the core wrote, the verdict as a chip with the rest beside it; the cards in the
+        // console's order, numbered as they stand, check 2 right under the session card (ADR 0041, ADR 0046)
+        Assert.Equal(["2. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE", "3. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "4. INCALZIREA CAMEREI IN TIMPUL SERIEI", "5. ZGOMOTUL FIECARUI CADRU", "6. PIXELI FIERBINTI", "7. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "8. PIXELI MORTI SI SATURATI", "9. CATE DARK-URI AJUNG", "INDEX"], vm.Sections.Select(s => s.Title));
+        Assert.Equal(DarkReport.Sections(r).Select(s => s.Title), vm.Sections.Select(s => s.Title));
         RowVm verdict = vm.Sections[1].Rows[^1];
         Assert.Equal("verdict", verdict.Label);
         Assert.True(verdict.HasVerdict);
         Assert.Equal("OK", verdict.Verdict);
         Assert.StartsWith("nicio margine", verdict.Rest, StringComparison.Ordinal);
         Assert.Equal("OK: " + verdict.Rest, verdict.Value);
+        // the verdicts of checks 3 and 4 one statement per line, the console's words cut at its "; " (ADR 0047)
+        Assert.StartsWith("nicio margine", verdict.Lines[0], StringComparison.Ordinal);
+        Assert.DoesNotContain("; ", verdict.Lines[0], StringComparison.Ordinal);
+        Assert.True(verdict.Lines.Count >= 2, "the leak verdict has more than one statement");
+        Assert.Equal(verdict.Rest, string.Join("; ", verdict.Lines));
+        RowVm warming = vm.Sections[2].Rows[^1];
+        Assert.Equal("verdict", warming.Label);
+        Assert.True(warming.Lines.Count >= 2, "the warming verdict has more than one statement");
+        Assert.Equal(warming.Rest, string.Join("; ", warming.Lines));
         RowVm label = vm.Sections[^1].Rows.Single(row => row.Label == "eticheta");
         Assert.False(label.HasVerdict);
         Assert.Equal(label.Value, label.Rest);
@@ -286,7 +299,7 @@ public class MainViewModelTests
         Assert.Equal([Th.MatchDirectLow, Th.MatchDirectHigh, Th.MatchOptLow, Th.MatchOptHigh, Th.MatchCosmeticLow], vm.LightGuides.Select(g => g.Value));
         Assert.Equal(VerdictPalette.Warn, vm.LightPoints[1].Colour);
 
-        // the hot-pixel, lights and index rows are the sections' rows; the Rezumat's check 5 card keeps only the
+        // the hot-pixel, lights and index rows are the sections' rows; the Rezumat's check 6 card keeps only the
         // stability and the verdict, the Pixeli fierbinti tab all five (R-071, ADR 0041)
         Assert.Equal(["pixeli peste prag", "pe culori, peste 20", "cat de fierbinti", "stabilitate", "verdict"], vm.HotRows.Select(row => row.Label));
         Assert.Equal(["stabilitate", "verdict"], vm.Sections[4].Rows.Select(row => row.Label));
@@ -301,7 +314,7 @@ public class MainViewModelTests
         Assert.Null(stability.Table);
         RowVm hotVerdict = vm.HotRows.Single(row => row.Label == "verdict");
         Assert.Equal([hotVerdict.Rest], hotVerdict.Lines);
-        RowVm curve = vm.Sections.Single(s => s.Title.StartsWith("8.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "zgomot dupa medie");
+        RowVm curve = vm.Sections.Single(s => s.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "zgomot dupa medie");
         Assert.Equal(["cadre", "masurat", "se astepta"], curve.Table!.Header);
         Assert.Equal(r.Darks.Noise.Curve.Count, curve.Table.Rows.Count);
         RowVm overlap = vm.LightRows.Single(row => row.Label == "in masterul dark");
@@ -326,7 +339,7 @@ public class MainViewModelTests
         }
 
         Assert.Equal(ScaleReport.Rows(r).Select(row => row.BoldParts), vm.ScaleRows.Select(row => row.Bold));
-        RowVm master = vm.Sections.Single(s => s.Title.StartsWith("8.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "master");
+        RowVm master = vm.Sections.Single(s => s.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "master");
         Assert.Single(master.Bold);
         Assert.Equal([("30 cadre -> ", false), (master.Bold[0], true), (" zgomot", false)], Emphasis.Segments("30 cadre -> " + master.Bold[0] + " zgomot", master.Bold).Select(p => (p.Text, p.Bold)).Take(3).ToList()[..3]);
         Assert.Equal([("a ", false), ("1.43 ADU", true), (" b ", false), ("1.43 ADU", true)], Emphasis.Segments("a 1.43 ADU b 1.43 ADU", ["1.43 ADU"]));
@@ -385,9 +398,11 @@ public class MainViewModelTests
         Assert.False(vm.HasPartner);
         Assert.Equal(WindowTexts.NoPartner, vm.PartnerText);
 
-        vm.Partner = p.Root;
+        // chosen before any folder: nothing to run yet
+        await vm.ChoosePartnerAsync(p.Root);
         Assert.True(vm.HasPartner);
         Assert.Equal(p.Root, vm.PartnerText);
+        Assert.False(vm.HasResult);
         // not stored (R-075, ADR 0041): a new window starts without it, and the settings file never names it
         vm.ThreadsText = "2";
         Assert.False(new MainViewModel().HasPartner);
@@ -401,15 +416,26 @@ public class MainViewModelTests
         Assert.Contains(vm.IndexRows, row => row.Label == "lights / partener" && row.Value.StartsWith("pixelii fierbinti sunt in lights de 0.6", StringComparison.Ordinal));
         Assert.Contains(vm.IndexRows, row => row.Label == "verdict partener" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("foloseste partenerul doar pentru corectia cosmetica", StringComparison.Ordinal));
 
-        // changing the partner after a run only says so; the next run takes it
-        vm.Partner = null;
-        Assert.Equal(WindowTexts.PartnerChanged, vm.Status);
-        Assert.NotNull(vm.Result.Partner);
-        await vm.RerunAsync();
+        // a choice after a run runs the folder again at once, no button to press (ADR 0048): clearing takes the
+        // partner's rows away
+        await vm.ChoosePartnerAsync(null);
+        Assert.False(vm.HasPartner);
+        Assert.Null(vm.Status);
+        Assert.True(vm.HasResult);
         Assert.Null(vm.Result!.Partner);
+        Assert.DoesNotContain(vm.IndexRows, row => row.Label == "dark-uri / partener");
+
+        // choosing it brings them back, and the same folder chosen again runs again too
+        await vm.ChoosePartnerAsync(p.Root);
+        Assert.True(vm.HasPartner);
+        DarkSeriesResult before = vm.Result!;
+        Assert.NotNull(before.Partner);
+        Assert.Contains(vm.IndexRows, row => row.Label == "dark-uri / partener");
+        await vm.ChoosePartnerAsync(p.Root);
+        Assert.NotSame(before, vm.Result);
+        Assert.NotNull(vm.Result!.Partner);
 
         // a partner is kept for a rerun of the same folder and dropped when another folder is opened, like the lights folder (R-122)
-        vm.Partner = p.Root;
         await vm.RerunAsync();
         Assert.True(vm.HasPartner);
         Assert.NotNull(vm.Result!.Partner);
@@ -532,10 +558,10 @@ public class MainViewModelTests
         Assert.False(vm.HasResult);
         Assert.Contains("\"Alege partener...\" in fereastra", vm.ProblemText, StringComparison.Ordinal);
 
-        vm.Partner = p.Root;
-        Assert.Null(vm.Status);
-        await vm.RerunAsync();
+        // the problem card's button: the choice runs the folder again with it
+        await vm.ChoosePartnerAsync(p.Root);
 
+        Assert.Null(vm.Status);
         Assert.True(vm.HasResult);
         Assert.False(vm.HasProblem);
         Assert.Equal(p.Root, vm.Result!.DarksFromPartner);
@@ -553,8 +579,7 @@ public class MainViewModelTests
         Assert.False(Directory.Exists(Path.Combine(p.Root, "rapoarte")));
 
         // a partner that does not open says so on the card
-        vm.Partner = Path.Combine(p.Root, "nu-exista");
-        await vm.RerunAsync();
+        await vm.ChoosePartnerAsync(Path.Combine(p.Root, "nu-exista"));
         Assert.True(vm.HasProblem);
         Assert.StartsWith("partenerul: nu gasesc folderul", vm.ProblemText, StringComparison.Ordinal);
     }
@@ -569,10 +594,12 @@ public class MainViewModelTests
         Assert.False(vm.HasLightsFrom);
         Assert.Equal(WindowTexts.NoLightsFrom, vm.LightsFromText);
 
-        vm.LightsFrom = s.LightsDir;
+        // chosen before any folder: nothing to run yet
+        await vm.ChooseLightsFromAsync(s.LightsDir);
         Assert.True(vm.HasLightsFrom);
         Assert.Equal(s.LightsDir, vm.LightsFromText);
         Assert.Null(vm.Status);
+        Assert.False(vm.HasResult);
         Assert.False(new MainViewModel().HasLightsFrom);
 
         await vm.OpenAsync(library.Root);
@@ -590,21 +617,22 @@ public class MainViewModelTests
         Assert.StartsWith("EROARE: --out nu poate fi folderul lights-urilor alese sau unul din el", vm.Status, StringComparison.Ordinal);
         Assert.False(Directory.Exists(Path.Combine(s.LightsDir, "rapoarte")));
 
-        // choosing or clearing after a run only says so; the next run of the same folder takes the change
-        vm.LightsFrom = s.Root;
-        Assert.Equal(WindowTexts.LightsFromChanged, vm.Status);
-        Assert.Equal(s.LightsDir, vm.Result.Inventory.Session.LightsDir);
-        await vm.RerunAsync();
+        // choosing or clearing after a run runs the folder again at once, no button to press (ADR 0048): the
+        // session's folder gives its lights\, and clearing leaves the library without lights
+        DarkSeriesResult before = vm.Result!;
+        await vm.ChooseLightsFromAsync(s.Root);
         Assert.Null(vm.Status);
+        Assert.NotSame(before, vm.Result);
         Assert.Equal(s.LightsDir, vm.Result!.Inventory.Session.LightsDir);
-        vm.LightsFrom = null;
-        Assert.Equal(WindowTexts.LightsFromChanged, vm.Status);
         Assert.True(vm.HasLights);
-        await vm.RerunAsync();
+        await vm.ChooseLightsFromAsync(null);
+        Assert.False(vm.HasLightsFrom);
+        Assert.True(vm.HasResult);
         Assert.False(vm.HasLights);
 
         // a choice is kept for a rerun of the same folder and dropped when another folder is opened
-        vm.LightsFrom = s.LightsDir;
+        await vm.ChooseLightsFromAsync(s.LightsDir);
+        Assert.True(vm.HasLights);
         await vm.RerunAsync();
         Assert.True(vm.HasLightsFrom);
         Assert.True(vm.HasLights);
@@ -614,8 +642,7 @@ public class MainViewModelTests
         Assert.Contains(vm.SessionRows, row => row.Label == "lights" && row.Value == "lights\\ (4 cadre .fit)");
 
         // a lights folder that does not open says so on the card
-        vm.LightsFrom = Path.Combine(s.Root, "nu-exista");
-        await vm.RerunAsync();
+        await vm.ChooseLightsFromAsync(Path.Combine(s.Root, "nu-exista"));
         Assert.True(vm.HasProblem);
         Assert.StartsWith("lights-urile alese: nu gasesc folderul", vm.ProblemText, StringComparison.Ordinal);
     }
