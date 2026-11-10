@@ -102,27 +102,32 @@ plane. `DarkMinusBias` subtracts the two binned mean maps: the dark current per 
 in regions; its median on the Smida session is 0.14 ADU, below one quantisation step, which
 is why a dark's value lies in its hot pixels (the report of 2026-10-11).
 
-## The warming and the plateau
+## The warming and the end of the series
 
 `DarkSeriesAnalyzer.WarmingOf` reads check 3 from every frame's amplitude ratio (the median,
 over the master's hot pixels under `Th.AmplitudeMaxFraction` of white, of the frame's
-amplitude over the master's). The `Warming` record keeps the first and last ratio and their
-degrees, then the fit of ADR 0017 when at least `Th.WarmingFitMinFrames` frames have a ratio:
+amplitude over the master's). The `Warming` record keeps the first and last ratio, their
+degrees and how many frames have a ratio (`Measured`), then, when at least
+`Th.WarmingFitMinFrames` of them do, the end of the series (ADR 0043): `EndRatio` is the median
+ratio of the last `Th.SeriesEndFrames` frames with one, the last decoded ones under the frame
+cap, and there is no end when that median is not positive (`HasEnd`). Against it: the first
+frame's degrees (`FirstCelsius`), the master's (`MasterCelsius`, `Degrees(1 / end)`, positive
+above the end), the band `OffEndLow` .. `OffEndHigh` of `Th.OffEndCelsius` around the end, the
+frames outside it (`OffEndFrames`, a ratio at or under 0 among them), where the median ratio of
+the frames left would put the master (`MasterWithoutOffCelsius`) and the noise factor
+sqrt(frames / frames left). `Cooling` is the end under the first frame, the two figures the row
+prints. `TimeConstant` keeps one figure of the old plateau fit, for the `REFA` advice alone:
 `TimeAxis` gives the minutes from the first frame (`TimeFromStamps`) or, when a timestamp is
-missing, a stamp goes back in series order or the span is zero, the frame's position; `PlateauFit` tries every time constant on
-a grid from a fiftieth of the span to three times it, in steps of a two-hundredth, solves the
-two linear coefficients of `plateau - drop x exp(-t / tau)` by least squares for each and
-keeps the smallest residual sum of squares (`FitScale` is the rms). From the fit: the master's
-degrees to the plateau (`Degrees(1 / plateau)`, negative under it), the degrees left between
-the fitted last frame and the plateau (`SettleCelsius`), the band `OffPlateauLow` ..
-`OffPlateauHigh` of `Th.OffPlateauCelsius` around the plateau, the frames outside it
-(`OffPlateauFrames`) and where the median ratio of the frames left would put the master
-(`MasterWithoutOffCelsius`) and the noise factor sqrt(frames / frames left). A fit whose
-plateau or fitted last frame is not positive counts as none; `TauAtGridTop` marks a time
-constant at three times the span, where the plateau is extrapolated and the report says so.
-`DarkVerdictAnalyzer` adds the frames whose ratio leaves `Th.MatchOptLow` .. `Th.MatchOptHigh`
-of the master and the ratio farthest from 1 among them; the series is settled when there is
-no fit or `|SettleCelsius|` is within `Th.SettledCelsius`.
+missing, a stamp goes back in series order or the span is zero, the frame's position;
+`PlateauFit` tries every time constant on a grid from a fiftieth of the span to three times
+it, in steps of a two-hundredth, solves the two linear coefficients of `plateau - drop x
+exp(-t / tau)` by least squares for each and keeps the smallest residual sum of squares; the
+tau is `TauMinutes` only when the plateau and the fitted last frame are positive, the curve
+moves the way the series did (it falls when the drop is negative) and tau is under the top of
+the grid, NaN otherwise. `DarkVerdictAnalyzer` adds the frames whose ratio leaves
+`Th.MatchOptLow` .. `Th.MatchOptHigh` of the master and the ratio farthest from 1 among them;
+the master is near the end (`MasterNearEnd`) when there is no end or `|MasterCelsius|` is
+within `Th.MasterNearEndCelsius`.
 
 ## The light and the glow
 
@@ -169,12 +174,11 @@ beside the eight and lets check 6's glow be the glow part of that region.
 `Th`: the leak from the largest region departure of the dark-minus-bias map (or the dark
 master without biases), its sign telling light from a readout offset, `ATENTIE` also when a
 frame is lit, and the words of the brighter case from the cause of the split; the drift as
-`REFA` (`Verdict.Redo`, `DriftVerdict.MostlyOff`) when more than `Th.RedoOffPlateauFraction` of
-the frames with a ratio are off a fitted plateau (not one extrapolated from the top of the
-grid), since the median master is then made of them (ADR 0038), else `ATENTIE` only when the
-series has not settled or a frame leaves the `-opt` band of the master (the frames off the
-plateau are otherwise information, in the `de aruncat` row, the table's `platou` column and a
-note on their rows); the noise from the residual sigma outliers, with the temporal noise
+`REFA` (`Verdict.Redo`, `DriftVerdict.MostlyOff`) when more than `Th.RedoOffEndFraction` of
+the frames with a ratio are off the end of the series, since the median master is then made of
+them (ADR 0038, ADR 0043), else `ATENTIE` only when the master is not near the end or a frame
+leaves the `-opt` band of the master (the frames off the end are otherwise information, in the
+`de aruncat` row, the table's `sfarsit` column and a note on their rows); the noise from the residual sigma outliers, with the temporal noise
 over the read noise beside it; the pattern from the worst structured banding and the glow;
 the dead and saturated counts; and whether the frames are enough: at least `Th.MinDarks`, and
 the median master's predicted noise (`Th.MedianNoiseFactor` x the temporal sigma / sqrt(N))
@@ -253,7 +257,11 @@ failure of the lights or of the partner is an error carried in the result (`Ligh
 writes section 9, `INDEX` (the index, the label, the lights' equivalent index, the partner's
 lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; one `MatchText` words
 every match verdict, the lights' and the partner's, from where the set's hot pixels are (`in
-lights`, `in dark-urile sesiunii`) against the master (`in dark`, `la partener`), and `Warmth`
+lights`, `in dark-urile sesiunii`) against the master (`in dark`, `la partener`), the lights'
+with their `TraceFigures`: a verdict the traces relaxed says the ratio is outside 0.9 .. 1.1 and
+why the dark is still taken as it is, an `-opt` one how much is left (R-067); `TraceRow` words
+the `ce ramane` row of section 9, a hole for a ratio under 1 and a rest for one over it, and
+gives none when the ratio is unmeasured or sits around zero; and `Warmth`
 turns a match's degrees into the clause of the INDEX rows (`adica cu 7.5 grade mai reci decat
 partenerul`; `la aceeasi temperatura` under `Th.SameTemperatureCelsius`; none for a ratio that
 gives no degrees); `DarkOutputs.LightsCsv`
@@ -272,7 +280,7 @@ line, `HeaderRows` the rows under it (`1 ADU-eq`, `pasul valorilor`, the biases'
 figures end (the file and the time, left-aligned, start where theirs start). `Write` prints exactly those:
 a row as `    {label,-19}: {value}`, a table row with the console's column widths
 (`FrameLine` for a dark: the cells, then the row's `Note` after the last column when the frame
-is off the plateau, `Plateau` being its degrees from the plateau or `-` without a fit), a file
+is off the end of the series, `End` being its degrees from that end or `-` without one), a file
 name cut to 20 characters at print time only. The header line takes the scale's source as
 `FrameStack` words it: a raw's `libraw (exact)`, the copied reader's label, becomes
 `citite exact din raw` (`RawSource`), a FITS says its bits and where its white and black came
@@ -281,16 +289,21 @@ and the scale section's, call a set at
 the reference settings themselves (`AtReference`: ISO `Th.NormIso` and `Th.NormExposureSeconds`)
 by those words and any other set, a factor of 1 at ISO 800 and 60 s included, by its factor.
 `WarmingChartNote` is the sentence the window
-puts under its warming chart: the plateau and the band of the frames to discard, when there
-is a fit. Check 3's rows take the camera's direction from `Warming.Cooling`, set once in
-`WarmingOf` (the fitted curve falls to its plateau: `SettleCelsius` negative; without a fit,
-`DeltaCelsius` negative), print every distance to the plateau unsigned with "above" or "below"
-(`FromMaster` for the plateau against the master, `FromPlateau` for the master and for the
-last frame against the plateau, "at the plateau" within 0.05 °C), and give the `REFA` advice
-of a cooling series as three times `TauMinutes` rounded up to a multiple of five (ADR 0038).
+puts under its warming chart: the end of the series and the band of the frames to discard,
+when there is an end. Check 3's rows (`EndRow`, `OffEndRow`, `Drift`) take the camera's
+direction from `Warming.Cooling`, set once in `WarmingOf` (the end under the first frame;
+without an end, `DeltaCelsius` negative), print every distance to the end unsigned with "above"
+or "below" (`FromEnd`, and `FromIt` where the sentence has just named the end; "level with"
+within 0.05 °C), name the end by `EndWords` (the average of the last five frames, a median said
+as ADR 0035 says), and give the `REFA` advice of a cooling series as three times `TauMinutes`
+rounded up to a multiple of five, or without minutes when `TauMinutes` is NaN (ADR 0038,
+ADR 0043); a series without an end says why by `NoEnd`, too few frames or hot pixels that do not
+show in its last ones. An `ATENTIE` for a master far from the end names the side: under it the
+colder frames of the start pull it down, above it the warmer ones pull it up and the cause is
+named.
 Every side text, check 2's, the note's and the ADU scale section's, names a side
 with its preposition (`SideWithPreposition`: `latura de sus`, `latura din dreapta`). A frame
-whose hot pixels do not show at all (a ratio at or under 0) is off the plateau in `WarmingOf`,
+whose hot pixels do not show at all (a ratio at or under 0) is off the end in `WarmingOf`,
 and `FrameRows` gives it its own reason, with no degrees; `NoiseColumnTip` and `HotColumnTip`
 are the hints of two columns that name the series' pixels. A `ReportRow` reads its own verdict word off the
 value (`Verdict`: OK, ATENTIE, REFA or NEMASURAT, or their English WARNING, REDO and UNMEASURED, when the value

@@ -114,8 +114,8 @@ they are now.
   the console's cells as they are, with the unit note of the table header (`[pixelii verzi G1; ...]`, `[G1; ...]` for the lights) as
   the last column's header, and the hints of `zgomot` and `>20` set from the core with it
   (`NoiseHeaderTip`, `HotHeaderTip`), since they name the series' pixels; a dark row's `Off` is set when the core gave it a `Note` (a frame
-  off the plateau, R-023), and `FramesView` then tints the row (`FrameRowGrid`, the note as
-  its tooltip), colours the `platou` cell bold (`PlateauCell`) and shows the note on a second
+  off the end of the series, R-023), and `FramesView` then tints the row (`FrameRowGrid`, the note as
+  its tooltip), colours the `sfarsit` cell bold (`EndCell`) and shows the note on a second
   row of the row's grid, under the cells and spanning them, all in the attention colour of
   `VerdictPalette.Warn` as local brushes;
 - the Harti tab takes the three `BinnedMap`s of the reference plane through
@@ -124,17 +124,20 @@ they are now.
   `DARK MINUS BIAS`; a map without blocks, or an absent group, is a `MapVm` without image and
   the card says why (`WindowTexts.NoDarkMap`, `NoBiasMap`);
 - the charts take `ChartPoint(X, Y, Label, Colour, Tip)` lists: the warming (every dark's
-  `AmpRatioMedian`, the frames of `Warming.OffPlateauFrames` in the attention colour, guide
-  at 1 and, with a fit, at `Plateau`, `OffPlateauLow` and `OffPlateauHigh`; the card's
+  `AmpRatioMedian`, the frames of `Warming.OffEndFrames` in the attention colour, guide
+  at 1 and, with an end, at `EndRatio`, `OffEndLow` and `OffEndHigh`; the card's
   sentence is `DarkReport.WarmingChartNote`, as `WarmingNote`), the residual sigma (`Residuals[rp].Sigma`, the outlier
   frames of `NoiseVerdict.OutlierFrames` in the attention colour, guide at
   `NoiseVerdict.OutlierLimitAdu`), the random banding (`ResidualFigures.RowBandingRatio`,
   guide at 1), the noise curve (`NoiseVsN.Curve` measured as points, expected as the dashed
   `Reference`, each point's tip its frames and the two figures) and the lights' ratio (`AmpRatioMedian` per
-  light, coloured by `IndexAnalyzer.Judge` through `VerdictPalette.For(MatchVerdict)`, the
-  five bounds of `Th.Match*` as guides named by what to do with the dark, `0.9 asa cum e`,
-  `0.7 cu -opt`, `0.4 doar cosmetic`); a frame without a figure is `NaN` and the chart
-  leaves a gap;
+  light, coloured by `LightsAnalysis.Judge` through `VerdictPalette.For(MatchVerdict)`, so
+  with the `Direct` band the traces allow, R-067; five guides named by what to do with the dark,
+  the two green ones at `TraceFigures.DirectLow` and `DirectHigh`, `0.9 asa cum e` or, when the
+  band is `Widened`, `0.80 asa cum e` with two decimals, then `0.7 cu -opt` and `0.4 doar
+  cosmetic` at `Th.Match*`; the sentence above it is `WindowTexts.LightsChartLead(TraceFigures)`,
+  which names the same band and is raised with the result); a frame without a figure is `NaN`
+  and the chart leaves a gap;
 - `Label` and `Tag` are the result's `Label` and `LabelTag` (the tag the label ends with,
   decided in `DarkSeriesRun`: the darks' index tag, or the lights' for a folder whose darks are
   the partner's, R-066); `IndexLead`, the text under the label, is `WindowTexts.IndexLead` or,

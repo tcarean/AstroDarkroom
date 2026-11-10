@@ -171,6 +171,179 @@ public class LightsAndIndexTests
         Assert.DoesNotContain("NEMASURAT: masterul nu are niciun pixel fierbinte", report, StringComparison.Ordinal);
     }
 
+    /// <summary>A hundred hot pixels of 30 ADU on a grid: just over the hot threshold of 20, weak against a light's noise of 6.</summary>
+    private static readonly IReadOnlyList<(int X, int Y, double Adu)> WeakHot = [.. Enumerable.Range(0, 100).Select(k => (20 + 22 * (k % 10), 20 + 16 * (k / 10), 30.0))];
+
+    [Theory]
+    [InlineData(0.85)]
+    [InlineData(1.15)]
+    public void R067_ARatioOutsideTheDirectBandIsOkWhenWhatItLeavesIsUnderTheNoiseOfALight(double factor)
+    {
+        // a hundred hot pixels of 30 ADU and lights with a noise of 6 (a pixel differs from its neighbours by about
+        // 6.5): at 0.85 or 1.15 of the dark a plain subtraction leaves 4.5 ADU, about 0.7 of the noise, so the dark
+        // can be subtracted as it is although the ratio is outside 0.9 .. 1.1 (ADR 0044)
+        using SessionFixture s = new SessionFixture()
+            .WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = WeakHot })
+            .WithLights(5, i => new SyntheticLight { Seed = 300 + i, Hot = WeakHot, HotFactor = factor });
+        DarkSeriesResult r = Run(s);
+        LightsAnalysis l = r.Lights!;
+        Assert.Equal(100, l.AmpPixels);
+        MatchFigures m = l.LightsOverDark;
+        Assert.InRange(m.Ratio, factor - 0.05, factor + 0.05);
+        Assert.Equal(MatchVerdict.WithOpt, IndexAnalyzer.Judge(m.Ratio));
+        TraceFigures t = l.Traces;
+        Assert.Equal(100, t.Pixels);
+        // the level over the noise at a typical hot pixel, then the trace at the night's ratio
+        Assert.InRange(t.PerUnit, 30 / 7.8, 30 / 5.5);
+        Assert.Equal(Math.Abs(m.Ratio - 1) * t.PerUnit, t.Median, 1e-9);
+        Assert.InRange(t.Median, 0.35, 0.99);
+        Assert.Equal(0, t.AboveNoise);
+        Assert.Equal(0, t.AboveStrong);
+        Assert.Equal(1 - Th.TraceNoiseLimit / t.PerUnit, t.DirectLow, 1e-9);
+        Assert.Equal(1 + Th.TraceNoiseLimit / t.PerUnit, t.DirectHigh, 1e-9);
+        Assert.InRange(t.DirectLow, Th.MatchOptLow, Th.MatchDirectLow);
+        Assert.InRange(t.DirectHigh, Th.MatchDirectHigh, Th.MatchOptHigh);
+        Assert.True(t.Relaxed);
+        Assert.Equal(MatchVerdict.Direct, m.Verdict);
+        Assert.Equal(MatchVerdict.Direct, l.Judge(m.Ratio));
+        Assert.Equal(MatchVerdict.WithOpt, l.Judge(factor < 1 ? t.DirectLow - 0.01 : t.DirectHigh + 0.01));
+
+        string report = Report(r);
+        string median = t.Median.ToString("0.00", CultureInfo.InvariantCulture);
+        string ratio = m.Ratio.ToString("0.00", CultureInfo.InvariantCulture);
+        string band = $"intre {t.DirectLow.ToString("0.00", CultureInfo.InvariantCulture)} si {t.DirectHigh.ToString("0.00", CultureInfo.InvariantCulture)}";
+        string tail = "(zgomotul light-ului pe culoarea pixelului; cu dithering urmele se imprastie, fara el raman in acelasi loc in stack)";
+        Assert.Contains(
+            factor < 1
+                ? $"    ce ramane          : scaderea ia prea mult: la un pixel fierbinte ramane in medie o gaura de {median} din zgomotul unui light; la 0 din 100 gaura trece de zgomot, la 0 de 3 ori zgomotul {tail}"
+                : $"    ce ramane          : scaderea ia prea putin: la un pixel fierbinte ramane in medie un rest de {median} din zgomotul unui light; la 0 din 100 restul trece de zgomot, la 0 de 3 ori zgomotul {tail}",
+            report,
+            StringComparison.Ordinal);
+        Assert.Contains($"    verdict            : OK: dark-ul se poate scadea asa cum e; in lights pixelii fierbinti sunt de {ratio} ori cat in dark, in afara 0.9 .. 1.1, dar ce ramane dupa scadere e in medie sub zgomotul unui light ({median} din el; pe aceste lights, asa e {band}): dark-ul e mai {(factor < 1 ? "cald" : "rece")} cu ", report, StringComparison.Ordinal);
+        // the new words name no part of the method (ADR 0028)
+        foreach (ReportRow row in DarkReport.Sections(r).Single(x => x.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Where(x => x.Label is "ce ramane" or "verdict"))
+        {
+            Assert.DoesNotMatch(PlainWords.RomanianTabWords(), row.Value);
+        }
+
+        // the row sits between the ratio's row and the indexes
+        Assert.True(report.IndexOf("lights fata de dark:", StringComparison.Ordinal) < report.IndexOf("ce ramane          :", StringComparison.Ordinal));
+        Assert.True(report.IndexOf("ce ramane          :", StringComparison.Ordinal) < report.IndexOf("index dark-uri     :", StringComparison.Ordinal));
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            string en = Report(r);
+            Assert.Contains(
+                factor < 1
+                    ? $"    what is left       : the subtraction takes too much: a hot pixel keeps on average a hole of {median} of the noise of a light; at 0 of 100 the hole is over the noise, at 0 over 3 times the noise (the light's noise on the pixel's colour; with dithering the traces spread, without it they stay in the same place in the stack)"
+                    : $"    what is left       : the subtraction takes too little: a hot pixel keeps on average a rest of {median} of the noise of a light; at 0 of 100 the rest is over the noise, at 0 over 3 times the noise (the light's noise on the pixel's colour; with dithering the traces spread, without it they stay in the same place in the stack)",
+                en,
+                StringComparison.Ordinal);
+            Assert.Contains($"    verdict            : OK: the dark can be subtracted as it is; in the lights the hot pixels are {ratio} times what they are in the dark, outside 0.9 .. 1.1, but what the subtraction leaves is on average under the noise of a light ({median} of it; on these lights that holds between {t.DirectLow.ToString("0.00", CultureInfo.InvariantCulture)} and {t.DirectHigh.ToString("0.00", CultureInfo.InvariantCulture)}): the dark is {(factor < 1 ? "warmer" : "colder")} by ", en, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void R067_StrongHotPixelsAtTheSameRatioKeepTheOptVerdict()
+    {
+        // the same ratio over twenty hot pixels of 120 ADU: the subtraction leaves 18 ADU, about 2.8 times the noise
+        // of a light, so the ratio's verdict stands and says what is left
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 0.85 });
+        DarkSeriesResult r = Run(s);
+        LightsAnalysis l = r.Lights!;
+        TraceFigures t = l.Traces;
+        Assert.Equal(20, t.Pixels);
+        Assert.InRange(t.Median, 1.8, 3.6);
+        Assert.Equal(20, t.AboveNoise);
+        Assert.InRange(t.AboveStrong, 0, 20);
+        Assert.Equal(Th.MatchDirectLow, t.DirectLow);
+        Assert.Equal(Th.MatchDirectHigh, t.DirectHigh);
+        Assert.False(t.Relaxed);
+        Assert.Equal(MatchVerdict.WithOpt, l.LightsOverDark.Verdict);
+        string report = Report(r);
+        string median = t.Median.ToString("0.00", CultureInfo.InvariantCulture);
+        // from 1.00 up the trace is said in times the noise, as the verdict under it says it
+        Assert.Contains($"    ce ramane          : scaderea ia prea mult: la un pixel fierbinte ramane in medie o gaura de {median} ori cat zgomotul unui light; la 20 din 20 gaura trece de zgomot, la {t.AboveStrong} de 3 ori zgomotul (", report, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Contains($"    what is left       : the subtraction takes too much: a hot pixel keeps on average a hole of {median} times the noise of a light; at 20 of 20 the hole is over the noise, at {t.AboveStrong} over 3 times the noise (", Report(r), StringComparison.Ordinal);
+        }
+
+        // too little, and over the noise: a rest of so many times the noise
+        using SessionFixture warm = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, 1.3));
+        DarkSeriesResult rw = Run(warm);
+        string rest = rw.Lights!.Traces.Median.ToString("0.00", CultureInfo.InvariantCulture);
+        Assert.InRange(rw.Lights.Traces.Median, 3.5, 7.5);
+        Assert.Contains($"    ce ramane          : scaderea ia prea putin: la un pixel fierbinte ramane in medie un rest de {rest} ori cat zgomotul unui light; la 20 din 20 restul trece de zgomot, la ", Report(rw), StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Contains($"    what is left       : the subtraction takes too little: a hot pixel keeps on average a rest of {rest} times the noise of a light; at 20 of 20 the rest is over the noise, at ", Report(rw), StringComparison.Ordinal);
+        }
+        Assert.Contains($" ori cat in dark, intre 0.7 si 1.4, iar ce ramane dupa scadere e in medie de {median} ori zgomotul unui light: dark-ul e mai cald cu ", report, StringComparison.Ordinal);
+        Assert.Contains("    verdict            : ATENTIE: scade dark-ul cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); in lights pixelii fierbinti sunt de 0.8", report, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R067_TheTwoCountsSplitThePixelsAtOnceAndAtThreeTimesTheNoise()
+    {
+        // ten hot pixels of 60 ADU and ten of 240, lights at 0.85 with a noise of 6: the subtraction leaves 9 ADU at
+        // the first ten (about 1.4 times the noise) and 36 at the others (about 5.5 times), so all twenty are above
+        // the noise and exactly the ten strong ones above three times it
+        (int X, int Y, double Adu)[] twoLevels = [.. SyntheticLight.Lattice.Select((h, k) => (h.X, h.Y, k < 10 ? 60.0 : 240.0))];
+        using SessionFixture s = new SessionFixture()
+            .WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = twoLevels })
+            .WithLights(5, i => new SyntheticLight { Seed = 300 + i, Hot = twoLevels, HotFactor = 0.85 });
+        DarkSeriesResult r = Run(s);
+        TraceFigures t = r.Lights!.Traces;
+        Assert.Equal(20, t.Pixels);
+        Assert.Equal(20, t.AboveNoise);
+        Assert.Equal(10, t.AboveStrong);
+        Assert.Contains("; la 20 din 20 gaura trece de zgomot, la 10 de 3 ori zgomotul (", Report(r), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R067_TheTracesOnlyRelaxTheOptBandAndAMatchedDarkLeavesNothing()
+    {
+        // weak hot pixels at 0.6 of the dark: under 0.7 the dark is for the cosmetic correction only, whatever is left
+        using SessionFixture cosmetic = new SessionFixture()
+            .WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = WeakHot })
+            .WithLights(5, i => new SyntheticLight { Seed = 300 + i, Hot = WeakHot, HotFactor = 0.6 });
+        LightsAnalysis lc = Run(cosmetic).Lights!;
+        Assert.InRange(lc.Traces.Median, 1.0, 2.6);
+        Assert.False(lc.Traces.Relaxed);
+        Assert.Equal(MatchVerdict.CosmeticOnly, lc.LightsOverDark.Verdict);
+        Assert.True(lc.LightsOverDark.Ratio < lc.Traces.DirectLow, $"{lc.LightsOverDark.Ratio} against {lc.Traces.DirectLow}");
+        Assert.InRange(lc.Traces.DirectLow, Th.MatchOptLow, Th.MatchDirectLow);
+
+        // hot pixels so weak against the lights' noise (22 ADU against 10) that the trace would stay under the noise
+        // well past the -opt band: the band stops at 0.7 .. 1.4, and lights at 0.6 are still for the cosmetic
+        // correction only
+        (int X, int Y, double Adu)[] faint = [.. WeakHot.Select(h => (h.X, h.Y, 22.0))];
+        using SessionFixture clamped = new SessionFixture()
+            .WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = faint })
+            .WithLights(5, i => new SyntheticLight { Seed = 300 + i, Hot = faint, HotFactor = 0.6, Noise = 10 });
+        LightsAnalysis lk = Run(clamped).Lights!;
+        Assert.True(Th.TraceNoiseLimit / lk.Traces.PerUnit > Th.MatchOptHigh - 1, $"per unit {lk.Traces.PerUnit}");
+        Assert.Equal(Th.MatchOptLow, lk.Traces.DirectLow);
+        Assert.Equal(Th.MatchOptHigh, lk.Traces.DirectHigh);
+        Assert.Equal(MatchVerdict.CosmeticOnly, lk.LightsOverDark.Verdict);
+        Assert.Equal(MatchVerdict.CosmeticOnly, lk.Judge(0.65));
+        Assert.Equal(MatchVerdict.Unmatched, lk.Judge(1.45));
+        Assert.Equal(MatchVerdict.Direct, lk.Judge(0.7));
+
+        // lights at the dark's own level: inside 0.9 .. 1.1, the old words, and a trace near nothing
+        using SessionFixture matched = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i));
+        DarkSeriesResult rm = Run(matched);
+        Assert.Equal(MatchVerdict.Direct, rm.Lights!.LightsOverDark.Verdict);
+        Assert.False(rm.Lights.Traces.Relaxed);
+        Assert.InRange(rm.Lights.Traces.Median, 0, 0.9);
+        Assert.Contains(", intre 0.9 si 1.1: dark-ul e ", Report(rm), StringComparison.Ordinal);
+
+        // lights that show none of the dark's hot pixels have no row: there is no subtraction to speak of
+        using SessionFixture none = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, 0));
+        Assert.DoesNotContain("ce ramane", Report(Run(none)), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R053_WithoutLightsCheck9IsUnmeasuredAndTheIndexHasNoLightsLine()
     {
@@ -251,15 +424,15 @@ public class LightsAndIndexTests
         LightsAnalysis l = r.Lights!;
         ReportSection nine = DarkReport.Sections(r).Single(x => x.Title.StartsWith("9.", StringComparison.Ordinal));
         ReportSection index = DarkReport.Sections(r).Single(x => x.Title == "INDEX");
-        Assert.Equal(["pixeli fierbinti", "in masterul dark", "masterul in lights", "lipsesc din master", "lights fata de dark", "index dark-uri", "index lights", "verdict"], nine.Rows.Select(row => row.Label));
+        Assert.Equal(["pixeli fierbinti", "in masterul dark", "masterul in lights", "lipsesc din master", "lights fata de dark", "ce ramane", "index dark-uri", "index lights", "verdict"], nine.Rows.Select(row => row.Label));
 
         // the two indexes, each on its own row: the darks' tag, and the lights' equivalent tag with the INDEX row's parenthesis
-        Assert.Equal(r.Index.Tag, nine.Rows[5].Value);
+        Assert.Equal(r.Index.Tag, nine.Rows[6].Value);
         string like = Math.Round(r.LightsIndex, MidpointRounding.AwayFromZero).ToString(CultureInfo.InvariantCulture);
-        Assert.StartsWith("idx" + like + " (de 1.30 ori cat dark-ul, adica cu 2.3 grade mai calde decat el)", nine.Rows[6].Value, StringComparison.Ordinal);
-        Assert.Equal("ca un dark cu " + nine.Rows[6].Value, index.Rows.Single(row => row.Label == "lights").Value);
-        Assert.Null(nine.Rows[5].Table);
-        Assert.Null(nine.Rows[6].Lines);
+        Assert.StartsWith("idx" + like + " (de 1.30 ori cat dark-ul, adica cu 2.3 grade mai calde decat el)", nine.Rows[7].Value, StringComparison.Ordinal);
+        Assert.Equal("ca un dark cu " + nine.Rows[7].Value, index.Rows.Single(row => row.Label == "lights").Value);
+        Assert.Null(nine.Rows[6].Table);
+        Assert.Null(nine.Rows[7].Lines);
 
         // the overlap rows: the console's line as before, the same figures as a table for the window
         foreach ((ReportRow row, Func<OverlapAtLevel, int> of) in new[] { (nine.Rows[1], (Func<OverlapAtLevel, int>)(o => l.Persistent)), (nine.Rows[2], o => o.DarkCount) })

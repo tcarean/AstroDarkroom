@@ -2,15 +2,16 @@
 
 **Covers:** `src/DarksCheck.Core/Analysis/LightsAnalyzer.cs`, `src/DarksCheck.Core/Analysis/IndexAnalyzer.cs`.
 
-The behaviour is R-050 to R-065; the decisions are ADR 0004 (the index as a rank statistic,
-the matching as a ratio on shared pixels, no reference file) and ADR 0008 (the lights read one
-by one, the isolated detector, the pixels two masters match on). The run that calls these two
+The behaviour is R-050 to R-067; the decisions are ADR 0004 (the index as a rank statistic,
+the matching as a ratio on shared pixels, no reference file), ADR 0008 (the lights read one
+by one, the isolated detector, the pixels two masters match on) and ADR 0044 (what a plain
+subtraction leaves, against the noise of a light). The run that calls these two
 (`DarkSeriesRun`), the report sections `9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE`, `INDEX` and `TABEL PE LIGHTS`
 and the file `darkscheck-lights.csv` are described with the rest of the run in
 `dark-analysis.md`. The oracle is the lights loop of `prototype/analyze_darks.py`
 (`local_excess`, `neighbour_max`) and `docs/validation/2026-08-12-smida/report.md`, section 9.
 
-`Analysis/LightsAnalyzer.cs` declares `LightFigures`, `OverlapAtLevel` and `LightsAnalysis`;
+`Analysis/LightsAnalyzer.cs` declares `LightFigures`, `OverlapAtLevel`, `TraceFigures` and `LightsAnalysis`;
 `Analysis/IndexAnalyzer.cs` the enum `MatchVerdict`, `IndexFigures`, `MatchFigures` and
 `PartnerAnalysis` (the partner itself is built by `MatchPartner` in `Runs/DarkSeriesRun.cs`,
 `dark-analysis.md`, which also describes `darkscheck-lights.csv`).
@@ -109,7 +110,32 @@ MatchOptHigh` (0.7 .. 1.4), `CosmeticOnly` from `Th.MatchCosmeticLow` (0.4) up t
 reference is much warmer: it sees every hot pixel, subtraction would over-correct), `Unmatched`
 beyond either side, `Unmeasured` for no pixel or a ratio that is not positive. The same `Match`
 serves the lights (their per-light medians) and the partner (the per-pixel ratios). Why the
-pixels hot in both and not the reference's alone is measured in ADR 0008.
+pixels hot in both and not the reference's alone is measured in ADR 0008. `Judge(ratio, low,
+high)` is the same rule with a `Direct` band of its own; the plain `Judge` passes
+`Th.MatchDirectLow .. MatchDirectHigh` and is the partner's.
+
+## What the mismatch leaves
+
+A set of lights against its darks is judged with a wider `Direct` band when a plain subtraction
+leaves little (R-067, ADR 0044). `LightsAnalyzer.TracesOf` runs at the end of `Analyze`, on
+figures already there. The noise of a light per CFA position is the median over the decoded
+lights of `LightFigures.LocalSigma[p]`, each divided by its own normalisation (the darks' for a
+light with assumed settings), so in ADU-eq. For every amplitude pixel (`ampIdx`) on a position
+whose noise is positive, the master's excess in ADU-eq over that noise is the trace it leaves
+per unit of `|ratio - 1|`; the position of mosaic index `i` is `(((i / w) & 1) << 1) | ((i % w)
+& 1)`, the order `LocalSigma` is filled in. `TraceFigures.PerUnit` is the median of those, `k`.
+The trace of any ratio is then `|ratio - 1| x k`, so the band inside which it stays under
+`Th.TraceNoiseLimit` is `1 -/+ Th.TraceNoiseLimit / k`: `DirectLow` and `DirectHigh` are
+`Th.MatchDirectLow` and `MatchDirectHigh` widened to it and clamped to `Th.MatchOptLow ..
+MatchOptHigh`, the plain band when `k` is large (`Widened` says which). For the night's ratio:
+`Median` (`|ratio - 1| x k`), `AboveNoise` and `AboveStrong` (the pixels whose own trace passes
+1 and `Th.TraceStrongFactor` times the noise), and `Relaxed`, true when the plain `Judge` says
+`WithOpt` and the band says `Direct`; `Analyze` then sets `LightsOverDark.Verdict` to `Direct`,
+so every reader of the verdict (the report, the validation, the window's chip) sees it, and the
+report takes its wording from `Relaxed`. `LightsAnalysis.Judge(ratio)` judges any ratio with
+the band: the window colours each light's point with it. `Chain` and `EquivalentIndex` read
+only the ratio, so the partner's verdicts and the lights' index do not move. No pixel read
+(`TraceFigures.None`) leaves the plain band.
 
 For a partner (`--against`) the run calls `SharedRatios` with the session's master as `own`
 and the partner's median master as `reference`, then `Match`; how the partner is opened,

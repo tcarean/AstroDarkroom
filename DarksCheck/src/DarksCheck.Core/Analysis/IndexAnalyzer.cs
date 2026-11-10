@@ -27,8 +27,8 @@ namespace DarksCheck.Core;
 internal enum MatchVerdict
 {
     /// <summary>
-    /// Within <see cref="Th.MatchDirectLow"/> .. <see cref="Th.MatchDirectHigh"/>: subtract the
-    /// dark as it is.
+    /// Within <see cref="Th.MatchDirectLow"/> .. <see cref="Th.MatchDirectHigh"/>, or, for a set of
+    /// lights, within the wider band its traces allow (R-067): subtract the dark as it is.
     /// </summary>
     Direct,
 
@@ -89,7 +89,8 @@ internal sealed record IndexFigures(double Index, int RankLow, int RankHigh, int
 /// <param name="Q75">The 75th percentile of the ratios.</param>
 /// <param name="DeltaCelsius">The temperature offset, in degrees Celsius; NaN for a ratio that
 /// is not positive.</param>
-/// <param name="Verdict">The verdict of the median ratio.</param>
+/// <param name="Verdict">The verdict of the median ratio; for a set of lights against its darks,
+/// with the wider Direct band its traces allow (R-067).</param>
 internal sealed record MatchFigures(int Pixels, double Ratio, double Q25, double Q75, double DeltaCelsius, MatchVerdict Verdict)
 {
     internal static readonly MatchFigures None = new(0, double.NaN, double.NaN, double.NaN, double.NaN, MatchVerdict.Unmeasured);
@@ -246,7 +247,20 @@ internal static partial class IndexAnalyzer
     /// </summary>
     /// <param name="ratio">The median ratio.</param>
     /// <returns>The verdict.</returns>
-    internal static MatchVerdict Judge(double ratio)
+    internal static MatchVerdict Judge(double ratio) => Judge(ratio, Th.MatchDirectLow, Th.MatchDirectHigh);
+
+    /// <summary>
+    /// The verdict of a ratio with a Direct band of its own: a set of lights against its darks
+    /// takes the band its traces allow (R-067, <see cref="TraceFigures.DirectLow"/> ..
+    /// <see cref="TraceFigures.DirectHigh"/>); the other bounds are R-062's.
+    /// </summary>
+    /// <param name="ratio">The median ratio.</param>
+    /// <param name="directLow">The lower bound of the Direct band, inclusive; within
+    /// <see cref="Th.MatchOptLow"/> .. <see cref="Th.MatchDirectLow"/>.</param>
+    /// <param name="directHigh">The upper bound of the Direct band, inclusive; within
+    /// <see cref="Th.MatchDirectHigh"/> .. <see cref="Th.MatchOptHigh"/>.</param>
+    /// <returns>The verdict.</returns>
+    internal static MatchVerdict Judge(double ratio, double directLow, double directHigh)
     {
         if (double.IsNaN(ratio))
         {
@@ -258,7 +272,7 @@ internal static partial class IndexAnalyzer
             return MatchVerdict.Unmatched;
         }
 
-        if (ratio >= Th.MatchDirectLow && ratio <= Th.MatchDirectHigh)
+        if (ratio >= directLow && ratio <= directHigh)
         {
             return MatchVerdict.Direct;
         }

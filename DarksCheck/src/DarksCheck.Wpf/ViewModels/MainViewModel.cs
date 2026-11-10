@@ -62,7 +62,7 @@ public sealed record SectionVm(string Title, IReadOnlyList<RowVm> Rows);
 
 /// <summary>
 /// One dark of the frames table (R-071): the console's cells as they are; Skipped or Error set
-/// when the frame has no figures; Off and Note mark a frame off the plateau of R-023, with the
+/// when the frame has no figures; Off and Note mark a frame off the end of the series of R-023, with the
 /// core's reason.
 /// </summary>
 /// <param name="Index">The frame's number in the series, as the console shows it.</param>
@@ -75,20 +75,20 @@ public sealed record SectionVm(string Title, IReadOnlyList<RowVm> Rows);
 /// <param name="Residual">The residual sigma cell.</param>
 /// <param name="Bands">The random banding ratio cell.</param>
 /// <param name="Amp">The hot pixels' amplitude ratio cell, against the master.</param>
-/// <param name="Plateau">The degrees from the plateau of R-023 cell (`-` without a fit).</param>
+/// <param name="End">The degrees from the end of the series of R-023 cell (`-` without an end).</param>
 /// <param name="Light">The frame's light excess cell (`-` when not measured).</param>
 /// <param name="Side">The worst side's offset after the bias cell (`-` without a side).</param>
 /// <param name="Above">The count of pixels above the hot level cell.</param>
-/// <param name="Off">True when the core gave the frame a note: a frame off the plateau.</param>
-/// <param name="Note">The core's note for a frame off the plateau; null for the others.</param>
-public sealed record FrameRowVm(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string Plateau, string Light, string Side, string Above, bool Off, string? Note)
+/// <param name="Off">True when the core gave the frame a note: a frame off the end of the series.</param>
+/// <param name="Note">The core's note for a frame off the end of the series; null for the others.</param>
+public sealed record FrameRowVm(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string End, string Light, string Side, string Above, bool Off, string? Note)
 {
     /// <summary>
     /// The table row of the core as the window binds it; Off is set when the row has a note.
     /// </summary>
     /// <param name="r">The core's row of the darks table.</param>
     /// <returns>The row, its cells unchanged.</returns>
-    internal static FrameRowVm From(DarkTableRow r) => new(r.Index, r.FileName, r.Skipped, r.Error, r.Time, r.Mean, r.Sigma, r.Residual, r.Bands, r.Amp, r.Plateau, r.Light, r.Side, r.Above, r.Note is not null, r.Note);
+    internal static FrameRowVm From(DarkTableRow r) => new(r.Index, r.FileName, r.Skipped, r.Error, r.Time, r.Mean, r.Sigma, r.Residual, r.Bands, r.Amp, r.End, r.Light, r.Side, r.Above, r.Note is not null, r.Note);
 }
 
 /// <summary>One light of the lights table (R-071): the console's cells as they are.</summary>
@@ -273,7 +273,11 @@ public sealed class MainViewModel : ObservableObject
 
     public string MapsLead => WindowTexts.MapsLead;
 
-    public string LightsChartLead => WindowTexts.LightsChartLead;
+    /// <summary>
+    /// The sentence above the lights' chart; its green band is the open result's (R-067), the plain
+    /// one before a result.
+    /// </summary>
+    public string LightsChartLead => WindowTexts.LightsChartLead(_result?.Lights?.Traces ?? TraceFigures.None);
 
     public string HotHeader => WindowTexts.HotHeader;
 
@@ -281,7 +285,7 @@ public sealed class MainViewModel : ObservableObject
 
     public string NoiseHeaderTip { get; private set; } = "";
 
-    public string PlateauHeaderTip => DarkReport.PlateauColumnTip;
+    public string EndHeaderTip => DarkReport.EndColumnTip;
 
     public string HotTabLead => WindowTexts.HotTabLead;
 
@@ -424,7 +428,7 @@ public sealed class MainViewModel : ObservableObject
     public IReadOnlyList<GuideLine> WarmingGuides { get; private set; } = [];
 
     /// <summary>
-    /// The core's sentence under the warming chart: what the points are, the plateau and the band
+    /// The core's sentence under the warming chart: what the points are, the end of the series and the band
     /// of the frames to discard (R-071).
     /// </summary>
     public string WarmingNote { get; private set; } = "";
@@ -750,7 +754,7 @@ public sealed class MainViewModel : ObservableObject
 
         // the charts: one point per dark, NaN where the frame has no figure
         HashSet<int> outliers = r.Verdicts.Noise.OutlierFrames.ToHashSet();
-        HashSet<int> off = d.Warming.OffPlateauFrames.ToHashSet();
+        HashSet<int> off = d.Warming.OffEndFrames.ToHashSet();
         List<ChartPoint> warming = [], residual = [], banding = [];
         foreach (DarkFrameFigures f in d.Frames)
         {
@@ -764,13 +768,13 @@ public sealed class MainViewModel : ObservableObject
         WarmingPoints = warming;
         Warming wm = d.Warming;
         GuideLine master = new(1.0, T("the master", "masterul"), VerdictPalette.Neutral);
-        WarmingGuides = wm.HasFit
+        WarmingGuides = wm.HasEnd
             ?
             [
                 master,
-                new GuideLine(wm.Plateau, T($"plateau {RunReport.F(wm.Plateau, 2)}", $"platoul {RunReport.F(wm.Plateau, 2)}"), VerdictPalette.Neutral),
-                new GuideLine(wm.OffPlateauLow, T($"{RunReport.F(wm.OffPlateauLow, 2)} discard", $"{RunReport.F(wm.OffPlateauLow, 2)} de aruncat"), VerdictPalette.Warn),
-                new GuideLine(wm.OffPlateauHigh, T($"{RunReport.F(wm.OffPlateauHigh, 2)} discard", $"{RunReport.F(wm.OffPlateauHigh, 2)} de aruncat"), VerdictPalette.Warn),
+                new GuideLine(wm.EndRatio, T($"end of series {RunReport.F(wm.EndRatio, 2)}", $"sfarsitul seriei {RunReport.F(wm.EndRatio, 2)}"), VerdictPalette.Neutral),
+                new GuideLine(wm.OffEndLow, T($"{RunReport.F(wm.OffEndLow, 2)} discard", $"{RunReport.F(wm.OffEndLow, 2)} de aruncat"), VerdictPalette.Warn),
+                new GuideLine(wm.OffEndHigh, T($"{RunReport.F(wm.OffEndHigh, 2)} discard", $"{RunReport.F(wm.OffEndHigh, 2)} de aruncat"), VerdictPalette.Warn),
             ]
             : [master];
         WarmingNote = DarkReport.WarmingChartNote(r);
@@ -783,11 +787,14 @@ public sealed class MainViewModel : ObservableObject
 
         if (r.Lights is LightsAnalysis l)
         {
-            LightPoints = l.Frames.Select(f => new ChartPoint(f.Info.Index, f.Error is null ? f.AmpRatioMedian : double.NaN, f.Info.Index.ToString(CultureInfo.InvariantCulture), VerdictPalette.For(IndexAnalyzer.Judge(f.AmpRatioMedian)))).ToList();
+            LightPoints = l.Frames.Select(f => new ChartPoint(f.Info.Index, f.Error is null ? f.AmpRatioMedian : double.NaN, f.Info.Index.ToString(CultureInfo.InvariantCulture), VerdictPalette.For(l.Judge(f.AmpRatioMedian)))).ToList();
+            // the green lines stand at the ends of the band the core found for these lights (R-067); two decimals when it is wider
+            TraceFigures band = l.Traces;
+            int digits = band.Widened ? 2 : 1;
             LightGuides =
             [
-                new GuideLine(Th.MatchDirectLow, T($"{RunReport.F(Th.MatchDirectLow, 1)} as it is", $"{RunReport.F(Th.MatchDirectLow, 1)} asa cum e"), VerdictPalette.Good),
-                new GuideLine(Th.MatchDirectHigh, T($"{RunReport.F(Th.MatchDirectHigh, 1)} as it is", $"{RunReport.F(Th.MatchDirectHigh, 1)} asa cum e"), VerdictPalette.Good),
+                new GuideLine(band.DirectLow, T($"{RunReport.F(band.DirectLow, digits)} as it is", $"{RunReport.F(band.DirectLow, digits)} asa cum e"), VerdictPalette.Good),
+                new GuideLine(band.DirectHigh, T($"{RunReport.F(band.DirectHigh, digits)} as it is", $"{RunReport.F(band.DirectHigh, digits)} asa cum e"), VerdictPalette.Good),
                 new GuideLine(Th.MatchOptLow, T($"{RunReport.F(Th.MatchOptLow, 1)} with -opt", $"{RunReport.F(Th.MatchOptLow, 1)} cu -opt"), VerdictPalette.Warn),
                 new GuideLine(Th.MatchOptHigh, T($"{RunReport.F(Th.MatchOptHigh, 1)} with -opt", $"{RunReport.F(Th.MatchOptHigh, 1)} cu -opt"), VerdictPalette.Warn),
                 new GuideLine(Th.MatchCosmeticLow, T($"{RunReport.F(Th.MatchCosmeticLow, 1)} cosmetic only", $"{RunReport.F(Th.MatchCosmeticLow, 1)} doar cosmetic"), VerdictPalette.Bad),
@@ -837,7 +844,7 @@ public sealed class MainViewModel : ObservableObject
             nameof(HasResult), nameof(SessionRows), nameof(HeaderLine), nameof(Sections), nameof(Frames), nameof(Lights), nameof(HasLights),
             nameof(FrameTableNote), nameof(NoiseHeaderTip), nameof(HotHeaderTip), nameof(LightTableNote), nameof(Maps), nameof(HotRows), nameof(WarmingPoints), nameof(WarmingGuides), nameof(WarmingNote),
             nameof(ResidualPoints), nameof(ResidualGuides), nameof(BandingPoints), nameof(BandingGuides), nameof(NoisePoints), nameof(NoiseExpected),
-            nameof(LightPoints), nameof(LightGuides), nameof(LightRows), nameof(IndexRows), nameof(ScaleRows), nameof(ScaleParagraphs), nameof(Label), nameof(Tag), nameof(IndexLead),
+            nameof(LightPoints), nameof(LightGuides), nameof(LightRows), nameof(IndexRows), nameof(ScaleRows), nameof(ScaleParagraphs), nameof(Label), nameof(Tag), nameof(IndexLead), nameof(LightsChartLead),
         })
         {
             Raise(name);

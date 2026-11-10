@@ -200,8 +200,8 @@ internal static class DarkReport
             new(T("2. LIGHT LEAKS AND DIFFERENCES ACROSS THE FRAME", "2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU"), leak),
             new(T("3. THE CAMERA'S WARMING DURING THE SERIES", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI"),
             [
-                new(T("plateau", "platou"), PlateauRow(d.Warming, d.Normalisation)),
-                new(T("to discard", "de aruncat"), OffPlateauRow(d.Warming)),
+                new(T("end of series", "sfarsitul seriei"), EndRow(d.Warming)),
+                new(T("to discard", "de aruncat"), OffEndRow(d.Warming)),
                 new("verdict", Drift(v.Drift, d.Normalisation)),
             ]),
             new(T("4. THE NOISE OF EACH FRAME", "4. ZGOMOTUL FIECARUI CADRU"),
@@ -307,6 +307,11 @@ internal static class DarkReport
             : T(
                 $"in the lights, the hot pixels are on average {F(m.Ratio, 2)} times what they are in the dark ({over}; in the first {F(l.RatioFirst, 2)}, in the last {F(l.RatioLast, 2)}; on {Pixels(l.AmpPixels)})",
                 $"in lights, pixelii fierbinti sunt in medie de {F(m.Ratio, 2)} ori cat in dark ({over}; in primul {F(l.RatioFirst, 2)}, in ultimul {F(l.RatioLast, 2)}; pe {Pixels(l.AmpPixels)})")));
+        if (TraceRow(m, l.Traces) is string left)
+        {
+            rows.Add(new(T("what is left", "ce ramane"), left));
+        }
+
         // both indexes, each on its own row (R-056): the darks' tag (the partner's, when the darks
         // are the partner's, R-054), the lights' equivalent tag
         rows.Add(new(r.DarksFromPartner is null ? T("index darks", "index dark-uri") : T("index partner", "index partener"), r.Index.Tag));
@@ -315,8 +320,54 @@ internal static class DarkReport
             rows.Add(new("index lights", tag + about));
         }
 
-        rows.Add(new("verdict", MatchText(m, partner: false, T("in the lights", "in lights"))));
+        rows.Add(new("verdict", MatchText(m, partner: false, T("in the lights", "in lights"), l.Traces)));
         return rows;
+    }
+
+    /// <summary>
+    /// The `ce ramane` row of check 9 (R-067): what a plain subtraction of the dark leaves at a hot
+    /// pixel, against the noise of a light, and at how many pixels it passes that noise. A ratio
+    /// under 1 takes too much and leaves a hole, one over 1 too little and leaves a rest.
+    /// </summary>
+    /// <param name="m">The lights over the dark.</param>
+    /// <param name="t">The traces.</param>
+    /// <returns>The row's value, in the run's language; null when there is nothing to say: the
+    /// ratio is unmeasured, the lights show none of the dark's hot pixels (ratios around zero), or no
+    /// pixel was read.</returns>
+    private static string? TraceRow(MatchFigures m, TraceFigures t)
+    {
+        // ratios that sit around zero are the "hot pixels do not show" verdict of MatchText: no subtraction to speak of
+        bool absent = m.Verdict == MatchVerdict.Unmatched && (m.Ratio <= 0 || m.Q25 <= 0);
+        if (m.Verdict == MatchVerdict.Unmeasured || absent || !(m.Ratio > 0) || t.Pixels == 0 || double.IsNaN(t.Median))
+        {
+            return null;
+        }
+
+        string median = F(t.Median, 2);
+        if (t.Median < 0.005)
+        {
+            return T(
+                $"after the subtraction nothing is left to see at the hot pixels: on average {median} of the noise of a light",
+                $"dupa scadere nu ramane nimic de vazut la pixelii fierbinti: in medie {median} din zgomotul unui light");
+        }
+
+        bool tooMuch = m.Ratio < 1;
+        string strong = F(Th.TraceStrongFactor, 0);
+        // a trace under the noise is a part of it; from the noise up it is so many times the noise,
+        // as the -opt verdict under the row says it
+        string size = t.Median < 1
+            ? T($"{median} of the noise of a light", $"{median} din zgomotul unui light")
+            : T($"{median} times the noise of a light", $"{median} ori cat zgomotul unui light");
+        string about = T(
+            "(the light's noise on the pixel's colour; with dithering the traces spread, without it they stay in the same place in the stack)",
+            "(zgomotul light-ului pe culoarea pixelului; cu dithering urmele se imprastie, fara el raman in acelasi loc in stack)");
+        return tooMuch
+            ? T(
+                $"the subtraction takes too much: a hot pixel keeps on average a hole of {size}; at {t.AboveNoise} of {t.Pixels} the hole is over the noise, at {t.AboveStrong} over {strong} times the noise {about}",
+                $"scaderea ia prea mult: la un pixel fierbinte ramane in medie o gaura de {size}; la {t.AboveNoise} din {t.Pixels} gaura trece de zgomot, la {t.AboveStrong} de {strong} ori zgomotul {about}")
+            : T(
+                $"the subtraction takes too little: a hot pixel keeps on average a rest of {size}; at {t.AboveNoise} of {t.Pixels} the rest is over the noise, at {t.AboveStrong} over {strong} times the noise {about}",
+                $"scaderea ia prea putin: la un pixel fierbinte ramane in medie un rest de {size}; la {t.AboveNoise} din {t.Pixels} restul trece de zgomot, la {t.AboveStrong} de {strong} ori zgomotul {about}");
     }
 
     /// <summary>
@@ -462,13 +513,13 @@ internal static class DarkReport
     {
         ArgumentNullException.ThrowIfNull(r);
         return T(
-            $"     no  file                  time        mean   noise   diff.   bands      hot plateau   light    side   >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}",
-            $"     nr  fisier                ora        medie  zgomot    dif.   benzi   fierb.  platou  lumina  latura   >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}");
+            $"     no  file                  time        mean   noise   diff.   bands      hot     end   light    side   >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}",
+            $"     nr  fisier                ora        medie  zgomot    dif.   benzi   fierb. sfarsit  lumina  latura   >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}");
     }
 
     /// <summary>
     /// One line of the frames table as the console prints it: the cells in their columns, the note
-    /// of a frame off the plateau after the last one; a skipped or failed frame prints its reason
+    /// of a frame off the end of the series after the last one; a skipped or failed frame prints its reason
     /// instead of cells.
     /// </summary>
     /// <param name="f">The formatted row; not null.</param>
@@ -488,7 +539,7 @@ internal static class DarkReport
         }
 
         string note = f.Note is null ? "" : $"   {f.Note}";
-        return $"    {f.Index,3}  {name,-20}  {f.Time,-8}  {f.Mean,6}  {f.Sigma,6}  {f.Residual,6}  {f.Bands,6}  {f.Amp,7}  {f.Plateau,6}  {f.Light,6}  {f.Side,6}  {f.Above,4}{note}";
+        return $"    {f.Index,3}  {name,-20}  {f.Time,-8}  {f.Mean,6}  {f.Sigma,6}  {f.Residual,6}  {f.Bands,6}  {f.Amp,7}  {f.End,6}  {f.Light,6}  {f.Side,6}  {f.Above,4}{note}";
     }
 
     /// <summary>The unit note of the frames table: the plane and what the columns mean.</summary>
@@ -504,8 +555,8 @@ internal static class DarkReport
                 $"latura = latura {SideWithPreposition(w.Side)} fata de centru{(w.RemainderAdu is null ? " (fara bias-uri, cu glow)" : ", dupa scaderea bias-ului (cu glow)")}, {eq}")
             : T("side = the side with the most constant light against the centre (UNMEASURED)", "latura = latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)");
         return T(
-            $"[{ScaleReport.PlaneWords(r.Darks.PlaneNames[r.ReferencePlane])}; mean = how far the frame is above the black, ADU; noise = the noise of the frame, ADU; diff. = how much the frame differs from the master, ADU; bands = how many times more the rows differ from one another than the noise alone would give (1 = no banding); hot = the hot pixels against the master (1 = the same); plateau = how many degrees the frame is from the steady temperature of the series; to discard = more than {F(Th.OffPlateauCelsius, 1)} degrees from it (check 3); light = the light above what the warming explains, {eq}; {side}]",
-            $"[{ScaleReport.PlaneWords(r.Darks.PlaneNames[r.ReferencePlane])}; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); platou = cu cate grade e cadrul fata de temperatura stabila a seriei; de aruncat = la peste {F(Th.OffPlateauCelsius, 1)} grade de ea (verificarea 3); lumina = lumina in plus fata de cat explica incalzirea, {eq}; {side}]");
+            $"[{ScaleReport.PlaneWords(r.Darks.PlaneNames[r.ReferencePlane])}; mean = how far the frame is above the black, ADU; noise = the noise of the frame, ADU; diff. = how much the frame differs from the master, ADU; bands = how many times more the rows differ from one another than the noise alone would give (1 = no banding); hot = the hot pixels against the master (1 = the same); end = how many degrees the frame is from the end of the series; to discard = more than {F(Th.OffEndCelsius, 1)} degrees from it (check 3); light = the light above what the warming explains, {eq}; {side}]",
+            $"[{ScaleReport.PlaneWords(r.Darks.PlaneNames[r.ReferencePlane])}; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); sfarsit = cu cate grade e cadrul fata de sfarsitul seriei; de aruncat = la peste {F(Th.OffEndCelsius, 1)} grade de el (verificarea 3); lumina = lumina in plus fata de cat explica incalzirea, {eq}; {side}]");
     }
 
     /// <summary>
@@ -535,17 +586,25 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The hover hint of the frames table's `platou` column (R-071): what the figure is and when a
+    /// The hover hint of the frames table's `sfarsit` column (R-071): what the figure is and when a
     /// frame is one to discard. A property, so it is worded in the language current when it is
     /// read.
     /// </summary>
-    internal static string PlateauColumnTip => T(
-        $"how many degrees the frame is from the steady temperature of the series (the plateau), by the hot pixels; a frame more than {F(Th.OffPlateauCelsius, 1)} degrees from the plateau is one to discard and has its reason on the line under it (check 3)",
-        $"cu cate grade e cadrul fata de temperatura stabila a seriei (platoul), dupa pixelii fierbinti; un cadru la peste {F(Th.OffPlateauCelsius, 1)} grade de platou e de aruncat si are motivul pe randul de sub el (verificarea 3)");
+    internal static string EndColumnTip => T(
+        $"how many degrees the frame is from the end of the series ({EndWords}), by the hot pixels; a frame more than {F(Th.OffEndCelsius, 1)} degrees from it is one to discard and has its reason on the line under it (check 3)",
+        $"cu cate grade e cadrul fata de sfarsitul seriei ({EndWords}), dupa pixelii fierbinti; un cadru la peste {F(Th.OffEndCelsius, 1)} grade de el e de aruncat si are motivul pe randul de sub el (verificarea 3)");
 
     /// <summary>
-    /// The sentence under the window's warming chart (R-071): what the points are, and with a fit
-    /// the plateau and the band outside which a frame is one to discard.
+    /// What the end of the series is, for the texts that name it: the average of the last frames
+    /// (a median, said as an average, ADR 0035).
+    /// </summary>
+    private static string EndWords => T(
+        $"the average of the last {Th.SeriesEndFrames} frames",
+        $"media ultimelor {RoCount(Th.SeriesEndFrames)}cadre");
+
+    /// <summary>
+    /// The sentence under the window's warming chart (R-071): what the points are, and with an end
+    /// of the series, where it is and the band outside which a frame is one to discard.
     /// </summary>
     /// <param name="r">The run's result; not null.</param>
     /// <returns>The sentence, in the run's language.</returns>
@@ -556,13 +615,20 @@ internal static class DarkReport
         string what = T(
             "How hot the master's hot pixels are in each frame, against the master: when the curve climbs, the camera warms during the series; when it falls, the camera cools (check 3).",
             "Cat de fierbinti sunt pixelii fierbinti ai masterului in fiecare cadru, fata de master: cand curba urca, aparatul se incalzeste in timpul seriei; cand coboara, se raceste (verificarea 3).");
-        return w.HasFit
+        if (w.HasEnd)
+        {
+            return T(
+                $"{what} The end of the series ({EndWords}) is at {F(w.EndRatio, 2)} of the master; the frames under {F(w.OffEndLow, 2)} or over {F(w.OffEndHigh, 2)} (more than {F(Th.OffEndCelsius, 1)} degrees from it) are to discard and show in yellow.",
+                $"{what} Sfarsitul seriei ({EndWords}) e la {F(w.EndRatio, 2)} din master; cadrele sub {F(w.OffEndLow, 2)} sau peste {F(w.OffEndHigh, 2)} (la peste {F(Th.OffEndCelsius, 1)} grade de el) sunt de aruncat si apar in galben.");
+        }
+
+        return w.Measured < Th.WarmingFitMinFrames
             ? T(
-                $"{what} The steady temperature of the series (the plateau) is at {F(w.Plateau, 2)} of the master; the frames under {F(w.OffPlateauLow, 2)} or over {F(w.OffPlateauHigh, 2)} (more than {F(Th.OffPlateauCelsius, 1)} degrees from the plateau) are to discard and show in yellow.",
-                $"{what} Temperatura stabila a seriei (platoul) e la {F(w.Plateau, 2)} din master; cadrele sub {F(w.OffPlateauLow, 2)} sau peste {F(w.OffPlateauHigh, 2)} (la peste {F(Th.OffPlateauCelsius, 1)} grade de platou) sunt de aruncat si apar in galben.")
+                $"{what} With fewer than {Th.WarmingFitMinFrames} frames with hot pixels the end of the series is not measured.",
+                $"{what} Cu mai putin de {RoCount(Th.WarmingFitMinFrames)}cadre cu pixeli fierbinti sfarsitul seriei nu se masoara.")
             : T(
-                $"{what} With fewer than {Th.WarmingFitMinFrames} frames with hot pixels the plateau cannot be found.",
-                $"{what} Cu mai putin de {RoCount(Th.WarmingFitMinFrames)}cadre cu pixeli fierbinti nu se poate gasi platoul.");
+                $"{what} At the end of the series the master's hot pixels do not show, so it is not measured.",
+                $"{what} La sfarsitul seriei pixelii fierbinti ai masterului nu se vad, deci el nu se masoara.");
     }
 
     /// <summary>
@@ -601,23 +667,23 @@ internal static class DarkReport
             ResidualFigures res = f.Residuals[rp];
             double light = excess is null ? double.NaN : excess[k];
             string side = worst is null || f.Edges is null ? "-" : Signed((LeakAnalyzer.SideOffset(f.Edges, worst.Side) - biasSide) / r.Darks.Norm, 2);
-            bool measured = wm.HasFit && !double.IsNaN(f.AmpRatioMedian) && f.AmpRatioMedian > 0;
-            string plateau = measured ? Signed(nz.Degrees(f.AmpRatioMedian / wm.Plateau), 1) : "-";
+            bool measured = wm.HasEnd && !double.IsNaN(f.AmpRatioMedian) && f.AmpRatioMedian > 0;
+            string end = measured ? Signed(nz.Degrees(f.AmpRatioMedian / wm.EndRatio), 1) : "-";
             string? note = null;
-            if (measured && (f.AmpRatioMedian < wm.OffPlateauLow || f.AmpRatioMedian > wm.OffPlateauHigh))
+            if (measured && (f.AmpRatioMedian < wm.OffEndLow || f.AmpRatioMedian > wm.OffEndHigh))
             {
-                bool under = f.AmpRatioMedian < wm.OffPlateauLow;
+                bool under = f.AmpRatioMedian < wm.OffEndLow;
                 note = T(
-                    $"to discard: the hot pixels are at {Ratio(f.AmpRatioMedian)} of the master, {(under ? "below" : "above")} {F(under ? wm.OffPlateauLow : wm.OffPlateauHigh, 2)}, that is more than {F(Th.OffPlateauCelsius, 1)} degrees {(under ? "below" : "above")} the plateau ({F(wm.Plateau, 2)})",
-                    $"de aruncat: pixelii fierbinti sunt la {Ratio(f.AmpRatioMedian)} din master, {(under ? "sub" : "peste")} {F(under ? wm.OffPlateauLow : wm.OffPlateauHigh, 2)}, adica la peste {F(Th.OffPlateauCelsius, 1)} grade {(under ? "sub" : "peste")} platou ({F(wm.Plateau, 2)})");
+                    $"to discard: the hot pixels are at {Ratio(f.AmpRatioMedian)} of the master, {(under ? "below" : "above")} {F(under ? wm.OffEndLow : wm.OffEndHigh, 2)}, that is more than {F(Th.OffEndCelsius, 1)} degrees {(under ? "below" : "above")} the end of the series ({F(wm.EndRatio, 2)})",
+                    $"de aruncat: pixelii fierbinti sunt la {Ratio(f.AmpRatioMedian)} din master, {(under ? "sub" : "peste")} {F(under ? wm.OffEndLow : wm.OffEndHigh, 2)}, adica la peste {F(Th.OffEndCelsius, 1)} grade {(under ? "sub" : "peste")} sfarsitul seriei ({F(wm.EndRatio, 2)})");
             }
-            else if (wm.HasFit && f.AmpRatioMedian <= 0)
+            else if (wm.HasEnd && f.AmpRatioMedian <= 0)
             {
-                // the analysis puts such a frame off the plateau too (WarmingOf), with no degrees to give
+                // the analysis puts such a frame off the end too (WarmingOf), with no degrees to give
                 note = T("to discard: the hot pixels of the master do not show in this frame", "de aruncat: pixelii fierbinti ai masterului nu se vad in acest cadru");
             }
 
-            rows.Add(new(f.Info.Index, f.Info.FileName, null, null, Time(f.Info.Timestamp), F(f.MeanAboveBlack, 2), F(p.Sigma, 2), F(res.Sigma, 2), F(res.RowBandingRatio, 1), Ratio(f.AmpRatioMedian), plateau, double.IsNaN(light) ? "-" : Signed(light, 2), side, p.Above[Th.HotLevelIndex].ToString(CultureInfo.InvariantCulture), note));
+            rows.Add(new(f.Info.Index, f.Info.FileName, null, null, Time(f.Info.Timestamp), F(f.MeanAboveBlack, 2), F(p.Sigma, 2), F(res.Sigma, 2), F(res.RowBandingRatio, 1), Ratio(f.AmpRatioMedian), end, double.IsNaN(light) ? "-" : Signed(light, 2), side, p.Above[Th.HotLevelIndex].ToString(CultureInfo.InvariantCulture), note));
         }
 
         return rows;
@@ -726,9 +792,12 @@ internal static class DarkReport
     /// dark.</param>
     /// <param name="where">Where the set's hot pixels are, as the sentence names it ("in lights",
     /// "in dark-urile sesiunii"), in the run's language.</param>
+    /// <param name="traces">What a plain subtraction leaves, for a set of lights against its
+    /// darks (R-067): a verdict the traces relaxed says so, and an -opt verdict says how much is
+    /// left; null for a partner, whose verdict is the ratio's alone.</param>
     /// <returns>The verdict's words, opening with OK, WARNING or UNMEASURED (OK, ATENTIE or
     /// NEMASURAT in Romanian).</returns>
-    internal static string MatchText(MatchFigures m, bool partner, string where)
+    internal static string MatchText(MatchFigures m, bool partner, string where, TraceFigures? traces = null)
     {
         ArgumentNullException.ThrowIfNull(m);
         string atMaster = partner ? T("at the partner", "la partener") : T("in the dark", "in dark");
@@ -749,15 +818,25 @@ internal static class DarkReport
         string ratio = T(
             $"{where} the hot pixels are {F(m.Ratio, 2)} times what they are {atMaster}",
             $"{where} pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat {atMaster}");
+        // what is left after a plain subtraction, when it was measured: said after the -opt band
+        string left = traces is { Pixels: > 0 } t && !double.IsNaN(t.Median)
+            ? T(
+                $", and what the subtraction leaves is on average {F(t.Median, 2)} times the noise of a light",
+                $", iar ce ramane dupa scadere e in medie de {F(t.Median, 2)} ori zgomotul unui light")
+            : "";
         return m.Verdict switch
         {
             MatchVerdict.Unmeasured => T("UNMEASURED", "NEMASURAT"),
+            // inside the band the traces widened (R-067): outside 0.9 .. 1.1, and the words say why it is still as it is
+            MatchVerdict.Direct when traces is { Relaxed: true } r => T(
+                $"OK: {master} can be subtracted as it is; {ratio}, outside {F(Th.MatchDirectLow, 1)} .. {F(Th.MatchDirectHigh, 1)}, but what the subtraction leaves is on average under the noise of a light ({F(r.Median, 2)} of it; on these lights that holds between {F(r.DirectLow, 2)} and {F(r.DirectHigh, 2)}): {temperature}",
+                $"OK: {master} se poate scadea asa cum e; {ratio}, in afara {F(Th.MatchDirectLow, 1)} .. {F(Th.MatchDirectHigh, 1)}, dar ce ramane dupa scadere e in medie sub zgomotul unui light ({F(r.Median, 2)} din el; pe aceste lights, asa e intre {F(r.DirectLow, 2)} si {F(r.DirectHigh, 2)}): {temperature}"),
             MatchVerdict.Direct => T(
                 $"OK: {master} can be subtracted as it is; {ratio}, between {F(Th.MatchDirectLow, 1)} and {F(Th.MatchDirectHigh, 1)}: {temperature}",
                 $"OK: {master} se poate scadea asa cum e; {ratio}, intre {F(Th.MatchDirectLow, 1)} si {F(Th.MatchDirectHigh, 1)}: {temperature}"),
             MatchVerdict.WithOpt => T(
-                $"WARNING: subtract {master} with -opt (-opt: Siril multiplies it so that it matches the lights); {ratio}, between {F(Th.MatchOptLow, 1)} and {F(Th.MatchOptHigh, 1)}: {temperature}",
-                $"ATENTIE: scade {master} cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); {ratio}, intre {F(Th.MatchOptLow, 1)} si {F(Th.MatchOptHigh, 1)}: {temperature}"),
+                $"WARNING: subtract {master} with -opt (-opt: Siril multiplies it so that it matches the lights); {ratio}, between {F(Th.MatchOptLow, 1)} and {F(Th.MatchOptHigh, 1)}{left}: {temperature}",
+                $"ATENTIE: scade {master} cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); {ratio}, intre {F(Th.MatchOptLow, 1)} si {F(Th.MatchOptHigh, 1)}{left}: {temperature}"),
             MatchVerdict.CosmeticOnly => T(
                 $"WARNING: use {master} for the cosmetic correction only (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); {ratio}: {temperature}, it sees them all, but subtracted it would take out too much and leave black dots",
                 $"ATENTIE: foloseste {master} doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); {ratio}: {temperature}, ii vede pe toti, dar scazut ar scoate prea mult si ar lasa puncte negre"),
@@ -1162,175 +1241,173 @@ internal static class DarkReport
                 $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cand senzorul se incalzeste), constant {Signed(s.ConstantAdu, 2)} {eq} (fara bias-uri nu se stie daca e lumina sau o diferenta de nivel din citirea senzorului){raw}");
     }
 
-    /// <summary>The words of a series too short for a plateau, in the run's language.</summary>
-    private static string NoPlateau => T(
-        $"UNMEASURED: there are fewer than {Th.WarmingFitMinFrames} frames with hot pixels",
-        $"NEMASURAT: sunt mai putin de {RoCount(Th.WarmingFitMinFrames)}cadre cu pixeli fierbinti");
+    /// <summary>
+    /// The words of a series without an end to read it against, in the run's language: too few
+    /// frames, or hot pixels that do not show in its last frames.
+    /// </summary>
+    /// <param name="w">The series' warming, without an end.</param>
+    /// <returns>The words, opening with UNMEASURED (NEMASURAT).</returns>
+    private static string NoEnd(Warming w) => w.Measured < Th.WarmingFitMinFrames
+        ? T(
+            $"UNMEASURED: there are fewer than {Th.WarmingFitMinFrames} frames with hot pixels",
+            $"NEMASURAT: sunt mai putin de {RoCount(Th.WarmingFitMinFrames)}cadre cu pixeli fierbinti")
+        : T(
+            "UNMEASURED: at the end of the series the master's hot pixels do not show",
+            "NEMASURAT: la sfarsitul seriei pixelii fierbinti ai masterului nu se vad");
 
     /// <summary>
-    /// The `platou` row of check 3: which way the camera moved, from the hot pixels of the first
-    /// frame to the last, where it would settle (the plateau, with the time constant), and how far
-    /// the last frame is from it, never as a signed figure (ADR 0038); a flat series says so.
+    /// The `sfarsitul seriei` row of check 3: which way the camera moved, from the hot pixels of
+    /// the first frame to the end of the series, by how many degrees, and where the master sits
+    /// against that end, never as a signed figure (ADR 0038, ADR 0043); a series that stayed
+    /// within <see cref="Th.MasterNearEndCelsius"/> says so.
     /// </summary>
-    /// <param name="w">The series' warming fit.</param>
-    /// <param name="nz">The normalisation, which turns ratios into degrees.</param>
+    /// <param name="w">The series' warming.</param>
     /// <returns>The row's value, in the run's language.</returns>
-    private static string PlateauRow(Warming w, Normalisation nz)
+    private static string EndRow(Warming w)
     {
         if (double.IsNaN(w.FirstRatio))
         {
             return T("UNMEASURED: too few frames or no hot pixel", "NEMASURAT: prea putine cadre sau niciun pixel fierbinte");
         }
 
-        if (!w.HasFit)
+        if (!w.HasEnd)
         {
-            return NoPlateau;
+            return NoEnd(w);
         }
 
-        string first = F(w.FirstRatio, 2), last = F(w.LastRatio, 2);
-        double firstOffset = Math.Abs(nz.Degrees(w.FirstRatio / w.Plateau));
-        if (firstOffset < Th.SettledCelsius && Math.Abs(w.SettleCelsius) < Th.SettledCelsius)
+        string first = F(w.FirstRatio, 2), end = F(w.EndRatio, 2);
+        string master = FromEnd(w.MasterCelsius);
+        string limit = F(Th.MasterNearEndCelsius, 1);
+        if (Math.Abs(w.FirstCelsius) < Th.MasterNearEndCelsius)
         {
             return T(
-                $"the camera did not warm: the hot pixels stay at {F(w.Plateau, 2)} of the master from the first frame ({first}) to the last ({last}), and the first frame is less than {F(Th.SettledCelsius, 1)} degrees from the plateau",
-                $"aparatul nu s-a incalzit: pixelii fierbinti au stat la {F(w.Plateau, 2)} din master, de la primul cadru ({first}) la ultimul ({last}), iar primul cadru e la mai putin de {F(Th.SettledCelsius, 1)} grade de platou");
+                $"the camera stayed at the same temperature: the hot pixels are at {first} of the master in the first frame and at {end} at the end of the series ({EndWords}), less than {limit} degrees apart; the master is {master}",
+                $"aparatul a stat la aceeasi temperatura: pixelii fierbinti sunt la {first} din master in primul cadru si la {end} la sfarsitul seriei ({EndWords}), mai putin de {limit} grade intre ele; masterul e {master}");
         }
 
         bool warming = !w.Cooling;
-        string tauFigure = F(w.TauMinutes, 0);
-        string tauWords = w.TimeFromStamps ? tauFigure + " min" : T(tauFigure + " frames", RoCount(tauFigure) + "cadre");
-        string tau = w.TauAtGridTop
-            ? T(
-                $"the series is too short to show how fast it {(warming ? "warms" : "cools")} (two thirds of the way would take at least {tauWords})",
-                $"seria e prea scurta ca sa se vada cat de repede se {(warming ? "incalzeste" : "raceste")} (doua treimi din drum ar lua cel putin {tauWords})")
-            : T($"two thirds of the way take {tauWords}", $"doua treimi din drum iau {tauWords}");
-        // the last frame is under the plateau while the series still climbs (the degrees left positive)
-        string lastFrame = FromPlateau(-w.SettleCelsius);
+        // a first frame whose hot pixels do not show has no degrees to the end
+        string degrees = double.IsNaN(w.FirstCelsius) ? "" : T($", that is {F(Math.Abs(w.FirstCelsius), 1)} degrees", $", adica {F(Math.Abs(w.FirstCelsius), 1)} grade");
+        string minutes = double.IsNaN(w.FirstCelsius) || double.IsNaN(w.Minutes) ? "" : $" in {F(w.Minutes, 0)} min";
         return T(
-            $"the camera {(warming ? "warmed" : "cooled")} the whole series: the hot pixels {(warming ? "rise" : "fall")} from {first} of the master in the first frame to {last} in the last. Left to run, it would settle {FromMaster(w.PlateauCelsius)} (the plateau, at {F(w.Plateau, 2)} of the master; {tau}); the last frame is {lastFrame}",
-            $"aparatul s-a {(warming ? "incalzit" : "racit")} pe toata seria: pixelii fierbinti {(warming ? "cresc" : "scad")} de la {first} din master in primul cadru la {last} in ultimul. Daca ar continua, s-ar opri {FromMaster(w.PlateauCelsius)} (platoul, la {F(w.Plateau, 2)} din master; {tau}); ultimul cadru e {lastFrame}");
+            $"the camera {(warming ? "warmed" : "cooled")} during the series: the hot pixels {(warming ? "rise" : "fall")} from {first} of the master in the first frame to {end} at the end of the series ({EndWords}){degrees}{minutes}; the master is {master}",
+            $"aparatul s-a {(warming ? "incalzit" : "racit")} in timpul seriei: pixelii fierbinti {(warming ? "cresc" : "scad")} de la {first} din master in primul cadru la {end} la sfarsitul seriei ({EndWords}){degrees}{minutes}; masterul e {master}");
     }
 
     /// <summary>
-    /// The `de aruncat` row of check 3: the frames more than Th.OffPlateauCelsius from the plateau,
-    /// the band's bounds, and where the master would sit without them.
+    /// The `de aruncat` row of check 3: the frames more than Th.OffEndCelsius from the end of the
+    /// series, the band's bounds, and where the master would sit without them.
     /// </summary>
-    /// <param name="w">The series' warming fit.</param>
+    /// <param name="w">The series' warming.</param>
     /// <returns>The row's value, in the run's language.</returns>
-    private static string OffPlateauRow(Warming w)
+    private static string OffEndRow(Warming w)
     {
-        if (!w.HasFit)
+        if (!w.HasEnd)
         {
-            return NoPlateau;
+            return NoEnd(w);
         }
 
-        string deg = F(Th.OffPlateauCelsius, 1);
-        if (w.OffPlateauFrames.Count == 0)
+        string deg = F(Th.OffEndCelsius, 1);
+        if (w.OffEndFrames.Count == 0)
         {
             return T(
-                $"no frame is more than {deg} degrees from the plateau (the hot pixels between {F(w.OffPlateauLow, 2)} and {F(w.OffPlateauHigh, 2)} of the master)",
-                $"niciun cadru nu e la mai mult de {deg} grade de platou (pixelii fierbinti intre {F(w.OffPlateauLow, 2)} si {F(w.OffPlateauHigh, 2)} din master)");
+                $"no frame is more than {deg} degrees from the end of the series (the hot pixels between {F(w.OffEndLow, 2)} and {F(w.OffEndHigh, 2)} of the master)",
+                $"niciun cadru nu e la mai mult de {deg} grade de sfarsitul seriei (pixelii fierbinti intre {F(w.OffEndLow, 2)} si {F(w.OffEndHigh, 2)} din master)");
         }
 
-        string without = double.IsNaN(w.MasterWithoutOffCelsius)
-            ? T("without them no frame is left", "fara ele nu ramane niciun cadru")
-            : T(
-                $"without them the master would be {FromPlateau(w.MasterWithoutOffCelsius)}, but with {F((w.NoiseFactorWithoutOff - 1) * 100, 0)} % more noise",
-                $"fara ele masterul ar fi {FromPlateau(w.MasterWithoutOffCelsius)}, dar cu {F((w.NoiseFactorWithoutOff - 1) * 100, 0)} % mai mult zgomot");
+        // some frame is always left: the end is one of the last five ratios
+        string without = T(
+            $"without them the master would be {FromEnd(w.MasterWithoutOffCelsius)}, but with {F((w.NoiseFactorWithoutOff - 1) * 100, 0)} % more noise",
+            $"fara ele masterul ar fi {FromEnd(w.MasterWithoutOffCelsius)}, dar cu {F((w.NoiseFactorWithoutOff - 1) * 100, 0)} % mai mult zgomot");
         return T(
-            $"{RunReport.Frames(w.OffPlateauFrames.Count)} ({Ranges(w.OffPlateauFrames)}) {(w.OffPlateauFrames.Count == 1 ? "is" : "are")} more than {deg} degrees from the plateau (the hot pixels below {F(w.OffPlateauLow, 2)} or above {F(w.OffPlateauHigh, 2)} of the master; the plateau {F(w.Plateau, 2)}); {without}",
-            $"{RunReport.Frames(w.OffPlateauFrames.Count)} ({Ranges(w.OffPlateauFrames)}) {(w.OffPlateauFrames.Count == 1 ? "e" : "sunt")} la mai mult de {deg} grade de platou (pixelii fierbinti sub {F(w.OffPlateauLow, 2)} sau peste {F(w.OffPlateauHigh, 2)} din master; platoul {F(w.Plateau, 2)}); {without}");
+            $"{RunReport.Frames(w.OffEndFrames.Count)} ({Ranges(w.OffEndFrames)}) {(w.OffEndFrames.Count == 1 ? "is" : "are")} more than {deg} degrees from the end of the series (the hot pixels below {F(w.OffEndLow, 2)} or above {F(w.OffEndHigh, 2)} of the master; the end of the series {F(w.EndRatio, 2)}); {without}",
+            $"{RunReport.Frames(w.OffEndFrames.Count)} ({Ranges(w.OffEndFrames)}) {(w.OffEndFrames.Count == 1 ? "e" : "sunt")} la mai mult de {deg} grade de sfarsitul seriei (pixelii fierbinti sub {F(w.OffEndLow, 2)} sau peste {F(w.OffEndHigh, 2)} din master; sfarsitul seriei {F(w.EndRatio, 2)}); {without}");
     }
 
     /// <summary>
-    /// The verdict row of check 3: whether the series settled, and the frames outside the range
-    /// -opt corrects.
+    /// The verdict row of check 3: whether the master is near the end of the series, whether most
+    /// frames are off it, and the frames outside the range -opt corrects.
     /// </summary>
     /// <param name="v">Check 3's verdict.</param>
     /// <param name="nz">The normalisation, whose doubling rule the words name.</param>
-    /// <returns>The verdict's words, opening with OK, WARNING or UNMEASURED (OK, ATENTIE or
-    /// NEMASURAT in Romanian).</returns>
+    /// <returns>The verdict's words, opening with OK, WARNING, REDO or UNMEASURED (OK, ATENTIE,
+    /// REFA or NEMASURAT in Romanian).</returns>
     private static string Drift(DriftVerdict v, Normalisation nz)
     {
         Warming w = v.Warming;
-        string within = T($"(between {F(Th.MatchOptLow, 1)} and {F(Th.MatchOptHigh, 1)})", $"(intre {F(Th.MatchOptLow, 1)} si {F(Th.MatchOptHigh, 1)})");
+        // an OK asks nothing of the owner, so it says the band in its own words and names no -opt;
+        // only the frames outside it are told what Siril could still do with them
+        string within = T(
+            $"no frame is too far from the master (the hot pixels of every frame are between {F(Th.MatchOptLow, 1)} and {F(Th.MatchOptHigh, 1)} of the master's)",
+            $"niciun cadru nu e prea departe de master (pixelii fierbinti ai fiecarui cadru sunt intre {F(Th.MatchOptLow, 1)} si {F(Th.MatchOptHigh, 1)} din ai masterului)");
         if (v.Verdict == Verdict.Unmeasured)
         {
             return T("UNMEASURED", "NEMASURAT");
         }
 
-        bool cooling = w.Cooling;
-        string limit = F(Th.SettledCelsius, 1);
-        // the last frame against the plateau: under it while the series still climbs
-        string lastFrame = FromPlateau(-w.SettleCelsius);
+        string limit = F(Th.MasterNearEndCelsius, 1);
+        bool discard = w.OffEndFrames.Count > 0;
 
         if (v.Verdict == Verdict.Ok)
         {
-            if (!w.HasFit)
+            if (!w.HasEnd)
             {
+                // an OK without an end is a short series: an end that is not positive has frames outside the band
                 return T(
-                    $"OK: every frame is close enough to the master for Siril to match it with -opt {within}; there are fewer than {Th.WarmingFitMinFrames} frames, so no plateau",
-                    $"OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt {within}; sunt mai putin de {RoCount(Th.WarmingFitMinFrames)}cadre, deci fara platou");
+                    $"OK: {within}; there are fewer than {Th.WarmingFitMinFrames} frames, so the end of the series is not measured",
+                    $"OK: {within}; sunt mai putin de {RoCount(Th.WarmingFitMinFrames)}cadre, deci sfarsitul seriei nu se masoara");
             }
 
-            string rule = T($"the degrees reckoned with the rule that the thermal signal doubles every {F(nz.DoublingCelsius, 0)} degrees", $"gradele socotite cu regula: semnalul termic se dubleaza la fiecare {RoCount(F(nz.DoublingCelsius, 0))}grade");
-            string minutes = double.IsNaN(w.Minutes) ? "" : T($" over {F(w.Minutes, 0)} min", $" din {F(w.Minutes, 0)} min");
-            string warmup = Math.Abs(w.DeltaCelsius) < 0.05
-                ? T($"the series did not warm ({rule})", $"seria nu s-a incalzit ({rule})")
-                : T(
-                    $"the {(cooling ? "cooling" : "warming")} of {F(Math.Abs(w.DeltaCelsius), 1)} degrees{minutes} is at the start ({rule})",
-                    $"{(cooling ? "racirea" : "incalzirea")} de {F(Math.Abs(w.DeltaCelsius), 1)} grade{minutes} e la inceput ({rule})");
-            string off = w.OffPlateauFrames.Count == 0
-                ? T("no frame to discard", "niciun cadru de aruncat")
-                : T("the frames to discard are in the row above", "cadrele de aruncat sunt in randul de mai sus");
+            string rule = T(
+                $"the degrees are reckoned with the rule that the thermal signal doubles every {F(nz.DoublingCelsius, 0)} degrees",
+                $"gradele sunt socotite cu regula: semnalul termic se dubleaza la fiecare {RoCount(F(nz.DoublingCelsius, 0))}grade");
+            string off = discard
+                ? T("the frames to discard are in the row above", "cadrele de aruncat sunt in randul de mai sus")
+                : T("no frame to discard", "niciun cadru de aruncat");
             return T(
-                $"OK: the series settled (the last frame is {lastFrame}, under {limit}) and every frame is close enough to the master for Siril to match it with -opt {within}; {warmup}; {off}",
-                $"OK: seria s-a stabilizat (ultimul cadru e {lastFrame}, mai putin de {limit}) si toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt {within}; {warmup}; {off}");
+                $"OK: the master is close to the end of the series ({FromIt(w.MasterCelsius)}, under {limit}) and {within}; {rule}; {off}",
+                $"OK: masterul e aproape de sfarsitul seriei ({FromIt(w.MasterCelsius)}, mai putin de {limit}) si {within}; {rule}; {off}");
         }
 
         List<string> parts = [];
-        if (!v.Settled)
-        {
-            string extrapolated = w.TauAtGridTop ? T("; the plateau is guessed from the curve", "; platoul e ghicit din curba") : "";
-            // a cooling series names its cause; every series warms itself, so a warming one has none (ADR 0017)
-            string head = cooling
-                ? T(
-                    $"the camera was still cooling at the last frame ({lastFrame}, more than {limit}{extrapolated}): it started warmer than the place it was in",
-                    $"aparatul inca se racea la ultimul cadru ({lastFrame}, mai mult de {limit}{extrapolated}): a pornit mai cald decat locul in care a stat")
-                : T(
-                    $"the camera was still warming at the last frame ({lastFrame}, more than {limit}{extrapolated}): the master mixes different temperatures",
-                    $"aparatul inca se incalzea la ultimul cadru ({lastFrame}, mai mult de {limit}{extrapolated}): masterul amesteca temperaturi diferite");
-            if (v.MostlyOff)
-            {
-                parts.Add(head);
-            }
-            else
-            {
-                string mixes = cooling ? T("; the master mixes different temperatures", "; masterul amesteca temperaturi diferite") : "";
-                string advice = w.OffPlateauFrames.Count > 0
-                    ? T("continue the series or discard the frames in the row above", "continua seria sau arunca cadrele din randul de mai sus")
-                    : T("continue the series", "continua seria");
-                parts.Add($"{head}{mixes}; {advice}");
-            }
-        }
-
         if (v.MostlyOff)
         {
-            // three time constants bring the camera within 5 % of its plateau; rounded up to 5 minutes (or frames)
+            // three time constants bring the camera within 5 % of where it settles; rounded up to 5 minutes (or frames)
             string tau = F(w.TauMinutes, 0);
             string rest = F(Math.Ceiling(3 * w.TauMinutes / 5) * 5, 0);
-            string advice = !cooling
+            // a cooling series names its cause; every series warms itself, so a warming one has none (ADR 0017)
+            string advice = !w.Cooling
                 ? T("take a longer series: the first frames are the warm-up", "refa seria mai lunga: primele cadre sunt incalzirea")
-                : w.TimeFromStamps
+                : T("the camera started warmer than the place it was in: ", "aparatul a pornit mai cald decat locul in care a stat: ") + (double.IsNaN(w.TauMinutes)
                     ? T(
-                        $"take the series again after the camera has sat where it shoots for about {rest} min (three times the {tau} min of this series)",
-                        $"refa seria dupa ce aparatul a stat vreo {rest} min in locul unde se trag dark-urile (de trei ori cele {tau} min ale seriei)")
-                    : T(
-                        $"take the series again after the camera has sat where it shoots for the time of about {rest} frames (three times the {tau} frames of this series)",
-                        $"refa seria dupa ce aparatul a stat in locul unde se trag dark-urile cat timp iau vreo {RoCount(rest)}cadre (de trei ori cele {RoCount(tau)}cadre ale seriei)");
+                        "take the series again after the camera has sat longer where it shoots",
+                        "refa seria dupa ce aparatul a stat mai mult in locul unde se trag dark-urile")
+                    : w.TimeFromStamps
+                        ? T(
+                            $"take the series again after the camera has sat where it shoots for about {rest} min (three times the {tau} min of this series)",
+                            $"refa seria dupa ce aparatul a stat vreo {rest} min in locul unde se trag dark-urile (de trei ori cele {tau} min ale seriei)")
+                        : T(
+                            $"take the series again after the camera has sat where it shoots for the time of about {rest} frames (three times the {tau} frames of this series)",
+                            $"refa seria dupa ce aparatul a stat in locul unde se trag dark-urile cat timp iau vreo {RoCount(rest)}cadre (de trei ori cele {RoCount(tau)}cadre ale seriei)"));
             parts.Add(T(
-                $"{w.OffPlateauFrames.Count} of {v.FramesWithRatio} frames are more than {F(Th.OffPlateauCelsius, 1)} degrees from the plateau, so the master belongs to no temperature; {advice}",
-                $"{w.OffPlateauFrames.Count} din {RoCount(v.FramesWithRatio)}cadre sunt la peste {F(Th.OffPlateauCelsius, 1)} grade de platou, deci masterul nu apartine niciunei temperaturi; {advice}"));
+                $"{w.OffEndFrames.Count} of {v.FramesWithRatio} frames are more than {F(Th.OffEndCelsius, 1)} degrees from the end of the series, so the master belongs to no temperature; {advice}",
+                $"{w.OffEndFrames.Count} din {RoCount(v.FramesWithRatio)}cadre sunt la peste {F(Th.OffEndCelsius, 1)} grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi; {advice}"));
+        }
+        else if (!v.MasterNearEnd)
+        {
+            // the master under the end: the colder frames of the start pull it down; above it, the
+            // warmer ones pull it up, and only then is there a cause to name (ADR 0017)
+            bool under = w.MasterCelsius < 0;
+            string advice = discard
+                ? T("discard the frames in the row above", "arunca cadrele din randul de mai sus")
+                : T("take a longer series", "fa seria mai lunga");
+            parts.Add(under
+                ? T(
+                    $"the master is {FromEnd(w.MasterCelsius)}, more than {limit}: the frames from the start, colder, pull it down; {advice}",
+                    $"masterul e {FromEnd(w.MasterCelsius)}, mai mult de {limit}: cadrele de la inceput, mai reci, il trag in jos; {advice}")
+                : T(
+                    $"the master is {FromEnd(w.MasterCelsius)}, more than {limit}: the frames from the start, warmer, pull it up (the camera started warmer than the place it was in); {advice}",
+                    $"masterul e {FromEnd(w.MasterCelsius)}, mai mult de {limit}: cadrele de la inceput, mai calde, il trag in sus (aparatul a pornit mai cald decat locul in care a stat); {advice}"));
         }
 
         if (v.OutsideFrames.Count > 0)
@@ -1345,30 +1422,44 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// Where the plateau sits against the master, in words: "at the master's level", or the degrees
-    /// under or over it.
+    /// A distance to the end of the series in words: "level with the end of the series", or the
+    /// degrees under or over it.
     /// </summary>
-    /// <param name="degrees">The master's degrees above the plateau (<see cref="Warming.PlateauCelsius"/>),
-    /// negative when the master is under it; the words name the plateau's side, the opposite.</param>
+    /// <param name="degrees">The distance in degrees, negative under the end.</param>
     /// <returns>The words, in the run's language.</returns>
-    private static string FromMaster(double degrees) =>
+    internal static string FromEnd(double degrees) =>
         Math.Abs(degrees) < 0.05
-            ? T("at the master's level", "la nivelul masterului")
+            ? T("level with the end of the series", "la nivelul sfarsitului seriei")
             : T(
-                $"{F(Math.Abs(degrees), 1)} degrees {(degrees > 0 ? "below" : "above")} the master",
-                $"cu {F(Math.Abs(degrees), 1)} grade {(degrees > 0 ? "sub" : "peste")} master");
+                $"{EndDegrees(degrees)} degrees {(degrees < 0 ? "below" : "above")} the end of the series",
+                $"cu {EndDegrees(degrees)} grade {(degrees < 0 ? "sub" : "peste")} sfarsitul seriei");
 
     /// <summary>
-    /// A distance to the plateau in words: "at the plateau", or the degrees under or over it.
+    /// The size of a distance to the end of the series as its words print it: one decimal, or two
+    /// when one decimal would show the limit itself (<see cref="Th.MasterNearEndCelsius"/>), so a
+    /// distance of 0.99 does not stand as "1.0" beside "under 1.0".
     /// </summary>
-    /// <param name="degrees">The distance in degrees, negative under the plateau.</param>
+    /// <param name="degrees">The distance in degrees, of either sign.</param>
+    /// <returns>The figure, unsigned.</returns>
+    private static string EndDegrees(double degrees)
+    {
+        double size = Math.Abs(degrees);
+        string one = F(size, 1);
+        return one == F(Th.MasterNearEndCelsius, 1) && size != Th.MasterNearEndCelsius ? F(size, 2) : one;
+    }
+
+    /// <summary>
+    /// <see cref="FromEnd"/> for a sentence that has just named the end of the series: "0.7
+    /// degrees below it", "level with it".
+    /// </summary>
+    /// <param name="degrees">The distance in degrees, negative under the end.</param>
     /// <returns>The words, in the run's language.</returns>
-    private static string FromPlateau(double degrees) =>
+    internal static string FromIt(double degrees) =>
         Math.Abs(degrees) < 0.05
-            ? T("at the plateau", "la platou")
+            ? T("level with it", "la nivelul lui")
             : T(
-                $"{F(Math.Abs(degrees), 1)} degrees {(degrees < 0 ? "below" : "above")} the plateau",
-                $"cu {F(Math.Abs(degrees), 1)} grade {(degrees < 0 ? "sub" : "peste")} platou");
+                $"{EndDegrees(degrees)} degrees {(degrees < 0 ? "below" : "above")} it",
+                $"cu {EndDegrees(degrees)} grade {(degrees < 0 ? "sub" : "peste")} el");
 
     /// <summary>
     /// Frame numbers as ranges: `1 .. 11`, `1 .. 3, 7`; a run of two prints both numbers.

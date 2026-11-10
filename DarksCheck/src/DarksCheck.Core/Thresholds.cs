@@ -213,39 +213,46 @@ internal static class Th
     internal const double LeakFrameAdu = 0.1;
 
     /// <summary>
-    /// The fit of R-023 (every frame's amplitude ratio on the minutes, as an approach to a plateau)
-    /// needs at least this many frames with a ratio; under it the plateau rows read NEMASURAT and
-    /// the verdict rests on the span alone (the same count as LeakFitMinFrames, a limit of its
-    /// own).
+    /// The end of the series of R-023, and the fit that gives the REFA advice its minutes, need at
+    /// least this many frames with a ratio; under it the end rows read NEMASURAT and the verdict
+    /// rests on the span alone (the same count as LeakFitMinFrames, a limit of its own).
     /// </summary>
     internal const int WarmingFitMinFrames = 6;
 
     /// <summary>
-    /// A frame whose hot pixels sit more than this many degrees from the plateau of the series
-    /// (under it in a warm-up, over it in a cool-down) is one to discard: at two degrees its dark
-    /// current is 21 % off the series'. Measured 2026-10-21 on the five series: at 1 °C the band
-    /// named 10 .. 18 of 30 frames (half the master's frames, 26 .. 58 % more noise for half a
-    /// degree of plateau), at 2 °C it names the cold start only, 3 .. 5 of 30 on the libraries, 8
-    /// on the leak set, 2 of 20 at Smida (ADR 0017).
+    /// The end of the series is the median ratio of this many last frames (ADR 0043): ten minutes
+    /// of 120 s frames, a median that one odd frame cannot move. Measured 2026-11-10 on the eleven
+    /// real series: within 0.01 of the fitted curve's last value on ten of them (0.1 °C), and 0.05
+    /// under it on the one the exponential does not fit (the 4.4 .. 2.7 °C series).
     /// </summary>
-    internal const double OffPlateauCelsius = 2.0;
+    internal const int SeriesEndFrames = 5;
 
     /// <summary>
-    /// When more than this fraction of the frames with a ratio are off the plateau, the median
-    /// master belongs to no temperature and check 3 reads REFA: the series is taken again (ADR
-    /// 0038). Measured 2026-11-07 on the eight real series: the owner's darks of 2026-11-07, shot
-    /// after the camera came out warm into 2 °C air, had 21 of 30 off (0.70, the master 83 % noisier
-    /// without them); the next highest, the 9.2 °C library, 12 of 30 (0.40); the others 1 .. 8 of
-    /// 30 and 2 of 20.
+    /// A frame whose hot pixels sit more than this many degrees from the end of the series (under
+    /// it in a warm-up, over it in a cool-down) is one to discard: at two degrees its dark current
+    /// is 21 % off the series'. The value was chosen against the plateau (ADR 0017: at 1 °C the band
+    /// named half the frames of every library); against the end, measured 2026-11-10, it names
+    /// 0 .. 4 of 30 on the libraries, 8 on the 9.2 °C one, 6 on the leak set, 2 of 20 at Smida
+    /// (ADR 0043).
     /// </summary>
-    internal const double RedoOffPlateauFraction = 0.5;
+    internal const double OffEndCelsius = 2.0;
 
     /// <summary>
-    /// A series whose fitted curve still has more than this many degrees to climb (or fall) at its
-    /// last frame has not settled: its master belongs to no temperature. The seven series measured
-    /// 2026-10-21 had 0.1 .. 0.4 °C left; a series cut mid-warm-up has 1.5 and more (ADR 0017).
+    /// When more than this fraction of the frames with a ratio are off the end of the series, the
+    /// median master belongs to no temperature and check 3 reads REFA: the series is taken again
+    /// (ADR 0038, the owner's limit of 2026-11-07, read against the end since ADR 0043). Measured
+    /// 2026-11-10 on the eleven real series: the most is 10 of 30 (0.33, the owner's darks of
+    /// 2026-11-07, which the plateau rule read at 21 of 30), then 8 of 30 (the 9.2 °C library).
     /// </summary>
-    internal const double SettledCelsius = 1.0;
+    internal const double RedoOffEndFraction = 0.5;
+
+    /// <summary>
+    /// A master more than this many degrees from the end of its series is pulled by the frames of
+    /// the start: check 3 reads ATENTIE (ADR 0043). Measured 2026-11-10: 0.4 .. 0.7 °C on nine of
+    /// the eleven real series, 1.0 on the leak set, 1.2 on the 9.2 °C library and 1.4 on the darks
+    /// of 2026-11-07, the two series that started farthest from where they ended.
+    /// </summary>
+    internal const double MasterNearEndCelsius = 1.0;
 
     /// <summary>
     /// A frame whose residual noise exceeds the series' median by this factor is an outlier (the
@@ -360,4 +367,22 @@ internal static class Th
     /// the dark is unmatched.
     /// </summary>
     internal const double MatchCosmeticLow = 0.4;
+
+    // --- what the mismatch leaves (R-067, ADR 0044) ---
+
+    /// <summary>
+    /// A set of lights takes its dark as it is, whatever the ratio inside MatchOptLow ..
+    /// MatchOptHigh, while the median trace a plain subtraction leaves at the master's hot pixels
+    /// does not pass this many times the noise of a light: under the noise of one frame, a trace
+    /// is not told from it. Measured 2026-11-10: 0.73 for the Veil lights of 2026-11-08 against the
+    /// -2 °C darks (ratio 0.85), 0.49 for a pair inside 0.9 .. 1.1 (Veil 2026-10-06, ratio 0.94),
+    /// 1.06 and 1.16 for two pairs at 0.77 and 0.79 reckoned from the indexes.
+    /// </summary>
+    internal const double TraceNoiseLimit = 1.0;
+
+    /// <summary>
+    /// A trace above this many times the noise of a light is a strong one, counted on its own row
+    /// figure: at three times the noise a single pixel stands out of a frame's sky.
+    /// </summary>
+    internal const double TraceStrongFactor = 3.0;
 }

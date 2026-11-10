@@ -26,9 +26,9 @@ Copyright (C) 2026 Tudor Carean
     verdict            : OK: nicio margine si niciun colt nu difera de centru cu peste 1.0 ADU (cel mai mult -0.14, la stanga-sus, pe dark minus bias); lumina pe cadre nu s-a putut masura
 
   3. INCALZIREA CAMEREI IN TIMPUL SERIEI
-    platou             : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    sfarsitul seriei   : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
     de aruncat         : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
-    verdict            : OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); sunt mai putin de 6 cadre, deci fara platou
+    verdict            : OK: niciun cadru nu e prea departe de master (pixelii fierbinti ai fiecarui cadru sunt intre 0.7 si 1.4 din ai masterului); sunt mai putin de 6 cadre, deci sfarsitul seriei nu se masoara
 
   4. ZGOMOTUL FIECARUI CADRU
     fata de master     : R 2.64 .. 2.75; G1 2.64 .. 2.71 (in medie 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]
@@ -65,7 +65,7 @@ Copyright (C) 2026 Tudor Carean
     eticheta           : <sesiune>-idx145
 
   TABEL PE CADRE
-     nr  fisier                ora        medie  zgomot    dif.   benzi   fierb.  platou  lumina  latura   >20   [pixelii verzi G1; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); platou = cu cate grade e cadrul fata de temperatura stabila a seriei; de aruncat = la peste 2.0 grade de ea (verificarea 3); lumina = lumina in plus fata de cat explica incalzirea, ADU; latura = latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)]
+     nr  fisier                ora        medie  zgomot    dif.   benzi   fierb. sfarsit  lumina  latura   >20   [pixelii verzi G1; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); sfarsit = cu cate grade e cadrul fata de sfarsitul seriei; de aruncat = la peste 2.0 grade de el (verificarea 3); lumina = lumina in plus fata de cat explica incalzirea, ADU; latura = latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)]
       1  DSC_0001.fit          00:48:53    0.00    3.01    2.64     1.0    0.888       -       -       -     1
       2  DSC_0002.fit          00:50:53    0.01    2.99    2.67     1.0    0.950       -       -       -     1
       3  DSC_0003.fit          00:52:53    0.02    3.03    2.71     1.0    1.050       -       -       -     1

@@ -59,10 +59,46 @@ internal sealed record LightFigures(FrameInfo Info, string? Error, bool AssumedS
 internal sealed record OverlapAtLevel(double LevelAdu, int DarkCount, int Both);
 
 /// <summary>
+/// What a plain subtraction of the dark leaves at the master's hot pixels, against the noise of a
+/// light (R-067, ADR 0044). The trace at a pixel is `|ratio - 1|` x its level in the master over
+/// the light's noise on the pixel's colour, both in ADU equivalent, so it grows in step with
+/// `|ratio - 1|`: <paramref name="PerUnit"/> is the level over the noise at a typical pixel, and
+/// the band inside which the typical trace stays under <see cref="Th.TraceNoiseLimit"/> x the
+/// noise follows from it.
+/// </summary>
+/// <param name="Pixels">How many amplitude pixels were read: those of a colour whose noise in
+/// the lights is positive.</param>
+/// <param name="PerUnit">The median over those pixels of the master's level over the light's
+/// noise; NaN when no pixel was read.</param>
+/// <param name="Median">The night's median trace, in times the noise: `|ratio - 1|` x
+/// <paramref name="PerUnit"/>; NaN when no pixel was read or the ratio is unmeasured.</param>
+/// <param name="AboveNoise">The pixels whose trace is above 1 x the noise.</param>
+/// <param name="AboveStrong">The pixels whose trace is above
+/// <see cref="Th.TraceStrongFactor"/> x the noise.</param>
+/// <param name="DirectLow">The lower bound of the ratio's Direct band on these lights:
+/// <see cref="Th.MatchDirectLow"/> widened down to where the median trace reaches the limit,
+/// never under <see cref="Th.MatchOptLow"/>.</param>
+/// <param name="DirectHigh">The upper bound: <see cref="Th.MatchDirectHigh"/> widened up
+/// likewise, never over <see cref="Th.MatchOptHigh"/>.</param>
+/// <param name="Relaxed">True when the night's ratio is outside the plain Direct band and
+/// inside the widened one: the verdict Direct stands on the traces, and its words say so.</param>
+internal sealed record TraceFigures(int Pixels, double PerUnit, double Median, int AboveNoise, int AboveStrong, double DirectLow, double DirectHigh, bool Relaxed)
+{
+    /// <summary>No pixel read: the plain band, nothing relaxed.</summary>
+    internal static readonly TraceFigures None = new(0, double.NaN, double.NaN, 0, 0, Th.MatchDirectLow, Th.MatchDirectHigh, false);
+
+    /// <summary>
+    /// True when the Direct band of these lights is wider than <see cref="Th.MatchDirectLow"/> ..
+    /// <see cref="Th.MatchDirectHigh"/> on either side.
+    /// </summary>
+    internal bool Widened => DirectLow < Th.MatchDirectLow || DirectHigh > Th.MatchDirectHigh;
+}
+
+/// <summary>
 /// The lights against the dark (check 9): every light's figures, the pixels persistent over
 /// the lights, their overlap with the dark master at the hot levels, the ones the dark misses,
-/// the amplitude ratio of the lights over the master per light and over the night, and the
-/// verdict (R-050 to R-052).
+/// the amplitude ratio of the lights over the master per light and over the night, what a plain
+/// subtraction leaves, and the verdict (R-050 to R-052, R-067).
 /// </summary>
 /// <param name="Used">How many lights decoded, at least 1.</param>
 /// <param name="AssumedSettings">How many were read at the darks' settings.</param>
@@ -80,9 +116,11 @@ internal sealed record OverlapAtLevel(double LevelAdu, int DarkCount, int Both);
 /// <param name="AmpPixels">How many amplitude pixels of the master the ratios are read
 /// on.</param>
 /// <param name="LightsOverDark">The lights' ratios over the master, one per light, as a
-/// match.</param>
+/// match; its verdict is the ratio's with <paramref name="Traces"/>' wider Direct band
+/// (R-067).</param>
 /// <param name="RatioFirst">The first measured light's ratio; NaN when none.</param>
 /// <param name="RatioLast">The last measured light's ratio; NaN when none.</param>
+/// <param name="Traces">What a plain subtraction leaves at the master's hot pixels.</param>
 internal sealed record LightsAnalysis(
     int Used,
     int AssumedSettings,
@@ -96,7 +134,17 @@ internal sealed record LightsAnalysis(
     int AmpPixels,
     MatchFigures LightsOverDark,
     double RatioFirst,
-    double RatioLast);
+    double RatioLast,
+    TraceFigures Traces)
+{
+    /// <summary>
+    /// The verdict of a ratio of these lights over their dark, the night's or one light's: R-062's
+    /// bounds with the Direct band of <see cref="Traces"/> (R-067).
+    /// </summary>
+    /// <param name="ratio">The amplitude ratio; NaN for unmeasured.</param>
+    /// <returns>The verdict.</returns>
+    internal MatchVerdict Judge(double ratio) => IndexAnalyzer.Judge(ratio, Traces.DirectLow, Traces.DirectHigh);
+}
 
 /// <summary>
 /// Check 9 as the prototype did it (`prototype/analyze_darks.py`, the lights loop): each
@@ -251,9 +299,75 @@ internal static class LightsAnalyzer
 
         LightFigures[] ok = frames.Where(f => f.Error is null && !double.IsNaN(f.AmpRatioMedian)).ToArray();
         MatchFigures match = IndexAnalyzer.Match(ok.Select(f => (float)f.AmpRatioMedian).ToArray(), darks.Normalisation);
+        // what the mismatch leaves, and the verdict it relaxes (R-067): inside the widened band a
+        // ratio the plain bounds call WithOpt is Direct
+        TraceFigures traces = TracesOf(frames, darks, excess, ampIdx, w, match.Ratio);
+        if (traces.Relaxed)
+        {
+            match = match with { Verdict = MatchVerdict.Direct };
+        }
+
         return new LightsAnalysis(used, frames.Count(f => f.AssumedSettings), frames, threshold, persistent, hist, overlap, missedExcess.Count,
             missedExcess.Count == 0 ? double.NaN : Planes.Median([.. missedExcess]), ampIdx.Count, match,
-            ok.Length == 0 ? double.NaN : ok[0].AmpRatioMedian, ok.Length == 0 ? double.NaN : ok[^1].AmpRatioMedian);
+            ok.Length == 0 ? double.NaN : ok[0].AmpRatioMedian, ok.Length == 0 ? double.NaN : ok[^1].AmpRatioMedian, traces);
+    }
+
+    /// <summary>
+    /// What a plain subtraction leaves at the master's amplitude pixels (R-067): each pixel's
+    /// level in the master over the lights' noise on its CFA colour, both in ADU equivalent, then
+    /// the night's traces and the Direct band they allow.
+    /// </summary>
+    /// <param name="frames">Every light's figures; those that decoded give the noise.</param>
+    /// <param name="darks">The darks' figures, for the normalisation.</param>
+    /// <param name="excess">The dark master minus its black, row-major, in raw ADU.</param>
+    /// <param name="ampIdx">The mosaic indices of the master's amplitude pixels.</param>
+    /// <param name="w">The mosaic's width, which gives a pixel's CFA position.</param>
+    /// <param name="ratio">The night's ratio of the lights over the master; NaN when
+    /// unmeasured.</param>
+    /// <returns>The figures; <see cref="TraceFigures.None"/> when no colour has a positive
+    /// noise or the master has no amplitude pixel.</returns>
+    private static TraceFigures TracesOf(LightFigures[] frames, DarkSeriesAnalysis darks, float[] excess, List<int> ampIdx, int w, double ratio)
+    {
+        // the noise of a light per CFA position, in ADU equivalent: the median over the lights of
+        // the local sigma (how much a pixel differs from its neighbours), each at its own settings
+        double[] noise = new double[4];
+        for (int p = 0; p < 4; p++)
+        {
+            float[] sigmas = frames
+                .Where(f => f.Error is null && f.LocalSigma.Count == 4 && f.LocalSigma[p] > 0)
+                .Select(f => (float)(f.LocalSigma[p] / (f.AssumedSettings ? darks.Norm : darks.Normalisation.NormOf(f.Info))))
+                .ToArray();
+            noise[p] = sigmas.Length == 0 ? double.NaN : Planes.Median(sigmas);
+        }
+
+        List<float> perUnit = [];
+        foreach (int i in ampIdx)
+        {
+            int p = (((i / w) & 1) << 1) | ((i % w) & 1);
+            if (noise[p] > 0)
+            {
+                perUnit.Add((float)(excess[i] / darks.Norm / noise[p]));
+            }
+        }
+
+        if (perUnit.Count == 0)
+        {
+            return TraceFigures.None;
+        }
+
+        double k = Planes.Median([.. perUnit]);
+        // the median trace is |ratio - 1| x k: under the limit while the ratio is within limit / k of 1
+        double reach = k > 0 ? Th.TraceNoiseLimit / k : 0;
+        double low = Math.Max(Th.MatchOptLow, Math.Min(Th.MatchDirectLow, 1 - reach));
+        double high = Math.Min(Th.MatchOptHigh, Math.Max(Th.MatchDirectHigh, 1 + reach));
+        if (double.IsNaN(ratio))
+        {
+            return new TraceFigures(perUnit.Count, k, double.NaN, 0, 0, low, high, false);
+        }
+
+        double off = Math.Abs(ratio - 1);
+        bool relaxed = IndexAnalyzer.Judge(ratio) == MatchVerdict.WithOpt && IndexAnalyzer.Judge(ratio, low, high) == MatchVerdict.Direct;
+        return new TraceFigures(perUnit.Count, k, off * k, perUnit.Count(x => off * x > 1), perUnit.Count(x => off * x > Th.TraceStrongFactor), low, high, relaxed);
     }
 
     /// <summary>

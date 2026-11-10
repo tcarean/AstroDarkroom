@@ -156,10 +156,11 @@ public class ValidationTests
         AssertWithin("warmFirst", e.GetProperty("warmFirst").GetDouble(), d.Warming.FirstRatio, ratio);
         AssertWithin("warmLast", e.GetProperty("warmLast").GetDouble(), d.Warming.LastRatio, ratio);
         AssertWithin("driftCelsius", e.GetProperty("driftCelsius").GetDouble(), d.Warming.DeltaCelsius, 0.1);
-        AssertWithin("plateau", e.GetProperty("plateau").GetDouble(), d.Warming.Plateau, ratio);
+        // the series against its end (R-023, ADR 0043); the time constant only feeds the REFA advice
+        AssertWithin("endRatio", e.GetProperty("endRatio").GetDouble(), d.Warming.EndRatio, ratio);
+        AssertWithin("masterCelsius", e.GetProperty("masterCelsius").GetDouble(), d.Warming.MasterCelsius, 0.1);
         AssertWithin("tauMinutes", e.GetProperty("tauMinutes").GetDouble(), d.Warming.TauMinutes, 1.0);
-        AssertWithin("settleCelsius", e.GetProperty("settleCelsius").GetDouble(), d.Warming.SettleCelsius, 0.1);
-        Assert.Equal(e.GetProperty("offPlateauFrames").GetInt32(), d.Warming.OffPlateauFrames.Count);
+        Assert.Equal(e.GetProperty("offEndFrames").GetInt32(), d.Warming.OffEndFrames.Count);
         AssertWithin("bandingRowP2pMax", e.GetProperty("bandingRowP2pMax").GetDouble(), d.Banding.Max(b => b.RowP2p), adu);
         AssertWithin("bandingColP2pMax", e.GetProperty("bandingColP2pMax").GetDouble(), d.Banding.Max(b => b.ColP2p), adu);
         AssertWithin("leakOffset", e.GetProperty("leakOffset").GetDouble(), r.Verdicts.Leak.OffsetAdu, adu);
@@ -225,6 +226,16 @@ public class ValidationTests
         Assert.Equal(e.GetProperty("rankHigh").GetInt32(), r.Index.RankHigh);
         Assert.Equal(e.GetProperty("label").GetString(), r.Label);
 
+        // the darks' series against its end (R-023, ADR 0043), on a match case that records it
+        if (e.TryGetProperty("drift", out JsonElement drift))
+        {
+            Warming w = r.Darks.Warming;
+            Assert.Equal(drift.GetProperty("verdict").GetString(), r.Verdicts.Drift.Verdict.ToString());
+            AssertWithin("endRatio", drift.GetProperty("endRatio").GetDouble(), w.EndRatio, ratio);
+            AssertWithin("masterCelsius", drift.GetProperty("masterCelsius").GetDouble(), w.MasterCelsius, celsius);
+            Assert.Equal(drift.GetProperty("offEndFrames").GetInt32(), w.OffEndFrames.Count);
+        }
+
         JsonElement l = e.GetProperty("lights");
         if (l.ValueKind == JsonValueKind.Null)
         {
@@ -254,6 +265,15 @@ public class ValidationTests
             AssertWithin("ratioFirst", l.GetProperty("ratioFirst").GetDouble(), lights.RatioFirst, ratio);
             AssertWithin("ratioLast", l.GetProperty("ratioLast").GetDouble(), lights.RatioLast, ratio);
             Assert.Equal(l.GetProperty("verdict").GetString(), lights.LightsOverDark.Verdict.ToString());
+            // what a plain subtraction leaves (R-067, ADR 0044), on the cases recorded since
+            if (l.TryGetProperty("traceMedian", out JsonElement traceMedian))
+            {
+                AssertWithin("traceMedian", traceMedian.GetDouble(), lights.Traces.Median, 0.02);
+                AssertWithin("traceAboveNoise", l.GetProperty("traceAboveNoise").GetInt32(), lights.Traces.AboveNoise, counts);
+                AssertWithin("traceAboveStrong", l.GetProperty("traceAboveStrong").GetInt32(), lights.Traces.AboveStrong, counts);
+                AssertWithin("directLow", l.GetProperty("directLow").GetDouble(), lights.Traces.DirectLow, 0.01);
+                AssertWithin("directHigh", l.GetProperty("directHigh").GetDouble(), lights.Traces.DirectHigh, 0.01);
+            }
         }
 
         JsonElement p = e.GetProperty("partner");

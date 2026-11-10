@@ -186,7 +186,30 @@ internal static class WindowTexts
         + "1 % din patrate e negru, cel mai luminos 1 % e alb, ca sa se vada si diferentele mici. O margine sau un colt mai luminos pe dark minus bias "
         + "e lumina intrata in aparat sau glow; unul care apare si in bias vine din citirea senzorului, nu e lumina.");
 
-    internal static string LightsChartLead => T(
+    /// <summary>
+    /// The sentence above the lights' chart: what a point is and what each colour means. The green
+    /// band is the one the core found for the open lights (R-067): 0.9 .. 1.1, or wider while what a
+    /// plain subtraction leaves stays under the noise of a light, and then the sentence says so.
+    /// </summary>
+    /// <param name="band">The traces of the open result, whose band the sentence names;
+    /// <see cref="TraceFigures.None"/> for the plain band.</param>
+    /// <returns>The sentence, in the window's language.</returns>
+    internal static string LightsChartLead(TraceFigures band) => band.Widened
+        ? T(
+            "Each point is a light: how hot the master's hot pixels are in it, against the master (1 = the same), once ISO and exposure are taken into account. "
+            + $"Green between {RunReport.F(band.DirectLow, 2)} and {RunReport.F(band.DirectHigh, 2)}: the dark can be subtracted as it is ({RunReport.F(Th.MatchDirectLow, 1)} .. {RunReport.F(Th.MatchDirectHigh, 1)}, widened to where what the subtraction leaves reaches the noise of a light). "
+            + $"Yellow from there to {RunReport.F(Th.MatchOptLow, 1)} and {RunReport.F(Th.MatchOptHigh, 1)}: subtract the dark with -opt (Siril multiplies it so that it matches the lights); "
+            + $"yellow too between {RunReport.F(Th.MatchCosmeticLow, 1)} and {RunReport.F(Th.MatchOptLow, 1)}: use the dark for the cosmetic correction only. "
+            + "Red beyond: they do not match. The first lights of the night usually sit lower, because the camera is still cold.",
+            "Fiecare punct e un light: cat de fierbinti sunt in el pixelii fierbinti ai masterului, fata de master (1 = la fel), dupa ce se tine cont de ISO si de expunere. "
+            + $"Verde intre {RunReport.F(band.DirectLow, 2)} si {RunReport.F(band.DirectHigh, 2)}: dark-ul se poate scadea asa cum e ({RunReport.F(Th.MatchDirectLow, 1)} .. {RunReport.F(Th.MatchDirectHigh, 1)}, largit pana unde ce ramane dupa scadere ajunge cat zgomotul unui light). "
+            + $"Galben de acolo pana la {RunReport.F(Th.MatchOptLow, 1)} si {RunReport.F(Th.MatchOptHigh, 1)}: scade dark-ul cu -opt (Siril il inmulteste cat sa se potriveasca cu lights-urile); "
+            + $"tot galben intre {RunReport.F(Th.MatchCosmeticLow, 1)} si {RunReport.F(Th.MatchOptLow, 1)}: foloseste dark-ul doar pentru corectia cosmetica. "
+            + "Rosu mai departe: nu se potrivesc. Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.")
+        : PlainLightsChartLead;
+
+    /// <summary>The sentence above the lights' chart with the plain green band, 0.9 .. 1.1.</summary>
+    private static string PlainLightsChartLead => T(
         "Each point is a light: how hot the master's hot pixels are in it, against the master (1 = the same), once ISO and exposure are taken into account. "
         + $"Green between {RunReport.F(Th.MatchDirectLow, 1)} and {RunReport.F(Th.MatchDirectHigh, 1)}: the dark can be subtracted as it is. "
         + $"Yellow between {RunReport.F(Th.MatchOptLow, 1)} and {RunReport.F(Th.MatchOptHigh, 1)}: subtract the dark with -opt (Siril multiplies it so that it matches the lights); "

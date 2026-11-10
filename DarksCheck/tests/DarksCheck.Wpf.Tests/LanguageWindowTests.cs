@@ -153,7 +153,7 @@ public partial class LanguageWindowTests
                 Assert.True(vm.HasResult);
                 FramesView view = new() { DataContext = vm };
                 Render(view, 1360, 1800);
-                List<string> texts = [.. TextsOf(view), vm.WarmingNote, vm.FrameTableNote, vm.PlateauHeaderTip, vm.HotHeaderTip];
+                List<string> texts = [.. TextsOf(view), vm.WarmingNote, vm.FrameTableNote, vm.EndHeaderTip, vm.HotHeaderTip];
                 texts.AddRange(vm.WarmingGuides.Concat(vm.ResidualGuides).Concat(vm.BandingGuides).Select(g => g.Label));
 
                 // the scenes reached their variants, so the words below were looked at

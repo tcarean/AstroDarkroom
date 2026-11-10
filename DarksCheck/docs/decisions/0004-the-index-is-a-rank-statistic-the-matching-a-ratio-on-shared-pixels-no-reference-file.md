@@ -1,7 +1,7 @@
 # 0004. The index is a rank statistic of the master, the matching a ratio on the pixels two sets share; no reference file
 
 Date: 2026-10-11
-Status: accepted 2026-10-11
+Status: accepted 2026-10-11; the lights' verdict by the ratio alone superseded by 0044
 
 ## Context
 

@@ -42,6 +42,27 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- Check 3 reads the series against its end, not against a fitted plateau (R-023, ADR 0043):
+  the end of the series is the average of its last 5 frames, the frames more than 2 degrees
+  from it are the ones to discard, `REDO` when more than half are, `WARNING` when the master is
+  more than 1 degree from the end or a frame leaves 0.7 .. 1.4 of the master. The `plateau` row
+  is `end of series`, the frames table's column `plateau` is `end`, the window's chart has the
+  end of the series as its line, and no text names a plateau any more. A series that was still
+  moving at its last frame is no longer flagged for that alone: darks that moved half a degree
+  in 70 minutes read `WARNING` at "1.4 degrees above the plateau" and now read `OK`, 0.4
+  degrees from where they ended. This replaces the plateau of the two older entries on check 3
+  further down. A series whose last frame shows no hot pixel is no longer `UNMEASURED` as a
+  whole: its frames are judged like any others. An `OK` no longer names `-opt` (it read as
+  advice to use it): it says that no frame is too far from the master, the hot pixels of
+  every frame between 0.7 and 1.4 of the master's.
+- Check 9 also weighs what the mismatch leaves (R-067, ADR 0044): a new row `what is left` says
+  how big a trace a plain subtraction leaves at a hot pixel against the noise of one light, and
+  at how many pixels it passes the noise and 3 times the noise. A lights / dark ratio between
+  0.7 and 1.4 whose average trace is under the noise of a light now reads `OK: the dark can be
+  subtracted as it is` instead of `subtract the dark with -opt`; the window's chart of the
+  lights moves its two green lines and colours its points by that wider band. Ratios inside
+  0.9 .. 1.1, the cosmetic-only and no-match verdicts and the partner's verdicts are unchanged.
+
 - The window's Summary tab puts check 9, how well the dark fits the lights, right under the
   session card, then checks 2 to 8 and INDEX; its hot-pixel card keeps only the stability and
   the verdict (the Hot pixels tab shows the rest); the stability's four statements and the

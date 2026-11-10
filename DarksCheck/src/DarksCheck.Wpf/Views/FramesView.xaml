@@ -45,7 +45,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="TextWrapping" Value="NoWrap" />
     </Style>
-    <!-- the attention colour of VerdictPalette.Warn, for a frame off the plateau (R-071) -->
+    <!-- the attention colour of VerdictPalette.Warn, for a frame off the end of the series (R-071) -->
     <SolidColorBrush x:Key="WarnBr" Color="#E3B341" />
     <SolidColorBrush x:Key="WarnBg" Color="#26E3B341" />
     <Style x:Key="FrameRowGrid" TargetType="Grid">
@@ -58,7 +58,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </DataTrigger>
       </Style.Triggers>
     </Style>
-    <Style x:Key="PlateauCell" TargetType="TextBlock" BasedOn="{StaticResource Cell}">
+    <Style x:Key="EndCell" TargetType="TextBlock" BasedOn="{StaticResource Cell}">
       <Style.Triggers>
         <DataTrigger Binding="{Binding Off}" Value="True">
           <Setter Property="Foreground" Value="{StaticResource WarnBr}" />
@@ -95,7 +95,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TextBlock Grid.Column="5" Style="{StaticResource Cell}" Text="{Binding Residual}" />
         <TextBlock Grid.Column="6" Style="{StaticResource Cell}" Text="{Binding Bands}" />
         <TextBlock Grid.Column="7" Style="{StaticResource Cell}" Text="{Binding Amp}" />
-        <TextBlock Grid.Column="8" Style="{StaticResource PlateauCell}" Text="{Binding Plateau}" />
+        <TextBlock Grid.Column="8" Style="{StaticResource EndCell}" Text="{Binding End}" />
         <TextBlock Grid.Column="9" Style="{StaticResource Cell}" Text="{Binding Light}" />
         <TextBlock Grid.Column="10" Style="{StaticResource Cell}" Text="{Binding Side}" />
         <TextBlock Grid.Column="11" Style="{StaticResource Cell}" Text="{Binding Above}" />
@@ -147,7 +147,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Grid.Column="5" Style="{StaticResource Head}" Text="{l:T En='diff.', Ro='dif.'}" ToolTip="{l:T En='how much the frame differs from the master, in ADU (its noise against the master)', Ro='cat difera cadrul de master, in ADU (zgomotul lui fata de master)'}" />
           <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="{l:T En='bands', Ro='benzi'}" ToolTip="{l:T En='how many times more the rows differ from one another than the noise alone would give; 1 = no banding', Ro='de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur; 1 = fara benzi'}" />
           <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="{l:T En='hot', Ro='fierb.'}" ToolTip="{l:T En='how hot the hot pixels of the master are in this frame, against the master (1 = the same); it shows how warm the sensor was', Ro='cat de fierbinti sunt in acest cadru pixelii fierbinti ai masterului, fata de master (1 = la fel); arata cat de cald era senzorul'}" />
-          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="{l:T En='plateau', Ro='platou'}" ToolTip="{Binding PlateauHeaderTip}" />
+          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="{l:T En='end', Ro='sfarsit'}" ToolTip="{Binding EndHeaderTip}" />
           <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="{l:T En='light', Ro='lumina'}" ToolTip="{l:T En='how much more light the frame has than the warming explains, in ADU-eq: light that comes and goes from one frame to the next (check 2)', Ro='cata lumina in plus are cadrul fata de cat explica incalzirea, in ADU-eq: lumina care vine si pleaca de la un cadru la altul (verificarea 2)'}" />
           <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="{l:T En='side', Ro='latura'}" ToolTip="{l:T En='how much the side with the most constant light (the edge and its two corners) differs from the centre in this frame, once the bias is taken off when there is one, glow included, in ADU-eq; what does not change from one frame to the next is the light in every frame (check 2)', Ro='cat difera de centru, in acest cadru, latura cu cea mai multa lumina constanta (marginea si cele doua colturi ale ei), dupa ce se scade bias-ul, daca exista, cu glow cu tot, in ADU-eq; ce nu se schimba de la un cadru la altul e lumina din toate cadrele (verificarea 2)'}" />
           <TextBlock Grid.Column="11" Style="{StaticResource Head}" Text="{Binding HotHeader}" ToolTip="{Binding HotHeaderTip}" />
