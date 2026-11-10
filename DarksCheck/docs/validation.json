@@ -1,5 +1,5 @@
 {
-  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder DARKSCHECK_TESTDATA_LARGE names (ADR 0006). ValidationTests reads this file; docs/validation.md explains each entry. 'kind' is 'inventory' (the session's inventory and check 1), 'darks' (checks 2 to 8 on the darks and the biases) or 'match' (check 9, the index, the label and the partner named by 'against', relative to the same folder). Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder DARKSCHECK_TESTDATA_LARGE names (ADR 0006). ValidationTests reads this file; docs/validation.md explains each entry. 'kind' is 'inventory' (the session's inventory and check 1), 'darks' (checks 2 to 8 on the darks and the biases) or 'match' (check 9, the index, the label and the partner named by 'against', relative to the same folder; a case-level 'lights' names another folder's lights, given to the run as --lights is, and an optional 'drift' block records check 3 of the darks against the end of their series). Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
   "cases": [
     {
       "id": "V-001",

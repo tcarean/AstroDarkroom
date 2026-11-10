@@ -228,9 +228,9 @@ From 6 frames up, the series is read against its end: the average of its last 5 
 temperature the camera actually reached. `end of series` says which way the camera moved, from
 the hot pixels of the first frame to that end (a series that cools came in warmer than the
 place it sat in), by how many degrees, and how far above or below the end the master sits (0.4
-to 0.7 degrees on the measured libraries). `to discard` names the frames more than 2 degrees
+to 0.7 degrees on the measured libraries, 1.2 on the one that started coldest). `to discard` names the frames more than 2 degrees
 from the end of the series (the cold start, with a dark current more than 21 % under the
-end's; up to 4 of 30 on the libraries, 2 of 20 on Smida), says where the master would be
+end's; up to 4 of 30 on the libraries, 8 on the one that started coldest, 2 of 20 on Smida), says where the master would be
 without them and how much its noise would grow (the square root of the frames over the frames
 left). You move them out of `darks\` yourself, since the program writes nothing into the
 folder, and you leave them when the noise costs more than the half degree is worth.

@@ -406,6 +406,28 @@ public partial class DarkSeriesTests
     }
 
     [Fact]
+    public void R023_SixFramesHaveAnEndAndHalfTheFramesOffItAreNotYetRefa()
+    {
+        // six frames are enough for an end (Th.WarmingFitMinFrames), the median of the last five
+        using SessionFixture six = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot });
+        DarkSeriesResult r6 = Run(six);
+        Assert.Equal(6, r6.Darks.Warming.Measured);
+        Assert.True(r6.Darks.Warming.HasEnd);
+        Assert.Equal(Planes.Median(r6.Darks.Frames.Skip(1).Select(f => (float)f.AmpRatioMedian).ToArray()), r6.Darks.Warming.EndRatio, 1e-9);
+
+        // six frames at 1.6 and then six at 1.0: exactly half are more than two degrees above the end, and REFA needs
+        // more than half (Th.RedoOffEndFraction); the master, between the two levels, is far from the end
+        using SessionFixture half = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i < 6 ? 1.6 : 1.0 });
+        DarkSeriesResult r = Run(half);
+        Assert.Equal([1, 2, 3, 4, 5, 6], r.Darks.Warming.OffEndFrames);
+        Assert.False(r.Verdicts.Drift.MostlyOff);
+        Assert.False(r.Verdicts.Drift.MasterNearEnd);
+        Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
+        string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[2].Value;
+        Assert.Matches(@"^ATENTIE: masterul e cu 2\.\d grade peste sfarsitul seriei, mai mult de 1\.0: cadrele de la inceput, mai calde, il trag in sus \(aparatul a pornit mai cald decat locul in care a stat\); arunca cadrele din randul de mai sus$", verdict);
+    }
+
+    [Fact]
     public void R023_AFlatSeriesHasNoFrameOffItsEnd()
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(7, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot });

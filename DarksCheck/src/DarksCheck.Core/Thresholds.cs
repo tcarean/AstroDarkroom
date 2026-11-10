@@ -373,8 +373,8 @@ internal static class Th
     /// <summary>
     /// A set of lights takes its dark as it is, whatever the ratio inside MatchOptLow ..
     /// MatchOptHigh, while the median trace a plain subtraction leaves at the master's hot pixels
-    /// stays under this many times the noise of a light: under the noise of one frame, a trace is
-    /// not told from it. Measured 2026-11-10: 0.73 for the Veil lights of 2026-11-08 against the
+    /// does not pass this many times the noise of a light: under the noise of one frame, a trace
+    /// is not told from it. Measured 2026-11-10: 0.73 for the Veil lights of 2026-11-08 against the
     /// -2 °C darks (ratio 0.85), 0.49 for a pair inside 0.9 .. 1.1 (Veil 2026-10-06, ratio 0.94),
     /// 1.06 and 1.16 for two pairs at 0.77 and 0.79 reckoned from the indexes.
     /// </summary>

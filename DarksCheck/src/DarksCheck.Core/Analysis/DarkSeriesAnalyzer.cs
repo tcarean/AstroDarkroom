@@ -308,9 +308,9 @@ internal sealed record BandingFigures(string Name, double RowStd, double ColStd,
 /// <param name="OffEndLow">The band's lower bound, as a ratio to the master.</param>
 /// <param name="OffEndHigh">The band's upper bound, as a ratio to the master.</param>
 /// <param name="MasterWithoutOffCelsius">The degrees from the end to the median ratio of the
-/// frames left, negative under the end; NaN when none is left.</param>
-/// <param name="NoiseFactorWithoutOff">sqrt(frames measured / frames left); NaN when none is
-/// left.</param>
+/// frames left, negative under the end; NaN without an end.</param>
+/// <param name="NoiseFactorWithoutOff">sqrt(frames measured / frames left); NaN without an
+/// end.</param>
 /// <param name="TauMinutes">The fitted time constant, in minutes, or in frames when
 /// <paramref name="TimeFromStamps"/> is false; NaN when the fit cannot give one: no fit, a
 /// plateau or fitted last frame that is not positive, a curve that does not move the way the
@@ -1095,8 +1095,9 @@ internal static class DarkSeriesAnalyzer
             OffEndFrames = off,
             OffEndLow = low,
             OffEndHigh = high,
-            MasterWithoutOffCelsius = left.Count == 0 ? double.NaN : nz.Degrees(Planes.Median([.. left]) / end),
-            NoiseFactorWithoutOff = left.Count == 0 ? double.NaN : Math.Sqrt((double)ok.Length / left.Count),
+            // the end is one of the last five ratios, so its own frame is always among those left
+            MasterWithoutOffCelsius = nz.Degrees(Planes.Median([.. left]) / end),
+            NoiseFactorWithoutOff = Math.Sqrt((double)ok.Length / left.Count),
             TauMinutes = tau,
             TimeFromStamps = stamps,
         };

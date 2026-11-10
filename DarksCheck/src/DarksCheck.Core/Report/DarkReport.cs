@@ -1315,11 +1315,10 @@ internal static class DarkReport
                 $"niciun cadru nu e la mai mult de {deg} grade de sfarsitul seriei (pixelii fierbinti intre {F(w.OffEndLow, 2)} si {F(w.OffEndHigh, 2)} din master)");
         }
 
-        string without = double.IsNaN(w.MasterWithoutOffCelsius)
-            ? T("without them no frame is left", "fara ele nu ramane niciun cadru")
-            : T(
-                $"without them the master would be {FromEnd(w.MasterWithoutOffCelsius)}, but with {F((w.NoiseFactorWithoutOff - 1) * 100, 0)} % more noise",
-                $"fara ele masterul ar fi {FromEnd(w.MasterWithoutOffCelsius)}, dar cu {F((w.NoiseFactorWithoutOff - 1) * 100, 0)} % mai mult zgomot");
+        // some frame is always left: the end is one of the last five ratios
+        string without = T(
+            $"without them the master would be {FromEnd(w.MasterWithoutOffCelsius)}, but with {F((w.NoiseFactorWithoutOff - 1) * 100, 0)} % more noise",
+            $"fara ele masterul ar fi {FromEnd(w.MasterWithoutOffCelsius)}, dar cu {F((w.NoiseFactorWithoutOff - 1) * 100, 0)} % mai mult zgomot");
         return T(
             $"{RunReport.Frames(w.OffEndFrames.Count)} ({Ranges(w.OffEndFrames)}) {(w.OffEndFrames.Count == 1 ? "is" : "are")} more than {deg} degrees from the end of the series (the hot pixels below {F(w.OffEndLow, 2)} or above {F(w.OffEndHigh, 2)} of the master; the end of the series {F(w.EndRatio, 2)}); {without}",
             $"{RunReport.Frames(w.OffEndFrames.Count)} ({Ranges(w.OffEndFrames)}) {(w.OffEndFrames.Count == 1 ? "e" : "sunt")} la mai mult de {deg} grade de sfarsitul seriei (pixelii fierbinti sub {F(w.OffEndLow, 2)} sau peste {F(w.OffEndHigh, 2)} din master; sfarsitul seriei {F(w.EndRatio, 2)}); {without}");

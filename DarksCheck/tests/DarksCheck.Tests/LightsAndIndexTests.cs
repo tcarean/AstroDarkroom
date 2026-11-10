@@ -284,6 +284,24 @@ public class LightsAndIndexTests
     }
 
     [Fact]
+    public void R067_TheTwoCountsSplitThePixelsAtOnceAndAtThreeTimesTheNoise()
+    {
+        // ten hot pixels of 60 ADU and ten of 240, lights at 0.85 with a noise of 6: the subtraction leaves 9 ADU at
+        // the first ten (about 1.4 times the noise) and 36 at the others (about 5.5 times), so all twenty are above
+        // the noise and exactly the ten strong ones above three times it
+        (int X, int Y, double Adu)[] twoLevels = [.. SyntheticLight.Lattice.Select((h, k) => (h.X, h.Y, k < 10 ? 60.0 : 240.0))];
+        using SessionFixture s = new SessionFixture()
+            .WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = twoLevels })
+            .WithLights(5, i => new SyntheticLight { Seed = 300 + i, Hot = twoLevels, HotFactor = 0.85 });
+        DarkSeriesResult r = Run(s);
+        TraceFigures t = r.Lights!.Traces;
+        Assert.Equal(20, t.Pixels);
+        Assert.Equal(20, t.AboveNoise);
+        Assert.Equal(10, t.AboveStrong);
+        Assert.Contains("; la 20 din 20 gaura trece de zgomot, la 10 de 3 ori zgomotul (", Report(r), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void R067_TheTracesOnlyRelaxTheOptBandAndAMatchedDarkLeavesNothing()
     {
         // weak hot pixels at 0.6 of the dark: under 0.7 the dark is for the cosmetic correction only, whatever is left

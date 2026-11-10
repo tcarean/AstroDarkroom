@@ -118,6 +118,7 @@ public class MainViewModelTests
         using (Ui.Use(UiLanguage.English))
         {
             Assert.Contains($"Green between {RunReport.F(t.DirectLow, 2)} and {RunReport.F(t.DirectHigh, 2)}: the dark can be subtracted as it is (0.9 .. 1.1, widened to where what the subtraction leaves reaches the noise of a light). Yellow from there to 0.7 and 1.4: ", WindowTexts.LightsChartLead(t), StringComparison.Ordinal);
+            Assert.DoesNotMatch(PlainWords.EnglishTabWords(), WindowTexts.LightsChartLead(t));
         }
     }
 

@@ -2,6 +2,7 @@
 
 Date: 2026-11-10
 Status: accepted 2026-11-10
+Supersedes: 0004 in part (the lights' verdict by the ratio alone)
 
 ## Context
 

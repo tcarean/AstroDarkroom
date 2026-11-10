@@ -300,6 +300,13 @@ Reused as they are: `Planes.Median`, `Normalisation.Degrees` and `NormOf`,
 - One commit for the two checks, not one per check: their words share `DarkReport.cs`, the
   goldens and the validation file, and neither half passes the gate alone once the goldens are
   regenerated.
+- From a second review, of the whole branch (a fourth commit): tests that pin the count above
+  three times the noise, a series of exactly six frames and exactly half the frames off the
+  end; the words for "no frame left" removed, since the end is one of the last five ratios and
+  its frame is always left; ADR 0044 now supersedes 0004 in part, as step 9 had planned; R-071
+  and the README's figures for the 9.2 °C library corrected. Left as they are, reported to the
+  owner: a figure that rounds onto a limit in check 9's words, the end read from the last five
+  decoded frames over the frame cap, the band's words when it reaches 0.7 .. 1.4.
 - After the owner read the window: the two `OK` verdicts of check 3 no longer name `-opt`,
   which read as advice to use it; they say that no frame is too far from the master. The
   `ATENTIE` for a frame outside 0.7 .. 1.4 keeps `-opt`, at the owner's word (a third commit).
