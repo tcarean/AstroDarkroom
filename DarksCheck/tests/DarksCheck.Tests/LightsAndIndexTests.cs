@@ -345,7 +345,7 @@ public class LightsAndIndexTests
     }
 
     [Fact]
-    public void R053_WithoutLightsCheck9IsUnmeasuredAndTheIndexHasNoLightsLine()
+    public void R053_WithoutLightsCheck2IsUnmeasuredAndTheIndexHasNoLightsLine()
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark);
         DarkSeriesResult r = Run(s);
@@ -422,20 +422,20 @@ public class LightsAndIndexTests
         using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, 1.3));
         DarkSeriesResult r = Run(s);
         LightsAnalysis l = r.Lights!;
-        ReportSection nine = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Lights);
-        ReportSection index = DarkReport.Sections(r).Single(x => x.Title == "INDEX");
-        Assert.Equal(["pixeli fierbinti", "in masterul dark", "masterul in lights", "lipsesc din master", "lights fata de dark", "ce ramane", "index dark-uri", "index lights", "verdict"], nine.Rows.Select(row => row.Label));
+        ReportSection check2 = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Lights);
+        ReportSection index = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Index);
+        Assert.Equal(["pixeli fierbinti", "in masterul dark", "masterul in lights", "lipsesc din master", "lights fata de dark", "ce ramane", "index dark-uri", "index lights", "verdict"], check2.Rows.Select(row => row.Label));
 
         // the two indexes, each on its own row: the darks' tag, and the lights' equivalent tag with the INDEX row's parenthesis
-        Assert.Equal(r.Index.Tag, nine.Rows[6].Value);
+        Assert.Equal(r.Index.Tag, check2.Rows[6].Value);
         string like = Math.Round(r.LightsIndex, MidpointRounding.AwayFromZero).ToString(CultureInfo.InvariantCulture);
-        Assert.StartsWith("idx" + like + " (de 1.30 ori cat dark-ul, adica cu 2.3 grade mai calde decat el)", nine.Rows[7].Value, StringComparison.Ordinal);
-        Assert.Equal("ca un dark cu " + nine.Rows[7].Value, index.Rows.Single(row => row.Label == "lights").Value);
-        Assert.Null(nine.Rows[6].Table);
-        Assert.Null(nine.Rows[7].Lines);
+        Assert.StartsWith("idx" + like + " (de 1.30 ori cat dark-ul, adica cu 2.3 grade mai calde decat el)", check2.Rows[7].Value, StringComparison.Ordinal);
+        Assert.Equal("ca un dark cu " + check2.Rows[7].Value, index.Rows.Single(row => row.Label == "lights").Value);
+        Assert.Null(check2.Rows[6].Table);
+        Assert.Null(check2.Rows[7].Lines);
 
         // the overlap rows: the console's line as before, the same figures as a table for the window
-        foreach ((ReportRow row, Func<OverlapAtLevel, int> of) in new[] { (nine.Rows[1], (Func<OverlapAtLevel, int>)(o => l.Persistent)), (nine.Rows[2], o => o.DarkCount) })
+        foreach ((ReportRow row, Func<OverlapAtLevel, int> of) in new[] { (check2.Rows[1], (Func<OverlapAtLevel, int>)(o => l.Persistent)), (check2.Rows[2], o => o.DarkCount) })
         {
             ReportTable t = Assert.IsType<ReportTable>(row.Table);
             Assert.Equal(["prag", "pixeli", "procent"], t.Header);
@@ -450,17 +450,17 @@ public class LightsAndIndexTests
             Assert.Null(row.Lines);
         }
 
-        Assert.StartsWith("cati dintre acesti pixeli sunt si in masterul dark, peste fiecare prag in ADU", nine.Rows[1].Table!.Note, StringComparison.Ordinal);
-        Assert.Equal("cati dintre pixelii masterului de peste fiecare prag se vad si in lights", nine.Rows[2].Table!.Note);
+        Assert.StartsWith("cati dintre acesti pixeli sunt si in masterul dark, peste fiecare prag in ADU", check2.Rows[1].Table!.Note, StringComparison.Ordinal);
+        Assert.Equal("cati dintre pixelii masterului de peste fiecare prag se vad si in lights", check2.Rows[2].Table!.Note);
         Assert.Contains("    index dark-uri     : " + r.Index.Tag + Environment.NewLine + "    index lights       : idx" + like + " (", Report(r), StringComparison.Ordinal);
 
         // the darks are the partner's (R-054): the row says so
         using SessionFixture alone = new SessionFixture().WithLights(4, i => Light(i, 1.3)).WithBiases(3);
         using SessionFixture partner = new SessionFixture().WithDarkSeries(5, Dark, inSubfolder: false);
         DarkSeriesResult taken = Run(alone, partner.Root);
-        ReportSection nineAlone = DarkReport.Sections(taken).Single(x => x.Check == ReportCheck.Lights);
-        Assert.Equal(taken.Index.Tag, nineAlone.Rows.Single(row => row.Label == "index partener").Value);
-        Assert.Contains(nineAlone.Rows, row => row.Label == "index lights");
+        ReportSection check2Alone = DarkReport.Sections(taken).Single(x => x.Check == ReportCheck.Lights);
+        Assert.Equal(taken.Index.Tag, check2Alone.Rows.Single(row => row.Label == "index partener").Value);
+        Assert.Contains(check2Alone.Rows, row => row.Label == "index lights");
 
         // without lights: the one unmeasured verdict row, as before
         using SessionFixture darks = new SessionFixture().WithDarkSeries(6, Dark);
@@ -629,7 +629,7 @@ public class LightsAndIndexTests
             List<string> texts = [];
             foreach (DarkSeriesResult r in new[] { Run(same), Run(warmer), Run(colder), Run(far), Run(none), Run(noIso), Run(same, hotter.Root), Run(darks, warm.Root), Run(alone, hotter.Root), Run(darks) })
             {
-                foreach (ReportSection section in DarkReport.Sections(r).Where(x => x.Check == ReportCheck.Lights || x.Title == "INDEX"))
+                foreach (ReportSection section in DarkReport.Sections(r).Where(x => x.Check == ReportCheck.Lights || x.Check == ReportCheck.Index))
                 {
                     texts.Add(section.Title);
                     texts.AddRange(section.Rows.SelectMany(row => new[] { row.Label, row.Value }));
@@ -843,7 +843,7 @@ public class LightsAndIndexTests
         using SessionFixture p = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 2 }, inSubfolder: false);
         DarkSeriesResult r = Run(s, p.Root);
         PartnerAnalysis partner = r.Partner!;
-        ReportRow shared = DarkReport.Sections(r).Single(x => x.Title == "INDEX").Rows.Single(row => row.Label == "pixeli comuni");
+        ReportRow shared = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Index).Rows.Single(row => row.Label == "pixeli comuni");
         IReadOnlyList<string> lines = Assert.IsAssignableFrom<IReadOnlyList<string>>(shared.Lines);
         Assert.Equal(2, lines.Count);
         Assert.Equal(string.Join("; ", lines), shared.Value);

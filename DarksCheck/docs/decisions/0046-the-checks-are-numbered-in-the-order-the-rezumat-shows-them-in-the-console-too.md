@@ -29,11 +29,12 @@ check 1, then 2 to 9, over `1. SESIUNE` and over 1 to 8.
    (`(verificarea 4)` for the frames to discard, `(verificarea 3)` and `(verificarea 5)` on the
    Cadre tab) say the new numbers.
 3. **A section carries its check**: `ReportSection.Check`, a `ReportCheck`. The window and the
-   tests find a section by it, never by the number in its title, so a later renumbering touches
-   the titles alone.
+   core's tests find a section by it, never by the number in its title. The window's own tests
+   find a card by its title or its place, since the title is what they check, so a later
+   renumbering touches the titles, the goldens and those tests.
 4. **The living documents say the new numbers**: `README.md`, `CHANGELOG.md` (all of it under
    `[Unreleased]`), `docs/requirements.md`, `docs/design/`, `docs/validation.md` above its
-   History, `CLAUDE.md`, the code's comments and the tests' names. The history keeps the
+   History, the comment of `docs/validation.json`, `CLAUDE.md`, the code's comments and the tests' names. The history keeps the
    numbers it was written with: the ADRs before this one, `docs/plans/`, the History of
    `docs/validation.md`, `prototype/` and the Smida report of the hand analysis
    (`docs/validation/2026-08-12-smida/`). Read there, old 2 .. 8 are new 3 .. 9 and old 9 is

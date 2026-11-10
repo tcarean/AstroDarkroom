@@ -630,8 +630,13 @@ public class MainViewModelTests
         Assert.True(vm.HasResult);
         Assert.False(vm.HasLights);
 
-        // a choice is kept for a rerun of the same folder and dropped when another folder is opened
+        // the same lights chosen again run again too; a choice is kept for a rerun of the same folder and
+        // dropped when another folder is opened
         await vm.ChooseLightsFromAsync(s.LightsDir);
+        Assert.True(vm.HasLights);
+        DarkSeriesResult first = vm.Result!;
+        await vm.ChooseLightsFromAsync(s.LightsDir);
+        Assert.NotSame(first, vm.Result);
         Assert.True(vm.HasLights);
         await vm.RerunAsync();
         Assert.True(vm.HasLightsFrom);

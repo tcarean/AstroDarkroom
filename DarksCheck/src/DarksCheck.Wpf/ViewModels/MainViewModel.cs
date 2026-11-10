@@ -615,7 +615,7 @@ public sealed class MainViewModel : ObservableObject
     public Task ChoosePartnerAsync(string? folder)
     {
         Partner = folder;
-        Log.Info("partner chosen: " + (HasFolder ? "the folder runs again" : "no folder is open yet"));
+        Log.Info((HasPartner ? "partner chosen: " : "partner cleared: ") + (HasFolder ? "the folder runs again" : "no folder is open yet"));
         return RerunAsync();
     }
 
@@ -629,7 +629,7 @@ public sealed class MainViewModel : ObservableObject
     public Task ChooseLightsFromAsync(string? folder)
     {
         LightsFrom = folder;
-        Log.Info("lights chosen: " + (HasFolder ? "the folder runs again" : "no folder is open yet"));
+        Log.Info((HasLightsFrom ? "lights chosen: " : "lights cleared: ") + (HasFolder ? "the folder runs again" : "no folder is open yet"));
         return RerunAsync();
     }
 

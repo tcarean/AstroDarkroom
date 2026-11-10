@@ -32,6 +32,6 @@ at the next run: a choice, or the folder opened again.
 
 ## Consequences
 
-R-073, R-077, R-087 and R-122 say so; the window logs `partner chosen:` and `lights chosen:` with
-whether the folder runs again, and the clears. A run takes about a minute on a real session
+R-073, R-077, R-087 and R-122 say so; the window logs `partner chosen:` or `partner cleared:`, and
+`lights chosen:` or `lights cleared:`, with whether the folder runs again. A run takes about a minute on a real session
 (63 to 90 s on Smida), now started by the choice itself; the stop button stays.

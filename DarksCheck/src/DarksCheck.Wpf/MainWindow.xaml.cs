@@ -97,11 +97,7 @@ public partial class MainWindow : Window
     internal void ChooseLightsFromView() => ChooseLights();
 
     /// <summary>The Lights tab's clear button (R-122): back to the open folder's own lights, run again (ADR 0048).</summary>
-    internal void ClearLightsFromView()
-    {
-        Log.Info("lights cleared");
-        _ = _vm.ChooseLightsFromAsync(null);
-    }
+    internal void ClearLightsFromView() => _ = _vm.ChooseLightsFromAsync(null);
 
     /// <summary>
     /// Asks for the folder of lights (R-055, R-122), starting in the current choice when it still
@@ -172,11 +168,7 @@ public partial class MainWindow : Window
     /// <summary>Forgets the partner folder and runs the folder again without it (ADR 0048).</summary>
     /// <param name="sender">The button.</param>
     /// <param name="e">The click.</param>
-    private void ClearPartner(object sender, RoutedEventArgs e)
-    {
-        Log.Info("partner cleared");
-        _ = _vm.ChoosePartnerAsync(null);
-    }
+    private void ClearPartner(object sender, RoutedEventArgs e) => _ = _vm.ChoosePartnerAsync(null);
 
     /// <summary>
     /// The label goes to the clipboard; the folder is the owner's to rename (ADR 0002). Nothing

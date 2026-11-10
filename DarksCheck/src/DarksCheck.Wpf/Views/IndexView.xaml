@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- IndexView: the label with its copy button, the INDEX rows of the report, and the partner
-     folder to match against (chosen here for the open folder, applied on the next run; not kept
-     between runs of the program, dropped when another folder is opened, R-073). -->
+     folder to match against (chosen here for the open folder, which runs again at once, ADR 0048;
+     not kept between runs of the program, dropped when another folder is opened, R-073). -->
 
 <UserControl x:Class="DarksCheck.Wpf.IndexView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
