@@ -19,9 +19,9 @@ content grid holding four overlapping states: the empty state (no folder and no 
 problem card (`HasProblem`), the `TabControl` (`HasResult`) and the wait screen over everything
 (`IsRunning`). Each state is a visibility binding on `MainViewModel`; there is no navigation
 code. The six tab views under `Views/` are `UserControl`s with no code of their own beyond
-`InitializeComponent`, except `IndexView`, whose four buttons call back into `MainWindow`
-(`CopyLabelFromView`, `ChoosePartnerFromView`, `ClearPartnerFromView`, `RerunFromView`),
-since the folder dialogs and the clipboard belong to the window. `AboutWindow` is the only
+`InitializeComponent`, except `IndexView`, whose three buttons call back into `MainWindow`
+(`CopyLabelFromView`, `ChoosePartnerFromView`, `ClearPartnerFromView`), and `LightsView` (its
+card, below), since the folder dialogs and the clipboard belong to the window. `AboutWindow` is the only
 second window.
 
 The tab control is an `AccessibleTabControl`, whose automation peer gives each tab the stock
@@ -81,7 +81,10 @@ inside a parallel loop arrives wrapped in (flattened to its distinct messages, a
 does), become `ProblemText`; anything else is a bug and propagates. A superseded run's
 progress callbacks are dropped once its token is cancelled, so they never write over the new
 run's bar. `RerunAsync` opens the same folder again, with the settings and the partner as
-they are now.
+they are now. `ChoosePartnerAsync` and `ChooseLightsFromAsync` set the choice (null clears it)
+and call it, so every choice the window hands them, the same folder again and a clear
+included, runs at once, with no button and no status line (ADR 0048); without a folder open
+they only set it. The `Partner` and `LightsFrom` setters alone run nothing.
 
 `Populate(DarkSeriesResult)` arranges, it does not compute:
 
@@ -94,10 +97,11 @@ they are now.
   in the core (`ReportRow`), `Lines` the core's `ReportRow.Lines` or `Rest` alone (empty for a
   row with a table), `Table` the core's `ReportRow.Table` as a `TableVm(Header, Rows, Note)` or
   null; the Rezumat's cards are
-  the sections with the one whose title starts with `9.` moved first (`IsLightsCheck`), each
-  holding only the rows whose `ReportRow.Summary` is true (ADR 0041); `HotRows`, `LightRows`
-  and `IndexRows` are all the rows of the sections whose title starts with `5.`, `9.` and
-  `INDEX`, for the tabs that show one check beside a chart;
+  the sections in the core's order, each holding only the rows whose `ReportRow.Summary` is
+  true (ADR 0041, ADR 0046); `HotRows`, `LightRows` and `IndexRows` are all the rows of the
+  sections whose `ReportSection.Check` is `HotPixels`, `Lights` and `Index`, and the maps'
+  rows are those of `Leaks`, for the tabs that show one check beside a chart; the core's
+  `Lines` of the verdicts of checks 3 and 4 put each statement on its own line (ADR 0047);
 - the shared `ReportRow` template draws each of a row's `Lines` as a wrapped `TextBlock`, one
   under the other, through `Emphasis`, an attached property in `Presentation/` that rebuilds
   the `TextBlock`'s inlines from the line and `RowVm.Bold` (`Emphasis.Segments`: every
@@ -119,7 +123,7 @@ they are now.
   row of the row's grid, under the cells and spanning them, all in the attention colour of
   `VerdictPalette.Warn` as local brushes;
 - the Harti tab takes the three `BinnedMap`s of the reference plane through
-  `DarkOutputs.MapRaster` and `RasterBitmaps.Grey`, each with its section-2 row (`master dark`,
+  `DarkOutputs.MapRaster` and `RasterBitmaps.Grey`, each with its check-3 row (`master dark`,
   `master bias`, `dark - bias`) as its note under the titles `MASTER DARK`, `MASTER BIAS` and
   `DARK MINUS BIAS`; a map without blocks, or an absent group, is a `MapVm` without image and
   the card says why (`WindowTexts.NoDarkMap`, `NoBiasMap`);
@@ -144,24 +148,24 @@ they are now.
   for such a folder, `IndexLeadLights`, raised with the result; `Partner` is the folder of
   `--against`.
 
-The problem card has a second button, `Alege partener...` (R-077): `MainWindow.ChoosePartnerAndRerun`
-runs the partner dialog and, when a folder was chosen (the same one again included), `RerunAsync`;
-a cancelled dialog does nothing. So a session with lights and no darks goes from the refusal
+The problem card has a second button, `Alege partener...` (R-077): the Index tab's
+`MainWindow.ChoosePartner`, the partner dialog and, when a folder was chosen, `ChoosePartnerAsync`,
+which runs the folder again; a cancelled dialog does nothing. So a session with lights and no darks goes from the refusal
 to its run without choosing the folder again. `Export(dir)` calls `DarkOutputs.WriteAll`, which refuses a folder inside the session or the
 partner as `--out` does, and shows the paths or the error in `Status`. `LabelCopied` sets the
 status line after the window put the label in the clipboard.
 
 The Potrivire cu lights tab's first card, `LIGHTS-URI DIN ALT FOLDER` (R-122, ADR 0039), is
 the partner card's twin for `--lights`: `LightsFrom` on the view-model (blank is null;
-`HasLightsFrom`, `LightsFromText` with `WindowTexts.NoLightsFrom` for none;
-`Status = LightsFromChanged` when a result is shown), reaching the core as
-`DarkOptions.LightsFrom` through `Options`. Neither it nor the partner is stored (ADR 0041):
+`HasLightsFrom`, `LightsFromText` with `WindowTexts.NoLightsFrom` for none), reaching the
+core as `DarkOptions.LightsFrom` through `Options`. Neither it nor the partner is stored (ADR 0041):
 `SaveSettings` knows the four settings alone, and `OpenAsync` drops both when the folder
 opened differs from the one open (`SameFolder`: full paths, case ignored) and one was open, so
 a rerun, the problem card's run and the first open after the choice keep them. The
 card's buttons go through `LightsView`'s code-behind to `MainWindow.ChooseLightsFromView`
 (the `OpenFolderDialog` titled `ChooseLightsTitle`, starting in the current choice when it
-exists), `ClearLightsFromView` and `RerunFromView`; the lead is `WindowTexts.LightsFromLead`.
+exists) and `ClearLightsFromView`, both ending in `ChooseLightsFromAsync`; the lead is
+`WindowTexts.LightsFromLead`.
 
 ## The settings (`UserSettings`)
 
@@ -198,8 +202,8 @@ pairs read as properties. The verdict chips colour either language's words
 (`VerdictPalette.Severity`: OK good, ATENTIE / WARNING attention, REFA / REDO and EROARE /
 ERROR bad, NEMASURAT / UNMEASURED neutral). The window still finds the maps' rows by the
 labels `master dark`,
-`master bias` and `dark - bias` and the sections by their `5.`, `9.` and `INDEX` prefixes,
-which the report keeps the same in both languages. `LanguageWindowTests` render every tab in an
+`master bias` and `dark - bias`, which the report keeps the same in both languages, and the
+sections by their `ReportSection.Check`, never by the number in the title. `LanguageWindowTests` render every tab in an
 English scope and look for Romanian words, and the Cadre, Harti, Pixeli fierbinti, Potrivire cu lights and Index
 tabs and the empty window's start screen and top bar in both languages for the method's words of
 R-083 to R-088, the list `PlainWords.cs` that the core's tests share, linked like the fixtures.

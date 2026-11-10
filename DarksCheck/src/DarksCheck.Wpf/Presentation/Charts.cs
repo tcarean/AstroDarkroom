@@ -122,7 +122,7 @@ public abstract class ChartElement : FrameworkElement
 
 /// <summary>
 /// Values over the frame index (or over n) as a line with dots or as bars, with guide lines at
-/// thresholds and an optional dashed reference series (the expected curve of check 8).
+/// thresholds and an optional dashed reference series (the expected curve of check 9).
 /// Missing values (NaN) break the line.
 /// </summary>
 public sealed class SeriesChart : ChartElement

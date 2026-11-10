@@ -21,8 +21,8 @@ using System.Windows.Controls;
 namespace DarksCheck.Wpf;
 
 /// <summary>
-/// The Index tab; its four buttons reach the main window's handlers, which own the dialogs and
-/// the clipboard.
+/// The Index tab; its three buttons reach the main window's handlers, which own the dialogs and
+/// the clipboard. A choice of partner runs the folder again by itself (ADR 0048).
 /// </summary>
 public partial class IndexView : UserControl
 {
@@ -36,18 +36,13 @@ public partial class IndexView : UserControl
     /// <param name="e">The click.</param>
     private void CopyLabel(object sender, RoutedEventArgs e) => Owner?.CopyLabelFromView();
 
-    /// <summary>The partner button: the window asks for the partner folder.</summary>
+    /// <summary>The partner button: the window asks for the partner folder, then the folder runs again.</summary>
     /// <param name="sender">The button.</param>
     /// <param name="e">The click.</param>
     private void ChoosePartner(object sender, RoutedEventArgs e) => Owner?.ChoosePartnerFromView();
 
-    /// <summary>The clear button: the window forgets the partner folder.</summary>
+    /// <summary>The clear button: the window forgets the partner folder, then the folder runs again.</summary>
     /// <param name="sender">The button.</param>
     /// <param name="e">The click.</param>
     private void ClearPartner(object sender, RoutedEventArgs e) => Owner?.ClearPartnerFromView();
-
-    /// <summary>The rerun button: the window runs the same folder again.</summary>
-    /// <param name="sender">The button.</param>
-    /// <param name="e">The click.</param>
-    private void Rerun(object sender, RoutedEventArgs e) => Owner?.RerunFromView();
 }

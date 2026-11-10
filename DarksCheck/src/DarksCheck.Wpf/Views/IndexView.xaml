@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- IndexView: the label with its copy button, the INDEX rows of the report, and the partner
-     folder to match against (chosen here for the open folder, applied on the next run; not kept
-     between runs of the program, dropped when another folder is opened, R-073). -->
+     folder to match against (chosen here for the open folder, which runs again at once, ADR 0048;
+     not kept between runs of the program, dropped when another folder is opened, R-073). -->
 
 <UserControl x:Class="DarksCheck.Wpf.IndexView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -59,8 +59,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <StackPanel Orientation="Horizontal" Margin="0,10,0,0" IsEnabled="{Binding IsIdle}">
             <Button Content="{l:T En='Choose partner...', Ro='Alege partener...'}" Click="ChoosePartner" />
             <Button Content="{l:T En='No partner', Ro='Fara partener'}" Click="ClearPartner" Margin="10,0,0,0" IsEnabled="{Binding HasPartner}" />
-            <Button Content="{l:T En='Analyse again', Ro='Analizeaza din nou'}" Click="Rerun" Margin="10,0,0,0" IsEnabled="{Binding HasFolder}"
-                    ToolTip="{l:T En='Analyses the open folder again, with the chosen lights, the partner and the settings of now', Ro='Analizeaza din nou folderul deschis, cu lights-urile alese, partenerul si setarile de acum'}" />
           </StackPanel>
         </StackPanel>
       </Border>

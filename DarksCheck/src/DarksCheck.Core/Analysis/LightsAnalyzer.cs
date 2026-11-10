@@ -95,7 +95,7 @@ internal sealed record TraceFigures(int Pixels, double PerUnit, double Median, i
 }
 
 /// <summary>
-/// The lights against the dark (check 9): every light's figures, the pixels persistent over
+/// The lights against the dark (check 2): every light's figures, the pixels persistent over
 /// the lights, their overlap with the dark master at the hot levels, the ones the dark misses,
 /// the amplitude ratio of the lights over the master per light and over the night, what a plain
 /// subtraction leaves, and the verdict (R-050 to R-052, R-067).
@@ -147,7 +147,7 @@ internal sealed record LightsAnalysis(
 }
 
 /// <summary>
-/// Check 9 as the prototype did it (`prototype/analyze_darks.py`, the lights loop): each
+/// Check 2 as the prototype did it (`prototype/analyze_darks.py`, the lights loop): each
 /// light is decoded on its own, never kept; a pixel more than <see cref="Th.LightHotSigmas"/>
 /// above the median of its eight same-colour neighbours, under saturation, with no immediate
 /// neighbour above <see cref="Th.LightIsolationSigmas"/>, is an isolated hot pixel; a pixel
@@ -172,7 +172,7 @@ internal static class LightsAnalyzer
     /// <param name="threads">How many lights are decoded at once; below 1 counts as 1.</param>
     /// <param name="progress">Told (done, total) after each light; null for none.</param>
     /// <param name="cancel">Stops the reading; the cancellation is thrown.</param>
-    /// <returns>Check 9's figures.</returns>
+    /// <returns>Check 2's figures.</returns>
     /// <exception cref="InvalidOperationException">No light decoded.</exception>
     internal static LightsAnalysis Analyze(IReadOnlyList<string> paths, DarkSeriesAnalysis darks, int threads, IProgress<(int Done, int Total)>? progress = null, CancellationToken cancel = default)
     {

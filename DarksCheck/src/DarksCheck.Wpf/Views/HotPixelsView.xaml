@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- HotPixelsView: the rows of check 5 (counts per level, amplitudes, stability) and the
-     noise curve of check 8, the measured points over the expected sigma / sqrt(n). -->
+<!-- HotPixelsView: the rows of check 6 (counts per level, amplitudes, stability) and the
+     noise curve of check 9, the measured points over the expected sigma / sqrt(n). -->
 
 <UserControl x:Class="DarksCheck.Wpf.HotPixelsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -34,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="0,0,14,0">
       <Border Style="{StaticResource Card}">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="{l:T En='5. HOT PIXELS', Ro='5. PIXELI FIERBINTI'}" />
+          <TextBlock Style="{StaticResource Heading}" Text="{l:T En='6. HOT PIXELS', Ro='6. PIXELI FIERBINTI'}" />
           <ItemsControl ItemsSource="{Binding HotRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
           <TextBlock Style="{StaticResource Muted}" Margin="0,10,0,0" TextWrapping="Wrap" Text="{Binding HotTabLead}" />
         </StackPanel>
@@ -44,7 +44,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
       <Border Style="{StaticResource Card}">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="{l:T En='8. HOW THE NOISE FALLS WITH MORE FRAMES (ADU)', Ro='8. CAT SCADE ZGOMOTUL CU MAI MULTE CADRE (ADU)'}" />
+          <TextBlock Style="{StaticResource Heading}" Text="{l:T En='9. HOW THE NOISE FALLS WITH MORE FRAMES (ADU)', Ro='9. CAT SCADE ZGOMOTUL CU MAI MULTE CADRE (ADU)'}" />
           <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap"
                      Text="{l:T En='Each point shows how much noise is left after the mean of several frames; the number of frames is at the bottom, under the chart. The dotted line shows how much should be left: the noise of one frame, falling the way a random noise falls (4 times the frames, half the noise). The points are measured between two different groups of frames, so without what is the same in every frame; that is why they can sit a little under the line. Hold the mouse over a point to see its figures.', Ro='Fiecare punct arata cat zgomot ramane dupa media mai multor cadre; din cate cadre, scrie jos, sub grafic. Linia punctata arata cat ar trebui sa ramana: zgomotul unui cadru, care scade cum scade un zgomot la intamplare (de 4 ori mai multe cadre, zgomot de 2 ori mai mic). Punctele se masoara intre doua grupuri diferite de cadre, deci fara ce e la fel in toate cadrele; de aceea pot sta putin sub linie. Tine mouse-ul pe un punct ca sa vezi cifrele.'}" />
           <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">

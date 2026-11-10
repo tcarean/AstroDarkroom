@@ -90,10 +90,6 @@ internal static class WindowTexts
         "(none: choose a library or another session to compare the darks with)",
         "(niciunul: alege o biblioteca sau alta sesiune ca sa compari dark-urile)");
 
-    internal static string PartnerChanged => T(
-        "The partner has changed: press \"Analyse again\" to compare it with the session.",
-        "Partenerul s-a schimbat: apasa \"Analizeaza din nou\" ca sa-l compari cu sesiunea.");
-
     internal static string ChooseLightsTitle => T(
         "Choose the folder of lights (a session, or a folder with the lights in it)",
         "Alege folderul de lights (o sesiune, sau un folder cu lights-urile in el)");
@@ -101,10 +97,6 @@ internal static class WindowTexts
     internal static string NoLightsFrom => T(
         "(none: the open folder's lights)",
         "(niciunul: lights-urile folderului deschis)");
-
-    internal static string LightsFromChanged => T(
-        "The lights have changed: press \"Analyse again\" to compare them with the darks.",
-        "Lights-urile s-au schimbat: apasa \"Analizeaza din nou\" ca sa le compari cu dark-urile.");
 
     /// <summary>The sentence of the Lights tab's card (R-122): what choosing another folder's lights does.</summary>
     internal static string LightsFromLead => T(

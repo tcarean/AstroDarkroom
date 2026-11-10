@@ -32,7 +32,7 @@ internal enum Verdict
     Unmeasured,
 
     /// <summary>
-    /// The series is compromised and is to be taken again: check 3 when more than
+    /// The series is compromised and is to be taken again: check 4 when more than
     /// <see cref="Th.RedoOffEndFraction"/> of the frames are off the end of the series (ADR 0038,
     /// ADR 0043).
     /// </summary>

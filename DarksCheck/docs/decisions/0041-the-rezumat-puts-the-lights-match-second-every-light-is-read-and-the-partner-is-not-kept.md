@@ -1,7 +1,7 @@
 # 0041. The Rezumat puts the lights' match second, every light is read, and the partner is not kept
 
 Date: 2026-11-08
-Status: accepted 2026-11-08
+Status: accepted 2026-11-08; the console's order and numbering superseded by 0046
 Supersedes: 0008 in part (the frame cap on the lights), 0009 in part (the partner in the settings file, the tab named `Lights`), 0036 in part (the partner's sentence), 0039 in part (the partner stays remembered)
 
 ## Context

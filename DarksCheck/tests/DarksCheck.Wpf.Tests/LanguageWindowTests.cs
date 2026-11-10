@@ -217,9 +217,9 @@ public partial class LanguageWindowTests
     }
 
     /// <summary>
-    /// The Pixeli fierbinti tab in plain words (R-085, ADR 0033): the text under check 5's rows, the
+    /// The Pixeli fierbinti tab in plain words (R-085, ADR 0033): the text under check 6's rows, the
     /// noise chart's title and sentence and the hints of its points name no part of the method, in
-    /// either language; each hint names its frames as the Rezumat's check 8 does.
+    /// either language; each hint names its frames as the Rezumat's check 9 does.
     /// </summary>
     /// <param name="english">True for the English pass, false for the Romanian one.</param>
     [Theory]
@@ -243,7 +243,7 @@ public partial class LanguageWindowTests
 
                 // the scenes reached their variants, so the words below were looked at
                 string all = string.Join("\n", texts);
-                Assert.Contains(english ? "8. HOW THE NOISE FALLS WITH MORE FRAMES (ADU)" : "8. CAT SCADE ZGOMOTUL CU MAI MULTE CADRE (ADU)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "9. HOW THE NOISE FALLS WITH MORE FRAMES (ADU)" : "9. CAT SCADE ZGOMOTUL CU MAI MULTE CADRE (ADU)", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "(4 times the frames, half the noise)" : "(de 4 ori mai multe cadre, zgomot de 2 ori mai mic)", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "how many jump between two levels from one frame to the next (RTS). For information only: this check never warns." : "cati sar intre doua niveluri de la un cadru la altul (RTS). Doar de informare: verificarea asta nu da niciodata avertizare.", all, StringComparison.Ordinal);
 
@@ -296,6 +296,8 @@ public partial class LanguageWindowTests
                 Assert.Contains(english ? "(none: the open folder's lights)" : "(niciunul: lights-urile folderului deschis)", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "The choice holds for this folder only and is not kept." : "Alegerea tine doar pentru folderul asta si nu se pastreaza.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "Choose lights..." : "Alege lights-urile...", all, StringComparison.Ordinal);
+                // no button runs the folder again: a choice does (R-122, ADR 0048)
+                Assert.DoesNotContain(english ? "Analyse again" : "Analizeaza din nou", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "The first lights of the night usually sit lower, because the camera is still cold." : "Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "0.4 cosmetic only" : "0.4 doar cosmetic", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "how bright the sky is in the light: the average value of the pixels, above the black, in ADU" : "cat de luminos e cerul in light: valoarea medie a pixelilor, peste negru, in ADU", all, StringComparison.Ordinal);
@@ -315,9 +317,9 @@ public partial class LanguageWindowTests
     }
 
     /// <summary>
-    /// The Index tab in plain words (R-087, ADR 0036): the text under the label, the partner's
-    /// explanation and the hint of Analyse again name no part of the method, in either language;
-    /// the run has a partner, so its rows are on the tab too.
+    /// The Index tab in plain words (R-087, ADR 0036): the text under the label and the partner's
+    /// explanation name no part of the method, in either language; the run has a partner, so its
+    /// rows are on the tab too. No button runs the folder again: a choice does (R-073, ADR 0048).
     /// </summary>
     /// <param name="english">True for the English pass, false for the Romanian one.</param>
     [Theory]
@@ -354,7 +356,8 @@ public partial class LanguageWindowTests
                 Assert.Contains(english ? "if the session has no darks, they are compared directly with the darks of the partner." : "daca sesiunea nu are dark-uri, se compara direct cu dark-urile partenerului.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "The partner holds for the open folder only: it is not kept after you close the program and is dropped when you open another folder." : "Partenerul tine doar pentru folderul deschis: nu se pastreaza dupa ce inchizi programul si se pierde cand deschizi alt folder.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "(idx- when the index cannot be measured)" : "(idx- cand indexul nu se poate masura)", all, StringComparison.Ordinal);
-                Assert.Contains(english ? "Analyses the open folder again, with the chosen lights, the partner and the settings of now" : "Analizeaza din nou folderul deschis, cu lights-urile alese, partenerul si setarile de acum", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "Choose partner..." : "Alege partener...", all, StringComparison.Ordinal);
+                Assert.DoesNotContain(english ? "Analyse again" : "Analizeaza din nou", all, StringComparison.Ordinal);
                 Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
                 List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
                 Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));

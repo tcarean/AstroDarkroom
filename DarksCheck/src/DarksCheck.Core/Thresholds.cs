@@ -239,7 +239,7 @@ internal static class Th
 
     /// <summary>
     /// When more than this fraction of the frames with a ratio are off the end of the series, the
-    /// median master belongs to no temperature and check 3 reads REFA: the series is taken again
+    /// median master belongs to no temperature and check 4 reads REFA: the series is taken again
     /// (ADR 0038, the owner's limit of 2026-11-07, read against the end since ADR 0043). Measured
     /// 2026-11-10 on the eleven real series: the most is 10 of 30 (0.33, the owner's darks of
     /// 2026-11-07, which the plateau rule read at 21 of 30), then 8 of 30 (the 9.2 °C library).
@@ -248,7 +248,7 @@ internal static class Th
 
     /// <summary>
     /// A master more than this many degrees from the end of its series is pulled by the frames of
-    /// the start: check 3 reads ATENTIE (ADR 0043). Measured 2026-11-10: 0.4 .. 0.7 °C on nine of
+    /// the start: check 4 reads ATENTIE (ADR 0043). Measured 2026-11-10: 0.4 .. 0.7 °C on nine of
     /// the eleven real series, 1.0 on the leak set, 1.2 on the 9.2 °C library and 1.4 on the darks
     /// of 2026-11-07, the two series that started farthest from where they ended.
     /// </summary>
@@ -286,7 +286,7 @@ internal static class Th
     /// </summary>
     internal const double MedianNoiseFactor = 1.2533;
 
-    // --- the lights against the dark (R-050, check 9) ---
+    // --- the lights against the dark (R-050, check 2) ---
 
     /// <summary>
     /// A light's pixel this many sigmas above the median of its eight same-colour neighbours is a

@@ -37,7 +37,8 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
     private static readonly string[] Words = ["NEMASURAT", "UNMEASURED", "ATENTIE", "WARNING", "REFA", "REDO", "OK"];
 
     /// <summary>
-    /// The value's statements, for the window to show one under the other (R-031, R-063); null
+    /// The statements of <see cref="Rest"/> (the value without its verdict word), for the window
+    /// to show one under the other (R-031, R-063, and the verdicts of checks 3 and 4, R-071); null
     /// when the value is one statement. The value holds them joined by "; " for the console.
     /// </summary>
     internal IReadOnlyList<string>? Lines { get; init; }
@@ -50,7 +51,7 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
 
     /// <summary>
     /// Whether the Rezumat's card of the row's check shows the row (R-071): false for the rows of
-    /// check 5 that only the Pixeli fierbinti tab shows, true for every other row.
+    /// check 6 that only the Pixeli fierbinti tab shows, true for every other row.
     /// </summary>
     internal bool Summary { get; init; } = true;
 
@@ -101,6 +102,83 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
 
         return null;
     }
+
+    /// <summary>
+    /// The row with its <see cref="Rest"/> cut into statements as <see cref="Lines"/>, when it
+    /// holds more than one (ADR 0047); the value, and so the console's text, stays as it is.
+    /// </summary>
+    /// <returns>This row with its lines set, or this row unchanged for a one-statement text.</returns>
+    internal ReportRow WithStatements() => StatementsOf(Rest) is { Count: > 1 } lines ? this with { Lines = lines } : this;
+
+    /// <summary>
+    /// A text cut into its statements: at every "; " that stands outside round and square
+    /// brackets, so "(outside 0.7 .. 1.4; the farthest 1.93)" stays whole.
+    /// </summary>
+    /// <param name="text">The text; not null.</param>
+    /// <returns>The statements in order, without their separators; the text alone when it has no
+    /// such "; ".</returns>
+    internal static IReadOnlyList<string> StatementsOf(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        List<string> parts = [];
+        int depth = 0;
+        int start = 0;
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (c is '(' or '[')
+            {
+                depth++;
+            }
+            else if (c is ')' or ']')
+            {
+                depth = Math.Max(0, depth - 1);
+            }
+            else if (c == ';' && depth == 0 && i + 1 < text.Length && text[i + 1] == ' ')
+            {
+                parts.Add(text[start..i]);
+                start = i + 2;
+                i++;
+            }
+        }
+
+        parts.Add(text[start..]);
+        return parts;
+    }
+}
+
+/// <summary>
+/// Which check a section of the report is (ADR 0046): the window and the tests find a section by
+/// it, never by the number in its title.
+/// </summary>
+internal enum ReportCheck
+{
+    /// <summary>Check 2, how well the dark fits the lights.</summary>
+    Lights,
+
+    /// <summary>Check 3, light leaks and differences across the frame.</summary>
+    Leaks,
+
+    /// <summary>Check 4, the camera's warming during the series.</summary>
+    Warming,
+
+    /// <summary>Check 5, the noise of each frame.</summary>
+    Noise,
+
+    /// <summary>Check 6, hot pixels.</summary>
+    HotPixels,
+
+    /// <summary>Check 7, the fixed pattern.</summary>
+    Pattern,
+
+    /// <summary>Check 8, dead and saturated pixels.</summary>
+    DeadSaturated,
+
+    /// <summary>Check 9, how many darks are enough.</summary>
+    Enough,
+
+    /// <summary>The INDEX block: the index, the label and the partner.</summary>
+    Index,
 }
 
 /// <summary>
@@ -114,10 +192,11 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
 internal sealed record ReportTable(IReadOnlyList<string> Header, IReadOnlyList<IReadOnlyList<string>> Rows, string Note);
 
 /// <summary>A titled group of rows: one check of the report, or its INDEX block.</summary>
-/// <param name="Title">The section's title, as the console prints it ("2. LIGHT LEAKS AND
-/// GRADIENT").</param>
+/// <param name="Check">Which check the section is.</param>
+/// <param name="Title">The section's title, as the console prints it ("3. LIGHT LEAKS AND
+/// DIFFERENCES ACROSS THE FRAME").</param>
 /// <param name="Rows">The section's rows, in order.</param>
-internal sealed record ReportSection(string Title, IReadOnlyList<ReportRow> Rows);
+internal sealed record ReportSection(ReportCheck Check, string Title, IReadOnlyList<ReportRow> Rows);
 
 /// <summary>
 /// One dark of the frames table, every cell already formatted; Skipped or Error set when the frame
@@ -139,7 +218,7 @@ internal sealed record ReportSection(string Title, IReadOnlyList<ReportRow> Rows
 /// <param name="End">The degrees from the end of the series, signed, or "-".</param>
 /// <param name="Light">The light above the warming line of R-028, signed, in ADU-eq (ADU when the
 /// factor is 1), or "-".</param>
-/// <param name="Side">The offset of check 2's worst side from the centre, minus the bias's, signed,
+/// <param name="Side">The offset of check 3's worst side from the centre, minus the bias's, signed,
 /// in ADU-eq, or "-".</param>
 /// <param name="Above">How many pixels of the reference plane lie above the hot level.</param>
 /// <param name="Note">Why a frame off the end of the series is one to discard, or null.</param>

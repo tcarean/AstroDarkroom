@@ -1,7 +1,7 @@
 # 0009. The window shows the report's rows and computes nothing; the two settings of the normalisation; its tests are a second project
 
 Date: 2026-10-16
-Status: accepted 2026-10-16; the partner in the settings file and the tab named Lights superseded by 0041
+Status: accepted 2026-10-16; the partner in the settings file and the tab named Lights superseded by 0041; a partner applied on the next run superseded by 0048
 
 ## Context
 

@@ -72,7 +72,7 @@ Without a partner such a folder is refused with a message that says what to give
 The question can also be asked darks first: do the open darks fit the lights of another
 session? `--lights <folder>` in the console, **Choose lights...** on the window's Lights tab.
 The folder is a session, whose `lights\` is taken, or a folder with the lights in it; those
-lights replace the open folder's own in the run (check 1, check 9, the lights table and the
+lights replace the open folder's own in the run (check 1, check 2, the lights table and the
 lights CSV), and the darks' index and label stay the open folder's. The choice holds for the
 open folder only: it is not kept between runs and is dropped when another folder is opened.
 
@@ -128,9 +128,10 @@ English, `OK`, `ATENTIE`, `REFA` and `NEMASURAT` in Romanian.
 time (the progress goes to stderr: `Reading the darks: 3 / 20`), and holds them in memory as 16-bit
 mosaics, 48 MB a frame at 24 MP. Above 60 frames, or the cap `--max-frames N` sets, it decodes
 one file in k and lists the others as `skipped`, which is not an error. Then it reads every
-light, one by one, without keeping them, so the cap does not apply to them. It prints the session's lines, one section
-per check, each with its figures and a `verdict` row that starts with `OK`, `WARNING`, `REDO`
-(check 3 only: the series is to be taken again) or `UNMEASURED`, then `INDEX`, the frames
+light, one by one, without keeping them, so the cap does not apply to them. It prints the session's lines (check 1: the frames, their
+settings and whether the darks match the lights), one section per check, from check 2, how well
+the dark fits the lights, to check 9, each with its figures and a `verdict` row that starts with `OK`, `WARNING`, `REDO`
+(check 4 only: the series is to be taken again) or `UNMEASURED`, then `INDEX`, the frames
 table, the lights table and `ADU SCALE EXPLAINED`.
 
 On the author's computer (8 cores, 4 threads), the Smida session, 20 darks, 30 biases and 32
@@ -149,7 +150,7 @@ exposure.
 A frame whose size differs from the first frame's, or whose ISO or exposure does (the exposure
 by more than 2 %), is left out of the figures and listed as an error
 (`error: different size: ...`, `error: settings differ from the first frame: ...`), so the exit
-code is `1`. A single dark is not a series: checks 3, 4 and 8 and the stability of check 5 stay
+code is `1`. A single dark is not a series: checks 4, 5 and 9 and the stability of check 6 stay
 `UNMEASURED`.
 
 The start of the report on Smida:
@@ -159,7 +160,18 @@ The start of the report on Smida:
     1 ADU-eq           : 0.99 ADU in the file at ISO 400, 119.2 s (ADU-eq is the ADU as it would be at ISO 400 and 120 s)
     value step         : near the black, the file's values go up 2 by 2 ADU; the first frame has 44 different values (the green pixels G1)
 
-  2. LIGHT LEAKS AND DIFFERENCES ACROSS THE FRAME
+  2. HOW WELL THE DARK FITS THE LIGHTS
+    hot pixels         : 86 hot pixels show in the lights at the same place, in at least 26 of 32 frames (single pixels, not part of a star, brighter than their surroundings by more than 6 times the noise there)
+    in the dark master : above 10: 85 of 86 (99 %); above 20: 85 of 86 (99 %); above 50: 70 of 86 (81 %); above 100: 16 of 86 (19 %)  [how many of these pixels are in the dark master too, above each threshold in ADU-eq]
+    master in lights   : above 10: 85 of 2283 (4 %); above 20: 85 of 443 (19 %); above 50: 70 of 111 (63 %); above 100: 16 of 24 (67 %)  [how many of the master's pixels above each threshold show in the lights too]
+    not in the master  : 1 hot pixel of the lights is under 20 ADU-eq in the master (it has 3 ADU-eq there)
+    lights against dark: in the lights, the hot pixels are on average 1.00 times what they are in the dark (over the 32 frames; in the first 0.72, in the last 0.94; on 443 pixels)
+    what is left       : after the subtraction nothing is left to see at the hot pixels: on average 0.00 of the noise of a light
+    index darks        : idx25
+    index lights       : idx25 (1.00 times the dark, that is at the same temperature)
+    verdict            : OK: the dark can be subtracted as it is; in the lights the hot pixels are 1.00 times what they are in the dark, between 0.9 and 1.1: the dark is at the same temperature
+
+  3. LIGHT LEAKS AND DIFFERENCES ACROSS THE FRAME
     master dark        : centre -0.55, corners -0.44 / -0.49 / -0.10 / -0.31 (top-left / top-right / bottom-left / bottom-right), edges top -0.48 bottom -0.18 left -0.41 right -0.50  [the green pixels G1, ADU-eq above the black, mean of 20 frames, in squares of 32 px]
     master bias        : centre -0.68, ...
     dark - bias        : centre 0.13, corners 0.22 / 0.17 / 0.15 / 0.13 (top-left / top-right / bottom-left / bottom-right), ...
@@ -168,120 +180,13 @@ The start of the report on Smida:
     constant light     : against the centre, once the bias is taken off: top +0.04 (+/-0.05), bottom -0.01 (+/-0.02), left -0.03 (+/-0.02), right +0.08 (+/-0.03) ADU-eq; no side goes over 0.15 and over 3 times what the measurement can be off by; ...
     verdict            : OK: no edge and no corner differs from the centre by more than 1.0 ADU-eq (the most +0.09, at the top-left, on dark minus bias); no frame has more light; no side has constant light above 0.15 ADU-eq
 
-  3. THE CAMERA'S WARMING DURING THE SERIES
+  4. THE CAMERA'S WARMING DURING THE SERIES
     end of series      : the camera warmed during the series: the hot pixels rise from 0.83 of the master in the first frame to 1.07 at the end of the series (the average of the last 5 frames), that is 2.3 degrees in 38 min; the master is 0.6 degrees below the end of the series
     to discard         : 2 frames (1, 2) are more than 2.0 degrees from the end of the series (the hot pixels below 0.85 or above 1.35 of the master; the end of the series 1.07); without them the master would be 0.5 degrees below the end of the series, but with 5 % more noise
     verdict            : OK: the master is close to the end of the series (0.6 degrees below it, under 1.0) and no frame is too far from the master (the hot pixels of every frame are between 0.7 and 1.4 of the master's); the degrees are reckoned with the rule that the thermal signal doubles every 6 degrees; the frames to discard are in the row above
 ```
 
-#### 2. Light leaks and differences across the frame
-
-The dark master (the mean of the frames), the bias master and their difference, the dark
-current, each in blocks of 32 px, read at the centre, in the four corners (TL top-left, TR
-top-right, BL bottom-left, BR bottom-right) and on the four edges, on the green plane G1. The
-verdict reads `dark - bias` when there are biases (an offset that is in the bias too is the
-readout, not light), otherwise the dark master: `OK` when no region departs from the centre by
-more than 1 ADU-eq, `WARNING` naming the region that departs most otherwise. A brighter region
-gets its cause: the sensor's glow, a light leak, a readout offset, or undecided without biases;
-a darker one is a readout or bias offset.
-
-Three rows tell where light comes from, on the principle that the glow is dark current and grows
-as the series warms (the hot pixels' amplitude of check 3), while light from outside does not:
-
-- `light per frame` fits every frame's mean on the warming (a robust Theil-Sen line) and names
-  the frames with more light than the line, over 5 times the typical deviation and over 0.1
-  ADU-eq. Such frames (a lamp, the Moon, the dawn) make the verdict `WARNING`, with the advice
-  to take them out of `darks\`, or to redo the series when every frame carries light too.
-- `glow / constant` splits the departure of the verdict's region into the part that grows with
-  the warming, the glow, and the constant part. With biases, the constant part is split again
-  into what is in the bias (a readout offset) and what remains (a leak); without biases a
-  constant leak and a readout offset look the same, and the row says so. When 1 ADU-eq is not
-  1 ADU, the row ends with the figures in the file in brackets.
-- `constant light` does the same on the four sides (an edge with its two corners), where a leak
-  through the eyepiece or the mount leaves a band. With biases, what remains on a side after the
-  bias, over 0.15 ADU-eq and over 3 times its error, is light in every frame, which the
-  per-frame test cannot see (it sees only what changes from one frame to the next), and the
-  verdict names it: `in every frame the top side has +0.20 ADU-eq (+/-0.05) of constant light
-  against the centre, which does not come from the bias: light gets into the camera (through the
-  eyepiece or the lens mount)`. A uniform light over the whole frame, in every frame, has no
-  reference, and the row says so.
-
-The three need at least 6 frames with hot pixels, and the split also needs a series that warmed
-(an amplitude ratio that spans at least 0.1; the author's series span 0.24 to 0.38);
-otherwise they say why they cannot. Every light found is also given in raw ADU as a fraction of
-the dark master's noise per pixel (check 8), and of the lights stack's when there are lights:
-`+0.79 ADU is 0.55 times the dark master's noise per pixel (1.43 ADU)`. On the D3300 the glow is
-at the top-left, 0.05 ADU-eq on Smida and 0.22 in the library at 15.8 °C. The test set with the
-eyepiece uncovered and a lamp aimed at the camera (2026-10-20) reads 5 frames at +0.17 to +0.47
-ADU-eq and a top side at +0.20, which the verdict on the master alone had read as `OK`.
-
-#### 3. The camera's warming during the series
-
-The amplitude of the master's hot pixels in every frame, against the master; the ratio of the
-last frame to the first gives the degrees by the rule "the dark current doubles every 6
-degrees". A camera warms itself as it takes frame after frame, fast at first and then ever
-more slowly: started cold, it begins about 10 degrees under where it ends up. That is 2.2
-degrees in 38 min on Smida and 2.8 to 3.6 degrees in 58 min on the libraries, even after 20
-minutes of frames thrown away first.
-
-From 6 frames up, the series is read against its end: the average of its last 5 frames, the
-temperature the camera actually reached. `end of series` says which way the camera moved, from
-the hot pixels of the first frame to that end (a series that cools came in warmer than the
-place it sat in), by how many degrees, and how far above or below the end the master sits (0.4
-to 0.7 degrees on the measured libraries, 1.2 on the one that started coldest). `to discard` names the frames more than 2 degrees
-from the end of the series (the cold start, with a dark current more than 21 % under the
-end's; up to 4 of 30 on the libraries, 8 on the one that started coldest, 2 of 20 on Smida), says where the master would be
-without them and how much its noise would grow (the square root of the frames over the frames
-left). You move them out of `darks\` yourself, since the program writes nothing into the
-folder, and you leave them when the noise costs more than the half degree is worth.
-
-The verdict is `REDO`, in red, when more than half the frames are more than 2 degrees from
-the end of the series: the master, the median of the series, then belongs to no temperature,
-and the advice is to take the series again, after the camera has sat where it shoots for three
-times the series' time constant when it was cooling, or as a longer series when it was
-warming. The verdict is `WARNING` when the master is more than 1 degree from the end of the
-series (the frames from the start pull it: discard them, or take a longer series) or when a
-frame leaves 0.7 to 1.4 of the master (the margin of Siril's `-opt`: the series started cold);
-the warm-up at the start is only stated. The author's darks of 2026-11-07, taken at 2 °C right
-after the camera came out of the house, cooled 4 degrees in the hour: the master sits 1.4
-degrees above the end and the first 10 of the 30 frames are to discard. A series is not judged
-against where it would settle if left to run: the author's darks of 2026-11-09 moved half a
-degree in 70 minutes, and a curve drawn through them put that place 1.4 degrees further, where
-the camera never got. Under 6 frames the end is not measured and the verdict rests on the 0.7
-to 1.4 margin alone. In the frames table the column `end` gives every frame's degrees from the
-end of the series, and a frame to discard has its reason at the end of its row; in the window,
-the Frames tab shows that row, the value and the reason in the attention colour, and the chart
-has the end of the series and the two bounds.
-
-#### Checks 4 to 8
-
-- **4. The noise of each frame**: the sigma of the residual (frame minus master) on every plane;
-  the read noise from pairs of consecutive biases, and the temporal noise above it (the dark
-  current and the quantisation, from the frame-against-frame sigma of check 8); the random
-  banding, the spread of the row and column means against what white noise would give.
-  `WARNING` lists the frames whose noise is above 1.5 times the median.
-- **5. Hot pixels**: how many pixels of the master are above 10 / 20 / 50 / 100 / 500 ADU-eq,
-  per plane at 20; their amplitudes (median, p10, p90, p99); how many stay above half the
-  threshold in every frame and how many flicker; the temporal sigma of the hot pixels against
-  the rest; the RTS candidates, pixels whose value jumps from one frame to the next.
-  Informative.
-- **6. Fixed pattern: what is the same in every frame**: the master's structured banding (the
-  row and column profiles minus their running median, rms and peak to peak, on the worst plane)
-  and the glow (the part of check 2's departure that grows with the warming, or the whole
-  departure when it cannot be split). `WARNING` above 2 ADU-eq peak to peak or 1 ADU-eq at the
-  edges.
-- **7. Dead and saturated pixels**: on the master, below the black - 50 ADU and at the white;
-  any such pixel gives `WARNING`.
-- **8. How many darks are enough**: the noise of the mean of n frames against sigma / sqrt(n)
-  (the frames are independent when the two agree; the point n = 1 is the temporal sigma, frame
-  against frame, without the fixed pattern), and the predicted noise of the median master,
-  1.25 x the temporal sigma / sqrt(N), against the file's quantisation step. Under 10 frames,
-  `WARNING`: the median needs them, so that one odd frame cannot pull it. Above the step,
-  `WARNING` with the number of frames that would bring it under. Otherwise `OK`: the master's
-  noise adds in quadrature to every calibrated light, and under the step it is as small as the
-  file allows.
-
-#### 9. How well the dark fits the lights
+#### 2. How well the dark fits the lights
 
 In every light the hot pixels are found locally: a pixel more than 6 sigma above the median of
 its 8 neighbours of the same colour, under saturation, none of whose immediate neighbours passes
@@ -324,6 +229,113 @@ show the master's hot pixels at all: in-camera noise reduction, another camera, 
 another way) is `they do not match`, with its own sentence. A light that does not say its ISO
 or its exposure is taken at the darks' settings, with a `WARNING` line that counts such lights.
 
+#### 3. Light leaks and differences across the frame
+
+The dark master (the mean of the frames), the bias master and their difference, the dark
+current, each in blocks of 32 px, read at the centre, in the four corners (TL top-left, TR
+top-right, BL bottom-left, BR bottom-right) and on the four edges, on the green plane G1. The
+verdict reads `dark - bias` when there are biases (an offset that is in the bias too is the
+readout, not light), otherwise the dark master: `OK` when no region departs from the centre by
+more than 1 ADU-eq, `WARNING` naming the region that departs most otherwise. A brighter region
+gets its cause: the sensor's glow, a light leak, a readout offset, or undecided without biases;
+a darker one is a readout or bias offset.
+
+Three rows tell where light comes from, on the principle that the glow is dark current and grows
+as the series warms (the hot pixels' amplitude of check 4), while light from outside does not:
+
+- `light per frame` fits every frame's mean on the warming (a robust Theil-Sen line) and names
+  the frames with more light than the line, over 5 times the typical deviation and over 0.1
+  ADU-eq. Such frames (a lamp, the Moon, the dawn) make the verdict `WARNING`, with the advice
+  to take them out of `darks\`, or to redo the series when every frame carries light too.
+- `glow / constant` splits the departure of the verdict's region into the part that grows with
+  the warming, the glow, and the constant part. With biases, the constant part is split again
+  into what is in the bias (a readout offset) and what remains (a leak); without biases a
+  constant leak and a readout offset look the same, and the row says so. When 1 ADU-eq is not
+  1 ADU, the row ends with the figures in the file in brackets.
+- `constant light` does the same on the four sides (an edge with its two corners), where a leak
+  through the eyepiece or the mount leaves a band. With biases, what remains on a side after the
+  bias, over 0.15 ADU-eq and over 3 times its error, is light in every frame, which the
+  per-frame test cannot see (it sees only what changes from one frame to the next), and the
+  verdict names it: `in every frame the top side has +0.20 ADU-eq (+/-0.05) of constant light
+  against the centre, which does not come from the bias: light gets into the camera (through the
+  eyepiece or the lens mount)`. A uniform light over the whole frame, in every frame, has no
+  reference, and the row says so.
+
+The three need at least 6 frames with hot pixels, and the split also needs a series that warmed
+(an amplitude ratio that spans at least 0.1; the author's series span 0.24 to 0.38);
+otherwise they say why they cannot. Every light found is also given in raw ADU as a fraction of
+the dark master's noise per pixel (check 9), and of the lights stack's when there are lights:
+`+0.79 ADU is 0.55 times the dark master's noise per pixel (1.43 ADU)`. On the D3300 the glow is
+at the top-left, 0.05 ADU-eq on Smida and 0.22 in the library at 15.8 °C. The test set with the
+eyepiece uncovered and a lamp aimed at the camera (2026-10-20) reads 5 frames at +0.17 to +0.47
+ADU-eq and a top side at +0.20, which the verdict on the master alone had read as `OK`.
+
+#### 4. The camera's warming during the series
+
+The amplitude of the master's hot pixels in every frame, against the master; the ratio of the
+last frame to the first gives the degrees by the rule "the dark current doubles every 6
+degrees". A camera warms itself as it takes frame after frame, fast at first and then ever
+more slowly: started cold, it begins about 10 degrees under where it ends up. That is 2.2
+degrees in 38 min on Smida and 2.8 to 3.6 degrees in 58 min on the libraries, even after 20
+minutes of frames thrown away first.
+
+From 6 frames up, the series is read against its end: the average of its last 5 frames, the
+temperature the camera actually reached. `end of series` says which way the camera moved, from
+the hot pixels of the first frame to that end (a series that cools came in warmer than the
+place it sat in), by how many degrees, and how far above or below the end the master sits (0.4
+to 0.7 degrees on the measured libraries, 1.2 on the one that started coldest). `to discard` names the frames more than 2 degrees
+from the end of the series (the cold start, with a dark current more than 21 % under the
+end's; up to 4 of 30 on the libraries, 8 on the one that started coldest, 2 of 20 on Smida), says where the master would be
+without them and how much its noise would grow (the square root of the frames over the frames
+left). You move them out of `darks\` yourself, since the program writes nothing into the
+folder, and you leave them when the noise costs more than the half degree is worth.
+
+The verdict is `REDO`, in red, when more than half the frames are more than 2 degrees from
+the end of the series: the master, the median of the series, then belongs to no temperature,
+and the advice is to take the series again, after the camera has sat where it shoots for three
+times the series' time constant when it was cooling, or as a longer series when it was
+warming. The verdict is `WARNING` when the master is more than 1 degree from the end of the
+series (the frames from the start pull it: discard them, or take a longer series) or when a
+frame leaves 0.7 to 1.4 of the master (the margin of Siril's `-opt`: the series started cold);
+the warm-up at the start is only stated. The author's darks of 2026-11-07, taken at 2 °C right
+after the camera came out of the house, cooled 4 degrees in the hour: the master sits 1.4
+degrees above the end and the first 10 of the 30 frames are to discard. A series is not judged
+against where it would settle if left to run: the author's darks of 2026-11-09 moved half a
+degree in 70 minutes, and a curve drawn through them put that place 1.4 degrees further, where
+the camera never got. Under 6 frames the end is not measured and the verdict rests on the 0.7
+to 1.4 margin alone. In the frames table the column `end` gives every frame's degrees from the
+end of the series, and a frame to discard has its reason at the end of its row; in the window,
+the Frames tab shows that row, the value and the reason in the attention colour, and the chart
+has the end of the series and the two bounds.
+
+#### Checks 5 to 9
+
+- **5. The noise of each frame**: the sigma of the residual (frame minus master) on every plane;
+  the read noise from pairs of consecutive biases, and the temporal noise above it (the dark
+  current and the quantisation, from the frame-against-frame sigma of check 9); the random
+  banding, the spread of the row and column means against what white noise would give.
+  `WARNING` lists the frames whose noise is above 1.5 times the median.
+- **6. Hot pixels**: how many pixels of the master are above 10 / 20 / 50 / 100 / 500 ADU-eq,
+  per plane at 20; their amplitudes (median, p10, p90, p99); how many stay above half the
+  threshold in every frame and how many flicker; the temporal sigma of the hot pixels against
+  the rest; the RTS candidates, pixels whose value jumps from one frame to the next.
+  Informative.
+- **7. Fixed pattern: what is the same in every frame**: the master's structured banding (the
+  row and column profiles minus their running median, rms and peak to peak, on the worst plane)
+  and the glow (the part of check 3's departure that grows with the warming, or the whole
+  departure when it cannot be split). `WARNING` above 2 ADU-eq peak to peak or 1 ADU-eq at the
+  edges.
+- **8. Dead and saturated pixels**: on the master, below the black - 50 ADU and at the white;
+  any such pixel gives `WARNING`.
+- **9. How many darks are enough**: the noise of the mean of n frames against sigma / sqrt(n)
+  (the frames are independent when the two agree; the point n = 1 is the temporal sigma, frame
+  against frame, without the fixed pattern), and the predicted noise of the median master,
+  1.25 x the temporal sigma / sqrt(N), against the file's quantisation step. Under 10 frames,
+  `WARNING`: the median needs them, so that one odd frame cannot pull it. Above the step,
+  `WARNING` with the number of frames that would bring it under. Otherwise `OK`: the master's
+  noise adds in quadrature to every calibrated light, and under the step it is as small as the
+  file allows.
+
 #### The index and the label
 
 `idx<NN>` is the median amplitude, in ADU-eq, of the master's pixels ranked 5 to 20 per
@@ -340,20 +352,9 @@ name remains in front of it, so `...-15.8celsius-idx67` reads `...-15.8celsius-i
 gives the night's equivalent index (the darks' index times the lights / dark ratio) and its
 degrees against the dark.
 
-The end of the report's sections on Smida:
+The INDEX section of the report on Smida:
 
 ```
-  9. HOW WELL THE DARK FITS THE LIGHTS
-    hot pixels         : 86 hot pixels show in the lights at the same place, in at least 26 of 32 frames (single pixels, not part of a star, brighter than their surroundings by more than 6 times the noise there)
-    in the dark master : above 10: 85 of 86 (99 %); above 20: 85 of 86 (99 %); above 50: 70 of 86 (81 %); above 100: 16 of 86 (19 %)  [how many of these pixels are in the dark master too, above each threshold in ADU-eq]
-    master in lights   : above 10: 85 of 2283 (4 %); above 20: 85 of 443 (19 %); above 50: 70 of 111 (63 %); above 100: 16 of 24 (67 %)  [how many of the master's pixels above each threshold show in the lights too]
-    not in the master  : 1 hot pixel of the lights is under 20 ADU-eq in the master (it has 3 ADU-eq there)
-    lights against dark: in the lights, the hot pixels are on average 1.00 times what they are in the dark (over the 32 frames; in the first 0.72, in the last 0.94; on 443 pixels)
-    what is left       : after the subtraction nothing is left to see at the hot pixels: on average 0.00 of the noise of a light
-    index darks        : idx25
-    index lights       : idx25 (1.00 times the dark, that is at the same temperature)
-    verdict            : OK: the dark can be subtracted as it is; in the lights the hot pixels are 1.00 times what they are in the dark, between 0.9 and 1.1: the dark is at the same temperature
-
   INDEX
     darks              : idx25 (25.2 ADU-eq: the average value of the hot pixels at places 122 .. 483, counting from the hottest, that is 5-20 per Mpx of 24.2 Mpx; worked out for ISO 400 and 120 s)
     label              : 2026-08-12-Smida-idx25
@@ -391,11 +392,11 @@ The last section of the report, and the window's tab of the same name: what one 
 open set, in plain words, in the file's ADU, in ADU-eq and in electrons. Its rows give the file's
 range, what 1 ADU-eq is, the step of the file's values (`value step`), the electrons, the read
 noise, the noise on one dark and the dark current, the noise of the masters, the set's
-thresholds, what check 2 found (`what was found`), the sky of a light (with lights) and the
+thresholds, what check 3 found (`what was found`), the sky of a light (with lights) and the
 saturation; four paragraphs then say why a fraction of an ADU in the master matters, with the
 set's own numbers. The yardstick is the noise left in the masters: the row
-`master noise` gives the per-pixel noise of the dark master (check 8's) and of the lights stack,
-with the mean and with the median, and every light check 2 finds is also written as a fraction
+`master noise` gives the per-pixel noise of the dark master (check 9's) and of the lights stack,
+with the mean and with the median, and every light check 3 finds is also written as a fraction
 of them. In the window the masters' noise and the light found are in bold.
 
 The electrons come from a published source, not from a measurement of the program:
@@ -418,7 +419,7 @@ session's. `INDEX` then adds:
 - `shared pixels`: how many of the session's pixels above 50 ADU-eq the partner has above 50,
   and how many of the partner's above 50 the session has above 20;
 - `lights / partner`: the lights against the partner, through the session's darks;
-- `partner verdict`: check 9's thresholds on that ratio (without lights, on the darks' ratio).
+- `partner verdict`: check 2's thresholds on that ratio (without lights, on the darks' ratio).
 
 On Smida against the library, 0.42 on 434 pixels: the library ran 7.5 degrees warmer, so it is
 good for a cosmetic correction only.
@@ -438,7 +439,7 @@ in a `WARNING` line, also with exit code `1`. `--out` cannot point inside the pa
 either.
 
 **A session without darks.** With a partner, the partner's darks take the place of the
-session's: checks 2 to 8 run on them (so you also learn how good the library is), check 9
+session's: checks 3 to 9 run on them (so you also learn how good the library is), check 2
 compares the lights with their master, and the index shown is the partner's, on the row
 `darks (partner)`, with the partner's label at its end. The label on the `label` row, and the big
 one on the window's Index tab, stays the session's own: its folder's name and the index its
@@ -459,7 +460,7 @@ lights of another session with `--lights <folder>`, or choose them with **Choose
 the window's Lights tab. The folder is a session, whose `lights\` is taken, or a folder with the
 lights in it. Those lights replace the open folder's own in the whole run: the session row
 `lights` names them and says they were chosen by you, check 1 compares the darks' settings with
-theirs, check 9, the lights table and `darkscheck-lights.csv` describe them, and the `lights`
+theirs, check 2, the lights table and `darkscheck-lights.csv` describe them, and the `lights`
 row of `INDEX` says what dark they are like; the darks' index and label are the open folder's
 and do not change. The figures are the ones the same lights give from the folder's own
 `lights\`: the library with the Veil lights reads the 0.43 above, on the same 3933 pixels. A
@@ -481,7 +482,7 @@ saturated.
 
 `--out DIR` writes into DIR the report (`darkscheck-report.txt`), a CSV file with every figure
 per frame and per plane (`darkscheck-darks.csv`, `darkscheck-biases.csv`, and
-`darkscheck-lights.csv` when the session has lights) and the maps of check 2 on the G1 plane, as
+`darkscheck-lights.csv` when the session has lights) and the maps of check 3 on the G1 plane, as
 PNG files (`darkscheck-map-dark.png`, `darkscheck-map-bias.png`,
 `darkscheck-map-dark-minus-bias.png`; one block is a 4 x 4 square, and each map is stretched
 between its own 1st and 99th percentiles). It prints `-> written: <path>` for each file. The
@@ -535,28 +536,30 @@ by default. Without a folder it asks for one at start: a Siril session folder (t
 `darkscheck <folder>`, with a progress bar and a **Stop** button, and the result fills eight
 tabs:
 
-- **Summary**: the session's lines, then check 9, how well the dark fits the lights, right
-  under them (with the darks' and the lights' indexes on rows of their own and the overlap at
-  each threshold as a table), then checks 2 to 8 and INDEX, every check as a card of rows, its
-  verdict a coloured chip (green `OK`, amber `WARNING`, grey `UNMEASURED`) with the rest of the
-  text beside it. The hot-pixel card keeps only the stability, one statement per line, and the
-  verdict; the rest is on the Hot pixels tab. The noise after averaging is a table.
+- **Summary**: the session's lines, then checks 2 to 9 and INDEX in the report's order, check 2,
+  how well the dark fits the lights, right under them (with the darks' and the lights' indexes on
+  rows of their own and the overlap at each threshold as a table); every check is a card of rows,
+  its verdict a coloured chip (green `OK`, amber `WARNING`, red `REDO`, grey `UNMEASURED`) with the
+  rest of the text beside it. The verdicts of checks 3 and 4 put each statement on a line of its
+  own. The hot-pixel card keeps only the stability, one statement per line, and the verdict; the
+  rest is on the Hot pixels tab. The noise after averaging is a table.
 - **Frames**: the frames table, every column header with an explanation under the mouse, and
   beside it three charts, frame by frame: the hot pixels against the master (the warming, with
-  the end of the series and the two bounds of check 3), how much each frame differs from the master (with
+  the end of the series and the two bounds of check 4), how much each frame differs from the master (with
   the line at 1.5 times the average noise) and the random banding (with the line at 1, no banding).
   A frame to discard shows its `end` value in bold and its reason on a second line, in
   yellow.
-- **Maps**: the three maps of check 2 (master dark, master bias, dark minus bias), the same as the
+- **Maps**: the three maps of check 3 (master dark, master bias, dark minus bias), the same as the
   PNG files of `--out`, each with its row of the report under it.
-- **Hot pixels**: the rows of check 5 and the chart of check 8: how much noise is left after the
+- **Hot pixels**: the rows of check 6 and the chart of check 9: how much noise is left after the
   mean of more and more frames, against a dotted line of what a random noise would leave (4 times
   the frames, half the noise); hold the mouse over a point to see its figures.
 - **Match with lights**: first the card **Lights from another folder**, the window's `--lights`:
-  **Choose lights...** (a session, or a folder with the lights in it), **Lights of the open
-  folder** and **Analyse again**, for the question "do the open darks fit that session's
-  lights?"; the choice holds for the open folder only and is dropped when you open another.
-  Then the rows of check 9, the chart of every light against the dark (how hot the master's hot
+  **Choose lights...** (a session, or a folder with the lights in it) and **Lights of the open
+  folder**, for the question "do the open darks fit that session's lights?". A choice, or going
+  back to the folder's own lights, analyses the open folder again at once; the choice holds for
+  the open folder only and is dropped when you open another.
+  Then the rows of check 2, the chart of every light against the dark (how hot the master's hot
   pixels are in it) with the bounds as lines (0.9 and 1.1 green, as it is; 0.7 and 1.4 amber,
   with -opt; 0.4 red, cosmetic only), and the lights table. When what the subtraction leaves is
   under the noise of a light further out, the two green lines stand at the ends of that wider
@@ -564,8 +567,8 @@ tabs:
   says so.
 - **Index**: the label in large type with **Copy label** (it goes to the clipboard, and you
   rename the folder yourself), the INDEX rows, and the partner: **Choose partner...** (a library
-  or another session), **No partner** and **Analyse again**. A partner chosen after a run
-  applies to the next one; it holds for the open folder only: it is not kept when you close the
+  or another session) and **No partner**. Choosing or dropping the partner analyses the open
+  folder again at once; the partner holds for the open folder only: it is not kept when you close the
   program and is dropped when you open another folder, like the lights folder. A session
   without darks opened without a partner shows the problem
   card with **Choose partner...**: choose the library and the analysis runs again with its
@@ -583,8 +586,8 @@ half the cores); `MAX FRAMES`, how many frames of a group are held in memory (60
 every light is measured); `SIGNAL / ISO STOP`, how many times the signal grows at every ISO stop,
 so that every frame is worked out at ISO 400 (2 = it doubles at every stop, the D3300's); and
 `DEGREES / DOUBLING`, by how many degrees more the dark current doubles, from which the report's
-degrees are worked out (6). The four are read when a folder is opened and remembered between
-starts in `%LOCALAPPDATA%\DarksCheck\settings.json` (the partner and the chosen lights are not:
+degrees are worked out (6). The four are read when a folder is opened, and when a choice of
+lights or partner analyses it again, and are remembered between starts in `%LOCALAPPDATA%\DarksCheck\settings.json` (the partner and the chosen lights are not:
 they hold for the open folder), the only file the window writes outside the folder
 you export to besides its log ("Logs" below); a value that is not a positive number with `.` as its decimal separator means the
 default, and the field says it is invalid. The console always runs with a gain of 2 and 6 degrees
