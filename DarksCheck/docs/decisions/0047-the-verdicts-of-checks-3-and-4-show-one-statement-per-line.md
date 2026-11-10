@@ -32,6 +32,10 @@ of the `REFA` verdict was shown to the owner before the change and approved with
   asked for (the rule "Plain words": a rewrite is shown first). Kept as it is.
 - **The rule for every row.** The other rows' `; ` lists (the counts per level, the banding of
   both directions) read better on one line; only the two verdicts were asked for.
+- **`adica ...` / `that is, ...` joined to the line above.** The warning of check 3 ends with
+  what its light means against the dark's noise (`adica +0.79 ADU e 0.55 din zgomotul pe pixel al
+  masterului dark`), cut onto a line of its own. Joining it back needs a case of its own for
+  those words. The owner, 2026-11-10, shown the real leak set's warning: keep it on its own line.
 
 ## Consequences
 
