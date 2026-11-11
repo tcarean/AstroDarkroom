@@ -1,6 +1,6 @@
 # DarksCheck
 
-A quality check for the dark frames of a DSLR astrophotography session, made for the author's
+A quality check for the dark frames of a DSLR astrophotography session, made for a
 Nikon D3300 and a Siril workflow. Give it a Siril session folder or a folder of darks, a
 library. It repeats the nine checks of the hand analysis it grew out of, made on the Smida
 session of 2026-08-12: the metadata and the cadence, light leaks, thermal drift, noise, hot
@@ -13,7 +13,7 @@ There are two programs over one core, and they give the same figures: the consol
 `darkscheck.exe`, and the window, `DarksCheck.Wpf.exe`. Both speak English, or Romanian with
 `--lang ro`.
 
-The figures are checked against the author's sessions (`docs/validation.md`): the darks, biases
+The figures are checked against the test sessions (`docs/validation.md`): the darks, biases
 and lights of Smida, against the hand analysis; three libraries of 30 darks at ISO 1600, taken
 at 15.8, 13.3 and 9.5 °C; a set of darks with a deliberate light leak; and the Veil night of
 2026-10-06, whose lights have no darks of their own.
@@ -134,7 +134,7 @@ the dark fits the lights, to check 9, each with its figures and a `verdict` row 
 (check 4 only: the series is to be taken again) or `UNMEASURED`, then `INDEX`, the frames
 table, the lights table and `ADU SCALE EXPLAINED`.
 
-On the author's computer (8 cores, 4 threads), the Smida session, 20 darks, 30 biases and 32
+On the test computer (8 cores, 4 threads), the Smida session, 20 darks, 30 biases and 32
 lights, takes 63 to 65 seconds and up to 5.9 GB of memory; the library of 30 darks, 24 to 26
 seconds and 3.3 GB (measured 2026-10-25). The library as a partner adds about 27 seconds
 (2026-10-16).
@@ -217,7 +217,7 @@ colour, as an average over the hot pixels, with how many pixels keep more than t
 how many more than 3 times the noise. While the average trace is under the noise of a light,
 a ratio between 0.7 and 1.4 reads `OK: the dark can be subtracted as it is` too, and the
 verdict says so (`outside 0.9 .. 1.1, but what the subtraction leaves is on average under the
-noise of a light`); the traces only relax the verdict, they never make it harsher. The author's
+noise of a light`); the traces only relax the verdict, they never make it harsher. The
 lights of 2026-11-08 read 0.85 of darks taken right after them: on 183 hot pixels the average
 trace is 0.73 of the noise, 55 pixels keep more than the noise and 7 more than 3 times it, and
 on those lights the dark can be taken as it is from 0.80 to 1.20. The reckoning is for one
@@ -262,7 +262,7 @@ as the series warms (the hot pixels' amplitude of check 4), while light from out
   reference, and the row says so.
 
 The three need at least 6 frames with hot pixels, and the split also needs a series that warmed
-(an amplitude ratio that spans at least 0.1; the author's series span 0.24 to 0.38);
+(an amplitude ratio that spans at least 0.1; the test series span 0.24 to 0.38);
 otherwise they say why they cannot. Every light found is also given in raw ADU as a fraction of
 the dark master's noise per pixel (check 9), and of the lights stack's when there are lights:
 `+0.79 ADU is 0.55 times the dark master's noise per pixel (1.43 ADU)`. On the D3300 the glow is
@@ -297,10 +297,10 @@ times the series' time constant when it was cooling, or as a longer series when 
 warming. The verdict is `WARNING` when the master is more than 1 degree from the end of the
 series (the frames from the start pull it: discard them, or take a longer series) or when a
 frame leaves 0.7 to 1.4 of the master (the margin of Siril's `-opt`: the series started cold);
-the warm-up at the start is only stated. The author's darks of 2026-11-07, taken at 2 °C right
+the warm-up at the start is only stated. The darks of 2026-11-07, taken at 2 °C right
 after the camera came out of the house, cooled 4 degrees in the hour: the master sits 1.4
 degrees above the end and the first 10 of the 30 frames are to discard. A series is not judged
-against where it would settle if left to run: the author's darks of 2026-11-09 moved half a
+against where it would settle if left to run: the darks of 2026-11-09 moved half a
 degree in 70 minutes, and a curve drawn through them put that place 1.4 degrees further, where
 the camera never got. Under 6 frames the end is not measured and the verdict rests on the 0.7
 to 1.4 margin alone. In the frames table the column `end` gives every frame's degrees from the
@@ -340,7 +340,7 @@ has the end of the series and the two bounds.
 
 `idx<NN>` is the median amplitude, in ADU-eq, of the master's pixels ranked 5 to 20 per
 megapixel (the 122nd to the 483rd strongest of 24.2 MP): one number for how warm the sensor ran.
-Smida reads 25; the author's three libraries read idx67, idx47 and idx33 at 15.8, 13.3 and 9.5
+Smida reads 25; the three test libraries read idx67, idx47 and idx33 at 15.8, 13.3 and 9.5
 °C, one halving for 6.3 degrees, the doubling rule within a degree.
 
 `label` is the folder's name plus `-idx<NN>` (the parent folder's when the darks sit in
