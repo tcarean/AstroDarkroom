@@ -22,8 +22,8 @@ namespace AstroDarkroom.Core;
 /// <summary>
 /// What the suite needs on the machine, told to the user before the tools are opened (R-009,
 /// ADR 0007): a Siril session folder, Siril 1.4.4 or newer installed, Microsoft's Visual C++
-/// runtime for the tools that read camera raw files and, optional for FlatCheck, Adobe's lens
-/// profiles. The launcher checks the runtime only (<see cref="VcRuntime"/>, R-018, ADR 0016);
+/// runtime for the tools that read camera raw files and, for FlatCheck, Adobe's lens profiles, to
+/// install before its first run (ADR 0023). The launcher checks the runtime only (<see cref="VcRuntime"/>, R-018, ADR 0016);
 /// the texts are here, in both languages, so a test guards them (ADR 0006), and the windows show
 /// them.
 /// </summary>
@@ -36,8 +36,8 @@ public static class Prerequisites
 
     /// <summary>
     /// The four paragraphs of the "Despre" window, in the current language: the session folder,
-    /// the Siril version, the Visual C++ runtime with Microsoft's link, the optional Adobe lens
-    /// profiles.
+    /// the Siril version, the Visual C++ runtime with Microsoft's link, and Adobe's lens profiles
+    /// for FlatCheck, with what it loses without them and where the steps are.
     /// </summary>
     public static IReadOnlyList<string> Details =>
     [
@@ -62,11 +62,13 @@ public static class Prerequisites
           + "DarksCheck, FlatCheck si LightsCheck au nevoie de el ca sa citeasca fisiere raw de aparat, iar "
           + "lansatorul spune cand lipseste sau este prea vechi. Ultima lui versiune se instaleaza de la "
           + VcRuntime.DownloadUrl + "."),
-        T("Optional, for FlatCheck: Adobe's lens profiles, read from this computer when an Adobe program "
-          + "installed them: Lightroom, Photoshop with Camera Raw, or the free Adobe DNG Converter. Without "
-          + "them FlatCheck uses the lensfun database it ships with.",
-          "Optional, pentru FlatCheck: profilele de obiective Adobe, citite de pe acest calculator cand le-a "
-          + "instalat un program Adobe: Lightroom, Photoshop cu Camera Raw, sau Adobe DNG Converter, gratuit. "
-          + "Fara ele FlatCheck foloseste baza lensfun livrata cu el."),
+        T("For FlatCheck: Adobe's lens profiles, to install before its first run. The free Adobe DNG "
+          + "Converter installs them, and so do Lightroom and Photoshop with Camera Raw. Without them, "
+          + "FlatCheck compares the vignetting of your flat only with the lensfun database it ships with, "
+          + "which is less reliable. The steps are in FlatCheck's manual, in the suite's wiki.",
+          "Pentru FlatCheck: profilele de obiective Adobe, de instalat inainte de prima pornire. Le "
+          + "instaleaza Adobe DNG Converter, gratuit, si la fel Lightroom si Photoshop cu Camera Raw. Fara "
+          + "ele, FlatCheck compara vignetarea flat-ului tau doar cu baza lensfun livrata cu el, care e mai "
+          + "putin sigura. Pasii sunt in manualul FlatCheck, in wiki-ul suitei."),
     ];
 }
