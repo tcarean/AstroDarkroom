@@ -1,7 +1,7 @@
 # 0049. The README speaks impersonally, never of the author
 
 Date: 2026-11-11
-Status: accepted 2026-11-11
+Status: accepted 2026-11-11; the files it names superseded by 0050
 
 ## Context
 
