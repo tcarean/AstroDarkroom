@@ -1,7 +1,7 @@
 # 0019. The front page speaks impersonally, never of the author
 
 Date: 2026-11-11
-Status: accepted 2026-11-11
+Status: accepted 2026-11-11; the equipment it names superseded by 0020
 
 ## Context
 

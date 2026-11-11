@@ -1,7 +1,7 @@
 # 0025. User documentation lives in README.md, in Romanian, and only there; docs/requirements.md is for maintainers
 
 Date: 2026-10-02
-Status: accepted 2026-10-02; README.md in Romanian superseded by 0041
+Status: accepted 2026-10-02; README.md in Romanian superseded by 0041; how to use the tool written in README.md and nowhere else superseded by 0050
 
 ## Context
 

@@ -1,7 +1,7 @@
 # 0009. The README is in English
 
 Date: 2026-10-26
-Status: accepted 2026-10-26
+Status: accepted 2026-10-26; the README's sections How a release is made and Building superseded by 0020
 Supersedes: 0003 in part (README.md in Romanian)
 
 ## Context

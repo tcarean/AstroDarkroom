@@ -1,19 +1,16 @@
 # LightsCheck
 
-A quality check for the light frames of an astrophotography night, made for a DSLR on a star
-tracker and a Siril workflow (tested with a Nikon D3300 and a Samyang 135 mm on a Star Adventurer
-GTi). It reads a Siril session folder, measures every frame and tells you which frames to leave
-out of the stack and why, how often and how far you dithered, how the mount drifted, how good the
-polar alignment was, and what to do differently next time. The frames are only read: nothing in
-`lights/` is modified, moved or written.
+A quality check for the light frames of an astrophotography night, made for a camera on a
+tracking mount and a Siril workflow. It reads a Siril session folder, measures every frame and
+tells you which frames to leave out of the stack and why, how often and how far you dithered, how
+the mount drifted, how good the polar alignment was, and what to do differently next time. The
+frames are only read: nothing in `lights/` is modified, moved or written.
 
-There are two programs over one core, and they give the same figures: the console,
-`lightscheck.exe`, and the window, `LightsCheck.Wpf.exe`. Both speak English, or Romanian with
-`--lang ro`.
+There are two programs, and they give the same figures: the console, `lightscheck.exe`, and the
+window, `LightsCheck.Wpf.exe`. Both speak English, or Romanian with `--lang ro`. The suite's wiki
+has [the window's manual, tab by tab](https://github.com/tcarean/AstroDarkroom/wiki/LightsCheck).
 
-The figures are checked against two test nights (`docs/validation.md`): the Veil
-Nebula on 2026-10-06, 87 frames at 135 mm, against the hand analysis the tool grew out of, and the
-Milky Way at Smida on 2026-08-12, 32 frames at 20 mm.
+The figures were checked on real nights, at 20 mm and at 135 mm.
 
 ## Getting it
 
@@ -25,9 +22,9 @@ launcher's language. The console is not part of the suite: build it from this fo
 To read camera raw files, both programs need **Microsoft's Visual C++ v14 runtime (x64)**, which
 most computers already have. Windows lists it as "Microsoft Visual C++ v14 Redistributable (x64)",
 or, when it is older, "Microsoft Visual C++ 2015-2022 Redistributable (x64)", "2015-2019", "2017"
-or "2015"; the last two are too old, from before Visual Studio 2019 added one of the DLLs libraw
-needs. Neither the suite nor the programs built here include it. Without it FITS frames are still
-read, and every raw file gives this error, whose link downloads the latest version:
+or "2015"; the last two are too old. Neither the suite nor the programs built here include it.
+Without it FITS frames are still read, and every raw file gives this error, whose link downloads
+the latest version:
 
 ```
 cannot load libraw: Microsoft's Visual C++ runtime is likely missing or too old, so camera raw files cannot be read until its latest version is installed (FITS frames are not affected): https://aka.ms/vc14/vc_redist.x64.exe
@@ -40,7 +37,7 @@ The log then names the runtime's DLLs that Windows could not load ("Logs" below)
 Give it the folder of one night, laid out the way Siril and its scripts lay it out:
 
 ```
-2026-10-06-3h\
+MySessionFolder\
     lights\      DSC_0001.NEF ... DSC_0087.NEF   <- required (or the frames directly in the folder)
     biases\      DSC_0128.NEF ...                <- optional
     darks\       DSC_0160.NEF ...                <- optional, only counted, never read
@@ -77,11 +74,12 @@ lightscheck --help
 - `--out DIR`: also writes the report, a CSV with every figure and the list of the frames to
   reject into DIR.
 - `--threads N`: how many frames are measured in parallel; half the cores by default.
-- `--pixel UM`: the pixel size in microns. Without it, the files' `XPIXSZ` when a FITS carries
-  it; else the size the raw implies, from the 35 mm-equivalent focal length the camera writes
-  and the mosaic's size (4.00 on a D3300 at 135 mm); else 3.92, the D3300's spec. The `scale`
-  line of the report says which was used. With the focal length of the files it gives the scale
-  in "/px.
+- `--pixel UM`: the pixel size in microns. It is taken, in this order, from the `XPIXSZ` of a
+  FITS frame that carries it; from `--pixel`; from the raw, worked out from the 35 mm-equivalent
+  focal length the camera writes and the mosaic's size (4.00 on a Nikon D3300 at 135 mm); else
+  3.92, the D3300's spec. The `scale` line of the report says which was used: when it says "the
+  Nikon D3300's value, by default" and you use another camera, give `--pixel`. With the focal
+  length of the files it gives the scale in "/px.
 - `--east left|right` and `--north up|down`: the SynScan arrows that move the mount east and
   north, for the `dithering` column (below); right and down by default. Their Romanian forms,
   `--est stanga|dreapta` and `--nord sus|jos`, work too, in either language.
@@ -104,9 +102,8 @@ figures are the same in both languages.
 ### The whole night
 
 `lightscheck <session folder>` measures every frame, registers them all on the first and prints
-the report; the progress goes to stderr. On the test computer, an Intel i7-4790K with the
-default 4 threads, the 87 raws of 24 MP of the Veil night take about two minutes (123 s, measured
-2026-10-26). The report's sections:
+the report; the progress goes to stderr. With 4 threads, 87 raws of 24 MP take about two
+minutes. The report's sections:
 
 - **SUMMARY**: one row per question, each opening with its verdict: the focus, the exposure
   against the read noise of the biases, dew, the trailed frames, the dithering, the polar
@@ -162,21 +159,20 @@ the longest run of consecutive frames, 2 or more, that stayed within 10 px of th
 The polar alignment is read from the drift along DEC and from the field rotation: a polar axis
 off by an angle e makes the stars slide along DEC and the field rotate, in proportions that depend
 on the declination alone. The DEC drift alone gives a lower bound of the error
-(`the mount's axis is off the pole by at least 5.7'`). The field rotation, put down entirely to the alignment, gives the
-upper bound (`by 4.5' to 6.7'`), once it is cleared of the dithers' slews: each move
-in RA turns the frame a little, by its change of right ascension times the sine of the
-declination, and on the Veil night that was most of the rotation the registration saw. The upper bound needs the declination,
+(`the mount's axis is off the pole by at least 5.7'`). The field rotation, put down entirely to
+the alignment, gives the upper bound (`by 4.5' to 6.7'`), once it is cleared of the dithers'
+slews: each move in RA turns the frame a little, and on a test night at 135 mm that was most of
+the rotation the registration saw. The upper bound needs the declination,
 from the plate solve at the root, and a session of an hour or more. The row also says what the
 error costs: the drift the alignment can cause over one exposure, in pixels, and the elongation it
 adds to a star of the session's FWHM. The verdict in SUMMARY weighs that drift against a third of
 the FWHM: `OK` when the upper bound's drift stays under it, `WARNING` when even the lower bound's
 reaches it, `MARGINAL` between; with the lower bound alone and under the third, no verdict.
 
-`RA drift` says how much of the drift along RA the alignment can explain (the rotation times the
-tangent of the declination); the rest is the tracking (the rate, the periodic error, flexure), not
-the alignment. On the Veil night the RA drift of 4.4"/min owed at most 0.7"/min to the alignment,
-and the alignment, between 4.5' and 6.7', cost at most 0.46 px over a 120 s exposure: it is not
-what moved the frames.
+`RA drift` says how much of the drift along RA the alignment can explain; the rest is the tracking
+(the rate, the periodic error, flexure), not the alignment. On that test night, an RA drift of
+4.4"/min owed at most 0.7"/min to the alignment, and the alignment, between 4.5' and 6.7', cost
+at most 0.46 px over a 120 s exposure: it was not what moved the frames.
 
 The alignment cannot be measured with fewer than 3 pairs of frames without a pause and without a
 move; a run of 10 or more frames without dithering would measure it. Without a plate solve, or
@@ -190,9 +186,9 @@ fixed pattern makes them: the hot pixels and the faint marks the sensor always h
 place, what a dark takes out. When the stack aligns the frames on the stars, the pattern moves
 with the drift from one frame to the next, and its copies line up into a streak, in the runs of
 frames in a row that stayed in the same spot. The longer the focal length, the more pixels the
-same drift and the same dither move make. On the Veil night, at 135 mm, the drift was 1.52 px
-per exposure and drew a streak of 13.7 px over frames 61 to 70; at Smida, at 20 mm, it was
-0.17 px per exposure, and a run of 12 frames in one spot drew 1.9 px. A short focal length
+same drift and the same dither move make. In the tests, at 135 mm the drift was 1.52 px per
+exposure and drew a streak of 13.7 px over 10 frames in a row; at 20 mm it was 0.17 px per
+exposure, and a run of 12 frames in one spot drew 1.9 px. A short focal length
 forgives; a long one asks for a dither after every frame, on both axes, each time in another
 direction, at random. How often you move matters more than how far: 5 px are enough as long as
 two neighbouring frames do not stay in the same spot, while a big jump every 2 frames leaves
@@ -234,10 +230,8 @@ frames of the runs whose streak reaches 3 px, the ones whose streak would show:
 - `dithering` is the mount's move behind each dither: on which axis, how many pixels, which way on
   the sky and which SynScan arrow, such as `RA 17 px ← W` or `RA 5 px ← W, DEC 29 px ↑ S`: the
   arrow pressed, then the sense on the sky (E or W, N or S). The sense comes from the plate-solved
-  FITS at the root. Siril stores a FITS with its rows bottom-up against the raw, and the program
-  allows for it; this was checked on the Veil night against plate solves of raw frames. A session
-  of FITS lights, such as the `pp_light_*.fit` of Siril's `process\`, is read in the same order as
-  the solve and gives the same senses. Without a solve the cell is `RA 17 px`.
+  FITS at the root; raw lights and FITS lights, such as the `pp_light_*.fit` of Siril's `process\`,
+  give the same senses. Without a solve the cell is `RA 17 px`.
 - Which arrow moves the mount east and which north depends on the mount and the app. The
   defaults are those of a Star Adventurer GTi driven by the SynScan Pro app, tested on that
   pair with a target west of the meridian: `→` moves the mount east and `←` west, `↓` moves it
@@ -268,18 +262,16 @@ them, so for a file use `--out`, whose files are UTF-8.
 - `lightscheck-rejected.txt`: the names of the frames to reject, one per line, to take out of the
   sequence in Siril.
 
-The names are the same in both languages; version 1.0.0 named them `lightscheck-raport.txt`,
-`lightscheck-cadre.csv` and `lightscheck-respinse.txt`. The text in them follows the language of
-the run, and the CSV's header row stays English. Give a folder outside `lights\` and `biases\`,
-such as the session folder itself.
+The names are the same in both languages. The text in them follows the language of the run, and
+the CSV's header row stays English. Give a folder outside `lights\` and `biases\`, such as the
+session folder itself.
 
 ### Only the metadata: `--inventory`
 
-It reads the metadata of the frames without decoding their pixels, in a second or two for the 87
-raws of the Veil night:
+It reads the metadata of the frames without decoding their pixels, in a second or two for 87 raws:
 
 ```
-=== SESSION: E:\Photografie\Astro\Veil\2026-10-06-3h ===
+=== SESSION: D:\Astro\MySessionFolder ===
     total exposure     : 2 h 54 min 30 s
     lights             : lights\ (87 frames .NEF)
     biases             : biases\ (30 frames .NEF)
@@ -297,10 +289,11 @@ raws of the Veil night:
 ```
 
 `total exposure` is the exposures of the frames that carry a time of capture added up, to the
-second; `interval` gives the same total in minutes. `exposure` lists each exposure and ISO the frames use; that night frame 75
-was exposed for 133.2 s. `pause` is the time between the end of the previous exposure and the start of this one:
-with manual dithering, the pause in which you moved the mount. The time comes from the EXIF of a
-raw (the camera's clock) and from the `DATE-OBS` of a FITS (UTC, as Siril writes it).
+second; `interval` gives the same total in minutes. `exposure` lists each exposure and ISO the
+frames use; in the example, one frame was exposed for 133.2 s. `pause` is the time between the
+end of the previous exposure and the start of this one: with manual dithering, the pause in which
+you moved the mount. The time comes from the EXIF of a raw (the camera's clock) and from the
+`DATE-OBS` of a FITS (UTC, as Siril writes it).
 
 ### One frame: `--frame N`
 
@@ -371,18 +364,17 @@ The analysis starts by itself, the same as `lightscheck <folder>`, with a progre
   on the Summary tab.
 - **Report**: the console's text, the same to the byte.
 
-A screen reader such as Narrator reaches what each tab shows, not only the tabs' names.
+A screen reader such as Narrator reads what each tab shows.
 
 The top bar holds the inputs, read when a folder is opened: `PIXEL (um)`, the pixel size, blank
-by default, when the files' `XPIXSZ` or the raw's own figure decide, as for `--pixel`; `THREADS`, how many frames are measured in parallel
-(empty = half the cores); and `EAST` and `NORTH`, the SynScan arrows that move the mount east and
-north (`→` and `↓` by default), remembered between starts in
-`%LOCALAPPDATA%\LightsCheck\settings.json`, the only setting the program keeps there (its log goes
-there too when the folder beside the program cannot be written, see [Logs](#logs)).
+by default; as with `--pixel`, a FITS frame's `XPIXSZ` comes before it, and it comes before the
+raw's own figure; `THREADS`, how many frames are measured in parallel (empty = half the cores);
+and `EAST` and `NORTH`, the SynScan arrows that move the mount east and north (`→` and `↓` by
+default), remembered between starts in `%LOCALAPPDATA%\LightsCheck\settings.json`, the only
+setting the program keeps there (its log goes there too when the folder beside the program cannot
+be written, see [Logs](#logs)).
 **Write the files...** writes the three files of `--out` into a folder you choose; the session
-folder is proposed. **About** (F1) shows the version, the licence and the third-party components;
-on a screen too low for all of it, its cards scroll (wheel, arrows, Page Up/Down, Home, End) and
-the Close button stays in view.
+folder is proposed. **About** (F1) shows the version, the licence and the third-party components.
 
 ## Logs
 
@@ -392,28 +384,21 @@ attach the whole `log` folder: it holds what is needed to see what happened.
 **Where it is.** In a folder named `log` beside the program: `log\lightscheck.log` beside
 `lightscheck.exe`, `log\LightsCheck.Wpf.log` beside `LightsCheck.Wpf.exe`. When that folder cannot
 be written (a program under Program Files, a read-only drive), the log goes to
-`%LOCALAPPDATA%\LightsCheck\log` instead, and its first line says so. Past 1 MiB (1,048,576 bytes,
-so a file ends one line past that) a file is left and the next one is started
-(`lightscheck_01.log`, `lightscheck_02.log`, ...); the five most recent files are kept and the
-older ones deleted, so the folder holds about 5 MiB per program at most, the log of some thirty
-analyses of a night of 90 frames. Two windows open
-at the same time write into the same file, each line marked with its process. Nothing is written
-into the session folder.
+`%LOCALAPPDATA%\LightsCheck\log` instead, and its first line says so. Past 1 MiB a file is left
+and the next one is started (`lightscheck_01.log`, `lightscheck_02.log`, ...); the five most
+recent files are kept and the older ones deleted, so the folder holds about 5 MiB per program at
+most, the log of some thirty analyses of a night of 90 frames. Two windows open at the same time
+write into the same file, each line marked with its process. Nothing is written into the session
+folder.
 
-**What is in it.** One line per event, numbers with a point: at the start the version, the command
-line, the Windows and .NET versions and the folders; the session's folders and frame counts; every
-file read, with its size, its dimensions and what its header or the camera says (camera, lens,
-focal length, exposure, ISO, time); for each run its options, its outcome and the time each stage
-took; for each frame its figures, and the class, the flags and the thresholds behind every
-rejection; the dithering, the drift, the sensor's pattern, the read noise and the polar alignment
-as the report's verdicts read them; every file written; in the window, the folder opened, each
-run's end and the buttons pressed; when libraw cannot be loaded, once, which of the Visual C++
-runtime's four DLLs Windows cannot load, or that the four load, so none is missing;
-every error with its technical details, those the program works
-around without a word included (not a run you stopped yourself, nor what the window drops while it
-closes); at the end the exit code and the time taken. The log's own words are English whatever
-`--lang` says; an error's or a refusal's message appears as you saw it, so in Romanian under
-`--lang ro`. It holds the paths of your files and the figures measured on them, not their pixels.
+**What is in it.** One line per event: the versions, the command line and the folders at the
+start; every file read, with what its header or the camera says; each run's options, outcome and
+timings; each frame's figures and what rejected it; the report's verdicts; every file written; in
+the window, the folder opened and the buttons pressed; when libraw cannot be loaded, which of the
+Visual C++ runtime's DLLs Windows cannot load; every error with its technical details; at the end
+the exit code and the time taken. The log's own words are English whatever `--lang` says; an
+error's message appears as you saw it. It holds the paths of your files and the figures measured
+on them, not their pixels.
 
 **How much.** The environment variable `LIGHTSCHECK_LOG` sets the level: `off`, `fatal`, `error`,
 `warn`, `info`, `debug` (the default) or `trace`, which adds every header card of each FITS frame
@@ -432,12 +417,6 @@ projects target .NET 8, which that SDK builds. From this folder:
 dotnet build LightsCheck.sln -c Release
 ```
 
-The full gate, the one every commit runs (format check, strict build, tests):
-
-```
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
-```
-
 The two executables, each one self-contained file with the libraw DLLs inside, which runs without
 .NET installed (raw files still need the Visual C++ runtime, as "Getting it" says):
 
@@ -445,29 +424,37 @@ The two executables, each one self-contained file with the libraw DLLs inside, w
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 1.0.0 -PublishOnly
 ```
 
-writes `artifacts\1.0.0\console\lightscheck.exe` and `artifacts\1.0.0\wpf\LightsCheck.Wpf.exe`
-and changes no tracked file; the `.pdb` and `.xml` files beside them are not needed to run them.
-`-Version` only names the folder: the version the programs print is `<Version>` in
-`Directory.Build.props`.
+writes `artifacts\1.0.0\console\lightscheck.exe` and `artifacts\1.0.0\wpf\LightsCheck.Wpf.exe`;
+the `.pdb` and `.xml` files beside them are not needed to run them. `-Version` only names the
+folder.
 
 ## Licence
 
 LightsCheck is free software, under the GNU General Public License version 3 or, at your option,
-any later version: see [LICENSE](LICENSE). Its raw and FITS readers are copied from FlatCheck.
+any later version: see [LICENSE](LICENSE).
 What the programs ship from others is libraw with the three libraries its DLL calls
 (libjpeg-turbo, Little CMS and zlib), libraw's C# wrapper, and NLog, which writes the log; the
 About window lists them, each with its licence. The whole text of each licence is in
 `THIRD-PARTY-NOTICES.txt` beside the programs in the Astro Darkroom suite folder, and in this
-repository in [../AstroDarkroom/THIRD-PARTY-NOTICES.md](../AstroDarkroom/THIRD-PARTY-NOTICES.md);
-why each is compatible with the GPLv3 is also in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md),
-in Romanian. This software is based in part on the work of the Independent JPEG Group.
+repository in [../AstroDarkroom/THIRD-PARTY-NOTICES.md](../AstroDarkroom/THIRD-PARTY-NOTICES.md).
+This software is based in part on the work of the Independent JPEG Group.
 
 ## For developers
 
 The rules of the work are in `CLAUDE.md` and `.claude/rules/kit/process.md`; the behaviour, with
 IDs, in `docs/requirements.md`; the decisions in `docs/decisions/`; how the code works, area by
 area, in `docs/design/`; the figures measured on the real nights in `docs/validation.md`; the
-history of the versions in `CHANGELOG.md`. The analysis the tool grew out of, the Python scripts
-and the report on the Veil night of 2026-10-06 (in Romanian), is in `prototype/` and
-`docs/validation/2026-10-06-veil/`. This file is the user documentation; the comments in the code
-do not repeat it.
+history of the versions in `CHANGELOG.md`. The analysis the tool grew out of, Python scripts and a
+report in Romanian, is in `prototype/` and `docs/validation/`. The raw and FITS readers are copied
+from FlatCheck. Why each third-party component is compatible with the GPLv3 is argued in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), in Romanian. This file is the user
+documentation; the comments in the code do not repeat it.
+
+The full gate, the one every commit runs (format check, strict build, tests):
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
+```
+
+The publish command of "Building" changes no tracked file; the version the programs print is
+`<Version>` in `Directory.Build.props`.

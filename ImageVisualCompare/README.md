@@ -7,20 +7,21 @@ processing, such as before and after star removal, two background extractions or
 stretches, and to show a difference of one or two levels in a dark field, where the eye cannot
 see it.
 
-A Windows application (Windows 10 or 11, x64, .NET 8) with **no imaging library**: PNG and TIFF
-are decoded by WIC, the Windows codec that WPF uses anyway, and FITS, which WIC does not read, by
-the project's own reader. Its only packages are NLog's two, which write its log. It only
-reads your images: it never writes, moves or changes one; the only files it writes are its own
-log (see [Logs](#logs)).
+A Windows application for Windows 10 or 11 (x64). The release carries the .NET 8 runtime, so
+there is nothing to install. PNG and TIFF are read by WIC, the image codecs built into Windows,
+and FITS by the program's own reader. It only reads your images: it never writes, moves or
+changes one; the only files it writes are its own log (see [Logs](#logs)).
 
 Everything on screen is dark, whatever the Windows theme: the window, its title bar and its
 messages, because a bright frame around an astro image spoils the judgement of what is really
 dark in it. The one exception is the Windows dialog that opens the files, which follows the
 system theme.
 
-ImageVisualCompare is one of the five tools of Astro Darkroom. The repository's front page, the
+ImageVisualCompare is one of the tools of Astro Darkroom. The repository's front page, the
 [`README.md`](../README.md) at its root, describes the suite and how to build it, and the
 suite's launcher opens this tool in the launcher's language.
+[The window's manual](https://github.com/tcarean/AstroDarkroom/wiki/ImageVisualCompare) is in
+the suite's wiki.
 
 ---
 
@@ -45,8 +46,8 @@ each axis:
 
 ```
 The two images have different dimensions.
-A: de_printat.png — 5938 × 3888
-B: de_printat_50x35_TIFF8.tif — 5554 × 3888
+A: before.png — 5938 × 3888
+B: after.tif — 5554 × 3888
 
 Both can be padded with black to 5938 × 3888,
 anchored top-left, and compared on that canvas.
@@ -57,10 +58,8 @@ Continue?
 
 `Yes` compares the two on that canvas, each anchored at its top-left corner, with black where an
 image does not reach: the narrower one has black on its right, the shorter one below it. `No`,
-`Escape` or closing the question brings the open dialogs back. Neither the files nor the pixels
-in memory are touched: the black is the backdrop both images are drawn over anyway, not a larger
-copy of them. The pixel readout says `—` where an image does not reach, so the padding never
-passes for a black area of the picture.
+`Escape` or closing the question brings the open dialogs back. The pixel readout says `—` where
+an image does not reach, so the padding never passes for a black area of the picture.
 
 **A file that cannot be read** (missing, locked, damaged, in a format no installed codec reads,
 or too large to decode) gives a message with its name and the reason, such as
@@ -81,7 +80,7 @@ in an `IMAGE` extension.
   it anyway, there are the two display modes below.
 - **The rows are the way up Siril shows them.** The first row in the file is the bottom of the
   image, whatever `ROWORDER` in the header says: Siril reads that keyword only to debayer, never
-  to display, and files that say `TOP-DOWN` over rows written bottom-up exist.
+  to display.
 - **Floats in 0..1 or in 0..65535.** Siril writes floats between 0 and 1. If more than 1 % of
   the samples in the file are above 2, the file is read as 0 to 65535, and the status bar says
   so: `32-bit float RGB (0..65535)`. A few hot pixels above 2 do not change the scale. Negative
@@ -99,11 +98,10 @@ are two display modes besides the linear one, both copied from Siril 1.4.4, to s
 stack what the eye cannot: a one-level gradient, a patch, a band.
 
 - **`Histogram`** (the toolbar button, `Histogramă` in Romanian, or the `H` key) is Siril's
-  "Histogram" display mode: histogram equalisation, each channel on its own histogram, with
-  65 536 bins on the 16-bit value. Every grey level on the screen receives the same number of
-  pixels, so a tiny difference in the data becomes many grey steps on the screen. Amplitude is
-  destroyed by construction: a 0.5 % and a 10 % difference of the same shape look the same.
-  Pixels at 0 stay 0.
+  "Histogram" display mode: histogram equalisation, each channel on its own histogram. Every
+  grey level on the screen receives the same number of pixels, so a tiny difference in the data
+  becomes many grey steps on the screen. Amplitude is destroyed by construction: a 0.5 % and a
+  10 % difference of the same shape look the same. Pixels at 0 stay 0.
 - **`False colours`** (the button, `Culori false`, or the `F` key) is Siril's "rainbow" table
   over one layer equalised as above: the hue runs from magenta (level 0) through blue, cyan,
   green and yellow to red (level 255). The layer is the mean of the three planes of an RGB
@@ -121,11 +119,10 @@ keys do nothing: 8-bit levels are not equalised.
 A TIFF of 32-bit float samples, as the "32 bit" exports of GraXpert and Siril are, is read like a
 FITS of the same values: the status bar says `32-bit float RGB` (or `gray`, `RGBA`), and the
 values are shown as stored, with no stretch, between 0 and 1 or between 0 and 65535 by the same
-rule as a FITS. Windows' own conversion would have shown them much brighter, by 73 levels of 255
-on average on two GraXpert exports: the 16-bit stack from before GraXpert and its float result
-would have looked one twice as bright as the other, which the data is not. Only 32-bit float
-samples are read this way: a TIFF of 16-bit (half) or 64-bit floats is left to Windows' own
-conversion, as every file was before, which shows float samples brighter than stored.
+rule as a FITS. Windows' own conversion would show them much brighter than stored: a float
+export would look far brighter than the 16-bit stack it came from, which the data is not. Only
+32-bit float samples are read this way: a TIFF of 16-bit (half) or 64-bit floats is left to
+Windows' own conversion, which shows float samples brighter than stored.
 
 ## Starting it
 
@@ -274,7 +271,7 @@ read every 2 seconds. After them comes a hint,
 `wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open`, cut short
 when the window narrows; on the right, always, the version and the copyright (there is no
 `--version` option). `About` opens a window with the version, the licence notice and the
-components written by others, laid out as the About windows of the suite's other tools.
+components written by others.
 
 In the Romanian interface the same bar reads `A RGB pe 16 biți` (or `gri float pe 32 de biți`,
 `RGB float pe 32 de biți (0..65535)`) and `memorie .NET 2 MB, proces 560 MB`, and a padded pair
@@ -283,16 +280,14 @@ starts with `pânză 5938 × 3888`.
 ## Memory and speed
 
 A pair of 21 MP images takes about 170 MB once decoded: each image becomes 4 bytes a pixel, about
-80 MB at 21 MP, whatever it took on disk. Drawn at fit, the process holds about 280 MB of private
-memory; after several zoom levels it settles on a plateau of about 570 MB private and 300 MB
-resident, which is bounded, not a leak: going through the zoom levels again does not raise it.
-While another pair opens, the current one stays on screen, so both are in memory during the
-load; as soon as the new one is shown and rendered once, the old one is released explicitly, and from
-then on only one is held. The order matters: the surface keeps the old bitmaps in its render
-content until the new ones are first rendered, so a release before that frees nothing (measured
-on 2026-10-26). The same holds for a switch between linear, histogram and false colours.
+80 MB at 21 MP, whatever it took on disk. After several zoom levels the `process` figure of the
+status bar settles at about 570 MB for such a pair; going through the zoom levels again does not
+raise it, so it is not a leak. While another pair opens, the pair on screen stays, so for a
+moment both are in memory; once the new pair is on screen, the old one is released, and from
+then on only one is held. The same holds for a switch between linear, histogram and false
+colours.
 
-Decoding two 16-bit files of 100 to 130 MB takes about three seconds.
+Decoding two 16-bit files of 100 to 130 MB takes a few seconds.
 
 ## Logs
 
@@ -302,12 +297,12 @@ attach the whole `log` folder: it holds what is needed to see what happened.
 **Where it is.** In a folder named `log` beside the program: `log\ImageVisualCompare.Wpf.log`
 beside `ImageVisualCompare.Wpf.exe`. When that folder cannot be written (a program under Program
 Files, a read-only drive), the log goes to `%LOCALAPPDATA%\ImageVisualCompare\log` instead, and
-its first line says so. Past 1 MiB (1,048,576 bytes; a file ends one line past that) a file is left
-and the next one is started (`ImageVisualCompare.Wpf_01.log`, `ImageVisualCompare.Wpf_02.log`,
-...); the five most recent files are kept and the older ones deleted, so the program keeps about
-5 MiB there at most. In the Astro Darkroom folder, a tool of the suite that keeps a log too,
-FlatCheck for one, keeps its own files in the same `log` folder, under its own name. Two windows
-open at the same time write into the same file, each line marked with its process.
+its first line says so. Past 1 MiB a file is left and the next one is started
+(`ImageVisualCompare.Wpf_01.log`, `ImageVisualCompare.Wpf_02.log`, ...); the five most recent
+files are kept and the older ones deleted, so the program keeps about 5 MiB there at most. In the
+Astro Darkroom folder, a tool of the suite that keeps a log too, FlatCheck for one, keeps its own
+files in the same `log` folder, under its own name. Two windows open at the same time write into
+the same file, each line marked with its process.
 
 **What is in it.** One line per event, with its time, numbers written with a point: at the start
 the version, the command line, the Windows and .NET versions, how Windows draws the window, the
@@ -347,8 +342,7 @@ writes them: look through the log before you attach it to a public report.
 
 ## What it does not do (yet)
 
-- No difference mode (`|A−B|` amplified): it would need the full-depth data kept beside the
-  displayed images, about 250 MB more for a 21 MP pair at 16 bits.
+- No difference mode (`|A−B|` amplified).
 - No key that flips the whole view between A and B.
 - No drag and drop onto the window.
 - The tool itself remembers nothing between runs, neither the last pair nor the language; the
@@ -356,7 +350,41 @@ writes them: look through the log before you attach it to a public report.
 
 ---
 
-## Building
+## Licence
+
+Image Visual Compare, a before/after slider for two versions of the same image.
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify it under the terms of the
+**GNU General Public License** as published by the Free Software Foundation, either **version 3**
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+the GNU General Public License for more details.
+
+The full text of the licence is in the [LICENSE](LICENSE) file, which also sits next to the
+program in the folder it is built or published into, and at
+<https://www.gnu.org/licenses/gpl-3.0.html>. The `About` window shows the same notice, short,
+with a link to that page; the version and the copyright are always on the status bar.
+
+The program references two packages of one project, [NLog](https://nlog-project.org/) and its
+atomic file target, which write the log, under the BSD-3-Clause licence, compatible with the GPL.
+The `About` window names it in a card of its own, with its licence, its copyright line and a link
+to its project; the licence's whole text is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md),
+beside the source code.
+
+---
+
+## For developers
+
+The project's rules are in `CLAUDE.md` and `.claude/rules/kit/process.md`; the behaviour, with
+the IDs the tests carry, in `docs/requirements.md`; the decisions in `docs/decisions/`; how the
+code works, area by area, in `docs/design/` (its `README.md` is the index); the figures measured
+on test files in `docs/validation.md`; the changes in `CHANGELOG.md`.
+
+### Building
 
 On Windows, with the .NET 9 SDK, version 9.0.318 or a later 9.0.3xx patch (`global.json`); the
 projects target .NET 8, and Visual Studio is not needed. From this folder:
@@ -385,51 +413,3 @@ It empties `artifacts/X.Y.Z/` first, and writes `release.json` there beside the 
 version, the date and the commit it was built from. `X.Y.Z` names the folder; the version the
 application shows is `<Version>` in `Directory.Build.props`, so passing that number keeps the
 two the same.
-
-## For developers
-
-The project follows the process of `ClaudeCodeStarterKit`, the folder beside this one, and is
-maintained with Claude Code. Its rules are in `CLAUDE.md` and `.claude/rules/kit/process.md`;
-the behaviour, with the IDs the tests carry, in `docs/requirements.md`; the decisions in
-`docs/decisions/`; how the code works, area by area, in `docs/design/` (its `README.md` is the
-index); the figures measured on the test files, one 23 MP frame, three exports and two
-FITS stacks, in `docs/validation.md`; the changes in `CHANGELOG.md`. How to use the tool is
-written here and nowhere else (ADR 0025).
-
-Every commit passes the gate first: the kit's checks, the format check, a build with warnings as
-errors and every test but the validation ones, in about 20 seconds:
-
-```
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
-```
-
-The version is `<Version>` in `Directory.Build.props` and changes only at the owner's word. A
-release is cut on `main` with `scripts/release.ps1 -Version X.Y.Z`; the owner commits it and
-tags it `imagevisualcompare-vX.Y.Z`.
-
----
-
-## Licence
-
-Image Visual Compare, a before/after slider for two versions of the same image.
-
-Copyright (C) 2026 Tudor Carean
-
-This program is free software: you can redistribute it and/or modify it under the terms of the
-**GNU General Public License** as published by the Free Software Foundation, either **version 3**
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**;
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
-the GNU General Public License for more details.
-
-The full text of the licence is in the [LICENSE](LICENSE) file, which also sits next to the
-program in the folder it is built or published into, and at
-<https://www.gnu.org/licenses/gpl-3.0.html>. The `About` window shows the same notice, short,
-with a link to that page; the version and the copyright are always on the status bar.
-
-The program references two packages of one project, [NLog](https://nlog-project.org/) and its
-atomic file target, which write the log, under the BSD-3-Clause licence, compatible with the GPL.
-The `About` window names it in a card of its own, with its licence, its copyright line and a link
-to its project; the licence's whole text is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md),
-beside the source code.

@@ -1,35 +1,29 @@
 # DarksCheck
 
-A quality check for the dark frames of a DSLR astrophotography session, made for a
-Nikon D3300 and a Siril workflow. Give it a Siril session folder or a folder of darks, a
-library. It repeats the nine checks of the hand analysis it grew out of, made on the Smida
-session of 2026-08-12: the metadata and the cadence, light leaks, thermal drift, noise, hot
-pixels, fixed pattern, dead pixels, whether there are enough darks, and the lights against the
+A quality check for the dark frames of an astrophotography session, for a Siril workflow. Give
+it a Siril session folder or a folder of darks, a library. It runs nine checks, in the order the
+report shows them: the metadata and the cadence, the lights against the darks, light leaks, the
+camera's warming, noise, hot pixels, fixed pattern, dead pixels, and whether there are enough
 darks. Then it computes the index, a number for how warm the sensor ran, on darks, on a library
 and on lights, so that a master from a library can be matched to a night. The frames are only
 read: nothing in their folders is modified, moved or written.
 
-There are two programs over one core, and they give the same figures: the console,
-`darkscheck.exe`, and the window, `DarksCheck.Wpf.exe`. Both speak English, or Romanian with
-`--lang ro`.
-
-The figures are checked against the test sessions (`docs/validation.md`): the darks, biases
-and lights of Smida, against the hand analysis; three libraries of 30 darks at ISO 1600, taken
-at 15.8, 13.3 and 9.5 °C; a set of darks with a deliberate light leak; and the Veil night of
-2026-10-06, whose lights have no darks of their own.
+There are two programs, and they give the same figures: the console, `darkscheck.exe`, and the
+window, `DarksCheck.Wpf.exe`. Both speak English, or Romanian with `--lang ro`. The suite's wiki
+has [the window's manual, tab by tab](https://github.com/tcarean/AstroDarkroom/wiki/DarksCheck).
 
 ## Getting it
 
 The window is one of the tools of the Astro Darkroom suite, described on the front page of this
 repository ([../README.md](../README.md)), whose "Download" section is where the suite's zip is
 published; opened from the suite's launcher, it starts in the launcher's language. The console
-is not part of the suite: build it from this folder, as "Building" says below.
+is not part of the suite: build it from this folder, as "Building" says at the end.
 
 What it needs: Windows 10 or 11, x64, and memory: a session of 20 darks, 30 biases and 32 lights
 of 24 MP takes up to 6 GB. The published executables are self-contained, so there is no .NET to
-install and no Siril. It reads camera raws (`.nef`, `.cr2`, `.cr3`,
-`.arw`, `.dng`, `.raf`, `.pef`) through LibRaw, and FITS files. Its thresholds and figures were measured
-on a Nikon D3300 only, and the electrons of the ADU scale are known for the D3300 alone.
+install and no Siril. It reads camera raws (`.nef`, `.cr2`, `.cr3`, `.arw`, `.dng`, `.raf`,
+`.pef`) through LibRaw, and FITS files. The limits come from tests with one camera. The
+electrons of the ADU scale are known for the Nikon D3300 alone.
 
 Reading camera raws needs one more thing, which most computers already have: Microsoft's Visual
 C++ v14 runtime (x64), which Windows lists as "Microsoft Visual C++ v14 Redistributable (x64)" or,
@@ -42,14 +36,13 @@ cannot load libraw: Microsoft's Visual C++ runtime is likely missing or too old,
 ```
 
 That link is Microsoft's own, for the latest x64 version; install it and run the program again.
-LightsCheck says the same, word for word.
 
 ## The folder you give it
 
 A Siril session folder, the one with `darks\` and, optionally, `biases\` and `lights\`:
 
 ```
-2026-08-12-Smida\
+MySessionFolder\
     darks\      DSC_0034.NEF ... DSC_0053.NEF     <- required
     biases\     DSC_0042.NEF ...                  <- optional
     lights\     DSC_0002.NEF ...                  <- optional
@@ -60,7 +53,7 @@ A Siril session folder, the one with `darks\` and, optionally, `biases\` and `li
 or a folder of darks, a library, with the darks in its `darks\` or directly in it:
 
 ```
-2026-10-10-ISO1600-120s-15.8celsius-idx67\darks\   DSC_0009.NEF ... DSC_0038.NEF
+MyDarkLibrary\darks\   DSC_0009.NEF ... DSC_0038.NEF
 ```
 
 A session with `lights\` and no `darks\` (the darks were taken another day, or you keep a
@@ -70,11 +63,8 @@ Without a partner such a folder is refused with a message that says what to give
 `--inventory` lists it all the same, its `darks` row reading `(none)`.
 
 The question can also be asked darks first: do the open darks fit the lights of another
-session? `--lights <folder>` in the console, **Choose lights...** on the window's Lights tab.
-The folder is a session, whose `lights\` is taken, or a folder with the lights in it; those
-lights replace the open folder's own in the run (check 1, check 2, the lights table and the
-lights CSV), and the darks' index and label stay the open folder's. The choice holds for the
-open folder only: it is not kept between runs and is dropped when another folder is opened.
+session? `--lights <folder>` in the console, **Choose lights...** on the window's
+**Match with lights** tab (see "The lights of another session" below).
 
 - An empty `darks\` is an error, never a fall-back to the root of the session, where
   `result.fit` and the other results of the stacking sit. A folder with `biases\` or `flats\`
@@ -134,10 +124,9 @@ the dark fits the lights, to check 9, each with its figures and a `verdict` row 
 (check 4 only: the series is to be taken again) or `UNMEASURED`, then `INDEX`, the frames
 table, the lights table and `ADU SCALE EXPLAINED`.
 
-On the test computer (8 cores, 4 threads), the Smida session, 20 darks, 30 biases and 32
-lights, takes 63 to 65 seconds and up to 5.9 GB of memory; the library of 30 darks, 24 to 26
-seconds and 3.3 GB (measured 2026-10-25). The library as a partner adds about 27 seconds
-(2026-10-16).
+A session of 20 darks, 30 biases and 32 lights of 24 MP takes about a minute and up to 6 GB of
+memory, and a library of 30 darks about 25 seconds and 3.3 GB; a library as a partner adds about
+half a minute.
 
 The figures are in ADU above the black. When the darks are not at ISO 400 and 120 s, the
 thresholds and the figures marked `ADU-eq` are divided by the factor ISO / 400 x exposure /
@@ -153,7 +142,7 @@ by more than 2 %), is left out of the figures and listed as an error
 code is `1`. A single dark is not a series: checks 4, 5 and 9 and the stability of check 6 stay
 `UNMEASURED`.
 
-The start of the report on Smida:
+The start of a report, on a session of 20 darks, 30 biases and 32 lights:
 
 ```
 === DARKS: frames read 20 of 20, 6016 x 4016 px, values from 150 (black) to 4095 ADU (white) read exactly from the raw, colour filters RGGB ===
@@ -196,8 +185,9 @@ the lights is persistent. The section says how many persistent pixels the master
 many persistent pixels are not in the master (`not in the master`: a star that did not move
 between the frames, or a pixel the dark does not have); and the amplitude (`lights against
 dark`): how strong the master's hot pixels are in every light against the master, normalised for
-ISO and exposure, the median over the night with the first and the last light. The first lights of a night run cold: on Smida the
-first reads 0.72, and the lights from the 13th minute on read 0.92 to 1.07.
+ISO and exposure, the median over the night with the first and the last light. The first lights
+of a night run cold: in the report above the first light reads 0.72, and the lights from the
+13th minute on read 0.92 to 1.07.
 
 The verdict, on the lights / dark ratio:
 
@@ -217,10 +207,10 @@ colour, as an average over the hot pixels, with how many pixels keep more than t
 how many more than 3 times the noise. While the average trace is under the noise of a light,
 a ratio between 0.7 and 1.4 reads `OK: the dark can be subtracted as it is` too, and the
 verdict says so (`outside 0.9 .. 1.1, but what the subtraction leaves is on average under the
-noise of a light`); the traces only relax the verdict, they never make it harsher. The
-lights of 2026-11-08 read 0.85 of darks taken right after them: on 183 hot pixels the average
-trace is 0.73 of the noise, 55 pixels keep more than the noise and 7 more than 3 times it, and
-on those lights the dark can be taken as it is from 0.80 to 1.20. The reckoning is for one
+noise of a light`); the traces only relax the verdict, they never make it harsher. In one test,
+lights read 0.85 of darks taken right after them: on 183 hot pixels the average trace is 0.73
+of the noise, 55 pixels keep more than the noise and 7 more than 3 times it, and on those lights
+the dark can be taken as it is from 0.80 to 1.20. The reckoning is for one
 light and for dithered lights: with dithering the traces land in a different place of the sky
 in every frame, without it they stay on the same pixels of the stack.
 
@@ -243,7 +233,7 @@ a darker one is a readout or bias offset.
 Three rows tell where light comes from, on the principle that the glow is dark current and grows
 as the series warms (the hot pixels' amplitude of check 4), while light from outside does not:
 
-- `light per frame` fits every frame's mean on the warming (a robust Theil-Sen line) and names
+- `light per frame` fits a line to every frame's mean against the warming and names
   the frames with more light than the line, over 5 times the typical deviation and over 0.1
   ADU-eq. Such frames (a lamp, the Moon, the dawn) make the verdict `WARNING`, with the advice
   to take them out of `darks\`, or to redo the series when every frame carries light too.
@@ -265,30 +255,30 @@ The three need at least 6 frames with hot pixels, and the split also needs a ser
 (an amplitude ratio that spans at least 0.1; the test series span 0.24 to 0.38);
 otherwise they say why they cannot. Every light found is also given in raw ADU as a fraction of
 the dark master's noise per pixel (check 9), and of the lights stack's when there are lights:
-`+0.79 ADU is 0.55 times the dark master's noise per pixel (1.43 ADU)`. On the D3300 the glow is
-at the top-left, 0.05 ADU-eq on Smida and 0.22 in the library at 15.8 °C. The test set with the
-eyepiece uncovered and a lamp aimed at the camera (2026-10-20) reads 5 frames at +0.17 to +0.47
-ADU-eq and a top side at +0.20, which the verdict on the master alone had read as `OK`.
+`+0.79 ADU is 0.55 times the dark master's noise per pixel (1.43 ADU)`. In the tests the glow
+was at the top-left, 0.05 to 0.22 ADU-eq. A test series taken with the eyepiece uncovered and a
+lamp aimed at the camera reads 5 frames at +0.17 to +0.47 ADU-eq and a top side at +0.20, which
+the verdict on the master alone had read as `OK`.
 
 #### 4. The camera's warming during the series
 
 The amplitude of the master's hot pixels in every frame, against the master; the ratio of the
 last frame to the first gives the degrees by the rule "the dark current doubles every 6
 degrees". A camera warms itself as it takes frame after frame, fast at first and then ever
-more slowly: started cold, it begins about 10 degrees under where it ends up. That is 2.2
-degrees in 38 min on Smida and 2.8 to 3.6 degrees in 58 min on the libraries, even after 20
-minutes of frames thrown away first.
+more slowly. In the tests a series of 20 darks warmed 2.2 degrees in 38 min, and series of 30
+darks 2.8 to 3.6 degrees in 58 min, even after 20 minutes of frames thrown away first.
 
 From 6 frames up, the series is read against its end: the average of its last 5 frames, the
 temperature the camera actually reached. `end of series` says which way the camera moved, from
 the hot pixels of the first frame to that end (a series that cools came in warmer than the
 place it sat in), by how many degrees, and how far above or below the end the master sits (0.4
-to 0.7 degrees on the measured libraries, 1.2 on the one that started coldest). `to discard` names the frames more than 2 degrees
-from the end of the series (the cold start, with a dark current more than 21 % under the
-end's; up to 4 of 30 on the libraries, 8 on the one that started coldest, 2 of 20 on Smida), says where the master would be
-without them and how much its noise would grow (the square root of the frames over the frames
-left). You move them out of `darks\` yourself, since the program writes nothing into the
-folder, and you leave them when the noise costs more than the half degree is worth.
+to 0.7 degrees on the measured libraries, 1.2 on the one that started coldest). `to discard`
+names the frames more than 2 degrees from the end of the series (the cold start, with a dark
+current more than 21 % under the end's; up to 4 of 30 on the libraries, 8 on the one that
+started coldest, 2 of 20 in the report above), says where the master would be without them and
+how much its noise would grow (the square root of the frames over the frames left). You move
+them out of `darks\` yourself, since the program writes nothing into the folder, and you leave
+them when the noise costs more than the half degree is worth.
 
 The verdict is `REDO`, in red, when more than half the frames are more than 2 degrees from
 the end of the series: the master, the median of the series, then belongs to no temperature,
@@ -297,16 +287,12 @@ times the series' time constant when it was cooling, or as a longer series when 
 warming. The verdict is `WARNING` when the master is more than 1 degree from the end of the
 series (the frames from the start pull it: discard them, or take a longer series) or when a
 frame leaves 0.7 to 1.4 of the master (the margin of Siril's `-opt`: the series started cold);
-the warm-up at the start is only stated. The darks of 2026-11-07, taken at 2 °C right
-after the camera came out of the house, cooled 4 degrees in the hour: the master sits 1.4
-degrees above the end and the first 10 of the 30 frames are to discard. A series is not judged
-against where it would settle if left to run: the darks of 2026-11-09 moved half a
-degree in 70 minutes, and a curve drawn through them put that place 1.4 degrees further, where
-the camera never got. Under 6 frames the end is not measured and the verdict rests on the 0.7
-to 1.4 margin alone. In the frames table the column `end` gives every frame's degrees from the
-end of the series, and a frame to discard has its reason at the end of its row; in the window,
-the Frames tab shows that row, the value and the reason in the attention colour, and the chart
-has the end of the series and the two bounds.
+the warm-up at the start is only stated. A series of 30 darks taken at 2 °C, right after the
+camera came out of the house, cooled 4 degrees in the hour: the master sat 1.4 degrees above
+the end and the first 10 frames were to discard. Under 6 frames the end is not measured and the
+verdict rests on the 0.7 to 1.4 margin alone. In the frames table the column `end` gives every
+frame's degrees from the end of the series, and a frame to discard has its reason at the end of
+its row.
 
 #### Checks 5 to 9
 
@@ -340,24 +326,24 @@ has the end of the series and the two bounds.
 
 `idx<NN>` is the median amplitude, in ADU-eq, of the master's pixels ranked 5 to 20 per
 megapixel (the 122nd to the 483rd strongest of 24.2 MP): one number for how warm the sensor ran.
-Smida reads 25; the three test libraries read idx67, idx47 and idx33 at 15.8, 13.3 and 9.5
-°C, one halving for 6.3 degrees, the doubling rule within a degree.
+In the tests, three libraries of 30 darks at ISO 1600 read idx67, idx47 and idx33 at 15.8, 13.3
+and 9.5 °C, one halving for 6.3 degrees, the doubling rule within a degree.
 
 `label` is the folder's name plus `-idx<NN>` (the parent folder's when the darks sit in
 `darks\`). It is only shown: you rename the folder if you wish, and the program renames nothing.
 A folder already renamed to a label (its name ends in `-idx` and digits, or in the `-idx-` of an
 unmeasured index) keeps one suffix: the old one is dropped before the new one is added, when a
-name remains in front of it, so `...-15.8celsius-idx67` reads `...-15.8celsius-idx67`, not
-`...-idx67-idx67`, and a changed index shows as a changed number. With lights, the `lights` row
-gives the night's equivalent index (the darks' index times the lights / dark ratio) and its
-degrees against the dark.
+name remains in front of it, so `MyDarkLibrary-idx67` reads `MyDarkLibrary-idx67`, not
+`MyDarkLibrary-idx67-idx67`, and a changed index shows as a changed number. With lights, the
+`lights` row gives the night's equivalent index (the darks' index times the lights / dark ratio)
+and its degrees against the dark.
 
-The INDEX section of the report on Smida:
+The INDEX section of the same report:
 
 ```
   INDEX
     darks              : idx25 (25.2 ADU-eq: the average value of the hot pixels at places 122 .. 483, counting from the hottest, that is 5-20 per Mpx of 24.2 Mpx; worked out for ISO 400 and 120 s)
-    label              : 2026-08-12-Smida-idx25
+    label              : MySessionFolder-idx25
     lights             : like a dark of idx25 (1.00 times the dark, that is at the same temperature)
 ```
 
@@ -421,11 +407,11 @@ session's. `INDEX` then adds:
 - `lights / partner`: the lights against the partner, through the session's darks;
 - `partner verdict`: check 2's thresholds on that ratio (without lights, on the darks' ratio).
 
-On Smida against the library, 0.42 on 434 pixels: the library ran 7.5 degrees warmer, so it is
-good for a cosmetic correction only.
+Below, the session of the report above against a library of 30 darks: 0.42 on 434 pixels; the
+library ran 7.5 degrees warmer, so it is good for a cosmetic correction only.
 
 ```
-    partner            : E:\Photografie\Astro\Flats and Darks\Darks\2026-10-10-ISO1600-120s-15.8celsius-idx67\darks: idx67 (67.4 ADU-eq; frames read 30 of 30, ISO 1600, 120.2 s); label 2026-10-10-ISO1600-120s-15.8celsius-idx67
+    partner            : D:\Astro\MyDarkLibrary\darks: idx67 (67.4 ADU-eq; frames read 30 of 30, ISO 1600, 120.2 s); label MyDarkLibrary-idx67
     darks / partner    : in the session's darks the hot pixels are 0.42 times what they are at the partner, at the same settings (half of them between 0.38 and 0.44; 434 pixels hot in both), that is the session's darks are 7.5 degrees colder than the partner
     shared pixels      : 111 of the session's 111 above 50 ADU-eq are above 50 at the partner too (100 %); 425 of the partner's 528 above 50 are above 20 in the session (80 %)
     lights / partner   : in the lights the hot pixels are 0.42 times what they are at the partner (worked out through the session's darks), that is the lights are 7.5 degrees colder than the partner
@@ -448,31 +434,30 @@ session's folder with it. The report says so: its `darks` row reads `(none; the 
 partner ... are used)` and its darks line `=== DARKS (the partner's, ...)`; the rows `partner`,
 `darks / partner`, `shared pixels` and `lights / partner` are left out, since there is nothing
 left to compare the partner with; and `darkscheck-darks.csv` and the maps of `--out` describe
-the partner's darks. The Veil session of 2026-10-06 (87 lights, no darks) against the library
-reads lights / dark 0.43 over its 87 lights (every light is measured): the
-library ran 7.2 degrees warmer than the night, good for a cosmetic correction only; its label
-reads `2026-10-06-3h-idx29`.
+the partner's darks. For example, a session of 87 lights and no darks, against a library of 30
+darks, reads lights / dark 0.43 over its 87 lights (every light is measured): the library ran
+7.2 degrees warmer than the night, good for a cosmetic correction only; its label reads
+`MySessionFolder-idx29`.
 
 ### The lights of another session: `--lights`
 
 The same question asked darks first: open the library (or a session with darks) and give the
 lights of another session with `--lights <folder>`, or choose them with **Choose lights...** on
-the window's Lights tab. The folder is a session, whose `lights\` is taken, or a folder with the
-lights in it. Those lights replace the open folder's own in the whole run: the session row
-`lights` names them and says they were chosen by you, check 1 compares the darks' settings with
-theirs, check 2, the lights table and `darkscheck-lights.csv` describe them, and the `lights`
-row of `INDEX` says what dark they are like; the darks' index and label are the open folder's
-and do not change. The figures are the ones the same lights give from the folder's own
-`lights\`: the library with the Veil lights reads the 0.43 above, on the same 3933 pixels. A
-lights folder that does not exist or holds no frame is refused with `ERROR` before anything is
-decoded, and `--out` cannot point inside it. A folder with lights and no darks still needs its
-partner, whichever lights it is given. In the window the choice holds for the open folder only:
-it is not kept between runs and is dropped when you open another folder.
+the window's **Match with lights** tab. The folder is a session, whose `lights\` is taken, or a
+folder with the lights in it. Those lights replace the open folder's own in the whole run: the
+session row `lights` names them and says they were chosen by you, check 1 compares the darks'
+settings with theirs, check 2, the lights table and `darkscheck-lights.csv` describe them, and
+the `lights` row of `INDEX` says what dark they are like; the darks' index and label are the
+open folder's and do not change. The figures are the ones the same lights give from the
+folder's own `lights\`: the library of the example above, given those 87 lights, reads the same
+0.43, on the same 3933 pixels. A lights folder that does not exist or holds no frame is refused
+with `ERROR` before anything is decoded, and `--out` cannot point inside it. A folder with
+lights and no darks still needs its partner, whichever lights it is given.
 
 ### FITS frames
 
 A FITS file does not carry the black level (a FITS converted by Siril keeps the camera's
-pedestal, 150 on the D3300), so for FITS frames the black is the median of the first bias when
+pedestal), so for FITS frames the black is the median of the first bias when
 there are biases, otherwise of the first dark; the `=== DARKS` line says where it comes from. Nor
 does it carry the white: the saturation of a FITS is read at the file's own white (65535 at 16
 bits), so a 12-bit camera that saturates at 4095 inside a 16-bit FITS does not show as
@@ -491,10 +476,10 @@ session folder, or a folder inside it, is refused with `ERROR` before the analys
 
 ### Only the metadata: `--inventory`
 
-Reads the metadata without decoding the pixels: under three seconds for the 82 raws of Smida.
+Reads the metadata without decoding the pixels: under three seconds for a session of 82 raws.
 
 ```
-=== SESSION: E:\Photografie\Astro\Milkyway-Core\2026-08-12-Smida ===
+=== SESSION: D:\Astro\MySessionFolder ===
     darks              : darks\ (20 frames .NEF)
     biases             : biases\ (30 frames .NEF)
     lights             : lights\ (32 frames .NEF)
@@ -584,7 +569,7 @@ tabs' names.
 The top bar holds four settings: `THREADS`, how many frames are read at the same time (empty =
 half the cores); `MAX FRAMES`, how many frames of a group are held in memory (60 by default;
 every light is measured); `SIGNAL / ISO STOP`, how many times the signal grows at every ISO stop,
-so that every frame is worked out at ISO 400 (2 = it doubles at every stop, the D3300's); and
+so that every frame is worked out at ISO 400 (2 = it doubles at every stop); and
 `DEGREES / DOUBLING`, by how many degrees more the dark current doubles, from which the report's
 degrees are worked out (6). The four are read when a folder is opened, and when a choice of
 lights or partner analyses it again, and are remembered between starts in `%LOCALAPPDATA%\DarksCheck\settings.json` (the partner and the chosen lights are not:
@@ -597,10 +582,8 @@ per doubling.
 the session folder, which is refused, as are the partner's and the chosen lights' folder, so
 choose a folder outside them.
 **About** (F1) shows the version, the licence and the six third-party components the program
-ships, LibRaw's three libraries listed apart from it, with where their licence texts are. It is
-never taller than the screen it opens on: on a screen too low for it, such as a 1080-line screen
-at 125 % or more or a 1366x768 laptop, its cards scroll (the wheel, or the arrows, Page Up, Page
-Down, Home and End) and the Close button stays in view.
+ships, LibRaw's three libraries listed apart from it, with where their licence texts are. On a
+screen too low for it, its cards scroll and the Close button stays in view.
 
 ## Logs
 
@@ -610,29 +593,25 @@ attach the whole `log` folder: it holds what is needed to see what happened.
 **Where it is.** In a folder named `log` beside the program: `log\darkscheck.log` beside
 `darkscheck.exe`, `log\DarksCheck.Wpf.log` beside `DarksCheck.Wpf.exe`. When that folder cannot
 be written (a program under Program Files, a read-only drive), the log goes to
-`%LOCALAPPDATA%\DarksCheck\log` instead, and its first line says so. Past 1 MiB (1,048,576 bytes,
-so a file ends one line past that) a file is left and the next one is started
-(`darkscheck_01.log`, `darkscheck_02.log`, ...); the five most recent files are kept and the older
-ones deleted, so the folder holds about 5 MiB per program at most: an analysis of a night like
-Smida (20 darks, 30 biases and 32 lights, against a library of 30 darks) writes about 200 KB, so
-the log keeps some twenty-five of them. Two windows open at the same time write into the same
-file, each line marked with its process. The analysis writes nothing into the session folder or
-the library; keep the program itself outside them, since its log is written beside it.
+`%LOCALAPPDATA%\DarksCheck\log` instead, and its first line says so. Past 1 MiB a file is left
+and the next one is started (`darkscheck_01.log`, `darkscheck_02.log`, ...); the five most recent
+files are kept and the older ones deleted, so the folder holds about 5 MiB per program at most:
+an analysis of a session of 20 darks, 30 biases and 32 lights, against a library of 30 darks,
+writes about 200 KB, so the log keeps some twenty-five of them. Two windows open at the same
+time write into the same file, each line marked with its process. The analysis writes nothing
+into the session folder or the library; keep the program itself outside them, since its log is
+written beside it.
 
-**What is in it.** One line per event, numbers with a point: at the start the version, the command
-line, the Windows and .NET versions and the folders; each folder opened, with its frame counts;
-every file read, with its size and what its header or the camera says (camera, lens, focal length,
-exposure, ISO, time), and for a raw libraw's own figures; every frame decoded, with the time it
-took and the memory the program held after it; for each run its options, its outcome and the time
-each stage took; the figures behind every verdict: each dark's, bias's and light's figures, the
-masters, the noise curve, the warming, the maps' regions, the six verdicts, the index, the lights
-and the partner; every file it writes for you; in the window, the folder opened, each run's end, the dialogs
-and the buttons pressed; every error with its technical details, those the program works around
-without a word included (not a run you stopped yourself, nor what the window drops while it
-closes); the first time LibRaw cannot be loaded, which of the Visual C++ runtime's four DLLs
-Windows cannot load, or that it loads all four; at the end the exit code and the time taken.
-The log's own words are English whatever `--lang` says; an error's or a refusal's message appears as you saw it, so in Romanian under
-`--lang ro`. It holds the paths of your files and the figures measured on them, not their pixels.
+**What is in it.** One line per event: at the start the version, the command line, the Windows
+and .NET versions and the folders; each folder opened, with its frame counts; every file read,
+with what its header or the camera says; every frame decoded, with the time it took; each run's
+options, outcome and the time each stage took; the figures behind every verdict; every file it
+writes for you; in the window, the dialogs and the buttons pressed; every error with its
+technical details; the first time LibRaw cannot be loaded, which of the Visual C++ runtime's
+DLLs Windows cannot load; at the end the exit code and the time taken. The log's own words are
+English whatever `--lang` says; an error's or a refusal's message appears as you saw it, so in
+Romanian under `--lang ro`. It holds the paths of your files and the figures measured on them,
+not their pixels.
 
 **How much.** The environment variable `DARKSCHECK_LOG` sets the level: `off`, `fatal`, `error`,
 `warn`, `info`, `debug` (the default) or `trace`, which adds every header card of each FITS frame
@@ -642,7 +621,27 @@ from that window; for the window started from a shortcut or from Astro Darkroom,
 `setx DARKSCHECK_LOG trace` (or in Windows' environment variables) and start the program, or
 Astro Darkroom, again.
 
-## Building
+## Licence
+
+DarksCheck is free software, under the GNU General Public License version 3 or, at your option,
+any later version: see [LICENSE](LICENSE). What the programs ship from others is listed, each
+with its licence and why it is compatible, in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+The whole text of each of those licences is in the Astro Darkroom suite's notices, where About
+points: `THIRD-PARTY-NOTICES.txt` in the suite's folder, beside the programs, and
+[../AstroDarkroom/THIRD-PARTY-NOTICES.md](../AstroDarkroom/THIRD-PARTY-NOTICES.md) in this
+repository.
+
+## For developers
+
+The rules of the work are in `CLAUDE.md` and `.claude/rules/kit/process.md`; the behaviour, with
+IDs, in `docs/requirements.md`; the decisions in `docs/decisions/`; how the code works, area by
+area, in `docs/design/`; the figures measured on the real sessions in `docs/validation.md`; the
+history of the versions in `CHANGELOG.md`. The analysis the tool grew out of, its Python scripts
+and their report, is in `prototype/` and `docs/validation/`. The raw and FITS readers are copied
+from LightsCheck, which copied them from FlatCheck. This file is the user documentation; the
+comments in the code do not repeat it.
+
+### Building
 
 Windows 10 or 11 (x64) and the .NET 9 SDK, 9.0.318 or a later 9.0.3xx (`global.json`); the
 projects target .NET 8, which that SDK builds. From this folder:
@@ -675,24 +674,3 @@ beside the executable and must stay there: an executable copied alone cannot rea
 error then names the runtime too, since the loader's own error never does: it names
 `libraw.dll`, or says only `Dll was not found.`, whatever is missing. The log keeps that error,
 and its runtime line says whether the four runtime DLLs load.
-
-## For developers
-
-The rules of the work are in `CLAUDE.md` and `.claude/rules/kit/process.md`; the behaviour, with
-IDs, in `docs/requirements.md`; the decisions in `docs/decisions/`; how the code works, area by
-area, in `docs/design/`; the figures measured on the real sessions in `docs/validation.md`; the
-history of the versions in `CHANGELOG.md`. The analysis the tool grew out of, the Python scripts
-and the report on the Smida session of 2026-08-12 and the library of 2026-10-10, is in
-`prototype/` and `docs/validation/2026-08-12-smida/`. This file is the user documentation; the
-comments in the code do not repeat it.
-
-## Licence
-
-DarksCheck is free software, under the GNU General Public License version 3 or, at your option,
-any later version: see [LICENSE](LICENSE). Its raw and FITS readers are copied from LightsCheck,
-which copied them from FlatCheck. What the programs ship from others is listed, each with its
-licence and why it is compatible, in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). The whole
-text of each of those licences is in the Astro Darkroom suite's notices, where About points:
-`THIRD-PARTY-NOTICES.txt` in the suite's folder, beside the programs, and
-[../AstroDarkroom/THIRD-PARTY-NOTICES.md](../AstroDarkroom/THIRD-PARTY-NOTICES.md) in this
-repository.

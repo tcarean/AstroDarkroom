@@ -140,10 +140,11 @@ or varies a kit rule names it.
 - **Licence headers.** Every `.cs` file starts with the GPL notice, `.xaml` files do not;
   `LicenseHeaderTests` fails otherwise, and its project list is explicit, so adding a project
   is a decision (ADR 0024).
-- **User documentation lives in `README.md`, and only there.** Code comments explain why the
-  code is the way it is; the README explains how to use the tool, in English, quoting the
-  English interface (ADR 0041); `docs/` explains what it does and how, for whoever maintains it
-  (ADR 0025).
+- **User documentation lives in `README.md` and in the window's manual in the suite's wiki.**
+  Code comments explain why the code is the way it is; the README explains how to use the tool,
+  in English, quoting the English interface (ADR 0041), and links the manual, which a change to
+  the window updates too (ADR 0050); `docs/` explains what it does and how, for whoever
+  maintains it (ADR 0025).
 
 ## Workflow
 
