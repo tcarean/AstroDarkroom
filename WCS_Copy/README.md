@@ -5,7 +5,7 @@ Siril, then stretch, denoise or export it elsewhere and lose the astrometric hea
 way; CopyWcs puts the WCS cards of the solved file back into the processed one, so that the
 annotation, the catalogue overlays and the mosaic tools find the sky again. It copies the
 cards byte for byte, adds one `HISTORY` line, and leaves the image data of the destination
-exactly as it was. It is a small tool for the author's own stacks; it reads no pixel and
+exactly as it was. It is a small tool: it reads no pixel and
 needs no other program.
 
 It is free software under the GNU General Public License v3 or later; see `LICENSE`.

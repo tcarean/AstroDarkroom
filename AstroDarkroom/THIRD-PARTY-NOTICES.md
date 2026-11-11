@@ -1321,6 +1321,6 @@ runtime, are two files beside this one, which the launcher's publish copies unch
 
 The `Microsoft.WindowsDesktop.App` runtime pack, WPF, carries the same MIT licence, word for word,
 and no notices file of its own; WPF's repository keeps one, at the tag of each runtime version:
-<https://github.com/dotnet/wpf/blob/v8.0.33/THIRD-PARTY-NOTICES.TXT> for 8.0.33. The runtime's
+<https://github.com/dotnet/wpf/blob/v8.0.34/THIRD-PARTY-NOTICES.TXT> for 8.0.34. The runtime's
 version is in each program's `.runtimeconfig.json`.
 MIT is permissive and compatible with the GPLv3.
