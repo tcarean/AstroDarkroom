@@ -164,18 +164,22 @@ public class LanguageTests
     {
         string romanianSummary = Prerequisites.Summary;
         string[] romanian = Prerequisites.Details.ToArray();
-        Assert.StartsWith("Uneltele citesc folderul unei sesiuni Siril", romanianSummary, StringComparison.Ordinal);
+        Assert.StartsWith("Trei unelte citesc folderul unei sesiuni Siril", romanianSummary, StringComparison.Ordinal);
         Assert.Equal(4, romanian.Length);
+        Assert.Contains("din orice program", romanian[0], StringComparison.Ordinal);
         Assert.StartsWith("Siril 1.4.4 sau mai nou instalat", romanian[1], StringComparison.Ordinal);
+        Assert.Contains("Celelalte unelte merg fara Siril", romanian[1], StringComparison.Ordinal);
         Assert.StartsWith("Runtime-ul Microsoft Visual C++ v14 (x64)", romanian[2], StringComparison.Ordinal);
         Assert.StartsWith("Pentru FlatCheck: profilele de obiective Adobe", romanian[3], StringComparison.Ordinal);
 
         using IDisposable scope = Ui.Use(UiLanguage.English);
         string englishSummary = Prerequisites.Summary;
         string[] english = Prerequisites.Details.ToArray();
-        Assert.StartsWith("The tools read a Siril session folder", englishSummary, StringComparison.Ordinal);
+        Assert.StartsWith("Three tools read a Siril session folder", englishSummary, StringComparison.Ordinal);
         Assert.Equal(4, english.Length);
+        Assert.Contains("from any program", english[0], StringComparison.Ordinal);
         Assert.StartsWith("Siril 1.4.4 or newer installed", english[1], StringComparison.Ordinal);
+        Assert.Contains("The other tools run without Siril", english[1], StringComparison.Ordinal);
         Assert.StartsWith("Microsoft's Visual C++ v14 runtime (x64)", english[2], StringComparison.Ordinal);
         Assert.StartsWith("For FlatCheck: Adobe's lens profiles", english[3], StringComparison.Ordinal);
 
@@ -197,7 +201,11 @@ public class LanguageTests
             Assert.DoesNotContain("optional", whole, StringComparison.OrdinalIgnoreCase);
         }
 
-        Assert.Contains("Siril 1.4.4", romanianSummary, StringComparison.Ordinal);
-        Assert.Contains("Siril 1.4.4", englishSummary, StringComparison.Ordinal);
+        // The summary names the one tool that needs Siril (ADR 0024).
+        foreach (string summary in new[] { romanianSummary, englishSummary })
+        {
+            Assert.Contains("Siril 1.4.4", summary, StringComparison.Ordinal);
+            Assert.Contains("FlatCheck", summary, StringComparison.Ordinal);
+        }
     }
 }

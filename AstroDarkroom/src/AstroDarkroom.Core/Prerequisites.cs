@@ -21,18 +21,22 @@ namespace AstroDarkroom.Core;
 
 /// <summary>
 /// What the suite needs on the machine, told to the user before the tools are opened (R-009,
-/// ADR 0007): a Siril session folder, Siril 1.4.4 or newer installed, Microsoft's Visual C++
-/// runtime for the tools that read camera raw files and, for FlatCheck, Adobe's lens profiles, to
-/// install before its first run (ADR 0023). The launcher checks the runtime only (<see cref="VcRuntime"/>, R-018, ADR 0016);
-/// the texts are here, in both languages, so a test guards them (ADR 0006), and the windows show
-/// them.
+/// ADR 0007): a Siril session folder, Siril 1.4.4 or newer installed, which FlatCheck alone needs
+/// (ADR 0024), Microsoft's Visual C++ runtime for the tools that read camera raw files and, for
+/// FlatCheck, Adobe's lens profiles, to install before its first run (ADR 0023). The launcher
+/// checks the runtime only (<see cref="VcRuntime"/>, R-018, ADR 0016); the texts are here, in both
+/// languages, so a test guards them (ADR 0006), and the windows show them.
 /// </summary>
 public static class Prerequisites
 {
-    /// <summary>One line for the main window, under its subtitle, in the current language.</summary>
+    /// <summary>
+    /// One line for the main window, under its subtitle, in the current language: which tools read
+    /// a session folder and the one that needs Siril. At most 568 px wide in Segoe UI 11, the
+    /// column it sits in (ADR 0024 has the measurement).
+    /// </summary>
     public static string Summary => T(
-        "The tools read a Siril session folder and expect Siril 1.4.4 or newer; details under About.",
-        "Uneltele citesc folderul unei sesiuni Siril si cer Siril 1.4.4 sau mai nou; detalii la Despre.");
+        "Three tools read a Siril session folder; only FlatCheck needs Siril 1.4.4 or newer. Details under About.",
+        "Trei unelte citesc folderul unei sesiuni Siril; doar FlatCheck cere Siril 1.4.4 sau mai nou. Detalii la Despre.");
 
     /// <summary>
     /// The four paragraphs of the "Despre" window, in the current language: the session folder,
@@ -43,18 +47,20 @@ public static class Prerequisites
     [
         T("A Siril session folder: the folder of one night with lights/, darks/, flats/ and biases/ as "
           + "Siril lays them out, and the results of its scripts in process/ (or masters/). DarksCheck, "
-          + "FlatCheck and LightsCheck open that folder; ImageVisualCompare, CopyWcs and AstroPhotoAnalyzer "
-          + "open the files exported from Siril.",
+          + "FlatCheck and LightsCheck open that folder. ImageVisualCompare and AstroPhotoAnalyzer open "
+          + "image files from any program, and CopyWcs a FITS that Siril has plate-solved.",
           "Folderul unei sesiuni Siril: folderul unei nopti cu lights/, darks/, flats/ si biases/ cum le "
           + "aseaza Siril, si rezultatele scripturilor lui in process/ (sau masters/). DarksCheck, FlatCheck "
-          + "si LightsCheck deschid acel folder; ImageVisualCompare, CopyWcs si AstroPhotoAnalyzer deschid "
-          + "fisierele exportate din Siril."),
-        T("Siril 1.4.4 or newer installed (siril.org): the masters and the stacks the tools check come "
-          + "from its scripts, and FlatCheck runs the preprocessing script through siril-cli from your "
-          + "installation.",
-          "Siril 1.4.4 sau mai nou instalat (siril.org): masterele si stack-urile pe care le verifica "
-          + "uneltele ies din scripturile lui, iar FlatCheck ruleaza scriptul de preprocesare prin siril-cli "
-          + "din instalarea ta."),
+          + "si LightsCheck deschid acel folder. ImageVisualCompare si AstroPhotoAnalyzer deschid fisiere "
+          + "imagine din orice program, iar CopyWcs un FITS caruia Siril i-a facut plate solve."),
+        T("Siril 1.4.4 or newer installed (siril.org), for FlatCheck: it checks the master flat that "
+          + "Siril's preprocessing script makes, and can run that script through siril-cli from your "
+          + "installation. The other tools run without Siril: DarksCheck and LightsCheck read the camera's "
+          + "own files from folders named the way Siril names them, which you can also make by hand.",
+          "Siril 1.4.4 sau mai nou instalat (siril.org), pentru FlatCheck: verifica master flat-ul facut de "
+          + "scriptul de preprocesare al lui Siril si poate rula acel script prin siril-cli din instalarea ta. "
+          + "Celelalte unelte merg fara Siril: DarksCheck si LightsCheck citesc fisierele aparatului din "
+          + "foldere numite cum le numeste Siril, pe care le poti face si de mana."),
         T("Microsoft's Visual C++ v14 runtime (x64), which most computers already have: DarksCheck, "
           + "FlatCheck and LightsCheck need it to read camera raw files, and the launcher says when it is "
           + "missing or too old. Its latest version installs from " + VcRuntime.DownloadUrl + ".",
