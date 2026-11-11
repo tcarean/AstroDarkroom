@@ -8,6 +8,9 @@ cards byte for byte, adds one `HISTORY` line, and leaves the image data of the d
 exactly as it was. It is a small tool: it reads no pixel and
 needs no other program.
 
+The window has a manual in plain words in the suite's wiki:
+<https://github.com/tcarean/AstroDarkroom/wiki/CopyWcs>.
+
 It is free software under the GNU General Public License v3 or later; see `LICENSE`.
 
 ## What is copied
@@ -20,15 +23,15 @@ It is free software under the GNU General Public License v3 or later; see `LICEN
   starting point: `FOCALLEN`, `XPIXSZ`, `YPIXSZ`, the binning, the pointing (`OBJCTRA`,
   `OBJCTDEC`, `RA`, `DEC`, `OBJECT`), the site, `DATE-OBS`, `INSTRUME`, `TELESCOP`.
 
-Only the keys present in the source are copied. On a Siril 1.4.4 solve of a DSLR stack that
-is 72 cards: 21 WCS keys, 40 SIP coefficients and 11 optical keys (`docs/validation.md`).
+Only the keys present in the source are copied. A Siril 1.4.4 solve of a stack, for example, is
+72 cards: 21 WCS keys, 40 SIP coefficients and 11 optical keys.
 
 **The destination's old plate solve is dropped.** When the destination already holds a plate
 solve, one another program made for example, its plate-solve keys that the source does not have
 are removed before the copy: a `CD` matrix beside Siril's `PC` and `CDELT`, a `CROTA`, a SIP
 coefficient of a higher degree. Siril 1.4.4 reads a `CD` matrix in place of `PC` and `CDELT`
 when a file holds both, so a `CD` left behind would hide the copied solution from the very
-program the copy is checked in (ADR 0011). The optical keys are never removed, and nothing is
+program the copy is checked in. The optical keys are never removed, and nothing is
 removed when the source has no `CTYPE1`. `--dry-run` and the window's Preview name the keys
 that would be dropped under the cards, and a copy names them before its closing lines.
 
@@ -37,13 +40,11 @@ refuses to copy when they differ, because the solution would point at the wrong 
 `--force` copies anyway, for the case you know is right.
 
 **A mirrored destination is refused.** When the destination holds a plate solve of its own and
-it is the mirror image of the source's (the determinant of its scale and turn, read `CD` first
-as Siril reads it, has the opposite sign, both solves naming RA first), its pixels were mirrored
-or flipped after the source was solved, and a copied solution would point the wrong way: the
-copy is refused, a dry run too, unless `--force` (ADR 0012). The SyQon CLI's output is such an
-image: it stores the rows top-down and writes a flipped `CD` matrix for them, so Siril already
-shows it right. `--force` is also for the rare destination whose own plate solve was left
-mirrored after its pixels were flipped back.
+it is the mirror image of the source's, its pixels were mirrored or flipped after the source was
+solved, and a copied solution would point the wrong way: the copy is refused, a dry run too,
+unless `--force`. The SyQon CLI's output is such an image: it stores the rows top-down and writes
+a flipped `CD` matrix for them, so Siril already shows it right. `--force` is also for the rare
+destination whose own plate solve was left mirrored after its pixels were flipped back.
 
 **Check the result by eye.** The mirror check sees a flip only when whatever flipped the pixels
 flipped the destination's own plate solve with them, as Siril and the SyQon CLI do. A program
@@ -97,7 +98,7 @@ Under each file box the window shows what it read from the header (`Source: 5601
 plate-solved`, `Destination: 5601 x 3692`); after a copy the destination reads `already
 plate-solved`.
 
-The window computes nothing of its own: Preview lists exactly the cards `copywcs --dry-run`
+The window does what the console does: Preview lists exactly the cards `copywcs --dry-run`
 would print, Copy writes exactly the bytes the console writes, and a refusal or a warning is
 shown with the console's words (a refused copy writes nothing). The band at the top shows the
 version, the copyright and one sentence on what the tool does; its **About** button (or F1)
@@ -122,11 +123,9 @@ problem, attach the whole `log` folder: it holds what is needed to see what happ
 **Where it is.** In a folder named `log` beside the program: `log\copywcs.log` beside
 `copywcs.exe`, `log\CopyWcs.Wpf.log` beside `CopyWcs.Wpf.exe`. When that folder cannot be
 written (a program under Program Files, a read-only drive), the log goes to
-`%LOCALAPPDATA%\CopyWcs\log` instead, and its first line says so. Past 1 MiB (1,048,576 bytes,
-so a file ends one line past that) a file is left and the next one is started
-(`copywcs_01.log`, `copywcs_02.log`, ...); the five most recent files are kept and the older ones
-deleted, so the folder holds about 5 MiB per program at most. Two windows open at the same time
-write into the same file, each line marked with its process.
+`%LOCALAPPDATA%\CopyWcs\log` instead, and its first line says so. Past 1 MiB a file is left and
+the next one is started (`copywcs_01.log`, `copywcs_02.log`, ...); the five most recent files are
+kept and the older ones deleted, so the folder holds about 5 MiB per program at most.
 
 **What is in it.** One line per event, numbers with a point: at the start the version, the
 command line, the Windows and .NET versions and the folders; every file read, with its size and
@@ -171,8 +170,7 @@ dotnet test CopyWcs.sln -c Release
 
 The console is `src/CopyWcs.Cli/bin/Release/net8.0/copywcs.exe`, the window
 `src/CopyWcs.Wpf/bin/Release/net8.0-windows/CopyWcs.Wpf.exe`, with `LICENSE` beside it. The
-development process (requirements with IDs, decisions, the gate) is described in `CLAUDE.md`
-and `docs/`.
+requirements, the decisions and the working rules are in `docs/` and `CLAUDE.md`.
 
 ## Third-party components
 
