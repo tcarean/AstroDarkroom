@@ -75,7 +75,8 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
 - `Prerequisites` holds what the suite needs on the machine, as texts only (R-009, ADR 0007):
   `Summary`, one line for the main window, and `Details`, four paragraphs for the about
   window (the Siril session folder, Siril 1.4.4 or newer, the Visual C++ runtime with
-  `VcRuntime.DownloadUrl`, the optional Adobe lens profiles for FlatCheck), each a pair picked
+  `VcRuntime.DownloadUrl`, Adobe's lens profiles to install before FlatCheck's first run, ADR
+  0023), each a pair picked
   at each read. Of these, only the runtime is checked, by `VcRuntime` and the window.
 - `VcRuntime` is Microsoft's Visual C++ v14 runtime (x64) that LibRaw's DLLs import and the
   suite does not ship (R-018, ADR 0016): `Files`, its four DLLs as the import tables of

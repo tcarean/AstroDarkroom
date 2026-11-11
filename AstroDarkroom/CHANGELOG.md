@@ -8,6 +8,10 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 ### Changed
 
+- "Despre" no longer calls Adobe's lens profiles optional (R-009, ADR 0023): its requirements
+  ask for them before FlatCheck's first run, name the free Adobe DNG Converter first, say that
+  without them FlatCheck compares the vignetting only with lensfun's less reliable profiles, and
+  point at the steps in FlatCheck's manual in the wiki.
 - The launcher's main window shows the copyright, `Copyright (C) 2026 Tudor Carean`, at the
   left of its bottom bar, where the folder it runs from and the release's date were (R-019,
   ADR 0018); the folder is still in the log, the date in "Despre", with the components'
