@@ -73,8 +73,9 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   holds the warranty paragraph, a pair picked at each read, and the licence URL for the about
   window.
 - `Prerequisites` holds what the suite needs on the machine, as texts only (R-009, ADR 0007):
-  `Summary`, one line for the main window, and `Details`, four paragraphs for the about
-  window (the Siril session folder, Siril 1.4.4 or newer, the Visual C++ runtime with
+  `Summary`, one line for the main window, measured to fit the top bar's column (ADR 0024), and
+  `Details`, four paragraphs for the about window (the Siril session folder, Siril 1.4.4 or
+  newer for FlatCheck, the Visual C++ runtime with
   `VcRuntime.DownloadUrl`, Adobe's lens profiles to install before FlatCheck's first run, ADR
   0023), each a pair picked
   at each read. Of these, only the runtime is checked, by `VcRuntime` and the window.

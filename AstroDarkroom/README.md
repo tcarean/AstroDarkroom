@@ -56,13 +56,15 @@ when that is missing or too old:
 
 - **A Siril session folder**: the folder of one night with `lights/`, `darks/`, `flats/` and
   `biases/` as Siril lays them out, and the results of its scripts in `process/` (or `masters/`,
-  depending on the script). DarksCheck, FlatCheck and LightsCheck open that folder;
-  ImageVisualCompare, CopyWcs and AstroPhotoAnalyzer open the files exported from Siril. Each
-  tool's README says exactly what the tool looks for in it.
-- **Siril 1.4.4 or newer, installed** (<https://siril.org>): the masters and the stacks the
-  tools check come out of its scripts, and FlatCheck runs the preprocessing script through
+  depending on the script). DarksCheck, FlatCheck and LightsCheck open that folder.
+  ImageVisualCompare and AstroPhotoAnalyzer open image files from any program, and CopyWcs a
+  FITS that Siril has plate-solved. Each tool's README says exactly what the tool looks for.
+- **Siril 1.4.4 or newer, installed** (<https://siril.org>), for FlatCheck: it checks the
+  master flat that Siril's preprocessing script makes, and can run that script through
   `siril-cli.exe` from your installation (with a private copy of your settings, which it never
-  touches). The tools' figures were measured on 1.4.4.
+  touches). The tools' figures were measured on 1.4.4. The other tools run without Siril:
+  DarksCheck and LightsCheck read the camera's own files from folders named the way Siril names
+  them, which you can also make by hand.
 - **Microsoft's Visual C++ v14 runtime (x64)**, which most computers already have; Windows
   lists it as "Microsoft Visual C++ v14 Redistributable (x64)", or, when it is older, "Microsoft
   Visual C++ 2015-2022 Redistributable (x64)", "2015-2019", "2017" or "2015" (the last two are

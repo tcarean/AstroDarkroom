@@ -8,6 +8,10 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 ### Changed
 
+- The launcher says that FlatCheck alone needs Siril (R-009, ADR 0024): the line under the
+  subtitle reads "Three tools read a Siril session folder; only FlatCheck needs Siril 1.4.4 or
+  newer.", and "Despre" says that the other tools run without Siril and that ImageVisualCompare
+  and AstroPhotoAnalyzer open image files from any program.
 - "Despre" no longer calls Adobe's lens profiles optional (R-009, ADR 0023): its requirements
   ask for them before FlatCheck's first run, name the free Adobe DNG Converter first, say that
   without them FlatCheck compares the vignetting only with lensfun's less reliable profiles, and
