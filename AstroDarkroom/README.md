@@ -71,11 +71,14 @@ when that is missing or too old:
   cannot read raw files (FITS still works), and the launcher shows a warning with Microsoft's
   download of the latest version, <https://aka.ms/vc14/vc_redist.x64.exe>; the warning goes when
   you come back to the launcher after installing it.
-- **Optional, for FlatCheck: Adobe's lens profiles** (`.lcp`), which the free Adobe DNG
-  Converter, Camera Raw with Photoshop, Lightroom Classic and Lightroom install. Without them,
-  FlatCheck uses the lensfun database it ships in its `lensfun/` folder; with them, the synthetic
-  flat and the vignetting comparison also have Adobe's profile of your lens. The front page and
-  FlatCheck's README list the folders FlatCheck reads them from.
+- **For FlatCheck: Adobe's lens profiles** (`.lcp`), to install before its first run; the free
+  Adobe DNG Converter, Camera Raw with Photoshop, Lightroom Classic and Lightroom install them.
+  Without them, FlatCheck's check of the vignetting rests on the lensfun database it ships in its
+  `lensfun/` folder alone, which is less reliable; with them, the synthetic flat and the
+  vignetting comparison have Adobe's own profile of your lens. FlatCheck's manual in the wiki has
+  the steps,
+  <https://github.com/tcarean/AstroDarkroom/wiki/FlatCheck#installing-adobes-lens-profiles>; the
+  front page and FlatCheck's README list the folders FlatCheck reads them from.
 
 ## Download
 
