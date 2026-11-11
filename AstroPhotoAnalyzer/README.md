@@ -1,11 +1,11 @@
 # AstroPhotoAnalyzer
 
 A print-readiness check for a finished astrophoto. Open the stretched image you would send to
-print, a TIFF, PNG or FITS as it comes out of Siril, and it tells you, in the order the decisions
-are made, how to send it: the file format, whether the background survives the paper's black,
-the colour cast and the gradients, the largest print size the real detail supports from the
-distance it will be seen at, and how much denoise the print version needs. Every recommendation
-comes with the figure it measured and the threshold it judged it by.
+print, a TIFF, PNG or FITS, for example as it comes out of Siril, and it tells you, in the order
+the decisions are made, how to send it: the file format, whether the background survives the
+paper's black, the colour cast and the gradients, the largest print size the real detail supports
+from the distance it will be seen at, and how much denoise the print version needs. Every
+recommendation comes with the figure it measured and the threshold it judged it by.
 
 It measures and recommends; the export itself is made cleanly from Siril. Besides its report and
 its log (see "Logs") it writes a file only when you ask for it: from the window's **Curves
@@ -13,7 +13,7 @@ Editing** tab, a new FITS with a suggested contrast curve applied; from its **Co
 tab, a new FITS or 16-bit TIFF with the colours the paper cannot reproduce fitted to it. The
 image you open is never modified.
 
-There are two applications over one core, so both give the same figures: the window,
+There are two applications, and both give the same figures: the window,
 `AstroPhotoAnalyzer.Wpf.exe`, with a dark theme, and the console, `AstroPhotoAnalyzer.exe`, which
 prints the report as text. Both speak English, or Romanian with `--lang ro`; the words change,
 the figures do not.
@@ -38,20 +38,19 @@ the figures do not.
 
 ## Getting the programs
 
-The window comes with Astro Darkroom, the suite of this repository's five tools, one zip with
-the .NET 8 runtime inside; the repository's front page, [`../README.md`](../README.md), says where
-to download it and how to build it from a checkout. The console is not in the suite: its runtime
-and the windows' carry DLLs with the same names and different contents, so they cannot share one
-folder. Build it from this folder, as "Building" below shows.
+The window comes with Astro Darkroom, the suite this repository publishes, one zip with the .NET 8
+runtime inside; the repository's front page, [`../README.md`](../README.md), says where to
+download it and how to build it from a checkout. The console is not in the suite; build it from
+this folder, as "Building" below shows.
 
 ## The window
 
 ```bash
-AstroPhotoAnalyzer.Wpf.exe "E:\Astro\image.tif"
+AstroPhotoAnalyzer.Wpf.exe "D:\Astro\MyImage.tif"
 ```
 
 ```bash
-AstroPhotoAnalyzer.Wpf.exe --lang ro "E:\Astro\image.tif"
+AstroPhotoAnalyzer.Wpf.exe --lang ro "D:\Astro\MyImage.tif"
 ```
 
 The window opens maximized. An image given on the command line is analysed at once; without
@@ -95,8 +94,8 @@ over its surroundings, so the grain of a stretched sky is not counted as one; fa
 left out with it, and the resolution is the bright stars'.
 
 **On the right, seven tabs.** Most figures have a line under them saying what they measure and,
-where one applies, the threshold they are judged by. A screen reader such as Narrator reaches
-what each tab shows, not only the tabs' names.
+where one applies, the threshold they are judged by. A screen reader such as Narrator reads what
+each tab shows.
 
 | Tab | What it shows |
 | --- | --- |
@@ -144,11 +143,9 @@ under them. Browse them with **< Back** and **Next >**, or with the Left and Rig
 
 The curves are contrast curves: they do not move the dust or the sky, they spread the classes
 above them, taking the peaks towards 0.92 of the scale. Their points come from the classes of the
-**Tones** tab, on either of its two paths: the dust and the sky as there, then the upper part of
-the band and of the bright clouds and the median of the peaks (on the sky path, of the nebula,
-the bright nebula and the peaks); the tab names the path, and the points carry the classes'
-names, the same as on the map. A sky too dark for paper is not lifted with a curve: lift it at
-the stretch, as the **Tones** tab recommends, then come back. When the peaks are already at or
+**Tones** tab: the dust and the sky, then the brighter classes above them; each point carries its
+class's name, the same as on the map. A sky too dark for paper is not lifted with a curve: lift it
+at the stretch, as the **Tones** tab recommends, then come back. When the peaks are already at or
 over 0.92 of the scale, no curve is suggested, since these curves lower no point and the image is
 already at the ceiling; the tab says so in red, as it does when a class the curves need is empty.
 
@@ -170,11 +167,9 @@ Two buttons under the image:
   input's format. From a FITS it keeps every card of the header (WCS, exposure, instrument) and the
   data's encoding, and adds `HISTORY` lines with the suggestion and its points; from a PNG, TIFF or
   JPEG it writes a 32-bit float FITS, without the source's ICC profile. A WCS given in the "Sky
-  coordinates (WCS) from a FITS" field serves the analysis only and is not written. The orientation
-  is Siril's: a FITS is read with the file's first row at the bottom, as Siril shows it whatever its
-  `ROWORDER` says; the new FITS keeps a FITS input's own row order, and from a PNG, TIFF or JPEG it
-  is written from the bottom up with `ROWORDER = 'BOTTOM-UP'`, so that Siril shows the new file
-  exactly as it was analysed. The input image is never modified, and saving over it is refused.
+  coordinates (WCS) from a FITS" field serves the analysis only and is not written. The new file
+  shows in Siril the same way up as the image you analysed. The input image is never modified, and
+  saving over it is refused.
 
 ### Colours for paper
 
@@ -287,9 +282,8 @@ background and the paper, 3. the background colour and the frame's edges, 4. the
 recommendation a mark, `-` for OK, `!` for a caution, `!!` for a problem, with a `because:` line
 under it that gives the figure and the threshold. The appendices A to F follow, with the tables
 behind the decisions: tones, the background simulation, export, resolution and size, the
-background colour, and the parameters as used. The verdict and the first section on the
-reference image, `de_printat.png`, a 23 MP Milky Way frame analysed with the defaults (exit code
-2):
+background colour, and the parameters as used. The verdict and the first section on a test
+image, a 23 MP Milky Way frame analysed with the defaults (exit code 2):
 
 ```
 VERDICT: CAUTION
@@ -316,8 +310,8 @@ It measures on patches of 32 x 32 pixels, each read as the L\* of its mean lumin
 and single pixels do not count, and sorts them into five classes on the image as it is, on one of
 two paths. The report says which path it took and why, and gives each class's share.
 
-- **The band path**, on a plate-solved FITS (a WCS with `CTYPE` `RA---TAN` and `CD`, `PC` with
-  `CDELT`, or `CDELT` with `CROTA2`; SIP terms are ignored) or with `--wcs`. The band of the
+- **The band path**, on a plate-solved FITS (a WCS with a TAN projection, in any of the usual
+  FITS forms; its distortion terms, SIP, are ignored) or with `--wcs`. The band of the
   Milky Way is galactic latitude |b| under 10 degrees, and the sky is modelled from the patches
   outside it. A patch is **dust** when it lies under the band's local level (a median over
   about 480 px) or under the modelled sky by 4 times the sky's noise, that is, darker than the
@@ -325,20 +319,20 @@ two paths. The report says which path it took and why, and gives each class's sh
   level; a **peak** when it is among the brightest 0.1 % of the patches; **band** for the rest
   of the band, and outside it for a patch 8 times the noise over the modelled sky; **sky** for
   the rest outside the band. The sky's noise is the same figure on both paths, measured on the
-  32 px patches, so the depth follows the stretch (about 4.5 L\* on the reference frame at a
+  32 px patches, so the depth follows the stretch (about 4.5 L\* on a test image at a
   background of 0.17, 3 L\* at 0.10). The path needs the
   band and the sky outside it to hold at least 10 % of the patches each, and a frame spanning at
   least 20 degrees of galactic latitude, the band's width: it is made for wide Milky Way frames,
   where the band is a strip with sky beside it.
 - **The sky path**, without a WCS, or on a frame without the band, wholly inside it, or too
-  narrow for the band to be more than a gradient (a deep-sky frame such as the Veil, which spans
-  11 degrees of latitude). The classes are relative to the sky modelled from all the patches (the
-  median of each cell), with thresholds taken from the image: **nebula** more than 3 sigma of
-  the sky's noise over the model, **dust** as much under it, **bright nebula** over the Otsu
-  threshold of the nebula, **peaks** as above. The sky's noise is measured on the 32 px patches,
-  so it follows the stretch, not the denoising. On a Milky Way frame without a WCS this finds
-  the Great Rift and the Pipe to within a few tenths of an L\* of the band path. The report
-  gives the thresholds in L\*.
+  narrow for the band to be more than a gradient (a deep-sky frame spanning under 20 degrees of
+  galactic latitude). The classes are relative to the sky modelled from all the patches (the
+  median of each cell), with thresholds taken from the image: **nebula** more than 3 times the
+  sky's noise over the model, **dust** as much under it, **bright nebula** over the level that
+  best splits the nebula's tones in two, **peaks** as above. The sky's noise is measured on the
+  32 px patches, so it follows the stretch, not the denoising. On a Milky Way test image without
+  a WCS, this path found the dark clouds to within a few tenths of an L\* of the band path. The
+  report gives the thresholds in L\*.
 
 On either path the verdict measures the same way. The **sky** is the median of the sky patches.
 The **dust** is the darkest extended area: the 25th percentile of the dust patches when the dust
@@ -376,9 +370,6 @@ Two cautions on reading it:
   with black point compensation squeezes the shadows onto paper black instead, so "prints pure
   black" is then the pessimistic reading.
 
-The other known limits, each with what was measured, are in
-[`docs/design/known-limitations.md`](docs/design/known-limitations.md).
-
 ## How the colour is judged
 
 The third decision, the background colour and the frame's edges, compares the colour of the sky with
@@ -414,6 +405,24 @@ flagged:
 On a mono image there is no cast, and no region is coloured. Appendix E gives the sky's colour
 with its L\*, a\*, b\* and chroma, and the eight regions with their deltas.
 
+## Known limits
+
+Some limits you may meet on your own images:
+
+- A corner where the horizon is darker than the modelled sky counts as dust, on either path.
+  Without a WCS, a dark foreground or silhouette that covers more than 5 % of the frame becomes
+  the dust the verdict measures.
+- An object that fills the frame is taken as the sky: the verdict's sky is then the object's own
+  level. The report still says what it measured.
+- On the sky path, a patch that holds a bright star reads as nebula or bright nebula, so a frame
+  with stars shows speckles on the **Dust / sky map**. On a test image this moved the points of
+  the suggested curves by less than 1 L\*.
+- The JPEG figures are those of the tool's own JPEG encoder: another program's JPEG at quality
+  100 differs by tenths of a level.
+- On an 8-bit file the sky's colour is measured in whole levels, so its chroma can differ by up
+  to about 0.7 from that of the 16-bit version of the same image, and a cast near the threshold
+  of 3 can fall on either side of it.
+
 ## Logs
 
 Both programs keep a log of what they did, for the day something goes wrong. To report a problem,
@@ -423,29 +432,21 @@ attach the whole `log` folder: it holds what is needed to see what happened.
 `AstroPhotoAnalyzer.exe`, `log\AstroPhotoAnalyzer.Wpf.log` beside `AstroPhotoAnalyzer.Wpf.exe`.
 When that folder cannot be written (a program under Program Files, a read-only drive), the log
 goes to `%LOCALAPPDATA%\AstroPhotoAnalyzer\log` instead, beside the window's settings, and its
-first line says so. Past 1 MiB (1,048,576 bytes, so a file ends one line past that) a file is
-left and the next one is started (`AstroPhotoAnalyzer_01.log`, `AstroPhotoAnalyzer_02.log`, ...);
-the five most recent files are kept and the older ones deleted, so the folder holds about 5 MiB
-per program at most. An analysis of a 23 MP image writes about 25 KB in the console and about
-30 KB in the window, with its curves and its soft proof, so the log keeps some two hundred of
-them. Two windows open at the same time write into the same file, each line marked with its
-process. The log is written beside the program, wherever that is: keep the program outside your
-image folders.
+first line says so. Past 1 MiB a file is left and the next one is started
+(`AstroPhotoAnalyzer_01.log`, `AstroPhotoAnalyzer_02.log`, ...); the five most recent files are
+kept and the older ones deleted, so the folder holds about 5 MiB per program at most, some two
+hundred analyses of a 23 MP image. Two windows open at the same time write into the same file,
+each line marked with its process. The log is written beside the program, wherever that is: keep
+the program outside your image folders.
 
-**What is in it.** One line per event, numbers with a point: at the start the version, the
-command line, the Windows and .NET versions and the folders; every image read, with its size and
-what its file says (format, bit depth, compression, ICC profile, WCS), and for a FITS the keywords
-that decide how it is read; every ICC profile read, with its Dmax or why it cannot be used; for
-each analysis its parameters, every figure of every measurement, every recommendation with its
-"because:", the verdict and the time each stage took; the same for the suggested curves and the
-soft proof; every file the programs write for you, with its size; in the window, each run, the
-dialogs and the buttons pressed; every error with its technical details, and the problems the
-programs work around without a word (a profile or a settings file that cannot be read, a link
-that does not open), though not a temporary file that a failed save could not remove; at the end
-the exit code and the time taken. The log's own words are English
-whatever `--lang` says; an error's message, a refusal and a recommendation appear as you saw
-them, so in Romanian under `--lang ro`. It holds the paths of your files and the figures measured
-on them, not their pixels.
+**What is in it.** One line per event: at the start the version, the command line and the Windows
+and .NET versions; every image and ICC profile read; each analysis with its parameters, its
+figures, its recommendations and how long each stage took; every file written for you; in the
+window, the dialogs and the buttons pressed; every error, and every problem the programs work
+around without a word; at the end the exit code. The log's own words are English whatever `--lang`
+says; an error's message, a refusal and a recommendation appear as you saw them, so in Romanian
+under `--lang ro`. It holds the paths of your files and the figures measured on them, not their
+pixels.
 
 **How much.** The environment variable `APA_LOG` sets the level: `off`, `fatal`, `error`, `warn`,
 `info`, `debug` (the default) or `trace`, which adds every header card of each FITS read; `off`
@@ -465,10 +466,6 @@ dotnet build AstroPhotoAnalyzer.sln -c Release
 ```
 
 ```bash
-dotnet test AstroPhotoAnalyzer.sln -c Release --filter "Category!=Validation"
-```
-
-```bash
 dotnet build AstroPhotoAnalyzer/AstroPhotoAnalyzer.csproj -c Release
 ```
 
@@ -483,15 +480,6 @@ dotnet publish AstroPhotoAnalyzer/AstroPhotoAnalyzer.csproj -c Release -r win-x6
 dotnet publish AstroPhotoAnalyzer.Wpf/AstroPhotoAnalyzer.Wpf.csproj -c Release -r win-x64 --self-contained
 ```
 
-The release script publishes both at once, into `artifacts/X.Y.Z/console/` and
-`artifacts/X.Y.Z/wpf/`; with `-PublishOnly` it runs no check and changes no tracked file. The
-version passed names the folder and goes into its `release.json`; the version the programs show
-is `<Version>` in `Directory.Build.props`.
-
-```bash
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 1.0.0 -PublishOnly
-```
-
 ## For developers
 
 AstroPhotoAnalyzer follows the process of `ClaudeCodeStarterKit`, the folder beside it in this
@@ -504,9 +492,9 @@ repository, and is developed with Claude Code. What is where:
 - `docs/decisions/`: the decisions, one ADR each, with the alternatives rejected.
 - `docs/design/`: how the code works, area by area; the index is `docs/design/README.md`.
 - `docs/validation.md` and `docs/validation.json`: the figures measured on the reference images,
-  which stay out of git; the validation tests read them from
-  `E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer` (or the folder `APA_TESTDATA_LARGE`
-  names), and `AstroPhotoAnalyzer.Tests/testdata/manifest.json` holds their hashes.
+  which stay out of git; the validation tests read them from the folder that the environment
+  variable `APA_TESTDATA_LARGE` names, and `AstroPhotoAnalyzer.Tests/testdata/manifest.json` holds
+  their hashes.
 - `CHANGELOG.md`: the changes, version by version.
 
 The gate runs before every commit, through the git hooks and Claude Code's: the kit's shared
@@ -517,12 +505,23 @@ every warning as an error, and the tests except the validation ones, in about ha
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
 
+The tests alone, without the validation ones:
+
+```bash
+dotnet test AstroPhotoAnalyzer.sln -c Release --filter "Category!=Validation"
+```
+
 `scripts/`, `.claude/skills/`, `.claude/agents/` and `.claude/rules/kit/` are the kit's, the same
-bytes in every project, and change in the kit only. A release is cut on `main`, at the owner's
-word, with the `/release` skill (`scripts/release.ps1 -Version X.Y.Z`): it runs the gate, writes
-the version into `Directory.Build.props`, closes the CHANGELOG's section and publishes into
-`artifacts/X.Y.Z/`; the commit and the tag, `astrophotoanalyzer-vX.Y.Z`, stay the owner's. The
-other skills: `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`.
+bytes in every project, and change in the kit only. A release is cut on `main` with
+`scripts/release.ps1 -Version X.Y.Z` and tagged `astrophotoanalyzer-vX.Y.Z`; `CLAUDE.md` lists
+the rest. The script publishes both programs at once, into `artifacts/X.Y.Z/console/` and
+`artifacts/X.Y.Z/wpf/`; with `-PublishOnly` it runs no check and changes no tracked file. The
+version passed names the folder and goes into its `release.json`; the version the programs show
+is `<Version>` in `Directory.Build.props`.
+
+```bash
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 1.0.0 -PublishOnly
+```
 
 ## Licence
 
@@ -535,5 +534,5 @@ compatible with the GPL:
 | --- | --- | --- |
 | SixLabors.ImageSharp | reads TIFF, PNG and JPEG, and encodes the JPEGs and the 8-bit TIFF of the compression table | Six Labors Split License 1.0 (the Apache 2.0 terms for open-source software) |
 | Wacton.Unicolour | evaluates the tables of a printer ICC profile, for the paper's Dmax, for the out-of-gamut figure of the Curves Editing tab and for the Soft proof tab | MIT |
-| NLog and NLog.Targets.AtomicFile 6.2.2 | writing the diagnostic log (see "Logs"), two windows into one file | BSD-3-Clause |
+| NLog and NLog.Targets.AtomicFile | writing the diagnostic log (see "Logs") | BSD-3-Clause |
 | Lynds' Catalogue of Dark Nebulae (data, not code) | the catalogue of dust clouds (LDN, 1962) by which the clouds of a plate-solved FITS are recognized | published data (Lynds 1962, ApJS 7, 1), the ADC/NASA version of 1979 distributed by CDS/VizieR as VII/7A; citing the source is the only condition |
