@@ -1,7 +1,7 @@
 # 0020. The front page and the README name no test session and no camera
 
 Date: 2026-11-11
-Status: accepted 2026-11-11
+Status: accepted 2026-11-11; the front page's order superseded by 0021
 Supersedes: 0008 in part (the order of the front page's sections); 0009 in part (the README's sections How a release is made and Building); 0019 in part (the equipment it names)
 
 ## Context

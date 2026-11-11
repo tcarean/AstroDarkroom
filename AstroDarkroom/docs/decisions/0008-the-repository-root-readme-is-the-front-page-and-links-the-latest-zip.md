@@ -1,7 +1,7 @@
 # 0008. The repository's root README is its Bitbucket front page and links the latest suite zip
 
 Date: 2026-10-26
-Status: accepted 2026-10-26; the latest zip's row and its commit superseded by 0015; the order of the front page's sections superseded by 0020
+Status: accepted 2026-10-26; the latest zip's row and its commit superseded by 0015; the order of the front page's sections superseded by 0020; the repository's other folders superseded by 0021
 Supersedes: 0005 in part (the row's commit of README.md alone)
 
 ## Context
