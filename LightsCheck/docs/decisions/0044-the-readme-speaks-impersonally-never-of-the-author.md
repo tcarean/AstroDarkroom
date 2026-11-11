@@ -1,7 +1,7 @@
 # 0044. The README speaks impersonally, never of the author
 
 Date: 2026-11-11
-Status: accepted 2026-11-11
+Status: accepted 2026-11-11; the nights and the equipment it names superseded by 0045
 
 ## Context
 
