@@ -110,9 +110,10 @@ launcher and the .NET 8 runtime inside. No installer, and no .NET to install. Do
 
 **<https://github.com/tcarean/AstroDarkroom/releases/latest>**
 
-Unzip it into any folder and start `AstroDarkroom.exe`. FlatCheck needs Siril 1.4.4 or newer;
-the three tools that read camera raw files also need Microsoft's Visual C++ runtime, which most
-computers have and the launcher checks for: see [What the tools need](#what-the-tools-need).
+Unzip it into any folder and start `AstroDarkroom.exe`. FlatCheck needs Siril 1.4.4 or newer,
+and Adobe's free lens profiles, installed before its first run; the three tools that read camera
+raw files also need Microsoft's Visual C++ runtime, which most computers have and the launcher
+checks for: see [What the tools need](#what-the-tools-need).
 
 Before you unzip, check the hash. This command prints the zip's SHA-256, which must be the one on
 the release page, beside the zip and in the release's notes; otherwise the download broke or the
@@ -184,7 +185,7 @@ and `AstroDarkroom.exe` says so on its window, with Microsoft's download of the 
 <https://aka.ms/vc14/vc_redist.x64.exe>. Once it is installed, the warning goes when you come
 back to the launcher.
 
-### Optional, for FlatCheck: Adobe's lens profiles
+### For FlatCheck: Adobe's lens profiles
 
 FlatCheck compares the vignetting of a master flat with the lens's published profile, and its
 Synthetic tab builds a flat from that profile. It ships with one source of profiles, the lensfun
@@ -199,9 +200,14 @@ database (the `lensfun\` folder beside its executable). It also reads Adobe's le
 
 A file present in two of them is read once.
 
-Installing them is recommended but optional. Without them everything works, and the list of
-lenses holds the lensfun profiles only; with them, the vignetting check and the synthetic flat
-also have Adobe's profile of your lens. The Adobe programs that bring the profiles:
+Install them before you use FlatCheck for the first time. FlatCheck starts without them, but its
+check of the vignetting against the lens then rests on lensfun's profiles alone, measured by
+volunteers: on one lens in the tests, both were about a quarter of a stop darker than Adobe's,
+enough to turn a PERFECT flat into an ACCEPTABLE one. And a camera that names the lens only by a
+number, as a Nikon does, cannot tell FlatCheck which lens it was: FlatCheck then goes by the
+lens's range of focal lengths and its aperture alone. With Adobe's profiles, the vignetting check
+and the synthetic flat have Adobe's own measurement of your lens, which gives the verdict when
+the raw file names your lens. The Adobe programs that bring the profiles:
 
 | Program | Cost | Puts them where FlatCheck reads them |
 | --- | --- | --- |
@@ -210,8 +216,10 @@ also have Adobe's profile of your lens. The Adobe programs that bring the profil
 | Adobe Lightroom Classic, Adobe Lightroom | subscription | yes: each keeps its copy inside its own program folder, such as `C:\Program Files\Adobe\Adobe Lightroom Classic\Resources\LensProfiles\1.0`, which FlatCheck reads |
 
 The simplest way is the free Adobe DNG Converter: install it once and the profiles stay where
-FlatCheck finds them; you never need to run the converter itself. FlatCheck only reads the
-profiles; it neither copies nor redistributes them.
+FlatCheck finds them; you never need to run the converter itself. It needs no Adobe account, and
+the download is about 1.8 GB. The steps, and how to check that FlatCheck found the profiles, are
+in [FlatCheck's manual](https://github.com/tcarean/AstroDarkroom/wiki/FlatCheck#installing-adobes-lens-profiles).
+FlatCheck only reads the profiles; it neither copies nor redistributes them.
 
 ## For developers
 
