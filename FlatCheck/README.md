@@ -68,9 +68,15 @@ commands the script runs are under "Development".
 - **Siril 1.4.4 or newer.** FlatCheck reads what Siril's preprocessing scripts write, and
   `--histeq` mirrors Siril 1.4.4's display. The window's **Run in Siril** button starts your own
   `siril-cli.exe`.
-- **Adobe's lens profiles, optional.** The `.lcp` files that Adobe DNG Converter (free), Camera
-  Raw or Lightroom install. Without them, the lens list holds the lensfun profiles that ship with
-  FlatCheck. See mode 5.
+- **Adobe's lens profiles: install them before the first run.** The `.lcp` files that the free
+  Adobe DNG Converter, Camera Raw or Lightroom install. FlatCheck starts without them, but its
+  check of the vignetting against the lens then rests on the lensfun profiles that ship with it
+  alone, measured by volunteers: on one lens in the tests, both were about a quarter of a stop
+  darker than Adobe's, enough to turn a PERFECT flat into an ACCEPTABLE one. And a raw file that
+  names the lens only by a number, as a Nikon's does, is then matched by its focal range alone.
+  The window's manual has the steps:
+  <https://github.com/tcarean/AstroDarkroom/wiki/FlatCheck#installing-adobes-lens-profiles>. See
+  mode 5.
 - **Microsoft's Visual C++ v14 runtime (x64), to read camera raw files.** Most computers have it;
   Windows lists it as "Microsoft Visual C++ v14 Redistributable (x64)", or "2015-2022" on older
   installations. LibRaw, which reads the raw files, needs it, and neither FlatCheck nor Astro
