@@ -70,7 +70,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version
 `artifacts\1.0.0\` is the whole suite; copy it anywhere. Beside it, in `artifacts\`, are its zip,
 `AstroDarkroom-1.0.0-win-x64.zip`, and the zip's `.sha256`.
 
-On the author's computer, with the NuGet packages already downloaded and the projects already
+On the test computer, with the NuGet packages already downloaded and the projects already
 built, step 2 took 77 seconds and made a folder of 365 files and 160 MB, and a zip of 66 MB
 (measured 2026-10-27, with the six tools).
 
@@ -118,7 +118,7 @@ moves or deletes a frame; the few files some of them write on request are new fi
 originals. The sixth, CopyWcs, writes: it copies header cards from one FITS into another, in
 place or into a new file, and leaves the pixels as they were.
 
-The tools were built around the author's own equipment and validated on the author's sessions: a
+The tests and the validation were done with this equipment: a
 Nikon D3300 with a Samyang 135 mm f/2, a Nikkor 35 mm DX and a Tokina 11-20 mm, on a Sky-Watcher
 Star Adventurer GTi. Raws of other cameras are read too, through LibRaw, but every figure of their
 validation was measured on that kit.
