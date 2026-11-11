@@ -1,7 +1,7 @@
 # LightsCheck
 
 A quality check for the light frames of an astrophotography night, made for a DSLR on a star
-tracker and a Siril workflow (the author's Nikon D3300 with a Samyang 135 mm on a Star Adventurer
+tracker and a Siril workflow (tested with a Nikon D3300 and a Samyang 135 mm on a Star Adventurer
 GTi). It reads a Siril session folder, measures every frame and tells you which frames to leave
 out of the stack and why, how often and how far you dithered, how the mount drifted, how good the
 polar alignment was, and what to do differently next time. The frames are only read: nothing in
@@ -11,7 +11,7 @@ There are two programs over one core, and they give the same figures: the consol
 `lightscheck.exe`, and the window, `LightsCheck.Wpf.exe`. Both speak English, or Romanian with
 `--lang ro`.
 
-The figures are checked against two of the author's nights (`docs/validation.md`): the Veil
+The figures are checked against two test nights (`docs/validation.md`): the Veil
 Nebula on 2026-10-06, 87 frames at 135 mm, against the hand analysis the tool grew out of, and the
 Milky Way at Smida on 2026-08-12, 32 frames at 20 mm.
 
@@ -104,7 +104,7 @@ figures are the same in both languages.
 ### The whole night
 
 `lightscheck <session folder>` measures every frame, registers them all on the first and prints
-the report; the progress goes to stderr. On the author's computer, an Intel i7-4790K with the
+the report; the progress goes to stderr. On the test computer, an Intel i7-4790K with the
 default 4 threads, the 87 raws of 24 MP of the Veil night take about two minutes (123 s, measured
 2026-10-26). The report's sections:
 
