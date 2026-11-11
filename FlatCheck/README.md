@@ -33,7 +33,7 @@ file is the English one. Files that earlier versions wrote under Romanian names 
 `Rezultat testare.txt`) are no longer recognised: rename them to keep using them.
 
 FlatCheck measures and reports. It never changes a file you give it, and it never decides what a
-shape on a map is. It was built and validated on the author's equipment: a Nikon D3300 with a
+shape on a map is. The tests and the validation were done with this equipment: a Nikon D3300 with a
 Samyang 135 mm f/2, a Nikkor 35 mm f/1.8 DX and a Tokina 11-20 mm f/2.8. Raws of other cameras
 are read too, through LibRaw.
 
@@ -212,7 +212,7 @@ before you decide.
 
 Worth knowing before you act on it: the figure finds what is *compact*, but it also catches the
 edge of a large structure that is steeper than the window the local background is taken from.
-Measured on the author's two Nikkor 35 masters at f/2.8: on the ISO 400 one the extreme is a
+Measured on two Nikkor 35 masters at f/2.8: on the ISO 400 one the extreme is a
 vertical stripe along the left edge (-0.44 %), not a round spot, and on the ISO 800 one it sits in
 the top-right corner (+0.36 %), the same kind of thing. Both stay at a fifth of the threshold, so
 nothing lit up; but if you ever see the warning, check first whether the shape on the map is
@@ -262,7 +262,7 @@ residual scale, so under 0.03 stops PERFECT, under 0.14 GOOD, under 0.26 ACCEPTA
 REDO. **When the raw's lens ID or name found the lens and Adobe has a file for it, the Adobe
 profile gives the verdict**; the lensfun rows stay in the list, for comparison. Adobe measures each
 lens itself; lensfun's profiles come from volunteers, each with their own camera and diffuser: on
-the author's Tokina both lensfun entries came out deeper than any of the author's panel flats
+the test Tokina both lensfun entries came out deeper than any panel flat taken with it
 allows, so taking the nearest profile let a panel's own falloff pass as the lens's. When Adobe has
 the same lens under two names with the same figures (the Tokina AT-X 11-20 PRO DX and its
 re-release, the atx-i 11-20 CF), the file whose own lens ID is the raw's gives the verdict. When
@@ -289,7 +289,7 @@ sheets do not diffuse). Minus means the source fills the corners: the dome of th
 light, a reflection in the lens hood. More rotations do not help, because the excess turns with
 the camera or is symmetrised by the rotation.
 
-Measured on the author's library (D3300, `--raw` with the first raw of `flats/`; recorded on
+Measured on the test masters (D3300, `--raw` with the first raw of `flats/`; recorded on
 2026-09-18, re-measured on 2026-11-02 when the Adobe profile started to decide,
 `docs/validation.md`):
 
@@ -725,7 +725,7 @@ so harmful). On one master the two cannot be separated; the information is simpl
 second session with the same lens separates them: what comes back identical is the camera's.
 
 That is why a lens with genuinely non-radial vignetting shows up here as an "error" without being
-one. Measured on the author's library: a Nikkor 35 DX master has 4.00 % of corner spread, of which
+one. Measured on the test masters: a Nikkor 35 DX master has 4.00 % of corner spread, of which
 only ~1.3 % was the sky; the rest survived a 180-degree rotation, so it is fixed to the camera.
 
 The illumination centre's offset is **not** on this scale, and not a test: it appears under
@@ -969,14 +969,14 @@ On that same screen a **Run in Siril** button runs the script without opening Si
 `siril-cli.exe` from your installation on the session folder, with the script chosen from a list.
 The list is the one in Siril's own script menu (the `.ssf` files ticked in *Preferences › Scripts*,
 plus those in the script folders set there, read from `config.1.4.ini`), and the one proposed is
-**`OSC_Preprocessing_WithoutDark.ssf`**, from the scripts repository Siril downloads: the author's
-script, for a camera without darks. `OSC_Preprocessing.ssf` from the installation works as well: it
+**`OSC_Preprocessing_WithoutDark.ssf`**, from the scripts repository Siril downloads: the
+script for a camera without darks. `OSC_Preprocessing.ssf` from the installation works as well: it
 leaves the master in `masters/`, where the window looks too. The window brings no script with it and
 changes none; what runs is exactly the file Siril would run.
 
 Your Siril settings (`config.1.4.ini`) stay untouched. `siril-cli` rewrites its settings file at the
 end of every script, and a failed save can delete it: measured, in 5 to 10 per cent of the runs on
-the author's computer, and that is how all of Siril's settings were once lost. So the window gives
+the test computer, and that is how all of Siril's settings were once lost. So the window gives
 `siril-cli`, with `-i`, a copy of them in a temporary folder of the run (`%TEMP%\FlatCheck\siril-…`),
 deleted at the end; yours are only read. Siril works with the same settings, but nothing from the
 run flows back into them. Two visible consequences: Siril no longer starts in the last folder run
