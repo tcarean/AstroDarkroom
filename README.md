@@ -1,5 +1,107 @@
 # Astro Darkroom
 
+*Check every step of an astrophoto, from the frames of the night to the print.*
+
+## What is Astro Darkroom
+
+Astro Darkroom is a free set of Windows tools that check an astrophoto at every step, from the
+frames of the night to the print. It measures instead of guessing. Every verdict comes with the
+figure it measured and the limit it compared it with, so you see not only what is wrong, but by
+how much.
+
+- **Calibration frames.** Are your darks and flats good enough to calibrate your lights? Did
+  light leak in? Did the camera warm up? Does the flat remove the vignetting and nothing else?
+- **Light frames.** Which frames to leave out of the stack, and why: trailed stars, soft focus,
+  clouds. Did dew form on the lens? Did you dither enough? How well did the mount track?
+- **Processing.** Two versions of an image side by side, pixel by pixel, to see what a step
+  really changed and which version is better. And when a program drops the plate solve on the
+  way, you can put it back.
+- **Print.** What the paper will do to your image: whether the faint sky keeps its shades above
+  the paper's black, how large you can print, and a soft proof with the paper's own profile.
+
+The tools never change, move or delete the frames of your night.
+
+**Free and open source** (GPL v3 or later) · **Windows 10 and 11** · **No installer**: unzip and
+start · **English or Romanian**
+
+**[Download the latest version](https://github.com/tcarean/AstroDarkroom/releases/latest)**: one
+zip with the six tools, nothing to install. [Download](#download) below says how to check it and
+start it.
+
+## The tools
+
+![The Astro Darkroom launcher: one row for each of the six tools, with what it does, its version and an Open button](https://raw.githubusercontent.com/wiki/tcarean/AstroDarkroom/img/AstroDarkRoom/main.PNG)
+
+The launcher, `AstroDarkroom.exe`, lists the six tools in the order of a night's work and opens
+the one you pick ([its manual](https://github.com/tcarean/AstroDarkroom/wiki)).
+
+### [DarksCheck](https://github.com/tcarean/AstroDarkroom/wiki/DarksCheck): can you trust your darks?
+
+Do your darks match your lights? Did light leak in while you took them? Did the camera warm up
+during the series? DarksCheck reads the darks of a night, or a library of darks you keep for
+other nights, and answers in nine checks, each ending in a coloured verdict: light leaks,
+warming, noise, hot and dead pixels, and whether you took enough. It also sums up how warm the
+sensor was in one number, so you can pick matching darks from your library for another night.
+
+**[Read the DarksCheck manual](https://github.com/tcarean/AstroDarkroom/wiki/DarksCheck)**, with
+pictures.
+
+### [FlatCheck](https://github.com/tcarean/AstroDarkroom/wiki/FlatCheck): does your flat fix the vignetting, and nothing else?
+
+A flat should remove the dark corners and the dust shadows, and add nothing of its own.
+FlatCheck takes the master flat Siril made and checks that its shading is symmetric around the
+centre, as a lens's is, that its corners are as dark as the lens's published profile says, and
+that it really corrected your lights. It also tells you whether your flats were exposed right.
+No master flat yet? It runs Siril's script for you.
+
+**[Read the FlatCheck manual](https://github.com/tcarean/AstroDarkroom/wiki/FlatCheck)**, with
+pictures.
+
+### [LightsCheck](https://github.com/tcarean/AstroDarkroom/wiki/LightsCheck): which frames to keep, and what to change next time
+
+LightsCheck goes through every light frame of a night and lists the ones to leave out of the
+stack, each with its reason: trailed stars, soft focus, clouds. It tells you whether dew formed
+on the lens, whether your exposures were long enough, whether you dithered enough to avoid
+walking noise, and how well the mount tracked and was polar-aligned. It ends with what to change
+next time.
+
+**[Read the LightsCheck manual](https://github.com/tcarean/AstroDarkroom/wiki/LightsCheck)**, with
+pictures.
+
+### [ImageVisualCompare](https://github.com/tcarean/AstroDarkroom/wiki/ImageVisualCompare): which version is better?
+
+Drag a line across the image: version A on one side, version B on the other, always at the same
+zoom and in the same place. It is made for the questions of processing: did star removal leave
+marks, which background extraction is cleaner, which stretch keeps more of the faint dust. For
+the pixel under the mouse it shows the exact values in both images, so a difference too faint
+for the eye becomes a number you can read.
+
+**[Read the ImageVisualCompare manual](https://github.com/tcarean/AstroDarkroom/wiki/ImageVisualCompare)**,
+with pictures.
+
+### [CopyWcs](https://github.com/tcarean/AstroDarkroom/wiki/CopyWcs): give a processed image its plate solve back
+
+Some programs drop the plate solve, the part of the file that says where in the sky the image
+points, when they save a processed image. CopyWcs copies it back from the solved stack without
+touching a pixel, so that Siril can name the stars and nebulae on it again.
+
+**[Read the CopyWcs manual](https://github.com/tcarean/AstroDarkroom/wiki/CopyWcs)**, with
+pictures.
+
+### [AstroPhotoAnalyzer](https://github.com/tcarean/AstroDarkroom/wiki/AstroPhotoAnalyzer): what will the paper do to your image?
+
+A paper's black is never as deep as a screen's, and the faint sky of an astrophoto sits right
+where the paper runs out of shades. AstroPhotoAnalyzer checks whether your dark sky and dust
+clouds will keep their shades on paper, and how much to lift the background if not. It tells you
+how large you can print before the stars stop looking like points, and which file to send to the
+lab. With the paper's ICC profile it shows a soft proof: your image as that paper will print it.
+
+**[Read the AstroPhotoAnalyzer manual](https://github.com/tcarean/AstroDarkroom/wiki/AstroPhotoAnalyzer)**,
+with pictures.
+
+The limits behind the verdicts come from tests with one camera; raw files from other cameras are
+read too.
+
 ## Download
 
 The latest release of Astro Darkroom: one zip for Windows 10 or 11 (x64) with the six tools, the
@@ -8,10 +110,9 @@ launcher and the .NET 8 runtime inside. No installer, and no .NET to install. Do
 
 **<https://github.com/tcarean/AstroDarkroom/releases/latest>**
 
-Unzip it into any folder and start `AstroDarkroom.exe`. The tools work on the session folders
-Siril lays out and expect Siril 1.4.4 or newer; the three that read camera raw files also need
-Microsoft's Visual C++ runtime, which most computers have and the launcher checks for: see
-[What the tools need](#what-the-tools-need).
+Unzip it into any folder and start `AstroDarkroom.exe`. FlatCheck needs Siril 1.4.4 or newer;
+the three tools that read camera raw files also need Microsoft's Visual C++ runtime, which most
+computers have and the launcher checks for: see [What the tools need](#what-the-tools-need).
 
 Before you unzip, check the hash. This command prints the zip's SHA-256, which must be the one on
 the release page, beside the zip and in the release's notes; otherwise the download broke or the
@@ -24,109 +125,9 @@ certutil -hashfile AstroDarkroom-X.Y.Z-win-x64.zip SHA256
 The executables are not signed, so on a new computer Windows SmartScreen asks before the first
 start. Every earlier version is on the repository's Releases page, with its own zip and hash.
 
-## What Astro Darkroom is
-
-Astro Darkroom is a suite of six Windows tools for a wide-field or deep-sky astrophotography
-session processed in [Siril](https://siril.org), one step at a time: the darks, the flats, the
-lights, two versions of a processing side by side, the plate solve put back into the processed
-image, and the finished image before it goes to print. Five of them check: each measures and
-reports, every verdict with the number and the threshold behind it. None of the five modifies,
-moves or deletes a frame; the few files some of them write are new files beside the originals.
-The sixth, CopyWcs, writes: it copies header cards from one FITS into another, in place or into
-a new file, and leaves the pixels as they were.
-
-The thresholds come from tests with one camera; raws of other cameras are read too, through
-LibRaw.
-
-The launcher, `AstroDarkroom.exe`, is a small window with one row per tool, in the order of a
-session, each with its description, its version and a button that opens it; a tool whose
-executable is missing from the folder is shown disabled, with the missing file's name. **About**
-(F1) shows the suite's version and date, the licence and the version of every tool. The launcher
-keeps a log, `log\AstroDarkroom.log` beside it, in the same `log` folder as the tools' own logs:
-to report a problem, attach that folder (the launcher's `README.md`, "Logs").
-
-The launcher and the tools speak English or Romanian. The launcher's two language buttons switch
-every text at once, and the choice is remembered; a tool opened from the launcher starts in the
-launcher's language. Started on its own, a tool speaks English, or Romanian with `--lang ro`.
-
-Each tool has its own folder in this repository; its user guide is the folder's `README.md`. The
-windows of DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare and CopyWcs also have a manual,
-with pictures, in the suite's wiki: <https://github.com/tcarean/AstroDarkroom/wiki>.
-AstroPhotoAnalyzer has none yet.
-
-## The tools
-
-### DarksCheck: the darks
-
-Checks the dark frames of a night, or a library of darks. Open a Siril session folder (`darks/`
-required, `biases/` and `lights/` optional) or a folder of darks. It runs nine checks, in the
-order of its report: the frames and their settings, the lights against the darks, light leaks,
-the camera's warming, noise, hot pixels, fixed pattern, dead pixels, and how many darks are
-enough. It computes an index of how warm the sensor ran, on darks, on a library and on lights, so
-that a master from a library can be matched to a night; a night with lights and no darks is
-checked against a library you choose as its partner (**Choose partner...**). It reads camera raws
-(`.nef`, `.cr2`, `.cr3`, `.arw`, `.dng`, `.raf`) or FITS files.
-
-### FlatCheck: the flats
-
-A quantitative diagnostic of the flats of a photographic lens on a camera. Open a session folder:
-it finds the master flat Siril's preprocessing script wrote, `pp_flat_stacked.fit` in `process/`
-or `masters/`, and runs two tests at once. **Structure**: is the master radially symmetric, and
-does its vignetting match the lens's published profile. **End to end**: does the flat correct the
-night's calibrated lights, `pp_light_*.fit` in `process/`. The other tabs:
-
-- **Exposure**: whether a raw flat is exposed right.
-- **Histogram**: a frame as Siril's histogram-equalised view shows it; a picture, not a test.
-- **Synthetic**: writes a radial flat from the lens's Adobe or lensfun profile and compares the
-  master with it.
-- **Split**: splits the flats into 2 or 4 groups, runs Siril's script on each and compares the
-  groups' masters with the whole one.
-
-With no master in the folder yet, **Run in Siril** runs the preprocessing script on it through
-your own `siril-cli`, without opening Siril.
-
-### LightsCheck: the lights
-
-Checks the light frames of a night on a tracking mount. Open a Siril session folder (the raws in
-`lights/`, the biases in `biases/`, optional). It measures every frame (focus, elongation and
-trailing, sky level and noise, star count, satellite trails), registers the frames to measure the
-dithering (how often, how far, in which directions, where positions repeat), the drift and the
-polar alignment, and lists the frames to leave out of the stack, each with its reason, and what
-to do differently next time. It reads camera raws or FITS files.
-
-### ImageVisualCompare: two versions side by side
-
-A before/after slider for two versions of the same processing, such as before and after star
-removal, two background extractions or two stretches: image A left of a vertical line you drag,
-image B right of it, at the same zoom and pan, with the RGB of the pixel under the cursor read
-from both. It is made to show a difference of one or two levels in a dark field, where the eye
-cannot see it. It opens PNG and TIFF files (8 or 16 bits per channel, and 32-bit float TIFF) and
-FITS; two images of different sizes are compared on a common canvas after it asks. Everything on
-screen is dark, whatever the Windows theme.
-
-### CopyWcs: the plate solve, put back
-
-Copies the plate solve of one FITS file into another (its folder is `WCS_Copy`). You solve a
-stacked image in Siril, then stretch, denoise or export it and lose the astrometric header on
-the way; CopyWcs puts the WCS cards of the solved file back into the processed one, so that
-Siril's annotation and AstroPhotoAnalyzer's catalogue of dark nebulae find the sky again. Choose
-the solved file and the destination, preview the cards it would copy, then copy them into the
-destination in place or into a new file; the image data are left exactly as they were. It
-refuses two images of different sizes, or a destination whose own plate solve is the mirror
-image of the source's, unless you tell it to go on. It cannot see every flip, so check the
-annotation in Siril before trusting the result.
-
-### AstroPhotoAnalyzer: the finished image, before print
-
-A print-readiness diagnostic for a finished, stretched image: a TIFF, PNG or FITS as it comes out
-of Siril. It says, in the order the decisions are made, how to send it to print: the file format,
-whether the background survives the paper's black (from the medium's Dmax, or from the ICC
-profile of the paper on its printer), the colour cast and gradient, the largest print size the
-real detail supports, and how much denoise the print version needs. Each recommendation comes
-with its number and its threshold. With a plate-solved FITS (a WCS in its header) it finds the
-catalogued dark nebulae in the frame, by name, and judges the dust against the sky around them.
-Besides its report, it writes one file, and only when asked: from its **Curves** tab, a new FITS
-with a suggested contrast curve; the input is never touched.
+The launcher and the tools write their logs into a `log` folder beside them; to report a
+problem, attach that folder. The [launcher's manual](https://github.com/tcarean/AstroDarkroom/wiki)
+says more.
 
 ## What the tools need
 
@@ -160,11 +161,14 @@ files of Synthetic and Split when you press their button.
 
 ### Siril 1.4.4 or newer
 
-Install [Siril](https://siril.org/download/) 1.4.4 or newer. The masters and the stacks the tools
-check come out of its scripts, and the tools were built and measured against Siril 1.4.4.
-FlatCheck's **Run in Siril** starts `siril-cli.exe` from your installation (found through its
-entry in the registry, then in `C:\Program Files\Siril\bin`) with a script from Siril's own script
-menu; it proposes `OSC_Preprocessing_WithoutDark.ssf`, from the scripts repository Siril
+FlatCheck checks the master flat that Siril's preprocessing script makes, so it needs
+[Siril](https://siril.org/download/) 1.4.4 or newer, the version the tools were built and
+measured against. The other tools run without Siril: DarksCheck and LightsCheck read the camera's
+own files from folders named the way Siril names them, which you can also make by hand;
+ImageVisualCompare and AstroPhotoAnalyzer open image files from any program; CopyWcs needs a FITS
+that Siril has plate-solved. FlatCheck's **Run in Siril** starts `siril-cli.exe` from your
+installation (found through its entry in the registry, then in `C:\Program Files\Siril\bin`) with
+a script from Siril's own script menu; it proposes `OSC_Preprocessing_WithoutDark.ssf`, from the scripts repository Siril
 downloads. It gives `siril-cli` a private copy of your Siril settings, so your own
 `config.1.4.ini` is only read, never rewritten.
 
@@ -209,18 +213,10 @@ The simplest way is the free Adobe DNG Converter: install it once and the profil
 FlatCheck finds them; you never need to run the converter itself. FlatCheck only reads the
 profiles; it neither copies nor redistributes them.
 
-## Licence
-
-Every tool and the launcher are free software, under the GNU General Public License version 3 or
-(at your option) any later version: see the `LICENSE` file in each folder. What a tool ships from
-others is listed, with its licence, in the folder's `THIRD-PARTY-NOTICES.md`, where it has one;
-the zip holds all of it, each licence's whole text included, in `THIRD-PARTY-NOTICES.txt` beside
-`AstroDarkroom.exe`.
-
 ## For developers
 
-Each tool's folder also holds its sources and its tests, and in `docs/` its requirements, its
-decisions and its validation figures, all in English.
+Each tool has its own folder in this repository, with its `README.md`, its sources and its
+tests, and in `docs/` its requirements, its decisions and its validation figures, all in English.
 
 ### Build the suite from a checkout
 
@@ -301,15 +297,10 @@ folder, publishes that tool alone, its console included, into the tool's `artifa
 tool's folder, `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1` checks
 the format, makes a strict build and runs the tests.
 
-### Also in this repository
+## Licence
 
-Besides the six tools' folders and `AstroDarkroom` (the launcher and the suite's release):
-
-| Folder | What it is |
-| --- | --- |
-| `ClaudeCodeStarterKit` | the template and the development process the projects above follow: C#/.NET, maintained with Claude Code |
-| `SirilCleanup` | a PowerShell script that tidies a session folder after Siril: it moves what is no longer needed into `safe-to-delete` and deletes nothing |
-| `DitherCalculator` | a Python script: how long to hold a SynScan arrow for a wanted dither, on a Star Adventurer GTi |
-| `FocalLenghChecker` | a console tool that counts the Nikon raws of a folder per focal length |
-| `MindfulnessReminder` | a Windows tray reminder, not related to astrophotography |
-| `CodeMetrics`, `count_lines.py` | count the code files and lines of a folder |
+Every tool and the launcher are free software, under the GNU General Public License version 3 or
+(at your option) any later version: see the `LICENSE` file in each folder. What a tool ships from
+others is listed, with its licence, in the folder's `THIRD-PARTY-NOTICES.md`, where it has one;
+the zip holds all of it, each licence's whole text included, in `THIRD-PARTY-NOTICES.txt` beside
+`AstroDarkroom.exe`.
