@@ -392,7 +392,7 @@ The project follows the process of `ClaudeCodeStarterKit`, the folder beside thi
 maintained with Claude Code. Its rules are in `CLAUDE.md` and `.claude/rules/kit/process.md`;
 the behaviour, with the IDs the tests carry, in `docs/requirements.md`; the decisions in
 `docs/decisions/`; how the code works, area by area, in `docs/design/` (its `README.md` is the
-index); the figures measured on the author's files of one 23 MP frame, three exports and two
+index); the figures measured on the test files, one 23 MP frame, three exports and two
 FITS stacks, in `docs/validation.md`; the changes in `CHANGELOG.md`. How to use the tool is
 written here and nowhere else (ADR 0025).
 
