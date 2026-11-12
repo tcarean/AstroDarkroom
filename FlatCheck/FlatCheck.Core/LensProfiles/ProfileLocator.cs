@@ -243,6 +243,10 @@ namespace FlatCheck
                 }
             }
             var sources = new ProfileSources(adobeDirs, files, duplicates, lensfunDir, lfPresent, lfUnreadable, version, new LensCatalog(profiles, stubs), lf);
+            // The texts the lens search reads are built here, in the load (in the window, the
+            // background one of the opening), not at the first keystroke in the lens field
+            // (R-132, ADR 0099; the owner's choice).
+            sources.Catalog.PrepareSearch();
             if (Log.IsInfoEnabled)
                 Log.Info("profiles: adobe folders " + LogText.List(adobeDirs.Select(d => d + (Directory.Exists(d) ? "" : " (missing)")))
                          + " files=" + LogText.Int(files) + " duplicate=" + LogText.Int(duplicates)
