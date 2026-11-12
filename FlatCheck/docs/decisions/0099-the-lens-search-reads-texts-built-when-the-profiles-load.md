@@ -21,8 +21,8 @@ the least of three runs for each prefix of "samyang 135":
 The list itself was never the cost: it is virtualized, 8 row containers for 3799 rows, and its
 layout code did not change, so the two layout ranges differ only from one run to the next. Building
 one text per lens for the whole catalogue, in one pass over the profiles, took 8 to 13 ms. The
-number of lenses found was the same before and after for every prefix (3799, 3076, 423, 354,
-161, 161, 161, 161, 129, 7, 7).
+number of lenses found was the same before and after for the empty text and for each of the ten
+prefixes that do not end in a space (3799, then 3076, 423, 354, 161, 161, 161, 161, 129, 7, 7).
 
 The first proposal built the texts at the first search. The owner answered that they should be
 built when the application loads its data, where a progress line is shown anyway, so that the
@@ -56,5 +56,5 @@ builds them at its first search. The lenses found and their order do not change 
 The texts hold the aliases of the profiles the catalogue was given parsed, which are lensfun's;
 an Adobe file parsed later for its lens does not add its aliases to the search, as it did not
 before (`Search` never read the files parsed on demand). The console's `--lens` text and
-`--lenses` use the same search and lose the same half second. A catalogue costs one more array
+`--lenses` use the same search and are half a second faster too. A catalogue costs one more array
 of 3799 strings.

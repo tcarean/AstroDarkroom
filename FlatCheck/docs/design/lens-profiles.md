@@ -216,12 +216,12 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   known aliases), case-insensitive; empty text lists everything; `--source` restricts. That
   text is built once per lens, in one pass over the profiles (`ToLookup` by lens), into an
   array in the order of `Lenses`; `Search` scans the array and never the profile list, because
-  the window calls it at every keystroke of its lens field, on its own thread (R-132, ADR
+  the window calls it at every keystroke of its lens field, on the window's thread (R-132, ADR
   0099, with the timings: half a second a keystroke before, under a millisecond after).
   `ProfileLocator.Locate` builds the array before it returns (`PrepareSearch`), so the load
   pays the 8 to 13 ms and no search does; a catalogue made by hand builds it at its first
-  search (`SearchPrepared` says which). `Profiles` and `Lenses` never change after the
-  constructor, so the array cannot go stale.
+  search (`SearchPrepared` says which). `Profiles` is fixed by the constructor and `Lenses`
+  is built from it once, so the array cannot go stale.
 - **Nearest** profile (ADR 0029: nearest focal, then f-stop, then the farthest distance): the
   f-stop distance is measured in stops, `2·log2 f`. Reported as "profil folosit" beside
   "cerut".

@@ -568,8 +568,10 @@ public class LensCatalogTests
     {
         var profiles = new CountingProfiles(Catalog().Profiles);
         var c = new LensCatalog(profiles);
+        Assert.False(c.SearchPrepared);
         var first = c.Search("tokina 11-20");
         int walks = profiles.Walks;
+        Assert.True(c.SearchPrepared);          // a catalogue made by hand builds them at its first search
 
         Assert.Equal(first, c.Search("tokina 11-20"));
         Assert.Single(c.Search("Aspherical"));

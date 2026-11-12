@@ -29,8 +29,9 @@
 //   <Maker>/<Mount>/<Camera> (<Lens>) - RAW.lcp
 // so the catalogue keeps only these "stubs" for Adobe and parses a file only when someone asks
 // for its profiles (the chosen lens) or looks for a lens ID, and then only in the files of the
-// camera's mount. What is lost: the aliases do not enter the search until parsing. The parsed
-// files are remembered.
+// camera's mount. What is lost: an Adobe file's aliases never enter the search, which knows only
+// the aliases of the profiles the catalogue was given parsed (lensfun's). The parsed files are
+// remembered.
 
 using System;
 using System.Collections.Concurrent;
@@ -391,7 +392,7 @@ namespace FlatCheck
 
         /// <summary>
         /// Builds the texts <see cref="Search"/> reads, now instead of at the first search: a
-        /// pass over <see cref="Profiles"/> (13 ms on 3799 lenses and 18902 profiles). The
+        /// pass over <see cref="Profiles"/> (8 to 13 ms on 3799 lenses and 18902 profiles). The
         /// locator calls it while it loads the profiles, so no search pays for it (R-132). Safe
         /// to call again and from any thread.
         /// </summary>
@@ -399,7 +400,8 @@ namespace FlatCheck
 
         /// <summary>
         /// The lenses whose name, maker, mount or calibration contains ALL the words searched (and
-        /// the aliases, for the profiles already parsed), case-insensitively; an empty text gives
+        /// the aliases of the profiles in <see cref="Profiles"/>, never those of an Adobe file
+        /// parsed on demand), case-insensitively; an empty text gives
         /// them all. Optionally from one source only. The calibration is in the search so that
         /// "Nikkor 35mm full" picks one of the two lensfun entries of the same lens. It reads the
         /// texts built once per catalogue (<see cref="PrepareSearch"/>; the first search builds
