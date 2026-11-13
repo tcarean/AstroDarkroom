@@ -74,7 +74,9 @@ has none. Everything on screen is dark, whatever the system theme (ADR 0018).
   0028).
 - `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs. `docs/validation.md`
   + `.json` - figures on the real pair. `docs/design/` - the explanations, per area, read on
-  demand. `docs/plans/` - approved plans. `README.md` - the user documentation, English (ADR 0041).
+  demand. `docs/plans/` - approved plans. `docs/review/` - the whole-code review of 2026-11-13,
+  one list of findings fixed one entry per task (ADR 0051). `README.md` - the user
+  documentation, English (ADR 0041).
 - The process rules are the kit's, in `.claude/rules/kit/process.md`; this project's own are in
   this file. The reasons behind the process are in `GHID.md` in the kit folder
   `ClaudeCodeStarterKit` beside this project in the `photo` repository (for people, not loaded).
