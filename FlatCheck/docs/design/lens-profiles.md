@@ -178,8 +178,10 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   PowerShot G12 - RAW.lcp`) become camera-named stubs with the folder as maker and no mount.
   A file is parsed on `ProfilesOf(lens)` (cached, re-keyed to the stub's identity) and on
   `ByLensId(id, hint)`, which parses in parallel only the stubs whose mount or maker contains
-  the hint (the camera's first word). Aliases therefore enter `Search` only after a file was
-  parsed.
+  the hint (the camera's first word). The aliases `Search` knows are those of the profiles
+  the catalogue was given parsed, lensfun's; a file parsed later adds none. (Until 2026-11-12
+  this note said they entered `Search` once a file was parsed; `Search` never read the files
+  parsed on demand.)
 - **The folders** (`ProfileLocator`, ADR 0028 and ADR 0066): `DefaultAdobeDirectories` is the
   Camera Raw folder under ProgramData, the user's under `%APPDATA%`, then
   `AdobeAppDirectories(Program Files\Adobe)`, the `Resources\LensProfiles\1.0` of every
@@ -210,8 +212,16 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   when an Adobe file was found, and R-113's first sentence covers the case without one. In the
   window the load succeeded, so `ProfileCatalog` keeps it: a permission fixed afterwards needs
   a restart. `--profiles <dir>` replaces the whole list.
-- **Search**: every word of the text must appear in name + maker + mount (+ known
-  aliases), case-insensitive; empty text lists everything; `--source` restricts.
+- **Search**: every word of the text must appear in name + maker + mount + calibration (+
+  known aliases), case-insensitive; empty text lists everything; `--source` restricts. That
+  text is built once per lens, in one pass over the profiles (`ToLookup` by lens), into an
+  array in the order of `Lenses`; `Search` scans the array and never the profile list, because
+  the window calls it at every keystroke of its lens field, on the window's thread (R-132, ADR
+  0099, with the timings: half a second a keystroke before, under a millisecond after).
+  `ProfileLocator.Locate` builds the array before it returns (`PrepareSearch`), so the load
+  pays the 8 to 13 ms and no search does; a catalogue made by hand builds it at its first
+  search (`SearchPrepared` says which). `Profiles` is fixed by the constructor and `Lenses`
+  is built from it once, so the array cannot go stale.
 - **Nearest** profile (ADR 0029: nearest focal, then f-stop, then the farthest distance): the
   f-stop distance is measured in stops, `2·log2 f`. Reported as "profil folosit" beside
   "cerut".

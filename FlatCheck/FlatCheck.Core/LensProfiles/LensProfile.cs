@@ -29,8 +29,9 @@
 //   <Maker>/<Mount>/<Camera> (<Lens>) - RAW.lcp
 // so the catalogue keeps only these "stubs" for Adobe and parses a file only when someone asks
 // for its profiles (the chosen lens) or looks for a lens ID, and then only in the files of the
-// camera's mount. What is lost: the aliases do not enter the search until parsing. The parsed
-// files are remembered.
+// camera's mount. What is lost: an Adobe file's aliases never enter the search, which knows only
+// the aliases of the profiles the catalogue was given parsed (lensfun's). The parsed files are
+// remembered.
 
 using System;
 using System.Collections.Concurrent;
@@ -360,6 +361,15 @@ namespace FlatCheck
             _lenses = new Lazy<IReadOnlyList<LensChoice>>(() =>
                 Profiles.Select(p => p.Lens).Concat(AdobeFiles.Select(f => f.Lens)).Distinct()
                     .OrderBy(l => l.Source).ThenBy(l => l.Maker).ThenBy(l => l.Name).ThenBy(l => l.Mount).ToList());
+            _searchTexts = new Lazy<string[]>(() =>
+            {
+                // One pass over the profiles for all the lenses. A pass per lens, which Search
+                // made at every call until 2026-11-12, was 3799 x 18902 comparisons and half a
+                // second for each keystroke in the window's lens field (ADR 0099).
+                ILookup<LensChoice, LensProfile> byLens = Profiles.ToLookup(p => p.Lens);
+                return Lenses.Select(l => l.Name + " " + l.Maker + " " + l.Mount + " " + l.Calibration + " "
+                                        + string.Join(" ", byLens[l].SelectMany(p => p.Aliases).Distinct())).ToArray();
+            });
         }
 
         internal static readonly LensCatalog Empty = new LensCatalog(Array.Empty<LensProfile>());
@@ -371,11 +381,31 @@ namespace FlatCheck
 
         readonly Lazy<IReadOnlyList<LensChoice>> _lenses;
 
+        /// <summary>The text each lens is searched in, one per entry of <see cref="Lenses"/> and
+        /// in its order: name, maker, mount, calibration and the aliases of its profiles in
+        /// <see cref="Profiles"/>. Built once, since neither list changes.</summary>
+        readonly Lazy<string[]> _searchTexts;
+
+        /// <summary>Whether the texts <see cref="Search"/> reads are built already, so the next
+        /// search is only a scan of them.</summary>
+        internal bool SearchPrepared => _searchTexts.IsValueCreated;
+
+        /// <summary>
+        /// Builds the texts <see cref="Search"/> reads, now instead of at the first search: a
+        /// pass over <see cref="Profiles"/> (8 to 13 ms on 3799 lenses and 18902 profiles). The
+        /// locator calls it while it loads the profiles, so no search pays for it (R-132). Safe
+        /// to call again and from any thread.
+        /// </summary>
+        internal void PrepareSearch() => _ = _searchTexts.Value;
+
         /// <summary>
         /// The lenses whose name, maker, mount or calibration contains ALL the words searched (and
-        /// the aliases, for the profiles already parsed), case-insensitively; an empty text gives
+        /// the aliases of the profiles in <see cref="Profiles"/>, never those of an Adobe file
+        /// parsed on demand), case-insensitively; an empty text gives
         /// them all. Optionally from one source only. The calibration is in the search so that
-        /// "Nikkor 35mm full" picks one of the two lensfun entries of the same lens.
+        /// "Nikkor 35mm full" picks one of the two lensfun entries of the same lens. It reads the
+        /// texts built once per catalogue (<see cref="PrepareSearch"/>; the first search builds
+        /// them when nobody did), never the profile list: the window calls it at every keystroke.
         /// </summary>
         /// <param name="text">The words, separated by spaces; null or empty matches all.</param>
         /// <param name="source">The one source to search; null for both.</param>
@@ -383,14 +413,15 @@ namespace FlatCheck
         internal IReadOnlyList<LensChoice> Search(string text, ProfileSource? source = null)
         {
             string[] words = (text ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            IReadOnlyList<LensChoice> lenses = Lenses;
+            string[] texts = _searchTexts.Value;
             var hits = new List<LensChoice>();
-            foreach (LensChoice lens in Lenses)
+            for (int i = 0; i < lenses.Count; i++)
             {
-                if (source.HasValue && lens.Source != source.Value) continue;
-                string haystack = lens.Name + " " + lens.Maker + " " + lens.Mount + " " + lens.Calibration + " "
-                                + string.Join(" ", Profiles.Where(p => p.Lens == lens).SelectMany(p => p.Aliases).Distinct());
+                if (source.HasValue && lenses[i].Source != source.Value) continue;
+                string haystack = texts[i];
                 if (words.All(w => haystack.Contains(w, StringComparison.OrdinalIgnoreCase)))
-                    hits.Add(lens);
+                    hits.Add(lenses[i]);
             }
             return hits;
         }

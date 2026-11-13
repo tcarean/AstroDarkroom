@@ -232,6 +232,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- Typing in the Sintetic tab's lens field no longer freezes the window for half a second at
+  every keystroke (R-132, ADR 0099): the text each lens is searched in is built once, while the
+  profiles load, and a search takes under a millisecond on 3799 lenses. The same lenses are
+  found, in the same order; the console's `--lens` text and `--lenses` are half a second faster too.
 - The synthetic flat is written from the raster's last row to its first, so Siril shows it the
   way up it was built and the same way up as the lights it calibrates; a file with no
   `ROWORDER` to copy says `BOTTOM-UP` (R-130).

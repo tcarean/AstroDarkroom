@@ -542,6 +542,63 @@ public class LensCatalogTests
         return new LensCatalog(adobe.Concat(lf).ToList());
     }
 
+    /// <summary>A profile list that counts how many times it was walked (enumerated or read by
+    /// index), so a test can say a search did not walk it.</summary>
+    sealed class CountingProfiles : IReadOnlyList<LensProfile>
+    {
+        readonly IReadOnlyList<LensProfile> _inner;
+        internal int Walks;
+
+        internal CountingProfiles(IReadOnlyList<LensProfile> inner) => _inner = inner;
+
+        public int Count => _inner.Count;
+        public LensProfile this[int index] { get { Walks++; return _inner[index]; } }
+        public IEnumerator<LensProfile> GetEnumerator() { Walks++; return _inner.GetEnumerator(); }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    /// <summary>
+    /// A keystroke in the window's lens field is one search. It used to walk the whole profile
+    /// list once for every lens, to gather the lens's aliases: half a second a keystroke on a
+    /// real catalogue (3799 lenses, 18902 profiles, measured 2026-11-12). The texts are built
+    /// once; a search after that reads them only, and still finds a lens by its alias.
+    /// </summary>
+    [Fact]
+    public void R132_ASearchAfterTheFirstDoesNotWalkTheProfileList()
+    {
+        var profiles = new CountingProfiles(Catalog().Profiles);
+        var c = new LensCatalog(profiles);
+        Assert.False(c.SearchPrepared);
+        var first = c.Search("tokina 11-20");
+        int walks = profiles.Walks;
+        Assert.True(c.SearchPrepared);          // a catalogue made by hand builds them at its first search
+
+        Assert.Equal(first, c.Search("tokina 11-20"));
+        Assert.Single(c.Search("Aspherical"));
+        Assert.Equal(2, c.Search("11.0-20.0 mm").Count);       // found by the alias
+        Assert.Equal(2, c.Search("tokina 11-20", ProfileSource.Adobe).Count);
+        Assert.Equal(3, c.Search("").Count);
+        Assert.Equal(walks, profiles.Walks);
+    }
+
+    /// <summary>
+    /// The locator builds the search texts while it loads the profiles, so the first search in
+    /// the window pays nothing either (the owner's choice, ADR 0099); a catalogue made by hand
+    /// builds them at its first search.
+    /// </summary>
+    [Fact]
+    public void R132_TheLocatorBuildsTheSearchTextsWhileItLoads()
+    {
+        using var ws = new TempWorkspace();
+        Assert.True(LensProfileTestData.Sources(ws).Catalog.SearchPrepared);
+
+        var byHand = Catalog();
+        Assert.False(byHand.SearchPrepared);
+        byHand.PrepareSearch();
+        Assert.True(byHand.SearchPrepared);
+        Assert.Equal(3, byHand.Search("tokina 11-20").Count);
+    }
+
     [Fact]
     public void Search_MatchesEveryWordInNameMakerMountOrAlias_CaseInsensitively()
     {
