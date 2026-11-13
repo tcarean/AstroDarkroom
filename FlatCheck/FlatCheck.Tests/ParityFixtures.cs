@@ -59,6 +59,16 @@ internal static class ParityFixtures
             FitsTestData.BuildFits(Size, Size, rawCfa,
                 extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));
 
+        // Added 2026-11-13 (ADR 0107), not one of the cross-check's 39: a frame whose analysis
+        // raster is odd both ways (526 x 518 -> 263 x 259), so the centre column and the centre
+        // row are lines of pixels exactly between two sectors of the azimuthal asymmetry, the
+        // branch that counts them in both. A gradient along each axis, so the sectors differ.
+        // Its figures were never the prototype's and nothing else confirms them: the golden is
+        // a snapshot that shows the branch runs. The rule itself is pinned by the R131_* tests
+        // (the mirrors in StructureAnalyzerTests, the figure on two rasters in MetricsTests).
+        File.WriteAllBytes(Path.Combine(dir, "odd_raster.fit"),
+            FitsTestData.BuildFits(526, 518, (x, y) => FitsTestData.Radial(526, 518)(x, y) * (1 + 0.06 * x / 526.0) * (1 + 0.03 * y / 518.0)));
+
         // --- wider coverage, to exercise branches the golden scenarios miss ---
 
         // over-correction: background RISES toward the edges, so radPct goes negative

@@ -134,7 +134,9 @@ Accepted formats: FITS (`.fit`, `.fits`, `.fts`; BITPIX 8, 16, 32, -32 and -64; 
 colour cube, which is averaged over its planes) and camera raws (`.nef`, `.cr2`, `.cr3`, `.arw`,
 `.dng`, `.raf`, `.pef`), read undebayered through LibRaw, with the black and white levels the
 camera wrote. On a raw, `--expo` uses those exact levels instead of guessing them from the
-frame's maximum.
+frame's maximum. A FITS saved with compression (Siril's FITS compression, or `fpack`) is not read:
+every mode stops with a sentence that says so, and the file has to be saved again without
+compression.
 
 **ISO does not matter.** Change nothing for ISO. Every metric is a ratio
 (`log2(centre / corner)`, `(max - min) / mean`, `image / model`) and ISO is a scale factor, so it

@@ -713,6 +713,16 @@ namespace FlatCheck.Wpf
             T($"Nothing was written: the existing file was kept.\n{path}",
               $"Nu s-a scris nimic: fisierul existent a fost pastrat.\n{path}");
 
+        /// <summary>The line above the error when the comparison with the master could not be
+        /// made (R-135).</summary>
+        /// <param name="afterWrite">True when the comparison followed a write that succeeded,
+        /// so the line says the flat is on disk; false for the button alone.</param>
+        /// <returns>The line, ending in a colon; the error follows on the next line.</returns>
+        internal static string SyntheticCompareFailed(bool afterWrite) => afterWrite
+            ? T("The flat was written, but the comparison with the master failed:",
+                "Flatul a fost scris, dar comparatia cu masterul a esuat:")
+            : T("The comparison with the master failed:", "Comparatia cu masterul a esuat:");
+
         /// <summary>The refusal screen's title.</summary>
         /// <returns>The title.</returns>
         internal static string SyntheticRefusedTitle() => T("Cannot write the synthetic flat",

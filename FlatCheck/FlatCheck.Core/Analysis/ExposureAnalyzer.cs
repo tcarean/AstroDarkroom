@@ -50,6 +50,21 @@ namespace FlatCheck
         TooHigh,
     }
 
+    /// <summary>Where a level of the exposure scale came from, for the sentence that
+    /// refuses an impossible scale (R-041).</summary>
+    internal enum ScaleOrigin
+    {
+        /// <summary>Given on the command line: <c>--sat</c> for the white, <c>--black</c> for
+        /// the black.</summary>
+        Option,
+        /// <summary>Read from the file (a raw's own levels).</summary>
+        File,
+        /// <summary>The white guessed from the frame's brightest pixel.</summary>
+        Guess,
+        /// <summary>The black nobody gave: 0.</summary>
+        None,
+    }
+
     /// <summary>
     /// The ADU scale read FROM the file, when the file knows it: a camera raw carries exact
     /// white and black levels in its metadata. A FITS has no such thing - stacking and
@@ -255,6 +270,9 @@ namespace FlatCheck
         /// <see cref="ExposureResult.Preview"/>; nothing in the verdict touches it.
         /// </param>
         /// <returns>The measurements and the verdict; never null.</returns>
+        /// <exception cref="InvalidOperationException">The white level that results is not above
+        /// the black level that results, whichever came from an option, the file or the guess
+        /// (R-041): nothing can be measured on such a scale.</exception>
         internal static ExposureResult Analyze(Img data, double? satOverride, double? blackOverride,
                                                bool sky, ExposureScale fileScale = null,
                                                CfaPattern cfa = null, PreviewImage preview = null)
@@ -271,6 +289,15 @@ namespace FlatCheck
                         $"auto-detectat din max={mx:F0} (foloseste --sat/--black daca e gresit)");
             }
             double black = blackOverride ?? fileScale?.Black ?? 0.0;
+
+            // Checked here, after the precedence, and not only at the parse: the parse sees
+            // --sat against --black, never an option against the file's own level or against
+            // the guess. A range of zero or below gives percentages without meaning, and the
+            // sanity gate below would dress them up as "not a raw flat" or as a verdict (R-041).
+            if (!(white > black))
+                throw new InvalidOperationException(ExposureReport.ImpossibleScale(
+                    white, satOverride.HasValue ? ScaleOrigin.Option : fileScale != null ? ScaleOrigin.File : ScaleOrigin.Guess,
+                    black, blackOverride.HasValue ? ScaleOrigin.Option : fileScale != null ? ScaleOrigin.File : ScaleOrigin.None));
             double rng = white - black;
 
             // the 4 Bayer positions. The brightest channel clips first, so it is the limiting one.

@@ -443,6 +443,39 @@ public class WindowSmokeTests
         });
     }
 
+    /// <summary>
+    /// R-135 on the screen itself: the line of a comparison that failed is shown when no flat
+    /// was written in this session, so no panel of written figures is open above it. The first
+    /// version put the line inside that panel, and the failure was said nowhere (the branch
+    /// review of 2026-11-13).
+    /// </summary>
+    [Fact]
+    public async Task R135_AFailedComparisonIsShownWithNoWrittenFlatOnScreen()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = new MainViewModel();
+
+        await _sta.InvokeAsync(async () =>
+        {
+            await vm.OpenAsync(f.Root);
+            await vm.Synthetic.Pending;
+            File.WriteAllText(vm.Synthetic.Target, "left by an earlier session, and not a FITS");
+
+            await vm.Synthetic.CompareAsync();
+
+            Assert.False(vm.Synthetic.HasResult);
+            Assert.NotEmpty(vm.Synthetic.CompareError);
+            using var errors = new BindingErrors();
+            var view = new SyntheticView { DataContext = vm.Synthetic };
+            Render(view, name: "tab-synthetic-compare-failed");
+            // the line has two places, under the "saved" line of a written flat and on its own
+            // when nothing was written; exactly one of them is on screen
+            TextBlock line = Assert.Single(Descendants(view).OfType<TextBlock>(), t => t.Text == vm.Synthetic.CompareError && Shown(t));
+            Assert.True(line.ActualHeight > 0);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+        });
+    }
+
     /// <summary>Whether an element is on screen: it and every ancestor are visible. Its own
     /// size does not tell: a text inside a panel folded after the first layout keeps the size of
     /// that layout.</summary>

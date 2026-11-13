@@ -119,6 +119,21 @@ switchable scale. **The comparison follows the write by itself** (`RunAsync` cha
 banner) after a real write - not after a refused overwrite, whose old file may be another
 lens's, and not after a write error. The first cut needed a second click, and the screen
 after "Scrie" - depth table, no comparison - was reported as a bug. "Compara cu masterul"
-stays for a file written in an earlier session. The catalog is located once, in the
+stays for a file written in an earlier session. **The comparison on screen is the one of
+the figures above it** (R-135, the review's CR-006): `RunAsync` calls `ClearCompare` when it
+shows the new request's figures, before the overwrite question, so a "No" leaves the new
+lens's depth rows over nothing, never over the verdict, table and map of the lens written
+before (the view shows the block on `HasCompare` alone). `CompareAsync` catches its own
+failure: it clears the comparison, sets `CompareError` (`SessionMessages.
+SyntheticCompareFailed`, one wording after a write, one for the button) and returns, so
+`RunGuardedAsync` never puts its "The analysis failed" screen over a file that was written and
+the "saved" line stays; a cancellation still goes through. The line has two places in the view: right under the "saved" line, inside the written flat's
+panel, and below that panel when it is folded (`ShowsCompareErrorAlone`: a failure and no written
+flat on screen), since the button also compares a file of an earlier session. A failed
+comparison also takes the earlier comparison out of the report panel: `Report` goes back to the
+write's own text (`_writeReport`) while its figures are on screen, and to nothing otherwise. A
+new Write clears the line before anything else, so it never stays under a refusal. And the button alone, pressed over figures that were never written (after a
+"No", after a write error: `SavedTo` is not the target), calls `ClearWritten` first: it compares
+the file on disk, which those figures do not describe. The catalog is located once, in the
 background, on the first `Attach` (`Func<ProfileSources>` in the `MainViewModel`
-constructor for the tests). `SyntheticTabTests` and two smoke renders pin it.
+constructor for the tests). `SyntheticTabTests` and three smoke renders pin it.

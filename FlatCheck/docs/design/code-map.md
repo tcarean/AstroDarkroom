@@ -46,8 +46,9 @@ a library extraction and not a copy is ADR 0011.
     (`NAXISn` product times `|BITPIX| / 8`) and refuses a shorter one with the two byte counts
     ("data cut short"); the check runs for every HDU, the skipped ones too, and counts the data
     alone, so a last HDU without its padding to 2880 bytes is read (R-009). `LoadHeader` does
-    not check the data area, so this is the one refusal the two reads do not share: the header
-    of such a file is intact and the Sintetic tab can still use it. `LoadFull` fills the raster
+    not check the data area, so this is one of the refusals the two reads do not share: the header
+    of such a file is intact and the Sintetic tab can still use it. Another is the compressed
+    image of R-136: `LoadFull` refuses the table, `LoadHeader` answers on the empty primary HDU. `LoadFull` fills the raster
     with the file's first row LAST, whatever `ROWORDER` says: row 0 of every raster is the top of
     the frame as Siril shows it, the same as libraw's row 0 of a raw (R-130, ADR 0094), so no
     report, map or picture converts a row.

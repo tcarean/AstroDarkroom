@@ -546,6 +546,69 @@ public class ExposureAnalyzerTests
         Assert.Equal("--sat=4095", r.ScaleSource);
     }
 
+    /// <summary>
+    /// R-041: a white level at or below the black level is refused, whichever side came from
+    /// an option and whichever from the file or the guess. Before, only --sat against --black
+    /// was checked, at the parse: "--sat 100" on a raw with black 150 made the range -50 and the
+    /// report said the file "does not look like a raw flat"; "--black 8192" on a 12-bit FITS
+    /// read a pixel at 2000 as 151 % and said TOO HIGH.
+    /// </summary>
+    [Theory]
+    [InlineData(100.0, null, true, "nivelul de alb (100, din --sat)", "nivelul de negru (150, din fisier)")]
+    [InlineData(null, 3827.0, true, "nivelul de alb (3827, din fisier)", "nivelul de negru (3827, din --black)")]
+    [InlineData(null, 8192.0, false, "nivelul de alb (4095, ghicit din cel mai luminos pixel)", "nivelul de negru (8192, din --black)")]
+    [InlineData(0.0, null, false, "nivelul de alb (0, din --sat)", "nivelul de negru (0, nedat)")]
+    public void R041_AWhiteAtOrBelowTheBlackIsRefused_WhicheverSideCameFromTheFile(double? sat, double? black, bool fromFile, string white, string blackText)
+    {
+        ExposureScale? scale = fromFile ? new ExposureScale(3827, 150, "libraw (exact)") : null;
+
+        var e = Assert.Throws<InvalidOperationException>(() => ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, 2000), sat, black, false, scale));
+
+        Assert.StartsWith("--expo: ", e.Message);
+        Assert.Contains(white, e.Message);
+        Assert.Contains(blackText, e.Message);
+        Assert.Contains("trebuie sa fie peste", e.Message);
+        Assert.EndsWith("Da --sat si --black cu valorile corecte.", e.Message);
+    }
+
+    /// <summary>R-041: the English sentence, whole, and a white just above the black still
+    /// measured.</summary>
+    [Fact]
+    public void R041_TheRefusalInEnglish_AndAWhiteJustAboveTheBlackIsMeasured()
+    {
+        var scale = new ExposureScale(3827, 150, "libraw (exact)");
+        using (Ui.Use(UiLanguage.English))
+        {
+            var e = Assert.Throws<InvalidOperationException>(() => ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, 2000), 100, null, false, scale));
+            Assert.Equal("--expo: the white level (100, from --sat) must be above the black level (150, from the file). "
+                       + "Give --sat and --black with the right values.", e.Message);
+        }
+
+        var r = ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, 2000), 151, null, false, scale);
+        Assert.Equal(151, r.White, 6);
+        Assert.Equal(150, r.Black, 6);
+    }
+
+    /// <summary>
+    /// R-041 from the console: the refusal is one line on stderr, exit 1, and no verdict is
+    /// printed. A 12-bit FITS (the white is guessed 4095) with --black 8192.
+    /// </summary>
+    [Fact]
+    public void R041_TheConsoleExitsOneWithTheSentenceAndNoVerdict()
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("flat12.fit", FitsTestData.BuildFits(64, 64, (x, y) => ((x & 1) == (y & 1) ? 2000 : 1300), bitpix: 16));
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+
+        int exit = FlatCheckCli.Run(new[] { path, "--expo", "--black", "8192" }, stdout, stderr);
+
+        Assert.Equal(1, exit);
+        Assert.Contains("--expo: nivelul de alb (4095, ghicit din cel mai luminos pixel) trebuie sa fie peste nivelul de negru (8192, din --black)", stderr.ToString());
+        Assert.DoesNotContain("VERDICT", stdout.ToString());
+        Assert.DoesNotContain("PREA SUS", stdout.ToString());
+    }
+
     [Fact]
     public void BlackOverridesTheFileScaleWithoutTouchingItsWhite()
     {
