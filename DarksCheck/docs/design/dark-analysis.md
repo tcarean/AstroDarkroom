@@ -367,7 +367,12 @@ count rows, which the Rezumat's card leaves to the Pixeli fierbinti tab. Check 9
 plain lines: `CurveRow` prints the last point of `NoiseVsN.Curve` beside what the frame's sigma
 gave to expect, `EnoughFrom` the frames needed, the limit in force first and the other limits'
 after it, and `EnoughVerdictText` the verdict, with the frames that could be left out
-(`Frames - FramesNeeded`) when there are any. Check 2 ends with
+(`Frames - FramesNeeded`) when there are any and no dark was skipped by the frame cap: `Frames`
+is `DarkSeriesAnalysis.Used`, the frames read, which above the cap are every k-th of the
+folder's, so the table's `(acum)` row and the frames needed speak of the frames read.
+`StackPercent` prints the stack's figure with one decimal, or two when one would print the limit
+for a figure on the other side of it, since the verdict and the ratings are decided on the
+unrounded figure. Check 2 ends with
 `index dark-uri` (`index partener` when the darks are the partner's), the darks' tag, and
 `index lights`, the lights' equivalent tag with the parenthesis INDEX's `lights` row also uses,
 both from `LightsLike` (`IndexFigures.TagFor` on `LightsIndex`; null, and no row, when it is

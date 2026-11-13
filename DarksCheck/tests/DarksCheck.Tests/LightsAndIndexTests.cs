@@ -1227,5 +1227,55 @@ public class LightsAndIndexTests
         ReportRow strictFrames = strict.Single(row => row.Label == "cu n cadre");
         Assert.Equal("putine", strictFrames.Table!.Rows[3][4]);
         Assert.Equal(0, strictFrames.Choice!.Selected);
+
+        // the same rows in English
+        using (Ui.Use(UiLanguage.English))
+        {
+            IReadOnlyList<ReportRow> en = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows;
+            Assert.Equal($"OK: 20 frames are enough: the master makes the stack of the 5 lights {noisier} noisier, under the limit of 10 %; {at10} would do, so up to {20 - at10} can be left out", en[^1].Value);
+            Assert.Equal($"{at10} frames for a stack at most 10 % noisier; {at5} for at most 5 %", en.Single(row => row.Label == "enough from").Value);
+            ReportRow enFrames = en.Single(row => row.Label == "with n frames");
+            Assert.Equal(["frames", "master's noise", "against now", "the stack is noisier by", "how it is"], enFrames.Table!.Header);
+            Assert.Equal("the stack may be noisier by at most:", enFrames.Choice!.Label);
+            Assert.EndsWith($"  [the stack is that of the 5 lights ({RunReport.F(st.LightNoise, 1)} ADU of noise each), without dithering; with dithering the master's noise spreads and hurts less]", enFrames.Value, StringComparison.Ordinal);
+            Assert.Equal(
+                $"WARNING: 20 frames are few: the master makes the stack of the 5 lights {noisier} noisier, over the limit of 5 %; {at5} are needed",
+                DarkReport.Sections(DarkSeriesRun.WithStackLimit(r, 0.05)).Single(x => x.Check == ReportCheck.Enough).Rows[^1].Value);
+        }
+    }
+
+    [Fact]
+    public void R024_TheNoiseOfALightIsBroughtToTheDarksSettings()
+    {
+        // the same lights declared at 60 s: against darks of 120 s a light's ADU count double, and so does its noise
+        static SyntheticDark D(int i) => new() { Seed = 100 + i, Noise = 4, Hot = SyntheticLight.Lattice };
+        using SessionFixture same = new SessionFixture().WithDarkSeries(20, D).WithLights(5, i => Light(i));
+        using SessionFixture half = new SessionFixture().WithDarkSeries(20, D).WithLights(5, i => Light(i), exposure: 60);
+        StackLimit atSame = Run(same).Verdicts.Enough.Stack!;
+        DarkSeriesResult r = Run(half);
+        StackLimit atHalf = r.Verdicts.Enough.Stack!;
+
+        double normDarks = r.Darks.Norm;
+        List<double> eq = [.. r.Lights!.Frames.Select(f => f.LocalSigma[r.ReferencePlane] / r.Darks.Normalisation.NormOf(f.Info)).Order()];
+        Assert.NotEqual(normDarks, r.Darks.Normalisation.NormOf(r.Lights.Frames[0].Info));
+        Assert.Equal(eq[2] * normDarks, atHalf.LightNoise, 4);
+        Assert.Equal(2 * atSame.LightNoise, atHalf.LightNoise, 3);
+        // a noisier light hides the master better: fewer darks are needed
+        Assert.True(atHalf.Penalty < atSame.Penalty, $"{atHalf.Penalty} against {atSame.Penalty}");
+    }
+
+    [Fact]
+    public void R024_WhenTheFrameCapLeavesDarksOutTheVerdictDoesNotSayHowManyToLeaveOut()
+    {
+        // forty darks under a cap of twenty: every second one is read, so the twenty are not the folder's frames
+        using SessionFixture s = new SessionFixture().WithDarkSeries(40, i => new SyntheticDark { Seed = 100 + i, Noise = 4, Hot = SyntheticLight.Lattice }).WithLights(5, i => Light(i));
+        DarkSeriesResult r = Run(s, maxFrames: 20);
+        EnoughVerdict e = r.Verdicts.Enough;
+        Assert.Equal(20, e.Frames);
+        Assert.Equal(Verdict.Ok, e.Verdict);
+        Assert.True(e.FramesNeeded < 20, $"needed {e.FramesNeeded}");
+        string verdict = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows[^1].Value;
+        Assert.EndsWith($", sub limita de 10 %; ar ajunge {e.FramesNeeded}", verdict, StringComparison.Ordinal);
+        Assert.DoesNotContain("poti scoate", verdict, StringComparison.Ordinal);
     }
 }

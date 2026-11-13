@@ -123,8 +123,8 @@ public class WindowSmokeTests
         });
 
     /// <summary>
-    /// The "Despre" window: its own XAML, a template of the theme, the icon through a decoder
-    /// and links bound to properties, all of which compile with a wrong name.
+    /// Check 9's card with lights: the dropdown of the stack's limit above the five-column table,
+    /// and a pick made on the rendered ComboBox itself.
     /// </summary>
     [Fact]
     public async Task R123_TheDropdownOfCheckNineStandsInItsCardAndJudgesAgain()

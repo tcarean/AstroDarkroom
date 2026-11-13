@@ -203,9 +203,11 @@ lines and of the lines after each group is released. A verdict is read back from
 line and the `series:`, `dark` and `light` lines, which hold the figures the report words; a
 frame's file from its `loaded` and libraw lines. The `verdicts:` line is written before the
 lights are read, so with lights check 9's figures are those of the line `enough, against the
-lights' stack:` that `DarkSeriesRun` writes after them (ADR 0051), and a limit picked in the
-window writes `check 9 judged again: the stack may be 5 % noisier` from the view-model, with no
-run line, since nothing runs.
+lights' stack:` that `DarkSeriesRun` writes after them (ADR 0051), with the table's `points`
+and the `stack` (the limit, the lights, a light's noise, the stack's figure, the frames each
+limit needs), and a limit picked in the window writes `check 9 judged again: the stack may be
+5 % noisier; enough=Warning framesNeeded=27` from the view-model, with no run line, since
+nothing runs.
 
 ## In the tests
 

@@ -1460,7 +1460,27 @@ public partial class DarkSeriesTests
 
         // twelve frames: two more than needed, and the verdict says how many would do
         using SessionFixture twelve = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
-        Assert.EndsWith(", iar el se adauga la fiecare light calibrat; ar ajunge 10", DarkReport.Sections(Run(twelve)).Single(x => x.Check == ReportCheck.Enough).Rows[^1].Value, StringComparison.Ordinal);
+        DarkSeriesResult r12 = Run(twelve);
+        Assert.EndsWith(", iar el se adauga la fiecare light calibrat; ar ajunge 10", DarkReport.Sections(r12).Single(x => x.Check == ReportCheck.Enough).Rows[^1].Value, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            IReadOnlyList<ReportRow> en = DarkReport.Sections(r12).Single(x => x.Check == ReportCheck.Enough).Rows;
+            Assert.Equal(["noise when averaged", "master", "with n frames", "enough from", "verdict"], en.Select(row => row.Label));
+            Assert.StartsWith("the average of 5 frames has ", en[0].Value, StringComparison.Ordinal);
+            Assert.Equal(["frames", "master's noise", "against now", "how it is"], en[2].Table!.Header);
+            Assert.Contains("; 12 frames (now): ", en[2].Value, StringComparison.Ordinal);
+            Assert.Equal("10 frames: from there the master's noise is under the file's value step (1 ADU)", en[3].Value);
+            Assert.EndsWith(" is under the file's value step (1 ADU), and it adds to every calibrated light; 10 would do", en[4].Value, StringComparison.Ordinal);
+        }
+
+        // three frames: the one measured point is the frame against the next, and the row says so of 1 frame
+        using SessionFixture three = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
+        DarkSeriesResult r3 = Run(three);
+        NoisePoint only = Assert.Single(r3.Darks.Noise.Curve);
+        Assert.StartsWith(
+            $"1 cadru are {RunReport.F(only.Measured, 2)} ADU de zgomot; din zgomotul unui singur cadru ({RunReport.F(r3.Darks.Noise.SigmaFrame, 2)} ADU) se asteptau {RunReport.F(only.Expected, 2)}  [",
+            DarkReport.Sections(r3).Single(x => x.Check == ReportCheck.Enough).Rows[0].Value,
+            StringComparison.Ordinal);
 
         // a single frame: unmeasured, no table
         using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 1, Hot = SyntheticDark.OnePerLevel });
@@ -1517,6 +1537,19 @@ public partial class DarkSeriesTests
         // a single frame is no series: no table
         using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 1, Hot = SyntheticDark.OnePerLevel });
         Assert.Empty(Run(one).Verdicts.Enough.Points);
+    }
+
+    [Fact]
+    public void R024_AStackFigureThatRoundsToTheLimitIsPrintedWithTwoDecimals()
+    {
+        // one decimal would print the limit itself beside "under the limit" or "over the limit"
+        Assert.Equal("9.96 %", DarkReport.StackPercent(0.0996, 0.10));
+        Assert.Equal("10.04 %", DarkReport.StackPercent(0.1004, 0.10));
+        Assert.Equal("4.96 %", DarkReport.StackPercent(0.0496, 0.05));
+        // away from the limit, and on the limit itself, one decimal
+        Assert.Equal("10.4 %", DarkReport.StackPercent(0.104, 0.10));
+        Assert.Equal("3.1 %", DarkReport.StackPercent(0.031, 0.10));
+        Assert.Equal("10.0 %", DarkReport.StackPercent(0.10, 0.10));
     }
 
     [Fact]

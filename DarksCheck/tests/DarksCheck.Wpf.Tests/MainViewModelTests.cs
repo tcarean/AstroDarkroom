@@ -172,6 +172,12 @@ public class MainViewModelTests
         Assert.Equal("OK", Nine("verdict").Verdict);
         Assert.Equal(first.Verdicts.Enough.FramesNeeded, vm.Result.Verdicts.Enough.FramesNeeded);
 
+        // the choice is not kept: after 5 %, a new analysis of the folder starts at 10 % again
+        Nine("cu n cadre").Choice!.SelectedIndex = 0;
+        await vm.OpenAsync(f.Root);
+        Assert.Equal(1, Nine("cu n cadre").Choice!.SelectedIndex);
+        Assert.Equal("OK", Nine("verdict").Verdict);
+
         // without lights there is no stack to limit: no choice
         using SessionFixture alone = new SessionFixture().WithDarkSeries(10, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
         MainViewModel plain = new();

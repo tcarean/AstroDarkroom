@@ -365,6 +365,10 @@ public partial class LoggingTests
         Assert.Single(m, x => x.StartsWith("verdicts: leak=(verdict=" + r.Verdicts.Leak.Verdict + " offsetAdu=", StringComparison.Ordinal));
         Assert.Contains("index: " + LogText.Figures(r.Index) + " label=" + r.Label + " partnerLabel=none", m);
         Assert.Single(m, x => x.StartsWith("lights: used=3 ", StringComparison.Ordinal));
+        // check 9 is judged again with the lights, and its line holds the table's rows and the stack's figures (R-024)
+        string enough = Assert.Single(m, x => x.StartsWith("enough, against the lights' stack: verdict=Warning frames=4 ", StringComparison.Ordinal));
+        Assert.Contains(" points=[(n=4 masterNoise=", enough, StringComparison.Ordinal);
+        Assert.Contains(" stack=(limit=0.1 lights=3 lightNoise=", enough, StringComparison.Ordinal);
         Assert.Single(m, x => x.StartsWith("partner: folder=" + p.Root + " frames=3 used=3 ", StringComparison.Ordinal));
         Assert.Equal("darks done " + DarkSeriesRun.Outcome(r) + " in # (inventory #, biases #, darks #, measure #, verdicts #, lights #, partner #)", m[^1]);
         Assert.StartsWith("darks done leak=Ok drift=Ok noise=Ok pattern=Ok deadSat=Ok enough=Warning index=", m[^1], StringComparison.Ordinal);

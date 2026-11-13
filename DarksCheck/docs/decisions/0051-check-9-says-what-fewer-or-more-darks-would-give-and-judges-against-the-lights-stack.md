@@ -94,4 +94,8 @@ The owner's answers of 2026-11-12 and 2026-11-13:
 - The report holds two noises of a lights stack until the scale section is looked at: check 9's,
   on the noise against the neighbours, and `zgomot in master`'s, on the sky sigma, 1.6 to 2.8
   times larger on the three pairs.
+- Check 9 counts the frames read (`DarkSeriesAnalysis.Used`), as it did. Above the frame cap
+  those are every k-th of the folder's, so the row marked `(acum)` and the frames needed are of
+  the frames read, and the verdict then leaves out how many could be dropped (the review of
+  2026-11-13). A folder of more darks than the cap is judged as the cap's worth of them.
 - R-024 is rewritten and R-123 is new; the ten goldens change in check 9's rows alone.

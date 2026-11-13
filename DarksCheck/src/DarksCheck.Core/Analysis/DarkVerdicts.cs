@@ -227,10 +227,10 @@ internal sealed record EnoughVerdict(Verdict Verdict, int Frames, double MasterN
     /// to <see cref="Th.FramesTablePast"/> rows past the frames stacked, their own row, and the
     /// frames needed when they lie beyond; empty when the verdict is unmeasured.
     /// </summary>
-    internal IReadOnlyList<FramesPoint> Points { get; init; } = [];
+    public IReadOnlyList<FramesPoint> Points { get; init; } = [];
 
     /// <summary>The lights' stack the verdict is judged against; null without measured lights.</summary>
-    internal StackLimit? Stack { get; init; }
+    public StackLimit? Stack { get; init; }
 }
 
 /// <summary>The six verdicts of checks 3, 4, 5, 7, 8 and 9 on a dark series.</summary>

@@ -921,8 +921,10 @@ public sealed class MainViewModel : ObservableObject
         }
 
         double limit = Th.StackNoiseLimits[index];
-        Log.Info("check 9 judged again: the stack may be " + LogText.Num(limit * 100) + " % noisier");
-        Populate(DarkSeriesRun.WithStackLimit(r, limit));
+        DarkSeriesResult judged = DarkSeriesRun.WithStackLimit(r, limit);
+        Log.Info("check 9 judged again: the stack may be " + LogText.Num(limit * 100) + " % noisier; enough=" + judged.Verdicts.Enough.Verdict
+            + " framesNeeded=" + LogText.Int(judged.Verdicts.Enough.FramesNeeded));
+        Populate(judged);
     }
 
     /// <summary>The rows of one check's section, in order, all of them (the tabs show what the Rezumat leaves out).</summary>
