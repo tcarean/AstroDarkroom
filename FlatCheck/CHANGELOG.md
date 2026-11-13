@@ -244,6 +244,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   135, without a word, and the figures were those of that aperture, sensor or focal length. A
   comma, `NaN` and `Infinity` are now refused with the option's own error, exit 1, for `--sat`,
   `--black`, `--fov`, `--focal`, `--fstop` and `--crop`. Write the decimals with a dot.
+- The Split tab compares with the lens profile the way the Structure tab does (R-093, the
+  review's CR-003). It ignored the lens chosen there (R-121), so `Split result.txt` and `Test
+  result.txt` could judge the same master's depth against two different profiles, and it
+  ignored the box "I didn't use any filters on my lens" (R-118), so it could print REDO for a
+  depth the Structure tab had rightly left out. Now a chosen lens is the only one compared, and
+  with the box off nothing is compared and the reference line says why.
 - Typing in the Sintetic tab's lens field no longer freezes the window for half a second at
   every keystroke (R-132, ADR 0099): the text each lens is searched in is built once, while the
   profiles load, and a search takes under a millisecond on 3799 lenses. The same lenses are

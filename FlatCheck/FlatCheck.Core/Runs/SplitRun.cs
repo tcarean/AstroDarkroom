@@ -98,6 +98,9 @@ namespace FlatCheck
         /// <summary>The mosaic's shared scale: the automatic one over all the maps at
         /// once.</summary>
         internal readonly PngWriter.MapRange MapRange;
+        /// <summary>True when nothing was compared because a filter was on the lens (the
+        /// Structure tab's box, R-118), which the reference line then says.</summary>
+        internal readonly bool LensFiltered;
 
         /// <summary>Holds the columns and the reference; takes the profile list from the
         /// whole's comparison.</summary>
@@ -109,9 +112,13 @@ namespace FlatCheck
         /// <param name="framesPerPart">The frames each part had; 0 when unknown.</param>
         /// <param name="when">The run's date and time.</param>
         /// <param name="mapRange">The scale shared by every map of the mosaic.</param>
+        /// <param name="lensFiltered">True when the comparison was left out because a filter was
+        /// on the lens (R-118).</param>
         internal SplitResult(IReadOnlyList<SplitColumn> parts, SplitColumn whole, LensProfile referenceProfile,
-                             ProfileDepth referenceDepth, int framesPerPart, DateTime when, PngWriter.MapRange mapRange)
+                             ProfileDepth referenceDepth, int framesPerPart, DateTime when, PngWriter.MapRange mapRange,
+                             bool lensFiltered = false)
         {
+            LensFiltered = lensFiltered;
             Parts = parts;
             Whole = whole;
             ReferenceProfile = referenceProfile;
@@ -127,6 +134,11 @@ namespace FlatCheck
         /// <summary>True when the reference is the whole's Adobe row by R-128; false when it is
         /// the whole's nearest row, or when there is none.</summary>
         internal bool ReferenceByAdobe => HasReference && Whole.Outcome.Profiles.AdobeDecides;
+
+        /// <summary>True when the reference is the lens chosen on the Structure tab (R-121), the
+        /// only one compared; false when the nearest or the Adobe row decided, or without a
+        /// reference.</summary>
+        internal bool ReferenceChosen => HasReference && Whole.Outcome.Profiles.Shot?.ChosenLens != null;
 
         /// <summary>The parts in order, then the whole - the order of the columns and of the
         /// tiles.</summary>
@@ -152,13 +164,16 @@ namespace FlatCheck
         /// mosaic's title.</param>
         /// <param name="framesPerPart">How many frames each part had; 0 when unknown.</param>
         /// <param name="report">Where the report text goes.</param>
+        /// <param name="lensFiltered">True when <paramref name="query"/> is null because a
+        /// filter was on the lens (R-118): the report then says so instead of "no raw".</param>
         /// <returns>The result and the mosaic as PNG.</returns>
         internal static RunOutcome<SplitResult> Execute(string wholePath, IReadOnlyList<string> partPaths, StructureQuery query,
-                                                        DateTime when, int framesPerPart, TextWriter report)
+                                                        DateTime when, int framesPerPart, TextWriter report, bool lensFiltered = false)
         {
             using RunClock clock = RunClock.Start(Log, "split", wholePath + " parts=" + LogText.List(partPaths)
-                                                   + " framesPerPart=" + LogText.Int(framesPerPart) + " compare=" + LogText.Yes(query != null));
-            SplitResult r = Analyze(wholePath, partPaths, query, when, framesPerPart);
+                                                   + " framesPerPart=" + LogText.Int(framesPerPart) + " compare=" + LogText.Yes(query != null)
+                                                   + " lensFiltered=" + LogText.Yes(lensFiltered) + " lens=" + LogText.Str(query?.LensKey));
+            SplitResult r = Analyze(wholePath, partPaths, query, when, framesPerPart, lensFiltered);
             clock.Lap("analyze");
             if (Log.IsDebugEnabled) Log.Debug("split of " + wholePath + ": " + LogText.Split(r));
             SplitReport.Write(r, wholePath, report);
@@ -194,7 +209,7 @@ namespace FlatCheck
         /// <param name="framesPerPart">How many frames each part had; 0 when unknown.</param>
         /// <returns>The columns, the reference and the shared map scale.</returns>
         internal static SplitResult Analyze(string wholePath, IReadOnlyList<string> partPaths, StructureQuery query,
-                                            DateTime when, int framesPerPart)
+                                            DateTime when, int framesPerPart, bool lensFiltered = false)
         {
             if (partPaths == null || partPaths.Count == 0) throw new ArgumentException(T("no part", "nicio parte"), nameof(partPaths));
 
@@ -211,7 +226,7 @@ namespace FlatCheck
             var wholeColumn = new SplitColumn(wholePath, SplitReport.WholeLabel, whole, referenceDepth);
 
             return new SplitResult(columns, wholeColumn, reference, referenceDepth, framesPerPart, when,
-                                   SharedRange(columns.Append(wholeColumn)));
+                                   SharedRange(columns.Append(wholeColumn)), lensFiltered);
         }
 
         /// <summary>
