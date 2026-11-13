@@ -198,6 +198,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   stars and sky in the session's figures. A FITS whose header says it is a stack (`STACKCNT` or
   `NCOMBINE` above 1) is no longer a light, whatever its name (R-002, ADR 0048; CR-003 of the
   review of 2026-11-13).
+- A frame turned against the first by about 0.7 degrees or more could come back as aligned on
+  some ten stars of 600, with a wrong position: two dither moves that did not happen. An
+  alignment that matches under a fifth of the stars now fails, and the frame reads `could not be
+  aligned` (R-018, ADR 0049; CR-004 of the review of 2026-11-13).
+- After a meridian flip no frame could be aligned, and nothing said that the dithering, the
+  drift and the fixed pattern described the first part of the night only. Such a frame is now
+  recognised (it aligns when turned upside down): its reason reads `taken after the meridian
+  flip ...` and DITHERING opens with a `meridian flip` row that names the frames and says what
+  the figures cover. The frames after the flip are still not measured for position (R-087, ADR
+  0049; CR-004).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

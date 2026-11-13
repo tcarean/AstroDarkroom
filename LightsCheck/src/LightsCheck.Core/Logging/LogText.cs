@@ -195,7 +195,7 @@ internal static class LogText
     internal static string Registered(RegistrationResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
-        return (r.Ok ? "ok" : "failed") + " matches=" + Int(r.Matches) + " votes=" + Int(r.Votes) + " dx=" + Num(r.Dx) + " dy=" + Num(r.Dy)
+        return (r.Ok ? "ok" : r.Flipped ? "failed, aligns turned by 180 degrees" : "failed") + " matches=" + Int(r.Matches) + " votes=" + Int(r.Votes) + " dx=" + Num(r.Dx) + " dy=" + Num(r.Dy)
             + " rotation=" + Num(r.RotationDeg) + " scale=" + Num(r.Scale) + " rms=" + Num(r.Rms);
     }
 

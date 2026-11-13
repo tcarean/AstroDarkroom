@@ -58,6 +58,71 @@ public class SeriesTests
         Assert.Equal([3, 6], SeriesReport.RejectedRows(r).Select(x => x.Index));
     }
 
+    /// <summary>
+    /// Six frames whose last three are drawn upside down, as after a meridian flip: they have no
+    /// position and keep their class, their reason says the flip, and DITHERING opens, in the
+    /// console and in the window's rows, by saying what the figures cover (R-087). The stars
+    /// are scattered: the fixture's grid turned upside down falls nearly on itself.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R087_FramesTakenAfterAMeridianFlipAreSaidAndNotMeasured(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        SeriesFrame[] frames =
+        [
+            new(0, 0, 1.0, 0), new(0.5, 0.2, 1.0, 1), new(12, 0, 1.0, 30),
+            new(12.5, 0.3, 1.0, 1, Turned: true), new(12, -15, 1.0, 30, Turned: true), new(12.5, -15, 1.0, 1, Turned: true),
+        ];
+        using SessionFixture f = new SessionFixture().WithStarSeries(frames, scattered: true);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+
+        Assert.Equal(3, r.Dither.Registered);
+        Assert.All(Enumerable.Range(0, 3), i => Assert.Empty(r.Series.Flags[i]));
+        string reason = english
+            ? "taken after the meridian flip (the image is turned upside down), so its position is not measured"
+            : "facut dupa meridian flip (imaginea e intoarsa cu susul in jos), asa ca pozitia lui nu se masoara";
+        Assert.All(Enumerable.Range(3, 3), i =>
+        {
+            Assert.True(r.Frames[i].Registration!.Flipped);
+            Assert.Equal(FlagKind.AfterFlip, Assert.Single(r.Series.Flags[i]).Kind);
+            Assert.Equal(FrameClass.Good, r.Series.Classes[i]);
+            Assert.Equal(reason, SeriesReport.Reason(r.Series.Flags[i][0]));
+        });
+
+        ReportRow first = SeriesReport.DitherRows(r)[0];
+        Assert.Equal("meridian flip", first.Label);
+        Assert.Equal(
+            english
+                ? "frames 4-6 (3 of 6) were taken after the meridian flip; the dithering, the drift, the field rotation and the fixed pattern are measured on the other frames only"
+                : "cadrele 4-6 (3 din 6) sunt facute dupa meridian flip; ditheringul, driftul, rotatia de camp si pattern-ul fix sunt masurate doar pe celelalte cadre",
+            first.Value);
+        Assert.Equal(first, SeriesReport.DitherScalarRows(r)[0]);
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        Assert.Contains(first.Value, sw.ToString(), StringComparison.Ordinal);
+        Assert.Contains(english ? "frames aligned: 3 of 6" : "cadre aliniate: 3 din 6", sw.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>A session without a flip has no such row, and one frame or scattered frames are written as the other rows write frames (R-087).</summary>
+    [Fact]
+    public void R087_TheFlipRowIsThereOnlyAfterAFlipAndWritesRangesAndOneFrame()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(3).ToList());
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        Assert.DoesNotContain(SeriesReport.DitherRows(r), row => row.Label == "meridian flip");
+        Assert.DoesNotContain(SeriesReport.DitherScalarRows(r), row => row.Label == "meridian flip");
+
+        Assert.Equal("4-6", SeriesReport.Ranges([4, 5, 6]));
+        Assert.Equal("4-6, 9, 11-12", SeriesReport.Ranges([4, 5, 6, 9, 11, 12]));
+        Assert.Equal("87", SeriesReport.Ranges([87]));
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        Assert.StartsWith("frame 87 (1 of 87) was taken after the meridian flip; ", SeriesReport.FlipText([87], 87), StringComparison.Ordinal);
+        using IDisposable ro = Ui.Use(UiLanguage.Romanian);
+        Assert.StartsWith("cadrul 87 (1 din 87) e facut dupa meridian flip; ", SeriesReport.FlipText([87], 87), StringComparison.Ordinal);
+    }
+
     /// <summary>Every class and flag of R-022, end to end on files: the golden series-classes.txt pins the words, this pins the kinds.</summary>
     [Fact]
     public void R022_EveryClassAndFlagAppearsOnTheSyntheticClassesSession()

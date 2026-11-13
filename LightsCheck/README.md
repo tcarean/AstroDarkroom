@@ -132,6 +132,9 @@ minutes. The report's sections:
 - **DITHERING**: the pauses and the moves (a step of 5 px or more), how often (every how many
   frames), how far, on which axes and which way, and how close the frames are to each other (the
   nearest other frame, the different spots, the runs of frames in a row in the same spot); then:
+  - `meridian flip`, the first row, only when frames were taken after one: which frames. Their
+    image is turned upside down against the others; they stay in the stack, and the dithering,
+    the drift, the field rotation and the fixed pattern are measured on the other frames only;
   - `scale`: how far on the sky the mount must move the frame for 5 px and for 10 px, at the
     session's focal length;
   - `pattern in the stack`: how much of one frame's pattern stays after stacking, against 1

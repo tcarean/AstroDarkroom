@@ -174,6 +174,15 @@ internal static class Th
     /// <summary>Fewer matched stars than this and the registration failed.</summary>
     internal const int MinMatches = 10;
 
+    /// <summary>
+    /// ... and so did one whose last round matched under this fraction of the shorter of the two
+    /// star lists. Measured on 2026-11-13 (ADR 0049): a wrong fit, of a field turned by 0.7 or
+    /// 1.0 degrees, held on 10 and 11 stars of 576 and 580 (2 %); a right one matched 92 % or
+    /// more on the synthetic fields and at least 62 %, 84 % and 90 % on the three recorded
+    /// sessions.
+    /// </summary>
+    internal const double MinMatchFraction = 0.2;
+
     // ---- dithering (R-019 to R-021)
 
     /// <summary>

@@ -94,6 +94,70 @@ public class RegistrationTests
         Assert.False(unrelated.Ok);
     }
 
+    /// <summary>
+    /// A field turned by more than the vote for one shift can follow is aligned right or not at
+    /// all: before the share of matched stars was judged, a fit on some ten stars of 600 came
+    /// back as good, with a wrong shift and rotation (R-018, CR-004 of the review of 2026-11-13).
+    /// </summary>
+    [Theory]
+    [InlineData(0.7)]
+    [InlineData(1.0)]
+    public void R018_ARotationTheVoteCannotFollowIsAlignedRightOrNotAtAll(double theta)
+    {
+        for (int seed = 1; seed <= 8; seed++)
+        {
+            List<RegistrationStar> reference = Field(600, seed);
+            List<RegistrationStar> frame = Moved(reference, 50, -30, theta, 0.2, 100 + seed);
+
+            RegistrationResult r = Registration.Register(reference, frame, W, H);
+
+            if (!r.Ok)
+            {
+                continue;
+            }
+
+            Assert.True(r.Matches > 400, $"field {seed}: aligned on {r.Matches} stars");
+            Assert.Equal(theta, r.RotationDeg, 0.02);
+            Assert.Equal(50, r.Dx, 1.0);
+            Assert.Equal(-30, r.Dy, 1.0);
+        }
+    }
+
+    /// <summary>A share of the stars just under the fifth fails and just over it passes, on a frame that shares only its brightest stars with the reference (R-018).</summary>
+    [Theory]
+    [InlineData(110, false)]
+    [InlineData(130, true)]
+    public void R018_UnderAFifthOfTheShorterListMatchedIsAFailedRegistration(int shared, bool ok)
+    {
+        List<RegistrationStar> reference = Field(600, 1);
+        // The frame: the first stars of the reference, moved, and unrelated stars up to 600.
+        List<RegistrationStar> frame = [.. reference.Take(shared).Select(s => new RegistrationStar(s.X + 20, s.Y - 10, s.Flux)), .. Field(600 - shared, 77).Select(s => new RegistrationStar(s.X, s.Y, 10))];
+
+        RegistrationResult r = Registration.Register(reference, frame, W, H);
+
+        Assert.Equal(ok, r.Ok);
+    }
+
+    /// <summary>
+    /// A frame taken after a meridian flip is the same field turned upside down: it has no
+    /// position, and it is told from a frame that shares no stars with the reference (R-087).
+    /// </summary>
+    [Fact]
+    public void R087_AFrameTurnedUpsideDownIsToldFromOneThatCannotBeAligned()
+    {
+        List<RegistrationStar> reference = Field(600, 1);
+
+        RegistrationResult flipped = Registration.Register(reference, Moved(reference, 50, -30, 180.3, 0.2, 2), W, H);
+        Assert.False(flipped.Ok);
+        Assert.True(flipped.Flipped);
+        Assert.True(double.IsNaN(flipped.Dx));
+
+        RegistrationResult unrelated = Registration.Register(reference, Field(600, 9), W, H);
+        Assert.False(unrelated.Ok);
+        Assert.False(unrelated.Flipped);
+        Assert.False(Registration.Register(reference, Moved(reference, 50, -30, 0.1, 0.2, 2), W, H).Flipped);
+    }
+
     [Fact]
     public void R018_TheSimilarityFitIsExactOnAnExactTransform()
     {

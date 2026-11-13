@@ -25,7 +25,7 @@ namespace LightsCheck.Core;
 /// </summary>
 /// <param name="Ok">
 /// Whether the frame was registered: every round matched at least <see cref="Th.MinMatches"/>
-/// stars.
+/// stars, and the last one at least <see cref="Th.MinMatchFraction"/> of the shorter list.
 /// </param>
 /// <param name="Matches">The pairs the last round matched; 0 on a failure.</param>
 /// <param name="Votes">
@@ -45,6 +45,13 @@ namespace LightsCheck.Core;
 /// </param>
 internal sealed record RegistrationResult(bool Ok, int Matches, int Votes, double Dx, double Dy, double RotationDeg, double Scale, double Rms)
 {
+    /// <summary>
+    /// Whether the frame, which could not be registered as it is, registers once its stars are
+    /// turned by 180 degrees about the frame's centre: a frame taken after a meridian flip
+    /// (R-087). Never true on a registered frame.
+    /// </summary>
+    internal bool Flipped { get; init; }
+
     /// <summary>A registration that failed.</summary>
     /// <param name="votes">
     /// The coarse votes reached before the failure, 0 when there were none.
@@ -56,15 +63,17 @@ internal sealed record RegistrationResult(bool Ok, int Matches, int Votes, doubl
 /// <summary>
 /// Registers one frame's star list to the reference's: a vote over all pairwise offsets
 /// gives the coarse shift, then nearest-neighbour matches at a shrinking tolerance feed a
-/// least-squares similarity (shift, rotation, scale). The prototype's `reg.py`, step for step.
+/// least-squares similarity (shift, rotation, scale). The prototype's `reg.py`, step for step,
+/// with two additions of 2026-11-13 (ADR 0049): a fit on a small share of the stars fails, and
+/// a frame that fails is tried once more turned upside down, to tell a meridian flip.
 /// </summary>
 internal static class Registration
 {
     /// <summary>
-    /// Registers <paramref name="frame"/>'s stars to <paramref name="reference"/>'s: the coarse
-    /// vote, then <see cref="Th.MatchIterations"/> rounds of matching (the first at
-    /// <see cref="Th.MatchToleranceCoarse"/>, the others at <see cref="Th.MatchToleranceFine"/>)
-    /// and fitting.
+    /// Registers <paramref name="frame"/>'s stars to <paramref name="reference"/>'s
+    /// (<see cref="Align"/>). A frame that fails is aligned once more with its stars turned by
+    /// 180 degrees about the frame's centre: when that succeeds the frame was taken after a
+    /// meridian flip, and the failed result says so (R-087); it still has no position.
     /// </summary>
     /// <param name="reference">
     /// The reference frame's registration stars, brightest first. Not null.
@@ -73,13 +82,45 @@ internal static class Registration
     /// <param name="width">The frame's width, in pixels, for its centre.</param>
     /// <param name="height">The frame's height, in pixels, for its centre.</param>
     /// <returns>
-    /// The shift of the centre, the rotation, the scale and the fit; a failed result when either
-    /// list or any round holds fewer than <see cref="Th.MinMatches"/> stars.
+    /// The shift of the centre, the rotation, the scale and the fit; otherwise a failed result,
+    /// with <see cref="RegistrationResult.Flipped"/> set when only the turned frame aligns.
     /// </returns>
     internal static RegistrationResult Register(IReadOnlyList<RegistrationStar> reference, IReadOnlyList<RegistrationStar> frame, int width, int height)
     {
         ArgumentNullException.ThrowIfNull(reference);
         ArgumentNullException.ThrowIfNull(frame);
+        RegistrationResult direct = Align(reference, frame, width, height);
+        if (direct.Ok)
+        {
+            return direct;
+        }
+
+        // The same field turned upside down has no single shift, so the vote finds none; turned
+        // back it is a frame like any other, and the fit's own shift takes up the half pixel
+        // between the turn about (width, height) / 2 and the centre of the pixel grid.
+        List<RegistrationStar> turned = frame.Select(s => new RegistrationStar(width - s.X, height - s.Y, s.Flux)).ToList();
+        return Align(reference, turned, width, height).Ok ? direct with { Flipped = true } : direct;
+    }
+
+    /// <summary>
+    /// One registration of <paramref name="frame"/>'s stars to <paramref name="reference"/>'s:
+    /// the coarse vote, then <see cref="Th.MatchIterations"/> rounds of matching (the first at
+    /// <see cref="Th.MatchToleranceCoarse"/>, the others at <see cref="Th.MatchToleranceFine"/>)
+    /// and fitting. The last round must match <see cref="Th.MinMatchFraction"/> of the shorter
+    /// list: a fit that holds on a handful of stars of hundreds is a coincidence, with a wrong
+    /// shift and rotation (R-018).
+    /// </summary>
+    /// <param name="reference">The reference frame's registration stars, brightest first.</param>
+    /// <param name="frame">This frame's registration stars, brightest first.</param>
+    /// <param name="width">The frame's width, in pixels, for its centre.</param>
+    /// <param name="height">The frame's height, in pixels, for its centre.</param>
+    /// <returns>
+    /// The shift of the centre, the rotation, the scale and the fit; a failed result when either
+    /// list or any round holds fewer than <see cref="Th.MinMatches"/> stars, or the last round
+    /// too small a share of the shorter list.
+    /// </returns>
+    private static RegistrationResult Align(IReadOnlyList<RegistrationStar> reference, IReadOnlyList<RegistrationStar> frame, int width, int height)
+    {
         if (reference.Count < Th.MinMatches || frame.Count < Th.MinMatches)
         {
             return RegistrationResult.Failed(0);
@@ -112,6 +153,11 @@ internal static class Registration
 
             sol = FitSimilarity(pairs, out rms);
             matched = pairs.Count;
+        }
+
+        if (matched < Th.MinMatchFraction * Math.Min(reference.Count, frame.Count))
+        {
+            return RegistrationResult.Failed(votes);
         }
 
         double a = sol[0], b = sol[1];

@@ -27,9 +27,10 @@ namespace LightsCheck.Tests;
 /// <summary>
 /// One frame of a synthetic series: the shift from the reference, the drawn elongation (1 =
 /// round), the pause before it, and what varies per class: the FWHM, how many of the 40 grid
-/// stars are kept, the factor on the sky background.
+/// stars are kept, the factor on the sky background, the exposure when it is not the series',
+/// and whether the frame is drawn turned by 180 degrees, as after a meridian flip.
 /// </summary>
-internal sealed record SeriesFrame(double Dx, double Dy, double Elongation, double PauseSeconds, double Fwhm = 3.0, int StarsKept = 40, double BackgroundFactor = 1.0, double? Exposure = null);
+internal sealed record SeriesFrame(double Dx, double Dy, double Elongation, double PauseSeconds, double Fwhm = 3.0, int StarsKept = 40, double BackgroundFactor = 1.0, double? Exposure = null, bool Turned = false);
 
 internal sealed class SessionFixture : IDisposable
 {
@@ -106,9 +107,10 @@ internal sealed class SessionFixture : IDisposable
     /// The field of <paramref name="frame"/>: the 40-star grid shifted by (Dx, Dy), the stars
     /// trailed vertically when Elongation is above 1, drawn at Fwhm, only the first StarsKept
     /// of the grid (the positions stay those of the reference, so the frame still registers),
-    /// the three backgrounds scaled by BackgroundFactor.
+    /// the three backgrounds scaled by BackgroundFactor. With <paramref name="scattered"/> the
+    /// stars sit at scattered places instead of the grid's (<see cref="Scatter"/>).
     /// </summary>
-    internal static byte[] StarLight(DateTime start, double exposure, SeriesFrame frame, int seed, bool sensorPattern = false, bool bayer = true)
+    internal static byte[] StarLight(DateTime start, double exposure, SeriesFrame frame, int seed, bool sensorPattern = false, bool bayer = true, bool scattered = false)
     {
         SyntheticFrame f = new SyntheticFrame
         {
@@ -123,6 +125,11 @@ internal sealed class SessionFixture : IDisposable
             HotPixels = sensorPattern ? SensorPattern : [],
             FixedPatternSigma = sensorPattern ? PatternSigmaAdu : 0,
         }.WithStarGrid(40, 3.0, 3000, 30000);
+        if (scattered)
+        {
+            Scatter(f);
+        }
+
         for (int i = 0; i < f.Stars.Count; i++)
         {
             SyntheticStar s = f.Stars[i];
@@ -136,10 +143,42 @@ internal sealed class SessionFixture : IDisposable
         }
 
         Func<int, int, double> px = f.Pixel();
+        if (frame.Turned)
+        {
+            // The whole mosaic upside down: on even sides a green pixel lands on a green one, and
+            // the red and the blue trade places, which the stars do not mind.
+            Func<int, int, double> upright = px;
+            px = (x, y) => upright(f.Width - 1 - x, f.Height - 1 - y);
+        }
+
         // Without the Bayer cards the frame is a mosaic of unknown order: its channels are
         // named CFA[row,col] (R-028's quoting case).
         string[] cards = bayer ? [.. Cards(start, exposure), .. FitsTestData.BayerCards("RGGB")] : Cards(start, exposure);
         return FitsTestData.BuildFits(f.Width, f.Height, px, bitpix: 16, extraCards: cards);
+    }
+
+    /// <summary>
+    /// Moves the grid's stars to scattered places, the same in every frame and at least 20 px
+    /// apart on an axis: a field that does not fall on itself when turned upside down, as the
+    /// sky does not and the grid, a block of rows and columns, nearly does.
+    /// </summary>
+    private static void Scatter(SyntheticFrame f)
+    {
+        Random rng = new(4242);
+        List<(double X, double Y)> placed = [];
+        for (int i = 0; i < f.Stars.Count; i++)
+        {
+            double x, y;
+            do
+            {
+                x = 60 + rng.NextDouble() * (f.Width - 120);
+                y = 60 + rng.NextDouble() * (f.Height - 120);
+            }
+            while (placed.Any(p => Math.Abs(p.X - x) < 20 && Math.Abs(p.Y - y) < 20));
+
+            placed.Add((x, y));
+            f.Stars[i] = f.Stars[i] with { X = x, Y = y };
+        }
     }
 
     /// <summary>
@@ -153,9 +192,10 @@ internal sealed class SessionFixture : IDisposable
     /// The same series from <see cref="SeriesFrame"/> entries, which can also vary the FWHM,
     /// the star count and the background; with <paramref name="sensorPattern"/> every light
     /// carries the same warm and hot pixels (<see cref="SensorPattern"/>), as a sensor does;
-    /// without <paramref name="bayer"/> the lights carry no Bayer cards.
+    /// without <paramref name="bayer"/> the lights carry no Bayer cards; with
+    /// <paramref name="scattered"/> the stars are scattered instead of on the grid.
     /// </summary>
-    internal SessionFixture WithStarSeries(IReadOnlyList<SeriesFrame> frames, double exposure = 120, int biases = 0, int darks = 0, bool sensorPattern = false, bool bayer = true)
+    internal SessionFixture WithStarSeries(IReadOnlyList<SeriesFrame> frames, double exposure = 120, int biases = 0, int darks = 0, bool sensorPattern = false, bool bayer = true, bool scattered = false)
     {
         Directory.CreateDirectory(LightsDir);
         DateTime t = FirstStart;
@@ -166,7 +206,7 @@ internal sealed class SessionFixture : IDisposable
                 t = t.AddSeconds((frames[i - 1].Exposure ?? exposure) + frames[i].PauseSeconds);
             }
 
-            File.WriteAllBytes(Path.Combine(LightsDir, $"DSC_{i + 1:0000}.fit"), StarLight(t, frames[i].Exposure ?? exposure, frames[i], i, sensorPattern, bayer));
+            File.WriteAllBytes(Path.Combine(LightsDir, $"DSC_{i + 1:0000}.fit"), StarLight(t, frames[i].Exposure ?? exposure, frames[i], i, sensorPattern, bayer, scattered));
         }
 
         if (biases > 0)

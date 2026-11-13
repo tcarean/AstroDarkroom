@@ -71,6 +71,20 @@ where the reference's centre lands in the frame, so a dither that moved the moun
 as a positive Dx. Rotation is `atan2(b, a)`. With fewer than 10 matches the frame has no
 position; on the Veil frames 500 to 550 of 600 match with an RMS of 0.3 to 0.8 px.
 
+Two things are not the prototype's (ADR 0049). `Align`, the registration proper, also fails
+when its last round matched under `Th.MinMatchFraction` of the shorter list: the vote is for one
+shift, so a field turned by 0.7 degrees or more smears it (at 1 degree the offset at a corner
+of a D3300 frame is 63 px from the one at the centre, eight bins), the rounds then start from a
+wrong shift, and a fit can settle on some
+ten stars that happen to pair up, with a shift and a rotation of its own. And `Register` calls
+`Align` a second time for a frame that failed, with the frame's stars turned by 180 degrees
+about (width, height) / 2: a frame taken after a meridian flip is the same field upside down,
+which no shift maps, and turned back it aligns like any other. Such a frame comes back failed
+with `Flipped` set and still has no position: its place on the sensor says nothing against the
+frames before the flip, whose pattern lands elsewhere on the sky. `SeriesAnalyzer` flags it
+`AfterFlip` in place of `Unregistered`, and `SeriesReport.FlipRows` puts the `meridian flip` row
+before the others of DITHERING, in the console's rows and in the window's (R-087).
+
 ## Dithering (`DitherAnalyzer`)
 
 Steps are differences of consecutive positions; a step needs both frames registered. A move

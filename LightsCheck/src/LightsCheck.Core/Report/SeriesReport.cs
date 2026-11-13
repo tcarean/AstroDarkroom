@@ -839,7 +839,10 @@ internal static class SeriesReport
     /// (R-077).
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
-    /// <returns>The thirteen rows, in the console's order.</returns>
+    /// <returns>
+    /// The thirteen rows, in the console's order, after the `meridian flip` row when frames were
+    /// taken after one (R-087).
+    /// </returns>
     internal static IReadOnlyList<ReportRow> DitherRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -849,6 +852,7 @@ internal static class SeriesReport
         string tight = RunReport.F(Th.CoverageTight, 0), mid = RunReport.F(Th.CoverageMid, 0), loose = RunReport.F(Th.CoverageLoose, 0);
         return
         [
+            .. FlipRows(r),
             PausesRow(r, d),
             new(HowOftenLabel, HowOften(d)),
             LongestRow(r, d),
@@ -877,7 +881,8 @@ internal static class SeriesReport
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
-    /// The nine rows, how close the frames are cut to the nearest frame and the frames alone.
+    /// The nine rows, how close the frames are cut to the nearest frame and the frames alone,
+    /// after the `meridian flip` row when frames were taken after one (R-087).
     /// </returns>
     internal static IReadOnlyList<ReportRow> DitherScalarRows(SeriesResult r)
     {
@@ -886,6 +891,7 @@ internal static class SeriesReport
         (string verdict, string text) = DitherVerdict(r);
         return
         [
+            .. FlipRows(r),
             PausesRow(r, d),
             LongestRow(r, d),
             new(CoverageLabel, $"{NearestWords(d)}; {AloneWords(d)}"),
@@ -1139,6 +1145,63 @@ internal static class SeriesReport
     }
 
     /// <summary>
+    /// The `meridian flip` row DITHERING opens with when frames were taken after a flip (R-087):
+    /// which frames, and that the figures of the frames' positions describe the others.
+    /// </summary>
+    /// <param name="r">The result of the series run.</param>
+    /// <returns>The one row, or none when no frame carries <see cref="FlagKind.AfterFlip"/>.</returns>
+    private static IReadOnlyList<ReportRow> FlipRows(SeriesResult r)
+    {
+        List<int> flipped = Enumerable.Range(0, r.Frames.Count).Where(i => r.Series.Flags[i].Any(f => f.Kind == FlagKind.AfterFlip))
+            .Select(i => r.Frames[i].Info.Index).ToList();
+        return flipped.Count == 0 ? [] : [new("meridian flip", FlipText(flipped, r.Frames.Count))];
+    }
+
+    /// <summary>The text of the `meridian flip` row, in plain words (R-087).</summary>
+    /// <param name="flipped">
+    /// The 1-based indices of the frames taken after the flip, in series order; at least one.
+    /// </param>
+    /// <param name="frames">How many frames the session has.</param>
+    /// <returns>
+    /// `frames 41-87 (47 of 87) were taken after the meridian flip; the dithering, the drift, the
+    /// field rotation and the fixed pattern are measured on the other frames only`; one frame
+    /// alone as `frame 87 (1 of 87) was taken ...`.
+    /// </returns>
+    internal static string FlipText(IReadOnlyList<int> flipped, int frames)
+    {
+        ArgumentNullException.ThrowIfNull(flipped);
+        string ranges = Ranges(flipped), count = flipped.Count.ToString(Inv), all = frames.ToString(Inv);
+        bool one = flipped.Count == 1;
+        return T(
+            $"{(one ? "frame" : "frames")} {ranges} ({count} of {all}) {(one ? "was" : "were")} taken after the meridian flip; the dithering, the drift, the field rotation and the fixed pattern are measured on the other frames only",
+            $"{(one ? "cadrul" : "cadrele")} {ranges} ({count} din {all}) {(one ? "e facut" : "sunt facute")} dupa meridian flip; ditheringul, driftul, rotatia de camp si pattern-ul fix sunt masurate doar pe celelalte cadre");
+    }
+
+    /// <summary>
+    /// Frame indices as the ranges the rows write: a stretch of indices in a row as `first-last`,
+    /// one alone as itself, the pieces joined by `, `.
+    /// </summary>
+    /// <param name="indices">The indices, ascending; not null.</param>
+    /// <returns>`4-6, 9, 11-12` for 4, 5, 6, 9, 11 and 12; empty for none.</returns>
+    internal static string Ranges(IReadOnlyList<int> indices)
+    {
+        ArgumentNullException.ThrowIfNull(indices);
+        List<string> pieces = [];
+        for (int i = 0; i < indices.Count; i++)
+        {
+            int first = indices[i];
+            while (i + 1 < indices.Count && indices[i + 1] == indices[i] + 1)
+            {
+                i++;
+            }
+
+            pieces.Add(indices[i] == first ? first.ToString(Inv) : first.ToString(Inv) + "-" + indices[i].ToString(Inv));
+        }
+
+        return string.Join(", ", pieces);
+    }
+
+    /// <summary>
     /// The first DITHERING row: the pauses longer than <see cref="Th.DitherPause"/>, the moves of
     /// at least <see cref="Th.DitherStep"/>, the pauses after which the frame stayed put, the
     /// moves without a pause before them, and how many frames were aligned.
@@ -1269,6 +1332,9 @@ internal static class SeriesReport
             FlagKind.Trails => Count((int)f.Value, ("satellite or plane trail (Siril takes it out when stacking)", "dara de satelit sau avion (Siril o scoate la stivuire)"), ("satellite or plane trails (Siril takes them out when stacking)", "dare de satelit sau avion (Siril le scoate la stivuire)")),
             FlagKind.Unreadable => T("could not be read", "nu s-a putut citi") + (f.Detail is null ? "" : ": " + f.Detail),
             FlagKind.Unregistered => T("could not be aligned (too few stars in common with the reference frame)", "nu s-a putut alinia (prea putine stele comune cu cadrul de referinta)"),
+            FlagKind.AfterFlip => T(
+                "taken after the meridian flip (the image is turned upside down), so its position is not measured",
+                "facut dupa meridian flip (imaginea e intoarsa cu susul in jos), asa ca pozitia lui nu se masoara"),
             FlagKind.ShortExposure => T(
                 $"exposure {RunReport.F(f.Value, 1)} s, under {ShortFractionWord} the usual {RunReport.F(f.Threshold / Th.ExposureShortFraction, 1)} s: too short to be worth stacking",
                 $"expunere {RunReport.F(f.Value, 1)} s, sub {ShortFractionWord} din cea obisnuita, {RunReport.F(f.Threshold / Th.ExposureShortFraction, 1)} s: prea scurta ca sa merite stivuita"),

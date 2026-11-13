@@ -445,6 +445,24 @@ public class SeriesAnalyzerTests
     }
 
     /// <summary>
+    /// A frame the registration found turned upside down is flagged as taken after the flip,
+    /// not as one that could not be aligned, and keeps its class (R-087).
+    /// </summary>
+    [Fact]
+    public void R087_AFrameAfterTheFlipIsFlaggedSoAndKeepsItsClass()
+    {
+        AnalyzedFrame flipped = Frame(2, Measurement(3.0, 1.1, 10000, 120)) with { Registration = RegistrationResult.Failed(7) with { Flipped = true } };
+        AnalyzedFrame lost = Frame(3, Measurement(3.0, 1.1, 10000, 120)) with { Registration = RegistrationResult.Failed(7) };
+
+        SeriesAnalysis s = Analyze(Frame(1, Measurement(3.0, 1.1, 10000, 120)), flipped, lost);
+
+        Assert.Empty(s.Flags[0]);
+        Assert.Equal(FlagKind.AfterFlip, Assert.Single(s.Flags[1]).Kind);
+        Assert.Equal(FlagKind.Unregistered, Assert.Single(s.Flags[2]).Kind);
+        Assert.Equal([FrameClass.Good, FrameClass.Good, FrameClass.Good], s.Classes);
+    }
+
+    /// <summary>
     /// The noise sample is the first, the middle and the last of the frames that are not too
     /// short to stack: a 0.2 s last frame, whose channels hold the read noise alone, is not in
     /// it, so no ratio of the sample is the short frame's (R-024, R-085).
