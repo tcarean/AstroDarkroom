@@ -1016,6 +1016,39 @@ public partial class DarkSeriesTests
         Assert.Equal(Verdict.Warning, rf.Inventory.Match.DarksVsLights);
         Assert.True(StackNoise.Of(rf.Lights, rf.ReferencePlane, rf.Darks.Noise.MasterNoise)!.Scaled);
         Assert.EndsWith("; lights-urile sunt la alte setari decat dark-urile, asa ca cifrele sunt socotite pentru ISO-ul si expunerea dark-urilor", Sky(rf), StringComparison.Ordinal);
+
+        // the second review: the note is decided by the settings themselves, as check 1 and the stack compare them,
+        // not rebuilt from the factor. Exactly at the 2 % (100 s against 98 s) check 1 says the same exposure;
+        // the factor 100 / 98 falls just beyond it in floating point
+        using SessionFixture bound = new SessionFixture().WithDarkSeries(6, D, exposure: 100).WithLights(4, L, exposure: 98);
+        DarkSeriesResult rb = Run(bound);
+        Assert.Equal(Verdict.Ok, rb.Inventory.Match.DarksVsLights);
+        Assert.False(StackNoise.Of(rb.Lights, rb.ReferencePlane, rb.Darks.Noise.MasterNoise)!.Scaled);
+        // just outside it, 120 s against 117.5 s
+        using SessionFixture outside = new SessionFixture().WithDarkSeries(6, D).WithLights(4, L, exposure: 117.5);
+        DarkSeriesResult ro = Run(outside);
+        Assert.Equal(Verdict.Warning, ro.Inventory.Match.DarksVsLights);
+        Assert.True(StackNoise.Of(ro.Lights, ro.ReferencePlane, ro.Darks.Noise.MasterNoise)!.Scaled);
+
+        // twice the ISO and half the exposure: the factor is exactly 1 and no figure moves, yet the lights are at
+        // other settings, as check 1 says in the same report
+        using SessionFixture cancel = new SessionFixture().WithDarkSeries(6, D).WithLights(4, L, exposure: 60, iso: 800);
+        DarkSeriesResult rc = Run(cancel);
+        Assert.Equal(Verdict.Warning, rc.Inventory.Match.DarksVsLights);
+        Assert.All(rc.Lights!.Frames, f => Assert.Equal(1, f.ToDarks, 9));
+        Assert.All(rc.Lights.Frames, f => Assert.True(f.OtherSettings));
+        Assert.True(StackNoise.Of(rc.Lights, rc.ReferencePlane, rc.Darks.Noise.MasterNoise)!.Scaled);
+
+        // one stray test frame among lights at the darks' settings: check 1 names the lights by their usual
+        // setting, and the row's figures are those of the other four, so no note
+        using SessionFixture stray = new SessionFixture().WithDarkSeries(6, D).WithLights(4, L);
+        File.WriteAllBytes(Path.Combine(stray.LightsDir, "light_0005.fit"), L(4).Build(SessionFixture.FirstStart.AddSeconds(-3000), 30, 400));
+        DarkSeriesResult rs = Run(stray);
+        Assert.Equal(Verdict.Ok, rs.Inventory.Match.DarksVsLights);
+        Assert.Equal(5, rs.Lights!.Used);
+        Assert.Equal(1, rs.Lights.Frames.Count(f => f.OtherSettings));
+        Assert.False(StackNoise.Of(rs.Lights, rs.ReferencePlane, rs.Darks.Noise.MasterNoise)!.Scaled);
+        Assert.EndsWith(" (pixelii verzi G1, din 5 lights)", Sky(rs), StringComparison.Ordinal);
     }
 
     [Fact]

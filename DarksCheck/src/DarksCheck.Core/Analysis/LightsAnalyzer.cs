@@ -54,6 +54,16 @@ internal sealed record LightFigures(FrameInfo Info, string? Error, bool AssumedS
     /// light at twice the darks' ISO.
     /// </summary>
     internal double ToDarks { get; init; } = 1;
+
+    /// <summary>
+    /// True when the light's ISO or exposure is not the darks', by the rule that decides whether
+    /// a frame belongs to a stack and that check 1 applies (<see cref="FrameStack.SameSettings"/>:
+    /// another ISO, or an exposure further than <see cref="Th.ExposureTolerance"/>); false when
+    /// either side does not say a setting, and for a light without figures. It is read from the
+    /// settings, not from <see cref="ToDarks"/>: twice the ISO at half the exposure has a factor
+    /// of 1 and is still another setting.
+    /// </summary>
+    internal bool OtherSettings { get; init; }
 }
 
 /// <summary>
@@ -213,6 +223,8 @@ internal static class LightsAnalyzer
             }
         }
 
+        // the darks' ISO and exposure, which each light's are held against (LightFigures.OtherSettings)
+        FrameInfo? darkSettings = darks.FirstStacked;
         int[] counts = new int[w * h];
         LightFigures[] frames = new LightFigures[n];
         object gate = new();
@@ -238,7 +250,7 @@ internal static class LightsAnalyzer
                     bool assumed = !Normalisation.Says(frame.Info);
                     double normL = FactorOf(frame.Info, darks);
                     (LightFigures f, List<int> isolated) = Measure(frame, w, h, lightBlack, white, normL, assumed, excess, darks.Norm, ampIdx);
-                    frames[i] = f with { ToDarks = darks.Norm / normL };
+                    frames[i] = f with { ToDarks = darks.Norm / normL, OtherSettings = darkSettings is not null && !FrameStack.SameSettings(frame.Info, darkSettings) };
                     lock (gate)
                     {
                         used++;

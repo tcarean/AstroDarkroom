@@ -252,9 +252,13 @@ subtracted from every light alike, so its noise does not average out). Both side
 are in the darks' raw ADU: each light's sky median and sigma are multiplied by
 `LightFigures.ToDarks`, the darks' factor over the light's, which `LightsAnalyzer.Analyze` sets
 from `FactorOf` when it measures the light, so `StackNoise.Of` needs no settings of its own;
-`StackNoise.Scaled` says a light was not at the darks' settings as check 1 judges them
-(`StackNoise.OtherSettings`: a factor further from 1 than `Th.ExposureTolerance`, so a light a
-hair off the darks' exposure is brought to it without a word), and the `cer` row then says the
+`StackNoise.Scaled` says that more than half of those lights are at other settings than the
+darks, so the medians are those of brought figures. A light is at other settings when
+`FrameStack.SameSettings` says so of its metadata and the darks' (`LightFigures.OtherSettings`,
+set beside `ToDarks`; `DarkSeriesAnalysis.FirstStacked` is the darks' side): the rule that keeps
+a frame in a stack, with check 1's tolerance on the exposure. It is not read back from the
+factor, which is exactly 1 for twice the ISO at half the exposure and falls on either side of
+the tolerance by rounding. When `Scaled` is true the `cer` row says the
 figures were worked out for the darks' ISO and exposure. Check 9 brings the noise of a light to
 the darks' settings the same way, through `NoiseOnPlane`.
 `ScaleReport.AgainstMasters` turns a light in raw ADU into the words and the bold parts of its

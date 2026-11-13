@@ -49,10 +49,11 @@ compared as before.
 
 A comparison with a silent set is right only if the two were in fact made at the same settings;
 the `ATENTIE` line is what tells the reader it was assumed, and check 1 says `NEMASURAT` on the
-settings in the same report. `Normalisation.Says` is the test the comparisons use for "says its settings" (an
-ISO and an exposure, both above 0); `DarkSeriesAnalysis.SaysSettings` carries it for the darks.
-The rows that print a set's settings (the scale section's `1 ADU-eq`, the partner's row) still
-ask only whether the two are there, so a file with an ISO of 0 prints it.
+settings in the same report. `Normalisation.Says` is the test the comparisons use for "says its
+settings" (an ISO and an exposure, both above 0); `DarkSeriesAnalysis.SaysSettings` carries it
+for the darks. The rows that print a set's settings (the scale section's `1 ADU-eq`, the
+partner's row) ask only whether the two are there; for a file that was read the answers are the
+same, since the readers already turn an ISO or an exposure that is not positive into "not said".
 Guarded by `R052_DarksThatDoNotSayTheirSettingsAreComparedWithTheLightsAsMadeAtTheSame`,
 `R063_APartnerOrASessionThatDoesNotSayItsSettingsIsComparedAsMadeAtTheSame` and
 `R060_TheIndexRowSaysWhenTheFilesDoNotGiveTheSettings`. Sets that say their settings are

@@ -384,7 +384,14 @@ internal sealed record DarkSeriesAnalysis(
     /// them; false when the first stacked frame, whose settings every stacked frame shares, does
     /// not, and <see cref="Norm"/> is the 1 that stands for "unknown" (ADR 0053).
     /// </summary>
-    internal bool SaysSettings => Frames.FirstOrDefault(f => f.Error is null && !f.Skipped) is DarkFrameFigures first && Normalisation.Says(first.Info);
+    internal bool SaysSettings => FirstStacked is FrameInfo first && Normalisation.Says(first);
+
+    /// <summary>
+    /// The metadata of the first stacked frame, whose ISO and exposure every stacked frame shares
+    /// (<see cref="FrameStack.SameSettings"/>) and <see cref="Norm"/> is read from: the series'
+    /// settings. Null only when no frame was stacked.
+    /// </summary>
+    internal FrameInfo? FirstStacked => Frames.FirstOrDefault(f => f.Error is null && !f.Skipped)?.Info;
 }
 
 /// <summary>
