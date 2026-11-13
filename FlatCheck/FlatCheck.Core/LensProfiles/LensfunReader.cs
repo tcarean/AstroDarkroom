@@ -42,7 +42,8 @@ namespace FlatCheck
     /// <param name="CropFactor">The sensor's crop factor against full frame.</param>
     /// <param name="MakerNames">Every name the database gives the maker, the canonical one first,
     /// then those in other languages ("Eastman Kodak Company", "Kodak"); a camera's name from
-    /// a file carries the maker when it holds the first word of one of them (R-133).</param>
+    /// a file carries the maker when it holds a word of one of them that is not a generic
+    /// company word (R-133).</param>
     internal sealed record LensfunCamera(string Maker, string Model, IReadOnlyList<string> Aliases, string Mount, double CropFactor,
                                          IReadOnlyList<string> MakerNames);
 
@@ -162,20 +163,36 @@ namespace FlatCheck
             return words.ToArray();
         }
 
+        /// <summary>
+        /// The words of a maker's name that say nothing about who the maker is: legal forms
+        /// and the words of a trade, upper-cased. The first eighteen are the ones found in the
+        /// maker names of the shipped camera table on 2026-11-13 (57 names, 59 words, the other
+        /// 41 a maker's own: "Nikon Corporation", "Konica Minolta Camera, Inc.", "Olympus
+        /// Imaging Corp.", "OM Digital Solutions", "Phase One", "AEE DV", "LG Mobile"); the last
+        /// four are legal forms a later copy of the table may bring. A word here never makes a
+        /// file's camera name carry a maker (R-133, ADR 0101).
+        /// </summary>
+        internal static readonly IReadOnlySet<string> GenericMakerWords = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "AG", "CAMERA", "CO", "COMPANY", "COMPUTER", "CORP", "CORPORATION", "DIGITAL", "DV", "IMAGING", "INC", "LTD",
+            "MOBILE", "ONE", "OPTICAL", "SOLUTIONS", "SYSTEM", "TECHNOLOGY",
+            "GMBH", "KK", "LIMITED", "LLC",
+        };
+
         /// <summary>Whether a file's camera name carries a camera's maker: one of its words is
-        /// the first word of one of the maker's names ("NIKON" of "Nikon Corporation", "KODAK"
-        /// of the alias "Kodak" beside "Eastman Kodak Company").</summary>
+        /// a word of one of the maker's names, whichever, except the generic ones
+        /// (<see cref="GenericMakerWords"/>): "NIKON" of "Nikon Corporation", "KODAK" of the
+        /// alias "Kodak" beside "Eastman Kodak Company", "MINOLTA" of "Konica Minolta", which a
+        /// raw writes alone; never "CORPORATION".</summary>
         /// <param name="wanted">The words of the file's camera name.</param>
         /// <param name="camera">The table's entry.</param>
-        /// <returns>True when a maker name's first word is among
+        /// <returns>True when a word of a maker name that is not generic is among
         /// <paramref name="wanted"/>; false for an entry without a maker.</returns>
         static bool CarriesMaker(string[] wanted, LensfunCamera camera)
         {
             foreach (string maker in camera.MakerNames)
-            {
-                string[] words = Words(maker);
-                if (words.Length > 0 && Array.IndexOf(wanted, words[0]) >= 0) return true;
-            }
+                foreach (string word in Words(maker))
+                    if (!GenericMakerWords.Contains(word) && Array.IndexOf(wanted, word) >= 0) return true;
             return false;
         }
 

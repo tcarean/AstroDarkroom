@@ -238,7 +238,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `QHY...` camera the Pentax Q's 5.53, so the profile's depth and the depth verdict were those
   of another sensor. On the shipped lensfun table 137 camera names landed on a body with
   another crop; now none does. The D3300 was not affected. The crop line names the table's
-  model.
+  model. A camera the table does not hold no longer borrows the crop of a body whose name
+  shares a part of a word with it: its crop reads as unknown, and `--crop` gives it.
 - The console no longer reads a number with a comma as another number (R-005, ADR 0102, the
   review's CR-002): `--fstop 2,8` was taken as f/28, `--crop 1,5` as 15 and `--focal 13,5` as
   135, without a word, and the figures were those of that aperture, sensor or focal length. A

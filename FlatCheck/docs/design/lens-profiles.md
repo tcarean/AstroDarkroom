@@ -158,9 +158,12 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   the file's words is the camera; without one, the entry one of whose names stands whole in
   the file's name, word for word and side by side (`StandsIn`: "Nikon D3300" in "Nikon
   Corporation NIKON D3300"), the name with the most letters winning, and only an entry whose
-  maker the file's name carries (`CarriesMaker`: the first word of one of
-  `LensfunCamera.MakerNames`, the canonical maker and its aliases; without it the "X10" in
-  "Canon EOS Kiss X10" was Fujifilm's compact). A table name that only
+  maker the file's name carries (`CarriesMaker`: any word of one of
+  `LensfunCamera.MakerNames`, the canonical maker and its aliases, that is not in
+  `LensfunData.GenericMakerWords`, the legal forms and trade words such as "Corporation",
+  "Camera", "Imaging"; without the condition the "X10" in "Canon EOS Kiss X10" was Fujifilm's
+  compact, and with the first word alone lensfun's "Konica Minolta" was not the "Minolta" a
+  raw writes). A table name that only
   contains the file's name never matches ("Nikon D7500" for a "Nikon D750", the crossing the
   review of 2026-11-13 found: until then the match was containment on letters, either way
   round). `CropOf(name)` is that camera's crop ("NIKON D3300" → 1.523), and

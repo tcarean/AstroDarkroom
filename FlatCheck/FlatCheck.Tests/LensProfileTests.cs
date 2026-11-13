@@ -310,7 +310,7 @@ public class LensProfileReaderTests
     [Fact]
     public void R133_ANameOfAnotherMakerFoundInsideIsNotTheCamera()
     {
-        LensfunData d = CameraTable("X10||3.93|Fujifilm", "Canon EOS Kiss X10i||1.613", "Leica M10||1.0", "D60||1.523|Nikon Corporation");
+        LensfunData d = CameraTable("X10||3.93|Fujifilm", "Canon EOS Kiss X10i||1.613", "M10||1.0|Leica Camera AG", "D60||1.523|Nikon Corporation");
 
         Assert.Null(d.CameraOf("Canon EOS Kiss X10"));              // not Fujifilm's X10
         Assert.Null(d.CropOf("Canon EOS Kiss X10"));
@@ -319,11 +319,59 @@ public class LensProfileReaderTests
         Assert.Null(d.CameraOf("Canon EOS D60"));                   // not Nikon's D60
         Assert.Equal("X10", d.CameraOf("X10")?.Model);              // the exact name, without a maker
         Assert.Equal("X10", d.CameraOf("FUJIFILM X10")?.Model);     // the maker in front, as a raw gives it
+        Assert.Equal("M10", d.CameraOf("LEICA M10")?.Model);
         Assert.Equal("D60", d.CameraOf("NIKON CORPORATION NIKON D60")?.Model);
     }
 
-    /// <summary>R-133: any of the entry's maker names counts, the canonical one or an alias,
-    /// by its first word: lensfun's "Eastman Kodak Company" is "Kodak" in a file.</summary>
+    /// <summary>
+    /// R-133: the maker is carried by any word of its names but the generic ones. lensfun says
+    /// "Konica Minolta" where a raw says "Minolta" (the second review of the branch: with the
+    /// first word alone, 14 bodies of the shipped table lost their crop), and "Corporation" in
+    /// a file's name is nobody's maker.
+    /// </summary>
+    [Fact]
+    public void R133_AnyWordOfTheMakerCarriesIt_ExceptTheGenericOnes()
+    {
+        LensfunData d = CameraTable("Dynax 5D||1.531|Konica Minolta", "K10||1.5|Pentax Corporation", "S1||2.0|Olympus Imaging Corp.");
+
+        Assert.Equal("Dynax 5D", d.CameraOf("Minolta DYNAX 5D")?.Model);
+        Assert.Equal("Dynax 5D", d.CameraOf("KONICA MINOLTA DYNAX 5D")?.Model);
+        Assert.Equal("K10", d.CameraOf("PENTAX K10")?.Model);
+        Assert.Null(d.CameraOf("NIKON CORPORATION K10"));           // "Corporation" is not Pentax
+        Assert.Null(d.CameraOf("Ricoh Imaging S1"));                // "Imaging" is not Olympus
+        Assert.Null(d.CameraOf("Leica Corp. S1"));
+        Assert.Equal("S1", d.CameraOf("OLYMPUS S1")?.Model);
+    }
+
+    /// <summary>
+    /// R-133: the generic words are the ones the shipped table's maker names hold, and every
+    /// maker there keeps a word that is its own. A lensfun update that brings a maker word not
+    /// seen before fails here, so that someone decides whether it is a brand or a generic word.
+    /// </summary>
+    [Fact]
+    public void R133_TheGenericMakerWordsAreTheOnesOfTheShippedTable()
+    {
+        LensfunData d = LensfunReader.ReadDirectory(Path.Combine(TestData.RepoDir(), ProfileLocator.LensfunFolderName));
+        static IEnumerable<string> WordsOf(string s) => System.Text.RegularExpressions.Regex.Matches(s.ToUpperInvariant(), @"[\p{L}\p{Nd}]+").Select(m => m.Value);
+        var makerNames = d.Cameras.SelectMany(c => c.MakerNames).Distinct().ToList();
+        var words = makerNames.SelectMany(WordsOf).Distinct().ToList();
+
+        // every maker keeps a word of its own
+        Assert.All(makerNames, n => Assert.Contains(WordsOf(n), w => !LensfunData.GenericMakerWords.Contains(w)));
+        // the generic words met in the table, by name
+        Assert.Equal(new[] { "AG", "CAMERA", "CO", "COMPANY", "COMPUTER", "CORP", "CORPORATION", "DIGITAL", "DV", "IMAGING", "INC", "LTD",
+                             "MOBILE", "ONE", "OPTICAL", "SOLUTIONS", "SYSTEM", "TECHNOLOGY" },
+                     words.Where(LensfunData.GenericMakerWords.Contains).OrderBy(w => w, StringComparer.Ordinal));
+        // and the words that count as a maker's own: 41 on 2026-11-13
+        var own = words.Where(w => !LensfunData.GenericMakerWords.Contains(w)).OrderBy(w => w, StringComparer.Ordinal).ToList();
+        Assert.True(own.Count == 41, "the maker words that are not generic changed: " + string.Join(" ", own));
+        Assert.Contains("MINOLTA", own);
+        Assert.Contains("KODAK", own);
+        Assert.Contains("OM", own);
+    }
+
+    /// <summary>R-133: any of the entry's maker names counts, the canonical one or an alias:
+    /// lensfun's "Eastman Kodak Company" is "Kodak" in a file.</summary>
     [Fact]
     public void R133_TheMakerMayBeAnyOfTheEntrysMakerNames()
     {
@@ -355,6 +403,20 @@ public class LensProfileReaderTests
                 LensfunCamera found = d.CameraOf(name);
                 bool same = found != null && new[] { found.Model }.Concat(found.Aliases).Any(n => Letters(n) == Letters(name));
                 if (!same) wrong.Add($"{name} -> {found?.Model ?? "nothing"}");
+
+                // and with the maker's first word in front, as a raw names its camera when the
+                // model does not begin with it ("Sony ILCE-7M3"): the name is then found inside,
+                // which asks for the maker. A body is found, and it is the entry of this very name
+                // (the first of the aspect-ratio twins that share one, as above) or one with this
+                // body's crop: "Pentax" before the alias "K-5 IIs" also holds "Pentax K-5", the
+                // longer name, a sibling of the same format.
+                string brand = new string(c.Maker.TakeWhile(char.IsLetterOrDigit).ToArray());
+                if (brand.Length == 0 || Letters(name).StartsWith(Letters(brand))) continue;
+                LensfunCamera branded = d.CameraOf(brand + " " + name);
+                bool sameBranded = branded != null
+                    && (new[] { branded.Model }.Concat(branded.Aliases).Any(n => Letters(n) == Letters(name))
+                        || Math.Abs(branded.CropFactor - c.CropFactor) <= 0.03 * c.CropFactor);
+                if (!sameBranded) wrong.Add($"{brand} {name} -> {branded?.Model ?? "nothing"}");
             }
         Assert.True(wrong.Count == 0, string.Join("; ", wrong.Take(20)));
     }
