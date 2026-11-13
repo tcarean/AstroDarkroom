@@ -171,6 +171,60 @@ public class OptionsTests
         Assert.Equal(4095.5, o.Sat);
     }
 
+    /// <summary>
+    /// R-005: a comma is not a decimal sign and not a thousands separator, and NaN and
+    /// Infinity are not numbers. Before, "--fstop 2,8" was read as f/28 without a word
+    /// (NumberStyles.Any drops the invariant culture's thousands separator wherever it
+    /// stands), and "NaN" passed every range check, which are written as "at or below".
+    /// </summary>
+    [Theory]
+    [InlineData("--sat", "4095,5", "--sat asteapta un numar, a primit '4095,5'")]
+    [InlineData("--black", "1,5", "--black asteapta un numar, a primit '1,5'")]
+    [InlineData("--fov", "12,5", "--fov asteapta un numar, a primit '12,5'")]
+    [InlineData("--focal", "13,5", "--focal asteapta milimetri, a primit '13,5'")]
+    [InlineData("--fstop", "2,8", "--fstop asteapta un f-numar, a primit '2,8'")]
+    [InlineData("--crop", "1,5", "--crop asteapta un crop factor, a primit '1,5'")]
+    [InlineData("--crop", "1,523.5", "--crop asteapta un crop factor, a primit '1,523.5'")]
+    [InlineData("--sat", "NaN", "--sat asteapta un numar, a primit 'NaN'")]
+    [InlineData("--black", "Infinity", "--black asteapta un numar, a primit 'Infinity'")]
+    [InlineData("--fov", "NaN", "--fov asteapta un numar, a primit 'NaN'")]
+    [InlineData("--focal", "NaN", "--focal asteapta milimetri, a primit 'NaN'")]
+    [InlineData("--fstop", "Infinity", "--fstop asteapta un f-numar, a primit 'Infinity'")]
+    [InlineData("--crop", "1e999", "--crop asteapta un crop factor, a primit '1e999'")]
+    public void R005_ACommaOrANonFiniteValueIsNotANumber(string flag, string value, string error)
+    {
+        var o = Options.Parse(new[] { "raw.fit", flag, value });
+
+        Assert.Equal(error, o.Error);
+    }
+
+    /// <summary>R-005: "-Infinity" and "-NaN" are not numbers either, so, starting with a
+    /// dash, they are unknown options and never a positional.</summary>
+    [Theory]
+    [InlineData("-Infinity")]
+    [InlineData("-NaN")]
+    [InlineData("-1,5")]
+    public void R005_ADashBeforeSomethingThatIsNotANumberIsAnUnknownOption(string token)
+    {
+        var o = Options.Parse(new[] { "raw.fit", token });
+
+        Assert.Equal("optiune necunoscuta: " + token, o.Error);
+    }
+
+    /// <summary>R-005: what a number may be: a dot, a sign, an exponent.</summary>
+    [Fact]
+    public void R005_ADotASignAndAnExponentAreStillNumbers()
+    {
+        var o = Options.Parse(new[] { "raw.fit", "--focal", "1.35e2", "--fstop", "2.8", "--crop", "1.523", "--sat", "+4095", "--black", "-5" });
+
+        Assert.Null(o.Error);
+        Assert.Equal(135.0, o.Focal!.Value, 9);
+        Assert.Equal(2.8, o.FStop);
+        Assert.Equal(1.523, o.Crop);
+        Assert.Equal(4095.0, o.Sat);
+        Assert.Equal(-5.0, o.Black);
+    }
+
     // ------------------------------------------------------- flags are positional-free
 
     /// <summary>

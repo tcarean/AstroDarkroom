@@ -104,8 +104,11 @@ tests and documents; this section is that list, in the order the work goes.
   fails with `optiune necunoscuta`, unless it parses as a number, so `-5` stays a positional.
   A value flag with no next token, or whose next token is itself a flag, fails before the
   value is read. The value's own validation is the `case` for that flag in the `switch`:
-  `TryNum` (`double.TryParse` with `NumberStyles.Any` and `CultureInfo.InvariantCulture`, so
-  `0.5` parses and `0,5` does not; `SatAndBlack_UseInvariantCulture...` in `OptionsTests`),
+  `TryNum` (`double.TryParse` with `NumberStyles.Float` and `CultureInfo.InvariantCulture`,
+  then `double.IsFinite`, so `0.5`, `-5` and `1e3` parse and `0,5`, `NaN`, `Infinity` and
+  `1e999` do not: R-005, ADR 0102, `R005_...` in `OptionsTests`. Until 2026-11-13 the style
+  was `NumberStyles.Any`, which drops a comma wherever it stands, so `0,5` was 5 while this
+  note said it did not parse),
   then the range or the enumeration inline (`--fov` in (0, 180), `--scale` in [50, 2000] or
   `auto`, `--source` `adobe` or `lensfun`).
 - Flags come before or after the path with the same result (R-003;

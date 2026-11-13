@@ -822,7 +822,8 @@ A flag may come anywhere: `flatcheck --expo f.fit` and `flatcheck f.fit --expo` 
 modes exclude each other; given two, the first in the order `--lenses`, `--synthetic`, `--against`,
 `--histeq`, `--expo`, `--light` runs. A `--lang` with a value other than `en` or `ro`, or
 with none, stops the run with an English error and exit 1. `--pattern` takes `*` and `?`; character
-classes (`[abc]`) are taken literally.
+classes (`[abc]`) are taken literally. A number is written with a dot for the decimals
+(`--fstop 2.8`); with a comma (`2,8`) it is refused with an error and exit 1.
 
 Every run prints the version on its first line and the copyright on the second, `--help` and failed
 runs included, so a report copied somewhere says what produced it.

@@ -239,6 +239,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   of another sensor. On the shipped lensfun table 137 camera names landed on a body with
   another crop; now none does. The D3300 was not affected. The crop line names the table's
   model.
+- The console no longer reads a number with a comma as another number (R-005, ADR 0102, the
+  review's CR-002): `--fstop 2,8` was taken as f/28, `--crop 1,5` as 15 and `--focal 13,5` as
+  135, without a word, and the figures were those of that aperture, sensor or focal length. A
+  comma, `NaN` and `Infinity` are now refused with the option's own error, exit 1, for `--sat`,
+  `--black`, `--fov`, `--focal`, `--fstop` and `--crop`. Write the decimals with a dot.
 - Typing in the Sintetic tab's lens field no longer freezes the window for half a second at
   every keystroke (R-132, ADR 0099): the text each lens is searched in is built once, while the
   profiles load, and a search takes under a millisecond on 3799 lenses. The same lenses are
