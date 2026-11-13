@@ -113,8 +113,8 @@ a defect: dead code, duplicates, small inaccuracies.
 
 - **Severity 1, common, confirmed** (part b: to measure). Status: fixed e4cb8e5d; part (b)
   was measured on screen and is as described (ADR 0052). `ContentPointInsideAt` is now
-  `Viewport.PixelAt`, `UpdateCursorContentPoint` `CompareView.ReportPointer`, and the event
-  `CursorPixelChanged`.
+  `Viewport.PixelAt`, `UpdateCursorContentPoint` `CompareView.ReportPointer`, the event
+  `CursorPixelChanged` and the field `_cursorContentPoint` `_cursorPixel`; `Same` is gone.
 - **Where:** `src/ImageVisualCompare.Core/Viewport.cs:134-135` (`ScreenToContent`), `:182-194`
   (`ZoomTo`), `:246` (`ZoomToActualSize`);
   `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs:596-597` (`UpdatePixelReadout`);

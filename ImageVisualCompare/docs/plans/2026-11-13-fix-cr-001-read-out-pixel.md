@@ -125,3 +125,14 @@ pointer (CR-006).
   screen pixel whose centre is within 1/32 of a physical pixel of an image pixel's edge: the
   software rasteriser painted the next pixel on four such screen pixels (ADR 0052).
 - The surface's event is renamed `CursorPixelChanged`, since it no longer carries a point.
+- The heights test runs the 101 even heights from 900 to 1100, not all 201: an odd height puts
+  every row's centre on an edge and has a test of its own.
+- The review of the branch found what the plan had not foreseen: a centre exactly on an edge.
+  Measured on screen, the display adapter paints it from the pixel before the edge, so
+  `PixelAt` gives an edge, and 1/4096 of an image pixel past it, to the pixel before
+  (`Viewport.EdgeReach`). With that, the far-edge assertion the plan said would change holds as
+  it did before the task: `(99.5, 99.5)` on a 100 x 100 image reads the last pixel. The software
+  rasteriser paints such a centre from the pixel after; the read-out follows the adapter
+  (ADR 0052).
+- The application was not launched on the real pair with its log read (`docs/skills.md`,
+  `/wrap-up` step 9): the owner was at the PC. The real window ran on screen in the harness.

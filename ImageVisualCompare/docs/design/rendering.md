@@ -90,8 +90,12 @@ that returns an `ImagePixel`, whole coordinates, or null off the image. `CursorP
 raised only when the pixel changes, and `MainWindow.UpdatePixelReadout` reads both bitmaps at
 it. The pointer's position is the corner of the physical pixel it is on, and WPF paints that
 screen pixel from the image point at its centre, so `PixelAt` converts the centre; the step from
-a point to a pixel is taken there and nowhere after it. `CompareViewTests` renders the surface
-into a bitmap and compares the pixel drawn with the pixel reported. See ADR 0052.
+a point to a pixel is taken there and nowhere after it. A centre exactly on the edge between two
+image pixels, or `Viewport.EdgeReach` past it, goes to the pixel before the edge: the display
+adapter paints it so, and a centre that rounding left an ulp to either side of an edge then
+falls on one side. `CompareViewTests` renders the surface into a bitmap and compares the pixel
+drawn with the pixel reported, away from the edges, since the software rasteriser it renders
+with gives an edge to the pixel after it. See ADR 0052.
 
 **Scrollbars float over the image.** Putting them in the layout would shrink the viewport when
 they appear, which changes the fit scale, which can change whether they are needed. See ADR 0019.

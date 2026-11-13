@@ -38,22 +38,25 @@ public class CompareViewTests
     /// <summary>
     /// How close to an image pixel's edge, in physical pixels, the centre of a screen pixel may
     /// be before the rasteriser's own arithmetic, not the geometry, decides which of the two it
-    /// paints. WPF's software rasteriser, which renders here, steps along a row in fixed point:
-    /// on this surface it painted the next image pixel on screen pixels whose centre was up to
-    /// 0.008 of a physical pixel short of the edge (measured 2026-11-13, ADR 0052).
+    /// paints. WPF's software rasteriser, which renders here, paints a centre exactly on an edge
+    /// from the pixel after it, where the display adapter, which the read-out follows, paints it
+    /// from the pixel before; and it steps along a row in fixed point: on this surface it
+    /// painted the next image pixel on screen pixels whose centre was up to 0.008 of a physical
+    /// pixel short of the edge (measured 2026-11-13, ADR 0052).
     /// </summary>
     private const double UndecidedNearAnEdge = 1.0 / 32;
 
     /// <summary>
     /// CR-001 of the review of 2026-11-13. The first case is its part (a): on this surface the
     /// zoom leaves the horizontal offset of a 1854 pixel wide pair an ulp under 545. The others
-    /// are its part (b): from 400 % up each image pixel is a square of screen pixels, and the
-    /// square's edge falls anywhere inside a screen pixel.
+    /// are its part (b): from 400 % up each image pixel is a square of screen pixels, and in
+    /// each case some of the squares' edges fall in the first half of a screen pixel, where a
+    /// read-out taken at the screen pixel's corner names the pixel before.
     /// </summary>
     [Theory]
     [InlineData("fit then 100%")]
     [InlineData("400% at offsets 300.55, 200.45")]
-    [InlineData("1600% at offsets 300.21, 200.77")]
+    [InlineData("1600% at offsets 300.79, 200.36")]
     [InlineData("ten wheel notches from 100%")]
     public async Task R028_TheSurfaceReportsThePixelItDraws(string state)
     {
@@ -76,16 +79,19 @@ public class CompareViewTests
             switch (state)
             {
                 case "fit then 100%":
+                    // The zoom leaves the offset an ulp under 545 today; it is set so here, to
+                    // keep the case when the zoom's own rounding changes (CR-002).
                     view.ZoomToActualSize();
                     Assert.Equal(545, viewport.OffsetX, 9);
+                    viewport.SetOffset(Math.BitDecrement(545.0), viewport.OffsetY);
                     break;
                 case "400% at offsets 300.55, 200.45":
                     viewport.ZoomTo(4, 0, 0);
                     viewport.SetOffset(300.55, 200.45);
                     break;
-                case "1600% at offsets 300.21, 200.77":
+                case "1600% at offsets 300.79, 200.36":
                     viewport.ZoomTo(16, 0, 0);
-                    viewport.SetOffset(300.21, 200.77);
+                    viewport.SetOffset(300.79, 200.36);
                     break;
                 default:
                     view.ZoomToActualSize();

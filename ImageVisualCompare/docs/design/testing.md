@@ -98,7 +98,9 @@ the comparison surface out the same way at 764 × 450, shows a pair whose every 
 coordinates in its colour, renders the surface with `RenderTargetBitmap`, and compares, on one
 row and one column of screen pixels, the image pixel drawn with the one `ReportPointer` reports
 (R-028); a screen pixel whose centre is within 1/32 of a physical pixel of an image pixel's edge
-is left out, since there the rasteriser's own arithmetic decides (ADR 0052). `UiTextTests` builds the
+is left out: the software rasteriser that renders the bitmap gives an edge to the pixel after
+it, the display adapter to the pixel before, which is what `PixelAt` follows and `ViewportTests`
+pins on the figures measured on screen (ADR 0052). `UiTextTests` builds the
 main window in Romanian there and reads its toolbar and hint; it and the other Romanian tests run
 alone, in a collection with parallelisation off (`language.md`). `MessageDialog`, `DarkTitleBar`,
 `FileDialogService` and `MemoryHousekeeping.ReleaseImageBuffers` have no test, nor has the main

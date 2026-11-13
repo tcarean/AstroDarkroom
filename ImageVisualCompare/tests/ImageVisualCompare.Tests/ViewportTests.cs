@@ -308,6 +308,11 @@ public class ViewportTests
         // 149.9, still on the margin; one at 149.6 has its centre at 150.1, on image column 0.
         Assert.Null(viewport.PixelAt(149.4, 200));
         Assert.Equal(new ImagePixel(0, 50), viewport.PixelAt(149.6, 200));
+
+        // A centre exactly on the image's near edge is on the edge between the margin and
+        // column 0, and an edge belongs to what is before it: the margin.
+        Assert.Null(viewport.PixelAt(149.5, 200));
+        Assert.Equal(new ImagePixel(0, 50), viewport.PixelAt(149.5 + (1.0 / 1024), 200));
     }
 
     [Fact]
@@ -316,10 +321,11 @@ public class ViewportTests
         var viewport = Create(contentWidth: 100, contentHeight: 100, viewportWidth: 100, viewportHeight: 100);
         viewport.ZoomTo(1.0, 50, 50);
 
-        // The last physical pixel shows the last image pixel; one whose centre is at the image's
-        // far edge, or past it, shows none.
+        // A physical pixel whose centre is exactly on the image's far edge still shows the last
+        // image pixel, since an edge belongs to the pixel before it; one further out shows none.
         Assert.Equal(new ImagePixel(99, 99), viewport.PixelAt(99, 99));
-        Assert.Null(viewport.PixelAt(99.5, 99.5));
+        Assert.Equal(new ImagePixel(99, 99), viewport.PixelAt(99.5, 99.5));
+        Assert.Null(viewport.PixelAt(99.5 + (1.0 / 1024), 99.5 + (1.0 / 1024)));
         Assert.Null(viewport.PixelAt(100, 100));
     }
 
@@ -367,6 +373,82 @@ public class ViewportTests
         }
 
         Assert.Empty(wrong);
+    }
+
+    [Fact]
+    public void R028_PixelAt_AfterFitThen100Percent_AtEveryOddHeightFrom901To1099_SkipsNoRow()
+    {
+        // An odd height leaves the image half a physical pixel off (CR-002), so the centre of
+        // every screen row is on the edge between two image rows, and at 14 of the 100 heights
+        // the offset is an ulp under its half: every row must still go the same way, to the row
+        // before the edge, with none read twice and none skipped.
+        var wrong = new List<string>();
+        for (int height = 901; height <= 1099; height += 2)
+        {
+            Viewport viewport = Create(5938, 3888, 1920, height);
+            viewport.ZoomToFit();
+            viewport.ZoomToActualSize();
+            double half = Math.Round(viewport.OffsetY * 2) / 2;
+            Assert.Equal(half, viewport.OffsetY, 9);
+            int top = (int)Math.Floor(half);
+
+            int rows = Enumerable.Range(0, height).Count(row => viewport.PixelAt(100, row)?.Y != top + row);
+            if (rows > 0)
+            {
+                wrong.Add($"height {height}: {rows} rows");
+            }
+        }
+
+        Assert.Empty(wrong);
+    }
+
+    [Fact]
+    public void R028_PixelAt_WithTheCentreExactlyOnAnEdge_NamesThePixelBeforeIt()
+    {
+        Viewport viewport = Create(1200, 800, 764, 450);
+        viewport.ZoomTo(4, 0, 0);
+        viewport.SetOffset(300.375, 200.625);
+
+        // The centre of screen column 2 is at 300.375 + 2.5 / 4 = 301, the edge between image
+        // columns 300 and 301, and that of screen row 1 at 200.625 + 1.5 / 4 = 201. The display
+        // adapter paints such a screen pixel from the pixel before the edge (ADR 0052).
+        Assert.Equal(new ImagePixel(300, 200), viewport.PixelAt(2, 1));
+        Assert.Equal(new ImagePixel(301, 201), viewport.PixelAt(3, 2));
+    }
+
+    [Theory]
+    [InlineData(1.0 / 16384, 300)]
+    [InlineData(1.0 / 1024, 301)]
+    public void R028_PixelAt_WithTheCentreJustPastAnEdge_GoesByWhatTheAdapterPaints(double past, int column)
+    {
+        // Measured on screen (ADR 0052): a centre 1/16384 of an image pixel past an edge is
+        // still painted from the pixel before it, on every screen pixel; one 1/1024 past is
+        // painted from the pixel after it.
+        Viewport viewport = Create(1200, 800, 764, 450);
+        viewport.ZoomTo(4, 0, 0);
+        viewport.SetOffset(300.375 + past, 200.625);
+
+        Assert.Equal(column, viewport.PixelAt(2, 0)?.X);
+    }
+
+    [Fact]
+    public void R028_PixelAt_OnAnOddWidth_AfterFitThen100PercentThenFourSteps_NamesThePixelDrawn()
+    {
+        // On a surface of odd width the 100% offset ends in .5 and the 400% one in .375, which
+        // puts the centre of one screen column in four exactly on an edge. Measured on screen:
+        // screen column 10 is painted from image column 506.
+        Viewport viewport = Create(1200, 800, 765, 450);
+        viewport.ZoomToFit();
+        viewport.ZoomToActualSize();
+        for (int step = 0; step < 4; step++)
+        {
+            viewport.ZoomIn(765 / 2.0, 450 / 2.0);
+        }
+
+        Assert.Equal(4, viewport.Scale);
+        Assert.Equal(504.375, viewport.OffsetX);
+        Assert.Equal(506, viewport.PixelAt(10, 60)?.X);
+        Assert.Equal(507, viewport.PixelAt(11, 60)?.X);
     }
 
     [Fact]

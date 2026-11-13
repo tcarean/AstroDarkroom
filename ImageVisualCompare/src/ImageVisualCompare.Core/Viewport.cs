@@ -32,6 +32,17 @@ public sealed class Viewport
     /// <summary>Beyond roughly this point a pixel is a large flat square and more zoom buys nothing.</summary>
     public const double MaxScale = 16.0;
 
+    /// <summary>
+    /// How far past the edge between two image pixels, in image pixels, the centre of a screen
+    /// pixel may be and the screen pixel still be painted from the pixel before the edge.
+    /// Measured on screen with nearest-neighbour drawing at 400%, 800% and 1600% (ADR 0052): a
+    /// centre exactly on an edge, or 1/16384 past it, is always painted from the pixel before;
+    /// 1/4096 past, on some screen pixels and not on others; 1/1024 past, always from the pixel
+    /// after. It also keeps a centre that rounding left an ulp to either side of an edge on
+    /// one side of it.
+    /// </summary>
+    public const double EdgeReach = 1.0 / 4096;
+
     private double _scale = 1.0;
 
     public double ContentWidth { get; private set; }
@@ -154,8 +165,10 @@ public sealed class Viewport
     /// </param>
     /// <param name="screenY">The top edge of that physical pixel, in the same space.</param>
     /// <returns>
-    /// The pixel, by its whole coordinates. Null when the physical pixel shows the empty margin
-    /// around the image or lies past its far edge, and when there is no content.
+    /// The pixel that holds the image point at the centre of that physical pixel, by its whole
+    /// coordinates; a centre on the edge between two pixels, or within <see cref="EdgeReach"/>
+    /// past it, belongs to the pixel before the edge. Null when the physical pixel shows the
+    /// empty margin around the image or lies past its far edge, and when there is no content.
     /// </returns>
     public ImagePixel? PixelAt(double screenX, double screenY)
     {
@@ -165,15 +178,18 @@ public sealed class Viewport
         }
 
         // The image point at the centre of the physical pixel, not at its corner: that is the
-        // point the screen pixel is painted from, and it is half a pixel away from every edge
-        // an offset an ulp short of a whole number could push it across (ADR 0052).
+        // point the screen pixel is painted from (ADR 0052).
         PointD centre = ScreenToContent(screenX + 0.5, screenY + 0.5);
 
-        bool inside = centre.X >= 0 && centre.Y >= 0
-                      && centre.X < ContentWidth && centre.Y < ContentHeight;
+        // Pixel k holds the points from just past k + EdgeReach up to k + 1 + EdgeReach: rounding
+        // up and stepping back one gives an edge, and the little past it, to the pixel before.
+        double x = Math.Ceiling(centre.X - EdgeReach) - 1;
+        double y = Math.Ceiling(centre.Y - EdgeReach) - 1;
 
-        // Not negative here, so cutting the fraction off is rounding down.
-        return inside ? new ImagePixel((int)centre.X, (int)centre.Y) : null;
+        // The content's size is a whole number of pixels, so "less than" ends at the last one.
+        bool inside = x >= 0 && y >= 0 && x < ContentWidth && y < ContentHeight;
+
+        return inside ? new ImagePixel((int)x, (int)y) : null;
     }
 
     /// <summary>
