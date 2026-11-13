@@ -60,8 +60,14 @@ recommendation, and answered in chat.
 
 - R-178 and R-146 say so and R-179 is new; `SplitDividerTests`, `BeforeAfterViewerTests`,
   `ZoomPanViewerTests` and `GamutFitTabTests` hold the line's rules, the clip under zoom and pan,
-  the two additions of the viewer and the gallery of three. The mouse itself (the press that
-  grabs the line, the cursor) is not driven by a test; it is checked in the running window.
+  the two additions of the viewer and the gallery of three. A drag is tested through the
+  methods the mouse handlers call; the mouse itself (the capture, the cursor, the wheel handed
+  to the viewer while the line is held) is not driven by a test and is checked in the running
+  window.
+- The line is dragged from where it was grabbed, not pulled under the pointer, and a gallery
+  computed again for a larger area keeps the variant that was shown (the review of 2026-11-13):
+  with a comparison on screen, a fall back to `Exacta` changed the After side without a press.
+  The Editare Curbe tab still goes back to its first item after a recompute.
 - `ZoomPanViewer` serves two tabs: `FitEnlarges` keeps ADR 0084's rule that an image smaller
   than the area is not blown up, and `ViewChanged` lets the comparison follow the view.
 - A recompute for a larger area changes the copy's size, so the zoom goes back to the fit, as

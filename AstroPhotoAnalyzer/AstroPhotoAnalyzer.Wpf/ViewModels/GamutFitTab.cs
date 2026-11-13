@@ -21,8 +21,8 @@
 //
 // It computes nothing: the variants, the previews, the masks, the figures and the sentences
 // come from GamutFitRun; the saving is GamutFitExport's. Here are only the position in the
-// gallery, the box, the commands and the bitmaps; the comparison's line and the zoom are the
-// view's, unknown here (ADR 0090). Like Editare Curbe, the content is a run
+// gallery, the box, the commands and the bitmaps; the place of the comparison's line and the
+// zoom are the view's, held nowhere here (ADR 0090). Like Editare Curbe, the content is a run
 // after the analysis: MainViewModel starts it once the other tabs are filled (ADR 0051), and
 // the tab runs it again by itself when the gallery's area allows a finer preview (ADR 0084).
 
@@ -306,14 +306,14 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Takes a set: the bitmaps and the layers made once, the previews dropped; a set with
-        /// a problem empties the gallery and shows the problem in red.
+        /// Takes a set: the bitmaps and the layers made once, the previews dropped, the position
+        /// in the gallery kept; a set with a problem empties the gallery and shows the problem in
+        /// red.
         /// </summary>
         /// <param name="set">The core's set; not null.</param>
         void Show(GamutFitSet set)
         {
             SaveMessage = null; SaveError = null;
-            _index = 0;
             PreviewCapped = set.Problem == null && set.PreviewCapped;
             if (set.Problem != null)
             {
@@ -321,6 +321,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 // not depend on the size), so the asked size goes back to "nothing to redo".
                 _askedWidth = _askedHeight = 0;
                 _set = null;
+                _index = 0;
                 Before = null;
                 Items = Array.Empty<GamutFitGalleryItem>();
                 Message = set.Problem;
@@ -340,6 +341,9 @@ namespace AstroPhotoAnalyzer.Wpf
             Message = null;
             before.ShowOutside = _showOutside;
             foreach (GamutFitGalleryItem i in items) i.ShowOutside = _showOutside;
+            // A recompute of the same image (a larger area) keeps the variant looked at; a new
+            // image starts at the first, since Reset put the position there.
+            _index = Math.Clamp(_index, 0, items.Count - 1);
             Before = before;
             Items = items;
             RaiseGallery();

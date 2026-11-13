@@ -149,7 +149,9 @@ own: nothing copied from anyone's file.
 result, `MainViewModel` starts `ComputeAsync` beside the other two once every tab is filled,
 the tab runs it again by itself when its area allows a finer preview, as the curves tab does
 (ADR 0084; `Compute(w, h)` for the tests, `Computation` to await); the run number
-`_run` makes a late result nobody's. `Show` makes, once per set, the original's item and one
+`_run` makes a late result nobody's, and a recompute keeps the position in the gallery (`Show`
+clamps `_index`, which only `Reset` and a problem put back at the first), so the variant looked
+at stays when a larger area brings finer previews. `Show` makes, once per set, the original's item and one
 item per variant: the bitmap (`RasterBitmaps.Region`) and the red layer (`RasterBitmaps.Overlay`
 over the set's mask, the soft proof's half-transparent red; null when nothing is outside), and,
 for a variant, the evidence rows from `GamutFitTexts.EvidenceRows`, with the variant kept
@@ -195,11 +197,16 @@ purpose: it runs inside the viewer's arrange pass, and the first version, which 
 tab's area changed size (the line started 66 pixels under the top in the tab's render);
 `BeforeAfterViewerTests` holds that case. The line takes its height from the layout itself.
 
-The mouse: `OnPreviewMouseLeftButtonDown` asks `SplitDivider.HitTest` and, on a hit, captures
-the mouse and handles the event on the way down, so the viewer never sees the line's press (no
-pan, no double-click fit); `OnPreviewMouseMove` moves the line while it is dragged and otherwise
-shows `SizeWE` over it, unless the viewer is panning; the wheel and every other press are the
-viewer's. `After` going null (the gallery emptied by another image) hides the overlay and puts
+The mouse: `OnPreviewMouseLeftButtonDown` calls `BeginDividerDrag`, which asks
+`SplitDivider.HitTest` and, on a hit, remembers how far from the line the press landed; the
+control then captures the mouse and handles the event on the way down, so the viewer never sees
+the line's press (no pan, no double-click fit). `OnPreviewMouseMove` calls `DragDividerTo`
+while the line is dragged, which keeps that distance, so the line does not jump under the
+pointer, and otherwise shows `SizeWE` over the line, unless the viewer is panning. Every other
+press is the viewer's, and so is the wheel: while a drag holds the mouse here the wheel would
+not reach the viewer, so `OnPreviewMouseWheel` hands it over (`ZoomAt` with the viewer's
+`WheelFactor`). The three drag methods are internal and hold the whole rule, so the tests drive
+a drag without a mouse. `After` going null (the gallery emptied by another image) hides the overlay and puts
 the line back in the middle; another variant replaces `After` without passing through null and
 keeps it.
 

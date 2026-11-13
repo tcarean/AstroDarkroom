@@ -126,6 +126,19 @@ public class BeforeAfterViewerTests
             Assert.Equal(BeforeLevel, Seen(v, 190, 100));
             Assert.Equal(AfterLevel, Seen(v, 210, 100));
 
+            // An area the image does not fill (800 x 300: the image is 400 wide, in the middle):
+            // the line at a quarter of the width is on the image's left edge, and in the middle
+            // of the width it cuts the image in two.
+            Layout(v, 800, 300);
+            Assert.Equal(0, ClipRight(v), 9);
+            Assert.Equal(AfterLevel, Seen(v, 220, 100));
+            v.MoveDividerTo(400);
+            Assert.Equal(400, ClipRight(v), 9);
+            Assert.Equal(BeforeLevel, Seen(v, 380, 100));
+            Assert.Equal(AfterLevel, Seen(v, 420, 100));
+            v.MoveDividerTo(200);
+            Layout(v, 800, 600);
+
             // At the edges only one of the two is seen.
             v.MoveDividerTo(-30);
             Assert.Equal(0, v.DividerPosition);
@@ -230,6 +243,68 @@ public class BeforeAfterViewerTests
             Assert.Equal(Visibility.Visible, v.Overlay.Visibility);
             Assert.Equal(0.5, v.DividerPosition);
             Assert.Equal(400, ClipRight(v), 9);
+        });
+
+    [Fact]
+    public void R179_APressOnTheLineDragsItFromWhereItWasGrabbedAndOneElsewhereIsTheImages()
+        => _sta.Invoke(() =>
+        {
+            BeforeAfterViewer v = Comparison();   // the line at x = 200
+
+            // A press on the image is not the line's: nothing is dragged.
+            Assert.False(v.BeginDividerDrag(new Point(100, 150)));
+            v.DragDividerTo(300);
+            Assert.Equal(0.5, v.DividerPosition);
+
+            // A press 6 DIPs right of the line grabs it there: the line keeps that distance
+            // from the pointer instead of jumping under it.
+            Assert.True(v.BeginDividerDrag(new Point(206, 20)));
+            Assert.Equal(0.5, v.DividerPosition);
+            v.DragDividerTo(306);
+            Assert.Equal(0.75, v.DividerPosition, 9);
+            Assert.Equal(600, ClipRight(v), 9);
+            v.DragDividerTo(5000);
+            Assert.Equal(1, v.DividerPosition);
+            v.DragDividerTo(106);
+            Assert.Equal(0.25, v.DividerPosition, 9);
+
+            // Released, the pointer moves the line no more.
+            v.EndDividerDrag();
+            v.DragDividerTo(306);
+            Assert.Equal(0.25, v.DividerPosition, 9);
+
+            // The handle is a wider grip, at mid height.
+            Assert.True(v.BeginDividerDrag(new Point(100 - 12, 150)));
+            v.DragDividerTo(200 - 12);
+            Assert.Equal(0.5, v.DividerPosition, 9);
+            v.EndDividerDrag();
+
+            // With nothing to compare there is no line to grab.
+            v.After = null;
+            Assert.False(v.BeginDividerDrag(new Point(200, 150)));
+        });
+
+    [Fact]
+    public void R179_EachLayerIsCutAtTheLineWithTheImageUnderIt()
+        => _sta.Invoke(() =>
+        {
+            const byte beforeLayer = 250, afterLayer = 100;
+            BeforeAfterViewer v = Comparison();
+            v.BeforeOverlay = Image(800, 600, beforeLayer);
+            v.AfterOverlay = Image(800, 600, afterLayer);
+            // Each side shows its own layer, over its own image, up to the line.
+            Assert.Equal(beforeLayer, Seen(v, 150, 100));
+            Assert.Equal(afterLayer, Seen(v, 250, 100));
+            v.MoveDividerTo(300);
+            Assert.Equal(beforeLayer, Seen(v, 250, 100));
+            Assert.Equal(afterLayer, Seen(v, 350, 100));
+
+            // A layer taken away on one side leaves the other side's alone.
+            v.BeforeOverlay = null;
+            Assert.Equal(BeforeLevel, Seen(v, 250, 100));
+            Assert.Equal(afterLayer, Seen(v, 350, 100));
+            v.AfterOverlay = null;
+            Assert.Equal(AfterLevel, Seen(v, 350, 100));
         });
 
     [Fact]

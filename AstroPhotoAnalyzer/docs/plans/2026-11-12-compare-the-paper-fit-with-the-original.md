@@ -188,3 +188,8 @@ What deviated from the plan above, and why:
   plan was approved.
 - Verification: the gate green, `/validate` with all 27 cases passing (recorded in
   `docs/validation.md`), the tab's render read back.
+- The review of the first commit (a subagent, 2026-11-13) found no confirmed defect and led to
+  a second commit: the line keeps the distance from the pointer it was grabbed at, the wheel
+  zooms while the line is held, a recompute keeps the variant shown, the drag is testable
+  without a mouse, and tests were added for the two layers, an area the image does not fill and
+  the view's bindings; `window.md` no longer says this tab uses a `Viewbox`.

@@ -24,8 +24,9 @@
 // viewer transforms its child: the cut is set again whenever the view or the line moves
 // (ZoomPanViewer.ViewChanged, ToChildX). The line wins over the image: a press SplitDivider
 // calls the line's is taken here, on the way down, and never reaches the viewer, so it cannot
-// pan or reset the zoom; every other press, and the wheel, are the viewer's. All of it is
-// view state: nothing is computed about the images, and no view-model knows of the line.
+// pan or reset the zoom; every other press is the viewer's, and so is the wheel, which this
+// control hands to the viewer itself while a drag of the line holds the mouse. All of it is
+// view state: nothing is computed about the images, and no view-model holds the line's place.
 
 using System;
 using System.Windows;
@@ -44,6 +45,10 @@ namespace AstroPhotoAnalyzer.Wpf
         readonly SplitDivider _divider = new();
         readonly TranslateTransform _lineAt = new(), _handleAt = new(), _beforeLabelAt = new(), _afterLabelAt = new();
         bool _dragging;
+
+        // Where the line was grabbed: the pointer's x less the line's, kept for the whole drag,
+        // so that the line does not jump under the pointer at the first move.
+        double _grabOffset;
 
         /// <summary>The image left of the line; null shows nothing there.</summary>
         public static readonly DependencyProperty BeforeProperty = Register<ImageSource>(nameof(Before), null);
@@ -130,6 +135,30 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
+        /// Starts a drag of the line when a press is the line's (<see cref="SplitDivider.HitTest"/>),
+        /// remembering how far from the line it landed.
+        /// </summary>
+        /// <param name="at">The press, in the viewer's device-independent pixels.</param>
+        /// <returns>True when the line is now dragged; false when the press is the image's.</returns>
+        internal bool BeginDividerDrag(Point at)
+        {
+            if (!OnDivider(at)) return false;
+            _dragging = true;
+            _grabOffset = at.X - _divider.LineX(Viewer.Viewport.Width);
+            return true;
+        }
+
+        /// <summary>Moves a dragged line with the pointer, keeping the distance it was grabbed at; nothing without a drag.</summary>
+        /// <param name="x">The pointer's x, in the viewer's device-independent pixels.</param>
+        internal void DragDividerTo(double x)
+        {
+            if (_dragging) MoveDividerTo(x - _grabOffset);
+        }
+
+        /// <summary>Ends a drag of the line; the line stays where it is.</summary>
+        internal void EndDividerDrag() => _dragging = false;
+
+        /// <summary>
         /// A new After image: the line shows only while there is something to compare, and goes
         /// back to the middle when there is nothing, so that the next image starts there (another
         /// variant of the same image replaces After without passing through null, and keeps it).
@@ -145,9 +174,9 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>
         /// Puts the line, the handle and the two labels where <see cref="SplitDivider"/> says for
         /// the viewer's viewport, and cuts the Before layer at the line, in the child's units.
-        /// It sets translations and a clip only, never a layout property: it runs inside the
-        /// viewer's arrange pass too, where a size or a position set from here would be applied
-        /// to a slot the layout had already given.
+        /// It sets translations, a label's being seen and a clip, never a size or a position of
+        /// the layout: it runs inside the viewer's arrange pass too, where one set from here
+        /// would be applied to a slot the layout had already given.
         /// </summary>
         void Place()
         {
@@ -186,10 +215,9 @@ namespace AstroPhotoAnalyzer.Wpf
         protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             base.OnPreviewMouseLeftButtonDown(e);
-            if (!OnDivider(e.GetPosition(Viewer))) return;
+            if (!BeginDividerDrag(e.GetPosition(Viewer))) return;
             // The line's press: taken before the viewer sees it, so it neither pans nor, on a
             // second click, fits the image again.
-            _dragging = true;
             CaptureMouse();
             e.Handled = true;
         }
@@ -201,7 +229,7 @@ namespace AstroPhotoAnalyzer.Wpf
             Point at = e.GetPosition(Viewer);
             if (_dragging)
             {
-                MoveDividerTo(at.X);
+                DragDividerTo(at.X);
                 e.Handled = true;
                 return;
             }
@@ -214,8 +242,19 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             base.OnPreviewMouseLeftButtonUp(e);
             if (!_dragging) return;
-            _dragging = false;
+            EndDividerDrag();
             ReleaseMouseCapture();
+            e.Handled = true;
+        }
+
+        /// <inheritdoc/>
+        protected override void OnPreviewMouseWheel(MouseWheelEventArgs e)
+        {
+            base.OnPreviewMouseWheel(e);
+            // While the line is dragged this control holds the mouse, so the wheel would not
+            // reach the viewer: it is handed over, and the zoom works with the line in hand.
+            if (!_dragging) return;
+            Viewer.ZoomAt(e.GetPosition(Viewer), e.Delta > 0 ? ZoomPanViewer.WheelFactor : 1 / ZoomPanViewer.WheelFactor);
             e.Handled = true;
         }
 
@@ -223,7 +262,7 @@ namespace AstroPhotoAnalyzer.Wpf
         protected override void OnLostMouseCapture(MouseEventArgs e)
         {
             base.OnLostMouseCapture(e);
-            _dragging = false;
+            EndDividerDrag();
         }
     }
 }

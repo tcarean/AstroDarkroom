@@ -152,12 +152,16 @@ public class GamutFitTabTests
         Assert.Equal(before, tab.Current.Width);
 
         tab.ShowOutside = true;
+        tab.Next.Execute(null);
+        Assert.Equal("Lina", tab.Current.Name);
         tab.SetGallerySize(w, h);
         Assert.True(tab.IsBusy);
         Assert.True(tab.HasGallery);
         await tab.Computation;
         Assert.False(tab.IsBusy);
         Assert.Equal(w, tab.Current!.Width);
+        Assert.Equal("Lina", tab.Current.Name);        // the recompute keeps the variant looked at
+        Assert.Equal("2 / 3", tab.Position);
         Assert.True(tab.ShowOutside);                 // the box survives the recompute
         Assert.Equal(w, tab.Before!.Width);            // the original is recomputed with the variants
         Assert.NotNull(tab.Before.Overlay);            // and its layer is on the new original
@@ -232,7 +236,31 @@ public class GamutFitTabTests
             tab.Populate(Result(ws, withProfile: true));
             tab.Compute(400, 300);
             tab.ShowOutside = true;
-            WindowSmokeTests.Render(new GamutFitView { DataContext = tab }, name: "tab-culori-hartie");
+            var view = new GamutFitView { DataContext = tab };
+            WindowSmokeTests.Render(view, name: "tab-culori-hartie");
             Assert.Equal("", errors.Text);
+
+            // The comparison is wired to the tab: the original left, the variant shown right,
+            // each with its layer, and a frame smaller than the area kept at its own size.
+            var comparison = Assert.IsType<BeforeAfterViewer>(view.GalleryArea.Child);
+            Assert.Same(tab.Before!.Image, comparison.Before);
+            Assert.NotNull(comparison.BeforeOverlay);
+            Assert.Same(tab.Before.Overlay, comparison.BeforeOverlay);
+            Assert.Same(tab.Current!.Image, comparison.After);
+            Assert.Same(tab.Current.Overlay, comparison.AfterOverlay);
+            Assert.Equal(tab.Current.Width, comparison.ContentWidth);
+            Assert.Equal(tab.Current.Height, comparison.ContentHeight);
+            Assert.Equal("Inainte", comparison.BeforeText);
+            Assert.Equal("Dupa", comparison.AfterText);
+            Assert.False(tab.PreviewCapped);
+            Assert.False(comparison.FitEnlarges);
+            Assert.Equal(1, comparison.Viewer.Scale, 9);
+
+            // The buttons change the right side only.
+            tab.Next.Execute(null);
+            Assert.Same(tab.Current.Image, comparison.After);
+            Assert.Same(tab.Before.Image, comparison.Before);
+            tab.ShowOutside = false;
+            Assert.Null(comparison.BeforeOverlay);
         });
 }

@@ -156,8 +156,8 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// The Left and Right arrows browse the gallery while the Editare Curbe tab is the one selected
-        /// (R-146). They are caught at the window, before the TabControl, which would otherwise
+        /// The Left and Right arrows browse the gallery while one of the two gallery tabs, Editare
+        /// Curbe (R-146) or Culori pentru hartie (R-178), is the one selected. They are caught at the window, before the TabControl, which would otherwise
         /// use them to change the tab; in a text box they stay the box's.
         /// </summary>
         /// <param name="sender">The window; not read.</param>
