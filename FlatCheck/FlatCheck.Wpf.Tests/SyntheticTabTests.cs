@@ -660,6 +660,67 @@ public class SyntheticTabTests
         }
     }
 
+    /// <summary>
+    /// R-135: the report panel after the button fails over a flat written and compared in this
+    /// session. The earlier comparison's text goes (it is no longer the file's), and the write's
+    /// own report stays with the figures and the "saved" line it belongs to.
+    /// </summary>
+    [Fact]
+    public async Task R135_AFailedButtonComparisonDropsTheOldComparisonFromTheReportAndKeepsTheWrites()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f, confirm: _ => true);
+        using (ws)
+        {
+            await vm.Pending;
+            vm.Search = "nikon corporation";
+            vm.SelectedLens = vm.Lenses[0];
+            vm.FStopText = "2.8";
+            await vm.RunAsync();
+            AssertComparison(vm);
+            Assert.Contains("COMPARATIE", vm.Report);         // the write's report, then the comparison's
+            Assert.Contains("flat sintetic scris", vm.Report);
+
+            File.WriteAllText(vm.Target, "spoiled after the comparison");
+            await vm.CompareAsync();
+
+            Assert.NotEmpty(vm.CompareError);
+            Assert.False(vm.HasCompare);
+            Assert.True(vm.HasResult);                        // the flat written here is still what the figures say
+            Assert.Equal(vm.Target, vm.SavedTo);
+            Assert.DoesNotContain("COMPARATIE", vm.Report);
+            Assert.Contains("flat sintetic scris", vm.Report);
+        }
+    }
+
+    /// <summary>
+    /// R-135: a Write that is refused after a comparison failed does not leave that
+    /// comparison's failure line under the refusal.
+    /// </summary>
+    [Fact]
+    public async Task R135_ARefusedWriteTakesTheOldFailureLineOff()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f, confirm: _ => true);
+        using (ws)
+        {
+            await vm.Pending;
+            vm.Search = "nikon corporation";
+            vm.SelectedLens = vm.Lenses[0];
+            vm.FStopText = "2.8";
+            bool spoil = true;
+            vm.Saved += path => { if (spoil) File.WriteAllText(path, "not a FITS any more"); };
+            await vm.RunAsync();
+            Assert.NotEmpty(vm.CompareError);
+
+            vm.FStopText = "";                                // the master's header gives no aperture: refused
+            await vm.RunAsync();
+
+            Assert.True(vm.HasError);
+            Assert.Empty(vm.CompareError);
+        }
+    }
+
     /// <summary>R-135: the failure line goes when the next write and comparison succeed.</summary>
     [Fact]
     public async Task R135_TheFailureLineGoesWithTheNextGoodComparison()

@@ -32,6 +32,10 @@ namespace FlatCheck.Tests;
 /// it: a re-approval here (FLATCHECK_UPDATE_GOLDEN=1) is a decision that the C# alone is now
 /// right, and the diff is read with that in mind.
 ///
+/// Since 2026-11-13 the table has a 40th row, "structure odd raster 526x518", added for a
+/// branch the 39 do not reach (ADR 0107). It was never the prototype's: a snapshot, judged
+/// like a golden of the main set.
+///
 /// Keep all 39. They are not to be trimmed like the main set: each one was chosen to reach a
 /// branch the main goldens miss (a residual band, a BITPIX, a non-square frame, an exposure
 /// band boundary, a series verdict), and the coverage they add is listed in

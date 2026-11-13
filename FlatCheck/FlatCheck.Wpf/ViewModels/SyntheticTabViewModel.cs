@@ -114,6 +114,11 @@ namespace FlatCheck.Wpf
         string _profileLine = "", _modelLine = "", _cornerNote = "";
         IReadOnlyList<MetricRow> _depth = Array.Empty<MetricRow>();
         string _savedTo = "", _saveError = "", _compareError = "";
+
+        /// <summary>The report of the write whose figures are on screen, without any comparison
+        /// appended; what the report panel goes back to when a comparison asked for by the
+        /// button fails (R-135). Empty when no figures are on screen.</summary>
+        string _writeReport = "";
         IReadOnlyList<CompareRow> _compareTable = Array.Empty<CompareRow>();
         string _compareVerdict = "", _compareVerdictDetail = "";
         byte[] _compareMap;
@@ -148,6 +153,8 @@ namespace FlatCheck.Wpf
             _loadInfo = loadInfo ?? ImageLoader.LoadInfo;
             Run = new RelayCommand(() => Pending = RunAsync(), () => CanRun && IsIdle && SelectedLens != null);
             Compare = new RelayCommand(() => Pending = CompareAsync(), () => CanCompare && IsIdle);
+            // the failure line's second place depends on whether a written flat is on screen
+            PropertyChanged += (_, e) => { if (e.PropertyName == nameof(HasResult)) Raise(nameof(ShowsCompareErrorAlone)); };
             MapScale.Changed += RefreshMap;
             SensorFormat.Chosen += f =>
             {
@@ -395,9 +402,18 @@ namespace FlatCheck.Wpf
         public string SaveError { get => _saveError; private set => Set(ref _saveError, value); }
 
         /// <summary>Why the comparison with the master could not be made, when it could not
-        /// (R-135): its own line under the written flat's figures, so a failed comparison does
-        /// not take the write off the screen; empty otherwise.</summary>
-        public string CompareError { get => _compareError; private set => Set(ref _compareError, value); }
+        /// (R-135): its own line, under the "saved" line of the flat written in this session or
+        /// alone when none was, so a failed comparison does not take the write off the screen;
+        /// empty otherwise.</summary>
+        public string CompareError
+        {
+            get => _compareError;
+            private set { if (Set(ref _compareError, value)) Raise(nameof(ShowsCompareErrorAlone)); }
+        }
+
+        /// <summary>True when <see cref="CompareError"/> has to show outside the written flat's
+        /// panel, which is folded: there is a failure to say and no written flat on screen.</summary>
+        public bool ShowsCompareErrorAlone => !string.IsNullOrEmpty(_compareError) && !HasResult;
 
         public IReadOnlyList<CompareRow> CompareTable { get => _compareTable; private set => Set(ref _compareTable, value); }
         public string CompareColumnA => T("the master", "masterul");
@@ -621,6 +637,9 @@ namespace FlatCheck.Wpf
             await RunGuardedAsync(T("Writing the synthetic flat...", "Scriu flatul sintetic..."), async () =>
             {
                 RaiseCommands();
+                // a new Write: the failure line of an earlier comparison is not about it, and
+                // must not stay under a refusal or a failure of this one (R-135)
+                CompareError = "";
                 using IDisposable lease = await EnterGateAsync(_gate, ct).ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
                 ProfileSources sources = await EnsureProfilesAsync().ConfigureAwait(true);
@@ -648,7 +667,6 @@ namespace FlatCheck.Wpf
                 // goes: it was the flat written before, maybe another lens's (R-135). It comes
                 // back only from a comparison of the file this run writes, or from the button.
                 ClearCompare();
-                CompareError = "";
                 Populate(outcome.Result, outcome.Request);
 
                 SavedTo = "";
@@ -657,7 +675,7 @@ namespace FlatCheck.Wpf
                 {
                     Log.Info("the user kept the existing " + target + "; nothing written");
                     SaveError = SessionMessages.SyntheticNotOverwritten(target);
-                    Report = text.ToString();
+                    Report = _writeReport = text.ToString();
                     return;
                 }
                 try
@@ -677,7 +695,7 @@ namespace FlatCheck.Wpf
                     Log.Warn(e, "the synthetic flat could not be written to " + target);
                     SaveError = T("Could not write the synthetic flat:\n", "Nu am putut scrie flatul sintetic:\n") + Describe(e);
                 }
-                Report = text.ToString();
+                Report = _writeReport = text.ToString();
             }).ConfigureAwait(true);
             RaiseCommands();
 
@@ -735,12 +753,14 @@ namespace FlatCheck.Wpf
                     // flat's figures and its "saved" line where they are: the tab's failure
                     // screen would hide a file that is on disk (R-135). No earlier comparison
                     // stays either - it is not this file's.
-                    Log.Error(e, "the comparison of " + master + " with " + target + " failed; the tab says so under the written flat");
+                    Log.Error(e, "the comparison of " + master + " with " + target + " failed; the tab says so in the comparison's own line");
                     ClearCompare();
                     CompareError = SessionMessages.SyntheticCompareFailed(afterWrite: reportSoFar != null) + "\n" + Describe(e);
-                    // the report panel too: the write's own text when this followed a write,
-                    // nothing when the button stood alone - never the comparison of before
-                    Report = reportSoFar ?? "";
+                    // The report panel too, never the comparison of before: the write's own
+                    // text when this followed a write or when the button was pressed over the
+                    // flat written in this session (its figures and "saved" line stay, and so
+                    // does their report), nothing when no written flat is on screen.
+                    Report = reportSoFar ?? (HasResult ? _writeReport : "");
                     return;
                 }
                 PopulateCompare(outcome.Result);
@@ -805,6 +825,7 @@ namespace FlatCheck.Wpf
             Depth = Array.Empty<MetricRow>();
             SavedTo = "";
             SaveError = "";
+            _writeReport = "";
             HasResult = false;
         }
 
@@ -863,6 +884,7 @@ namespace FlatCheck.Wpf
             SavedTo = "";
             SaveError = "";
             CompareError = "";
+            _writeReport = "";
             ClearCompare();
         }
     }

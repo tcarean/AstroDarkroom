@@ -468,8 +468,9 @@ public class WindowSmokeTests
             using var errors = new BindingErrors();
             var view = new SyntheticView { DataContext = vm.Synthetic };
             Render(view, name: "tab-synthetic-compare-failed");
-            TextBlock line = Assert.Single(Descendants(view).OfType<TextBlock>(), t => t.Text == vm.Synthetic.CompareError);
-            Assert.True(Shown(line), "the comparison's failure line is inside a folded panel");
+            // the line has two places, under the "saved" line of a written flat and on its own
+            // when nothing was written; exactly one of them is on screen
+            TextBlock line = Assert.Single(Descendants(view).OfType<TextBlock>(), t => t.Text == vm.Synthetic.CompareError && Shown(t));
             Assert.True(line.ActualHeight > 0);
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });

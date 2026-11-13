@@ -360,27 +360,63 @@ public class FitsReaderTests
         Assert.Equal("FITS: niciun HDU cu imagine 2D gasit.", ex.Message);
     }
 
-    /// <summary>
-    /// R-136: a table whose counts are below zero cannot send the walk back over its own
-    /// header (PCOUNT -5760 with no rows would have moved the position two blocks back, for
-    /// ever); the counts are taken as zero and the file ends as one without an image.
-    /// </summary>
-    [Fact]
-    public async Task R136_ATableWithNegativeCountsDoesNotSendTheWalkBackwards()
+    /// <summary>A table extension with the given counts and no data after its header.</summary>
+    static byte[] TableHeader(string naxis, string naxis1, string naxis2, string pcount, string gcount, string naxis3 = "")
     {
-        byte[] table = Hdu(new[]
+        var cards = new List<string>
         {
-            "XTENSION= 'BINTABLE'", FitsTestData.Card("BITPIX", "8"), FitsTestData.Card("NAXIS", "2"),
-            FitsTestData.Card("NAXIS1", "8"), FitsTestData.Card("NAXIS2", "0"),
-            FitsTestData.Card("PCOUNT", "-5760"), FitsTestData.Card("GCOUNT", "1"),
-        }, 0);
+            "XTENSION= 'BINTABLE'", FitsTestData.Card("BITPIX", "8"), FitsTestData.Card("NAXIS", naxis),
+            FitsTestData.Card("NAXIS1", naxis1), FitsTestData.Card("NAXIS2", naxis2),
+        };
+        if (naxis3.Length > 0) cards.Add(FitsTestData.Card("NAXIS3", naxis3));
+        cards.Add(FitsTestData.Card("PCOUNT", pcount));
+        cards.Add(FitsTestData.Card("GCOUNT", gcount));
+        return Hdu(cards, 0);
+    }
 
-        byte[] file = EmptyPrimary().Concat(table).ToArray();
-        Task<Exception> read = Task.Run(() => Assert.Throws<Exception>(() => Load(file)));
-
+    /// <summary>What the reader throws on a file, or a failure when it has not come back in 20
+    /// seconds: a walk that steps back onto the header it has just read never ends.</summary>
+    static async Task<Exception> ThrownBy(byte[] file)
+    {
+        Task<Exception> read = Task.Run(() => Assert.ThrowsAny<Exception>(() => Load(file)));
         Task first = await Task.WhenAny(read, Task.Delay(TimeSpan.FromSeconds(20)));
         Assert.True(ReferenceEquals(first, read), "the reader did not come back");
-        Assert.Equal("FITS: niciun HDU cu imagine 2D gasit.", (await read).Message);
+        return await read;
+    }
+
+    /// <summary>
+    /// R-136: a table whose counts are below zero cannot send the walk back over its own
+    /// header. Each row would have made the step one block backwards (-5760 bytes of table,
+    /// padded, is -2880): through PCOUNT, through a NAXISn, through GCOUNT. The counts are taken
+    /// as zero and the file ends as one without an image.
+    /// </summary>
+    [Theory]
+    [InlineData("8", "0", "-5760", "1")]
+    [InlineData("-2880", "2", "0", "1")]
+    [InlineData("8", "720", "0", "-1")]
+    public async Task R136_ATableWithNegativeCountsDoesNotSendTheWalkBackwards(string naxis1, string naxis2, string pcount, string gcount)
+    {
+        byte[] file = EmptyPrimary().Concat(TableHeader("2", naxis1, naxis2, pcount, gcount)).ToArray();
+
+        Exception e = await ThrownBy(file);
+
+        Assert.Equal("FITS: niciun HDU cu imagine 2D gasit.", e.Message);
+    }
+
+    /// <summary>
+    /// R-136: counts that are all positive and whose product does not fit 64 bits (it wraps to
+    /// a step of exactly -2880 with these four, found by the second review of the branch) are
+    /// more bytes than any file holds: the cut-data refusal, not a walk that never ends.
+    /// </summary>
+    [Fact]
+    public async Task R136_ATableWhoseSizeOverflowsIsRefusedAsCutData()
+    {
+        byte[] file = EmptyPrimary().Concat(TableHeader("3", "1784854093", "2057604577", "1903472180", "1", naxis3: "1133817633")).ToArray();
+
+        Exception e = await ThrownBy(file);
+
+        Assert.IsType<InvalidDataException>(e);
+        Assert.StartsWith("FITS: date trunchiate", e.Message);
     }
 
     /// <summary>R-136: a table cut short is the cut file of R-009, heap counted.</summary>

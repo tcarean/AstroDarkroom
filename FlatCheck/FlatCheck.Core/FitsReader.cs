@@ -124,9 +124,10 @@ namespace FlatCheck
         /// Only the header of the primary HDU, without pixels: the 2880 blocks up to END. For
         /// whoever wants FOCALLEN or INSTRUME from a 96 MB master without reading it (the
         /// Synthetic tab, when the session opens). It refuses, with InvalidDataException,
-        /// exactly what the full load refuses too: a file that does not begin with the SIMPLE
+        /// two things the full load refuses too: a file that does not begin with the SIMPLE
         /// card (empty, shorter than a keyword, or with something else in the first card) and a
-        /// header cut before END. An empty header would be an answer, not an error, and every
+        /// header cut before END. What the full load refuses beyond them, this read does not
+        /// look at (the data area, the extensions: a compressed image, R-136). An empty header would be an answer, not an error, and every
         /// caller would have to recognise it by the number of cards (ADR 0057). It does not
         /// check the data area: a file whose pixels are cut short (R-009) has an intact, usable
         /// header, so this read answers it and only the full load refuses it.
@@ -354,14 +355,23 @@ namespace FlatCheck
                     if (hdr.TryGetValue("ZIMAGE", out string zimage) && zimage == "T")
                         throw new InvalidDataException(CompressedImage);
                     // Any other table: step over its rows and its heap (PCOUNT bytes after the
-                    // rows, which NAXISn do not count) and look at the next HDU.
-                    // A count below zero is a broken header: taken as zero, so the position
-                    // only ever moves forward and a crafted PCOUNT cannot send the walk back
-                    // over the header it has just read.
-                    long rowBytes = naxis > 0 ? 1 : 0;
-                    for (int ax = 1; ax <= naxis; ax++) rowBytes *= Math.Max(0, HInt(hdr, "NAXIS" + ax, 1));
-                    long tableBytes = Math.Abs(bitpix) / 8 * (long)Math.Max(0, HInt(hdr, "GCOUNT", 1)) * (Math.Max(0, HInt(hdr, "PCOUNT", 0)) + rowBytes);
-                    if (pos + tableBytes > raw.Length)
+                    // rows, which NAXISn do not count) and look at the next HDU. The walk only
+                    // ever moves forward here, whatever the header says: a count below zero is
+                    // a broken header and is taken as zero, and a product that does not fit 64
+                    // bits is more bytes than any file holds, so it ends in the cut-data refusal
+                    // instead of wrapping to a negative step back onto this very header.
+                    long tableBytes;
+                    try
+                    {
+                        checked
+                        {
+                            long rowBytes = naxis > 0 ? 1 : 0;
+                            for (int ax = 1; ax <= naxis; ax++) rowBytes *= Math.Max(0, HInt(hdr, "NAXIS" + ax, 1));
+                            tableBytes = Math.Abs(bitpix) / 8 * (long)Math.Max(0, HInt(hdr, "GCOUNT", 1)) * (Math.Max(0, HInt(hdr, "PCOUNT", 0)) + rowBytes);
+                        }
+                    }
+                    catch (OverflowException) { tableBytes = long.MaxValue; }
+                    if (tableBytes > raw.Length - pos)
                         throw new InvalidDataException(DataCut(tableBytes, raw.Length - pos));
                     pos += (int)((tableBytes + 2879) / 2880 * 2880);
                     continue;

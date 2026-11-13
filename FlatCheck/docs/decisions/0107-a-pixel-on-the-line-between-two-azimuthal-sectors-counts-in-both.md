@@ -23,11 +23,12 @@ Measured in C# the same day:
 | 459 x 305, through `StructureAnalyzer` (frame 918 x 610) | 4.216432 | 4.218383 | 4.215500 |
 | 526 x 259, through `StructureAnalyzer` (frame 1052 x 518) | 3.361315 | 3.371617 | 3.361315 |
 | 1376 x 917, `Metrics.AzimuthalAsymmetry` (the raster of an 8256 x 5504 frame) | 4.239522 | 4.237840 | 4.239522 |
+| 263 x 259, `Metrics.AzimuthalAsymmetry` | 5.404240 | 5.404240 | 5.403712 |
 | 264 x 260, even | 5.417889 | 5.417889 | 5.417889 |
 
 R-131 named the 8256 x 5504 frame as covered; it was not. The two rules that make the figure
 the same every way up, on the 1376 x 917 raster: the boundary pixel in both sectors 4.236745,
-in neither 4.240617.
+in neither 4.240617; on 263 x 259 the first gives 5.403712.
 
 ## Decision
 
@@ -59,10 +60,13 @@ one half has no meaning for a median.
   0.01. On an even raster nothing changes: no pixel has a zero
   coordinate.
 - The D3300's frames (6016 x 4016, raster 1504 x 1004) are even, so no figure of the validation
-  library moves, and no parity golden changes (their fixtures are even too).
+  library moves, and none of the 39 parity goldens changes (their fixtures are even too). A
+  40th scenario, `structure odd raster 526x518`, was added to reach the new branch; it prints
+  two decimals, so it shows that the branch runs and does not pin the rule.
 - The two sectors beside an axis share one line of pixels each, so their medians are a little
   closer than with disjoint sets; on the 1376 x 917 raster the figure is 0.003 points below the
   one-sided reading.
-- R-131 holds the behaviour; `R131_TheAzimuthalAsymmetryIsTheSame_WhenAnOddRasterIsMirrored`,
+- R-131 holds the behaviour; `R131_APixelOnTheLineBetweenTwoSectorsCountsInBoth_NotInNeither`
+  pins the rule's figure, and `R131_TheAzimuthalAsymmetryIsTheSame_WhenAnOddRasterIsMirrored`,
   `R131_AzimuthalAsymmetry_IsTheSameForARasterAndItsMirrors` and
   `R131_AxisSectors_AreTheSectorsOnEitherSideOfTheAxis` pin it.

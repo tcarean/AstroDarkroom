@@ -54,8 +54,11 @@ reader looks only at the header keywords, which are the convention's.
   primary HDU alone and so reads nothing from such a file; the run that follows it loads the
   file whole and shows the refusal. That difference between the two reads is CR-029's.
 - `NAXISn` and `BITPIX` are still used before they are checked (CR-013). The table branch
-  reads two more counts, `PCOUNT` and `GCOUNT`; it takes any of its counts below zero as zero,
-  so the read position only moves forward and a crafted header cannot send the walk back over
-  itself (the branch review found that a `PCOUNT` of -5760 with no rows would have).
+  reads two more counts, `PCOUNT` and `GCOUNT`. It takes any of its counts below zero as zero
+  and computes the size with overflow checked, a size that does not fit 64 bits being refused
+  as cut data, so in this branch the read position only moves forward. The branch's two reviews
+  found the two ways back onto the header just read: a `PCOUNT` of -5760 with no rows, and four
+  positive counts whose product wraps to -2880.
 - R-136 holds the behaviour; `R136_...` in `FitsReaderTests` pins the refusal from the reader
-  and from four modes of the console, the skipped table and the cut one.
+  and from four modes of the console, the skipped table, the cut one, the counts below zero
+  and the size that overflows.

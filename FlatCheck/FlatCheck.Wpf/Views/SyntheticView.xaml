@@ -223,6 +223,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Style="{StaticResource Muted}" Foreground="#E3B341" Margin="2,12,0,0"
                        TextWrapping="Wrap" Text="{Binding SaveError}"
                        Visibility="{Binding SaveError, Converter={StaticResource NotNullToVis}}" />
+            <!-- a comparison that failed after this flat was written: right under its "saved"
+                 line, above the depth card, where it is read (R-135) -->
+            <TextBlock Style="{StaticResource Muted}" Foreground="#F0857E" Margin="2,12,0,0"
+                       TextWrapping="Wrap" Text="{Binding CompareError}"
+                       Visibility="{Binding CompareError, Converter={StaticResource NotNullToVis}}" />
             <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="{l:T En='DEPTH OF THE VIGNETTING WRITTEN', Ro='ADANCIMEA VIGNETARII SCRISE'}" />
             <Border Style="{StaticResource Card}">
               <StackPanel>
@@ -246,12 +251,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Style="{StaticResource Faint}" Margin="2,8,0,0" TextWrapping="Wrap" Text="{Binding SirilNote}" />
           </StackPanel>
           <!-- the master / synthetic comparison -->
-          <!-- A comparison that failed, in its own line (R-135). Outside the written flat's
-               panel: the button also compares a file written in an earlier session, with no
-               figures on screen, and the failure must show then too. -->
+          <!-- The same line when no written flat is on screen and the panel above is folded
+               (R-135): the button also compares a file written in an earlier session, and its
+               failure must show then too. -->
           <TextBlock Style="{StaticResource Muted}" Foreground="#F0857E" Margin="2,12,0,0"
                      TextWrapping="Wrap" Text="{Binding CompareError}"
-                     Visibility="{Binding CompareError, Converter={StaticResource NotNullToVis}}" />
+                     Visibility="{Binding ShowsCompareErrorAlone, Converter={StaticResource BoolToVis}}" />
           <StackPanel Visibility="{Binding HasCompare, Converter={StaticResource BoolToVis}}">
             <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="{l:T En='THE MASTER AGAINST THE SYNTHETIC FLAT', Ro='MASTERUL FATA DE FLATUL SINTETIC'}" />
             <Border Style="{StaticResource Card}">

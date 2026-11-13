@@ -38,8 +38,9 @@ pointed at `/validate`); CLAUDE.md "Layout" says the same in one line. The mecha
 ## Coverage of the 39 scenarios
 
 (A 40th row, `structure odd raster 526x518`, was added on 2026-11-13 for the sector boundaries
-of an odd raster, ADR 0107. It is not one of the cross-check's: the prototype never confirmed
-its figures, the `R131_*` symmetry tests do, and it is judged like any golden.)
+of an odd raster, ADR 0107. It is not one of the cross-check's: nothing confirmed its figures,
+it is a snapshot judged like any golden, and with two decimals printed it shows that the new
+branch runs rather than pins the rule, which `R131_*` in `MetricsTests` does.)
 
 Kept whole on purpose (ADR 0047), 43 until the four `--ratio` scenarios left with the mode on
 2026-10-26 (ADR 0067): 15 structure, 11 `--light` (three of them series folders), 13 `--expo`.
