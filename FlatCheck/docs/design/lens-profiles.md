@@ -144,15 +144,31 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   Pentax's two-number form `8 215` is read by `LcpReader.ParseLensId` as 8·256 + 215 = 2263,
   libraw's value, and an entry of any other shape is dropped; `stCamera:Lens`, the camera's own
   LensModel string, enters the aliases). Entries without a vignette model (fisheye
-  files) are skipped; a file that is not XML throws, and the catalog swallows that per
+  files) are skipped, and so is an entry whose `stCamera:CameraRawProfile` is `False`, one
+  made for JPEGs (R-134, ADR 0103, with the counts: no installed file mixes the two kinds; an
+  entry that does not say is read); a file that is not XML throws, and the catalog swallows that per
   file, with a Warn line in the diagnostic log (`logging.md`). `Make`/`CameraPrettyName` becomes the mount label ("NIKON CORPORATION"),
   `LensPrettyName` the name, the first word of it the maker.
 - **lensfun** (`LensfunReader.ReadXml`): `<camera>` (maker, model + `lang` aliases, mount,
   cropfactor), `<lens>` (same, plus `<calibration><vignetting model="pa" .../>`) and the
   `<mount>` definitions at a file's root (`<name>` and its `<compat>` list, `LensfunMount`);
-  lenses without vignetting are dropped. `LensfunData.CropOf(name)` matches the camera
-  model or an alias by containment on letters and digits only, longest match wins
-  ("NIKON D3300" → 1.523); `MountsOf(name)` finds the camera the same way and gives its mount
+  lenses without vignetting are dropped. `LensfunData.CameraOf(name)` finds the body (R-133,
+  ADR 0101, with the counts on the shipped table): the names are cut into words, runs of
+  letters and digits upper-cased (`Words`); the first entry whose model or alias has exactly
+  the file's words is the camera; without one, the entry one of whose names stands whole in
+  the file's name, word for word and side by side (`StandsIn`: "Nikon D3300" in "Nikon
+  Corporation NIKON D3300"), the name with the most letters winning, and only an entry whose
+  maker the file's name carries (`CarriesMaker`: any word of one of
+  `LensfunCamera.MakerNames`, the canonical maker and its aliases, that is not in
+  `LensfunData.GenericMakerWords`, the legal forms and trade words such as "Corporation",
+  "Camera", "Imaging"; without the condition the "X10" in "Canon EOS Kiss X10" was Fujifilm's
+  compact, and with the first word alone lensfun's "Konica Minolta" was not the "Minolta" a
+  raw writes). A table name that only
+  contains the file's name never matches ("Nikon D7500" for a "Nikon D750", the crossing the
+  review of 2026-11-13 found: until then the match was containment on letters, either way
+  round). `CropOf(name)` is that camera's crop ("NIKON D3300" → 1.523), and
+  `LensIdentification.Identify` prints the camera's table model as the crop's source;
+  `MountsOf(name)` finds the camera the same way and gives its mount
   plus that mount's compat list ("NIKON D3300" → `Nikon F AF` with `Nikon F`, `Nikon F AI`,
   `Nikon F AI-S`, `M42`, `M39/1`, `DKL`, `T2`, `Generic`; a mount without a definition is
   itself alone), or null for a camera the table does not know or knows without a mount
@@ -173,7 +189,13 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
 - **Laziness** (`LensCatalog`; the parse and list timings behind it are ADR 0028): Adobe
   entries are `AdobeProfileFile` stubs from the file name: `<Camera> (<Lens>) - RAW.lcp` in
   `<Maker>/<Mount>/` → name = the text between the first " (" and its matching ")", mount =
-  the camera text (plus ", JPEG" when the suffix is not RAW), maker = the lens's first word.
+  the camera text, plus what follows the parenthesis unless that is `RAW` in any case or
+  nothing (", v2 - RAW", ", RAW vig"; no installed file ends in " - JPEG", which this note
+  named until 2026-11-13), maker = the lens's first word. So `X (L) - RAW.lcp` and `X (L).lcp`
+  are one lens: the second is usually Adobe's profile for JPEGs, whose entries `LcpReader`
+  leaves out, and `ProfilesOf` then pools the raw entries only (R-134; until 2026-11-13 both
+  files' entries were pooled and `Nearest` could take a JPEG one). A lens all of whose files
+  are non-raw is listed and has no profile, like one without a vignetting model.
   Names without parentheses (phones and compacts, `Apple/iPhone 6.lcp`, `Canon/Canon
   PowerShot G12 - RAW.lcp`) become camera-named stubs with the folder as maker and no mount.
   A file is parsed on `ProfilesOf(lens)` (cached, re-keyed to the stub's identity) and on
@@ -264,7 +286,12 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
 - **Narrowing by name** (`LensSpec`; why, and the Tokina raw that preselected a Nikkor, are
   ADR 0030): `LensSpec.Parse(name)` reads the focal range (first `<n>[-<m>]mm`) and the
   maximum aperture (first `f/<n>`, `F<n>` or `f<n>-<m>` not preceded by a letter, so `AF-S`
-  and `EF` do not match; a prime is `min = max`). `Contradicts` is true only when both sides
+  and `EF` do not match; a prime is `min = max`). Two filters on that number (R-018, ADR 0104,
+  with the 37 names of 3242 they change): one followed by `mm` or `-<m>mm` is a focal length
+  (`FocalTailRx`, anchored where the number ends; "Pentax-F 28mm f/2.8") and the next match is
+  tried; the first one left is the aperture only between `Th.LensNameApertureMin` and
+  `Th.LensNameApertureMax` (0.7 and 11), and otherwise the name gives none ("F045", Zeiss's
+  "f28", "DSC-F707") and no later number is tried. `Contradicts` is true only when both sides
   say something and disagree: focal ends within 1 mm or 5 % (names round), aperture within
   0.25 stops (Nikon's codes step in sixths). On this machine's Adobe folder ID 139 is carried
   by the Tokina AT-X 11-20 F2.8, the Tokina atx-i 11-20 f2.8, the Nikkor 18-200 f3.5-5.6G VR
@@ -459,7 +486,8 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
 
 - The sizes of the two databases and the parse and list timings that justify the lazy
   catalog are ADR 0028's context. Beyond them: 801 of the Adobe files lack the ` - RAW`
-  suffix and 638 carry no parentheses; `lensfun/update-lensfun.py` refreshes `data/db` and
+  suffix and 638 carry no parentheses (2026-09-17; the count by suffix and by the raw flag
+  inside, of 2026-11-13, is ADR 0103's context); `lensfun/update-lensfun.py` refreshes `data/db` and
   rewrites `LENSFUN-VERSION.txt`.
 - **The lens on four raws of other makes, 2026-10-26** (the measurement behind ADR 0068; the
   files are the CC0 samples 1064, 799, 2414 and 1141 of raw.pixls.us, kept as V-041 to V-044,

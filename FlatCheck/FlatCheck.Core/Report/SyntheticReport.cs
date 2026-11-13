@@ -429,15 +429,16 @@ namespace FlatCheck
                  : T($"\"{camera}\" is not in the lensfun database", $"\"{camera}\" nu e in baza lensfun"))
              + T($". Give --crop <factor>: {SensorFormats.Describe()}.", $". Da --crop <factor>: {SensorFormats.Describe()}.");
 
-        /// <summary>The refusal when the chosen lens's file carries no vignetting model: Adobe
-        /// ships such files for a lens measured for distortion or colour only (1275 of the 3531
-        /// on the author's machine, 2026-10-27), and the list names them, since it reads names
-        /// only (R-071).</summary>
+        /// <summary>The refusal when the chosen lens's files give no vignetting profile for raw
+        /// data: Adobe ships files for a lens measured for distortion or colour only (1275 of the
+        /// 3531 on the author's machine, 2026-10-27) and files made for JPEGs, whose entries are
+        /// not read (R-134; 189 lenses have only such files, 2026-11-13). The list names them
+        /// all, since it reads names only (R-071).</summary>
         /// <param name="lens">The lens chosen.</param>
         /// <returns>One line.</returns>
         internal static string NoProfile(LensChoice lens)
-            => T($"SYNTHETIC FLAT: the lens \"{lens.Title}\" has no vignetting profile (its file describes distortion or colour only); choose another lens.",
-                 $"FLAT SINTETIC: obiectivul \"{lens.Title}\" nu are profil de vignetare (fisierul lui descrie doar distorsiunea sau culoarea); alege alt obiectiv.");
+            => T($"SYNTHETIC FLAT: the lens \"{lens.Title}\" has no vignetting profile for raw files (its file describes distortion or colour only, or was made for JPEGs); choose another lens.",
+                 $"FLAT SINTETIC: obiectivul \"{lens.Title}\" nu are profil de vignetare pentru fisiere raw (fisierul lui descrie doar distorsiunea sau culoarea, ori e facut pentru JPEG); alege alt obiectiv.");
 
         /// <summary>The refusal for a colour cube as the reference.</summary>
         /// <param name="path">The refused file's path, as printed.</param>

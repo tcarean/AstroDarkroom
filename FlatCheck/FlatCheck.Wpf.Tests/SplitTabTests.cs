@@ -502,6 +502,137 @@ public class SplitTabTests
         Assert.Equal(3 * vm.Maps[0].Raster.W + 2 * PngWriter.MosaicGap, width);      // three tiles side by side
     }
 
+    /// <summary>The tab on the catalog with the two 135 f/2 lenses a raw's range alone finds
+    /// (R-121's case), the range raw in place of the files in flats/, attached with the
+    /// folder's switches.</summary>
+    static SplitTabViewModel VmWithRangePair(SessionFixture f, TempWorkspace ws, SessionSettings? settings, out ProfileSources sources)
+    {
+        ProfileSources found = sources = LensProfileTestData.Sources(ws, rangePair: true);
+        var vm = new SplitTabViewModel(() => FakeInstall(ws), () => false, FakeSiril(new List<Seen>()),
+                                       new ProfileCatalog(() => found),
+                                       path => RawReader.IsRawPath(path) ? LensProfileTestData.Range135Raw() : ImageLoader.LoadInfo(path),
+                                       clock: () => When, tempRootFor: _ => Path.Combine(ws.Dir, "temp"));
+        vm.Attach(f.Session, CancellationToken.None, new HeavyRunGate(), settings);
+        return vm;
+    }
+
+    /// <summary>
+    /// R-093: the lens chosen on the Structure tab (R-121) is the Split's too. Before, the tab
+    /// compared every lens of the range and let the nearest decide, so the two saved reports
+    /// could read the same master against two profiles.
+    /// </summary>
+    [Fact]
+    public async Task R093_TheLensChosenOnTheStructureTabIsTheOnlyOneCompared()
+    {
+        using var f = Session(flats: 4);
+        using var ws = new TempWorkspace();
+
+        // nothing chosen: both lenses of the range are rows
+        var none = VmWithRangePair(f, ws, SessionSettings.None, out _);
+        await none.StartAsync();
+        Assert.True(none.HasResult, none.ErrorText);
+        Assert.Contains(LensProfileTestData.Nikkor135Dc, none.Report);
+        Assert.Contains(LensProfileTestData.Samyang135, none.Report);
+
+        var chosen = SessionSettings.None;
+        var vm = VmWithRangePair(f, ws, chosen, out ProfileSources sources);
+        chosen.Lens = LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135);
+        await vm.StartAsync();
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(4, vm.Headers.Count);                                   // two parts, the whole, the profile
+        Assert.Contains(LensProfileTestData.Samyang135, vm.Report);
+        Assert.DoesNotContain(LensProfileTestData.Nikkor135Dc, vm.Report);
+        SplitTableRow reference = Assert.Single(vm.Rows, r => r.IsReference);
+        Assert.Contains(LensProfileTestData.Samyang135, reference.Label);
+        Assert.Contains("obiectivul ales de tine", reference.Note);              // not "the nearest": it was chosen
+        Assert.Contains("obiectivul ales de tine", vm.ReferenceLine);
+        Assert.Contains("cel mai apropiat de intreg", none.ReferenceLine);
+        Assert.Equal(none.Rows.Count - 1, vm.Rows.Count);                    // one profile row fewer
+    }
+
+    /// <summary>
+    /// R-093: with the box "no filters" off (R-118) the Structure tab compares nothing, and
+    /// neither does the Split: no profile row, no profile column, the five tests' verdict.
+    /// The box is read at the analysis, so a flip made after the folder opened counts.
+    /// </summary>
+    [Fact]
+    public async Task R093_WithAFilterOnTheLensNothingIsComparedWithAProfile()
+    {
+        using var f = Session(flats: 4);
+        using var ws = new TempWorkspace();
+        var settings = SessionSettings.None;
+        var vm = VmWithRangePair(f, ws, settings, out _);
+        settings.NoFilters = false;                                         // unticked on the Structure tab, after the opening
+
+        await vm.StartAsync();
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(new[] { "partea 1 din 2", "partea 2 din 2", "intreg" }, vm.Headers);
+        Assert.Equal(7, vm.Rows.Count);                                     // the five tests, the depth, the verdict
+        Assert.DoesNotContain(vm.Rows, r => r.IsReference);
+        Assert.Contains("filtru pe obiectiv", vm.ReferenceLine);                // why, in place of "no raw"
+        Assert.Contains("filtru pe obiectiv", vm.Report);
+        Assert.DoesNotContain(LensProfileTestData.Samyang135, vm.Report);
+        Assert.DoesNotContain(LensProfileTestData.Nikkor135Dc, vm.Report);
+    }
+
+    /// <summary>
+    /// R-093: the switches are read when the parts' masters are analysed, not when the button
+    /// is pressed: the other tabs stay usable through the Siril runs, and the two saved reports
+    /// must speak of the same comparison. Here the box is unticked while part 1 runs.
+    /// </summary>
+    [Fact]
+    public async Task R093_TheSwitchesAreReadAtTheAnalysis_SoAFlipDuringTheSirilRunsCounts()
+    {
+        using var f = Session(flats: 4);
+        using var ws = new TempWorkspace();
+        var settings = SessionSettings.None;
+        ProfileSources sources = LensProfileTestData.Sources(ws, rangePair: true);
+        var vm = new SplitTabViewModel(() => FakeInstall(ws), () => false,
+                                       FakeSiril(new List<Seen>(), exitCodeFor: part => { if (part == 1) settings.NoFilters = false; return 0; }),
+                                       new ProfileCatalog(() => sources),
+                                       path => RawReader.IsRawPath(path) ? LensProfileTestData.Range135Raw() : ImageLoader.LoadInfo(path),
+                                       clock: () => When, tempRootFor: _ => Path.Combine(ws.Dir, "temp"));
+        vm.Attach(f.Session, CancellationToken.None, new HeavyRunGate(), settings);
+        Assert.True(settings.NoFilters);                                    // ticked at the press
+
+        await vm.StartAsync();
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(3, vm.Headers.Count);
+        Assert.Contains("filtru pe obiectiv", vm.ReferenceLine);
+    }
+
+    /// <summary>
+    /// R-093: the window hands the Split tab the folder's switches. A folder remembered with
+    /// the box off (R-119) splits without a profile; the same folder without the file compares.
+    /// </summary>
+    [Fact]
+    public async Task R093_TheWindowHandsTheTabTheFoldersSwitches()
+    {
+        using var f = Session(flats: 4);
+        using var ws = new TempWorkspace();
+        ProfileSources sources = LensProfileTestData.Sources(ws, rangePair: true);
+        MainViewModel Window() => new MainViewModel(() => FakeInstall(ws), () => false, locateProfiles: () => sources,
+            loadInfo: path => RawReader.IsRawPath(path) ? LensProfileTestData.Range135Raw() : ImageLoader.LoadInfo(path),
+            runScript: FakeSiril(new List<Seen>()), clock: () => When, splitTempRootFor: _ => Path.Combine(ws.Dir, "temp"));
+
+        var compared = Window();
+        await compared.OpenAsync(f.Root);
+        await compared.Split.StartAsync();
+        Assert.True(compared.Split.HasResult, compared.Split.ErrorText);
+        Assert.Equal(4, compared.Split.Headers.Count);
+
+        File.WriteAllText(f.Session.SettingsPath, "{\"noFilters\":false,\"skyFlat\":false}");
+        var filtered = Window();
+        await filtered.OpenAsync(f.Root);
+        await filtered.Split.StartAsync();
+        Assert.True(filtered.Split.HasResult, filtered.Split.ErrorText);
+        Assert.Equal(3, filtered.Split.Headers.Count);
+        Assert.Contains("filtru pe obiectiv", filtered.Split.ReferenceLine);
+    }
+
     [Fact]
     public async Task R093_ChangingTheScaleReencodesTheMapsWithoutRerunning()
     {

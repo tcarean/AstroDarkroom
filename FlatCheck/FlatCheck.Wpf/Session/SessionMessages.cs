@@ -684,7 +684,8 @@ namespace FlatCheck.Wpf
         /// <returns>"tastat".</returns>
         internal static string SyntheticCropTyped() => T("typed", "tastat");
         /// <summary>The crop's source when lensfun's camera table gave it.</summary>
-        /// <param name="camera">The camera's name; not null.</param>
+        /// <param name="camera">The camera's model as lensfun's table spells it, the entry
+        /// the crop was taken from (R-133); not null.</param>
         /// <returns>The source, naming the camera.</returns>
         internal static string SyntheticCropFromTable(string camera) => T($"from the lensfun database ({camera.Trim()})",
                                                                           $"din baza lensfun ({camera.Trim()})");

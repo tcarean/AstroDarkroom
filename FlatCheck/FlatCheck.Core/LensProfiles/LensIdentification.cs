@@ -57,6 +57,10 @@ namespace FlatCheck
         internal string CropSource;
         /// <summary>True when the crop came out of the camera table, not from the person.</summary>
         internal bool CropFromTable;
+        /// <summary>The lensfun table's own model of the camera whose crop was taken (R-133),
+        /// which may be spelled otherwise than <see cref="Camera"/> ("Nikon D3300" for a raw's
+        /// "NIKON D3300"); null unless <see cref="CropFromTable"/>.</summary>
+        internal string CropCamera;
         /// <summary>
         /// The camera's name, from the reference or from the raw; null when neither says it.
         /// </summary>
@@ -198,13 +202,16 @@ namespace FlatCheck
             if (crop.HasValue) { id.Crop = crop; id.CropSource = "--crop"; }
             else
             {
-                double? known = id.Camera == null ? null : sources?.Lensfun?.CropOf(id.Camera);
-                if (known.HasValue)
+                // The table's own model is what is printed (R-133): it says which entry gave the
+                // crop, which the name in the file does not when the two are spelled differently.
+                LensfunCamera known = id.Camera == null ? null : sources?.Lensfun?.CameraOf(id.Camera);
+                if (known != null)
                 {
-                    id.Crop = known;
-                    id.CropSource = T($"lensfun database, {id.Camera}", $"baza lensfun, {id.Camera}");
+                    id.Crop = known.CropFactor;
+                    id.CropCamera = known.Model;
+                    id.CropSource = T($"lensfun database, {known.Model}", $"baza lensfun, {known.Model}");
                     id.CropFromTable = true;
-                    notes.Add(T($"crop from the lensfun database ({id.Camera.Trim()})", $"crop din baza lensfun ({id.Camera.Trim()})"));
+                    notes.Add(T($"crop from the lensfun database ({known.Model})", $"crop din baza lensfun ({known.Model})"));
                 }
                 else id.CropSource = T("unknown - the profile's calibration sensor is taken",
                                        "necunoscut - se ia senzorul de calibrare al profilului");

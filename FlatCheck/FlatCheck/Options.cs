@@ -284,11 +284,17 @@ namespace FlatCheck
             return string.Equals(fa, fb, cmp);
         }
 
-        /// <summary>Parses a number in the invariant culture (a dot for the decimals).</summary>
+        /// <summary>
+        /// Parses a finite number in the invariant culture: a dot for the decimals, an optional
+        /// sign and exponent, blanks around it, nothing else (R-005, ADR 0102). A comma is refused, whether meant
+        /// as the decimal sign or as a thousands separator: <c>NumberStyles.Any</c> dropped it
+        /// wherever it stood, so "2,8" was 28. "NaN", "Infinity" and a value too large for a
+        /// double are refused too, since no range check written as "at or below" stops them.
+        /// </summary>
         /// <param name="s">The text.</param>
-        /// <param name="v">The number, or 0 when the text is not one.</param>
-        /// <returns>True when the text is a number.</returns>
+        /// <param name="v">The number; meaningless when the text is not one.</param>
+        /// <returns>True when the text is a finite number.</returns>
         static bool TryNum(string s, out double v)
-            => double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out v);
+            => double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out v) && double.IsFinite(v);
     }
 }

@@ -276,8 +276,9 @@ namespace FlatCheck.Wpf
                 _prefillStep.State = OpeningState.Running;
                 Task prefill = WatchPrefillAsync(session, Synthetic.Pending);
                 // Nor does Split: it copies and runs Siril N times, so only on the button, and
-                // after the chain.
-                Split.Attach(session, ct, _gate);
+                // after the chain. It takes the folder's switches, the instance the Structure tab
+                // writes, so its comparison is that tab's (R-093).
+                Split.Attach(session, ct, _gate, settings);
                 DescribeInLog(session, problem);
 
                 await RunChainAsync(session, ct, settings).ConfigureAwait(true);

@@ -133,6 +133,9 @@ namespace FlatCheck.Wpf
         readonly Func<DateTime> _clock;
         readonly Func<DateTime, string> _tempRootFor;
 
+        /// <summary>The folder's switches (R-119), shared with the Structure tab; never null.</summary>
+        SessionSettings _settings = SessionSettings.None;
+
         SirilSession _session;
         CancellationToken _ct;
         HeavyRunGate _gate;
@@ -338,9 +341,14 @@ namespace FlatCheck.Wpf
         /// <param name="ct">The folder's token, to which the run's own token is linked.</param>
         /// <param name="gate">The window's heavy-run gate: waited for before the copies start
         /// and held around the analysis of the part masters; null runs at once.</param>
-        internal void Attach(SirilSession session, CancellationToken ct, HeavyRunGate gate)
+        /// <param name="settings">The folder's remembered switches (R-119), the instance the
+        /// Structure tab writes: its "no filters" box and its chosen lens are read when the
+        /// parts' masters are analysed, after the copies and the Siril runs (R-093); null for
+        /// none remembered.</param>
+        internal void Attach(SirilSession session, CancellationToken ct, HeavyRunGate gate, SessionSettings settings = null)
         {
             _session = session;
+            _settings = settings ?? SessionSettings.None;
             _ct = ct;
             _gate = gate;
             HasResult = false;
@@ -515,13 +523,18 @@ namespace FlatCheck.Wpf
 
                 using IDisposable lease = await EnterGateForPhaseAsync(gate, ct).ConfigureAwait(true);
                 Phase = SessionMessages.SplitPhaseAnalyse(parts);
+                // The comparison is the Structure tab's (R-093): nothing with a filter on the
+                // lens (R-118), and the folder's chosen lens alone when there is one (R-121).
+                // Both are read now, at the analysis, so a flip made on the Structure tab while
+                // the folder was open counts.
                 StructureQuery query = null;
                 string rawPath = session.ReferenceRawPath;
-                if (rawPath != null && _catalog != null)
+                bool lensFiltered = !_settings.NoFilters;
+                if (rawPath != null && _catalog != null && !lensFiltered)
                 {
                     ProfileSources sources = await _catalog.EnsureAsync().ConfigureAwait(true);
                     ct.ThrowIfCancellationRequested();
-                    query = new StructureQuery { Sources = sources, RawPath = rawPath, LoadInfo = _loadInfo };
+                    query = new StructureQuery { Sources = sources, RawPath = rawPath, LoadInfo = _loadInfo, LensKey = _settings.Lens };
                 }
 
                 var text = new StringWriter();
@@ -529,7 +542,7 @@ namespace FlatCheck.Wpf
                 var outcome = await Task.Run(() =>
                 {
                     RunReport.WriteBanner(text);
-                    var r = SplitRun.Execute(wholePath, masters, query, when, plan.FramesPerPart, text);
+                    var r = SplitRun.Execute(wholePath, masters, query, when, plan.FramesPerPart, text, lensFiltered);
                     RunReport.WriteMapSaved(session.SplitPngPath, text);
                     return r;
                 }, ct).ConfigureAwait(true);
@@ -683,6 +696,7 @@ namespace FlatCheck.Wpf
         {
             base.Reset();
             _session = null;
+            _settings = SessionSettings.None;
             Script.Detach();
             FrameCount = 0;
             FramesLine = "";

@@ -32,6 +32,7 @@ the last inline ones there and the `--expo` midpoints). Full picture:
 | \|corr(radPct, planePct)\| | light, series | 0.70 | | `Th.LightSeriesSkyCorr` |
 | frame count | light, series | ≥ 5 | | `Th.LightSeriesMinFrames` |
 | request vs the profile used (focal, f-stop) | synthetic, structure `--raw`/`--lens` | 1 mm or 5 % on the focal, 0.5 stops on the aperture = warning only, never a verdict | | `Th.ProfileFocalTolMm/Frac`, `Th.ProfileStopsTol` |
+| maximum aperture read from a lens's name | structure `--raw`, synthetic (the candidates) | between f/0.7 and f/11 = an aperture; outside = a model code, the name gives none; never a verdict | | `Th.LensNameApertureMin/Max` |
 | centre clipping | expo | 0.05% | - | `Th.ExpoClip` |
 | saturated pixel (what clipping counts) | expo | at or above 98 % of white | - | `Th.ExpoClipWhite` |
 | centre level | expo | 50-65% | - | `Th.ExpoLo/Hi` |

@@ -232,6 +232,40 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The camera's crop and mount are no longer taken from a longer model name that contains the
+  camera's (R-133, ADR 0101, the review's CR-001): a `Nikon D750` read the D7500's crop 1.534
+  where its own is 1.0, a `Canon EOS R5` the R50 V's, a `Pentax K-1` the K100D Super's, and any
+  `QHY...` camera the Pentax Q's 5.53, so the profile's depth and the depth verdict were those
+  of another sensor. On the shipped lensfun table 137 camera names landed on a body with
+  another crop; now none does. The D3300 was not affected. The crop line names the table's
+  model. A camera the table does not hold no longer borrows the crop of a body whose name
+  shares a part of a word with it: its crop reads as unknown, and `--crop` gives it.
+- The console no longer reads a number with a comma as another number (R-005, ADR 0102, the
+  review's CR-002): `--fstop 2,8` was taken as f/28, `--crop 1,5` as 15 and `--focal 13,5` as
+  135, without a word, and the figures were those of that aperture, sensor or focal length. A
+  comma, `NaN` and `Infinity` are now refused with the option's own error, exit 1, for `--sat`,
+  `--black`, `--fov`, `--focal`, `--fstop` and `--crop`. Write the decimals with a dot.
+- The Split tab compares with the lens profile the way the Structure tab does (R-093, the
+  review's CR-003). It ignored the lens chosen there (R-121), so `Split result.txt` and `Test
+  result.txt` could judge the same master's depth against two different profiles, and it
+  ignored the box "I didn't use any filters on my lens" (R-118), so it could print REDO for a
+  depth the Structure tab had rightly left out. Now a chosen lens is the only one compared, and
+  with the box off nothing is compared and the reference line says why.
+- An Adobe profile made for JPEGs is no longer used (R-134, ADR 0103, the review's CR-004).
+  Adobe ships many lenses as two files, `X (L) - RAW.lcp` and `X (L).lcp`, and the two were read
+  as one lens, so the profile nearest the request could be the JPEG one: on the Canon EF 17-40
+  f/4 L at 40 mm f/11 that is about a third less vignetting than the raw profile says, and the
+  depth verdict was read against it. An entry is now left out by what the file itself says
+  (`CameraRawProfile`), not by its name: 529 lenses on the owner's machine are read from their
+  raw file alone, and a lens that has only a JPEG profile is listed and refused when chosen,
+  with the reason. The three lenses of the validation library are not affected.
+- A lens is no longer left out of the candidates because a model code in its name was read as
+  its aperture (R-018, ADR 0104, the review's CR-005). `TAMRON SP 35mm F_1.4 Di USD F045` was
+  read as f/45, `Zeiss Distagon T 21 f28 ZE` as f/28 and `smc Pentax-F 28mm f/2.8` as f/28 (its
+  focal length), so for a raw that says f/1.4 or f/2.8 the right lens contradicted it and the
+  depth verdict came from another one. A number followed by `mm` is now a focal length, and one
+  outside f/0.7 to f/11 says nothing about the aperture; 37 of the 3242 lens names in the two
+  catalogues are read differently, the Tokina, the Nikkor 35 and the Samyang as before.
 - Typing in the Sintetic tab's lens field no longer freezes the window for half a second at
   every keystroke (R-132, ADR 0099): the text each lens is searched in is built once, while the
   profiles load, and a search takes under a millisecond on 3799 lenses. The same lenses are

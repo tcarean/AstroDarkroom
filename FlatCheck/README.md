@@ -770,10 +770,10 @@ The severity is monotonic, so "anything but 0" means "not clean, look". The mode
 
 - `--histeq`: 0 when the picture was written, 1 when it could not be.
 - `--synthetic`: 0 when it wrote the flat, 1 when it refused the reference, could not learn the
-  focal length, the aperture or the crop, or the lens chosen has no vignetting profile (Adobe ships
-  files for some lenses with only their distortion or colour measured; they are in the list, and
-  are refused when chosen), 2 when the lens could not be chosen (none, or too many: the list is
-  printed).
+  focal length, the aperture or the crop, or the lens chosen has no vignetting profile for raw
+  files (Adobe ships files for some lenses with only their distortion or colour measured, and
+  files made for JPEGs, which are never used; such lenses are in the list, and are refused when
+  chosen), 2 when the lens could not be chosen (none, or too many: the list is printed).
 - `--lenses`: always 0.
 
 `--against` exits like the structure mode, on the verdict of the *difference*. Structure with
@@ -822,7 +822,8 @@ A flag may come anywhere: `flatcheck --expo f.fit` and `flatcheck f.fit --expo` 
 modes exclude each other; given two, the first in the order `--lenses`, `--synthetic`, `--against`,
 `--histeq`, `--expo`, `--light` runs. A `--lang` with a value other than `en` or `ro`, or
 with none, stops the run with an English error and exit 1. `--pattern` takes `*` and `?`; character
-classes (`[abc]`) are taken literally.
+classes (`[abc]`) are taken literally. A number is written with a dot for the decimals
+(`--fstop 2.8`); with a comma (`2,8`) it is refused with an error and exit 1.
 
 Every run prints the version on its first line and the copyright on the second, `--help` and failed
 runs included, so a report copied somewhere says what produced it.

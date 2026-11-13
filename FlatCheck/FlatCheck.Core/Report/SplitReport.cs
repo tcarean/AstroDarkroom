@@ -150,9 +150,15 @@ namespace FlatCheck
             => r.ReferenceByAdobe
                 ? T($"{r.ReferenceProfile.Lens.SourceLabel} {r.ReferenceProfile.Lens.Title}, {r.ReferenceProfile.Settings} (the whole's Adobe profile, the same on every column)",
                     $"{r.ReferenceProfile.Lens.SourceLabel} {r.ReferenceProfile.Lens.Title}, {r.ReferenceProfile.Settings} (profilul Adobe al intregului, acelasi pe toate coloanele)")
+                : r.ReferenceChosen
+                ? T($"{r.ReferenceProfile.Lens.SourceLabel} {r.ReferenceProfile.Lens.Title}, {r.ReferenceProfile.Settings} (the lens you chose on the Structure tab, the same on every column)",
+                    $"{r.ReferenceProfile.Lens.SourceLabel} {r.ReferenceProfile.Lens.Title}, {r.ReferenceProfile.Settings} (obiectivul ales de tine in tabul Structura, acelasi pe toate coloanele)")
                 : r.HasReference
                 ? T($"{r.ReferenceProfile.Lens.SourceLabel} {r.ReferenceProfile.Lens.Title}, {r.ReferenceProfile.Settings} (the nearest to the whole, the same on every column)",
                     $"{r.ReferenceProfile.Lens.SourceLabel} {r.ReferenceProfile.Lens.Title}, {r.ReferenceProfile.Settings} (cel mai apropiat de intreg, acelasi pe toate coloanele)")
+                : r.LensFiltered
+                ? T("none: you said on the Structure tab that a filter was on the lens, so nothing is compared with the lens profiles",
+                    "niciunul: ai spus in tabul Structura ca a fost un filtru pe obiectiv, deci nu se compara nimic cu profilele obiectivului")
                 : T("none: the whole could not be compared with the lens profiles (no raw beside the master, or no profiles)",
                     "niciunul: intregul nu s-a putut compara cu profilele obiectivului (fara raw langa master, sau fara profile)");
 
@@ -195,7 +201,7 @@ namespace FlatCheck
                         : new SplitCell(T($"{Numbers.Signed(d.DiffStops, 2)} stops = {d.ErrorPct:F1} %", $"{Numbers.Signed(d.DiffStops, 2)} stopuri = {d.ErrorPct:F1} %"), d.Verdict);
                 }).ToList();
                 diff.Add(new SplitCell(Stops(p.CornerStops), null));
-                rows.Add(new SplitRow(DiffKey, ProfileLabel(p.Profile), diff, ProfileNote(p, isReference, r.ReferenceByAdobe), false, isReference));
+                rows.Add(new SplitRow(DiffKey, ProfileLabel(p.Profile), diff, ProfileNote(p, isReference, r.ReferenceByAdobe, r.ReferenceChosen), false, isReference));
             }
 
             // The verdict row's value is the verdict itself, worded; its Verdict stays the key
@@ -221,14 +227,19 @@ namespace FlatCheck
         /// verdict.</param>
         /// <param name="byAdobe">True when the reference is the whole's Adobe row (R-128), false
         /// when it is the whole's nearest row.</param>
+        /// <param name="chosen">True when the reference is the lens chosen on the Structure tab
+        /// (R-121), the only one compared; then <paramref name="byAdobe"/> is false.</param>
         /// <returns>The profile's settings and where it comes from, then the row's
         /// meaning.</returns>
-        internal static string ProfileNote(ProfileDepth p, bool isReference, bool byAdobe)
+        internal static string ProfileNote(ProfileDepth p, bool isReference, bool byAdobe, bool chosen = false)
             => T($"profile {p.Profile.Settings} [{p.Profile.Lens.Where}]: ", $"profil {p.Profile.Settings} [{p.Profile.Lens.Where}]: ")
              + (!isReference ? ""
                 : byAdobe
                 ? T("the whole's Adobe profile - the REFERENCE, gives the depth verdict on every column. ",
                     "profilul Adobe al intregului - REFERINTA, da verdictul adancimii pe fiecare coloana. ")
+                : chosen
+                ? T("the lens you chose on the Structure tab - the REFERENCE, gives the depth verdict on every column. ",
+                    "obiectivul ales de tine in tabul Structura - REFERINTA, da verdictul adancimii pe fiecare coloana. ")
                 : T("the nearest to the whole - the REFERENCE, gives the depth verdict on every column. ",
                     "cel mai apropiat de intreg - REFERINTA, da verdictul adancimii pe fiecare coloana. "))
              + RowNote(DiffKey);

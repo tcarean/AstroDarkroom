@@ -105,7 +105,10 @@ namespace FlatCheck
     /// is not unique: 139 is the Tokina 11-20 f/2.8, and the Nikkor 18-200 f/3.5-5.6, and the
     /// Sigma 18-35 f/1.8, and the first choice by ID took the first name in alphabetical order - a
     /// Nikkor - for a raw made with the Tokina. Null for any part the name does not say ("Zeiss
-    /// Batis 2/25"); nothing is guessed, and a name that cannot be read contradicts nothing.
+    /// Batis 2/25"); nothing is guessed, and a name that cannot be read contradicts nothing. A
+    /// number that cannot be a maximum aperture is not one (R-018, ADR 0104): the model code in
+    /// "TAMRON SP 35mm F_1.4 Di USD F045", Zeiss's "f28" for 2.8, the focal length in
+    /// "Pentax-F 28mm f/2.8".
     /// </summary>
     /// <param name="MinFocalMm">The shortest focal length, in mm; null when the name does not
     /// say.</param>
@@ -119,8 +122,12 @@ namespace FlatCheck
         // "11-20mm", "18-200 mm", "35mm"; the first occurrence wins.
         static readonly Regex FocalRx = new(@"(\d+(?:\.\d+)?)\s*(?:-\s*(\d+(?:\.\d+)?))?\s*mm\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         // "f/2.8", "F2.8", "f3.5-5.6G" (the aperture at the shortest focal length is taken); not
-        // "AF-S", "EF".
+        // "AF-S", "EF". It also finds what is no aperture ("F 28" in "Pentax-F 28mm", "F045"):
+        // Parse sorts those out.
         static readonly Regex ApertureRx = new(@"(?<![A-Za-z])[fF]/?\s?(\d+(?:\.\d+)?)", RegexOptions.Compiled);
+        // What follows a number that is a focal length, not an aperture: "mm" or "-80mm", from
+        // where the number ended. The word must end there: "f/2.8 MMJ" is an aperture.
+        static readonly Regex FocalTailRx = new(@"\G\s*(?:-\s*\d+(?:\.\d+)?\s*)?mm\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>
         /// The focal tolerance: 1 mm or 5 %, whichever is larger - names round. The same as
@@ -132,7 +139,12 @@ namespace FlatCheck
         /// </summary>
         internal const double ApertureToleranceStops = 0.25;
 
-        /// <summary>Reads the range from a lens's name.</summary>
+        /// <summary>
+        /// Reads the range from a lens's name. The aperture is the first "f" number that is not
+        /// a focal length (not followed by "mm" or "-80mm"), and only when it lies between
+        /// <see cref="Th.LensNameApertureMin"/> and <see cref="Th.LensNameApertureMax"/>:
+        /// outside them it is a model code, and the name says no aperture (R-018, ADR 0104).
+        /// </summary>
         /// <param name="name">The name; null or empty gives an all-null spec.</param>
         /// <returns>The range, each part null when the name does not say it.</returns>
         internal static LensSpec Parse(string name)
@@ -145,8 +157,16 @@ namespace FlatCheck
                 min = double.Parse(f.Groups[1].Value, CultureInfo.InvariantCulture);
                 max = f.Groups[2].Success ? double.Parse(f.Groups[2].Value, CultureInfo.InvariantCulture) : min;
             }
-            Match a = ApertureRx.Match(name);
-            if (a.Success) ap = double.Parse(a.Groups[1].Value, CultureInfo.InvariantCulture);
+            for (Match a = ApertureRx.Match(name); a.Success; a = a.NextMatch())
+            {
+                // "Pentax-F 28mm f/2.8": the first number is the focal length; look further.
+                if (FocalTailRx.Match(name, a.Index + a.Length).Success) continue;
+                // The first number left is the aperture, or a model code that says nothing. No
+                // later number is tried: after "F045" there is nothing better to believe.
+                double value = double.Parse(a.Groups[1].Value, CultureInfo.InvariantCulture);
+                if (value >= Th.LensNameApertureMin && value <= Th.LensNameApertureMax) ap = value;
+                break;
+            }
             return new LensSpec(min, max, ap);
         }
 
@@ -299,8 +319,11 @@ namespace FlatCheck
         /// Tokina/Nikon: the camera before the first parenthesis, the lens between the first
         /// parenthesis and its pair (it can contain parentheses: "(IF)"), the maker is the
         /// grandparent folder. A name without parentheses is a camera with a fixed lens, and stays
-        /// a
-        /// stub with its name.
+        /// a stub with its name. What follows the parenthesis joins the mount, except "RAW" in
+        /// any case and nothing at all: "X (L) - RAW.lcp", "X (L) - Raw.lcp" and "X (L).lcp" are
+        /// one lens. The last is usually the file made for JPEGs, but not always (43 of 434 on
+        /// 2026-11-13), so the name decides nothing about that: <see cref="LcpReader"/> leaves
+        /// the non-raw entries out by what each file says (R-134).
         /// </summary>
         /// <param name="path">The .lcp file's path.</param>
         /// <returns>The stub; never null.</returns>
@@ -327,7 +350,7 @@ namespace FlatCheck
             string make = name.Substring(0, open).Trim();
             string lens = name.Substring(open + 2, close - open - 2).Trim();
             string kind = name.Substring(close + 1).Trim().TrimStart('-').Trim();
-            string mount = make + (kind.Length == 0 || kind == "RAW" ? "" : $", {kind}");
+            string mount = make + (kind.Length == 0 || string.Equals(kind, "RAW", StringComparison.OrdinalIgnoreCase) ? "" : $", {kind}");
             string[] words = lens.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             string maker = words.Length > 0 ? words[0] : make;
             return new AdobeProfileFile(path, new LensChoice(ProfileSource.Adobe, maker, lens, mount));
@@ -448,8 +471,10 @@ namespace FlatCheck
                 {
                     var profiles = LcpReader.Read(path).Select(p => p.WithLens(f.Lens)).ToList();
                     // Adobe's files for a lens measured for distortion or colour only hold no
-                    // vignetting model: the lens is listed, and refused when asked for (R-071).
-                    if (profiles.Count == 0) Log.Debug("the Adobe profile " + path + " holds no vignetting profile; its lens is listed but cannot be used");
+                    // vignetting model, and its files made for JPEGs hold none for raw data
+                    // (R-134): the lens is listed, and refused when asked for (R-071) unless
+                    // another file of the same lens gives a profile.
+                    if (profiles.Count == 0) Log.Debug("the Adobe profile " + path + " holds no vignetting profile for raw files; alone, its lens is listed but cannot be used");
                     return profiles;
                 }
                 catch (Exception e)

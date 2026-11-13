@@ -132,6 +132,17 @@ namespace FlatCheck
         public const double ProfileFocalTolFrac = 0.05;
         public const double ProfileStopsTol = 0.5;
 
+        // --- the maximum aperture read from a lens's name (LensSpec.Parse, R-018, ADR 0104) ---
+        // A number after "f" or "F" in a name is the lens's maximum aperture only inside this
+        // interval; outside it, it is a model code ("F045", "f28", "DSC-F707"), and the name
+        // then says no aperture. Measured on 2026-11-13 on the 3242 distinct lens names of the
+        // two catalogues: the true maximum apertures run from f/0.8 to f/11 (the Canon RF 600
+        // and 800 mm F11), and every number read above 11 was a code or a focal length: 14, 22,
+        // 28, 32, 35, 45, 200, 601, 707, 770, 810, 828. The lower bound sits a third of a stop
+        // under the fastest lens there; nothing was read below it.
+        public const double LensNameApertureMin = 0.7;
+        public const double LensNameApertureMax = 11.0;
+
         // How much the two profile databases differ from each other, on the same lens, at the
         // same aperture, in the corner of the frame: 0.16-0.25 stops on the Tokina 11-20 and the
         // Nikkor 35 DX (docs/design/lens-profiles.md, section 8). It is the uncertainty of the

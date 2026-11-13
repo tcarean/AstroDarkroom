@@ -65,11 +65,11 @@ first" and "Test before fix"), and a formula change re-validates on the masters.
 
 | ID | Sev | Reach | Evidence | Title | Status |
 |----|----:|-------|----------|-------|--------|
-| CR-001 | 1 | some setups | confirmed | The camera lookup takes a longer model name, so a D750 gets a D7500's crop | open |
-| CR-002 | 1 | slip | confirmed | The console reads `--fstop 2,8` as f/28, and accepts NaN and Infinity | open |
-| CR-003 | 1 | common | confirmed | The Split tab ignores the folder's chosen lens and its "no filters" box | open |
-| CR-004 | 1 | some setups | confirmed | An Adobe non-raw profile is merged with its RAW sibling and can be the one used | open |
-| CR-005 | 1 | some setups | confirmed | The aperture read from a lens name takes a model code for the f-number | open |
+| CR-001 | 1 | some setups | confirmed | The camera lookup takes a longer model name, so a D750 gets a D7500's crop | fixed 4f5569ca |
+| CR-002 | 1 | slip | confirmed | The console reads `--fstop 2,8` as f/28, and accepts NaN and Infinity | fixed 9a939c41 |
+| CR-003 | 1 | common | confirmed | The Split tab ignores the folder's chosen lens and its "no filters" box | fixed 6bf3bb55 |
+| CR-004 | 1 | some setups | confirmed | An Adobe non-raw profile is merged with its RAW sibling and can be the one used | fixed 6c8da74b |
+| CR-005 | 1 | some setups | confirmed | The aperture read from a lens name takes a model code for the f-number | fixed b8b270cb |
 | CR-006 | 1 | common | confirmed | The Synthetic tab keeps the previous comparison under a new lens's figures | open |
 | CR-007 | 1 | slip | confirmed | `--expo` gives a verdict on a white level at or below the black level | open |
 | CR-008 | 1 | some setups | to measure | A compressed FITS (a table HDU) is read as an 8-pixel-wide image | open |
@@ -152,6 +152,12 @@ twice.
   inside an unrelated name; the crop's source names the model matched.
 - Test: none; `LensProfileTests.cs:202-206` pins the D3300 on a one-camera table.
 - Evidence: confirmed (line 126 read; the cases are the reviewer's, to become the failing test).
+- Status: fixed 4f5569ca (R-133, ADR 0101). `CameraOf` compares names as words: the exact name,
+  else a table name standing whole in the file's name when that name also carries the entry's
+  maker (added after the branch's review, in the commit after 1d951743); never the reverse. The
+  crop's source names the table's model. `R133_...` in `LensProfileTests` pins the crossed pairs and walks the
+  shipped table. Left open: `LensIdentification.PreferCamera` (the cleanup list) still matches
+  by containment.
 
 ### CR-002 The console reads `--fstop 2,8` as f/28, and accepts NaN and Infinity
 
@@ -172,6 +178,10 @@ twice.
 - Test: none parses a comma or NaN.
 - Evidence: confirmed (code read; the parse itself is documented .NET behaviour, to be pinned by
   the failing test).
+- Status: fixed 9a939c41 (R-005, ADR 0102). The owner chose the refusal: `TryNum` parses with
+  `NumberStyles.Float` and asks `double.IsFinite`, so a comma, `NaN` and `Infinity` get the
+  option's own error. `R005_...` in `OptionsTests`. The window's fields still take a comma
+  (CR-056). The sentence of `process.md` that CR-060 lists is corrected with it.
 
 ### CR-003 The Split tab ignores the folder's chosen lens and its "no filters" box
 
@@ -191,6 +201,9 @@ twice.
   0078).
 - Test: none (`SplitTabTests` has no lens key, box or settings case).
 - Evidence: confirmed.
+- Status: fixed 6bf3bb55 (R-093). `Split.Attach` takes the folder's `SessionSettings`; the
+  analysis builds no query with the box off and puts `LensKey` on it otherwise, and the
+  reference line says which of the two happened. `R093_...` in `SplitTabTests`.
 
 ### CR-004 An Adobe non-raw profile is merged with its RAW sibling and can be the one used
 
@@ -210,6 +223,11 @@ twice.
 - Test: `AnAdobeFileNameCarriesTheCameraAndTheLens` covers only the " - JPEG" spelling.
 - Evidence: confirmed (the line read; the file facts are the reviewer's and go into the test as
   real names).
+- Status: fixed 6c8da74b (R-134, ADR 0103). The owner chose the file's own flag: `LcpReader`
+  skips an entry whose `CameraRawProfile` is `False`, since 43 of the 434 suffix-less files are
+  raw profiles and the name cannot tell; ` - RAW` is read without case. `R134_...` in
+  `LensProfileTests`. The ", JPEG" sentence of `lens-profiles.md` that CR-060 lists is
+  corrected with it.
 
 ### CR-005 The aperture read from a lens name takes a model code for the f-number
 
@@ -224,6 +242,10 @@ twice.
 - Should: a number that cannot be a maximum aperture is "not said", which contradicts nothing.
 - Test: none; `LensSpec_ReadsTheRangeAndTheApertureOutOfTheName` has "F/1.8" before the code.
 - Evidence: confirmed for the parse; what libraw reports for those lenses is to measure.
+- Status: fixed b8b270cb (R-018, ADR 0104). A number followed by `mm` is a focal length, and
+  one outside `Th.LensNameApertureMin` to `Th.LensNameApertureMax` (0.7 to 11) gives no
+  aperture. `R018_...` in `LensProfileTests`. What libraw reports for those lenses was not
+  measured: no such raw is in the library.
 
 ### CR-006 The Synthetic tab keeps the previous comparison under a new lens's figures
 

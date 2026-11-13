@@ -348,6 +348,17 @@ kept only after a failure). Mechanics the ADR does not spell out:
 - On screen "auto" is the file's shared range, not each map's own, so the chips never show a
   picture the file could not; the fixed caps behave as on every other tab. The maps are
   re-encoded per (map, cap) and cached, the Structure tab's rule.
+- The comparison is the Structure tab's (R-093, the review's CR-003): `MainViewModel` hands
+  `Attach` the folder's `SessionSettings`, the instance the Structure tab writes, and the
+  analysis reads it only when the copies and the Siril runs are over. With the box "no filters"
+  off there is no query at all, and `SplitRun.Execute` is told so (`lensFiltered`), so that
+  `SplitReport.ReferenceLine` says a filter was on the lens and not "no raw beside the master";
+  otherwise the query carries `LensKey = settings.Lens`, and `StructureRun` compares that lens
+  alone on the whole and on every part. `SplitResult.ReferenceChosen` (the whole's
+  `ShotIdentity.ChosenLens`) picks the third wording of the reference line and of the
+  reference row's note, beside "the whole's Adobe profile" and "the nearest to the whole".
+  Until 2026-11-13 the tab had no settings: it compared every lens of the range and ignored
+  the box.
 - `Populate` is `internal` for the smoke test, which renders the tab from `SplitRun.Analyze`
   on generated masters.
 - The table's horizontal `ScrollViewer` swallowed the wheel even with nothing to scroll

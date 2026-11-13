@@ -40,7 +40,12 @@ namespace FlatCheck
     /// <param name="Aliases">The model's names in other languages, for searching.</param>
     /// <param name="Mount">The camera's mount; empty when the database gives none.</param>
     /// <param name="CropFactor">The sensor's crop factor against full frame.</param>
-    internal sealed record LensfunCamera(string Maker, string Model, IReadOnlyList<string> Aliases, string Mount, double CropFactor);
+    /// <param name="MakerNames">Every name the database gives the maker, the canonical one first,
+    /// then those in other languages ("Eastman Kodak Company", "Kodak"); a camera's name from
+    /// a file carries the maker when it holds a word of one of them that is not a generic
+    /// company word (R-133).</param>
+    internal sealed record LensfunCamera(string Maker, string Model, IReadOnlyList<string> Aliases, string Mount, double CropFactor,
+                                         IReadOnlyList<string> MakerNames);
 
     /// <summary>
     /// A mount definition of the lensfun database: what the <c>&lt;mount&gt;</c> element at the
@@ -76,12 +81,11 @@ namespace FlatCheck
         internal static readonly LensfunData Empty = new LensfunData(Array.Empty<LensProfile>(), Array.Empty<LensfunCamera>(), Array.Empty<LensfunMount>());
 
         /// <summary>
-        /// The crop of the camera whose name (model or alias) appears in
-        /// <paramref name="cameraName"/> or contains it - "NIKON D3300" from the EXIF finds
-        /// "Nikon D3300" / "D3300". Null when there is none.
+        /// The crop of the camera of that name (<see cref="CameraOf"/>, R-133) - "NIKON D3300"
+        /// from the EXIF finds "Nikon D3300". Null when there is none.
         /// </summary>
         /// <param name="cameraName">The camera's name from the file; null or blank allowed.</param>
-        /// <returns>The crop factor of the longest matching name, or null.</returns>
+        /// <returns>The camera's crop factor, or null.</returns>
         internal double? CropOf(string cameraName) => CameraOf(cameraName)?.CropFactor;
 
         /// <summary>
@@ -106,32 +110,103 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// The camera whose name (model or alias) appears in <paramref name="cameraName"/> or
-        /// contains it, the longest matching name winning ("D3300" beats "D3").
+        /// The camera of that name (R-133, ADR 0101), the names compared as words
+        /// (<see cref="Words"/>): the first entry whose model or alias has exactly the words of
+        /// <paramref name="cameraName"/>; when there is none, the entry one of whose names
+        /// stands whole in it, word for word and side by side ("Nikon D3300" in "Nikon
+        /// Corporation NIKON D3300"), the name with the most letters winning and, of two as
+        /// long, the first. Such an entry counts only when the file's name also carries its
+        /// maker (<see cref="CarriesMaker"/>): the "X10" inside "Canon EOS Kiss X10" is a
+        /// Fujifilm compact. A table name that only contains the file's name is no match: "Nikon
+        /// D7500" is not the camera of "Nikon D750".
         /// </summary>
         /// <param name="cameraName">The camera's name from the file; null or blank allowed.</param>
-        /// <returns>The camera, or null when none matches.</returns>
-        LensfunCamera CameraOf(string cameraName)
+        /// <returns>The camera, or null when none matches or the name has no letter or
+        /// digit.</returns>
+        internal LensfunCamera CameraOf(string cameraName)
         {
-            if (string.IsNullOrWhiteSpace(cameraName)) return null;
-            string wanted = Normalise(cameraName);
-            LensfunCamera best = null;
-            int bestLen = 0;
+            string[] wanted = Words(cameraName);
+            if (wanted.Length == 0) return null;
+            LensfunCamera inside = null;
+            int insideLetters = 0;
             foreach (LensfunCamera c in Cameras)
                 foreach (string name in new[] { c.Model }.Concat(c.Aliases))
                 {
-                    string n = Normalise(name);
-                    if (n.Length == 0) continue;
-                    // the longest matching name wins: "D3300" beats "D3"
-                    if ((wanted.Contains(n) || n.Contains(wanted)) && n.Length > bestLen) { best = c; bestLen = n.Length; }
+                    string[] words = Words(name);
+                    if (words.Length == 0) continue;
+                    if (words.AsSpan().SequenceEqual(wanted)) return c;
+                    int letters = words.Sum(w => w.Length);
+                    if (letters > insideLetters && StandsIn(wanted, words) && CarriesMaker(wanted, c)) { inside = c; insideLetters = letters; }
                 }
-            return best;
+            return inside;
         }
 
-        /// <summary>A name with only its letters and digits, upper-cased, for matching.</summary>
-        /// <param name="s">The name.</param>
-        /// <returns>The normalised name.</returns>
-        static string Normalise(string s) => new string(s.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+        /// <summary>A name's words for matching: its runs of letters and digits, upper-cased, so
+        /// "PENTAX K-70" is PENTAX, K, 70 and "Nikon Z fc" is NIKON, Z, FC.</summary>
+        /// <param name="s">The name; null allowed.</param>
+        /// <returns>The words in order; none for a name without a letter or a digit.</returns>
+        static string[] Words(string s)
+        {
+            var words = new List<string>();
+            int start = -1;
+            string text = s ?? "";
+            for (int i = 0; i <= text.Length; i++)
+            {
+                bool inWord = i < text.Length && char.IsLetterOrDigit(text[i]);
+                if (inWord && start < 0) start = i;
+                else if (!inWord && start >= 0)
+                {
+                    words.Add(text.Substring(start, i - start).ToUpperInvariant());
+                    start = -1;
+                }
+            }
+            return words.ToArray();
+        }
+
+        /// <summary>
+        /// The words of a maker's name that say nothing about who the maker is: legal forms
+        /// and the words of a trade, upper-cased. The first eighteen are the ones found in the
+        /// maker names of the shipped camera table on 2026-11-13 (57 names, 59 words, the other
+        /// 41 a maker's own: "Nikon Corporation", "Konica Minolta Camera, Inc.", "Olympus
+        /// Imaging Corp.", "OM Digital Solutions", "Phase One", "AEE DV", "LG Mobile"); the last
+        /// four are legal forms a later copy of the table may bring. A word here never makes a
+        /// file's camera name carry a maker (R-133, ADR 0101).
+        /// </summary>
+        internal static readonly IReadOnlySet<string> GenericMakerWords = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "AG", "CAMERA", "CO", "COMPANY", "COMPUTER", "CORP", "CORPORATION", "DIGITAL", "DV", "IMAGING", "INC", "LTD",
+            "MOBILE", "ONE", "OPTICAL", "SOLUTIONS", "SYSTEM", "TECHNOLOGY",
+            "GMBH", "KK", "LIMITED", "LLC",
+        };
+
+        /// <summary>Whether a file's camera name carries a camera's maker: one of its words is
+        /// a word of one of the maker's names, whichever, except the generic ones
+        /// (<see cref="GenericMakerWords"/>): "NIKON" of "Nikon Corporation", "KODAK" of the
+        /// alias "Kodak" beside "Eastman Kodak Company", "MINOLTA" of "Konica Minolta", which a
+        /// raw writes alone; never "CORPORATION".</summary>
+        /// <param name="wanted">The words of the file's camera name.</param>
+        /// <param name="camera">The table's entry.</param>
+        /// <returns>True when a word of a maker name that is not generic is among
+        /// <paramref name="wanted"/>; false for an entry without a maker.</returns>
+        static bool CarriesMaker(string[] wanted, LensfunCamera camera)
+        {
+            foreach (string maker in camera.MakerNames)
+                foreach (string word in Words(maker))
+                    if (!GenericMakerWords.Contains(word) && Array.IndexOf(wanted, word) >= 0) return true;
+            return false;
+        }
+
+        /// <summary>Whether a run of words stands in another, in order and side by side.</summary>
+        /// <param name="all">The words searched in.</param>
+        /// <param name="run">The words searched for; not empty.</param>
+        /// <returns>True when <paramref name="run"/> is a contiguous part of
+        /// <paramref name="all"/>.</returns>
+        static bool StandsIn(string[] all, string[] run)
+        {
+            for (int at = 0; at + run.Length <= all.Length; at++)
+                if (all.AsSpan(at, run.Length).SequenceEqual(run)) return true;
+            return false;
+        }
     }
 
     /// <summary>Reads the lensfun database's XML files.</summary>
@@ -199,8 +274,10 @@ namespace FlatCheck
                 string model = Canonical(cam, "model");
                 double? crop = Num(cam.Element("cropfactor")?.Value);
                 if (model == null || !crop.HasValue) continue;
-                cameras.Add(new LensfunCamera(Canonical(cam, "maker") ?? "?", model, Aliases(cam, "model"),
-                    cam.Element("mount")?.Value?.Trim() ?? "", crop.Value));
+                string maker = Canonical(cam, "maker");
+                var makerNames = (maker == null ? Array.Empty<string>() : new[] { maker }).Concat(Aliases(cam, "maker")).Distinct().ToList();
+                cameras.Add(new LensfunCamera(maker ?? "?", model, Aliases(cam, "model"),
+                    cam.Element("mount")?.Value?.Trim() ?? "", crop.Value, makerNames));
             }
 
             foreach (XElement lens in root.Elements("lens"))
