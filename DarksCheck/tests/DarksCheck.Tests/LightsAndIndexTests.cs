@@ -207,8 +207,14 @@ public class LightsAndIndexTests
         Assert.DoesNotContain("socotita pentru ISO 400", Report(rs), StringComparison.Ordinal);
         Assert.Contains("; socotita pentru ISO 400 si 120 s)", Report(rk), StringComparison.Ordinal);
         Assert.DoesNotContain("in ADU din fisier, pentru ca", Report(rk), StringComparison.Ordinal);
+        // and the figure's unit follows: ADU for the set that does not say its settings, ADU-eq for the one that does
+        Assert.Matches(@"dark-uri           : idx\d+ \(\d+\.\d ADU: valoarea medie a pixelilor fierbinti", Report(rs));
+        Assert.DoesNotContain(" ADU-eq: valoarea medie", Report(rs), StringComparison.Ordinal);
+        Assert.Matches(@"dark-uri           : idx\d+ \(\d+\.\d ADU-eq: valoarea medie a pixelilor fierbinti", Report(rk));
         using (Ui.Use(UiLanguage.English))
         {
+            Assert.Matches(@"darks              : idx\d+ \(\d+\.\d ADU: the average value of the hot pixels", Report(rs));
+            Assert.Matches(@"darks              : idx\d+ \(\d+\.\d ADU-eq: the average value of the hot pixels", Report(rk));
             Assert.Contains("; in ADU of the file, as the files do not give the ISO or the exposure)", Report(rs), StringComparison.Ordinal);
             Assert.DoesNotContain("worked out for ISO 400", Report(rs), StringComparison.Ordinal);
             Assert.Contains("; worked out for ISO 400 and 120 s)", Report(rk), StringComparison.Ordinal);
@@ -242,6 +248,8 @@ public class LightsAndIndexTests
         Assert.InRange(pa.Index.Index, 114, 126);
         string ra = Report(a);
         Assert.Contains(", setari necunoscute); eticheta ", ra, StringComparison.Ordinal);
+        // the partner's own figure is in the file's ADU then, and the row says ADU, not ADU-eq
+        Assert.Matches(@"partener           : .*: idx\d+ \(\d+\.\d ADU; cadre citite 5 din 5, setari necunoscute\); eticheta ", ra);
         Assert.Contains("    ATENTIE            : dark-urile partenerului nu spun ISO-ul sau expunerea; s-au comparat cu ale sesiunii ca facute la aceleasi setari", ra, StringComparison.Ordinal);
         Assert.Contains("    dark-uri / partener: pixelii fierbinti sunt in dark-urile sesiunii de 1.0", ra, StringComparison.Ordinal);
 
@@ -278,6 +286,12 @@ public class LightsAndIndexTests
         Assert.Equal(SilentSide.None, c.Partner!.Silent);
         Assert.InRange(c.Partner.OwnOverPartner.Ratio, 0.95, 1.05);
         Assert.DoesNotContain("ca facute la aceleasi setari", Report(c), StringComparison.Ordinal);
+        Assert.Matches(@"partener           : .*: idx\d+ \(\d+\.\d ADU-eq; cadre citite 5 din 5, ISO 1600, 120\.0 s\); eticheta ", Report(c));
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Matches(@"partner            : .*: idx\d+ \(\d+\.\d ADU; frames read 5 of 5, unknown settings\); label ", Report(a));
+            Assert.Matches(@"partner            : .*: idx\d+ \(\d+\.\d ADU-eq; frames read 5 of 5, ISO 1600, 120\.0 s\); label ", Report(c));
+        }
         DarkSeriesResult d = Run(silent, partnerSilent.Root);
         Assert.Equal(SilentSide.None, d.Partner!.Silent);
         Assert.InRange(d.Partner.OwnOverPartner.Ratio, 0.95, 1.05);

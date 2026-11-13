@@ -259,7 +259,8 @@ set beside `ToDarks`; `DarkSeriesAnalysis.FirstStacked` is the darks' side): the
 a frame in a stack, with check 1's tolerance on the exposure. It is not read back from the
 factor, which is exactly 1 for twice the ISO at half the exposure and falls on either side of
 the tolerance by rounding. When `Scaled` is true the `cer` row says the
-figures were worked out for the darks' ISO and exposure. Check 9 brings the noise of a light to
+figures were worked out for the darks' ISO and exposure, and the third paragraph, which gives
+the same figures, opens with that sentence (`Paragraphs`, `onALight`). Check 9 brings the noise of a light to
 the darks' settings the same way, through `NoiseOnPlane`.
 `ScaleReport.AgainstMasters` turns a light in raw ADU into the words and the bold parts of its
 ratio to the dark master's noise (`NoiseVsN.MasterNoise`) and to the stack's, used by the

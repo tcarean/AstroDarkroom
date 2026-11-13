@@ -454,11 +454,13 @@ internal static class DarkReport
         string workedOut = d.SaysSettings
             ? T($"worked out for ISO {F(Th.NormIso, 0)} and {F(Th.NormExposureSeconds, 0)} s", $"socotita pentru ISO {F(Th.NormIso, 0)} si {F(Th.NormExposureSeconds, 0)} s")
             : T("in ADU of the file, as the files do not give the ISO or the exposure", "in ADU din fisier, pentru ca fisierele nu spun ISO-ul sau expunerea");
+        // and its figure is then in the file's ADU, as the row's ending says
+        string unit = d.SaysSettings ? "ADU-eq" : "ADU";
         List<ReportRow> rows =
         [
             new(r.DarksFromPartner is null ? T("darks", "dark-uri") : T("darks (partner)", "dark-uri (partener)"), T(
-                $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: the average value of the hot pixels at places {ix.RankLow + 1} .. {ix.RankHigh}, counting from the hottest, that is {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} per Mpx of {F(mpx, mpx < 1 ? 2 : 1)} Mpx; {workedOut})",
-                $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile {ix.RankLow + 1} .. {ix.RankHigh}, numarand de la cel mai fierbinte, adica {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} pe fiecare Mpx din {F(mpx, mpx < 1 ? 2 : 1)} Mpx; {workedOut})")
+                $"{ix.Tag} ({F(ix.Index, 1)} {unit}: the average value of the hot pixels at places {ix.RankLow + 1} .. {ix.RankHigh}, counting from the hottest, that is {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} per Mpx of {F(mpx, mpx < 1 ? 2 : 1)} Mpx; {workedOut})",
+                $"{ix.Tag} ({F(ix.Index, 1)} {unit}: valoarea medie a pixelilor fierbinti de pe locurile {ix.RankLow + 1} .. {ix.RankHigh}, numarand de la cel mai fierbinte, adica {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} pe fiecare Mpx din {F(mpx, mpx < 1 ? 2 : 1)} Mpx; {workedOut})")
                 // the partner's label stands on the partner's row, the session's own on `eticheta` (R-066)
                 + (r.DarksFromPartnerLabel is string partnerLabel ? T($"; label {partnerLabel}", $"; eticheta {partnerLabel}") : "")),
             new(T("label", "eticheta"), r.Label),
@@ -477,9 +479,11 @@ internal static class DarkReport
         {
             MatchFigures m = p.OwnOverPartner;
             string settings = p.Iso is double iso && p.ExposureSeconds is double e ? $"ISO {F(iso, 0)}, {InventoryReport.Exposure(e)} s" : T("unknown settings", "setari necunoscute");
+            // a partner with unknown settings has its index in its file's ADU (R-063)
+            string partnerUnit = p.Iso is double && p.ExposureSeconds is double ? "ADU-eq" : "ADU";
             rows.Add(new(T("partner", "partener"), T(
-                $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} ADU-eq; frames read {p.Used} of {p.Frames}, {settings}); label {p.Label}",
-                $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} ADU-eq; cadre citite {p.Used} din {p.Frames}, {settings}); eticheta {p.Label}")));
+                $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} {partnerUnit}; frames read {p.Used} of {p.Frames}, {settings}); label {p.Label}",
+                $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} {partnerUnit}; cadre citite {p.Used} din {p.Frames}, {settings}); eticheta {p.Label}")));
             if (p.Failed > 0)
             {
                 rows.Add(new(T("WARNING", "ATENTIE"), T(

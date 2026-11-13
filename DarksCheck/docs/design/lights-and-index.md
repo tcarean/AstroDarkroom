@@ -29,7 +29,10 @@ black level of its own and takes the darks' black (the pedestal is the camera's)
 libraw's. A light that does not say its ISO or its exposure is taken at the darks'
 normalisation and marked `AssumedSettings`. A light that says them while the darks do not
 (`DarkSeriesAnalysis.SaysSettings` false) is taken at the darks' normalisation too, is not
-marked, and is counted in `LightsAnalysis.DarksSilent` for the report's line (ADR 0053). `FactorOf` is that rule, and the only place it is written:
+marked, and is counted in `LightsAnalysis.DarksSilent` for the report's line (ADR 0053). The `INDEX` rows follow the same flag: `DarkReport.IndexRows` gives the
+darks' figure in `ADU` and ends the row with the files not saying their settings, where a set
+that says them reads `ADU-eq` and the reference settings, and the partner's row gives `ADU`
+beside `setari necunoscute`. `FactorOf` is that rule, and the only place it is written:
 `Analyze` reads the ratio with it and `NoiseOnPlane` the noise of a light. The loop writes the diagnostic log as it goes, one
 line per light measured with its time, the working set and its figures, and a light that failed
 with its exception (ADR 0025, `logging.md`); `Measure` and the rest of the file write nothing.

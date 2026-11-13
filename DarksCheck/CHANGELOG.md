@@ -352,14 +352,17 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   same temperature, and so did darks against such a partner. The two are now compared as made
   at the same settings, as a light without an ISO already was, and an `ATENTIE` line says so in
   check 2 or under `INDEX`; the `INDEX` row of such a set no longer says it was worked out for
-  ISO 400 and 120 s (R-052, R-060, R-063, ADR 0053; CR-002 of the code review).
+  ISO 400 and 120 s and gives its figure in `ADU`, as the partner's row does for a partner with
+  unknown settings, and the window's text under the label says the index is then in the file's
+  ADU and compares only with sets made at the same settings (R-052, R-060, R-063, R-087,
+  ADR 0053; CR-002 of the code review).
 
 - The noise of the lights' stack in the scale section, and the rows of check 3 that weigh a
   light found in the darks against it, added the lights' noise in the lights' ADU to the dark
   master's in the darks' ADU: with lights at twice the darks' ISO the lights' share came out
   double. The lights' sky and noise are now brought to the darks' settings first, as check 9
-  brings them, and the `sky` row says so when the lights are at other settings than the darks
-  (R-080; CR-003 of the code review). With lights at the darks' settings nothing changes.
+  brings them, and the `sky` row and the paragraph under the table say so when the lights are
+  at other settings than the darks (R-080; CR-003 of the code review). With lights at the darks' settings nothing changes.
 
 - Lights that do not show the dark's hot pixels (in-camera noise reduction, another camera,
   rotated frames) got an index all the same, `idx-0` or `idx0`, beside a verdict that says the

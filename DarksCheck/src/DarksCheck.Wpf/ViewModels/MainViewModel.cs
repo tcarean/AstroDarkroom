@@ -324,10 +324,14 @@ public sealed class MainViewModel : ObservableObject
     public string LightsFromLead => WindowTexts.LightsFromLead;
 
     /// <summary>
-    /// The text under the label: the darks' index for a folder with darks, the lights' label for
-    /// a folder whose darks are the partner's (R-066).
+    /// The text under the label: the darks' index for a folder with darks, said without the
+    /// reference settings when the darks do not give their ISO or exposure (R-087), the lights'
+    /// label for a folder whose darks are the partner's (R-066). The core decides which case it
+    /// is; this only picks the text.
     /// </summary>
-    public string IndexLead => _result?.DarksFromPartner is null ? WindowTexts.IndexLead : WindowTexts.IndexLeadLights;
+    public string IndexLead => _result?.DarksFromPartner is not null ? WindowTexts.IndexLeadLights
+        : _result is { Darks.SaysSettings: false } ? WindowTexts.IndexLeadNoSettings
+        : WindowTexts.IndexLead;
 
     public string MapsLead => WindowTexts.MapsLead;
 

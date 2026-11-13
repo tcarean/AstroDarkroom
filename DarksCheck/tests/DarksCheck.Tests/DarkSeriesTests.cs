@@ -1051,6 +1051,40 @@ public partial class DarkSeriesTests
         Assert.EndsWith(" (pixelii verzi G1, din 5 lights)", Sky(rs), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The third paragraph gives the lights' sky and noise as the `cer` row does, brought to the darks'
+    /// settings; with lights at other settings it now opens by saying so, in the row's words.
+    /// </summary>
+    [Fact]
+    public void R080_TheThirdParagraphSaysWhenTheLightsAreAtOtherSettings()
+    {
+        static SyntheticLight L(int i, double gain) => new() { Seed = 300 + i, Sky = 500 * gain, Noise = 6 * gain, Hot = SyntheticLight.Lattice, HotFactor = gain };
+        static SyntheticDark D(int i) => new() { Seed = 100 + i, Hot = SyntheticLight.Lattice };
+        using SessionFixture same = new SessionFixture().WithDarkSeries(6, D).WithLights(4, i => L(i, 1));
+        using SessionFixture twice = new SessionFixture().WithDarkSeries(6, D).WithLights(4, i => L(i, 2), iso: 800);
+        DarkSeriesResult a = Run(same), b = Run(twice);
+        string pa = ScaleReport.Paragraphs(a)[2], pb = ScaleReport.Paragraphs(b)[2];
+
+        Assert.StartsWith("Fata de cer: pe un light al acestei sesiuni cerul e la ", pa, StringComparison.Ordinal);
+        Assert.DoesNotContain("alte setari", pa, StringComparison.Ordinal);
+        const string Opening = "Fata de cer: lights-urile sunt la alte setari decat dark-urile, asa ca cifrele lor sunt socotite aici pentru ISO-ul si expunerea dark-urilor. Pe un light al acestei sesiuni cerul e la ";
+        Assert.StartsWith(Opening, pb, StringComparison.Ordinal);
+        // the rest of the paragraph is the one every session has, from the sky's figure on
+        string Rest(string p) => p[p.IndexOf(" ADU peste negru, deci 1 ADU e ", StringComparison.Ordinal)..];
+        Assert.Contains(" In stack-ul celor 4 lights zgomotul pe pixel scade la ", Rest(pb), StringComparison.Ordinal);
+        Assert.EndsWith("Iar o greseala de 1 ADU din master ramane 1 ADU in stack.", pb, StringComparison.Ordinal);
+        Assert.Equal(Rest(pa).Split(". ").Length, Rest(pb).Split(". ").Length);
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.StartsWith("Against the sky: on a light of this session the sky is at ", ScaleReport.Paragraphs(a)[2], StringComparison.Ordinal);
+            Assert.StartsWith(
+                "Against the sky: the lights are at other settings than the darks, so their figures are worked out here for the darks' ISO and exposure. On a light of this session the sky is at ",
+                ScaleReport.Paragraphs(b)[2],
+                StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void R080_TheFirstParagraphSaysWhenTheCameraIsNotInTheTable()
     {
