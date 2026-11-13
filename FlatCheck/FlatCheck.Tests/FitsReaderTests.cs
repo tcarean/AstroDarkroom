@@ -419,6 +419,149 @@ public class FitsReaderTests
         Assert.StartsWith("FITS: date trunchiate", e.Message);
     }
 
+    // ---------------------------------------------------------------- a header that cannot be right (R-139)
+
+    /// <summary>A primary HDU from the cards given after SIMPLE, with no data after it.</summary>
+    static byte[] Primary(params (string Key, string Value)[] cards)
+        => Hdu(new[] { FitsTestData.Card("SIMPLE", "T") }.Concat(cards.Select(c => FitsTestData.Card(c.Key, c.Value))), 0);
+
+    /// <summary>
+    /// R-139, the header of the review's CR-013: an axis of -2880 bytes makes the data area
+    /// -5760 bytes, which padded is one block backwards, onto the header just read. The
+    /// reader never came back; it now refuses the axis by name, in both languages.
+    /// </summary>
+    [Fact]
+    public async Task R139_ANegativeAxisIsRefusedByNameInsteadOfSendingTheWalkBackwards()
+    {
+        byte[] file = Primary(("BITPIX", "8"), ("NAXIS", "2"), ("NAXIS1", "-2880"), ("NAXIS2", "2"));
+
+        Exception e = await ThrownBy(file);
+
+        Assert.IsType<InvalidDataException>(e);
+        Assert.Equal("FITS: header invalid: NAXIS1 = -2880; o axa nu poate fi mai scurta de 0.", e.Message);
+        using (Ui.Use(UiLanguage.English))
+            Assert.Equal("FITS: invalid header: NAXIS1 = -2880; an axis cannot be shorter than 0.", (await ThrownBy(file)).Message);
+    }
+
+    /// <summary>R-139: any axis, of an image or of an HDU that would only be stepped over.</summary>
+    [Theory]
+    [InlineData("2", "4", "-1", "", "NAXIS2 = -1")]
+    [InlineData("3", "4", "4", "-3", "NAXIS3 = -3")]
+    [InlineData("1", "-100", "", "", "NAXIS1 = -100")]
+    public async Task R139_ANegativeAxisIsRefusedWhicheverItIs(string naxis, string n1, string n2, string n3, string named)
+    {
+        var cards = new List<(string, string)> { ("BITPIX", "16"), ("NAXIS", naxis), ("NAXIS1", n1) };
+        if (n2.Length > 0) cards.Add(("NAXIS2", n2));
+        if (n3.Length > 0) cards.Add(("NAXIS3", n3));
+
+        Exception e = await ThrownBy(Primary(cards.ToArray()));
+
+        Assert.IsType<InvalidDataException>(e);
+        Assert.Equal("FITS: header invalid: " + named + "; o axa nu poate fi mai scurta de 0.", e.Message);
+    }
+
+    /// <summary>R-139: the standard allows 0 to 999 axes. A count of two thousand million
+    /// was a loop of as many header lookups, and a count below zero was read as a header
+    /// with one byte of data.</summary>
+    [Theory]
+    [InlineData("-1")]
+    [InlineData("1000")]
+    [InlineData("2000000000")]
+    public async Task R139_AnAxisCountOutsideTheStandardIsRefused(string naxis)
+    {
+        Exception e = await ThrownBy(Primary(("BITPIX", "16"), ("NAXIS", naxis), ("NAXIS1", "4"), ("NAXIS2", "4")));
+
+        Assert.IsType<InvalidDataException>(e);
+        Assert.Equal("FITS: header invalid: NAXIS = " + naxis + "; standardul permite intre 0 si 999 de axe.", e.Message);
+        using (Ui.Use(UiLanguage.English))
+            Assert.Equal("FITS: invalid header: NAXIS = " + naxis + "; the standard allows 0 to 999 axes.",
+                         (await ThrownBy(Primary(("BITPIX", "16"), ("NAXIS", naxis), ("NAXIS1", "4"), ("NAXIS2", "4")))).Message);
+    }
+
+    /// <summary>
+    /// R-139: without BITPIX a sample has no size, so the bound of R-009 saw 0 bytes of data
+    /// and let any NAXIS1 x NAXIS2 through to the allocation: an out-of-memory error for
+    /// 100000 x 100000. Refused by name now, missing or not a number, before any size is
+    /// computed.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("'sixteen'")]
+    public async Task R139_AHeaderWithoutAUsableBitpixIsRefusedBeforeAnyPixelIsAllocated(string? bitpix)
+    {
+        var cards = new List<(string, string)> { ("NAXIS", "2"), ("NAXIS1", "100000"), ("NAXIS2", "100000") };
+        if (bitpix != null) cards.Insert(0, ("BITPIX", bitpix));
+
+        Exception e = await ThrownBy(Primary(cards.ToArray()));
+
+        Assert.IsType<InvalidDataException>(e);
+        Assert.Equal("FITS: header invalid: BITPIX lipseste sau nu e un numar.", e.Message);
+        using (Ui.Use(UiLanguage.English))
+            Assert.Equal("FITS: invalid header: BITPIX is missing or not a number.", (await ThrownBy(Primary(cards.ToArray()))).Message);
+    }
+
+    /// <summary>R-139: a BITPIX that is none of the standard's six gives no sample size
+    /// either, so an HDU that would only be stepped over is refused too; it was stepped over
+    /// by a size that meant nothing.</summary>
+    [Fact]
+    public async Task R139_ABitpixOutsideTheStandardIsRefusedInAnHduThatIsOnlySteppedOver()
+    {
+        Exception e = await ThrownBy(Primary(("BITPIX", "12"), ("NAXIS", "1"), ("NAXIS1", "100")));
+
+        Assert.Equal("BITPIX neacceptat: 12", e.Message);
+    }
+
+    /// <summary>R-139: a size that does not fit 64 bits is more bytes than any file holds,
+    /// the cut-data refusal of R-009, whatever the product wraps to.</summary>
+    [Fact]
+    public async Task R139_AnImageWhoseSizeOverflowsIsRefusedAsCutData()
+    {
+        Exception e = await ThrownBy(Primary(("BITPIX", "-64"), ("NAXIS", "3"), ("NAXIS1", "2147483647"), ("NAXIS2", "2147483647"), ("NAXIS3", "2147483647")));
+
+        Assert.IsType<InvalidDataException>(e);
+        Assert.StartsWith("FITS: date trunchiate", e.Message);
+    }
+
+    /// <summary>R-139: an axis of length 0 beside a 2D size, or a second axis card in a
+    /// header that declares one axis, is no image: the HDU is stepped over and the file ends
+    /// as one without an image. Both ended in an ArgumentException out of the row copy.</summary>
+    [Theory]
+    [InlineData("3", "0", 0)]      // 4 x 4 x 0: no data after the header
+    [InlineData("1", "", 1)]       // one axis of 4 samples: 8 bytes, one block
+    public async Task R139_AnHduWithAnEmptyAxisOrASingleAxisHoldsNoImage(string naxis, string n3, int dataBlocks)
+    {
+        var cards = new List<(string, string)> { ("BITPIX", "16"), ("NAXIS", naxis), ("NAXIS1", "4"), ("NAXIS2", "4") };
+        if (n3.Length > 0) cards.Add(("NAXIS3", n3));
+        byte[] file = Primary(cards.ToArray()).Concat(new byte[dataBlocks * FitsTestData.BlockSize]).ToArray();
+
+        Exception e = await ThrownBy(file);
+
+        Assert.Equal("FITS: niciun HDU cu imagine 2D gasit.", e.Message);
+    }
+
+    /// <summary>R-139 from the console: exit 1 and the sentence, from every mode, where the
+    /// run never ended.</summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData("--expo")]
+    [InlineData("--histeq")]
+    [InlineData("--light")]
+    public async Task R139_EveryModeOfTheConsoleRefusesABrokenHeader(string mode)
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("broken.fit", Primary(("BITPIX", "8"), ("NAXIS", "2"), ("NAXIS1", "-2880"), ("NAXIS2", "2")));
+        var args = new List<string> { path, "-o", ws.PathTo("out.png") };
+        if (mode.Length > 0) args.Add(mode);
+        var stderr = new StringWriter();
+
+        Task<int> run = Task.Run(() => FlatCheckCli.Run(args.ToArray(), new StringWriter(), stderr));
+        Assert.True(ReferenceEquals(await Task.WhenAny(run, Task.Delay(TimeSpan.FromSeconds(20))), run), "the run did not come back");
+
+        Assert.Equal(1, await run);
+        Assert.Contains("FITS: header invalid: NAXIS1 = -2880", stderr.ToString());
+        Assert.False(File.Exists(ws.PathTo("out.png")));
+    }
+
     /// <summary>R-136: a table cut short is the cut file of R-009, heap counted.</summary>
     [Fact]
     public void R136_ATableCutShortIsRefusedAsCutData()

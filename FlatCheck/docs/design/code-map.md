@@ -45,7 +45,15 @@ a library extraction and not a copy is ADR 0011.
     a sample is read, `LoadFull` checks that the file holds the data area the header declares
     (`NAXISn` product times `|BITPIX| / 8`) and refuses a shorter one with the two byte counts
     ("data cut short"); the check runs for every HDU, the skipped ones too, and counts the data
-    alone, so a last HDU without its padding to 2880 bytes is read (R-009). `LoadHeader` does
+    alone, so a last HDU without its padding to 2880 bytes is read (R-009). Before that size is
+    computed, `LoadFull` refuses a header it cannot be computed from (R-139): `NAXIS` outside 0
+    to 999, a `NAXISn` below 0, and, in an HDU with data, a `BITPIX` that is missing or none of
+    the standard's six; the product of the axes is taken in checked arithmetic, one that does
+    not fit 64 bits being the cut-data refusal, and `NextHdu` is the one step to the next
+    header, which cannot go backwards (a negative axis used to send the walk back onto the
+    header it had just read, for ever). An HDU is the image only with two axes or more and none
+    of them empty; a `BITPIX` of 64 is refused there, before the pixels are allocated, and
+    only stepped over elsewhere. `LoadHeader` does
     not check the data area, so this is one of the refusals the two reads do not share: the header
     of such a file is intact and the Sintetic tab can still use it. Another is the compressed
     image of R-136: `LoadFull` refuses the table, `LoadHeader` answers on the empty primary HDU. `LoadFull` fills the raster

@@ -304,9 +304,11 @@ namespace FlatCheck
         /// loses the comments and cuts the strings at the first '/'. Throws
         /// InvalidDataException on a file that is not a FITS, whose header is cut, whose data
         /// area is shorter than the header declares (R-009, checked for every HDU before a
-        /// sample is read) or whose image is stored as a tile-compressed table (R-136), and an
-        /// Exception when no HDU holds a 2D image (a table is none) or BITPIX is not one of the
-        /// five.
+        /// sample is read), whose image is stored as a tile-compressed table (R-136) or whose
+        /// header cannot be right (NAXIS outside 0 to 999, a NAXISn below 0, no BITPIX in an
+        /// HDU with data: R-139, checked before a size is computed or a pixel allocated), and
+        /// an Exception when no HDU holds a 2D image (a table is none, nor is an HDU with one
+        /// axis or with an empty one) or BITPIX is not one of the five.
         /// </summary>
         /// <param name="raw">The whole file's bytes.</param>
         /// <returns>
@@ -373,15 +375,24 @@ namespace FlatCheck
                     catch (OverflowException) { tableBytes = long.MaxValue; }
                     if (tableBytes > raw.Length - pos)
                         throw new InvalidDataException(DataCut(tableBytes, raw.Length - pos));
-                    pos += (int)((tableBytes + 2879) / 2880 * 2880);
+                    pos = NextHdu(pos, tableBytes, raw.Length);
                     continue;
                 }
 
-                if (naxis < 2)
-                {
-                    // an HDU without an image (e.g. an empty primary) - skip its data (0) and go on
-                    if (naxis == 0) continue;
-                }
+                // A header that cannot be right is refused before a size is computed from it,
+                // a pixel allocated or a step taken (R-139): each of these used to go on, to a
+                // walk that stepped back onto this very header, to an allocation the file's
+                // length did not bound, or to an exception out of the row copy.
+                if (naxis < 0 || naxis > MaxAxes) throw new InvalidDataException(BadAxisCount(naxis));
+                // an HDU without data (e.g. an empty primary): nothing to step over, go on
+                if (naxis == 0) continue;
+
+                // Without a sample size there is no data size: the cut-data bound below saw 0
+                // bytes for any NAXIS1 x NAXIS2. The standard's six give a size; 64 is refused
+                // further down, only in the HDU that would be read.
+                if (HInt(hdr, "BITPIX", int.MinValue) == int.MinValue) throw new InvalidDataException(NoBitpix);
+                if (!(bitpix is 8 or 16 or 32 or 64 or -32 or -64)) throw new Exception(UnsupportedBitpix(bitpix));
+
                 int n1 = HInt(hdr, "NAXIS1", 0);
                 int n2 = HInt(hdr, "NAXIS2", 0);
                 int n3 = naxis >= 3 ? HInt(hdr, "NAXIS3", 1) : 1;
@@ -390,22 +401,42 @@ namespace FlatCheck
 
                 // The product of ALL the axes. It used to be n1*n2*max(1,n3), which for a 1-D
                 // HDU gave 0 -> pos did not advance, and the data area was parsed as a header,
-                // failing with "header incomplet" instead of "niciun HDU cu imagine 2D".
-                long npix = 1;
-                for (int ax = 1; ax <= naxis; ax++) npix *= HInt(hdr, "NAXIS" + ax, 1);
+                // failing with "header incomplet" instead of "niciun HDU cu imagine 2D". An
+                // axis of length 0 makes it 0, whatever the others say; a product that does
+                // not fit 64 bits is more bytes than any file holds, so it ends in the
+                // cut-data refusal below, as for a table.
                 int bytesPer = Math.Abs(bitpix) / 8;
-                long dataBytes = npix * bytesPer;
-                long dataBlocks = (dataBytes + 2879) / 2880 * 2880;
+                long npix = 1;
+                bool empty = false, tooLarge = false;
+                for (int ax = 1; ax <= naxis; ax++)
+                {
+                    int length = HInt(hdr, "NAXIS" + ax, 1);
+                    if (length < 0) throw new InvalidDataException(BadAxis(ax, length));
+                    if (length == 0) empty = true;
+                    else if (!tooLarge)
+                    {
+                        try { npix = checked(npix * length); }
+                        catch (OverflowException) { tooLarge = true; }
+                    }
+                }
+                if (empty) npix = 0;
+                long dataBytes;
+                try { dataBytes = empty ? 0 : tooLarge ? long.MaxValue : checked(npix * bytesPer); }
+                catch (OverflowException) { dataBytes = long.MaxValue; }
 
                 // A file cut mid-transfer: the header promises more pixels than the file holds.
                 // Checked for every HDU, before a sample is read, so ReadSample never indexes
                 // past the end (it used to throw IndexOutOfRangeException). The data alone
                 // counts, not the padding to 2880 bytes, which a last HDU may lack.
-                if (pos + dataBytes > raw.Length)
+                if (dataBytes > raw.Length - pos)
                     throw new InvalidDataException(DataCut(dataBytes, raw.Length - pos));
 
-                if (n1 > 0 && n2 > 0)
+                // An image has two axes or more, none of them empty: a header that declares one
+                // axis and still carries a NAXIS2 card, or a cube of no planes, has no pixels
+                // for the rows below.
+                if (naxis >= 2 && n1 > 0 && n2 > 0 && npix > 0)
                 {
+                    if (bitpix == 64) throw new Exception(UnsupportedBitpix(bitpix));
                     var vals = new double[npix];
                     int p = pos;
                     for (long i = 0; i < npix; i++)
@@ -437,10 +468,59 @@ namespace FlatCheck
                     return (img, hdr, cards, n3, bitpix);
                 }
                 // an HDU without a usable 2D image: skip its data blocks and go on
-                pos += (int)dataBlocks;
+                pos = NextHdu(pos, dataBytes, raw.Length);
             }
             throw new Exception(T("FITS: no HDU with a 2D image found.", "FITS: niciun HDU cu imagine 2D gasit."));
         }
+
+        /// <summary>The most axes the standard allows an HDU (<c>NAXIS</c> is 0 to 999).</summary>
+        const int MaxAxes = 999;
+
+        /// <summary>
+        /// Where the HDU after a data area starts: past the data, padded to whole blocks, and
+        /// never past the end of the file (a last HDU may lack its padding) nor before
+        /// <paramref name="pos"/>.
+        /// </summary>
+        /// <param name="pos">Where the data area starts, in bytes from the start of the
+        /// file.</param>
+        /// <param name="dataBytes">The data area's length in bytes, 0 or more and no more than
+        /// the file holds after <paramref name="pos"/>.</param>
+        /// <param name="fileLength">The file's length in bytes.</param>
+        /// <returns>The next header's offset, at most <paramref name="fileLength"/>.</returns>
+        static int NextHdu(int pos, long dataBytes, int fileLength)
+            => (int)Math.Min(fileLength, pos + (dataBytes + 2879) / 2880 * 2880);
+
+        /// <summary>The refusal of an axis count the standard does not allow (R-139).</summary>
+        /// <param name="naxis">The header's <c>NAXIS</c>.</param>
+        /// <returns>The message, in the current language.</returns>
+        static string BadAxisCount(int naxis)
+        {
+            string n = naxis.ToString(CultureInfo.InvariantCulture);
+            return T("FITS: invalid header: NAXIS = " + n + "; the standard allows 0 to 999 axes.",
+                     "FITS: header invalid: NAXIS = " + n + "; standardul permite intre 0 si 999 de axe.");
+        }
+
+        /// <summary>The refusal of an axis shorter than nothing (R-139).</summary>
+        /// <param name="axis">Which axis, from 1.</param>
+        /// <param name="length">The header's <c>NAXISn</c>, below 0.</param>
+        /// <returns>The message, in the current language.</returns>
+        static string BadAxis(int axis, int length)
+        {
+            string card = "NAXIS" + axis.ToString(CultureInfo.InvariantCulture) + " = " + length.ToString(CultureInfo.InvariantCulture);
+            return T("FITS: invalid header: " + card + "; an axis cannot be shorter than 0.",
+                     "FITS: header invalid: " + card + "; o axa nu poate fi mai scurta de 0.");
+        }
+
+        /// <summary>The refusal of an HDU with data and no sample size (R-139).</summary>
+        static string NoBitpix => T(
+            "FITS: invalid header: BITPIX is missing or not a number.",
+            "FITS: header invalid: BITPIX lipseste sau nu e un numar.");
+
+        /// <summary>The refusal of a sample type the reader does not read.</summary>
+        /// <param name="bitpix">The header's <c>BITPIX</c>.</param>
+        /// <returns>The message, in the current language.</returns>
+        static string UnsupportedBitpix(int bitpix)
+            => T("unsupported BITPIX: ", "BITPIX neacceptat: ") + bitpix.ToString(CultureInfo.InvariantCulture);
 
         /// <summary>One big-endian sample, as stored (before BZERO and BSCALE).</summary>
         /// <param name="b">The file's bytes.</param>
@@ -465,7 +545,7 @@ namespace FlatCheck
                         for (int k = 0; k < 8; k++) bits = (bits << 8) | b[p + k];
                         return BitConverter.Int64BitsToDouble(bits);
                     }
-                default: throw new Exception(T("unsupported BITPIX: ", "BITPIX neacceptat: ") + bitpix);
+                default: throw new Exception(UnsupportedBitpix(bitpix));
             }
         }
 
