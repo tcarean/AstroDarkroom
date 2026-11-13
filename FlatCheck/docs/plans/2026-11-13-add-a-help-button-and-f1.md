@@ -26,6 +26,8 @@ Owner's answers in this session (they make ADR 0112 `accepted 2026-11-13`):
    `Choose folder...` and `About`.
 3. With no tab on screen the manual opens at the section of the state: `Opening a session` (no
    folder chosen, or the opening analyses running), `The session folder` (the problem card).
+   (Changed after the branch review, the owner's answer of 2026-11-13: the problem card opens
+   `Opening a session` too, where the wiki explains it; ADR 0112.)
 
 ## Requirement (draft, to be accepted with this plan)
 

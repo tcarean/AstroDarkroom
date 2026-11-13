@@ -22,8 +22,10 @@
 using FlatCheck.Tests;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Navigation;
 
 namespace FlatCheck.Wpf.Tests;
 
@@ -38,14 +40,15 @@ public class HelpTests
 
     /// <summary>
     /// Each state of the window and each tab has its section of the manual; the addresses are
-    /// written out, as the wiki's headings make them.
+    /// written out, as the wiki's headings make them. Every state without the tabs, the problem
+    /// card included, opens "Opening a session" (the owner's answer after the branch review).
     /// </summary>
     [Theory]
     [InlineData(false, false, false, null, Page + "#opening-a-session")]
     [InlineData(true, false, true, null, Page + "#opening-a-session")]
     [InlineData(true, false, true, ManualSection.Split, Page + "#opening-a-session")]
-    [InlineData(true, true, false, null, Page + "#the-session-folder")]
-    [InlineData(true, true, false, ManualSection.Exposure, Page + "#the-session-folder")]
+    [InlineData(true, true, false, null, Page + "#opening-a-session")]
+    [InlineData(true, true, false, ManualSection.Exposure, Page + "#opening-a-session")]
     [InlineData(true, false, false, ManualSection.Structure, Page + "#structure")]
     [InlineData(true, false, false, ManualSection.EndToEnd, Page + "#end-to-end")]
     [InlineData(true, false, false, ManualSection.Exposure, Page + "#exposure")]
@@ -74,15 +77,15 @@ public class HelpTests
     }
 
     /// <summary>
-    /// The Help command, which F1 raises, opens the manual at the section of what is on
-    /// screen and logs the address: the opening's before a folder, the session folder's on the
-    /// problem card, the selected tab's once the tabs show.
+    /// F1, pressed on an element inside the window, opens the manual at the section of what is
+    /// on screen and logs the address: the opening's before a folder and on the problem card
+    /// (whose explanation is in that section), the selected tab's once the tabs show. The key goes through WPF's own
+    /// translation of a key into a command, so an input binding that took F1 away would fail
+    /// here.
     /// </summary>
     [Fact]
     public async Task R141_HelpAndF1OpenTheManualAtTheSectionOnScreen()
     {
-        Assert.Contains(ApplicationCommands.Help.InputGestures.OfType<KeyGesture>(), g => g.Key == Key.F1 && g.Modifiers == ModifierKeys.None);
-
         using var good = new SessionFixture().WithFlatMaster();
         using var bad = new SessionFixture().WithProcess();
         using var capture = LogCapture.Start();
@@ -92,27 +95,47 @@ public class HelpTests
             var opened = new List<string>();
             var w = new MainWindow { OpenAddress = opened.Add };
 
-            ApplicationCommands.Help.Execute(null, w);
+            Assert.True(PressF1(w.Tabs));
             Assert.Equal(Page + "#opening-a-session", opened.Last());
 
             await w.ViewModel.OpenAsync(bad.Root);
             Assert.True(w.ViewModel.HasProblem);
-            ApplicationCommands.Help.Execute(null, w);
-            Assert.Equal(Page + "#the-session-folder", opened.Last());
+            Assert.True(PressF1(w.Tabs));
+            Assert.Equal(Page + "#opening-a-session", opened.Last());
 
             await w.ViewModel.OpenAsync(good.Root);
             Assert.False(w.ViewModel.HasProblem || w.ViewModel.IsRunning);
             w.Tabs.SelectedIndex = 2;
-            ApplicationCommands.Help.Execute(null, w);
+            Assert.True(PressF1((UIElement)((TabItem)w.Tabs.SelectedItem).Content));
             Assert.Equal(Page + "#exposure", opened.Last());
 
             w.Tabs.SelectedIndex = 5;
-            ApplicationCommands.Help.Execute(null, w);
+            Assert.True(PressF1(w.Tabs));
             Assert.Equal(Page + "#split", opened.Last());
             Assert.Equal(4, opened.Count);
         });
 
         Assert.Contains(capture.Events, e => e.Logger == "Window" && e.Message == "Help opened: " + Page + "#exposure");
+    }
+
+    /// <summary>
+    /// A link the shell cannot open is logged and the window goes on: a relative address,
+    /// which has no absolute form, included (the review of the branch, 2026-11-13: reading it
+    /// threw out of the click handler).
+    /// </summary>
+    [Fact]
+    public void ALinkThatCannotBeOpenedIsLoggedNotThrown()
+    {
+        using var capture = LogCapture.Start();
+        var e = new RequestNavigateEventArgs(new Uri("no-such-flatcheck-page.html", UriKind.Relative), null)
+        {
+            RoutedEvent = Hyperlink.RequestNavigateEvent,
+        };
+
+        ExternalLink.Open(e);
+
+        Assert.True(e.Handled);
+        Assert.Contains(capture.Events, ev => ev.Message == "the link no-such-flatcheck-page.html could not be opened in a browser");
     }
 
     /// <summary>
@@ -140,7 +163,6 @@ public class HelpTests
             var buttons = Descendants(host).OfType<Button>().ToList();
             Button help = Assert.Single(buttons, b => b.Command == ApplicationCommands.Help);
             Assert.True(help.IsEnabled);
-            Assert.True(help.TranslatePoint(new Point(help.ActualWidth, 0), host).X < 960);
             Assert.Equal(tip, help.ToolTip);
             Assert.Contains(Descendants(help).OfType<TextBlock>(), t => t.Text == word);
             Image icon = Assert.Single(Descendants(help).OfType<Image>());
@@ -151,12 +173,36 @@ public class HelpTests
             Assert.Null(aboutButton.Command);
             Assert.Equal(aboutTip, aboutButton.ToolTip);
 
+            // the bar fits the window's minimum width: About, the rightmost, ends at the bar's
+            // 20 px right padding, not past it
+            Assert.True(aboutButton.TranslatePoint(new Point(aboutButton.ActualWidth, 0), host).X < 960 - 20 + 0.5);
+
             // Help sits between the folder button and About, in the same row
             var row = (Panel)VisualTreeHelper.GetParent(help);
             int at = row.Children.IndexOf(help);
             Assert.Same(aboutButton, row.Children[at + 1]);
             Assert.Equal(Ui.T("Choose folder...", "Alege folder..."), ((Button)row.Children[at - 1]).Content);
         });
+    }
+
+    /// <summary>Raises a key-down of F1 on <paramref name="target"/>, as the keyboard would with
+    /// the focus there; returns whether something handled it.</summary>
+    static bool PressF1(UIElement target)
+    {
+        var e = new KeyEventArgs(Keyboard.PrimaryDevice, new KeySource(), 0, Key.F1) { RoutedEvent = Keyboard.KeyDownEvent };
+        target.RaiseEvent(e);
+        return e.Handled;
+    }
+
+    /// <summary>The presentation source a key event names: a window never shown has none, and
+    /// nothing here is drawn through it (as in AboutWindowFitTests).</summary>
+    sealed class KeySource : PresentationSource
+    {
+        public override Visual RootVisual { get; set; } = null!;
+
+        public override bool IsDisposed => false;
+
+        protected override CompositionTarget GetCompositionTargetCore() => null!;
     }
 
     /// <summary>Every element under <paramref name="node"/> in the visual tree, depth

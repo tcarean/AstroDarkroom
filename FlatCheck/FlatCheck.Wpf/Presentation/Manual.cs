@@ -24,11 +24,9 @@ namespace FlatCheck.Wpf
     /// <summary>A section of FlatCheck's manual in the wiki that the window can open.</summary>
     public enum ManualSection
     {
-        /// <summary>"Opening a session": no folder chosen yet, or the opening's analyses running.</summary>
+        /// <summary>"Opening a session": no folder chosen yet, the opening's analyses running, or
+        /// the problem card, which that section explains ("When the folder cannot be used").</summary>
         OpeningASession,
-
-        /// <summary>"The session folder": the problem card of a folder nothing can start on.</summary>
-        TheSessionFolder,
 
         /// <summary>The Structure tab.</summary>
         Structure,
@@ -66,7 +64,6 @@ namespace FlatCheck.Wpf
         /// <returns>The anchor, without the <c>#</c>.</returns>
         static string Anchor(ManualSection section) => section switch
         {
-            ManualSection.TheSessionFolder => "the-session-folder",
             ManualSection.Structure => "structure",
             ManualSection.EndToEnd => "end-to-end",
             ManualSection.Exposure => "exposure",
@@ -77,9 +74,10 @@ namespace FlatCheck.Wpf
         };
 
         /// <summary>
-        /// The section of what the window shows, in the order the window stacks its panels: the
-        /// opening panel while the opening runs, over everything; then the problem card; then the
-        /// "choose a folder" panel; then the tabs.
+        /// The section of what the window shows: the selected tab's when the tabs show (a folder,
+        /// no problem, the opening ended, as MainWindow.xaml shows them); "Opening a session"
+        /// for everything shown instead of them - the "choose a folder" panel, the opening panel
+        /// and the problem card.
         /// </summary>
         /// <param name="hasFolder">Whether a folder was chosen.</param>
         /// <param name="hasProblem">Whether the folder shows the problem card instead of the tabs.</param>
@@ -88,10 +86,8 @@ namespace FlatCheck.Wpf
         /// <returns>The section to open.</returns>
         internal static ManualSection SectionFor(bool hasFolder, bool hasProblem, bool isRunning, ManualSection? tab)
         {
-            if (isRunning) return ManualSection.OpeningASession;
-            if (hasProblem) return ManualSection.TheSessionFolder;
-            if (!hasFolder) return ManualSection.OpeningASession;
-            return tab ?? ManualSection.OpeningASession;
+            bool tabsShow = hasFolder && !hasProblem && !isRunning;
+            return tabsShow && tab.HasValue ? tab.Value : ManualSection.OpeningASession;
         }
     }
 }

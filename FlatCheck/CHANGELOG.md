@@ -10,7 +10,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - The window's top bar has a `Help` (`Ajutor`) button, with an icon, between `Choose folder...` and
   `About`; it and the F1 key open the manual in the browser at the section of the tab on screen,
-  or of the opening or the session folder when no tab shows (R-141, ADR 0112).
+  or at the section on opening a session when no tab shows (R-141, ADR 0112).
 - When LibRaw cannot be loaded, the diagnostic log says why, on a Warn line with the loader's
   exception (R-110, ADR 0085): on Windows, the folder `raw_r.dll` was found in, or that none of
   the folders .NET searches holds it, and which of the four DLLs of Microsoft's Visual C++
