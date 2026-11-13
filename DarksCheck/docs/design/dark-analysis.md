@@ -359,7 +359,9 @@ under the label while the console prints the value alone (`OverlapRow` for the t
 of check 2, one row per hot level, `peste 10`, `20 din 20`, `100 %`; `FramesRow` for check 9's
 `cu n cadre`, one row per `FramesPoint` with the frames, the master's noise, the change against
 now, with lights the stack's figure, and the rating, four or five columns; the
-note is the value's bracket hint without its brackets, empty when the value has none); `Choice`, a
+note is the value's bracket hint without its brackets, empty when the value has none, and for
+`FramesRow` led by the name of the column it explains, `stack mai zgomotos cu: `, which the console's
+bracket leaves out since the console prints no column); `Choice`, a
 `ReportChoice(Label, Options, Selected)` the window offers above the table and the console
 ignores (`FramesRow` with lights alone: the limits of `Th.StackNoiseLimits` as percents, the one
 in force selected, ADR 0051); and `Summary`, false on check 6's three

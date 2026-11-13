@@ -1856,9 +1856,11 @@ internal static class DarkReport
         }
 
         StackLimit? st = e.Stack;
-        string note = st is null ? "" : T(
-            $"the stack is noisier by: against the stack made with an ideal dark master, that is one of very many frames, with no noise of its own; it is the stack of the {st.Lights} lights ({F(st.LightNoise, 1)} ADU of noise each), counted without dithering; with dithering the difference is smaller",
-            $"stack mai zgomotos cu: fata de stack-ul facut cu un master dark ideal, adica din foarte multe cadre, fara zgomot propriu; e stack-ul celor {RoCount(st.Lights)}lights ({F(st.LightNoise, 1)} ADU de zgomot fiecare), socotit fara dithering; cu dithering diferenta e mai mica");
+        // what the stack's figure is compared with: the console's bracket; under the window's table it is led by the column's name
+        string compared = st is null ? "" : T(
+            $"against the stack made with an ideal dark master, that is, one made from very many frames, with no noise of its own; it is the stack of the {st.Lights} lights ({F(st.LightNoise, 1)} ADU of noise each), counted without dithering; with dithering the difference is smaller",
+            $"fata de stack-ul facut cu un master dark ideal, adica din foarte multe cadre, fara zgomot propriu; e stack-ul celor {RoCount(st.Lights)}lights ({F(st.LightNoise, 1)} ADU de zgomot fiecare), socotit fara dithering; cu dithering diferenta e mai mica");
+        string note = compared.Length == 0 ? "" : T("the stack is noisier by: ", "stack mai zgomotos cu: ") + compared;
         List<string> header = [T("frames", "cadre"), T("master's noise", "zgomotul masterului"), T("against the master of now", "fata de masterul de acum")];
         if (st is not null)
         {
@@ -1893,7 +1895,7 @@ internal static class DarkReport
             texts.Add(RunReport.Frames(p.N) + (p.Now ? T(" (now)", " (acum)") : "") + ": " + noise + " (" + string.Join("; ", parts) + ")");
         }
 
-        return new(label, string.Join("; ", texts) + (note.Length == 0 ? "" : "  [" + note + "]"))
+        return new(label, string.Join("; ", texts) + (compared.Length == 0 ? "" : "  [" + compared + "]"))
         {
             Table = new(header, rows, note),
             Choice = st is null ? null : new ReportChoice(
