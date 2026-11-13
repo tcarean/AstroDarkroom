@@ -129,6 +129,15 @@ namespace FlatCheck
             int code;
             try
             {
+                // The one output-over-input check that needs the disk (R-137); inside the try,
+                // so a folder that cannot be listed fails as the series run itself would.
+                string clash = o.SeriesFrameAtOutput();
+                if (clash != null)
+                {
+                    Log.Warn("refused the arguments: " + clash);
+                    stderr.WriteLine(ErrorPrefix + clash);
+                    return 1;
+                }
                 switch (o.Mode)
                 {
                     case Mode.Lenses: code = RunLenses(o, stdout); break;

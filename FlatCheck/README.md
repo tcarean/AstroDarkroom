@@ -800,6 +800,7 @@ flatcheck --lenses [--lens <text>]         # the lenses with a profile (Adobe on
 flatcheck <A.fit> --against <B.fit>        # how much and how two flats differ
 
   -o, --out <file.png>     the output map (default flatcheck.png; with --histeq the equalised picture)
+                           (refused when it names a file the run reads: the input, --against, --raw, a frame of the series)
   --sky                    the thresholds for sky flats (--expo)
   --sat <white>            the saturation level, when the auto-detection is wrong (--expo)
   --black <level>          the black level (--expo)

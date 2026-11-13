@@ -232,6 +232,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The console no longer writes its picture over a file it has just read (R-137, ADR 0108, the
+  review's CR-011). `flatcheck master.fit -o master.fit` printed the report and then replaced
+  the master with the PNG; the same happened to the second flat of `--against`, to the `--raw`
+  file and to a frame of a `--light` folder, and `--synthetic` could be pointed at the `--raw`
+  file. Each is now refused before anything runs, exit `1`, with a sentence that names the
+  output. An `-o` that names any other file still replaces it.
 - The azimuthal asymmetry no longer depends on which way up a frame is read when its analysis
   raster has an odd width or height (R-131, ADR 0107, the review's CR-010). The pixels of the
   centre column or row lie exactly between two of the twelve sectors and went always to the
