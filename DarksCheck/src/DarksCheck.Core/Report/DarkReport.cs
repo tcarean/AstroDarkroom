@@ -288,6 +288,14 @@ internal static class DarkReport
                 $"{RoCount(l.AssumedSettings)}{(l.AssumedSettings == 1 ? "light nu spune ISO-ul sau expunerea; s-au luat cele ale dark-urilor" : "lights nu spun ISO-ul sau expunerea; s-au luat cele ale dark-urilor")} (1 ADU-eq = {F(r.Darks.Norm, 2)} ADU)")));
         }
 
+        if (l.DarksSilent > 0)
+        {
+            // the mirror case (ADR 0053): the lights say their settings, the darks do not
+            rows.Add(new(T("WARNING", "ATENTIE"), T(
+                "the darks do not give their ISO or exposure; they were compared with the lights as made at the same settings",
+                "dark-urile nu spun ISO-ul sau expunerea; s-au comparat cu lights-urile ca facute la aceleasi setari")));
+        }
+
         bool one = l.Persistent == 1;
         string seen = one ? T("1 hot pixel shows", "1 pixel fierbinte se vede") : T($"{l.Persistent} hot pixels show", $"{RoCount(l.Persistent)}pixeli fierbinti se vad");
         rows.Add(new(T("hot pixels", "pixeli fierbinti"), T(
@@ -441,11 +449,15 @@ internal static class DarkReport
         DarkSeriesAnalysis d = r.Darks;
         IndexFigures ix = r.Index;
         double mpx = d.Width * (double)d.Height / 1e6;
+        // a set that does not say its settings is not worked out for the reference ones (R-060)
+        string workedOut = d.SaysSettings
+            ? T($"worked out for ISO {F(Th.NormIso, 0)} and {F(Th.NormExposureSeconds, 0)} s", $"socotita pentru ISO {F(Th.NormIso, 0)} si {F(Th.NormExposureSeconds, 0)} s")
+            : T("in ADU of the file, as the files do not give the ISO or the exposure", "in ADU din fisier, pentru ca fisierele nu spun ISO-ul sau expunerea");
         List<ReportRow> rows =
         [
             new(r.DarksFromPartner is null ? T("darks", "dark-uri") : T("darks (partner)", "dark-uri (partener)"), T(
-                $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: the average value of the hot pixels at places {ix.RankLow + 1} .. {ix.RankHigh}, counting from the hottest, that is {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} per Mpx of {F(mpx, mpx < 1 ? 2 : 1)} Mpx; worked out for ISO {F(Th.NormIso, 0)} and {F(Th.NormExposureSeconds, 0)} s)",
-                $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile {ix.RankLow + 1} .. {ix.RankHigh}, numarand de la cel mai fierbinte, adica {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} pe fiecare Mpx din {F(mpx, mpx < 1 ? 2 : 1)} Mpx; socotita pentru ISO {F(Th.NormIso, 0)} si {F(Th.NormExposureSeconds, 0)} s)")
+                $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: the average value of the hot pixels at places {ix.RankLow + 1} .. {ix.RankHigh}, counting from the hottest, that is {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} per Mpx of {F(mpx, mpx < 1 ? 2 : 1)} Mpx; {workedOut})",
+                $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile {ix.RankLow + 1} .. {ix.RankHigh}, numarand de la cel mai fierbinte, adica {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} pe fiecare Mpx din {F(mpx, mpx < 1 ? 2 : 1)} Mpx; {workedOut})")
                 // the partner's label stands on the partner's row, the session's own on `eticheta` (R-066)
                 + (r.DarksFromPartnerLabel is string partnerLabel ? T($"; label {partnerLabel}", $"; eticheta {partnerLabel}") : "")),
             new(T("label", "eticheta"), r.Label),
@@ -472,6 +484,18 @@ internal static class DarkReport
                 rows.Add(new(T("WARNING", "ATENTIE"), T(
                     $"{p.Failed} {(p.Failed == 1 ? "dark of the partner could not be used" : "darks of the partner could not be used")} (the first: {p.FirstError})",
                     $"{RoCount(p.Failed)}{(p.Failed == 1 ? "dark al partenerului nu s-a putut folosi" : "dark-uri ale partenerului nu s-au putut folosi")} (primul: {p.FirstError})")));
+            }
+
+            if (p.Silent != SilentSide.None)
+            {
+                // one set does not say its settings: the two were compared as made at the same (R-063, ADR 0053)
+                rows.Add(new(T("WARNING", "ATENTIE"), p.Silent == SilentSide.Partner
+                    ? T(
+                        "the partner's darks do not give their ISO or exposure; they were compared with the session's as made at the same settings",
+                        "dark-urile partenerului nu spun ISO-ul sau expunerea; s-au comparat cu ale sesiunii ca facute la aceleasi setari")
+                    : T(
+                        "the session's darks do not give their ISO or exposure; they were compared with the partner's as made at the same settings",
+                        "dark-urile sesiunii nu spun ISO-ul sau expunerea; s-au comparat cu ale partenerului ca facute la aceleasi setari")));
             }
 
             string partnerWords = T("the partner", "partenerul");

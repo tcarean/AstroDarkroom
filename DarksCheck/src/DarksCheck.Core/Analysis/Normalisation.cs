@@ -41,14 +41,29 @@ internal sealed record Normalisation(double IsoFactorPerStop = 2, double Doublin
     internal double NormOf(FrameInfo info)
     {
         ArgumentNullException.ThrowIfNull(info);
-        if (info.Iso is not double iso || info.ExposureSeconds is not double e || iso <= 0 || e <= 0)
+        if (!Says(info))
         {
             return 1.0;
         }
 
+        double iso = info.Iso!.Value, e = info.ExposureSeconds!.Value;
         double stops = Math.Log2(iso / Th.NormIso);
         double gain = IsoFactorPerStop == 2 ? iso / Th.NormIso : Math.Pow(IsoFactorPerStop, stops);
         return gain * (e / Th.NormExposureSeconds);
+    }
+
+    /// <summary>
+    /// Whether a frame says the settings its factor is read from: an ISO and an exposure, both
+    /// above 0. A frame that does not has the factor 1 of <see cref="NormOf"/>, which stands for
+    /// "unknown", not for ISO 400 and 120 s: a set of such frames is compared with another set as
+    /// made at that set's settings (ADR 0053).
+    /// </summary>
+    /// <param name="info">The frame's metadata; not null.</param>
+    /// <returns>True when both are known and positive.</returns>
+    internal static bool Says(FrameInfo info)
+    {
+        ArgumentNullException.ThrowIfNull(info);
+        return info.Iso is double iso && info.ExposureSeconds is double e && iso > 0 && e > 0;
     }
 
     /// <summary>

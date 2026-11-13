@@ -27,7 +27,10 @@ the darks does not apply, since no light is kept (ADR 0041). A light of another
 size than the darks, or one that fails to decode, is listed with its error. A FITS light has no
 black level of its own and takes the darks' black (the pedestal is the camera's); a raw brings
 libraw's. A light that does not say its ISO or its exposure is taken at the darks'
-normalisation and marked `AssumedSettings`. The loop writes the diagnostic log as it goes, one
+normalisation and marked `AssumedSettings`. A light that says them while the darks do not
+(`DarkSeriesAnalysis.SaysSettings` false) is taken at the darks' normalisation too, is not
+marked, and is counted in `LightsAnalysis.DarksSilent` for the report's line (ADR 0053). `FactorOf` is that rule, and the only place it is written:
+`Analyze` reads the ratio with it and `NoiseOnPlane` the noise of a light. The loop writes the diagnostic log as it goes, one
 line per light measured with its time, the working set and its figures, and a light that failed
 with its exception (ADR 0025, `logging.md`); `Measure` and the rest of the file write nothing.
 
@@ -142,7 +145,10 @@ only the ratio, so the partner's verdicts and the lights' index do not move. No 
 For a partner (`--against`) the run calls `SharedRatios` with the session's master as `own`
 and the partner's median master as `reference`, then `Match`; how the partner is opened,
 decoded and reduced to its master, and how the overlap of the two hot-pixel sets is counted,
-is `MatchPartner` in `dark-analysis.md`. `Chain` gives the lights against the partner: the
+is `MatchPartner` in `dark-analysis.md`. When one of the two sets says its settings and the
+other does not, `MatchPartner` passes the session's factor for the partner too, in the ratio
+and in the overlap levels, and sets `PartnerAnalysis.Silent` for the report's line (ADR 0053);
+the partner's index is ranked before that, at its own factor. `Chain` gives the lights against the partner: the
 product of the two medians, lights over darks times darks over partner, judged by `Judge` as
 one ratio; `EquivalentIndex` gives the lights' equivalent index, the darks' index times the
 lights-over-dark ratio. Both are carried in the result (`DarkSeriesResult.LightsIndex`,

@@ -347,6 +347,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   be read and, over the frame cap, were read in the place of real darks (R-002; CR-001 of the
   code review).
 
+- A set that does not say its ISO or its exposure (a FITS without `ISOSPEED`) was compared at
+  factor 1 with a set that says its own: lights at ISO 1600 read a quarter of such darks at the
+  same temperature, and so did darks against such a partner. The two are now compared as made
+  at the same settings, as a light without an ISO already was, and an `ATENTIE` line says so in
+  check 2 or under `INDEX`; the `INDEX` row of such a set no longer says it was worked out for
+  ISO 400 and 120 s (R-052, R-060, R-063, ADR 0053; CR-002 of the code review).
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

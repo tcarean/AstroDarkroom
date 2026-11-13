@@ -82,9 +82,10 @@ internal sealed class SessionFixture : IDisposable
     /// <summary>
     /// Writes <paramref name="darks"/> synthetic darks built by <paramref name="dark"/> (given
     /// the 0-based index), one every 120 s from <see cref="FirstStart"/>, and
-    /// <paramref name="biases"/> biases built by <paramref name="bias"/> an hour earlier.
+    /// <paramref name="biases"/> biases built by <paramref name="bias"/> an hour earlier; a null
+    /// <paramref name="iso"/> leaves the ISOSPEED card out of both.
     /// </summary>
-    internal SessionFixture WithDarkSeries(int darks, Func<int, SyntheticDark> dark, int biases = 0, Func<int, SyntheticDark>? bias = null, double exposure = 120, double iso = 400, bool inSubfolder = true)
+    internal SessionFixture WithDarkSeries(int darks, Func<int, SyntheticDark> dark, int biases = 0, Func<int, SyntheticDark>? bias = null, double exposure = 120, double? iso = 400, bool inSubfolder = true)
     {
         ArgumentNullException.ThrowIfNull(dark);
         string dir = inSubfolder ? DarksDir : Root;

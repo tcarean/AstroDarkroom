@@ -378,6 +378,13 @@ internal sealed record DarkSeriesAnalysis(
     Warming Warming)
 {
     internal IReadOnlyList<string> PlaneNames => Master.Select(m => m.Name).ToList();
+
+    /// <summary>
+    /// True when the series says its ISO and its exposure, so <see cref="Norm"/> is read from
+    /// them; false when the first stacked frame, whose settings every stacked frame shares, does
+    /// not, and <see cref="Norm"/> is the 1 that stands for "unknown" (ADR 0053).
+    /// </summary>
+    internal bool SaysSettings => Frames.FirstOrDefault(f => f.Error is null && !f.Skipped) is DarkFrameFigures first && Normalisation.Says(first.Info);
 }
 
 /// <summary>

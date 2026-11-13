@@ -388,4 +388,29 @@ internal sealed record PartnerAnalysis(
     int OwnHot50,
     int OwnHot50InPartner50,
     int PartnerHot50,
-    int PartnerHot50InOwn20);
+    int PartnerHot50InOwn20)
+{
+    /// <summary>
+    /// Which of the two sets does not say its ISO or its exposure while the other does (R-063,
+    /// ADR 0053): the partner's master was then read at the session's darks' factor for
+    /// <see cref="OwnOverPartner"/> and the overlap, the two compared as made at the same
+    /// settings; <see cref="Norm"/> and <see cref="Index"/> stay at the partner's own factor.
+    /// </summary>
+    internal SilentSide Silent { get; init; }
+}
+
+/// <summary>
+/// Which of two compared sets of darks does not say its ISO or its exposure while the other does
+/// (ADR 0053).
+/// </summary>
+internal enum SilentSide
+{
+    /// <summary>Both say their settings, or neither does: each is read at its own factor.</summary>
+    None,
+
+    /// <summary>The open folder's darks do not say theirs; the partner's do.</summary>
+    Own,
+
+    /// <summary>The partner's darks do not say theirs; the open folder's do.</summary>
+    Partner,
+}

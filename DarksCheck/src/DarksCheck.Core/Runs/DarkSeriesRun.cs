@@ -439,13 +439,20 @@ internal static class DarkSeriesRun
         float[] median = DarkSeriesAnalyzer.MedianMaster(stack, threads);
         FrameInfo first = stack.Decoded[0].Info;
         IndexFigures index = IndexAnalyzer.RankIndex(median, stack.Black, stack.White, stack.Norm, stack.Width, stack.Height);
-        MatchFigures match = IndexAnalyzer.Match(IndexAnalyzer.SharedRatios(own.MedianMaster, own.Black, own.White, own.Norm, median, stack.Black, stack.White, stack.Norm), own.Normalisation);
+
+        // A set that does not say its ISO or exposure has the factor 1 of "unknown": against a set
+        // that says its own, the two are compared as made at the same settings, the partner's
+        // master read at the session's factor (ADR 0053). Its index above stays at its own.
+        bool ownSays = own.SaysSettings, partnerSays = Normalisation.Says(first);
+        SilentSide silent = ownSays == partnerSays ? SilentSide.None : ownSays ? SilentSide.Partner : SilentSide.Own;
+        double partnerNorm = silent == SilentSide.None ? stack.Norm : own.Norm;
+        MatchFigures match = IndexAnalyzer.Match(IndexAnalyzer.SharedRatios(own.MedianMaster, own.Black, own.White, own.Norm, median, stack.Black, stack.White, partnerNorm), own.Normalisation);
         MatchFigures lightsOverPartner = lights is null ? MatchFigures.None : IndexAnalyzer.Chain(lights.LightsOverDark, match, own.Normalisation);
 
         // the overlap of the two sets at 50 ADU-eq (the partner's) and 20 (ours), as the hand
         // analysis read it
         double own50 = DarkSeriesAnalyzer.HotLevel(Th.PartnerOverlapAdu, own.Norm), own20 = DarkSeriesAnalyzer.HotLevel(Th.HotAdu, own.Norm);
-        double p50 = DarkSeriesAnalyzer.HotLevel(Th.PartnerOverlapAdu, stack.Norm);
+        double p50 = DarkSeriesAnalyzer.HotLevel(Th.PartnerOverlapAdu, partnerNorm);
         int ownHot50 = 0, ownIn = 0, partnerHot50 = 0, partnerIn = 0;
         for (int i = 0; i < median.Length; i++)
         {
@@ -471,7 +478,10 @@ internal static class DarkSeriesRun
 
         StackFrame[] failed = stack.Frames.Where(f => f.Error is not null && !f.Skipped).ToArray();
         string? firstError = failed.Length == 0 ? null : failed[0].Info.FileName + ": " + failed[0].Error;
-        return new PartnerAnalysis(session.Root, stack.Frames.Count, stack.Decoded.Count, stack.Norm, first.Iso, first.ExposureSeconds, index, IndexAnalyzer.Label(session, index), match, lightsOverPartner, failed.Length, firstError, ownHot50, ownIn, partnerHot50, partnerIn);
+        return new PartnerAnalysis(session.Root, stack.Frames.Count, stack.Decoded.Count, stack.Norm, first.Iso, first.ExposureSeconds, index, IndexAnalyzer.Label(session, index), match, lightsOverPartner, failed.Length, firstError, ownHot50, ownIn, partnerHot50, partnerIn)
+        {
+            Silent = silent,
+        };
     }
 
     /// <summary>
