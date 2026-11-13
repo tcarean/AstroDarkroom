@@ -235,10 +235,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   RA axis; its drift and walking-noise figures move with the frames (1.19 px per exposure instead
   of 1.97), its verdicts stay. No code changed.
 - The validation cases V-001, V-008 and V-014 follow their session folders as they are on
-  2026-11-13: 30 and 35 darks where there were none, and no RA axis on the session of
-  2026-11-06, whose root holds no plate-solved FITS; the session of 2026-10-06 has a solved
-  stack at its root again and keeps its polar figures (`docs/validation.md`). V-013's fixed
-  pattern is no longer measured (CR-005, above). No code changed for the three.
+  2026-11-13: 30 and 35 darks where there were none. Both sessions hold a plate-solved stack at
+  their root again, and keep their RA axis and polar figures (`docs/validation.md`). V-013's
+  fixed pattern is no longer measured (CR-005, above). No code changed for the three.
 
 ## [1.0.0] - 2026-10-25
 

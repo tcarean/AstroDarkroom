@@ -179,7 +179,7 @@
       "id": "V-014",
       "kind": "series",
       "session": "Veil/2026-11-06",
-      "measuredOn": "2026-11-07, the RA axis and the darks 2026-11-13",
+      "measuredOn": "2026-11-07, the darks 2026-11-13",
       "expected": {
         "good": 80, "marginal": 2, "bad": 0,
         "badFrames": [],
@@ -187,7 +187,7 @@
         "distinctMid": 52, "distinctLoose": 37, "isolated": 14, "longestRunLoose": 4,
         "medianMove": 17.14, "rotationArcmin": 5.4, "driftYPerMin": -0.59, "sessionFwhm": 4.70,
         "readNoiseG1": 3.0, "swampingRFrame1": 11.6,
-        "raAxis": "Unknown", "focusHeld": true, "dew": false, "hotPixelsOk": true,
+        "raAxis": "Y", "focusHeld": true, "dew": false, "hotPixelsOk": true,
         "driftPerExposurePx": 1.19, "walkingStreakPx": 3.6, "walkingSharedFrames": 4, "walkingNoise": "Ok",
         "darks": 35, "patternStatus": "Measured", "patternHotPerMpx": 0, "patternSigmaAdu": [1.1, 2.4, 2.3, 1.5], "patternSurvivingPct": 1.5,
         "driftPairs": 6, "driftApproximate": true, "polarAlignment": "Unknown"
