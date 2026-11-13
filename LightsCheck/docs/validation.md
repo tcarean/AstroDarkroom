@@ -123,7 +123,8 @@ drift instead of editing the figures.
   were two stars (ADR 0050). All 14 cases re-run before the change of the figure with
   `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Failed: 5, Passed: 9, Skipped: 0, Total:
   14, Duration: 14 m 53 s`. V-013 failed on that status alone, every other figure of the
-  session as recorded. V-011 (`frame 2: cell 'RA 5 px', expected 'RA 5 px ← V'`) failed as
+  session as recorded; re-run alone against its new figures: `Failed: 0, Passed: 1, Skipped: 0,
+  Total: 1, Duration: 36 s`. V-011 (`frame 2: cell 'RA 5 px', expected 'RA 5 px ← V'`) failed as
   recorded since 2026-10-27, and V-008 would have failed on its polar figures for the same
   reason, the Veil session of 2026-10-06 holding no solved FITS at its root. Three failures are
   the folders', not the code's, and their figures are **not re-recorded here; the owner decides**:

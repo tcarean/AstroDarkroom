@@ -17,8 +17,9 @@ and `Bad`, and the recorded figure of V-008 is "swamping of R on frame 1 9.4".
 ## Decision
 
 The sample is the first, the middle and the last of the measured frames that are not flagged
-`ShortExposure` (under half the usual exposure, R-085, ADR 0040). A trailed frame stays in the
-sample: its sky and its noise are those of any frame exposed as long, so it says the same about
+`ShortExposure` (under half the usual exposure, R-085, ADR 0040); when every measured frame
+carries that flag, the sample is taken among them, since an empty sample would be read as a
+session without a read noise. A trailed frame stays in the sample: its sky and its noise are those of any frame exposed as long, so it says the same about
 the exposure.
 
 ## Alternatives rejected
@@ -32,7 +33,8 @@ the exposure.
 ## Consequences
 
 `SeriesAnalyzer.Analyze` drops the short frames from the list the three are picked from;
-`R024_AFrameTooShortToStackIsNotInTheNoiseSample` guards it. No recorded figure moves: no
+`R024_AFrameTooShortToStackIsNotInTheNoiseSample` and
+`R024_WhenEveryMeasuredFrameIsTooShortTheSampleIsThoseFrames` guard it. No recorded figure moves: no
 session of `docs/validation.md` holds a short frame. The `NaN %` the summary could print beside
 such a ratio is CR-029 of the same list, still open: a ratio at or under zero can also come from
 float lights with raw biases.

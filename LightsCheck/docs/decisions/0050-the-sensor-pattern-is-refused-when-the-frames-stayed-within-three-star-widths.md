@@ -34,7 +34,7 @@ On the recorded sessions, the largest group of the greedy clustering at several 
 
 A hot pixel of the sensor is hot in every frame; a star is on a pixel only in the frames that
 put it there. Smida's 13 are two stars: the session has three spots (12, 8 and 12 frames, the
-first two about 11 px apart), and a bright star's core, wider than its width at half height,
+first two between 10 and 12 px apart, where the largest group grows from 15 to 20 frames), and a bright star's core, wider than its width at half height,
 covers the pixels between two spots in 20 frames of 32. V-013 recorded them as 55 hot pixels
 per megapixel. The owner chose on 2026-11-13.
 
@@ -70,7 +70,13 @@ the distance and what it is: `the largest group within 13 px, three times the st
 55 hot pixels per megapixel) to `FramesDidNotMove` with no figures, by the owner's approval of
 the plan `docs/plans/2026-11-13-fix-cr-001-to-cr-005.md`; `docs/validation.md` has the dated
 line. A session that was not dithered and drifted by less than about six star widths in all
-gets no pattern figure; its dithering verdict already says what that costs. The walking-noise
+gets no pattern figure; its dithering verdict already says what that costs. Two limits of the
+rule, known and not measured on a session. A session dithered by small steps, every frame
+within three star widths of the first, is refused with the same sentence, `the frames stayed
+in place too much`, though it moved. And the margin on Smida is thin: its two near spots are
+within the 12.5 px by a pixel or two, and a little farther apart they would be three groups
+under half again, with a bright star's core perhaps still on both; the alternative of a pixel
+hot in nearly every frame, above, is the answer to that case. The walking-noise
 verdict does not read the measured pattern (it reads the pattern that survives, from the
 positions), so no verdict moves. `PatternAnalyzer.Analyze` takes the positions and the frames'
 widths; `SensorPattern` carries the distance and the group. Guarded by

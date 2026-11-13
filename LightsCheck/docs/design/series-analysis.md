@@ -96,8 +96,9 @@ within the radius of the stretch's first frame. `SpotRun` is the per-frame view 
 10 px, filled from `runsLoose` (the ordinal in the run, its length, its first frame; null
 outside a run), for the table cell and the map ring of R-034 (ADR 0011). `Clusters` is the
 greedy clustering behind the distinct counts; its sizes also give `LargestClusterTight`, the
-biggest group of frames at 3 px, which the pattern analyzer reads to know whether a pixel can
-have seen a star in half the frames. `SharingPairs` counts the pairs of registered frames
+biggest group of frames at 3 px, which only the diagnostic log reads since 2026-11-13, and,
+through `LargestCluster(x, y, radius)`, the biggest group at the distance the pattern analyzer
+asks for, to know whether a pixel can have seen a star in half the frames. `SharingPairs` counts the pairs of registered frames
 closer than `Th.PatternSharePx`, and `PatternSurviving` is `(n + 2 pairs) / n^2`, how much of
 one frame's pattern the mean of the stack keeps (R-048): the n copies of 1/n each, plus the
 pairs that put the same pixels on the same pixels.
@@ -271,7 +272,8 @@ so it is corrected by the ratio of the pair sigma to the same estimator on the b
 variance is total minus read; the swamping ratio shot over read variance; the penalty
 `sqrt(1 + 1/ratio) - 1`. On Veil: 9 to 11 in red, 40 to 60 in green and blue, as the hand
 report found. `SeriesAnalyzer` takes the sample: the first, the middle and the last of the
-measured frames, those flagged `ShortExposure` left out, since a frame with almost no sky
+measured frames, those flagged `ShortExposure` left out (unless every measured frame is,
+when they are sampled all the same), since a frame with almost no sky
 reads a ratio near zero that the summary's verdict, the weakest channel of the sample, would
 take for the session's (ADR 0047).
 

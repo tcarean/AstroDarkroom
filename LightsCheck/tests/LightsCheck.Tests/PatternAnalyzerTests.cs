@@ -209,10 +209,13 @@ public class PatternAnalyzerTests
     /// <summary>
     /// The distance the group is judged at is three times the stars' width, and 3 px when that
     /// is smaller or no frame has a width: twelve frames 4 px apart are spread enough for stars
-    /// 3 px wide (three frames within 9 px), not for stars 8 px wide (seven within 24 px).
+    /// 3 px wide (three frames within 9 px), not for stars 8 px wide (seven within 24 px), nor
+    /// for stars 7 px wide, where the group is exactly half the frames (six within 21 px).
     /// </summary>
     [Theory]
     [InlineData(3.0, 9.0, 3, true)]
+    [InlineData(6.0, 18.0, 5, true)]
+    [InlineData(7.0, 21.0, 6, false)]
     [InlineData(8.0, 24.0, 7, false)]
     [InlineData(0.5, 3.0, 1, true)]
     [InlineData(null, 3.0, 1, true)]

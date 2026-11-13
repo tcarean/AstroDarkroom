@@ -139,6 +139,24 @@ public class RegistrationTests
     }
 
     /// <summary>
+    /// The fifth is of the shorter list: a frame under thin cloud that kept 60 of the reference's
+    /// 600 stars aligns on those 60, a tenth of the reference's list (R-018).
+    /// </summary>
+    [Fact]
+    public void R018_TheShareIsOfTheShorterListSoAFrameWithFewStarsAligns()
+    {
+        List<RegistrationStar> reference = Field(600, 1);
+        List<RegistrationStar> frame = reference.Take(60).Select(s => new RegistrationStar(s.X + 20, s.Y - 10, s.Flux)).ToList();
+
+        RegistrationResult r = Registration.Register(reference, frame, W, H);
+
+        Assert.True(r.Ok);
+        Assert.Equal(60, r.Matches);
+        Assert.Equal(20, r.Dx, 0.01);
+        Assert.Equal(-10, r.Dy, 0.01);
+    }
+
+    /// <summary>
     /// A frame taken after a meridian flip is the same field turned upside down: it has no
     /// position, and it is told from a frame that shares no stars with the reference (R-087).
     /// </summary>

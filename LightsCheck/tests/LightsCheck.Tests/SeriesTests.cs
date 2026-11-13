@@ -143,6 +143,7 @@ public class SeriesTests
         Assert.Equal(PatternStatus.FramesDidNotMove, r.Pattern.Status);
         Assert.True(r.Pattern.ClusterByStarWidth);
         Assert.InRange(r.Pattern.ClusterRadiusPx, 3 * 2.8, 3 * 3.6);   // three times the width the 3.0 px stars read
+        // All eight frames are good, so the width over the frames used is the session's own.
         Assert.Equal(3 * r.Series.SessionFwhm!.Value, r.Pattern.ClusterRadiusPx, 6);
         Assert.Equal(8, r.Pattern.LargestCluster);
         string px = r.Pattern.ClusterRadiusPx.ToString("F0", CultureInfo.InvariantCulture);

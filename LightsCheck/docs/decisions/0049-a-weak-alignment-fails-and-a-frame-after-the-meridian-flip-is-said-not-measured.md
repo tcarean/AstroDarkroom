@@ -57,10 +57,16 @@ first part of the night with no word about it. The owner chose on 2026-11-13.
 
 A frame that shares under a fifth of its stars with the reference (a field moved by most of
 the frame, thick cloud over most of it) is no longer aligned; before, it was aligned when ten
-stars matched. A session whose reference frame is the only one before the flip reports its
-dithering on one frame, and says so. `Registration.Register` runs `Align` twice for a frame
+stars matched. A session whose reference frame is the only one before the flip has one frame
+with a position: the `meridian flip` row names the others, and the verdict and the pattern
+under it still read `the frames could not be aligned`, and `fewer than 7 frames measured` with
+two to six frames before the flip, the sentences of CR-041 of the review list, which this
+decision makes easier to meet and does not reword. The same entry holds the `longest stretch
+without a move`, which runs through the frames that have no position, flipped ones included. `Registration.Register` runs `Align` twice for a frame
 that fails. Guarded by `R018_ARotationTheVoteCannotFollowIsAlignedRightOrNotAtAll`,
-`R018_UnderAFifthOfTheShorterListMatchedIsAFailedRegistration`, the three `R087_` tests of
-`RegistrationTests`, `SeriesAnalyzerTests` and `SeriesTests`; the last draws its frames upside
+`R018_UnderAFifthOfTheShorterListMatchedIsAFailedRegistration`,
+`R018_TheShareIsOfTheShorterListSoAFrameWithFewStarsAligns` and the four `R087_` tests of
+`RegistrationTests`, `SeriesAnalyzerTests` and `SeriesTests`; the first of `SeriesTests` draws
+its frames upside
 down on a field of scattered stars, since the fixture's star grid turned by 180 degrees falls
 nearly on itself and aligns as it is.

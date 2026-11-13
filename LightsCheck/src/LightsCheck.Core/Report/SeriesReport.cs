@@ -1223,7 +1223,8 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// The first DITHERING row: the pauses longer than <see cref="Th.DitherPause"/>, the moves of
+    /// The first DITHERING row, the second after a `meridian flip` row: the pauses longer than
+    /// <see cref="Th.DitherPause"/> (counted on every frame with a time), the moves of
     /// at least <see cref="Th.DitherStep"/>, the pauses after which the frame stayed put, the
     /// moves without a pause before them, and how many frames were aligned.
     /// </summary>

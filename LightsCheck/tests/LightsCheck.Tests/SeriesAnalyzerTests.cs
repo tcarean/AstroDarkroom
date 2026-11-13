@@ -489,6 +489,26 @@ public class SeriesAnalyzerTests
         Assert.All(s.Swamping!.SelectMany(x => x), n => Assert.True(n.SwampingRatio >= Th.SwampingRatioOk, $"{n.Name} ratio {n.SwampingRatio}"));
     }
 
+    /// <summary>
+    /// When every measured frame is too short to stack there is no other frame to sample: the
+    /// sample is those frames, not an empty one, which the summary would read as "the biases
+    /// are missing" (R-024). Here the one 120 s frame could not be read and the 0.2 s one was.
+    /// </summary>
+    [Fact]
+    public void R024_WhenEveryMeasuredFrameIsTooShortTheSampleIsThoseFrames()
+    {
+        AnalyzedFrame[] frames = [Frame(1, null, "stricat"), Frame(2, Measurement(3.0, 1.1, 100, 1), exposure: 0.2)];
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+        double?[] positions = [null, 0];
+        ReadNoise[] readNoise = [new("R", 1.5, 1.5), new("G1", 1.5, 1.5), new("G2", 1.5, 1.5), new("B", 1.5, 1.5)];
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, DitherAnalyzer.Analyze(positions, positions, c.PauseSeconds), readNoise, null);
+
+        Assert.Equal(FlagKind.ShortExposure, Assert.Single(s.Flags[1]).Kind);
+        Assert.Equal([2], s.SwampingFrames);
+        Assert.Single(s.Swamping!);
+    }
+
     /// <summary>The usual exposure on a tie is the longer one, exactly half of it is not under it, and no frame with an exposure means no usual one and no flag (R-085).</summary>
     [Fact]
     public void R085_TheUsualExposureTakesTheLongerOnATieAndIsNullWithoutOne()

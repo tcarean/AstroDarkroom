@@ -112,7 +112,8 @@ minutes. The report's sections:
 - **FOCUS**: the stars' width (FWHM) on the good frames, at the start and at the end of the night
   and in three zones (centre, middle, edge), and the verdict.
 - **EXPOSURE AND NOISE**: the sky background, the read noise of each channel (the noise the sensor
-  adds to every frame), and on the first, the middle and the last frame the shot/read ratio of each
+  adds to every frame), and on the first, the middle and the last frame (one too short to stack
+  is skipped) the shot/read ratio of each
   channel: from 10 up the sky covers the read noise; under 10 the channel suffers from the read
   noise, and longer exposures would help.
 - **DEW**: the light around the bright stars (the halo) and the star count at the start and at the
