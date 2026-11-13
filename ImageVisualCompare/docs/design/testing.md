@@ -106,7 +106,7 @@ an area with the pixel stored (R-022, ADR 0053); `MainWindowTests` lays the wind
 at a whole size, never shown, and asks that the surface start and end on a whole physical pixel,
 also with the toolbar made half a pixel taller, in the pixels of the system's scale, which is the
 one a window without a handle is laid out at; a change of display scale it can only stand in for,
-by calling what `OnDpiChanged` calls. `UiTextTests` builds the
+by calling `OnDpiChanged` itself. `UiTextTests` builds the
 main window in Romanian there and reads its toolbar and hint; it and the other Romanian tests run
 alone, in a collection with parallelisation off (`language.md`). `MessageDialog`, `DarkTitleBar`,
 `FileDialogService` and `MemoryHousekeeping.ReleaseImageBuffers` have no test, nor has the main

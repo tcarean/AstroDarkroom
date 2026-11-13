@@ -395,6 +395,20 @@ public class ViewportTests
     }
 
     [Fact]
+    public void R022_AFitALastBitUnderOneHundredPercent_IsStillDrawnOnWholePixels()
+    {
+        // The scale stays the fit, 0.9999999999999999, and reads 100%: the 1001 pixels of
+        // margin above and below must not put the image half a pixel off for that last bit.
+        var viewport = Create(contentWidth: 1921, contentHeight: 1000, viewportWidth: 1920.9999999999998, viewportHeight: 2001);
+        viewport.ZoomToFit();
+
+        Assert.True(viewport.Scale < 1);
+        Assert.Equal(-500.5, viewport.OffsetY, 9);
+        Assert.Equal(-500, viewport.DrawnOffsetY * viewport.Scale, 9);
+        Assert.Equal(0, viewport.DrawnOffsetX * viewport.Scale, 9);
+    }
+
+    [Fact]
     public void R022_AFitALastBitOverOneHundredPercent_IsOneHundredPercent()
     {
         var viewport = Create(contentWidth: 1920, contentHeight: 1000, viewportWidth: 1920.0000000000002, viewportHeight: 2000);

@@ -394,11 +394,14 @@ public sealed class Viewport
     /// The offset itself at a scale that is not a whole number; at a whole one, the offset whose
     /// product with the scale is the nearest whole number of physical pixels, a half going up,
     /// and on an axis the image overflows never one that would leave the view past the image's
-    /// far edge.
+    /// far edge. A scale within <see cref="WholeTolerance"/> of a whole number counts as whole
+    /// here: a fit a last bit under one is kept as it is (<see cref="Settled"/>) and is still
+    /// drawn on whole pixels.
     /// </returns>
     private double Drawn(double offset, double content, double viewport)
     {
-        if (!HasContent || _scale < 1 || _scale != Math.Floor(_scale))
+        double whole = Math.Round(_scale);
+        if (!HasContent || whole < 1 || Math.Abs(_scale - whole) >= WholeTolerance)
         {
             return offset;
         }

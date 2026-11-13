@@ -146,5 +146,9 @@ its neighbours at the edges of its square; CR-006; CR-011.
 - The review of the branch added: a fit a last bit under 100 % stays the fit (settled, it showed
   a scrollbar at `Fit`); the two bars are measured again when the display's scale changes; the
   window's test no longer assumes a system scale of 100 %.
+- The review of those fixes added: a fit kept a last bit under 100 % is still drawn on whole
+  pixels; ADR 0053 supersedes ADR 0052 in part, the read-out converting through the drawn
+  offsets. The harness ran on screen again after each of the two commits of fixes, with no grey
+  pixel in any state.
 - The application was not launched on the real pair with its log read (`docs/skills.md`,
   `/wrap-up` step 9): the owner was at the PC. The real window ran on screen in the harness.

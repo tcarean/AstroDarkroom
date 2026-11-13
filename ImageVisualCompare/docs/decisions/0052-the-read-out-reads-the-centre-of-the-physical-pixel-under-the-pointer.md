@@ -1,7 +1,7 @@
 # 0052. The read-out reads the centre of the physical pixel under the pointer
 
 Date: 2026-11-13
-Status: accepted 2026-11-13
+Status: accepted 2026-11-13; which offsets the read-out converts through superseded by 0053
 
 ## Context
 
@@ -152,8 +152,8 @@ that `ScreenToContent` uses.)
   pixel that holds the screen pixel's centre. From 100 % up that is the one that weighs most in
   the blend, unless the centre is on an edge, where the two weigh the same and the one before
   is named; below 100 % a screen pixel covers several image pixels and the one named is one of
-  them. At 100 % with the image a fraction of a pixel off (CR-002, still open; Restated 2026-11-13:
-  closed by ADR 0053) the read-out
+  them. At 100 % with the image a fraction of a pixel off (CR-002, still open) (Restated 2026-11-13:
+  CR-002 is closed by ADR 0053) the read-out
   before named the lighter of the two: on the surface above, the vertical offset was 174.815
   and every row read was the one above the row drawn at 81.5 %.
 - (Restated 2026-11-13: since ADR 0053 the image is not drawn half a pixel off at 100 %; what

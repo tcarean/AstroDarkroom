@@ -124,7 +124,10 @@ public class MainWindowTests
             root.UpdateLayout();
             before = (window.TopBar.IsMeasureValid, window.BottomBar.IsMeasureValid);
 
-            window.OnDisplayScaleChanged();
+            // What WPF calls when the window comes onto a display scaled differently.
+            typeof(MainWindow)
+                .GetMethod("OnDpiChanged", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .Invoke(window, [new DpiScale(1, 1), new DpiScale(1.5, 1.5)]);
             after = (window.TopBar.IsMeasureValid, window.BottomBar.IsMeasureValid);
         });
 
