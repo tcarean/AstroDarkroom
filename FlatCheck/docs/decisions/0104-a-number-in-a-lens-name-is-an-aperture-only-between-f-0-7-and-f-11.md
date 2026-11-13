@@ -49,9 +49,11 @@ The owner's choice of 2026-11-13, between this and "the same, and also read `f28
 
 ## Consequences
 
-- A lens whose name gives no aperture is narrowed by its focal range alone, so the list of
-  candidates can be one lens longer than with a right reading; it is never the wrong lens
-  alone.
+- Where the candidates come from the raw's lens ID or name, a lens whose name gives no
+  aperture is narrowed by its focal range alone (`LensCatalog.Narrow`), so the list can be one
+  lens longer than with a right reading, and that lens is no longer dropped. On the range-only
+  path (a manual lens, `CandidatesByRange`) a name must state the whole range to be a
+  candidate, so such a lens is not found there, as it was not when its name read f/45.
 - `Leica SUMMICRON-S 100 mm f2 mm ASPH.` (one Adobe file) loses its aperture: its `f2` is
   followed by `mm`. It gives none now, which contradicts nothing.
 - `FinePix F11 & compatibles` still reads f/11: a code inside the interval cannot be told from

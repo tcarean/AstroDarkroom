@@ -57,6 +57,10 @@ namespace FlatCheck
         internal string CropSource;
         /// <summary>True when the crop came out of the camera table, not from the person.</summary>
         internal bool CropFromTable;
+        /// <summary>The lensfun table's own model of the camera whose crop was taken (R-133),
+        /// which may be spelled otherwise than <see cref="Camera"/> ("Nikon D3300" for a raw's
+        /// "NIKON D3300"); null unless <see cref="CropFromTable"/>.</summary>
+        internal string CropCamera;
         /// <summary>
         /// The camera's name, from the reference or from the raw; null when neither says it.
         /// </summary>
@@ -204,6 +208,7 @@ namespace FlatCheck
                 if (known != null)
                 {
                     id.Crop = known.CropFactor;
+                    id.CropCamera = known.Model;
                     id.CropSource = T($"lensfun database, {known.Model}", $"baza lensfun, {known.Model}");
                     id.CropFromTable = true;
                     notes.Add(T($"crop from the lensfun database ({known.Model})", $"crop din baza lensfun ({known.Model})"));

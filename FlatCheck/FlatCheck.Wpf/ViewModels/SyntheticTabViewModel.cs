@@ -497,7 +497,9 @@ namespace FlatCheck.Wpf
                 {
                     if (id.Crop.HasValue && id.CropFromTable)
                     {
-                        _cropSource = SessionMessages.SyntheticCropFromTable(id.Camera);
+                        // the table's model, not the file's spelling: it says which entry gave
+                        // the crop (R-133)
+                        _cropSource = SessionMessages.SyntheticCropFromTable(id.CropCamera ?? id.Camera);
                         CropText = id.Crop.Value.ToString("0.###", CultureInfo.InvariantCulture);
                     }
                     else { CropNote = SessionMessages.SyntheticCropUnknown(id.Camera); _cropUnknown = true; }

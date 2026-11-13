@@ -286,7 +286,7 @@ namespace FlatCheck
 
         /// <summary>
         /// Parses a finite number in the invariant culture: a dot for the decimals, an optional
-        /// sign and exponent, nothing else (R-005, ADR 0102). A comma is refused, whether meant
+        /// sign and exponent, blanks around it, nothing else (R-005, ADR 0102). A comma is refused, whether meant
         /// as the decimal sign or as a thousands separator: <c>NumberStyles.Any</c> dropped it
         /// wherever it stood, so "2,8" was 28. "NaN", "Infinity" and a value too large for a
         /// double are refused too, since no range check written as "at or below" stops them.

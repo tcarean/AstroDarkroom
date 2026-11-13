@@ -206,15 +206,17 @@ public class LensProfileReaderTests
         Assert.Null(d.CropOf(null));
     }
 
-    /// <summary>A lensfun document of cameras only, each row "model|alias|crop" (the alias may
-    /// be empty), in the order given.</summary>
+    /// <summary>A lensfun document of cameras only, each row "model|alias|crop" or
+    /// "model|alias|crop|maker" (the alias may be empty), in the order given. Without a maker
+    /// in the row it is the model's first word, as in lensfun's own entries ("Nikon D750").</summary>
     static LensfunData CameraTable(params string[] rows)
     {
         var xml = new System.Text.StringBuilder("<lensdatabase version=\"2\">");
         foreach (string row in rows)
         {
             string[] p = row.Split('|');
-            xml.Append("<camera><maker>Maker</maker><model>").Append(p[0]).Append("</model>");
+            string maker = p.Length > 3 ? p[3] : p[0].Split(' ')[0];
+            xml.Append("<camera><maker>").Append(maker).Append("</maker><model>").Append(p[0]).Append("</model>");
             if (p[1].Length > 0) xml.Append("<model lang=\"en\">").Append(p[1]).Append("</model>");
             xml.Append("<mount>Mount of ").Append(p[0]).Append("</mount><cropfactor>").Append(p[2]).Append("</cropfactor></camera>");
         }
@@ -278,6 +280,63 @@ public class LensProfileReaderTests
         Assert.Equal(1.0, d.CropOf("NIKON Z f")!.Value, 9);
         Assert.Equal(1.0, d.CropOf("Canon EOS R5")!.Value, 9);
         Assert.Equal(1.0, d.CropOf("PENTAX K-1")!.Value, 9);
+    }
+
+    /// <summary>
+    /// R-133: of two table names that both stand in the file's name, the one with the most
+    /// letters is the camera, whatever their order in the table; and of two entries that carry
+    /// one name, the first.
+    /// </summary>
+    [Fact]
+    public void R133_OfTwoNamesInsideTheLongerWins_AndOfTwoEntriesWithOneNameTheFirst()
+    {
+        LensfunData shortFirst = CameraTable("Canon EOS-1D||1.255", "Canon EOS-1D X||1.0");
+        LensfunData longFirst = CameraTable("Canon EOS-1D X||1.0", "Canon EOS-1D||1.255");
+        Assert.Equal("Canon EOS-1D X", shortFirst.CameraOf("Canon EOS-1D X Mark III")?.Model);
+        Assert.Equal("Canon EOS-1D X", longFirst.CameraOf("Canon EOS-1D X Mark III")?.Model);
+        Assert.Equal(1.0, shortFirst.CropOf("Canon EOS-1D X Mark III")!.Value, 9);
+
+        LensfunData twice = CameraTable("DMC-LX3||4.7|Panasonic", "DMC-LX3||5.1|Panasonic");
+        Assert.Equal(4.7, twice.CropOf("DMC-LX3")!.Value, 9);
+        Assert.Equal(4.7, twice.CropOf("Panasonic DMC-LX3")!.Value, 9);
+    }
+
+    /// <summary>
+    /// R-133: a table name found inside the file's name is the camera only when the file's name
+    /// also carries that entry's maker. Found by the review of the branch: a "Canon EOS Kiss
+    /// X10" (the Japanese 250D, not in the table) holds the word "X10", which is a Fujifilm
+    /// compact with crop 3.93. The exact name needs no maker.
+    /// </summary>
+    [Fact]
+    public void R133_ANameOfAnotherMakerFoundInsideIsNotTheCamera()
+    {
+        LensfunData d = CameraTable("X10||3.93|Fujifilm", "Canon EOS Kiss X10i||1.613", "Leica M10||1.0", "D60||1.523|Nikon Corporation");
+
+        Assert.Null(d.CameraOf("Canon EOS Kiss X10"));              // not Fujifilm's X10
+        Assert.Null(d.CropOf("Canon EOS Kiss X10"));
+        Assert.Null(d.MountsOf("Canon EOS Kiss X10"));
+        Assert.Null(d.CameraOf("Canon EOS M10"));                   // not Leica's M10: "Leica" is not in the name
+        Assert.Null(d.CameraOf("Canon EOS D60"));                   // not Nikon's D60
+        Assert.Equal("X10", d.CameraOf("X10")?.Model);              // the exact name, without a maker
+        Assert.Equal("X10", d.CameraOf("FUJIFILM X10")?.Model);     // the maker in front, as a raw gives it
+        Assert.Equal("D60", d.CameraOf("NIKON CORPORATION NIKON D60")?.Model);
+    }
+
+    /// <summary>R-133: any of the entry's maker names counts, the canonical one or an alias,
+    /// by its first word: lensfun's "Eastman Kodak Company" is "Kodak" in a file.</summary>
+    [Fact]
+    public void R133_TheMakerMayBeAnyOfTheEntrysMakerNames()
+    {
+        LensfunData d = LensfunReader.ReadXml(@"<lensdatabase version=""2"">
+<camera><maker>Eastman Kodak Company</maker><maker lang=""en"">Kodak</maker><model>DCS Pro 14n</model><mount>Nikon F AF</mount><cropfactor>1.0</cropfactor></camera>
+</lensdatabase>", "kodak.xml");
+
+        LensfunCamera cam = Assert.Single(d.Cameras);
+        Assert.Equal(new[] { "Eastman Kodak Company", "Kodak" }, cam.MakerNames);
+        Assert.Same(cam, d.CameraOf("Kodak DCS Pro 14n"));
+        Assert.Same(cam, d.CameraOf("EASTMAN KODAK DCS Pro 14n"));
+        Assert.Null(d.CameraOf("Nikon DCS Pro 14n"));
+        Assert.Same(cam, d.CameraOf("DCS Pro 14n"));                // exact
     }
 
     /// <summary>R-133 on the shipped table: every camera, asked for by each of its names, is
@@ -1470,6 +1529,32 @@ public class SyntheticRunTests
 /// </summary>
 public class LensIdentificationTests
 {
+    /// <summary>
+    /// R-133: the crop's source names the table's model, not the file's spelling of the camera,
+    /// so the entry that gave the crop can be read. A raw says "NIKON D3300"; the table's entry
+    /// is "Nikon D3300".
+    /// </summary>
+    [Fact]
+    public void R133_TheCropsSourceNamesTheTablesModel_NotTheFilesSpelling()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        LoadedFrame master = Master();
+        master.Camera = "Nikon Corporation NIKON D3300";
+
+        ShotIdentity id = LensIdentification.Identify(master, null, sources);
+
+        Assert.Equal("Nikon Corporation NIKON D3300", id.Camera);
+        Assert.True(id.CropFromTable);
+        Assert.Equal("Nikon D3300", id.CropCamera);
+        Assert.Equal("baza lensfun, Nikon D3300", id.CropSource);
+        Assert.Contains("crop din baza lensfun (Nikon D3300)", id.Notes);
+        Assert.DoesNotContain(id.Notes, n => n.Contains("Corporation"));
+
+        ShotIdentity typed = LensIdentification.Identify(master, null, sources, crop: 1.5);
+        Assert.Null(typed.CropCamera);
+    }
+
     static LoadedFrame Master() => new LoadedFrame
     {
         Header = new Dictionary<string, string> { ["SIMPLE"] = "T", ["FOCALLEN"] = "20", ["INSTRUME"] = "Nikon D3300" },
@@ -1508,6 +1593,7 @@ public class LensIdentificationTests
         Assert.Contains("focala din FOCALLEN", id.Notes);
         Assert.Contains("diafragma din DSC_0001.NEF", id.Notes);
         Assert.Contains("crop din baza lensfun (Nikon D3300)", id.Notes);
+        Assert.Equal("Nikon D3300", id.CropCamera);
 
         // the raw's lens ID, narrowed by its range, then the camera's mount: the Nikon Adobe
         // file and the lensfun Tokina, not the Canon file

@@ -28,9 +28,25 @@ D3300 was not affected. The names the validation raws give (`NIKON D3300`, `Cano
 II`, `Sony ILCE-7M3`, `Pentax K-70`, `Canon EOS R6`, `Canon EOS R5m2`, `Canon EOS 40D`) find
 the same crop under both rules.
 
+The review of the branch, the same day, found what that count cannot see: a body the table
+does not hold. `Canon EOS Kiss X10` (the Japanese 250D) is not there; its name holds the word
+`X10`, which is Fujifilm's compact, crop 3.93, where the rule before had landed on `Canon EOS
+Kiss X10i`, 1.613, right by luck. So each camera was also taken out of the table in turn and
+asked for by the names a file gives it (its model and aliases, with the maker in front where
+the name does not start with it; 2929 names):
+
+| Rule | Wrong crop (more than 3 % off) | Right crop | Not found |
+|---|---:|---:|---:|
+| Before | 668 | 988 | 1273 |
+| Words, without the maker (the branch's first commit) | 93 | 296 | 2540 |
+| Words, the maker asked for on a name found inside | 40 | 182 | 2707 |
+
+The 40 left are siblings of one maker (`Canon PowerShot G3 X` on `Canon PowerShot G3`).
+
 ## Decision
 
-The owner's choice of 2026-11-13, between this rule and "the exact name only":
+The owner's choices of 2026-11-13: first between this rule and "the exact name only", then,
+after the review, between asking for the maker (item 4) and leaving the rule as it was:
 
 1. Names are compared as **words**: runs of letters and digits, upper-cased. `PENTAX K-70` is
    PENTAX, K, 70.
@@ -38,10 +54,13 @@ The owner's choice of 2026-11-13, between this rule and "the exact name only":
 3. Otherwise the entry one of whose names **stands whole in the file's name**, word for word
    and side by side (`Nikon D3300` in `Nikon Corporation NIKON D3300`); the name with the most
    letters wins, the first of two as long.
-4. **Never the reverse**: a table name that only contains the file's name is no match, and
+4. Such an entry counts only when the file's name also **carries its maker**: the first word
+   of one of the maker's names in the table, the canonical one or an alias (`Nikon` of `Nikon
+   Corporation`, `Kodak` beside `Eastman Kodak Company`). The exact name needs no maker.
+5. **Never the reverse**: a table name that only contains the file's name is no match, and
    neither is a shared part of a word. A name with no letter or digit finds nothing.
-5. The crop's source in the report and in the notes prints the **table's model**, so the entry
-   that gave the crop can be read.
+6. The crop's source in the report, in the notes and under the window's crop field prints the
+   **table's model**, so the entry that gave the crop can be read.
 
 ## Alternatives rejected
 
@@ -55,14 +74,20 @@ The owner's choice of 2026-11-13, between this rule and "the exact name only":
 
 ## Consequences
 
-- A body the table does not hold gets the entry whose words its name contains: `Canon EOS R5
-  Mark II` on a table with only `Canon EOS R5` reads the R5's crop. Whether two such bodies
-  always share a format was not measured; the report names the model taken, so a wrong one is
-  visible, and `--crop` overrides it.
+- A body the table does not hold gets the entry of its own maker whose words its name
+  contains: `Canon EOS R5 Mark II` on a table with only `Canon EOS R5` reads the R5's crop.
+  Such a pair does not always share a format: 40 of the 2929 names of the count above land on
+  a sibling with another crop. The report names the model taken, so a wrong one is visible,
+  and `--crop` overrides it.
+- A body the table does not hold and whose name holds no whole entry of its maker gets no crop
+  from the table, where the rule before often found a sibling by a part of a word (`Canon EOS
+  R6m3`, `Olympus E-M1X`, `Canon EOS 60Da`): 2707 of the 2929 names against 1273. For an Adobe
+  profile the calibration sensor then stands in, and a lensfun profile asks for `--crop`, as
+  for any camera the table does not know.
 - Four names of the shipped table are carried by entries with different crops (`FinePix F810`,
   `DMC-LX1`, `DMC-LX3`, the alias `Cybershot`: one compact in several aspect ratios); the first
   entry counts, as before.
 - `LensIdentification.PreferCamera` still matches an Adobe file's body by containment (the
   review's cleanup list); it is not changed here.
-- R-133 holds the behaviour; `R133_...` in `LensProfileTests` pins the crossed pairs and walks
-  the whole shipped table.
+- R-133 holds the behaviour; `R133_...` in `LensProfileTests` pins the crossed pairs, the
+  maker condition and the order of two names found inside, and walks the whole shipped table.

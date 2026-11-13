@@ -554,7 +554,7 @@ public class SplitTabTests
     /// <summary>
     /// R-093: with the box "no filters" off (R-118) the Structure tab compares nothing, and
     /// neither does the Split: no profile row, no profile column, the five tests' verdict.
-    /// The box is read at the press, so a flip made after the folder opened counts.
+    /// The box is read at the analysis, so a flip made after the folder opened counts.
     /// </summary>
     [Fact]
     public async Task R093_WithAFilterOnTheLensNothingIsComparedWithAProfile()
@@ -575,6 +575,33 @@ public class SplitTabTests
         Assert.Contains("filtru pe obiectiv", vm.Report);
         Assert.DoesNotContain(LensProfileTestData.Samyang135, vm.Report);
         Assert.DoesNotContain(LensProfileTestData.Nikkor135Dc, vm.Report);
+    }
+
+    /// <summary>
+    /// R-093: the switches are read when the parts' masters are analysed, not when the button
+    /// is pressed: the other tabs stay usable through the Siril runs, and the two saved reports
+    /// must speak of the same comparison. Here the box is unticked while part 1 runs.
+    /// </summary>
+    [Fact]
+    public async Task R093_TheSwitchesAreReadAtTheAnalysis_SoAFlipDuringTheSirilRunsCounts()
+    {
+        using var f = Session(flats: 4);
+        using var ws = new TempWorkspace();
+        var settings = SessionSettings.None;
+        ProfileSources sources = LensProfileTestData.Sources(ws, rangePair: true);
+        var vm = new SplitTabViewModel(() => FakeInstall(ws), () => false,
+                                       FakeSiril(new List<Seen>(), exitCodeFor: part => { if (part == 1) settings.NoFilters = false; return 0; }),
+                                       new ProfileCatalog(() => sources),
+                                       path => RawReader.IsRawPath(path) ? LensProfileTestData.Range135Raw() : ImageLoader.LoadInfo(path),
+                                       clock: () => When, tempRootFor: _ => Path.Combine(ws.Dir, "temp"));
+        vm.Attach(f.Session, CancellationToken.None, new HeavyRunGate(), settings);
+        Assert.True(settings.NoFilters);                                    // ticked at the press
+
+        await vm.StartAsync();
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(3, vm.Headers.Count);
+        Assert.Contains("filtru pe obiectiv", vm.ReferenceLine);
     }
 
     /// <summary>

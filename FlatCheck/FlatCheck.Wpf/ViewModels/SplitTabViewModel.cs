@@ -343,7 +343,8 @@ namespace FlatCheck.Wpf
         /// and held around the analysis of the part masters; null runs at once.</param>
         /// <param name="settings">The folder's remembered switches (R-119), the instance the
         /// Structure tab writes: its "no filters" box and its chosen lens are read when the
-        /// split is started (R-093); null for none remembered.</param>
+        /// parts' masters are analysed, after the copies and the Siril runs (R-093); null for
+        /// none remembered.</param>
         internal void Attach(SirilSession session, CancellationToken ct, HeavyRunGate gate, SessionSettings settings = null)
         {
             _session = session;

@@ -40,7 +40,11 @@ namespace FlatCheck
     /// <param name="Aliases">The model's names in other languages, for searching.</param>
     /// <param name="Mount">The camera's mount; empty when the database gives none.</param>
     /// <param name="CropFactor">The sensor's crop factor against full frame.</param>
-    internal sealed record LensfunCamera(string Maker, string Model, IReadOnlyList<string> Aliases, string Mount, double CropFactor);
+    /// <param name="MakerNames">Every name the database gives the maker, the canonical one first,
+    /// then those in other languages ("Eastman Kodak Company", "Kodak"); a camera's name from
+    /// a file carries the maker when it holds the first word of one of them (R-133).</param>
+    internal sealed record LensfunCamera(string Maker, string Model, IReadOnlyList<string> Aliases, string Mount, double CropFactor,
+                                         IReadOnlyList<string> MakerNames);
 
     /// <summary>
     /// A mount definition of the lensfun database: what the <c>&lt;mount&gt;</c> element at the
@@ -110,7 +114,9 @@ namespace FlatCheck
         /// <paramref name="cameraName"/>; when there is none, the entry one of whose names
         /// stands whole in it, word for word and side by side ("Nikon D3300" in "Nikon
         /// Corporation NIKON D3300"), the name with the most letters winning and, of two as
-        /// long, the first. A table name that only contains the file's name is no match: "Nikon
+        /// long, the first. Such an entry counts only when the file's name also carries its
+        /// maker (<see cref="CarriesMaker"/>): the "X10" inside "Canon EOS Kiss X10" is a
+        /// Fujifilm compact. A table name that only contains the file's name is no match: "Nikon
         /// D7500" is not the camera of "Nikon D750".
         /// </summary>
         /// <param name="cameraName">The camera's name from the file; null or blank allowed.</param>
@@ -129,7 +135,7 @@ namespace FlatCheck
                     if (words.Length == 0) continue;
                     if (words.AsSpan().SequenceEqual(wanted)) return c;
                     int letters = words.Sum(w => w.Length);
-                    if (letters > insideLetters && StandsIn(wanted, words)) { inside = c; insideLetters = letters; }
+                    if (letters > insideLetters && StandsIn(wanted, words) && CarriesMaker(wanted, c)) { inside = c; insideLetters = letters; }
                 }
             return inside;
         }
@@ -154,6 +160,23 @@ namespace FlatCheck
                 }
             }
             return words.ToArray();
+        }
+
+        /// <summary>Whether a file's camera name carries a camera's maker: one of its words is
+        /// the first word of one of the maker's names ("NIKON" of "Nikon Corporation", "KODAK"
+        /// of the alias "Kodak" beside "Eastman Kodak Company").</summary>
+        /// <param name="wanted">The words of the file's camera name.</param>
+        /// <param name="camera">The table's entry.</param>
+        /// <returns>True when a maker name's first word is among
+        /// <paramref name="wanted"/>; false for an entry without a maker.</returns>
+        static bool CarriesMaker(string[] wanted, LensfunCamera camera)
+        {
+            foreach (string maker in camera.MakerNames)
+            {
+                string[] words = Words(maker);
+                if (words.Length > 0 && Array.IndexOf(wanted, words[0]) >= 0) return true;
+            }
+            return false;
         }
 
         /// <summary>Whether a run of words stands in another, in order and side by side.</summary>
@@ -234,8 +257,10 @@ namespace FlatCheck
                 string model = Canonical(cam, "model");
                 double? crop = Num(cam.Element("cropfactor")?.Value);
                 if (model == null || !crop.HasValue) continue;
-                cameras.Add(new LensfunCamera(Canonical(cam, "maker") ?? "?", model, Aliases(cam, "model"),
-                    cam.Element("mount")?.Value?.Trim() ?? "", crop.Value));
+                string maker = Canonical(cam, "maker");
+                var makerNames = (maker == null ? Array.Empty<string>() : new[] { maker }).Concat(Aliases(cam, "maker")).Distinct().ToList();
+                cameras.Add(new LensfunCamera(maker ?? "?", model, Aliases(cam, "model"),
+                    cam.Element("mount")?.Value?.Trim() ?? "", crop.Value, makerNames));
             }
 
             foreach (XElement lens in root.Elements("lens"))

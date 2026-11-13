@@ -187,6 +187,26 @@ public class SyntheticTabTests
         }
     }
 
+    /// <summary>
+    /// R-133: the note under the crop field names the table's model, the entry the crop was
+    /// taken from, not the header's spelling of the camera.
+    /// </summary>
+    [Fact]
+    public async Task R133_TheCropNoteNamesTheTablesModel_NotTheHeadersSpelling()
+    {
+        using var f = new SessionFixture().WithProcess();
+        File.WriteAllBytes(Path.Combine(f.ProcessDir, SirilSession.FlatMasterName),
+            FitsTestData.BuildFits(128, 128, FitsTestData.Radial(128, 128),
+                extraCards: new[] { FitsTestData.Card("FOCALLEN", "20.0"), FitsTestData.Card("INSTRUME", "'Nikon Corporation NIKON D3300'") }));
+        var (vm, ws) = Attached(f);
+        using (ws)
+        {
+            await vm.Pending;
+            Assert.Equal("1.523", vm.CropText);
+            Assert.Equal("crop 1.523 din baza lensfun (Nikon D3300) - format APS-C", vm.CropNote);
+        }
+    }
+
     [Fact]
     public async Task ASensorFormatChipFillsTheCrop_AndTypingReleasesIt()
     {

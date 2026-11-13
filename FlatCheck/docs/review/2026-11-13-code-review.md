@@ -153,8 +153,9 @@ twice.
 - Test: none; `LensProfileTests.cs:202-206` pins the D3300 on a one-camera table.
 - Evidence: confirmed (line 126 read; the cases are the reviewer's, to become the failing test).
 - Status: fixed 4f5569ca (R-133, ADR 0101). `CameraOf` compares names as words: the exact name,
-  else a table name standing whole in the file's name; never the reverse. The crop's source
-  names the table's model. `R133_...` in `LensProfileTests` pins the crossed pairs and walks the
+  else a table name standing whole in the file's name when that name also carries the entry's
+  maker (added after the branch's review, in the commit after 1d951743); never the reverse. The
+  crop's source names the table's model. `R133_...` in `LensProfileTests` pins the crossed pairs and walks the
   shipped table. Left open: `LensIdentification.PreferCamera` (the cleanup list) still matches
   by containment.
 
