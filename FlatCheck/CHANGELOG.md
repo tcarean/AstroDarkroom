@@ -232,6 +232,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The vertical decentring of an Adobe profile is no longer 1.5 times too large (R-072, ADR
+  0106, the review's CR-009). A profile may say that the lens's axis is not at the centre of
+  the frame; the vertical value was read as a fraction of the long side, as Adobe's document
+  words it, where the profiles themselves count it in image heights (a centred axis reads 0.50
+  in them on 3:2 and 4:3 bodies alike). On a 3:2 body the synthetic flat's axis was therefore
+  moved up or down by half as much again as the profile means: 0.85 mm for 0.57 on one Canon
+  profile. It changes the top-bottom balance of a synthetic flat (the offset and corner-spread
+  rows of `--against`), and only for the 126 of 3531 Adobe files that carry such a centre; the
+  depth at the corners hardly moves. The profiles used for the Tokina 11-20, the Nikkor 35 DX
+  and the Samyang 135 are centred, so their figures are the same.
 - A compressed FITS is refused with a sentence that says so (R-136, ADR 0105, the review's
   CR-008). A file saved with Siril's FITS compression, or packed with `fpack`, holds its image
   as a table; the reader took the table for a picture 8 pixels wide, so the structure mode

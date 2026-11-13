@@ -124,10 +124,20 @@ namespace FlatCheck
                 foreach (XElement e in holder.Descendants(St + "AlternateLensIDs").Descendants(Rdf + "li"))
                     if (ParseLensId(e.Value) is long id) ids.Add(id);
 
+                // The centres are fractions of the calibration image's width and height; the
+                // model wants each side as a fraction of the long one (ADR 0106). An entry
+                // without the image size leaves both at 1, the reading of Adobe's document.
+                double xUnit = 1.0, yUnit = 1.0;
+                if (Num(Prop("ImageWidth")) is double imageW && Num(Prop("ImageLength")) is double imageH && imageW > 0 && imageH > 0)
+                {
+                    double longSide = Math.Max(imageW, imageH);
+                    xUnit = imageW / longSide;
+                    yUnit = imageH / longSide;
+                }
                 var model = new VignettingModel(VignettingModelKind.Adobe, coeffs, table.Count >= 2 ? table : null,
                     focal.Value, sff,
                     Num(VProp("FocalLengthX")), Num(VProp("FocalLengthY")),
-                    Num(VProp("ImageXCenter")) ?? 0.5, Num(VProp("ImageYCenter")) ?? 0.5);
+                    Num(VProp("ImageXCenter")) ?? 0.5, Num(VProp("ImageYCenter")) ?? 0.5, xUnit, yUnit);
 
                 double fStop = Math.Pow(2, av.Value / 2);
                 double distance = Num(Prop("FocusDistance")) ?? double.NaN;

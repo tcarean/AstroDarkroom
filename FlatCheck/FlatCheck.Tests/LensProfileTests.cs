@@ -60,6 +60,82 @@ public class VignettingModelTests
     }
 
     /// <summary>
+    /// R-072: the vertical centre counts in heights of the calibration image, the horizontal one
+    /// in widths. Adobe's document says "v0 / Dmax" for both, but the installed profiles carry
+    /// about 0.5 for a centred axis on 3:2 and on 4:3 bodies alike, where v0 / Dmax would be
+    /// 0.333 and 0.375 (ADR 0106). Before, the vertical shift was 1.5 times too large on 3:2.
+    /// </summary>
+    [Fact]
+    public void R072_TheVerticalCentreCountsInHeightsOfTheCalibrationImage()
+    {
+        double fx = 20 * 1.5 / 36;                                     // 20 mm on a 24 mm long side
+        var inLongSides = new VignettingModel(VignettingModelKind.Adobe, new[] { -0.5, 0.0, 0.0 }, null, 20, 1.5,
+            focalX: fx, focalY: fx, centerX: 0.5, centerY: 0.6);
+        var inHeights = new VignettingModel(VignettingModelKind.Adobe, new[] { -0.5, 0.0, 0.0 }, null, 20, 1.5,
+            focalX: fx, focalY: fx, centerX: 0.5, centerY: 0.6, centerXUnit: 1.0, centerYUnit: 2.0 / 3);
+
+        Assert.Equal(0.1 * 24 / 20, inLongSides.Radius(0, 0, 1.5), 12);            // 2.4 mm off the axis
+        Assert.Equal(0.1 * 16 / 20, inHeights.Radius(0, 0, 1.5), 12);              // 1.6 mm: a tenth of the 16 mm height
+        Assert.Equal(0, inHeights.Radius(0, 0.1 * 16 / 24, 1.5), 12);              // the axis itself, 1.6 mm below the centre
+        // the horizontal centre is untouched by the vertical unit
+        var sideways = new VignettingModel(VignettingModelKind.Adobe, new[] { -0.5, 0.0, 0.0 }, null, 20, 1.5,
+            focalX: fx, focalY: fx, centerX: 0.4, centerY: 0.5, centerXUnit: 1.0, centerYUnit: 2.0 / 3);
+        Assert.Equal(0.1 * 24 / 20, sideways.Radius(0, 0, 1.5), 12);
+
+        // the profile the review of 2026-11-13 named: a 3:2 body of SFF 1.565304, 5202 x 3465
+        var eos50d = new VignettingModel(VignettingModelKind.Adobe, new[] { -0.36, 0.0, 0.0 }, null, 35, 1.565304,
+            centerX: 0.5, centerY: 0.536912, centerXUnit: 1.0, centerYUnit: 3465.0 / 5202);
+        Assert.Equal(0.5655, eos50d.Radius(0, 0, 1.565304) * 35, 4);               // mm; 0.8489 when counted in long sides
+    }
+
+    /// <summary>R-072: a centred profile is the same model whatever the image's shape, and a
+    /// portrait calibration image turns the two units round.</summary>
+    [Fact]
+    public void R072_ACentredProfileDoesNotDependOnTheUnits_AndAPortraitImageSwapsThem()
+    {
+        var plain = new VignettingModel(VignettingModelKind.Adobe, new[] { -0.5, 0.1, 0.0 }, null, 20, 1.5);
+        var shaped = new VignettingModel(VignettingModelKind.Adobe, new[] { -0.5, 0.1, 0.0 }, null, 20, 1.5, centerXUnit: 1.0, centerYUnit: 2.0 / 3);
+        foreach (var (x, y) in new[] { (0.0, 0.0), (0.5, 0.33), (-0.31, 0.2), (0.12, -0.33) })
+            Assert.Equal(plain.Factor(x, y, 1.523), shaped.Factor(x, y, 1.523));
+
+        double fx = 20 * 1.5 / 36;
+        var portrait = new VignettingModel(VignettingModelKind.Adobe, new[] { -0.5, 0.0, 0.0 }, null, 20, 1.5,
+            focalX: fx, focalY: fx, centerX: 0.6, centerY: 0.5, centerXUnit: 2.0 / 3, centerYUnit: 1.0);
+        Assert.Equal(0.1 * 16 / 20, portrait.Radius(0, 0, 1.5), 12);               // a tenth of the 16 mm width
+
+        Assert.Throws<ArgumentException>(() => new VignettingModel(VignettingModelKind.Adobe, new[] { -0.5, 0.0, 0.0 }, null, 20, 1.5, centerYUnit: 0));
+        Assert.Throws<ArgumentException>(() => new VignettingModel(VignettingModelKind.Adobe, new[] { -0.5, 0.0, 0.0 }, null, 20, 1.5, centerXUnit: 1.5));
+    }
+
+    /// <summary>
+    /// R-072: the reader takes the image's shape from the entry's ImageWidth and ImageLength,
+    /// in either spelling, and leaves the units at the long side when the entry gives none.
+    /// </summary>
+    [Fact]
+    public void R072_TheReaderHandsTheCalibrationImagesShapeToTheModel()
+    {
+        string plain = LensProfileTestData.LcpOneProfile("NIKON CORPORATION", "Lens 35mm f/1.8", "35mm f/1.8", "159", "1.5", "35")
+            .Replace("<stCamera:VignetteModel stCamera:VignetteModelParam1=", "<stCamera:VignetteModel stCamera:ImageXCenter=\"0.492\" stCamera:ImageYCenter=\"0.5156\" stCamera:VignetteModelParam1=");
+        Assert.Contains("ImageYCenter", plain);
+
+        VignettingModel noSize = Assert.Single(LcpReader.ReadXml(plain, "a.lcp")).Model;
+        Assert.Equal(0.5156, noSize.CenterY, 9);
+        Assert.Equal(1.0, noSize.CenterXUnit);
+        Assert.Equal(1.0, noSize.CenterYUnit);
+
+        string sized = plain.Replace("stCamera:SensorFormatFactor=", "stCamera:ImageWidth=\"4310\" stCamera:ImageLength=\"2868\" stCamera:SensorFormatFactor=");
+        VignettingModel landscape = Assert.Single(LcpReader.ReadXml(sized, "b.lcp")).Model;
+        Assert.Equal(1.0, landscape.CenterXUnit);
+        Assert.Equal(2868.0 / 4310, landscape.CenterYUnit, 12);
+        Assert.Equal(0.492, landscape.CenterX, 9);
+
+        string tall = plain.Replace("stCamera:SensorFormatFactor=", "stCamera:ImageWidth=\"2868\" stCamera:ImageLength=\"4310\" stCamera:SensorFormatFactor=");
+        VignettingModel portrait = Assert.Single(LcpReader.ReadXml(tall, "c.lcp")).Model;
+        Assert.Equal(2868.0 / 4310, portrait.CenterXUnit, 12);
+        Assert.Equal(1.0, portrait.CenterYUnit);
+    }
+
+    /// <summary>
     /// The camera's crop sets the frame's physical size; the profile's SFF is the calibration
     /// body and only the fallback. On the D3300 the difference is 1.5 % (1.523 vs 1.5); on a
     /// full-frame body with a DX-calibrated profile it is the whole corner.

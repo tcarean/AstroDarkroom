@@ -53,6 +53,14 @@ fetched 2026-09-17; the PDF's text was extracted with a script, formulas transcr
   stCamera:FocalLength in millimeters. stCamera:ImageXCenter: u0 / Dmax. If absent, default
   to 0.5." Params 2 and 3 are optional ("Required if α3 is present").
 
+The same page words the vertical pair alike: "stCamera:FocalLengthY: fy / Dmax" and
+"stCamera:ImageYCenter: v0 / Dmax. If absent, default to 0.5." (text extracted again on
+2026-11-13). The files do not agree with the second: a centred axis written as v0 / Dmax would
+read 0.333 on a 3:2 image and 0.375 on a 4:3 one, and the installed profiles carry 0.50 on
+both. So `ImageYCenter` is read as a fraction of the image's height and `ImageXCenter` of its
+width; the counts, RawTherapee's reading and the decision are ADR 0106. `FocalLengthY` is in
+Dmax as the page says: it equals `FocalLengthX` in every vignette model that gives both.
+
 Reading of the default: with the sensor's long side at `36 / SensorFormatFactor` mm, a pixel
 offset of `Δu / Dmax` of the long side is `Δu / Dmax · 36 / SFF` mm, and dividing by the
 focal length in mm gives `x_d = (Δu / Dmax) / (f · SFF / 36)`. So `fx / Dmax = f · SFF / 36`
@@ -108,7 +116,11 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   `longSideMm = 36 / cameraCrop` (yours; `calibMm` when the crop is unknown, i.e. 0),
   `fxMm = FocalX · calibMm` when the profile gives `FocalLengthX` (it is in units of the
   calibration body's `Dmax`), else `FocalMm`; `xd = (xN · longSideMm − (CenterX − 0.5) ·
-  calibMm) / fxMm`, likewise `yd`, `r = hypot(xd, yd)`, `V = 1 + a1 r² + a2 r⁴ + a3 r⁶`;
+  calibMm · CenterXUnit) / fxMm` and `yd = (yN · longSideMm − (CenterY − 0.5) · calibMm ·
+  CenterYUnit) / fyMm`, where the two units are the calibration image's width and height over
+  its long side (`LcpReader` takes them from the entry's `ImageWidth` and `ImageLength`: 1 and
+  2/3 on a landscape 3:2 body; both 1 when the entry gives no size, which is the first
+  version's formula and Adobe's wording), `r = hypot(xd, yd)`, `V = 1 + a1 r² + a2 r⁴ + a3 r⁶`;
   with a table instead of coefficients, linear interpolation in r, clamped at both ends.
   At `cameraCrop = SFF` this is exactly `(xN + 0.5 − CenterX) / (FocalX ?? FocalMm · SFF /
   36)`, the first version's formula. Why that version (the profile's SFF for every camera)

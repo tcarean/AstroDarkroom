@@ -100,8 +100,19 @@ namespace FlatCheck
         /// </summary>
         internal readonly double? FocalX, FocalY;
 
-        /// <summary>Adobe: u0 / Dmax, v0 / Dmax; 0.5 when missing.</summary>
+        /// <summary>Adobe: the principal point as a fraction of the calibration image's width
+        /// and of its height (<see cref="CenterXUnit"/>, <see cref="CenterYUnit"/>); 0.5 when
+        /// missing.</summary>
         internal readonly double CenterX, CenterY;
+
+        /// <summary>
+        /// Adobe: the side each centre is a fraction of, itself as a fraction of the calibration
+        /// image's long side (Dmax): the width for <see cref="CenterX"/>, the height for
+        /// <see cref="CenterY"/>, so 1 and 2/3 on a landscape 3:2 body (ADR 0106). Both 1 when
+        /// the profile gives no image size: then the centres count in long sides, as Adobe's
+        /// document words them.
+        /// </summary>
+        internal readonly double CenterXUnit, CenterYUnit;
 
         /// <summary>
         /// A model. Throws an ArgumentException without coefficients or a table of at least two
@@ -116,12 +127,24 @@ namespace FlatCheck
         /// 0.</param>
         /// <param name="focalX">Adobe's fx / Dmax; null when the profile gives none.</param>
         /// <param name="focalY">Adobe's fy / Dmax; null to use the x one.</param>
-        /// <param name="centerX">Adobe's u0 / Dmax.</param>
-        /// <param name="centerY">Adobe's v0 / Dmax.</param>
+        /// <param name="centerX">Adobe's <c>ImageXCenter</c>: the principal point's column as a
+        /// fraction of <paramref name="centerXUnit"/> long sides.</param>
+        /// <param name="centerY">Adobe's <c>ImageYCenter</c>: its row as a fraction of
+        /// <paramref name="centerYUnit"/> long sides.</param>
+        /// <param name="centerXUnit">The calibration image's width over its long side, in
+        /// (0, 1]; 1 when the profile does not give the image size.</param>
+        /// <param name="centerYUnit">The calibration image's height over its long side, in
+        /// (0, 1]; 1 when the profile does not give the image size.</param>
         internal VignettingModel(VignettingModelKind kind, double[] coefficients, IReadOnlyList<(double R, double V)> table,
                                  double focalMm, double cropFactor,
-                                 double? focalX = null, double? focalY = null, double centerX = 0.5, double centerY = 0.5)
+                                 double? focalX = null, double? focalY = null, double centerX = 0.5, double centerY = 0.5,
+                                 double centerXUnit = 1.0, double centerYUnit = 1.0)
         {
+            if (!(centerXUnit > 0 && centerXUnit <= 1) || !(centerYUnit > 0 && centerYUnit <= 1))
+                throw new ArgumentException(T("the side a centre is counted in is a fraction of the long side, above 0 and at most 1",
+                                              "latura in care se numara un centru e o fractiune din latura lunga, peste 0 si cel mult 1"));
+            CenterXUnit = centerXUnit;
+            CenterYUnit = centerYUnit;
             if (coefficients == null && (table == null || table.Count < 2))
                 throw new ArgumentException(T("a vignetting model has coefficients or a table of at least two points",
                                               "un model de vignetare are coeficienti sau un tabel cu cel putin doua puncte"));
@@ -168,14 +191,15 @@ namespace FlatCheck
             {
                 // Everything in mm: your frame is 36 / crop wide (36 / SFF without a crop), the
                 // profile's focal length in pixels is in the calibration camera's Dmax
-                // (36 / SFF mm), and the decentring the same. At crop == SFF it reduces to
-                // (xN + 0.5 - CenterX) / fx.
+                // (36 / SFF mm), and the decentring in that image's width (x) and height (y),
+                // which are CenterXUnit and CenterYUnit of Dmax (ADR 0106). At crop == SFF on a
+                // landscape image it reduces to (xN + 0.5 - CenterX) / fx.
                 double calibMm = 36.0 / CropFactor;
                 double longSideMm = 36.0 / (cameraCrop > 0 ? cameraCrop : CropFactor);
                 double fxMm = FocalX.HasValue ? FocalX.Value * calibMm : FocalMm;
                 double fyMm = FocalY.HasValue ? FocalY.Value * calibMm : fxMm;
-                double xd = (xN * longSideMm - (CenterX - 0.5) * calibMm) / fxMm;
-                double yd = (yN * longSideMm - (CenterY - 0.5) * calibMm) / fyMm;
+                double xd = (xN * longSideMm - (CenterX - 0.5) * calibMm * CenterXUnit) / fxMm;
+                double yd = (yN * longSideMm - (CenterY - 0.5) * calibMm * CenterYUnit) / fyMm;
                 return Math.Sqrt(xd * xd + yd * yd);
             }
             else
