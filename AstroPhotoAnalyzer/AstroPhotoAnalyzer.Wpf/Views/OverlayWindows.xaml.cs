@@ -59,23 +59,25 @@ namespace AstroPhotoAnalyzer.Wpf
     /// <summary>
     /// The soft proof's full-screen window (R-163, R-164), over the tab's own
     /// <see cref="SoftProofTabViewModel"/>; non-modal, borderless, over the whole screen. Its
-    /// panel of controls shows while the mouse is over the band it occupies at the top
-    /// (<see cref="PanelShown"/>). The keys G, O and I go to the view-model; Esc and the
-    /// panel's Close button close.
+    /// panel of controls shows while the mouse is over the band it occupies at the top, and
+    /// when the tab has a reason to show in red (<see cref="PanelShown"/>). The keys G, O and
+    /// I go to the view-model; Esc and the panel's Close button close.
     /// </summary>
     public partial class SoftProofWindow : Window
     {
         /// <summary>
         /// Whether the panel over the top of the image is shown (R-164): true while the mouse is
         /// over its band or the margin list is open, set from the band's MouseEnter and
-        /// MouseLeave; false at first.
+        /// MouseLeave, and from the moment the tab has a reason to show in red until that
+        /// reason goes or the mouse next leaves the band (R-166); false at first.
         /// </summary>
         public static readonly DependencyProperty PanelShownProperty =
             DependencyProperty.Register(nameof(PanelShown), typeof(bool), typeof(SoftProofWindow), new PropertyMetadata(false));
 
         /// <summary>
         /// Loads the XAML; the band's MouseEnter and MouseLeave drive <see cref="PanelShown"/>,
-        /// held while the margin list is open; the keys as above.
+        /// held while the margin list is open, and so does the tab's reason in red, the one it
+        /// has when the window gets it included; the keys as above.
         /// </summary>
         public SoftProofWindow()
         {
@@ -93,11 +95,13 @@ namespace AstroPhotoAnalyzer.Wpf
             ProofControls.MarginList.DropDownClosed += (_, _) => { if (!PanelZone.IsMouseOver) HidePanel(); };
             // A reason shown in red is in the panel, which the mouse is rarely over when it
             // comes (a file dialog was just closed): the tab's IsProblem shows the panel
-            // (R-166). The tab outlives this window, so the window lets go of it when closed.
+            // (R-166), and one already there when the window opens shows it from the start.
+            // The tab outlives this window, so the window lets go of it when closed.
             DataContextChanged += (_, e) =>
             {
                 if (e.OldValue is INotifyPropertyChanged before) before.PropertyChanged -= TabChanged;
                 if (e.NewValue is INotifyPropertyChanged now) now.PropertyChanged += TabChanged;
+                if (e.NewValue is SoftProofTabViewModel { IsProblem: true }) PanelShown = true;
             };
             Closed += (_, _) => { if (DataContext is INotifyPropertyChanged tab) tab.PropertyChanged -= TabChanged; };
             PreviewKeyDown += (_, e) =>

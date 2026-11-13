@@ -647,14 +647,18 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Forgets the file of a comparison, shown or kept for the next run: the main view-model
-        /// calls it when an analysis fails, so that an image that could not be analysed ends the
-        /// comparison as one that could does (R-166), and the first image opened again comes back alone.
+        /// Forgets the file of a comparison, shown or kept for the next run, when the analysis
+        /// of another image failed: the main view-model calls it then, since the tab is only
+        /// emptied by such a run and never populated, so that an image that could not be
+        /// analysed ends the comparison as one that could does (R-166), and the first image
+        /// opened again comes back alone. A failed run of the image the file was chosen for
+        /// forgets nothing: the next run of that image that succeeds brings the comparison back.
         /// </summary>
-        internal void EndComparison()
+        /// <param name="failedPath">The path of the image whose analysis failed.</param>
+        internal void EndComparison(string failedPath)
         {
-            if (_otherPath == null) return;
-            Log.Info("comparison ended: the analysis failed");
+            if (_otherPath == null || string.Equals(failedPath, _otherFor, StringComparison.OrdinalIgnoreCase)) return;
+            Log.Info("comparison ended: another image was opened, and its analysis failed");
             _other = null;
             _otherPath = _otherFor = null;
             RaiseProof();

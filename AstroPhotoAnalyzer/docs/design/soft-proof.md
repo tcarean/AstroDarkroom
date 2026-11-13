@@ -160,9 +160,11 @@ so it drops the side but keeps the file; `Populate` forgets the file when the re
 another path; `Prepare` proofs the kept file again from the new set, and `Show` ends the
 comparison with the core's reason, forgetting the file, when it is then refused. `StopCompare`
 forgets it at the user's word, only while nothing is computed, so that a render in flight
-cannot bring the other side back. `EndComparison` forgets it for `MainViewModel`, which calls
-it when an analysis fails: the tab is only cleared then, never populated, and without the call
-the first image opened again would bring the comparison back.
+cannot bring the other side back. `EndComparison(failedPath)` forgets it for `MainViewModel`,
+which calls it when an analysis fails: the tab is only cleared then, never populated, and
+without the call the first image opened again would bring the comparison back. It forgets
+nothing when the image that failed is the one the file was chosen for, so that a run of the
+same image that fails (its file held by another program for a moment) costs no comparison.
 
 `SoftProofControls` is one `UserControl` for the controls, used by the tab and by the window
 over the same view-model; its `ShowFullScreenButton` dependency property hides the button in the
@@ -214,7 +216,8 @@ a style trigger keeps the panel `Hidden` (not `Collapsed`, so the band keeps its
 the window's `PanelShown` dependency property is true, which the band's `MouseEnter` sets and
 `MouseLeave` clears (`HidePanel`). The window also follows the tab's `IsProblem`
 (`TabChanged`, subscribed while the tab is the data context and dropped when the window
-closes, since the tab outlives it): a reason in red shows the panel wherever the mouse is, and
+closes, since the tab outlives it): a reason in red, one the tab already has when the window
+gets it included, shows the panel wherever the mouse is, and
 its going hides the panel unless the mouse is over the band or the margin list is open (R-166). While the margin list's drop-down is open the `ComboBox`
 holds a sub-tree mouse capture, so the band sees no `MouseLeave` wherever the mouse goes (the
 list is taller than the band) and the panel stays; `MouseLeave` also skips the hide while the

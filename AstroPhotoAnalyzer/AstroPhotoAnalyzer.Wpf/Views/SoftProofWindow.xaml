@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
      image. The tab's controls, the caption, the message, the key hint and a Close button sit
      in a panel laid over the top of the image, hidden until the mouse is over the band the
      panel occupies (PanelShown, in the code-behind, from the band's MouseEnter / MouseLeave,
-     held while the margin list is open); the band keeps its height while hidden, so there is
+     held while the margin list is open, and shown too when the tab has a reason in red); the band keeps its height while hidden, so there is
      something to point at. With another image chosen (R-166) the image is the comparison
      across a line, as in the tab. The keys G, O, I and Esc are in the code-behind. No figure is
      computed here. -->

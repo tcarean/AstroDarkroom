@@ -482,70 +482,74 @@ public class SoftProofTabTests
         Assert.Equal("a-doua.tif", tab.ImageName);
     }
 
+    // On the window's thread, as in the application: there the change of intent is made
+    // before any continuation of the comparison can run, which a pool thread would race.
     [Fact]
-    public async Task R166_AChangeOfIntentWhileAFileIsProofedRendersBothAfterItAndKeepsARefusal()
-    {
-        using var ws = new TempWorkspace();
-        string icc = Profile(ws);
-        var tab = new SoftProofTabViewModel();
-        tab.Populate(ResultAt(icc, "prima.tif"));
-        tab.Compute();
-        ProofProfile profile = ProofRun.Prepare(ResultAt(icc, "prima.tif")).Profile;
+    public Task R166_AChangeOfIntentWhileAFileIsProofedRendersBothAfterItAndKeepsARefusal()
+        => _sta.InvokeAsync(async () =>
+        {
+            using var ws = new TempWorkspace();
+            string icc = Profile(ws);
+            var tab = new SoftProofTabViewModel();
+            tab.Populate(ResultAt(icc, "prima.tif"));
+            tab.Compute();
+            ProofProfile profile = ProofRun.Prepare(ResultAt(icc, "prima.tif")).Profile;
 
-        // The intent changes while the file is proofed: no render of its own starts, which
-        // would drop the chosen file, and the comparison is rendered with the new intent.
-        Task comparing = tab.CompareAsync(OtherTiff(ws));
-        tab.IsRelative = true;
-        Assert.Same(comparing, tab.ProofComputation);
-        await comparing;
-        Assert.True(tab.IsComparing, tab.Message);
-        Assert.False(tab.IsBusy);
-        Assert.Null(tab.Message);
-        Assert.Equal(ProofTexts.Caption(profile, ProofIntent.Relative), tab.Caption);
+            // The intent changes while the file is proofed: no render of its own starts, which
+            // would drop the chosen file, and the comparison is rendered with the new intent.
+            Task comparing = tab.CompareAsync(OtherTiff(ws));
+            tab.IsRelative = true;
+            Assert.Same(comparing, tab.ProofComputation);
+            await comparing;
+            Assert.True(tab.IsComparing, tab.Message);
+            Assert.False(tab.IsBusy);
+            Assert.Null(tab.Message);
+            Assert.Equal(ProofTexts.Caption(profile, ProofIntent.Relative), tab.Caption);
 
-        // A file refused on the pool thread: the earlier comparison stays, the reason in red.
-        var right = tab.OtherImage;
-        await tab.CompareAsync(OtherTiff(ws, "mica.tif", w: 256));
-        Assert.False(tab.IsBusy);
-        Assert.True(tab.IsComparing);
-        Assert.Same(right, tab.OtherImage);
-        Assert.True(tab.IsProblem);
-        Assert.Equal(ProofTexts.SizeMismatch(512, 512, 256, 512), tab.Message);
+            // A file refused on the pool thread: the earlier comparison stays, the reason in red.
+            var right = tab.OtherImage;
+            await tab.CompareAsync(OtherTiff(ws, "mica.tif", w: 256));
+            Assert.False(tab.IsBusy);
+            Assert.True(tab.IsComparing);
+            Assert.Same(right, tab.OtherImage);
+            Assert.True(tab.IsProblem);
+            Assert.Equal(ProofTexts.SizeMismatch(512, 512, 256, 512), tab.Message);
 
-        // Refused with the intent changed meanwhile: both sides are rendered on the new
-        // intent, and that render leaves the reason where it was.
-        Task refused = tab.CompareAsync(OtherTiff(ws, "mica-2.tif", w: 256));
-        tab.IsPerceptual = true;
-        await refused;
-        Assert.False(tab.IsBusy);
-        Assert.True(tab.IsComparing);
-        Assert.Equal("alta.tif", tab.OtherName);
-        Assert.NotSame(right, tab.OtherImage);
-        Assert.Equal(ProofTexts.Caption(profile, ProofIntent.Perceptual), tab.Caption);
-        Assert.True(tab.IsProblem);
-        Assert.Equal(ProofTexts.SizeMismatch(512, 512, 256, 512), tab.Message);
+            // Refused with the intent changed meanwhile: both sides are rendered on the new
+            // intent, and that render leaves the reason where it was.
+            Task refused = tab.CompareAsync(OtherTiff(ws, "mica-2.tif", w: 256));
+            tab.IsPerceptual = true;
+            await refused;
+            Assert.False(tab.IsBusy);
+            Assert.True(tab.IsComparing);
+            Assert.Equal("alta.tif", tab.OtherName);
+            Assert.NotSame(right, tab.OtherImage);
+            Assert.Equal(ProofTexts.Caption(profile, ProofIntent.Perceptual), tab.Caption);
+            Assert.True(tab.IsProblem);
+            Assert.Equal(ProofTexts.SizeMismatch(512, 512, 256, 512), tab.Message);
 
-        // A file still being proofed when the tab is emptied touches nothing when it ends.
-        Task late = tab.CompareAsync(OtherTiff(ws, "tarzie.tif"));
-        tab.Clear();
-        await late;
-        Assert.False(tab.IsComparing);
-        Assert.False(tab.IsBusy);
-        Assert.Null(tab.Message);
-        Assert.Null(tab.OtherImage);
-    }
+            // A file still being proofed when the tab is emptied touches nothing when it ends.
+            Task late = tab.CompareAsync(OtherTiff(ws, "tarzie.tif"));
+            tab.Clear();
+            await late;
+            Assert.False(tab.IsComparing);
+            Assert.False(tab.IsBusy);
+            Assert.Null(tab.Message);
+            Assert.Null(tab.OtherImage);
+        });
 
     [Fact]
-    public async Task R166_AnImageThatCannotBeAnalysedEndsTheComparisonToo()
+    public async Task R166_AnotherImageThatCannotBeAnalysedEndsTheComparisonAndAFailedRunOfTheSameOneKeepsIt()
     {
         using var ws = new TempWorkspace();
         string tif = WindowSmokeTests.DarkTiff(ws);
+        string other = OtherTiff(ws);
         var vm = new MainViewModel();
         Assert.True(vm.Parameters.UseProfile(new IccProfileRow(IccPaperBlack.Read(Profile(ws)))));
         await vm.OpenAsync(tif);
         await vm.ProofComputation;
         Assert.True(vm.SoftProof.HasProof, vm.SoftProof.Message);
-        await vm.SoftProof.CompareAsync(OtherTiff(ws));
+        await vm.SoftProof.CompareAsync(other);
         Assert.True(vm.SoftProof.IsComparing, vm.SoftProof.Message);
         Assert.Equal("cer-intunecat.tif", vm.SoftProof.ImageName);
 
@@ -555,12 +559,35 @@ public class SoftProofTabTests
         Assert.True(vm.SoftProof.IsComparing, vm.SoftProof.Message);
         Assert.Equal("alta.tif", vm.SoftProof.OtherName);
 
-        // Another image, one that cannot be read: its tab is only emptied, never filled.
+        // A run of the same image that fails (its file gone for a moment) forgets nothing: the
+        // next run that succeeds brings the comparison back.
+        File.Delete(tif);
+        await vm.RunAsync();
+        Assert.False(vm.HasResult);
+        Assert.False(string.IsNullOrEmpty(vm.Error));
+        Assert.Equal(tif, WindowSmokeTests.DarkTiff(ws));
+        await vm.RunAsync();
+        await vm.ProofComputation;
+        Assert.True(vm.SoftProof.IsComparing, vm.SoftProof.Message);
+
+        // Another image, refused as linear: its tab is only emptied, never filled, and the
+        // first image opened again comes back alone.
+        string linear = ws.WriteFile("liniara.tif", TiffTestData.Build16Rgb(512, 512, (_, _, _) => RasterOps.Level16(0.001f), IccTestData.V2("sRGB test")));
+        await vm.OpenAsync(linear);
+        Assert.False(vm.HasResult);
+        Assert.Contains("LINIARA", vm.Error);
+        await vm.OpenAsync(tif);
+        await vm.ProofComputation;
+        Assert.True(vm.SoftProof.HasProof, vm.SoftProof.Message);
+        Assert.False(vm.SoftProof.IsComparing);
+        Assert.Null(vm.SoftProof.Message);
+
+        // The same with another image that cannot be read at all.
+        await vm.SoftProof.CompareAsync(other);
+        Assert.True(vm.SoftProof.IsComparing, vm.SoftProof.Message);
         await vm.OpenAsync(ws.WriteFile("stricata.tif", new byte[] { 1, 2, 3 }));
         Assert.False(vm.HasResult);
         Assert.False(string.IsNullOrEmpty(vm.Error));
-
-        // The first image opened again comes back alone.
         await vm.OpenAsync(tif);
         await vm.ProofComputation;
         Assert.True(vm.SoftProof.HasProof, vm.SoftProof.Message);
@@ -659,6 +686,16 @@ public class SoftProofTabTests
                 tab.Compare(OtherTiff(ws, "mica.tif", w: 256));
                 Assert.True(tab.IsProblem);
                 Assert.True(window.PanelShown);
+                // ... and a window opened while the sentence is already there shows it from the start.
+                var opened = new SoftProofWindow { DataContext = tab };
+                try
+                {
+                    Assert.True(opened.PanelShown);
+                }
+                finally
+                {
+                    opened.DataContext = null;
+                }
                 tab.Compare(OtherTiff(ws, "buna.tif"));
                 Assert.False(tab.IsProblem);
                 Assert.False(window.PanelShown);

@@ -74,8 +74,9 @@ with a recommendation, and accepted as recommended.
 - The full-screen window's panel, hidden unless the mouse is over its band (ADR 0068), also
   shows while the tab has a reason in red: after the file dialog the mouse is rarely at the top,
   and a refusal nobody sees looks like a button that did nothing (the review of 2026-11-13).
-- An analysis that fails ends the comparison too (`MainViewModel` tells the tab), so that the
-  first image opened again comes back alone (the same review).
+- The analysis of another image that fails ends the comparison too (`MainViewModel` tells the
+  tab, with the image's path), so that the first image opened again comes back alone; a failed
+  run of the same image forgets nothing (the two reviews of 2026-11-13).
 - `ProofTexts` changed, which is under `Report/`: `/validate` runs before the task ends.
 - Left for a task of its own if wanted: two sizes; a key for the compare mode in full screen;
   remembering the other file.

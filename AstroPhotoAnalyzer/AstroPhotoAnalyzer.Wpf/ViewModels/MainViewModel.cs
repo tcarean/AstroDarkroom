@@ -317,15 +317,15 @@ namespace AstroPhotoAnalyzer.Wpf
                 // A linear image is a refusal, not a failure: the run's done line has its figures.
                 Log.Warn("run " + LogText.Int(run) + " refused after " + LogText.Ms(clock.ElapsedMilliseconds) + ": " + e.Message);
                 _result = null;
-                SoftProof.EndComparison();
+                SoftProof.EndComparison(path);
                 Error = Describe(e);
             }
             catch (Exception e)
             {
                 Log.Error(e, "run " + LogText.Int(run) + " failed after " + LogText.Ms(clock.ElapsedMilliseconds) + "; the window shows the message");
                 _result = null;
-                // An image that could not be analysed ends the soft proof's comparison too (R-166).
-                SoftProof.EndComparison();
+                // Another image that could not be analysed ends the soft proof's comparison too (R-166).
+                SoftProof.EndComparison(path);
                 Error = Describe(e);
             }
             finally

@@ -96,9 +96,9 @@ namespace AstroPhotoAnalyzer.Wpf
                 Log.Info("compare dialog: cancelled");
                 return;
             }
-            // The tab may have started a computation while the dialog was open (a key in the
-            // other window): the file is then not taken, and the log says so.
-            Log.Info("compare dialog: chose " + file + (tab.CanCompare ? "" : "; not taken, the tab is computing"));
+            // The tab may have started a computation or lost its proof while the dialog was open
+            // (a key in the other window): the file is then not taken, and the log says so.
+            Log.Info("compare dialog: chose " + file + (tab.CanCompare ? "" : "; not taken, the tab cannot compare now"));
             _ = tab.CompareAsync(file);
         }
 
