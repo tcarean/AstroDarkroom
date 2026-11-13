@@ -267,7 +267,10 @@ twice.
 - Status: fixed fa414c5e (R-135). `RunAsync` clears the comparison when it shows the new
   request's figures; `CompareAsync` reports its own failure in `CompareError` and leaves the
   written flat and its "saved" line on screen (case B, shown by a test that spoils the file
-  between the write and the comparison). `R135_...` in `SyntheticTabTests`.
+  between the write and the comparison). `R135_...` in `SyntheticTabTests`. The branch's review
+  added, in the commit after 767eb2ea: the failure line outside the written flat's panel, so it
+  shows for a file of an earlier session, and the button taking unwritten figures off the
+  screen before it compares the file on disk (the owner's choice).
 
 ### CR-007 `--expo` gives a verdict on a white level at or below the black level
 
@@ -324,7 +327,7 @@ twice.
   `ImageXCenter` only (`lens-profiles.md:51-54`); Adobe's sentence for `ImageYCenter` has to be
   read before the model changes.
 - Status: fixed 0377b8d9 (R-072, ADR 0106). Adobe's sentence was read: it says "v0 / Dmax"
-  for the vertical centre too. The files say a half on 3:2 and 4:3 alike (1499 files) and
+  for the vertical centre too. The files say a half on 3:2 and 4:3 alike (1480 files) and
   RawTherapee multiplies the centres by the image's width and height, so the owner chose that
   reading: `VignettingModel` counts each centre in its own side, taken from the entry's
   `ImageWidth` and `ImageLength`. The value 0.536912 quoted above was not found in the
@@ -352,7 +355,8 @@ twice.
   459 x 305 raster, 3.3613 against 3.3716 on 526 x 259. The owner chose "in both sectors":
   `AzimuthalAsymmetry` adds a pixel with `dx` or `dy` of 0 to the two sectors beside that axis
   (`Metrics.AxisSectors`). No parity golden changed and `/validate` shows no drift (44 of 44).
-  `R131_...` in `StructureAnalyzerTests` and `MetricsTests`.
+  `R131_...` in `StructureAnalyzerTests` and `MetricsTests`; a 40th parity scenario,
+  `structure odd raster 526x518`, reaches the new branch.
 
 ## Severity 2: a crash, a hang, or a file overwritten or lost
 

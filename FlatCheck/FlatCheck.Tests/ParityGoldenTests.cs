@@ -80,6 +80,8 @@ public class ParityGoldenTests : IClassFixture<ParityGoldenTests.Fixtures>
         { "structure int32", new[] { "int32.fit" } },
         { "structure float 0..1", new[] { "float01.fit" } },
         { "structure dust shadow", new[] { "dust.fit" } },
+        // added 2026-11-13, after the cross-check: the sector boundaries of an odd raster (ADR 0107)
+        { "structure odd raster 526x518", new[] { "odd_raster.fit" } },
 
         { "light undercorrected", new[] { "clean.fit", "--light" } },
         { "light overcorrected", new[] { "overcorrected.fit", "--light" } },
@@ -145,7 +147,8 @@ public class ParityGoldenTests : IClassFixture<ParityGoldenTests.Fixtures>
     {
         var slugs = Scenarios.Select(row => Slug((string)row[0])).ToList();
 
-        Assert.Equal(39, slugs.Count);
+        // the 39 of the cross-check and one added since ("structure odd raster 526x518")
+        Assert.Equal(40, slugs.Count);
         Assert.Equal(slugs.Count, slugs.Distinct().Count());
     }
 }

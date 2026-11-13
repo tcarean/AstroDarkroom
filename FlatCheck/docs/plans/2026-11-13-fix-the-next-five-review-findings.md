@@ -37,6 +37,13 @@ decision, put to the owner on 2026-11-13 with the facts; both answers are in the
   differs. Both candidate rules give the same figure every way up: the boundary pixel in both
   sectors 4.236745, in neither 4.240617.
 
+Corrected after the approval, on the same day (the figures above are the ones the owner
+saw): the count of CR-009 took only the profiles that write a property as an attribute. With
+the element spelling too, 1499 files carry a centre (640 of 3:2, 840 of 4:3), 126 carry one in
+a vignette model, and the owner's Nikkor 35 DX file is one of them, though the seven models
+the program takes from it are centred. ADR 0106 has the table. And for CR-010 the largest
+difference measured was 0.010 points (526 x 259), not 0.002.
+
 ## The fixes
 
 Each: requirement, the failing test seen red, the code, the note, ADR and CHANGELOG line, the

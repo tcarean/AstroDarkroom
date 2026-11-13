@@ -37,6 +37,10 @@ pointed at `/validate`); CLAUDE.md "Layout" says the same in one line. The mecha
 
 ## Coverage of the 39 scenarios
 
+(A 40th row, `structure odd raster 526x518`, was added on 2026-11-13 for the sector boundaries
+of an odd raster, ADR 0107. It is not one of the cross-check's: the prototype never confirmed
+its figures, the `R131_*` symmetry tests do, and it is judged like any golden.)
+
 Kept whole on purpose (ADR 0047), 43 until the four `--ratio` scenarios left with the mode on
 2026-10-26 (ADR 0067): 15 structure, 11 `--light` (three of them series folders), 13 `--expo`.
 Across them: all four residual bands (`grad_bun`, `grad`,
@@ -144,5 +148,6 @@ of known issue 5, are ADR 0016 and ADR 0013.
   light figures is that of the symmetry tests (`R131_*`), not of the prototype.
 - On 2026-11-13 a pixel exactly on the line between two sectors of the azimuthal asymmetry
   began to count in both (R-131, ADR 0107). It happens only on a raster of odd width or
-  height; every parity fixture has an even raster, so no parity golden changed, byte for
-  byte. A C#-only call: the prototype put such a pixel on one side.
+  height; each of the 39 parity fixtures has an even raster, so no parity golden changed, byte
+  for byte, and a 40th scenario on an odd raster was added to reach the new branch. A C#-only
+  call: the prototype put such a pixel on one side.

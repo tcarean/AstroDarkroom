@@ -244,8 +244,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the frame; the vertical value was read as a fraction of the long side, as Adobe's document
   words it, where the profiles themselves count it in image heights (a centred axis reads 0.50
   in them on 3:2 and 4:3 bodies alike). On a 3:2 body the synthetic flat's axis was therefore
-  moved up or down by half as much again as the profile means: 0.85 mm for 0.57 on one Canon
-  profile. It changes the top-bottom balance of a synthetic flat (the offset and corner-spread
+  moved up or down by half as much again as the profile means: 0.85 mm where 0.57 is meant,
+  for a vertical centre of 0.537 on a sensor 23 mm wide. It changes the top-bottom balance of a synthetic flat (the offset and corner-spread
   rows of `--against`), and only for the 126 of 3531 Adobe files that carry such a centre; the
   depth at the corners hardly moves. The profiles used for the Tokina 11-20, the Nikkor 35 DX
   and the Samyang 135 are centred, so their figures are the same.

@@ -584,6 +584,79 @@ public class SyntheticTabTests
             Assert.StartsWith("Comparatia cu masterul a esuat:", vm.CompareError);
             Assert.False(vm.HasCompare);
             Assert.Equal(vm.Target, vm.SavedTo);              // the write of before still stands
+            Assert.DoesNotContain("COMPARATIE", vm.Report);   // and the report panel holds no earlier comparison
+        }
+    }
+
+    /// <summary>
+    /// R-135: the button's main use, a file written in an earlier session, with nothing written
+    /// in this one. Its failure is said in the comparison's own line, with no written flat on
+    /// screen and without the tab's failure screen, and leaves the report panel empty.
+    /// </summary>
+    [Fact]
+    public async Task R135_AComparisonThatFailsWithNothingWrittenInThisSessionSaysSo()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f);
+        using (ws)
+        {
+            await vm.Pending;
+            File.WriteAllText(vm.Target, "left by an earlier session, and not a FITS");
+            Assert.True(vm.CanCompare);
+
+            await vm.CompareAsync();
+
+            Assert.False(vm.HasResult);                       // nothing was written here
+            Assert.False(vm.HasError, vm.ErrorText);
+            Assert.StartsWith("Comparatia cu masterul a esuat:", vm.CompareError);
+            Assert.False(vm.HasCompare);
+            Assert.Empty(vm.Report);
+        }
+    }
+
+    /// <summary>
+    /// R-135: the button after a "No". The figures on screen are lens Y's and were never
+    /// written; the file on disk is lens X's. The button compares the file, so it takes the
+    /// unwritten figures off: the comparison stands alone, never under another lens's figures
+    /// (the branch review of 2026-11-13: one click brought the screen of CR-006 back).
+    /// </summary>
+    [Fact]
+    public async Task R135_TheButtonAfterANoShowsTheKeptFilesComparisonAlone()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f, confirm: _ => false);
+        using (ws)
+        {
+            await vm.Pending;
+            vm.Search = "nikon corporation";
+            vm.SelectedLens = vm.Lenses[0];
+            vm.FStopText = "2.8";
+            await vm.RunAsync();                              // X written and compared
+            string verdictOfX = vm.CompareVerdict;
+
+            // the button with the written flat's own figures above it: they stay
+            await vm.CompareAsync();
+            Assert.True(vm.HasResult);
+            Assert.NotEmpty(vm.ProfileLine);
+            Assert.Equal(vm.Target, vm.SavedTo);
+            AssertComparison(vm);
+
+            vm.Search = "";
+            vm.SelectedLens = vm.Lenses.First(l => l.Choice.Source == ProfileSource.Lensfun);
+            await vm.RunAsync();                              // Y shown, not written
+            Assert.True(vm.HasResult);
+            Assert.False(vm.HasCompare);
+
+            await vm.CompareAsync();
+
+            AssertComparison(vm);                             // the kept file, X's
+            Assert.Equal(verdictOfX, vm.CompareVerdict);
+            Assert.False(vm.HasResult);                       // and Y's unwritten figures are gone
+            Assert.Empty(vm.ProfileLine);
+            Assert.Empty(vm.ModelLine);
+            Assert.Empty(vm.Depth);
+            Assert.Empty(vm.SaveError);
+            Assert.Empty(vm.SavedTo);
         }
     }
 

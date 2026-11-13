@@ -692,8 +692,9 @@ namespace FlatCheck.Wpf
 
         /// <summary>Compares the session's master with the synthetic flat beside it, guarded,
         /// after the gate, and shows the table, the verdict and the map; a comparison that
-        /// fails shows <see cref="CompareError"/> instead and leaves the rest of the tab as it
-        /// is (R-135).</summary>
+        /// fails shows <see cref="CompareError"/> instead. Called alone (the button), it first
+        /// takes off the screen the figures of a request that was never written, so the
+        /// comparison of the file on disk stands under no other flat's figures (R-135).</summary>
         /// <param name="reportSoFar">The write's report, when the comparison follows it; otherwise
         /// null and the banner is written.</param>
         /// <returns>A task that completes when the comparison ended; it never faults.</returns>
@@ -712,6 +713,11 @@ namespace FlatCheck.Wpf
                 var text = new StringWriter();
                 if (reportSoFar != null) text.Write(reportSoFar);
                 CompareError = "";
+                // The button compares the file on disk. Figures on screen that were never
+                // written (a "No" to the overwrite, a write error) are another request's,
+                // maybe another lens's: they go, so the comparison never stands under them
+                // (R-135). After a write the figures are the file's and stay.
+                if (reportSoFar == null && HasResult && SavedTo != target) ClearWritten();
                 RunOutcome<AgainstResult> outcome;
                 try
                 {
@@ -732,6 +738,9 @@ namespace FlatCheck.Wpf
                     Log.Error(e, "the comparison of " + master + " with " + target + " failed; the tab says so under the written flat");
                     ClearCompare();
                     CompareError = SessionMessages.SyntheticCompareFailed(afterWrite: reportSoFar != null) + "\n" + Describe(e);
+                    // the report panel too: the write's own text when this followed a write,
+                    // nothing when the button stood alone - never the comparison of before
+                    Report = reportSoFar ?? "";
                     return;
                 }
                 PopulateCompare(outcome.Result);
@@ -782,6 +791,21 @@ namespace FlatCheck.Wpf
             CompareVerdictDetail = AgainstReport.VerdictDetail(a);
             CompareVerdict = a.Verdict;
             RefreshMap();
+        }
+
+        /// <summary>Takes the written flat's figures off the screen: the profile and model
+        /// lines, the notes, the depth rows and both save lines (R-135).</summary>
+        void ClearWritten()
+        {
+            ProfileLine = "";
+            ModelLine = "";
+            CornerNote = "";
+            CornerWarning = false;
+            WrittenRequestNote = "";
+            Depth = Array.Empty<MetricRow>();
+            SavedTo = "";
+            SaveError = "";
+            HasResult = false;
         }
 
         /// <summary>Takes the comparison off the screen: the verdict, the table, the map and its

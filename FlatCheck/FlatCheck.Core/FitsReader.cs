@@ -29,7 +29,8 @@ using static FlatCheck.Ui;
 namespace FlatCheck
 {
     /// <summary>
-    /// Reads a FITS file: the first HDU with a 2D image, its planes averaged into one raster
+    /// Reads a FITS file: the first HDU with a 2D image (the primary one or an IMAGE extension,
+    /// never a table, R-136), its planes averaged into one raster
     /// whose row 0 is the file's LAST row (the frame as Siril shows it, R-130), the header's
     /// cards as a dictionary and as they stand, and the CFA order from BAYERPAT.
     /// </summary>
@@ -171,7 +172,8 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Reads the whole file: the first HDU with a 2D image, its planes averaged, its rows
+        /// Reads the whole file: the first HDU with a 2D image (never a table, and a compressed
+        /// image is refused, R-136), its planes averaged, its rows
         /// with the file's first row last (R-130), the header as a dictionary and as raw cards,
         /// the CFA order from BAYERPAT for that row order, and the focal length
         /// and camera. The ADU scale stays null: a FITS does not carry it. Throws
@@ -266,7 +268,8 @@ namespace FlatCheck
         // ========================================================= FITS I/O
         // FITS: a header of 80-byte cards, in 2880-byte blocks. Then the binary data,
         // big-endian. BITPIX: 16=short, 32=int, -32=float, -64=double. Physical value =
-        // BZERO + BSCALE * stored_value. Takes the first HDU with data (NAXIS>=2).
+        // BZERO + BSCALE * stored_value. Takes the first image HDU with data (NAXIS>=2); a table
+        // extension is stepped over (R-136).
         /// <summary>
         /// The image of a FITS already in memory, as <see cref="LoadFull"/> reads it.
         /// </summary>
@@ -298,10 +301,11 @@ namespace FlatCheck
         /// (without END), its number of planes and its BITPIX. The raw cards are what FitsWriter
         /// copies into a file written back; the dictionary cannot be the source, because it
         /// loses the comments and cuts the strings at the first '/'. Throws
-        /// InvalidDataException on a file that is not a FITS, whose header is cut or whose data
+        /// InvalidDataException on a file that is not a FITS, whose header is cut, whose data
         /// area is shorter than the header declares (R-009, checked for every HDU before a
-        /// sample is read), and an Exception when no HDU holds a 2D image or BITPIX is not one
-        /// of the five.
+        /// sample is read) or whose image is stored as a tile-compressed table (R-136), and an
+        /// Exception when no HDU holds a 2D image (a table is none) or BITPIX is not one of the
+        /// five.
         /// </summary>
         /// <param name="raw">The whole file's bytes.</param>
         /// <returns>
@@ -351,9 +355,12 @@ namespace FlatCheck
                         throw new InvalidDataException(CompressedImage);
                     // Any other table: step over its rows and its heap (PCOUNT bytes after the
                     // rows, which NAXISn do not count) and look at the next HDU.
-                    long rowBytes = 1;
-                    for (int ax = 1; ax <= naxis; ax++) rowBytes *= HInt(hdr, "NAXIS" + ax, 1);
-                    long tableBytes = Math.Abs(bitpix) / 8 * (long)HInt(hdr, "GCOUNT", 1) * (HInt(hdr, "PCOUNT", 0) + (naxis > 0 ? rowBytes : 0));
+                    // A count below zero is a broken header: taken as zero, so the position
+                    // only ever moves forward and a crafted PCOUNT cannot send the walk back
+                    // over the header it has just read.
+                    long rowBytes = naxis > 0 ? 1 : 0;
+                    for (int ax = 1; ax <= naxis; ax++) rowBytes *= Math.Max(0, HInt(hdr, "NAXIS" + ax, 1));
+                    long tableBytes = Math.Abs(bitpix) / 8 * (long)Math.Max(0, HInt(hdr, "GCOUNT", 1)) * (Math.Max(0, HInt(hdr, "PCOUNT", 0)) + rowBytes);
                     if (pos + tableBytes > raw.Length)
                         throw new InvalidDataException(DataCut(tableBytes, raw.Length - pos));
                     pos += (int)((tableBytes + 2879) / 2880 * 2880);

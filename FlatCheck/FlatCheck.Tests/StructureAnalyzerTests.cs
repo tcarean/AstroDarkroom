@@ -177,17 +177,7 @@ public class StructureAnalyzerTests
     }
 
     /// <summary>
-    /// An asymmetric scene (vignetting, a gradient along x and a weaker one along y, a dust
-    /// shadow off centre, deterministic noise) read the right way up, upside down and mirrored
-    /// left to right gives the same six figures (R-131): the geometry is built about the
-    /// frame's centre, so the orientation a file is read in cannot move a figure. Two sizes:
-    /// 1536 x 1024 -> 768 x 512, even leftovers for the 40-tile grid (tiles of 19) and an odd one
-    /// for the 80-tile grid of the local spot (tiles of 9: 768 = 85 x 9 + 3); 1580 x 1060 -> 790
-    /// x 530, odd leftovers both ways for the 40-tile grid (790 = 41 x 19 + 11, 530 = 27 x 19 +
-    /// 17).
-    /// </summary>
-    /// <summary>
-    /// R-131 on rasters of odd size, which the theory above does not reach: 918 x 610 gives a
+    /// R-131 on rasters of odd size, the asymmetry alone and with its figures in the message: 918 x 610 gives a
     /// raster 459 x 305, 1052 x 518 one of 526 x 259. The centre column and row are then lines
     /// of pixels exactly between two azimuthal sectors. Before, each went to one side, a mirror
     /// left the line in place and so moved it to the other sector: the asymmetry read 4.2164
@@ -214,9 +204,23 @@ public class StructureAnalyzerTests
         Assert.True(Math.Abs(a.AzimuthalMaxPct - r.AzimuthalMaxPct) < 1e-9 && Math.Abs(a.AzimuthalMaxPct - c.AzimuthalMaxPct) < 1e-9, report);
     }
 
+    /// <summary>
+    /// An asymmetric scene (vignetting, a gradient along x and a weaker one along y, a dust
+    /// shadow off centre, deterministic noise) read the right way up, upside down and mirrored
+    /// left to right gives the same six figures (R-131): the geometry is built about the
+    /// frame's centre, so the orientation a file is read in cannot move a figure. Two sizes:
+    /// 1536 x 1024 -> 768 x 512, even leftovers for the 40-tile grid (tiles of 19) and an odd one
+    /// for the 80-tile grid of the local spot (tiles of 9: 768 = 85 x 9 + 3); 1580 x 1060 -> 790
+    /// x 530, odd leftovers both ways for the 40-tile grid (790 = 41 x 19 + 11, 530 = 27 x 19 +
+    /// 17). And two frames whose rasters are odd, 918 x 610 -> 459 x 305 and 1052 x 518 -> 526 x
+    /// 259, where the centre column and row are lines of pixels on the axes: all six figures hold
+    /// there too, the asymmetry since ADR 0107.
+    /// </summary>
     [Theory]
     [InlineData(1536, 1024)]
     [InlineData(1580, 1060)]
+    [InlineData(918, 610)]
+    [InlineData(1052, 518)]
     public void R131_TheFiguresAreTheSame_WhenTheRasterIsMirrored(int W, int H)
     {
         var shadow = DustShadow(FitsTestData.Radial(W, H), 0.3 * W, 0.3 * H, 30, 0.05);

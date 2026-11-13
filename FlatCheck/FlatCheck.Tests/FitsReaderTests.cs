@@ -360,6 +360,29 @@ public class FitsReaderTests
         Assert.Equal("FITS: niciun HDU cu imagine 2D gasit.", ex.Message);
     }
 
+    /// <summary>
+    /// R-136: a table whose counts are below zero cannot send the walk back over its own
+    /// header (PCOUNT -5760 with no rows would have moved the position two blocks back, for
+    /// ever); the counts are taken as zero and the file ends as one without an image.
+    /// </summary>
+    [Fact]
+    public async Task R136_ATableWithNegativeCountsDoesNotSendTheWalkBackwards()
+    {
+        byte[] table = Hdu(new[]
+        {
+            "XTENSION= 'BINTABLE'", FitsTestData.Card("BITPIX", "8"), FitsTestData.Card("NAXIS", "2"),
+            FitsTestData.Card("NAXIS1", "8"), FitsTestData.Card("NAXIS2", "0"),
+            FitsTestData.Card("PCOUNT", "-5760"), FitsTestData.Card("GCOUNT", "1"),
+        }, 0);
+
+        byte[] file = EmptyPrimary().Concat(table).ToArray();
+        Task<Exception> read = Task.Run(() => Assert.Throws<Exception>(() => Load(file)));
+
+        Task first = await Task.WhenAny(read, Task.Delay(TimeSpan.FromSeconds(20)));
+        Assert.True(ReferenceEquals(first, read), "the reader did not come back");
+        Assert.Equal("FITS: niciun HDU cu imagine 2D gasit.", (await read).Message);
+    }
+
     /// <summary>R-136: a table cut short is the cut file of R-009, heap counted.</summary>
     [Fact]
     public void R136_ATableCutShortIsRefusedAsCutData()

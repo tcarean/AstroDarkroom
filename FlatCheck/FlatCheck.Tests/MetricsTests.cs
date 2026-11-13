@@ -495,6 +495,26 @@ public class MetricsTests
     }
 
     /// <summary>
+    /// R-131, the rule and not only its symmetry: a pixel on the line counts in BOTH sectors.
+    /// Leaving it out of both is as symmetric and gives another figure (4.240617 on the 1376 x
+    /// 917 raster, against 4.236745; ADR 0107 has the two), so the figures are pinned, on the two
+    /// odd rasters the decision was measured on.
+    /// </summary>
+    [Fact]
+    public void R131_APixelOnTheLineBetweenTwoSectorsCountsInBoth_NotInNeither()
+    {
+        Func<int, int, int, int, double> scene = (x, y, w, h) =>
+        {
+            double dx = (x - (w - 1) / 2.0) / w, dy = (y - (h - 1) / 2.0) / w;
+            return 2000 * (1 - 2.4 * (dx * dx + dy * dy)) * (1 + 0.06 * x / w) * (1 + 0.02 * y / h)
+                 * (1 + 0.004 * (((x * 73856093) ^ (y * 19349663)) % 1000) / 1000.0);
+        };
+        double Max(int w, int h) => Metrics.AzimuthalAsymmetry(Make(w, h, (x, y) => scene(x, y, w, h)), Metrics.Centre(w), Metrics.Centre(h)).Max(v => v.ptp);
+        Assert.Equal(4.236745, Max(1376, 917), 6);
+        Assert.Equal(5.403712, Max(263, 259), 6);
+    }
+
+    /// <summary>
     /// R-131: the two sectors that meet on each half-axis are the ones `Azimuth` gives a hair
     /// to either side of it, for any sector count that is a multiple of 4.
     /// </summary>

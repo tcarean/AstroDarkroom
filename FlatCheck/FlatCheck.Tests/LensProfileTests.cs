@@ -109,7 +109,8 @@ public class VignettingModelTests
 
     /// <summary>
     /// R-072: the reader takes the image's shape from the entry's ImageWidth and ImageLength,
-    /// in either spelling, and leaves the units at the long side when the entry gives none.
+    /// written as attributes or as elements, and leaves the units at the long side when the
+    /// entry gives none.
     /// </summary>
     [Fact]
     public void R072_TheReaderHandsTheCalibrationImagesShapeToTheModel()
@@ -133,6 +134,40 @@ public class VignettingModelTests
         VignettingModel portrait = Assert.Single(LcpReader.ReadXml(tall, "c.lcp")).Model;
         Assert.Equal(2868.0 / 4310, portrait.CenterXUnit, 12);
         Assert.Equal(1.0, portrait.CenterYUnit);
+
+        // the other spelling, properties as elements, which the installed profiles with a
+        // centre use (the Canon EOS 50D and the Nikon D90 files)
+        const string elements = @"<x:xmpmeta xmlns:x='adobe:ns:meta/'>
+ <rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+  <rdf:Description rdf:about='' xmlns:photoshop='http://ns.adobe.com/photoshop/1.0/' xmlns:stCamera='http://ns.adobe.com/photoshop/1.0/camera-profile'>
+   <photoshop:CameraProfiles>
+    <rdf:Seq>
+     <rdf:li rdf:parseType='Resource'>
+      <stCamera:Make>Canon</stCamera:Make>
+      <stCamera:CameraRawProfile>True</stCamera:CameraRawProfile>
+      <stCamera:LensPrettyName>Lens 17-55mm f/2.8</stCamera:LensPrettyName>
+      <stCamera:SensorFormatFactor>1.565304</stCamera:SensorFormatFactor>
+      <stCamera:ImageWidth>5202</stCamera:ImageWidth>
+      <stCamera:ImageLength>3465</stCamera:ImageLength>
+      <stCamera:FocalLength>17</stCamera:FocalLength>
+      <stCamera:ApertureValue>2.970854</stCamera:ApertureValue>
+      <stCamera:PerspectiveModel rdf:parseType='Resource'>
+       <stCamera:VignetteModel rdf:parseType='Resource'>
+        <stCamera:ImageXCenter>0.4950</stCamera:ImageXCenter>
+        <stCamera:ImageYCenter>0.5156</stCamera:ImageYCenter>
+        <stCamera:VignetteModelParam1>-0.3603</stCamera:VignetteModelParam1>
+       </stCamera:VignetteModel>
+      </stCamera:PerspectiveModel>
+     </rdf:li>
+    </rdf:Seq>
+   </photoshop:CameraProfiles>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>";
+        VignettingModel asElements = Assert.Single(LcpReader.ReadXml(elements, "d.lcp")).Model;
+        Assert.Equal(0.5156, asElements.CenterY, 9);
+        Assert.Equal(1.0, asElements.CenterXUnit);
+        Assert.Equal(3465.0 / 5202, asElements.CenterYUnit, 12);
     }
 
     /// <summary>
