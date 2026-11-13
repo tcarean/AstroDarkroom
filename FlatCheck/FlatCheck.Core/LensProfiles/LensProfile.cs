@@ -144,6 +144,8 @@ namespace FlatCheck
         /// a focal length (not followed by "mm" or "-80mm"), and only when it lies between
         /// <see cref="Th.LensNameApertureMin"/> and <see cref="Th.LensNameApertureMax"/>:
         /// outside them it is a model code, and the name says no aperture (R-018, ADR 0104).
+        /// A number written with digits other than 0 to 9 is not read (<see cref="Number"/>),
+        /// so no name makes this throw.
         /// </summary>
         /// <param name="name">The name; null or empty gives an all-null spec.</param>
         /// <returns>The range, each part null when the name does not say it.</returns>
@@ -154,8 +156,10 @@ namespace FlatCheck
             Match f = FocalRx.Match(name);
             if (f.Success)
             {
-                min = double.Parse(f.Groups[1].Value, CultureInfo.InvariantCulture);
-                max = f.Groups[2].Success ? double.Parse(f.Groups[2].Value, CultureInfo.InvariantCulture) : min;
+                // Both ends or neither: half a range is no range.
+                double? shortest = Number(f.Groups[1].Value);
+                double? longest = f.Groups[2].Success ? Number(f.Groups[2].Value) : shortest;
+                if (shortest.HasValue && longest.HasValue) { min = shortest; max = longest; }
             }
             for (Match a = ApertureRx.Match(name); a.Success; a = a.NextMatch())
             {
@@ -163,12 +167,27 @@ namespace FlatCheck
                 if (FocalTailRx.Match(name, a.Index + a.Length).Success) continue;
                 // The first number left is the aperture, or a model code that says nothing. No
                 // later number is tried: after "F045" there is nothing better to believe.
-                double value = double.Parse(a.Groups[1].Value, CultureInfo.InvariantCulture);
+                double? value = Number(a.Groups[1].Value);
                 if (value >= Th.LensNameApertureMin && value <= Th.LensNameApertureMax) ap = value;
                 break;
             }
             return new LensSpec(min, max, ap);
         }
+
+        /// <summary>
+        /// A number of a lens's name, read only when it is written with the digits 0 to 9
+        /// (R-018, ADR 0110). The patterns' <c>\d</c> matches every Unicode digit, so that a
+        /// number is found whole however it is written; one with any other digit (full-width,
+        /// Arabic-Indic) is not guessed and not converted, and never throws: the name does
+        /// not say that part.
+        /// </summary>
+        /// <param name="text">The digits a pattern matched, with at most one dot.</param>
+        /// <returns>The number; null when it is not written with 0 to 9 alone, or is too long
+        /// to be a finite number.</returns>
+        static double? Number(string text)
+            => double.TryParse(text, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out double value) && double.IsFinite(value)
+                ? value
+                : null;
 
         /// <summary>
         /// True when the name says one range and the raw says another. A part missing on either

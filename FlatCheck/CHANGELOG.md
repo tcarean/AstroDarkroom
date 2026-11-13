@@ -232,6 +232,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A lens profile whose name has digits other than 0 to 9 (full-width or Arabic-Indic ones, in
+  a profile the user adds) no longer stops the lens identification (R-018, ADR 0110, the
+  review's CR-014). The search that reads every name of the catalogue for its focal range
+  threw on that one name, for every raw that reached it. Such a number is now not read: the
+  name says no range or no aperture, and contradicts nothing. No profile Adobe or lensfun
+  ships has such a name.
 - A FITS whose header cannot be right is refused by name instead of hanging or crashing the
   run (R-139, the review's CR-013). A negative `NAXISn` sent the reader back onto the header it
   had just read, for ever (`BITPIX = 8`, `NAXIS1 = -2880`, `NAXIS2 = 2`); a header without

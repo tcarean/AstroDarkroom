@@ -1141,6 +1141,50 @@ public class LensCatalogTests
         Assert.Equal(new[] { hits[1] }, LensCatalog.Narrow(hits, 28, 28, 4.0));
     }
 
+    /// <summary>
+    /// R-018: a name is read with the digits 0 to 9 only (ADR 0110). A regex's "\d" also
+    /// matches every other Unicode digit, which the invariant parse then refuses: one name
+    /// with full-width or Arabic-Indic digits threw a FormatException out of Parse (the
+    /// review's CR-014). Such a number is found whole and not read: that part is not said.
+    /// </summary>
+    [Theory]
+    [InlineData("Lens １３５mm F2.8", null, null, 2.8)]              // a full-width 135: no focal length
+    [InlineData("Lens 135mm F２.８", 135.0, 135.0, null)]                // a full-width 2.8: no aperture
+    [InlineData("Lens １３５mm F２.８", null, null, null)]
+    [InlineData("Lens 18-２００mm F3.5-5.6", null, null, 3.5)]       // half a range is no range
+    [InlineData("Lens ١٣٥mm f/٢", null, null, null)]         // Arabic-Indic digits
+    [InlineData("Lens 50mm f/1.٨", 50.0, 50.0, null)]                       // 1.8 with one other digit is not f/1
+    [InlineData("Lens １" + "35mm f/2", null, null, 2.0)]                    // nor is a 135 with one other digit 35 mm
+    public void R018_ANameIsReadWithTheDigitsZeroToNineOnly(string name, double? min, double? max, double? ap)
+    {
+        var spec = LensSpec.Parse(name);
+        Assert.Equal(min, spec.MinFocalMm);
+        Assert.Equal(max, spec.MaxFocalMm);
+        Assert.Equal(ap, spec.MaxAperture);
+    }
+
+    /// <summary>
+    /// R-018, the harm of CR-014: the range path reads every name of the catalogue, so one
+    /// such name stopped the identification of every raw that reached it. The name now says
+    /// nothing: it contradicts no raw, and it is no candidate by range.
+    /// </summary>
+    [Fact]
+    public void R018_OneNameWithOtherDigitsDoesNotStopTheIdentification()
+    {
+        const string Odd = "Tokina AT-X １１-２０mm F２.８ PRO DX";
+        var plain = LcpReader.ReadXml(LensProfileTestData.Lcp(), "n.lcp")
+            .Concat(LensfunReader.ReadXml(LensProfileTestData.LensfunXml, "x.xml").Profiles).ToList();
+        var withOdd = plain.Concat(LcpReader.ReadXml(LensProfileTestData.Lcp(lens: Odd, lensId: "9001"), "odd.lcp")).ToList();
+        LoadedFrame raw = LensProfileTestData.Range135Raw();
+
+        var found = LensIdentification.CandidatesByRange(new LensCatalog(withOdd), raw, "NIKON D3300");
+
+        Assert.Equal(LensIdentification.CandidatesByRange(new LensCatalog(plain), raw, "NIKON D3300"), found);
+        Assert.DoesNotContain(found, l => l.Name == Odd);
+        var odd = new LensCatalog(withOdd).Lenses.Single(l => l.Name == Odd);
+        Assert.Equal(new[] { odd }, LensCatalog.Narrow(new[] { odd }, 135, 135, 2.0));
+    }
+
     [Fact]
     public void Narrow_DropsTheLensesWhoseNameContradictsTheRaw_AndKeepsTheOnesItCannotRead()
     {
