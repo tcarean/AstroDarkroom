@@ -48,9 +48,13 @@ wait:
    no longer than `SirilScriptRun.OutputGrace`, 2 seconds. When `siril-cli` itself has exited
    by then, the run is reported as stopped, the same cancellation as any stop, with a Warn
    line saying a process it started still holds its output.
-3. When `siril-cli` itself is still alive after those 2 seconds (the kill did not end it), the
-   wait goes on without a limit, as before: a run is never called stopped while Siril still
-   works in the session folder.
+3. When `siril-cli` itself is still alive after those 2 seconds (the kill did not end it), it
+   is waited for without a limit: a run is never called stopped while Siril still works in the
+   session folder. That wait is for the process alone, and once it has exited its output gets
+   the 2 seconds again, so a surviving child cannot hold the run from there either (the review
+   of the branch found the first version waiting for the output without a limit in this case).
+   No test reaches this branch: nothing was found that makes the process the test starts
+   outlive its own kill.
 4. The screen says what it says for any stop. The surviving process is named only in the log:
    the window does not know what it is, and the user who started an elevated tool does.
 
@@ -80,4 +84,6 @@ a killed Siril left in the pipe.
 - R-140 holds the behaviour; `R140_AStopEndsTheRunEvenWhenAChildOfSirilCannotBeKilled` in
   `SirilRunTests.cs` starts the measurement's protected child from the fake `siril-cli`, about
   8 seconds of the gate, most of them the wait for the child's own end before the test's folder
-  can be removed.
+  can be removed. On a machine that does not let that child start (a policy or an antivirus
+  that blocks the script) the test checks nothing, and where the caller may end the child after
+  all (a shell that hands on its debug privilege) it checks an ordinary stop.

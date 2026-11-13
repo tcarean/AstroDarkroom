@@ -84,6 +84,10 @@ namespace FlatCheck.Wpf
         /// that could not be ended holds it.</summary>
         internal static readonly TimeSpan OutputGrace = TimeSpan.FromSeconds(2);
 
+        /// <summary>How often, in milliseconds, a stopped run looks whether a siril-cli that
+        /// outlived the kill has exited.</summary>
+        const int ExitPollMs = 250;
+
         /// <summary>Where the copies of the settings sit, one siril-&lt;guid&gt; folder per
         /// run - beside the Split tab's splits.</summary>
         static string PrivateRoot => Path.Combine(Path.GetTempPath(), "FlatCheck");
@@ -190,17 +194,28 @@ namespace FlatCheck.Wpf
                 using (ct.Register(() => { Kill(process); outputWait.CancelAfter(OutputGrace); }))
                 {
                     try { await process.WaitForExitAsync(outputWait.Token).ConfigureAwait(false); }
-                    catch (OperationCanceledException) when (process.HasExited)
-                    {
-                        Log.Warn("siril-cli has exited, but its output is still open " + LogText.Seconds(OutputGrace)
-                                 + " after the kill: a process it started is still running; the run is reported as stopped");
-                    }
                     catch (OperationCanceledException)
                     {
-                        // siril-cli itself outlived the kill: a run is never called stopped
-                        // while Siril still works in the session folder.
-                        Log.Warn("siril-cli is still running " + LogText.Seconds(OutputGrace) + " after the kill; waiting for it to exit");
-                        await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+                        bool outputOpen = true;
+                        if (!process.HasExited)
+                        {
+                            // siril-cli itself outlived the kill: a run is never called stopped
+                            // while Siril still works in the session folder. The wait is for
+                            // the process alone (a wait with a time limit does not also wait
+                            // for the output), and the output then gets its grace again.
+                            Log.Warn("siril-cli is still running " + LogText.Seconds(OutputGrace) + " after the kill; waiting for it to exit");
+                            await Task.Run(() => { while (!process.WaitForExit(ExitPollMs)) { } }).ConfigureAwait(false);
+                            using var afterExit = new CancellationTokenSource(OutputGrace);
+                            try
+                            {
+                                await process.WaitForExitAsync(afterExit.Token).ConfigureAwait(false);
+                                outputOpen = false;
+                            }
+                            catch (OperationCanceledException) { }
+                        }
+                        if (outputOpen)
+                            Log.Warn("siril-cli has exited, but its output is still open " + LogText.Seconds(OutputGrace)
+                                     + " later: a process it started is still running; the run is reported as stopped");
                     }
                 }
 

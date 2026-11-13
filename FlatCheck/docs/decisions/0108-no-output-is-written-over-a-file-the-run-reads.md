@@ -47,6 +47,9 @@ refusing any `-o` that ends in a FITS or raw extension:
 
 - A line that names its input as its output gets an error where it lost the file.
 - A file reached under two different full paths is not recognised; the limit is in point 3.
+- "A file the run reads" means the inputs named on the command line and the frames of the
+  series. The lens profile files a run reads under `--profiles` or from Adobe's folders are
+  not compared with `-o`.
 - The window writes only names it builds itself beside the session's files, and asks before it
   replaces a synthetic flat; it is not changed.
 - R-137 holds the behaviour; `R137_...` in `OutputOverInputTests` pins every pair, the series

@@ -46,11 +46,21 @@ namespace FlatCheck
         /// case the target is as it was and the temporary file is deleted when it can be.
         /// </summary>
         /// <param name="path">The file to write; replaced when it exists. Its folder must
-        /// exist.</param>
-        /// <param name="write">Writes the whole content into the stream it is given, which
-        /// is seekable; it need not close it.</param>
+        /// exist. A device (<c>NUL</c>, <c>/dev/null</c>) is written into directly: there is
+        /// no earlier file to keep, and a device is not replaced by a move. A folder is
+        /// refused with an <see cref="IOException"/> before anything is written.</param>
+        /// <param name="write">Writes the whole content into the stream it is given (seekable
+        /// for a file); it need not close it.</param>
         internal static void Write(string path, Action<Stream> write)
         {
+            if (Directory.Exists(path)) throw new IOException(IsAFolder(path));
+            if (IsDevice(path))
+            {
+                using var device = new FileStream(path, FileMode.Create, FileAccess.Write);
+                write(device);
+                return;
+            }
+
             string temp = path + TemporarySuffix;
             try
             {
@@ -95,6 +105,32 @@ namespace FlatCheck
         internal static string CannotReplace(string path, string reason)
             => T($"Could not replace {path}: the file is open in another program or is read-only ({reason}).",
                  $"Nu am putut inlocui {path}: fisierul e deschis in alt program sau e doar pentru citire ({reason}).");
+
+        /// <summary>The refusal of an output path that is a folder.</summary>
+        /// <param name="path">The path given for the output.</param>
+        /// <returns>The message, in the current language.</returns>
+        internal static string IsAFolder(string path)
+            => T($"{path} is a folder; the output needs a file name.",
+                 $"{path} e un folder; iesirea are nevoie de un nume de fisier.");
+
+        /// <summary>
+        /// Whether a path names a device and not a file: on Windows a path of the device
+        /// namespace, which is what the full path of <c>NUL</c> or <c>CON</c> is
+        /// (<c>\\.\NUL</c>); elsewhere a path under <c>/dev/</c>. A file under
+        /// <c>/dev/shm</c> counts too, and is then simply written in place.
+        /// </summary>
+        /// <param name="path">The output path, relative or full.</param>
+        /// <returns>True for a device; false for anything else, a path that cannot be
+        /// made full included.</returns>
+        static bool IsDevice(string path)
+        {
+            string full;
+            try { full = Path.GetFullPath(path); }
+            catch (Exception e) when (e is ArgumentException || e is NotSupportedException || e is PathTooLongException) { return false; }
+            return OperatingSystem.IsWindows()
+                ? full.StartsWith(@"\\.\", StringComparison.Ordinal)
+                : full.StartsWith("/dev/", StringComparison.Ordinal);
+        }
 
         /// <summary>Deletes the temporary file of a write that did not end; a failure is
         /// ignored, since the next write overwrites the file anyway.</summary>

@@ -39,6 +39,12 @@ program writes for the user:
    message in brackets, because the system's message alone names neither the file nor the
    cause.
 
+5. **A device is written into directly, and a folder is refused by name** (added by the
+   review of the branch, which found `-o NUL` ending in "Could not replace NUL", exit 1, after
+   the whole report). A device (`NUL`, `/dev/null`) holds no earlier file and cannot be
+   replaced by a move; a folder named as the output got the sentence of point 4, whose two
+   causes were not the cause.
+
 ## Alternatives rejected
 
 - **Only the three writes of the entry.** The four small saves of the Structure and Split tabs
@@ -65,8 +71,17 @@ program writes for the user:
   file beside the old one.
 - A `<name>.tmp` may stay in a session folder after a process that was ended mid-write, until
   the next write of that output.
+- An output folder that does not exist is reported by the system with the temporary file's
+  name (`...\map.png.tmp`), not with the name typed.
+- A symbolic link named as the output is replaced by a file; before, the write went through
+  the link to its target.
+- Off Windows the move asks the folder's permission, not the file's: a read-only target is
+  replaced there, where the write into it failed before. The console builds on Linux and
+  macOS, and nothing of this was run there; `/dev/` paths are taken as devices so that a run
+  as root cannot replace `/dev/null` with a file.
 - CR-040 (a save failure that names the wrong file on the Structure and Split tabs) is not
   changed here: the calls moved, the messages around them did not.
-- R-138 holds the behaviour; `R138_...` in `OutputFileTests` and `SyntheticTabTests` pin it,
+- R-138 holds the behaviour; `R138_...` in `OutputFileTests`, `SyntheticTabTests`,
+  `StructureTabTests` and `SplitTabTests` pin it for each of the seven writes,
   the earlier file seen through a second name (a hard link) that keeps the old bytes only when
   the write did not go into it.

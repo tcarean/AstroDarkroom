@@ -348,6 +348,11 @@ namespace FlatCheck
                 int bitpix = HInt(hdr, "BITPIX", 0);
                 int naxis = HInt(hdr, "NAXIS", 0);
 
+                // The count of axes first, for a table too (R-139): everything below walks
+                // the axes one by one, and a count of two thousand million was as many header
+                // lookups before anything was refused.
+                if (naxis < 0 || naxis > MaxAxes) throw new InvalidDataException(BadAxisCount(naxis));
+
                 // An extension is an image only when it says so. A table's NAXIS1 x NAXIS2 are
                 // its row length and row count, with BITPIX 8, so it would pass for a 2D image
                 // of bytes: a tile-compressed image (one 8-byte descriptor per tile) came out as
@@ -383,7 +388,6 @@ namespace FlatCheck
                 // a pixel allocated or a step taken (R-139): each of these used to go on, to a
                 // walk that stepped back onto this very header, to an allocation the file's
                 // length did not bound, or to an exception out of the row copy.
-                if (naxis < 0 || naxis > MaxAxes) throw new InvalidDataException(BadAxisCount(naxis));
                 // an HDU without data (e.g. an empty primary): nothing to step over, go on
                 if (naxis == 0) continue;
 

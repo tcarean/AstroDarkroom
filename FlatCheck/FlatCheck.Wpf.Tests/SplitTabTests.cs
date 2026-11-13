@@ -470,6 +470,28 @@ public class SplitTabTests
 
     // ------------------------------------------------------------------ R-093
 
+    /// <summary>R-138: the split's report and mosaic replace the earlier files and are never
+    /// written into them; each earlier file's second name keeps its bytes.</summary>
+    [Fact]
+    public async Task R138_TheSavedReportAndMosaicReplaceTheEarlierFilesAndNeverWriteIntoThem()
+    {
+        using var f = Session(flats: 4);
+        using var ws = new TempWorkspace();
+        byte[] old = Enumerable.Repeat((byte)0x55, 5000).ToArray();
+        File.WriteAllBytes(f.Session.SplitResultTextPath, old);
+        File.WriteAllBytes(f.Session.SplitPngPath, old);
+        string oldReport = SecondName.Of(f.Session.SplitResultTextPath), oldMosaic = SecondName.Of(f.Session.SplitPngPath);
+        var vm = Vm(f, ws, FakeSiril(new List<Seen>()));
+
+        await vm.StartAsync();
+
+        Assert.Equal(f.Session.SplitResultTextPath, vm.SavedTo);
+        Assert.Equal(old, File.ReadAllBytes(oldReport));
+        Assert.Equal(old, File.ReadAllBytes(oldMosaic));
+        Assert.Equal(vm.Report, File.ReadAllText(f.Session.SplitResultTextPath));
+        Assert.NotEqual(old, File.ReadAllBytes(f.Session.SplitPngPath));
+    }
+
     [Fact]
     public async Task R093_TheTableHasAVerdictOnEveryTestCell_AndTheSavedFilesAreTheTabs()
     {

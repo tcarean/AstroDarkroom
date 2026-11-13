@@ -478,6 +478,20 @@ public class FitsReaderTests
                          (await ThrownBy(Primary(("BITPIX", "16"), ("NAXIS", naxis), ("NAXIS1", "4"), ("NAXIS2", "4")))).Message);
     }
 
+    /// <summary>R-139: the axis count is checked in a table too, before its rows are counted
+    /// axis by axis: a table that declares two thousand million axes was as many header
+    /// lookups before anything was refused (found by the review of the branch).</summary>
+    [Fact]
+    public async Task R139_AnAxisCountOutsideTheStandardIsRefusedInATableToo()
+    {
+        byte[] file = EmptyPrimary().Concat(TableHeader("2000000000", "8", "4", "0", "1")).ToArray();
+
+        Exception e = await ThrownBy(file);
+
+        Assert.IsType<InvalidDataException>(e);
+        Assert.Equal("FITS: header invalid: NAXIS = 2000000000; standardul permite intre 0 si 999 de axe.", e.Message);
+    }
+
     /// <summary>
     /// R-139: without BITPIX a sample has no size, so the bound of R-009 saw 0 bytes of data
     /// and let any NAXIS1 x NAXIS2 through to the allocation: an OverflowException for

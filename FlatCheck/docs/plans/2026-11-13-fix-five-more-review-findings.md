@@ -47,6 +47,16 @@ Corrected after the approval, on the same day (the plan below is the one the own
 - CR-013: one case more than planned, found by its test: a header that declares one axis and
   still carries a `NAXIS2` card is stepped over like the cube of no planes.
 
+The review of the branch (a subagent, read-only, 2026-11-13) found nothing in CR-011 and
+CR-014 and seven things in the rest; applied in one commit: `-o NUL` had stopped working (a
+device is written into directly again); a folder named as the output got a sentence with the
+wrong causes (refused by name now); the `NAXIS` range check did not cover a table; a
+`siril-cli` that outlived its kill brought the unlimited wait for the output back; the R-140
+test depended on the machine; the read-only test would fail off Windows; the Structure and
+Split saves had no test. Left, and written in ADR 0109's consequences: a missing output folder
+is reported with the temporary file's name, a symbolic link is replaced by a file, and off
+Windows a read-only target is replaced.
+
 ## The fixes
 
 ### 1. CR-011: an output never replaces an input (new R-137, ADR 0108)

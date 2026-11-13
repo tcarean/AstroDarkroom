@@ -399,8 +399,10 @@ twice.
   target at the end. The window-close timing was not measured: whatever ends the write, the
   earlier file is no longer opened for writing. Measured instead: Windows does not replace a
   file another program holds open, so that write now fails with a sentence that names the
-  file. `R138_...` in `OutputFileTests` and `SyntheticTabTests`. CR-040, on the same save
-  methods, stays open.
+  file. The branch's review added, in the commit after d480a272: a device (`-o NUL`) is
+  written into directly, as before the fix, and a folder named as the output is refused by
+  name. `R138_...` in `OutputFileTests`, `SyntheticTabTests`, `StructureTabTests` and
+  `SplitTabTests`. CR-040, on the same save methods, stays open.
 
 ### CR-013 The FITS reader uses `NAXISn` and `BITPIX` before checking them
 
@@ -418,8 +420,9 @@ twice.
   `NAXISn` below 0 and a missing or non-standard `BITPIX`; the size is taken without overflow
   and the step to the next HDU cannot go backwards. Found while fixing: an HDU with an empty
   axis (`NAXIS3 = 0`) or one axis and a stray `NAXIS2` threw out of the row copy, and is now
-  stepped over. `R139_...` in `FitsReaderTests`. CR-029 and CR-048 (the header-only read) stay
-  open.
+  stepped over. The branch's review added the `NAXIS` range check for a table too, whose axes
+  were still walked one by one. `R139_...` in `FitsReaderTests`. CR-029 and CR-048 (the
+  header-only read) stay open.
 
 ### CR-014 A lens name with non-ASCII digits throws out of the identification
 
@@ -451,8 +454,9 @@ twice.
   termination: the stop threw `AggregateException` out of `Cancel()`, and with that caught the
   run still waited the 20 s the child lived, since the wait for the exit also waits for the
   output to close. `Kill` now catches it, and the run is reported as stopped at most 2 s after
-  `siril-cli` itself is gone (the owner's choice over catching alone). No real Siril run was
-  seen to leave such a child. `R140_...` in `SirilRunTests.cs`.
+  `siril-cli` itself is gone (the owner's choice over catching alone), also when it outlived
+  the kill (the branch's review; no test reaches that case). No real Siril run was seen to
+  leave such a child. `R140_...` in `SirilRunTests.cs`.
 
 ## Severity 3: a wrong text or a wrong display
 

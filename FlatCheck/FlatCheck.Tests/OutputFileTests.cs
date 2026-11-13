@@ -127,11 +127,62 @@ public class OutputFileTests
         Assert.False(File.Exists(text + ".tmp"));
     }
 
+    /// <summary>A device is no file to keep whole and cannot be replaced by a move: it is
+    /// written into, as before. <c>-o NUL</c>, for a run whose map is not wanted, ended in
+    /// "Could not replace NUL" and exit 1 between the first fix and the review of the
+    /// branch.</summary>
+    [Fact]
+    public void R138_ADeviceIsWrittenIntoNotReplaced()
+    {
+        string device = OperatingSystem.IsWindows() ? "NUL" : "/dev/null";
+
+        OutputFile.WriteAllBytes(device, new byte[] { 1, 2, 3 });
+        OutputFile.Write(device, s => s.Write(new byte[] { 4, 5 }, 0, 2));
+
+        Assert.False(File.Exists(device + OutputFile.TemporarySuffix));
+    }
+
+    /// <summary>The same from the console: the run ends with its own exit code.</summary>
+    [Fact]
+    public void R138_TheConsoleStillTakesADeviceAsItsMap()
+    {
+        using var ws = new TempWorkspace();
+        string master = ws.WriteFile("m.fit", FitsTestData.BuildFits(64, 48, (x, y) => 1000 + x + y));
+        var stderr = new StringWriter();
+
+        int exit = FlatCheckCli.Run(new[] { master, "--histeq", "-o", OperatingSystem.IsWindows() ? "NUL" : "/dev/null" }, new StringWriter(), stderr);
+
+        Assert.Equal("", stderr.ToString());
+        Assert.Equal(0, exit);
+    }
+
+    /// <summary>A folder named as the output is refused as a folder, before anything is
+    /// written beside it; the sentence for a file that cannot be replaced would name two
+    /// causes that are not this one.</summary>
+    [Fact]
+    public void R138_AFolderNamedAsTheOutputIsRefusedAsAFolder()
+    {
+        using var ws = new TempWorkspace();
+        string folder = Path.Combine(ws.Dir, "maps");
+        Directory.CreateDirectory(folder);
+
+        var e = Assert.Throws<IOException>(() => OutputFile.WriteAllBytes(folder, new byte[] { 1 }));
+
+        Assert.Equal(folder + " e un folder; iesirea are nevoie de un nume de fisier.", e.Message);
+        using (Ui.Use(UiLanguage.English))
+            Assert.Equal(folder + " is a folder; the output needs a file name.",
+                         Assert.Throws<IOException>(() => OutputFile.WriteAllBytes(folder, new byte[] { 1 })).Message);
+        Assert.False(File.Exists(folder + OutputFile.TemporarySuffix));
+    }
+
     /// <summary>A target that cannot be replaced (here read-only) stays as it was, and the
-    /// failure names it and says what to look for, in both languages.</summary>
+    /// failure names it and says what to look for, in both languages. On Windows only: a
+    /// rename on Linux or macOS asks the folder's permission, not the file's, and replaces a
+    /// read-only file.</summary>
     [Fact]
     public void R138_ATargetThatCannotBeReplacedIsNamedAndLeftAsItWas()
     {
+        if (!OperatingSystem.IsWindows()) return;
         using var ws = new TempWorkspace();
         string path = ws.WriteFile("out.png", Old);
         File.SetAttributes(path, FileAttributes.ReadOnly);
