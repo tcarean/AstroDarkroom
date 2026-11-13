@@ -144,7 +144,9 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   Pentax's two-number form `8 215` is read by `LcpReader.ParseLensId` as 8·256 + 215 = 2263,
   libraw's value, and an entry of any other shape is dropped; `stCamera:Lens`, the camera's own
   LensModel string, enters the aliases). Entries without a vignette model (fisheye
-  files) are skipped; a file that is not XML throws, and the catalog swallows that per
+  files) are skipped, and so is an entry whose `stCamera:CameraRawProfile` is `False`, one
+  made for JPEGs (R-134, ADR 0103, with the counts: no installed file mixes the two kinds; an
+  entry that does not say is read); a file that is not XML throws, and the catalog swallows that per
   file, with a Warn line in the diagnostic log (`logging.md`). `Make`/`CameraPrettyName` becomes the mount label ("NIKON CORPORATION"),
   `LensPrettyName` the name, the first word of it the maker.
 - **lensfun** (`LensfunReader.ReadXml`): `<camera>` (maker, model + `lang` aliases, mount,
@@ -181,7 +183,13 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
 - **Laziness** (`LensCatalog`; the parse and list timings behind it are ADR 0028): Adobe
   entries are `AdobeProfileFile` stubs from the file name: `<Camera> (<Lens>) - RAW.lcp` in
   `<Maker>/<Mount>/` → name = the text between the first " (" and its matching ")", mount =
-  the camera text (plus ", JPEG" when the suffix is not RAW), maker = the lens's first word.
+  the camera text, plus what follows the parenthesis unless that is `RAW` in any case or
+  nothing (", v2 - RAW", ", RAW vig"; no installed file ends in " - JPEG", which this note
+  named until 2026-11-13), maker = the lens's first word. So `X (L) - RAW.lcp` and `X (L).lcp`
+  are one lens: the second is usually Adobe's profile for JPEGs, whose entries `LcpReader`
+  leaves out, and `ProfilesOf` then pools the raw entries only (R-134; until 2026-11-13 both
+  files' entries were pooled and `Nearest` could take a JPEG one). A lens all of whose files
+  are non-raw is listed and has no profile, like one without a vignetting model.
   Names without parentheses (phones and compacts, `Apple/iPhone 6.lcp`, `Canon/Canon
   PowerShot G12 - RAW.lcp`) become camera-named stubs with the folder as maker and no mount.
   A file is parsed on `ProfilesOf(lens)` (cached, re-keyed to the stub's identity) and on
@@ -467,7 +475,8 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
 
 - The sizes of the two databases and the parse and list timings that justify the lazy
   catalog are ADR 0028's context. Beyond them: 801 of the Adobe files lack the ` - RAW`
-  suffix and 638 carry no parentheses; `lensfun/update-lensfun.py` refreshes `data/db` and
+  suffix and 638 carry no parentheses (2026-09-17; the count by suffix and by the raw flag
+  inside, of 2026-11-13, is ADR 0103's context); `lensfun/update-lensfun.py` refreshes `data/db` and
   rewrites `LENSFUN-VERSION.txt`.
 - **The lens on four raws of other makes, 2026-10-26** (the measurement behind ADR 0068; the
   files are the CC0 samples 1064, 799, 2414 and 1141 of raw.pixls.us, kept as V-041 to V-044,

@@ -299,8 +299,11 @@ namespace FlatCheck
         /// Tokina/Nikon: the camera before the first parenthesis, the lens between the first
         /// parenthesis and its pair (it can contain parentheses: "(IF)"), the maker is the
         /// grandparent folder. A name without parentheses is a camera with a fixed lens, and stays
-        /// a
-        /// stub with its name.
+        /// a stub with its name. What follows the parenthesis joins the mount, except "RAW" in
+        /// any case and nothing at all: "X (L) - RAW.lcp", "X (L) - Raw.lcp" and "X (L).lcp" are
+        /// one lens. The last is usually the file made for JPEGs, but not always (43 of 434 on
+        /// 2026-11-13), so the name decides nothing about that: <see cref="LcpReader"/> leaves
+        /// the non-raw entries out by what each file says (R-134).
         /// </summary>
         /// <param name="path">The .lcp file's path.</param>
         /// <returns>The stub; never null.</returns>
@@ -327,7 +330,7 @@ namespace FlatCheck
             string make = name.Substring(0, open).Trim();
             string lens = name.Substring(open + 2, close - open - 2).Trim();
             string kind = name.Substring(close + 1).Trim().TrimStart('-').Trim();
-            string mount = make + (kind.Length == 0 || kind == "RAW" ? "" : $", {kind}");
+            string mount = make + (kind.Length == 0 || string.Equals(kind, "RAW", StringComparison.OrdinalIgnoreCase) ? "" : $", {kind}");
             string[] words = lens.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             string maker = words.Length > 0 ? words[0] : make;
             return new AdobeProfileFile(path, new LensChoice(ProfileSource.Adobe, maker, lens, mount));
@@ -448,8 +451,10 @@ namespace FlatCheck
                 {
                     var profiles = LcpReader.Read(path).Select(p => p.WithLens(f.Lens)).ToList();
                     // Adobe's files for a lens measured for distortion or colour only hold no
-                    // vignetting model: the lens is listed, and refused when asked for (R-071).
-                    if (profiles.Count == 0) Log.Debug("the Adobe profile " + path + " holds no vignetting profile; its lens is listed but cannot be used");
+                    // vignetting model, and its files made for JPEGs hold none for raw data
+                    // (R-134): the lens is listed, and refused when asked for (R-071) unless
+                    // another file of the same lens gives a profile.
+                    if (profiles.Count == 0) Log.Debug("the Adobe profile " + path + " holds no vignetting profile for raw files; alone, its lens is listed but cannot be used");
                     return profiles;
                 }
                 catch (Exception e)

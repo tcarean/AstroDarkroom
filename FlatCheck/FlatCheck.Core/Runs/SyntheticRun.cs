@@ -285,12 +285,13 @@ namespace FlatCheck
             {
                 // A lens is listed by its file's name; only now is the file parsed, and Adobe's
                 // files for a lens measured for distortion or colour only hold no vignetting
-                // model: an input refusal, not a null profile handed to the builder (R-071).
+                // model, and those made for JPEGs none for raw data (R-134): an input refusal,
+                // not a null profile handed to the builder (R-071).
                 all = sources.Catalog.ProfilesOf(req.Lens);
                 if (all.Count == 0)
                 {
                     refusal = SyntheticReport.NoProfile(req.Lens);
-                    why = "the lens has no vignetting profile";
+                    why = "the lens has no vignetting profile for raw files";
                 }
             }
             if (refusal != null)

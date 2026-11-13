@@ -1033,6 +1033,110 @@ public class SyntheticRunTests
         Assert.InRange(img.At(80, 120), 0.99, 1.0);
     }
 
+    /// <summary>The one-profile LCP of the Canon EF 50 f/1.4 at 50 mm, as a raw profile
+    /// (a1 = -0.289055) or as one made for rendered files (a1 = -0.1, a third of the
+    /// falloff, the shape of the pair the review of 2026-11-13 measured in Adobe's files).</summary>
+    static string Canon50Lcp(bool raw)
+    {
+        string xml = LensProfileTestData.LcpOneProfile("Canon", "Canon EF 50mm f/1.4 USM", "EF50mm f/1.4 USM", "198", "1", "50");
+        return raw ? xml
+            : xml.Replace("stCamera:CameraRawProfile=\"True\"", "stCamera:CameraRawProfile=\"False\"")
+                 .Replace("VignetteModelParam1=\"-0.289055\"", "VignetteModelParam1=\"-0.1\"");
+    }
+
+    /// <summary>
+    /// R-134: an entry that says it was made for rendered files is not read, whatever the case
+    /// of the word; one that says raw, or says nothing, is.
+    /// </summary>
+    [Fact]
+    public void R134_AnEntryMadeForRenderedFilesIsNotRead()
+    {
+        Assert.Single(LcpReader.ReadXml(Canon50Lcp(raw: true), "raw.lcp"));
+        Assert.Empty(LcpReader.ReadXml(Canon50Lcp(raw: false), "jpeg.lcp"));
+        Assert.Empty(LcpReader.ReadXml(Canon50Lcp(raw: false).Replace("\"False\"", "\"false\""), "jpeg.lcp"));
+        string silent = Canon50Lcp(raw: true).Replace(" stCamera:CameraRawProfile=\"True\"", "");
+        Assert.DoesNotContain("CameraRawProfile", silent);
+        Assert.Single(LcpReader.ReadXml(silent, "silent.lcp"));
+    }
+
+    /// <summary>
+    /// R-134: Adobe ships many lenses as two files, "X (L) - RAW.lcp" and "X (L).lcp", the
+    /// second made for JPEGs; by name they are one lens. Its profiles are the raw file's alone:
+    /// before, both files' entries were pooled and the nearest rule could take the JPEG one.
+    /// </summary>
+    [Fact]
+    public void R134_ALensOfARawFileAndANonRawOneIsReadFromTheRawFileAlone()
+    {
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        string rawFile = Path.Combine(dir, "Tokina", "Canon (Canon EF 50mm f1.4 USM) - RAW.lcp");
+        File.WriteAllText(rawFile, Canon50Lcp(raw: true));
+        File.WriteAllText(Path.Combine(dir, "Tokina", "Canon (Canon EF 50mm f1.4 USM).lcp"), Canon50Lcp(raw: false));
+        var s = ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
+
+        LensChoice lens = Assert.Single(s.Catalog.Lenses, l => l.Name.Contains("50mm"));   // one lens, two files
+        LensProfile only = Assert.Single(s.Catalog.ProfilesOf(lens));
+        Assert.Equal(rawFile, only.File);
+        Assert.Equal(-0.289055, only.Model.Coefficients[0], 9);
+        Assert.Same(only, LensCatalog.Nearest(s.Catalog.ProfilesOf(lens), 50, 4));
+        Assert.Equal(new[] { lens }, s.Catalog.ByLensId(198, "Canon"));
+    }
+
+    /// <summary>
+    /// R-134: the name does not decide. A raw profile whose file has no " - RAW" suffix (43 of
+    /// Adobe's 3531 files on 2026-11-13, the Leica S and the Lensbaby Velvet among them) is
+    /// read, and " - Raw" (two files) is the same lens as " - RAW".
+    /// </summary>
+    [Fact]
+    public void R134_TheFilesNameDoesNotDecide_AndTheRawSuffixIsReadWithoutCase()
+    {
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        File.WriteAllText(Path.Combine(dir, "Tokina", "Canon (Canon EF 50mm f1.4 USM).lcp"), Canon50Lcp(raw: true));
+        var s = ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
+        LensChoice lens = Assert.Single(s.Catalog.Lenses, l => l.Name.Contains("50mm"));
+        Assert.Single(s.Catalog.ProfilesOf(lens));
+
+        LensChoice upper = AdobeProfileFile.FromName(@"Canon\Canon (Canon EF 50mm f1.4 USM) - RAW.lcp").Lens;
+        Assert.Equal(upper, AdobeProfileFile.FromName(@"Canon\Canon (Canon EF 50mm f1.4 USM) - Raw.lcp").Lens);
+        Assert.Equal(upper, AdobeProfileFile.FromName(@"Canon\Canon (Canon EF 50mm f1.4 USM).lcp").Lens);
+        Assert.Equal("Canon", upper.Mount);
+    }
+
+    /// <summary>
+    /// R-134: a lens whose only file was made for JPEGs is listed, is no candidate by the raw's
+    /// lens ID, and is refused with the reason and exit 1 when asked for.
+    /// </summary>
+    [Fact]
+    public void R134_ALensWithOnlyANonRawFileIsListedAndRefusedWithTheReason()
+    {
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        File.WriteAllText(Path.Combine(dir, "Tokina", "Canon (Canon EF 50mm f1.4 USM).lcp"), Canon50Lcp(raw: false));
+        var sources = ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
+        Assert.Single(sources.Catalog.Lenses, l => l.Name.Contains("50mm"));
+        Assert.Empty(sources.Catalog.ByLensId(198, "Canon"));
+        string reference = ws.WriteFile("ref.fit", Reference());
+        var req = new SyntheticRequest { LensText = "50mm f1.4" };
+        var sw = new StringWriter();
+
+        var run = SyntheticRun.Execute(reference, req, sources, 50, 4, 1.0, sw);
+
+        Assert.True(run.Refused);
+        Assert.Equal($"FLAT SINTETIC: obiectivul \"{req.Lens.Title}\" nu are profil de vignetare pentru fisiere raw "
+                     + "(fisierul lui descrie doar distorsiunea sau culoarea, ori e facut pentru JPEG); alege alt obiectiv.", run.Refusal);
+        using (Ui.Use(UiLanguage.English))
+            Assert.Equal($"SYNTHETIC FLAT: the lens \"{req.Lens.Title}\" has no vignetting profile for raw files "
+                         + "(its file describes distortion or colour only, or was made for JPEGs); choose another lens.",
+                         SyntheticReport.NoProfile(req.Lens));
+
+        var stderr = new StringWriter();
+        int exit = FlatCheckCli.Run(new[] { reference, "--synthetic", ws.PathTo("synth.fit"), "--lens", "50mm f1.4", "--focal", "50", "--fstop", "4", "--crop", "1", "--profiles", dir },
+                                    new StringWriter(), stderr);
+        Assert.Equal(1, exit);
+        Assert.False(File.Exists(ws.PathTo("synth.fit")));
+    }
+
     /// <summary>
     /// R-071: a lens whose Adobe file carries no vignetting model (1275 of the 3531 files on the
     /// author's machine on 2026-10-27, the extender combinations among them) is listed, since

@@ -770,10 +770,10 @@ The severity is monotonic, so "anything but 0" means "not clean, look". The mode
 
 - `--histeq`: 0 when the picture was written, 1 when it could not be.
 - `--synthetic`: 0 when it wrote the flat, 1 when it refused the reference, could not learn the
-  focal length, the aperture or the crop, or the lens chosen has no vignetting profile (Adobe ships
-  files for some lenses with only their distortion or colour measured; they are in the list, and
-  are refused when chosen), 2 when the lens could not be chosen (none, or too many: the list is
-  printed).
+  focal length, the aperture or the crop, or the lens chosen has no vignetting profile for raw
+  files (Adobe ships files for some lenses with only their distortion or colour measured, and
+  files made for JPEGs, which are never used; such lenses are in the list, and are refused when
+  chosen), 2 when the lens could not be chosen (none, or too many: the list is printed).
 - `--lenses`: always 0.
 
 `--against` exits like the structure mode, on the verdict of the *difference*. Structure with

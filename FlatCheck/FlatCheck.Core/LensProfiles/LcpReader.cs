@@ -23,7 +23,8 @@
 // also has the "piecewise" table, a nested rdf:Description.
 //
 // What is NOT read: the distortion, the chromatic aberration, the fisheye profiles without a
-// VignetteModel. A broken file stops nothing - the catalog parses it to no profile, with a
+// VignetteModel, and the sub-profiles made for rendered files (CameraRawProfile "False", R-134):
+// FlatCheck reads raw data only. A broken file stops nothing - the catalog parses it to no profile, with a
 // line in the log, so that the list is made from what works; it is someone else's file.
 //
 // The aperture is in APEX (ApertureValue): f = 2^(Av/2); 2.970854 -> 2.80. The focal length and
@@ -47,14 +48,15 @@ namespace FlatCheck
 
         /// <summary>The sub-profiles of an .lcp file on disk; throws on unreadable XML.</summary>
         /// <param name="path">The .lcp file.</param>
-        /// <returns>One profile per sub-profile that has a vignetting model.</returns>
+        /// <returns>One profile per raw sub-profile that has a vignetting model.</returns>
         internal static IReadOnlyList<LensProfile> Read(string path)
             => ReadXml(File.ReadAllText(path), path);
 
         /// <summary>
         /// The sub-profiles of an .lcp document, in either of its two looks. A sub-profile without
-        /// a VignetteModel, without a focal length above 0 or without an aperture is skipped.
-        /// Throws on XML that does not parse.
+        /// a VignetteModel, without a focal length above 0 or without an aperture is skipped, and
+        /// so is one whose <c>CameraRawProfile</c> is "False" (made for JPEGs, R-134); one that
+        /// does not say is read. Throws on XML that does not parse.
         /// </summary>
         /// <param name="xml">The document's text.</param>
         /// <param name="file">The path recorded as each profile's source.</param>
@@ -72,6 +74,12 @@ namespace FlatCheck
                 if (desc == null && li.Element(St + "Make") == null && li.Element(St + "LensPrettyName") == null) continue;
                 XElement holder = desc ?? li;
                 string Prop(string name) => holder.Attribute(St + name)?.Value ?? holder.Element(St + name)?.Value?.Trim();
+
+                // An entry made for rendered files (a JPEG: the camera's tone curve and its own
+                // corrections are in the picture) does not describe raw data, and every frame
+                // read here is raw (R-134, ADR 0103). The file's name cannot tell: Adobe ships
+                // raw profiles without the " - RAW" suffix. An entry that does not say is kept.
+                if (string.Equals(Prop("CameraRawProfile")?.Trim(), "False", StringComparison.OrdinalIgnoreCase)) continue;
 
                 XElement vig = holder.Descendants(St + "VignetteModel").FirstOrDefault();
                 if (vig == null) continue;

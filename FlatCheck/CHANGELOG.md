@@ -250,6 +250,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   ignored the box "I didn't use any filters on my lens" (R-118), so it could print REDO for a
   depth the Structure tab had rightly left out. Now a chosen lens is the only one compared, and
   with the box off nothing is compared and the reference line says why.
+- An Adobe profile made for JPEGs is no longer used (R-134, ADR 0103, the review's CR-004).
+  Adobe ships many lenses as two files, `X (L) - RAW.lcp` and `X (L).lcp`, and the two were read
+  as one lens, so the profile nearest the request could be the JPEG one: on the Canon EF 17-40
+  f/4 L at 40 mm f/11 that is about a third less vignetting than the raw profile says, and the
+  depth verdict was read against it. An entry is now left out by what the file itself says
+  (`CameraRawProfile`), not by its name: 529 lenses on the owner's machine are read from their
+  raw file alone, and a lens that has only a JPEG profile is listed and refused when chosen,
+  with the reason. The three lenses of the validation library are not affected.
 - Typing in the Sintetic tab's lens field no longer freezes the window for half a second at
   every keystroke (R-132, ADR 0099): the text each lens is searched in is built once, while the
   profiles load, and a search takes under a millisecond on 3799 lenses. The same lenses are
