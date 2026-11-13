@@ -207,6 +207,8 @@ namespace FlatCheck
         /// comparison, hence no reference.</param>
         /// <param name="when">The run's date and time.</param>
         /// <param name="framesPerPart">How many frames each part had; 0 when unknown.</param>
+        /// <param name="lensFiltered">True when <paramref name="query"/> is null because a
+        /// filter was on the lens (R-118); kept on the result for the reference line.</param>
         /// <returns>The columns, the reference and the shared map scale.</returns>
         internal static SplitResult Analyze(string wholePath, IReadOnlyList<string> partPaths, StructureQuery query,
                                             DateTime when, int framesPerPart, bool lensFiltered = false)
