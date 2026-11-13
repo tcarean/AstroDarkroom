@@ -113,10 +113,12 @@ internal static class FrameAnalyzer
         double margin = Th.SaturationMargin(top);
         int saturated = comps.Count(c => c.PeakRaw >= top - margin);
 
-        // Shapes of the brightest unsaturated stars.
+        // Shapes of the brightest unsaturated stars. Peak is above the sky, so under a bright sky
+        // a clipped star falls below the fraction of the scale: the raw peak is asked too, by the
+        // test of the saturated count.
         List<StarShape> shapes = [];
         foreach (Component c in stars
-            .Where(c => c.Peak < Th.ShapePeakMaxFraction * top && c.Peak > Th.ShapePeakSigmas * sigma)
+            .Where(c => c.Peak < Th.ShapePeakMaxFraction * top && c.PeakRaw < top - margin && c.Peak > Th.ShapePeakSigmas * sigma)
             .Take(Th.ShapeStars))
         {
             StarShape? s = StarShapes.Measure(d, c.CentroidY, c.CentroidX, Th.MomentRadius, Th.MomentIterations, c.Peak, c.Area);

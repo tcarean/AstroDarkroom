@@ -66,7 +66,9 @@ internal static class Th
     internal const double ShapePeakSigmas = 20.0;
 
     /// <summary>
-    /// ... and below this fraction of the scale, so a saturated star does not vote on shape.
+    /// ... and below this fraction of the scale, the peak taken above the sky. A saturated star
+    /// does not vote on shape whatever the sky: the analyzer also leaves out a star with a raw
+    /// pixel within <see cref="SaturationMargin"/> of the top.
     /// </summary>
     internal const double ShapePeakMaxFraction = 0.8;
 

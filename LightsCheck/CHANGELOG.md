@@ -189,6 +189,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   among the frames that are not under half the usual exposure, so a 0.2 s last frame no longer
   turns the session's verdict to `MARGINAL` (R-024, ADR 0047; CR-001 of the review of
   2026-11-13).
+- Under a bright sky (from about 20 % of the scale: light pollution, the moon, a long exposure)
+  saturated stars were measured for width and elongation, and being the brightest they came
+  first, though a clipped star reads wider than it is. A saturated star is now left out of the
+  shapes whatever the sky (R-014; CR-002 of the review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

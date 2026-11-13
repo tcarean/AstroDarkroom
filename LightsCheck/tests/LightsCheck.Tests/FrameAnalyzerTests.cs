@@ -166,6 +166,22 @@ public class FrameAnalyzerTests
         Assert.DoesNotContain(m.Shapes, s => Math.Abs(s.X - 500) < 2 && Math.Abs(s.Y - 350) < 2);
     }
 
+    /// <summary>
+    /// Under a sky at 22 % of the scale a clipped star's peak above the sky is under 0.8 of the
+    /// scale; it is saturated all the same and must not be measured for shape (R-014).
+    /// </summary>
+    [Fact]
+    public void R014_ASaturatedStarIsNotMeasuredForShapeUnderABrightSky()
+    {
+        SyntheticFrame f = new SyntheticFrame { Width = 1000, Height = 700, BackgroundG = 900 }.WithStarGrid(40, 3.0, 400, 2000);
+        f.Stars.Add(SyntheticStar.Round(500, 350, 20000, 3.0));
+        FrameMeasurement m = Analyze(f);
+
+        Assert.Equal(1, m.SaturatedStars);
+        Assert.InRange(m.Shapes.Count, 35, 40);
+        Assert.DoesNotContain(m.Shapes, s => Math.Abs(s.X - 500) < 2 && Math.Abs(s.Y - 350) < 2);
+    }
+
     [Fact]
     public void R016_StarCentroidsLandOnTheDrawnPositions()
     {

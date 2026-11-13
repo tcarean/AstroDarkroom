@@ -41,7 +41,11 @@ stages on the clock `FrameRun.Run` hands it (`logging.md`).
 6. **Trails**: components over 250 px whose box diagonal exceeds 80 px and whose area is under
    a quarter of the box plus 60: a line, not a blob.
 7. **Stars**: components of 5 to 400 px. Bright = peak over 50 sigma. The 400 brightest by
-   flux among those with a peak over 20 sigma and under 0.8 of the scale get `StarShapes.Measure`:
+   flux among those with a peak over 20 sigma and under 0.8 of the scale get `StarShapes.Measure`
+   (the peak is the one on `d`, above the sky, so a clipped star under a sky of 20 % of the scale
+   or more would pass; a star whose raw peak is within 1 ADU of the top, the saturated count's
+   test, is left out as well; the prototype has the first test alone, and on a sky of 3 % of the
+   scale, the Veil's, the two agree):
    three centroid refinements in a circle of radius 6 px on `d` clipped at zero, then the second
    moments; FWHM from the mean of the two eigenvalues, elongation from their ratio, angle from
    `0.5 atan2(2 mxy, mxx - myy)` in the image frame (x right, y down). Kept when the FWHM is in
