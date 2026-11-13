@@ -316,7 +316,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void R028_PixelAt_ExcludesTheFarEdgeBecauseThereIsNoPixelThere()
+    public void R028_PixelAt_AtTheFarEdge_ReadsTheLastPixel_AndNothingPastIt()
     {
         var viewport = Create(contentWidth: 100, contentHeight: 100, viewportWidth: 100, viewportHeight: 100);
         viewport.ZoomTo(1.0, 50, 50);
@@ -421,14 +421,31 @@ public class ViewportTests
     [InlineData(1.0 / 1024, 301)]
     public void R028_PixelAt_WithTheCentreJustPastAnEdge_GoesByWhatTheAdapterPaints(double past, int column)
     {
-        // Measured on screen (ADR 0052): a centre 1/16384 of an image pixel past an edge is
-        // still painted from the pixel before it, on every screen pixel; one 1/1024 past is
-        // painted from the pixel after it.
+        // Measured on screen on these columns (ADR 0052): a centre 1/16384 of an image pixel
+        // past an edge is still painted from the pixel before it, on 156 of 160 screen pixels;
+        // one 1/1024 past is painted from the pixel after it, on all 160.
         Viewport viewport = Create(1200, 800, 764, 450);
         viewport.ZoomTo(4, 0, 0);
         viewport.SetOffset(300.375 + past, 200.625);
 
         Assert.Equal(column, viewport.PixelAt(2, 0)?.X);
+    }
+
+    [Fact]
+    public void R028_PixelAt_AnEdgesReach_IsOneFourThousandNinetySixthOfAPixel_Inclusive()
+    {
+        Assert.Equal(1.0 / 4096, Viewport.EdgeReach);
+
+        // The centre of screen column 2 is at the offset plus 2.5 / 4: exactly EdgeReach past
+        // the edge at 301 it is still in column 300, and one ulp further in column 301.
+        Viewport viewport = Create(1200, 800, 764, 450);
+        viewport.ZoomTo(4, 0, 0);
+
+        viewport.SetOffset(300.375 + Viewport.EdgeReach, 200.625);
+        Assert.Equal(300, viewport.PixelAt(2, 0)?.X);
+
+        viewport.SetOffset(Math.BitIncrement(300.375 + Viewport.EdgeReach), 200.625);
+        Assert.Equal(301, viewport.PixelAt(2, 0)?.X);
     }
 
     [Fact]

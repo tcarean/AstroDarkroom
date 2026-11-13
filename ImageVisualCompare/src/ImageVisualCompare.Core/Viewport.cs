@@ -36,10 +36,11 @@ public sealed class Viewport
     /// How far past the edge between two image pixels, in image pixels, the centre of a screen
     /// pixel may be and the screen pixel still be painted from the pixel before the edge.
     /// Measured on screen with nearest-neighbour drawing at 400%, 800% and 1600% (ADR 0052): a
-    /// centre exactly on an edge, or 1/16384 past it, is always painted from the pixel before;
-    /// 1/4096 past, on some screen pixels and not on others; 1/1024 past, always from the pixel
-    /// after. It also keeps a centre that rounding left an ulp to either side of an edge on
-    /// one side of it.
+    /// centre exactly on an edge, or 1/16384 past it, is painted from the pixel before on nearly
+    /// every screen pixel (435 of 438 on the edge); 1/4096 past, on some and not on others; and
+    /// 1/1024 past, from the pixel after, on every one near the image's origin and on half of
+    /// them near column 3800. The value sits inside that band. It also keeps a centre that
+    /// rounding left an ulp to either side of an edge on one side of it.
     /// </summary>
     public const double EdgeReach = 1.0 / 4096;
 

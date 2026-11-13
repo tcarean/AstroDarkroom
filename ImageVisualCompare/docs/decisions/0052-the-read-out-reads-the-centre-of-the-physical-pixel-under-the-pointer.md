@@ -115,7 +115,8 @@ edge from the pixel after it (0 of 148 columns and 0 of 85 rows from the pixel b
 - Measured again on screen after the change: the 1200 × 800 pair on surfaces 764 and 765 wide
   and the 1854 × 800 pair on 764, nine states each drawn nearest-neighbour (the five of the
   first table from 400 % up, the three with centres on edges, and `Fit`, `100%`, `+` to
-  1600 %), 26 982 screen pixels compared. The read-out names another pixel than the one drawn on
+  1600 %), 26 982 screen pixels compared (a row of 639 and a column of 360 in each state, the
+  row 640 on the wider surface). The read-out names another pixel than the one drawn on
   12: nine have
   the centre exactly on an edge at 400 % and were painted from the row after it (3 of the 90
   such rows, in each run), two the same at 1600 %, and one has its centre 0.00028 of an image
@@ -148,6 +149,11 @@ edge from the pixel after it (0 of 148 columns and 0 of 85 rows from the pixel b
 - At 100 % with the image exactly half a pixel off, on a surface of odd width, every screen
   pixel is on an edge. All of them read the pixel before, also when the zoom left the offset
   an ulp under its half: no row is read twice and none is skipped.
+- A canvas drawn thinner than one screen pixel, an extreme shape at `Fit`, may have no screen
+  pixel whose centre is on it, and then reads nothing anywhere.
+- A threshold has its own edge: an offset built to put a centre one ulp past the reach reads
+  an image pixel on two screen pixels in a row at 100 %. No state the zoom steps or `Fit` leave
+  was found to do it.
 - The wheel's zoom still holds still the image point at the corner of the pointer's physical
   pixel, half a physical pixel from the point the read-out names; it anchors a zoom and names no
   pixel (R-023).
