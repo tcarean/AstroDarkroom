@@ -156,20 +156,83 @@ internal sealed record PatternVerdict(Verdict Verdict, double BandingP2pAdu, dou
 /// <param name="Saturated">The master's pixels at the white minus 1 or above.</param>
 internal sealed record DeadSatVerdict(Verdict Verdict, int Dead, int Saturated);
 
+/// <summary>How a number of darks rates in check 9's table (R-024).</summary>
+internal enum FramesRating
+{
+    /// <summary>Under <see cref="Th.MinDarks"/>: one odd frame can spoil the median.</summary>
+    TooFew,
+
+    /// <summary>At least <see cref="Th.MinDarks"/>, under the frames needed.</summary>
+    Few,
+
+    /// <summary>The frames needed, or more.</summary>
+    Enough,
+}
+
+/// <summary>One row of check 9's table: the master a number of darks would give (R-024).</summary>
+/// <param name="N">The number of darks, at least 1.</param>
+/// <param name="MasterNoise">The median master's predicted per-pixel noise with that many, in raw
+/// ADU of the darks.</param>
+/// <param name="AgainstNow">That noise against the noise with the frames stacked, as a fraction:
+/// 0.87 is 87 % more, -0.06 is 6 % less, 0 on the row of the frames stacked.</param>
+/// <param name="StackPenalty">How much noisier the lights' stack comes out than with an ideal
+/// master, one with no noise of its own, as a fraction (0.104 is 10.4 %), without dithering; NaN
+/// without measured lights.</param>
+/// <param name="Rating">Too few, few or enough, by the rule of the verdict.</param>
+/// <param name="Now">True on the row of the frames stacked.</param>
+internal sealed record FramesPoint(int N, double MasterNoise, double AgainstNow, double StackPenalty, FramesRating Rating, bool Now);
+
+/// <summary>The darks one limit of the stack's noise asks for.</summary>
+/// <param name="Limit">The limit, as a fraction (0.10 is 10 %).</param>
+/// <param name="Frames">The fewest darks whose master keeps the stack within it, at least
+/// <see cref="Th.MinDarks"/>.</param>
+internal sealed record LimitFrames(double Limit, int Frames);
+
 /// <summary>
-/// Check 9: whether the frames are enough: at least <see cref="Th.MinDarks"/>, and the median
-/// master's noise under the quantisation step; the frames that would do both (R-024).
+/// The lights' stack the darks are judged against in check 9 (R-024, ADR 0051): the master is
+/// subtracted from every light alike, so without dithering its noise stays whole in the stack
+/// while the lights' own falls with their number.
 /// </summary>
-/// <param name="Verdict">Ok when there are enough frames and the noise is under
-/// <see cref="Th.MasterNoiseVsStep"/> times the step; Unmeasured under two frames or without a
-/// noise.</param>
+/// <param name="Limit">The limit in force, as a fraction: the stack at most this much noisier.</param>
+/// <param name="Lights">How many lights gave the noise, at least 1.</param>
+/// <param name="LightNoise">The noise of one light: the median over the lights of the noise
+/// against the neighbours on the reference plane, brought to the darks' settings, in raw ADU of
+/// the darks; above 0.</param>
+/// <param name="Penalty">How much noisier the master of the frames stacked makes the stack, as a
+/// fraction.</param>
+/// <param name="Needed">The darks each of <see cref="Th.StackNoiseLimits"/> asks for, in that
+/// order.</param>
+internal sealed record StackLimit(double Limit, int Lights, double LightNoise, double Penalty, IReadOnlyList<LimitFrames> Needed)
+{
+    /// <summary>The lights' own share of the stack's per-pixel noise: one light's over the square root of their number.</summary>
+    internal double ShareAdu => LightNoise / Math.Sqrt(Lights);
+}
+
+/// <summary>
+/// Check 9: whether the frames are enough (R-024, ADR 0051): at least <see cref="Th.MinDarks"/>,
+/// and, with measured lights, a master that keeps their stack within the limit of
+/// <see cref="Stack"/>; without lights, the median master's noise under the quantisation step.
+/// </summary>
+/// <param name="Verdict">Ok when the frames are at least <paramref name="FramesNeeded"/>;
+/// Unmeasured under two frames or without a noise.</param>
 /// <param name="Frames">The frames stacked.</param>
 /// <param name="MasterNoise">The median master's predicted noise, in raw ADU.</param>
 /// <param name="QuantStep">The quantisation step, in ADU (0 unknown, read as 1).</param>
-/// <param name="FramesNeeded">The frames that would meet both conditions, at least
+/// <param name="FramesNeeded">The frames the rule in force asks for, at least
 /// <see cref="Th.MinDarks"/>.</param>
 /// <param name="TooFew">True under <see cref="Th.MinDarks"/> frames.</param>
-internal sealed record EnoughVerdict(Verdict Verdict, int Frames, double MasterNoise, int QuantStep, int FramesNeeded, bool TooFew);
+internal sealed record EnoughVerdict(Verdict Verdict, int Frames, double MasterNoise, int QuantStep, int FramesNeeded, bool TooFew)
+{
+    /// <summary>
+    /// The table's rows, by rising number of darks: every <see cref="Th.FramesTableStep"/> frames
+    /// to <see cref="Th.FramesTablePast"/> rows past the frames stacked, their own row, and the
+    /// frames needed when they lie beyond; empty when the verdict is unmeasured.
+    /// </summary>
+    public IReadOnlyList<FramesPoint> Points { get; init; } = [];
+
+    /// <summary>The lights' stack the verdict is judged against; null without measured lights.</summary>
+    public StackLimit? Stack { get; init; }
+}
 
 /// <summary>The six verdicts of checks 3, 4, 5, 7, 8 and 9 on a dark series.</summary>
 /// <param name="Leak">Check 3.</param>
@@ -251,18 +314,112 @@ internal static class DarkVerdictAnalyzer
         int dead = d.Master.Sum(m => m.Low), sat = d.Master.Sum(m => m.Saturated);
         DeadSatVerdict deadSat = new(dead == 0 && sat == 0 ? Verdict.Ok : Verdict.Warning, dead, sat);
 
-        // 8. enough frames: at least MinDarks for an honest median, and the median master's
-        // noise (median factor x temporal sigma / sqrt(N)) under the quantisation step
-        double step = d.QuantStep > 0 ? d.QuantStep : 1;
-        double masterNoise = d.Noise.MasterNoise;
-        double perFrame = masterNoise * Math.Sqrt(d.Used);
-        int needed = double.IsNaN(masterNoise) ? Th.MinDarks : Math.Max(Th.MinDarks, (int)Math.Ceiling(Math.Pow(perFrame / (Th.MasterNoiseVsStep * step), 2)));
-        bool tooFew = d.Used < Th.MinDarks;
-        Verdict enoughVerdict = d.Used < 2 || double.IsNaN(masterNoise) ? Verdict.Unmeasured
-            : tooFew || masterNoise > Th.MasterNoiseVsStep * step ? Verdict.Warning : Verdict.Ok;
-        EnoughVerdict enough = new(enoughVerdict, d.Used, masterNoise, d.QuantStep, needed, tooFew);
+        // 9. enough frames, judged without lights here: the run judges it again once it has them
+        EnoughVerdict enough = EnoughOf(d, null, refPlane, Th.StackNoiseLimit);
 
         return new DarkVerdicts(leak, drift, noise, pattern, deadSat, enough);
+    }
+
+    /// <summary>
+    /// Check 9 (R-024, ADR 0051): whether the darks are enough, the frames needed and the table of
+    /// what fewer or more darks would give. With measured lights the frames needed keep the lights'
+    /// stack within <paramref name="limit"/> of what an ideal master, one with no noise of its
+    /// own, would leave; without them
+    /// the median master's noise must be under <see cref="Th.MasterNoiseVsStep"/> x the
+    /// quantisation step. Either way at least <see cref="Th.MinDarks"/>.
+    /// </summary>
+    /// <param name="d">The darks' figures; not null.</param>
+    /// <param name="lights">The lights measured against the dark; null without lights.</param>
+    /// <param name="refPlane">The reference CFA position, 0..3.</param>
+    /// <param name="limit">How much noisier the stack may be, as a fraction above 0 (0.10 is
+    /// 10 %); read only with lights.</param>
+    /// <returns>The verdict with its table and, with lights, the stack's figures.</returns>
+    internal static EnoughVerdict EnoughOf(DarkSeriesAnalysis d, LightsAnalysis? lights, int refPlane, double limit)
+    {
+        ArgumentNullException.ThrowIfNull(d);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
+        double step = d.QuantStep > 0 ? d.QuantStep : 1;
+        double masterNoise = d.Noise.MasterNoise;
+        bool tooFew = d.Used < Th.MinDarks;
+        if (d.Used < 2 || double.IsNaN(masterNoise))
+        {
+            return new EnoughVerdict(Verdict.Unmeasured, d.Used, masterNoise, d.QuantStep, Th.MinDarks, tooFew);
+        }
+
+        // the noise one frame brings to a median master: the master's noise is this over sqrt(n)
+        double perFrame = masterNoise * Math.Sqrt(d.Used);
+        (double lightNoiseEq, int lightCount) = lights is null ? (double.NaN, 0) : LightsAnalyzer.NoiseOnPlane(lights.Frames, d, refPlane);
+        StackLimit? stack = null;
+        int needed;
+        if (lightCount > 0 && lightNoiseEq > 0 && perFrame > 0)
+        {
+            // both noises at the darks' settings, so the master's raw ADU compare with the light's
+            double lightNoise = lightNoiseEq * d.Norm;
+            double share = lightNoise / Math.Sqrt(lightCount);
+            List<LimitFrames> byLimit = [.. Th.StackNoiseLimits.Select(l => new LimitFrames(l, FramesWithin(perFrame, share, l)))];
+            stack = new StackLimit(limit, lightCount, lightNoise, StackPenalty(masterNoise, share), byLimit);
+            needed = FramesWithin(perFrame, share, limit);
+        }
+        else
+        {
+            needed = Math.Max(Th.MinDarks, (int)Math.Ceiling(Math.Pow(perFrame / (Th.MasterNoiseVsStep * step), 2)));
+        }
+
+        // the rows: every step under the frames stacked, their own row, the steps past them, then
+        // the frames needed when they lie beyond the last row
+        List<int> counts = [];
+        for (int n = Th.FramesTableStep; n < d.Used; n += Th.FramesTableStep)
+        {
+            counts.Add(n);
+        }
+
+        counts.Add(d.Used);
+        int next = ((d.Used / Th.FramesTableStep) + 1) * Th.FramesTableStep;
+        for (int k = 0; k < Th.FramesTablePast; k++)
+        {
+            counts.Add(next + (k * Th.FramesTableStep));
+        }
+
+        if (needed > counts[^1])
+        {
+            counts.Add(needed);
+        }
+
+        List<FramesPoint> points = [];
+        foreach (int n in counts)
+        {
+            double noiseAtN = perFrame / Math.Sqrt(n);
+            FramesRating rating = n < Th.MinDarks ? FramesRating.TooFew : n >= needed ? FramesRating.Enough : FramesRating.Few;
+            points.Add(new FramesPoint(n, noiseAtN, n == d.Used ? 0 : Math.Sqrt((double)d.Used / n) - 1, stack is null ? double.NaN : StackPenalty(noiseAtN, stack.ShareAdu), rating, n == d.Used));
+        }
+
+        Verdict verdict = tooFew || d.Used < needed ? Verdict.Warning : Verdict.Ok;
+        return new EnoughVerdict(verdict, d.Used, masterNoise, d.QuantStep, needed, tooFew) { Points = points, Stack = stack };
+    }
+
+    /// <summary>
+    /// How much noisier the lights' stack comes out with a master than with an ideal one, with no
+    /// noise of its own: the master's noise does not average out over the lights, so it adds in
+    /// quadrature to their share.
+    /// </summary>
+    /// <param name="masterNoise">The master's per-pixel noise, in raw ADU of the darks.</param>
+    /// <param name="share">The lights' share of the stack's noise, in the same ADU; above 0.</param>
+    /// <returns>The stack's noise with the master over the stack's noise without it, minus 1.</returns>
+    private static double StackPenalty(double masterNoise, double share) => Math.Sqrt(1 + Math.Pow(masterNoise / share, 2)) - 1;
+
+    /// <summary>The fewest darks whose master keeps the stack within a limit.</summary>
+    /// <param name="perFrame">The noise one frame brings to the median master (the master's noise
+    /// x the square root of its frames), in raw ADU of the darks; above 0.</param>
+    /// <param name="share">The lights' share of the stack's noise, in the same ADU; above 0.</param>
+    /// <param name="limit">The limit, as a fraction above 0.</param>
+    /// <returns>The smallest n with <see cref="StackPenalty"/> of perFrame / sqrt(n) at or under
+    /// the limit, at least <see cref="Th.MinDarks"/>.</returns>
+    private static int FramesWithin(double perFrame, double share, double limit)
+    {
+        // the master's noise may reach the share times sqrt((1 + limit)^2 - 1)
+        double allowed = share * Math.Sqrt(((1 + limit) * (1 + limit)) - 1);
+        double frames = Math.Ceiling(Math.Pow(perFrame / allowed, 2));
+        return frames >= int.MaxValue ? int.MaxValue : Math.Max(Th.MinDarks, (int)frames);
     }
 
     /// <summary>The median of the finite values.</summary>

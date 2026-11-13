@@ -50,6 +50,12 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
     internal ReportTable? Table { get; init; }
 
     /// <summary>
+    /// A choice the window offers above the row's table (R-123): check 9's limit of the stack's
+    /// noise; null for every other row. The console prints the value alone.
+    /// </summary>
+    internal ReportChoice? Choice { get; init; }
+
+    /// <summary>
     /// Whether the Rezumat's card of the row's check shows the row (R-071): false for the rows of
     /// check 6 that only the Pixeli fierbinti tab shows, true for every other row.
     /// </summary>
@@ -190,6 +196,17 @@ internal enum ReportCheck
 /// <param name="Rows">The rows, each with one formatted cell per column.</param>
 /// <param name="Note">What the table shows, said under it; empty for none.</param>
 internal sealed record ReportTable(IReadOnlyList<string> Header, IReadOnlyList<IReadOnlyList<string>> Rows, string Note);
+
+/// <summary>
+/// A choice a row offers the window's user (R-123): what is chosen, the options in the order
+/// shown, and the one the row's figures were judged at. The window shows it and hands the pick
+/// back to the core; it decides neither the words nor what a pick means.
+/// </summary>
+/// <param name="Label">What is chosen, in the run's language, ending with a colon.</param>
+/// <param name="Options">The options as shown, in the run's language.</param>
+/// <param name="Selected">The index in <paramref name="Options"/> of the option in force; -1
+/// when it is none of them.</param>
+internal sealed record ReportChoice(string Label, IReadOnlyList<string> Options, int Selected);
 
 /// <summary>A titled group of rows: one check of the report, or its INDEX block.</summary>
 /// <param name="Check">Which check the section is.</param>

@@ -313,6 +313,25 @@ internal static class LightsAnalyzer
     }
 
     /// <summary>
+    /// The noise of a light on one CFA position (R-067, R-024): the median over the lights of the
+    /// local sigma (how much a pixel differs from its neighbours), each light at its own settings.
+    /// </summary>
+    /// <param name="frames">Every light's figures; those that decoded with a positive local sigma
+    /// on the position give the noise.</param>
+    /// <param name="darks">The darks' figures, for the normalisation.</param>
+    /// <param name="plane">The CFA position, 0..3.</param>
+    /// <returns>The noise in ADU equivalent, NaN when no light gives one, and how many lights gave
+    /// it.</returns>
+    internal static (double Noise, int Lights) NoiseOnPlane(IReadOnlyList<LightFigures> frames, DarkSeriesAnalysis darks, int plane)
+    {
+        float[] sigmas = frames
+            .Where(f => f.Error is null && f.LocalSigma.Count == 4 && f.LocalSigma[plane] > 0)
+            .Select(f => (float)(f.LocalSigma[plane] / (f.AssumedSettings ? darks.Norm : darks.Normalisation.NormOf(f.Info))))
+            .ToArray();
+        return (sigmas.Length == 0 ? double.NaN : Planes.Median(sigmas), sigmas.Length);
+    }
+
+    /// <summary>
     /// What a plain subtraction leaves at the master's amplitude pixels (R-067): each pixel's
     /// level in the master over the lights' noise on its CFA colour, both in ADU equivalent, then
     /// the night's traces and the Direct band they allow.
@@ -328,16 +347,10 @@ internal static class LightsAnalyzer
     /// noise or the master has no amplitude pixel.</returns>
     private static TraceFigures TracesOf(LightFigures[] frames, DarkSeriesAnalysis darks, float[] excess, List<int> ampIdx, int w, double ratio)
     {
-        // the noise of a light per CFA position, in ADU equivalent: the median over the lights of
-        // the local sigma (how much a pixel differs from its neighbours), each at its own settings
         double[] noise = new double[4];
         for (int p = 0; p < 4; p++)
         {
-            float[] sigmas = frames
-                .Where(f => f.Error is null && f.LocalSigma.Count == 4 && f.LocalSigma[p] > 0)
-                .Select(f => (float)(f.LocalSigma[p] / (f.AssumedSettings ? darks.Norm : darks.Normalisation.NormOf(f.Info))))
-                .ToArray();
-            noise[p] = sigmas.Length == 0 ? double.NaN : Planes.Median(sigmas);
+            noise[p] = NoiseOnPlane(frames, darks, p).Noise;
         }
 
         List<float> perUnit = [];

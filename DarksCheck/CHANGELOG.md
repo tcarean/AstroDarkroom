@@ -42,6 +42,19 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- Check 9 says what fewer or more darks would give, and with lights judges the darks against
+  the lights' stack (R-024, R-123, ADR 0051). A new row `with n frames` gives, for 5, 10, 15,
+  ... frames to two rows past the frames read, the master's noise, how it compares with the
+  master of now, with lights how much noisier their stack comes out than with an ideal dark
+  master (counted without dithering, on the noise of a light against its neighbours) and a
+  rating, `too few`, `few` or `enough`; a row `enough from` gives the frames needed. With
+  lights the darks are enough when that stack is at most 10 % noisier than with an ideal dark
+  master, where the verdict looked only at the file's value step, so a verdict can change both
+  ways; it also says how many frames could be left out. Without lights the rule is the old
+  one, and the verdict adds how many frames would do.
+  In the window the table is drawn in check 9's card, with a dropdown above it for the limit,
+  5 % or 10 %, which judges check 9 again at once. The row `noise when averaged` is now one
+  sentence, the last measured point, and no longer a table.
 - The checks are numbered in the order the Summary tab shows them, in the console too (R-025,
   ADR 0046): after the session's lines (check 1), 2 is how well the dark fits the lights, then
   3 light leaks, 4 the warming, 5 the noise, 6 hot pixels, 7 the fixed pattern, 8 dead and

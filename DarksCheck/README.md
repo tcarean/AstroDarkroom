@@ -313,14 +313,29 @@ its row.
   edges.
 - **8. Dead and saturated pixels**: on the master, below the black - 50 ADU and at the white;
   any such pixel gives `WARNING`.
-- **9. How many darks are enough**: the noise of the mean of n frames against sigma / sqrt(n)
-  (the frames are independent when the two agree; the point n = 1 is the temporal sigma, frame
-  against frame, without the fixed pattern), and the predicted noise of the median master,
-  1.25 x the temporal sigma / sqrt(N), against the file's quantisation step. Under 10 frames,
-  `WARNING`: the median needs them, so that one odd frame cannot pull it. Above the step,
-  `WARNING` with the number of frames that would bring it under. Otherwise `OK`: the master's
-  noise adds in quadrature to every calibrated light, and under the step it is as small as the
-  file allows.
+- **9. How many darks are enough**: first the rule, measured: the noise of the mean of n frames
+  beside the noise of a single frame over sqrt(n) (the frames are independent when the two
+  agree), and the predicted noise of the median master, 1.25 x the frame-against-frame noise /
+  sqrt(N). Then the row `with n frames`: what the master would be with 5, 10, 15, ... frames, to
+  two rows past the frames read: its noise, how that compares with the master of now
+  and, when there are lights, how much noisier their stack comes out than with an ideal dark
+  master, one made from very many frames, with no noise of its own. A master of few frames keeps some
+  noise; it is subtracted from every light alike, so without dithering that noise stays whole in
+  the stack while the lights' own falls with their number; with dithering the difference is
+  smaller. The
+  noise of a light is here how much a pixel differs from its neighbours (the `noise` column of
+  the lights table, brought to the darks' ISO and exposure when the lights have others). Every
+  row is rated `too few` (under 10 frames: the median needs them, so that one odd frame cannot
+  pull it), `few` or `enough`, and the row `enough from` gives the
+  frames needed: with lights, the fewest that keep the stack within 10 % of what an ideal dark
+  master would leave, and beside them the fewest for 5 %; without lights, the fewest that bring
+  the master's noise under the file's quantisation step. Under the frames needed the verdict is
+  `WARNING`; otherwise `OK`, and with lights it says how many frames could be left out, which
+  tells whether the frames check 4 lists as `to discard` can go. With more darks than
+  `--max-frames` reads, the table speaks of the frames read, not of the folder's, and the
+  verdict leaves that count out. As an example of what to
+  expect, 35 darks under 83 lights of two minutes gave a stack 3.1 % noisier, 11 darks were
+  enough at 10 % and 22 at 5 %.
 
 #### The index and the label
 
@@ -527,7 +542,10 @@ tabs:
   its verdict a coloured chip (green `OK`, amber `WARNING`, red `REDO`, grey `UNMEASURED`) with the
   rest of the text beside it. The verdicts of checks 3 and 4 put each statement on a line of its
   own. The hot-pixel card keeps only the stability, one statement per line, and the verdict; the
-  rest is on the Hot pixels tab. The noise after averaging is a table.
+  rest is on the Hot pixels tab. Check 9 shows what the master would be with fewer or more
+  frames as a table; with lights, a dropdown above it sets how much noisier the stack may be than with an ideal dark master,
+  5 % or 10 %. Choosing judges check 9 again at once, without reading the frames; every
+  analysis starts at 10 %.
 - **Frames**: the frames table, every column header with an explanation under the mouse, and
   beside it three charts, frame by frame: the hot pixels against the master (the warming, with
   the end of the series and the two bounds of check 4), how much each frame differs from the master (with

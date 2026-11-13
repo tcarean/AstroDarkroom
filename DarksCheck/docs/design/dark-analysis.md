@@ -180,9 +180,7 @@ them (ADR 0038, ADR 0043), else `ATENTIE` only when the master is not near the e
 leaves the `-opt` band of the master (the frames off the end are otherwise information, in the
 `de aruncat` row, the table's `sfarsit` column and a note on their rows); the noise from the residual sigma outliers, with the temporal noise
 over the read noise beside it; the pattern from the worst structured banding and the glow;
-the dead and saturated counts; and whether the frames are enough: at least `Th.MinDarks`, and
-the median master's predicted noise (`Th.MedianNoiseFactor` x the temporal sigma / sqrt(N))
-under the quantisation step. The hot levels have a floor of `Th.MinHotAdu` raw ADU, the dead
+the dead and saturated counts; and whether the frames are enough, the next section. The hot levels have a floor of `Th.MinHotAdu` raw ADU, the dead
 limit is raw, and the biases' plane figures are not normalised. `DarkReport` prints the
 words; `DarkOutputs` writes the report, two CSV files and three grey PNG maps of the
 reference plane, refuses a folder inside the session (the console checks that before the
@@ -191,6 +189,37 @@ bias, is listed as `sarit`, not as an error, and the exit code ignores it; a bia
 is counted in an `ATENTIE` line of the darks header, since the darks run prints no bias table.
 With a single frame the residual, the stability, the warming and the noise curve have nothing
 to measure and the report says `NEMASURAT` rather than printing zeros.
+
+## The frames needed and the table of check 9
+
+`DarkVerdictAnalyzer.EnoughOf` judges check 9 (ADR 0051) from `NoiseVsN.MasterNoise`, the
+median master's predicted noise with the N frames stacked: `perFrame`, that noise x sqrt(N), is
+what one frame brings, so a master of n frames has `perFrame / sqrt(n)`. `Judge` calls it
+without lights; `DarkSeriesRun.Run` calls it again once the lights are measured and puts the
+result in the verdicts, and `DarkSeriesRun.WithStackLimit` calls it for a finished result at
+another limit, reading nothing again (the window's dropdown, R-123).
+
+With lights it takes `LightsAnalyzer.NoiseOnPlane` on the reference plane: the median over the
+decoded lights of `LightFigures.LocalSigma` (how much a pixel differs from its neighbours), each
+divided by its own normalisation, and how many lights gave it; times the darks' normalisation
+it is `StackLimit.LightNoise`, in the darks' raw ADU, so it compares with the master's noise.
+`StackLimit.ShareAdu` is that noise over sqrt(lights), the lights' own part of the stack's
+noise. The master is subtracted from every light alike, so without dithering its noise adds
+whole: `StackPenalty` is sqrt(1 + (master / share)^2) - 1. `FramesWithin` turns a limit into
+frames: the master's noise may reach share x sqrt((1 + limit)^2 - 1), so the frames are
+ceil((perFrame / that)^2), at least `Th.MinDarks`. `StackLimit.Needed` holds them for every
+limit of `Th.StackNoiseLimits`, `StackLimit.Limit` the one in force, whose frames are
+`EnoughVerdict.FramesNeeded`. Without lights (or when no light gives a noise) there is no
+`StackLimit` and the frames needed are those that bring the master's noise under
+`Th.MasterNoiseVsStep` x the quantisation step, at least `Th.MinDarks`. The verdict is
+`Warning` under `Th.MinDarks` or under the frames needed, `Unmeasured` under two frames or
+without a noise, when it has no points.
+
+`EnoughVerdict.Points` are the table's rows: every multiple of `Th.FramesTableStep` under N, N
+itself (`FramesPoint.Now`), the next `Th.FramesTablePast` multiples above N, and the frames
+needed when they lie beyond the last of those. Each has the master's noise, that noise against
+N's (sqrt(N / n) - 1), the stack's figure (NaN without lights) and its `FramesRating`: too few
+under `Th.MinDarks`, enough from the frames needed, few between.
 
 ## The scale section
 
@@ -327,10 +356,25 @@ row: its two; the verdicts of checks 3 and 4, through `ReportRow.WithStatements`
 `Rest` with `StatementsOf` at every `; ` outside round and square brackets and sets `Lines` only
 for two or more, so the value and the console's text stay as they were, ADR 0047); `Table`, a `ReportTable(Header, Rows, Note)` of formatted cells the window draws
 under the label while the console prints the value alone (`OverlapRow` for the two overlap rows
-of check 2, one row per hot level, `peste 10`, `20 din 20`, `100 %`; `CurveRow` for check 9's
-`zgomot dupa medie`, one row per n with the frames, the measured and the expected noise; the
-note is the value's bracket hint without its brackets); and `Summary`, false on check 6's three
-count rows, which the Rezumat's card leaves to the Pixeli fierbinti tab. Check 2 ends with
+of check 2, one row per hot level, `peste 10`, `20 din 20`, `100 %`; `FramesRow` for check 9's
+`cu n cadre`, one row per `FramesPoint` with the frames, the master's noise, the change against
+now, with lights the stack's figure, and the rating, four or five columns; the
+note is the value's bracket hint without its brackets, empty when the value has none, and for
+`FramesRow` led by the name of the column it explains, `stack mai zgomotos cu: `, which the console's
+bracket leaves out since the console prints no column); `Choice`, a
+`ReportChoice(Label, Options, Selected)` the window offers above the table and the console
+ignores (`FramesRow` with lights alone: the limits of `Th.StackNoiseLimits` as percents, the one
+in force selected, ADR 0051); and `Summary`, false on check 6's three
+count rows, which the Rezumat's card leaves to the Pixeli fierbinti tab. Check 9's other rows are
+plain lines: `CurveRow` prints the last point of `NoiseVsN.Curve` beside what the frame's sigma
+gave to expect, `EnoughFrom` the frames needed, the limit in force first and the other limits'
+after it, and `EnoughVerdictText` the verdict, with the frames that could be left out
+(`Frames - FramesNeeded`) when there are any and no dark was skipped by the frame cap: `Frames`
+is `DarkSeriesAnalysis.Used`, the frames read, which above the cap are every k-th of the
+folder's, so the table's `(acum)` row and the frames needed speak of the frames read.
+`StackPercent` prints the stack's figure with one decimal, or with more, up to four, while the
+text would be that of one of `Th.StackNoiseLimits` for a figure that is not that limit, since the
+verdict, the ratings and the frames of every limit are decided on the unrounded figure. Check 2 ends with
 `index dark-uri` (`index partener` when the darks are the partner's), the darks' tag, and
 `index lights`, the lights' equivalent tag with the parenthesis INDEX's `lights` row also uses,
 both from `LightsLike` (`IndexFigures.TagFor` on `LightsIndex`; null, and no row, when it is

@@ -201,7 +201,13 @@ say where the time went, or its `ended without an outcome` line when it threw; a
 `ERROR` or `WARN` and the stack under it. Memory is read from the `working set` of the `decoded`
 lines and of the lines after each group is released. A verdict is read back from the `verdicts:`
 line and the `series:`, `dark` and `light` lines, which hold the figures the report words; a
-frame's file from its `loaded` and libraw lines.
+frame's file from its `loaded` and libraw lines. The `verdicts:` line is written before the
+lights are read, so with lights check 9's figures are those of the line `enough, against the
+lights' stack:` that `DarkSeriesRun` writes after them (ADR 0051), with the table's `points`
+and the `stack` (the limit, the lights, a light's noise, the stack's figure, the frames each
+limit needs), and a limit picked in the window writes `check 9 judged again: the stack may be
+5 % noisier; enough=Warning framesNeeded=27` from the view-model, with no run line, since
+nothing runs.
 
 ## In the tests
 

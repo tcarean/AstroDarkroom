@@ -1422,26 +1422,140 @@ public partial class DarkSeriesTests
     }
 
     [Fact]
-    public void R024_TheNoiseCurveRowCarriesItsPointsAsATable()
+    public void R024_TheRowsOfCheckNineSayTheMeasuredRuleTheTableAndTheFramesNeeded()
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(10, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
         DarkSeriesResult r = Run(s);
-        ReportRow curve = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows.Single(row => row.Label == "zgomot dupa medie");
-        ReportTable t = Assert.IsType<ReportTable>(curve.Table);
-        Assert.Equal(["cadre", "masurat", "se astepta"], t.Header);
-        Assert.Equal(r.Darks.Noise.Curve.Select(p => RunReport.Frames(p.N)), t.Rows.Select(row => row[0]));
-        NoisePoint first = r.Darks.Noise.Curve[0];
-        Assert.Equal(["1 cadru", RunReport.F(first.Measured, 2), RunReport.F(first.Expected, 2)], t.Rows[0]);
+        EnoughVerdict e = r.Verdicts.Enough;
+        IReadOnlyList<ReportRow> rows = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows;
+        Assert.Equal(["zgomot dupa medie", "master", "cu n cadre", "ajung de la", "verdict"], rows.Select(row => row.Label));
+
+        // the measured rule: the last point alone, in a sentence, with the plane and the crop in brackets; no table
+        NoisePoint last = r.Darks.Noise.Curve[^1];
+        Assert.Equal(5, last.N);
+        Assert.Equal(
+            $"media a 5 cadre are {RunReport.F(last.Measured, 2)} ADU de zgomot; din zgomotul unui singur cadru ({RunReport.F(r.Darks.Noise.SigmaFrame, 2)} ADU) se asteptau {RunReport.F(last.Expected, 2)}  [pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul]",
+            rows[0].Value);
+        Assert.Null(rows[0].Table);
+        Assert.Null(rows[0].Lines);
+
+        // the table: one row per point, the frames stacked marked, no stack column and no choice without lights
+        ReportRow frames = rows[2];
+        ReportTable t = Assert.IsType<ReportTable>(frames.Table);
+        Assert.Equal(["cadre", "zgomotul masterului", "fata de masterul de acum", "cum e"], t.Header);
+        Assert.Equal(4, t.Rows.Count);
+        Assert.Equal(["5", RunReport.F(e.Points[0].MasterNoise, 2) + " ADU", "+41 %", "prea putine"], t.Rows[0]);
+        Assert.Equal(["10 (acum)", RunReport.F(e.MasterNoise, 2) + " ADU", "", "ajung"], t.Rows[1]);
+        Assert.Equal(["20", RunReport.F(e.Points[3].MasterNoise, 2) + " ADU", "-29 %", "ajung"], t.Rows[3]);
+        Assert.Equal("", t.Note);
+        Assert.Null(frames.Choice);
         // the console's line holds the same figures, point by point
-        Assert.StartsWith($"1 cadru: {RunReport.F(first.Measured, 2)} (se astepta {RunReport.F(first.Expected, 2)}); 2 cadre: ", curve.Value, StringComparison.Ordinal);
-        Assert.Equal("pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul", t.Note);
-        Assert.Null(curve.Lines);
+        Assert.Equal(
+            $"5 cadre: {RunReport.F(e.Points[0].MasterNoise, 2)} ADU (+41 % fata de masterul de acum; prea putine); 10 cadre (acum): {RunReport.F(e.MasterNoise, 2)} ADU (ajung); "
+            + $"15 cadre: {RunReport.F(e.Points[2].MasterNoise, 2)} ADU (-18 % fata de masterul de acum; ajung); 20 de cadre: {RunReport.F(e.Points[3].MasterNoise, 2)} ADU (-29 % fata de masterul de acum; ajung)",
+            frames.Value);
+
+        Assert.Equal("10 cadre: de acolo zgomotul masterului e sub pasul valorilor din fisier (1 ADU)", rows[3].Value);
+        Assert.Equal($"OK: 10 cadre ajung; zgomotul masterului ({RunReport.F(e.MasterNoise, 2)} ADU) e sub pasul valorilor din fisier (1 ADU), iar el se adauga la fiecare light calibrat", rows[4].Value);
+
+        // twelve frames: two more than needed, and the verdict says how many would do
+        using SessionFixture twelve = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
+        DarkSeriesResult r12 = Run(twelve);
+        Assert.EndsWith(", iar el se adauga la fiecare light calibrat; ar ajunge 10", DarkReport.Sections(r12).Single(x => x.Check == ReportCheck.Enough).Rows[^1].Value, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            IReadOnlyList<ReportRow> en = DarkReport.Sections(r12).Single(x => x.Check == ReportCheck.Enough).Rows;
+            Assert.Equal(["noise when averaged", "master", "with n frames", "enough from", "verdict"], en.Select(row => row.Label));
+            Assert.StartsWith("the average of 5 frames has ", en[0].Value, StringComparison.Ordinal);
+            Assert.Equal(["frames", "master's noise", "against the master of now", "how it is"], en[2].Table!.Header);
+            Assert.Contains("; 12 frames (now): ", en[2].Value, StringComparison.Ordinal);
+            Assert.Equal("10 frames: from there the master's noise is under the file's value step (1 ADU)", en[3].Value);
+            Assert.EndsWith(" is under the file's value step (1 ADU), and it adds to every calibrated light; 10 would do", en[4].Value, StringComparison.Ordinal);
+        }
+
+        // three frames: the one measured point is the frame against the next, and the row says so of 1 frame
+        using SessionFixture three = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
+        DarkSeriesResult r3 = Run(three);
+        NoisePoint only = Assert.Single(r3.Darks.Noise.Curve);
+        Assert.StartsWith(
+            $"1 cadru are {RunReport.F(only.Measured, 2)} ADU de zgomot; din zgomotul unui singur cadru ({RunReport.F(r3.Darks.Noise.SigmaFrame, 2)} ADU) se asteptau {RunReport.F(only.Expected, 2)}  [",
+            DarkReport.Sections(r3).Single(x => x.Check == ReportCheck.Enough).Rows[0].Value,
+            StringComparison.Ordinal);
 
         // a single frame: unmeasured, no table
         using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 1, Hot = SyntheticDark.OnePerLevel });
-        ReportRow single = DarkReport.Sections(Run(one)).Single(x => x.Check == ReportCheck.Enough).Rows.Single(row => row.Label == "zgomot dupa medie");
-        Assert.Null(single.Table);
-        Assert.StartsWith("NEMASURAT: ", single.Value, StringComparison.Ordinal);
+        IReadOnlyList<ReportRow> single = DarkReport.Sections(Run(one)).Single(x => x.Check == ReportCheck.Enough).Rows;
+        Assert.StartsWith("NEMASURAT: sunt mai putin de 2 cadre  [", single[0].Value, StringComparison.Ordinal);
+        Assert.Equal("NEMASURAT: sunt mai putin de 2 cadre", single[2].Value);
+        Assert.Null(single[2].Table);
+        Assert.Equal("NEMASURAT", single[3].Value);
+    }
+
+    [Fact]
+    public void R024_TheFramesTableReadsTheMasterEveryFiveFramesAndRatesEachRow()
+    {
+        // ten frames of noise 2, no lights: a row every five frames to two rows past the ten, rated on the value step
+        using SessionFixture s = new SessionFixture().WithDarkSeries(10, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
+        EnoughVerdict e = Run(s).Verdicts.Enough;
+        Assert.Null(e.Stack);
+        Assert.Equal(10, e.FramesNeeded);
+        Assert.Equal([5, 10, 15, 20], e.Points.Select(p => p.N));
+        Assert.Equal([false, true, false, false], e.Points.Select(p => p.Now));
+        Assert.Equal([FramesRating.TooFew, FramesRating.Enough, FramesRating.Enough, FramesRating.Enough], e.Points.Select(p => p.Rating));
+        foreach (FramesPoint p in e.Points)
+        {
+            // the master of n frames against the master of the ten: sqrt(10 / n) times its noise
+            Assert.Equal(e.MasterNoise * Math.Sqrt(10.0 / p.N), p.MasterNoise, 9);
+            Assert.Equal(Math.Sqrt(10.0 / p.N) - 1, p.AgainstNow, 9);
+            Assert.True(double.IsNaN(p.StackPenalty));
+        }
+
+        // twelve frames: their own row stands between the tens and the fifteens
+        using SessionFixture twelve = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
+        EnoughVerdict e12 = Run(twelve).Verdicts.Enough;
+        Assert.Equal([5, 10, 12, 15, 20], e12.Points.Select(p => p.N));
+        Assert.Equal(12, Assert.Single(e12.Points, p => p.Now).N);
+        Assert.Equal(0, e12.Points[2].AgainstNow, 9);
+
+        // ten frames of noise 4: the master stays over the step, and the frames needed get the last row
+        using SessionFixture noisy = new SessionFixture().WithDarkSeries(10, i => new SyntheticDark { Seed = 100 + i, Noise = 4 });
+        EnoughVerdict en = Run(noisy).Verdicts.Enough;
+        Assert.InRange(en.FramesNeeded, 22, 30);
+        Assert.Equal([5, 10, 15, 20, en.FramesNeeded], en.Points.Select(p => p.N).Distinct());
+        Assert.Equal(FramesRating.TooFew, en.Points[0].Rating);
+        Assert.All(en.Points.Skip(1).Where(p => p.N < en.FramesNeeded), p => Assert.Equal(FramesRating.Few, p.Rating));
+        Assert.Equal(FramesRating.Enough, en.Points[^1].Rating);
+        Assert.Equal(en.FramesNeeded, en.Points[^1].N);
+
+        // three frames of noise 6: their own row first, the fives and tens too few or few, then the frames needed
+        using SessionFixture few = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i, Noise = 6 });
+        EnoughVerdict ef = Run(few).Verdicts.Enough;
+        Assert.Equal([3, 5, 10, ef.FramesNeeded], ef.Points.Select(p => p.N));
+        Assert.Equal([FramesRating.TooFew, FramesRating.TooFew, FramesRating.Few, FramesRating.Enough], ef.Points.Select(p => p.Rating));
+        Assert.True(ef.Points[0].Now);
+
+        // a single frame is no series: no table
+        using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 1, Hot = SyntheticDark.OnePerLevel });
+        Assert.Empty(Run(one).Verdicts.Enough.Points);
+    }
+
+    [Fact]
+    public void R024_AStackFigureThatRoundsToALimitIsPrintedWithMoreDecimals()
+    {
+        // one decimal would print a limit itself beside "under the limit" or "over the limit"
+        Assert.Equal("9.96 %", DarkReport.StackPercent(0.0996));
+        Assert.Equal("10.04 %", DarkReport.StackPercent(0.1004));
+        Assert.Equal("4.96 %", DarkReport.StackPercent(0.0496));
+        // the other limit is guarded too: the row "ajung de la" names both
+        Assert.Equal("5.03 %", DarkReport.StackPercent(0.0503));
+        // closer still: as many decimals as it takes, to four
+        Assert.Equal("9.996 %", DarkReport.StackPercent(0.09996));
+        Assert.Equal("10.0004 %", DarkReport.StackPercent(0.100004));
+        // away from the limits, and on a limit itself, one decimal
+        Assert.Equal("10.4 %", DarkReport.StackPercent(0.104));
+        Assert.Equal("3.1 %", DarkReport.StackPercent(0.031));
+        Assert.Equal("10.0 %", DarkReport.StackPercent(0.10));
+        Assert.Equal("5.0 %", DarkReport.StackPercent(0.05));
     }
 
     [Fact]

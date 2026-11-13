@@ -44,6 +44,50 @@ public sealed record RowVm(string Label, string Value, string Rest, string? Verd
     public bool HasVerdict => Verdict is not null;
 
     public bool HasTable => Table is not null;
+
+    /// <summary>
+    /// The choice shown above the row's table (R-123): the core's label and options, wired to the
+    /// view-model; null for a row without one.
+    /// </summary>
+    public ChoiceVm? Choice { get; init; }
+
+    public bool HasChoice => Choice is not null;
+}
+
+/// <summary>
+/// A choice of the core as a dropdown binds it (R-123): the core's label and options, and the
+/// selected one, whose change is handed back so the core judges again.
+/// </summary>
+/// <param name="label">What is chosen, as the core words it.</param>
+/// <param name="options">The options, as the core words them, in order.</param>
+/// <param name="selected">The index of the option in force; -1 for none.</param>
+/// <param name="choose">Called with the index of a newly selected option; not null.</param>
+public sealed class ChoiceVm(string label, IReadOnlyList<string> options, int selected, Action<int> choose)
+{
+    private int _selected = selected;
+
+    public string Label { get; } = label;
+
+    public IReadOnlyList<string> Options { get; } = options;
+
+    /// <summary>
+    /// The index of the selected option. Setting another valid index calls back once; the same
+    /// index, or one outside the options, does nothing.
+    /// </summary>
+    public int SelectedIndex
+    {
+        get => _selected;
+        set
+        {
+            if (value == _selected || value < 0 || value >= Options.Count)
+            {
+                return;
+            }
+
+            _selected = value;
+            choose(value);
+        }
+    }
 }
 
 /// <summary>
@@ -53,7 +97,27 @@ public sealed record RowVm(string Label, string Value, string Rest, string? Verd
 /// <param name="Header">The column names.</param>
 /// <param name="Rows">The rows, one formatted cell per column.</param>
 /// <param name="Note">What the table shows, said under it.</param>
-public sealed record TableVm(IReadOnlyList<string> Header, IReadOnlyList<IReadOnlyList<string>> Rows, string Note);
+public sealed record TableVm(IReadOnlyList<string> Header, IReadOnlyList<IReadOnlyList<string>> Rows, string Note)
+{
+    /// <summary>
+    /// How many columns the <c>ReportTable</c> template draws: the widest table of the core, check
+    /// 9's (R-024); a table with fewer leaves the last ones empty.
+    /// </summary>
+    public const int Columns = 5;
+
+    /// <summary>The column names, filled with empty names to <see cref="Columns"/>.</summary>
+    public IReadOnlyList<string> HeaderCells => Padded(Header);
+
+    /// <summary>The rows, each filled with empty cells to <see cref="Columns"/>.</summary>
+    public IReadOnlyList<IReadOnlyList<string>> RowCells => [.. Rows.Select(Padded)];
+
+    /// <summary>A row of cells brought to the template's column count.</summary>
+    /// <param name="cells">The core's cells, at most <see cref="Columns"/>.</param>
+    /// <returns>The cells followed by empty ones, <see cref="Columns"/> in all; the cells
+    /// unchanged when they are already that many or more.</returns>
+    private static IReadOnlyList<string> Padded(IReadOnlyList<string> cells) =>
+        cells.Count >= Columns ? cells : [.. cells, .. Enumerable.Repeat("", Columns - cells.Count)];
+}
 
 /// <summary>One check of the report as a card: its title and its rows, the core's.</summary>
 /// <param name="Title">The section's title as the report prints it.</param>
@@ -748,7 +812,7 @@ public sealed class MainViewModel : ObservableObject
         IReadOnlyList<ReportSection> sections = DarkReport.Sections(r);
         // the Rezumat's cards in the console's order, each with the rows the core marks for the Rezumat
         // (R-071, ADR 0041, ADR 0046)
-        Sections = sections.Select(s => new SectionVm(s.Title, s.Rows.Where(row => row.Summary).Select(Row).ToList())).ToList();
+        Sections = sections.Select(s => new SectionVm(s.Title, s.Rows.Where(row => row.Summary).Select(CardRow).ToList())).ToList();
         HotRows = Rows(sections, ReportCheck.HotPixels);
         LightRows = Rows(sections, ReportCheck.Lights);
         IndexRows = Rows(sections, ReportCheck.Index);
@@ -831,6 +895,37 @@ public sealed class MainViewModel : ObservableObject
     /// <returns>The row with its label, value, rest, verdict, bold parts, lines and table; a row
     /// with a table has no lines, the table standing in for the text.</returns>
     private static RowVm Row(ReportRow r) => new(r.Label, r.Value, r.Rest, r.Verdict, r.BoldParts, r.Table is not null ? [] : r.Lines ?? [r.Rest], r.Table is null ? null : new TableVm(r.Table.Header, r.Table.Rows, r.Table.Note));
+
+    /// <summary>
+    /// A report row as a card of the Rezumat binds it: the row, and, when the core gave it a
+    /// choice, the choice wired to <see cref="ChooseStackLimit"/>, the one choice the core has
+    /// (R-123).
+    /// </summary>
+    /// <param name="r">The core's row.</param>
+    /// <returns>The row, with its choice when it has one.</returns>
+    private RowVm CardRow(ReportRow r) =>
+        r.Choice is ReportChoice c ? Row(r) with { Choice = new ChoiceVm(c.Label, c.Options, c.Selected, ChooseStackLimit) } : Row(r);
+
+    /// <summary>
+    /// Shows the result with check 9 judged at another limit of the stack's noise (R-123): the core
+    /// judges again from the figures it has, no frame is read, and every tab is shaped anew from
+    /// the result, the report's text included. Nothing happens without a result or for an index
+    /// outside the core's limits.
+    /// </summary>
+    /// <param name="index">The index of the limit in <see cref="Th.StackNoiseLimits"/>.</param>
+    internal void ChooseStackLimit(int index)
+    {
+        if (_result is not DarkSeriesResult r || index < 0 || index >= Th.StackNoiseLimits.Count)
+        {
+            return;
+        }
+
+        double limit = Th.StackNoiseLimits[index];
+        DarkSeriesResult judged = DarkSeriesRun.WithStackLimit(r, limit);
+        Log.Info("check 9 judged again: the stack may be " + LogText.Num(limit * 100) + " % noisier; enough=" + judged.Verdicts.Enough.Verdict
+            + " framesNeeded=" + LogText.Int(judged.Verdicts.Enough.FramesNeeded));
+        Populate(judged);
+    }
 
     /// <summary>The rows of one check's section, in order, all of them (the tabs show what the Rezumat leaves out).</summary>
     /// <param name="sections">The report's sections.</param>

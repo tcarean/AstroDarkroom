@@ -1135,4 +1135,165 @@ public class LightsAndIndexTests
         Assert.Equal(Path.GetFileName(with.Root) + "-" + a.Index.Tag, a.Label);
         Assert.DoesNotContain("; eticheta ", Report(a), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void R024_WithLightsTheFramesNeededKeepTheStackUnderTheChosenLimit()
+    {
+        // twenty darks of noise 4 and five lights of noise 6: about 16 darks keep the stack within 10 %, about 31 within 5 %
+        using SessionFixture s = new SessionFixture().WithDarkSeries(20, i => new SyntheticDark { Seed = 100 + i, Noise = 4, Hot = SyntheticLight.Lattice }).WithLights(5, i => Light(i));
+        DarkSeriesResult r = Run(s);
+        EnoughVerdict e = r.Verdicts.Enough;
+        StackLimit st = Assert.IsType<StackLimit>(e.Stack);
+        Assert.Equal(Th.StackNoiseLimit, st.Limit);
+        Assert.Equal(5, st.Lights);
+
+        // the noise of a light: the median over the lights of the noise against the neighbours, on the reference plane
+        List<double> local = [.. r.Lights!.Frames.Select(f => f.LocalSigma[r.ReferencePlane]).Order()];
+        Assert.Equal(local[2], st.LightNoise, 4);
+        double share = st.LightNoise / Math.Sqrt(5);
+        double perFrame = e.MasterNoise * Math.Sqrt(20);
+        Assert.Equal(Math.Sqrt(1 + Math.Pow(e.MasterNoise / share, 2)) - 1, st.Penalty, 9);
+        int Needed(double limit) => Math.Max(Th.MinDarks, (int)Math.Ceiling(Math.Pow(perFrame / (share * Math.Sqrt(((1 + limit) * (1 + limit)) - 1)), 2)));
+        Assert.Equal([0.05, 0.10], st.Needed.Select(n => n.Limit));
+        Assert.Equal([Needed(0.05), Needed(0.10)], st.Needed.Select(n => n.Frames));
+        Assert.InRange(Needed(0.10), 12, 20);
+        Assert.InRange(Needed(0.05), 24, 40);
+        Assert.Equal(Needed(0.10), e.FramesNeeded);
+        Assert.Equal(Verdict.Ok, e.Verdict);
+
+        Assert.Equal([5, 10, 15, 20, 25, 30], e.Points.Select(p => p.N));
+        foreach (FramesPoint p in e.Points)
+        {
+            Assert.Equal(Math.Sqrt(1 + Math.Pow(perFrame / Math.Sqrt(p.N) / share, 2)) - 1, p.StackPenalty, 9);
+            Assert.Equal(p.N < Th.MinDarks ? FramesRating.TooFew : p.N >= e.FramesNeeded ? FramesRating.Enough : FramesRating.Few, p.Rating);
+        }
+
+        // the stricter limit: the same figures, more frames needed, and the twenty are few
+        DarkSeriesResult strict = DarkSeriesRun.WithStackLimit(r, 0.05);
+        EnoughVerdict e5 = strict.Verdicts.Enough;
+        Assert.Equal(0.05, e5.Stack!.Limit);
+        Assert.Equal(st.Penalty, e5.Stack.Penalty, 12);
+        Assert.Equal(Needed(0.05), e5.FramesNeeded);
+        Assert.Equal(Verdict.Warning, e5.Verdict);
+        Assert.False(e5.TooFew);
+        Assert.Equal(FramesRating.Few, e5.Points.Single(p => p.Now).Rating);
+        Assert.Equal(Math.Max(30, e5.FramesNeeded), e5.Points[^1].N);
+        Assert.Equal(FramesRating.Enough, e5.Points[^1].Rating);
+        Assert.Same(r.Darks, strict.Darks);
+        Assert.Same(r.Lights, strict.Lights);
+        Assert.Equal(r.Verdicts.Drift, strict.Verdicts.Drift);
+
+        // and back to the default: the first verdict again
+        Assert.Equal(Verdict.Ok, DarkSeriesRun.WithStackLimit(strict, Th.StackNoiseLimit).Verdicts.Enough.Verdict);
+    }
+
+    [Fact]
+    public void R024_WithLightsTheRowsNameTheStackTheLimitAndTheFramesToLeaveOut()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(20, i => new SyntheticDark { Seed = 100 + i, Noise = 4, Hot = SyntheticLight.Lattice }).WithLights(5, i => Light(i));
+        DarkSeriesResult r = Run(s);
+        EnoughVerdict e = r.Verdicts.Enough;
+        StackLimit st = e.Stack!;
+        int at10 = st.Needed[1].Frames, at5 = st.Needed[0].Frames;
+        string noisier = RunReport.F(st.Penalty * 100, 1) + " %";
+        IReadOnlyList<ReportRow> rows = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows;
+
+        // the table gains the stack's column, its note names the lights and their noise, and the row offers the limit
+        ReportRow frames = rows.Single(row => row.Label == "cu n cadre");
+        string against = $"fata de stack-ul facut cu un master dark ideal, adica din foarte multe cadre, fara zgomot propriu; e stack-ul celor 5 lights ({RunReport.F(st.LightNoise, 1)} ADU de zgomot fiecare), socotit fara dithering; cu dithering diferenta e mai mica";
+        ReportTable t = frames.Table!;
+        Assert.Equal(["cadre", "zgomotul masterului", "fata de masterul de acum", "stack mai zgomotos cu", "cum e"], t.Header);
+        Assert.Equal(["20 (acum)", RunReport.F(e.MasterNoise, 2) + " ADU", "", noisier, "ajung"], t.Rows[3]);
+        Assert.Equal(["5", RunReport.F(e.Points[0].MasterNoise, 2) + " ADU", "+100 %", RunReport.F(e.Points[0].StackPenalty * 100, 1) + " %", "prea putine"], t.Rows[0]);
+        // under the table the note is led by the column's name; the console, which prints no column, has it without
+        Assert.Equal("stack mai zgomotos cu: " + against, t.Note);
+        Assert.StartsWith($"5 cadre: {RunReport.F(e.Points[0].MasterNoise, 2)} ADU (+100 % fata de masterul de acum; stack cu {RunReport.F(e.Points[0].StackPenalty * 100, 1)} % mai zgomotos; prea putine); 10 cadre: ", frames.Value, StringComparison.Ordinal);
+        Assert.Contains($"; 20 de cadre (acum): {RunReport.F(e.MasterNoise, 2)} ADU (stack cu {noisier} mai zgomotos; ajung); 25 de cadre: ", frames.Value, StringComparison.Ordinal);
+        Assert.EndsWith("; ajung)  [" + against + "]", frames.Value, StringComparison.Ordinal);
+        ReportChoice choice = Assert.IsType<ReportChoice>(frames.Choice);
+        Assert.Equal("fata de un master dark ideal, stack-ul poate fi mai zgomotos cu cel mult:", choice.Label);
+        Assert.Equal(["5 %", "10 %"], choice.Options);
+        Assert.Equal(1, choice.Selected);
+
+        Assert.Equal($"{RunReport.Frames(at10)} pentru un stack cu cel mult 10 % mai zgomotos decat cu un master dark ideal; {at5} pentru cel mult 5 %", rows.Single(row => row.Label == "ajung de la").Value);
+        Assert.True(at10 < 20, $"needed at 10 %: {at10}");
+        Assert.Equal(
+            $"OK: 20 de cadre ajung: stack-ul celor 5 lights iese cu {noisier} mai zgomotos decat cu un master dark ideal, sub limita de 10 %; ar ajunge {at10}, deci poti scoate pana la {20 - at10}",
+            rows[^1].Value);
+
+        // at 5 % the same twenty are few: the verdict, the limit first in its row, the ratings and the selected option follow
+        IReadOnlyList<ReportRow> strict = DarkReport.Sections(DarkSeriesRun.WithStackLimit(r, 0.05)).Single(x => x.Check == ReportCheck.Enough).Rows;
+        Assert.Equal($"ATENTIE: 20 de cadre sunt putine: stack-ul celor 5 lights iese cu {noisier} mai zgomotos decat cu un master dark ideal, peste limita de 5 %; trebuie {at5}", strict[^1].Value);
+        Assert.Equal($"{RunReport.Frames(at5)} pentru un stack cu cel mult 5 % mai zgomotos decat cu un master dark ideal; {at10} pentru cel mult 10 %", strict.Single(row => row.Label == "ajung de la").Value);
+        ReportRow strictFrames = strict.Single(row => row.Label == "cu n cadre");
+        Assert.Equal("putine", strictFrames.Table!.Rows[3][4]);
+        Assert.Equal(0, strictFrames.Choice!.Selected);
+
+        // a figure that one decimal would print as the limit keeps its decimals, in the verdict and in the table
+        DarkSeriesResult near = r with
+        {
+            Verdicts = r.Verdicts with
+            {
+                Enough = e with { Stack = st with { Penalty = 0.0996 }, Points = [.. e.Points.Select(p => p.Now ? p with { StackPenalty = 0.0996 } : p)] },
+            },
+        };
+        IReadOnlyList<ReportRow> nearRows = DarkReport.Sections(near).Single(x => x.Check == ReportCheck.Enough).Rows;
+        Assert.Contains(" iese cu 9.96 % mai zgomotos decat cu un master dark ideal, sub limita de 10 %", nearRows[^1].Value, StringComparison.Ordinal);
+        Assert.Equal("9.96 %", nearRows.Single(row => row.Label == "cu n cadre").Table!.Rows[3][3]);
+
+        // the same rows in English
+        using (Ui.Use(UiLanguage.English))
+        {
+            IReadOnlyList<ReportRow> en = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows;
+            Assert.Equal($"OK: 20 frames are enough: the stack of the 5 lights comes out {noisier} noisier than with an ideal dark master, under the limit of 10 %; {at10} would do, so up to {20 - at10} can be left out", en[^1].Value);
+            Assert.Equal($"{at10} frames for a stack at most 10 % noisier than with an ideal dark master; {at5} for at most 5 %", en.Single(row => row.Label == "enough from").Value);
+            ReportRow enFrames = en.Single(row => row.Label == "with n frames");
+            Assert.Equal(["frames", "master's noise", "against the master of now", "the stack is noisier by", "how it is"], enFrames.Table!.Header);
+            Assert.Equal("against an ideal dark master, the stack may be noisier by at most:", enFrames.Choice!.Label);
+            Assert.StartsWith("the stack is noisier by: against the stack made with an ideal dark master, that is, one made from very many frames, with no noise of its own; it is the stack of the 5 lights (", enFrames.Table.Note, StringComparison.Ordinal);
+            Assert.EndsWith($"; enough)  [against the stack made with an ideal dark master, that is, one made from very many frames, with no noise of its own; it is the stack of the 5 lights ({RunReport.F(st.LightNoise, 1)} ADU of noise each), counted without dithering; with dithering the difference is smaller]", enFrames.Value, StringComparison.Ordinal);
+            Assert.Equal(
+                $"WARNING: 20 frames are few: the stack of the 5 lights comes out {noisier} noisier than with an ideal dark master, over the limit of 5 %; {at5} are needed",
+                DarkReport.Sections(DarkSeriesRun.WithStackLimit(r, 0.05)).Single(x => x.Check == ReportCheck.Enough).Rows[^1].Value);
+        }
+    }
+
+    [Fact]
+    public void R024_TheNoiseOfALightIsBroughtToTheDarksSettings()
+    {
+        // the same lights declared at 60 s: against darks of 120 s a light's ADU count double, and so does its noise
+        static SyntheticDark D(int i) => new() { Seed = 100 + i, Noise = 4, Hot = SyntheticLight.Lattice };
+        using SessionFixture same = new SessionFixture().WithDarkSeries(20, D).WithLights(5, i => Light(i));
+        using SessionFixture half = new SessionFixture().WithDarkSeries(20, D).WithLights(5, i => Light(i), exposure: 60);
+        StackLimit atSame = Run(same).Verdicts.Enough.Stack!;
+        DarkSeriesResult r = Run(half);
+        StackLimit atHalf = r.Verdicts.Enough.Stack!;
+
+        double normDarks = r.Darks.Norm;
+        List<double> eq = [.. r.Lights!.Frames.Select(f => f.LocalSigma[r.ReferencePlane] / r.Darks.Normalisation.NormOf(f.Info)).Order()];
+        Assert.NotEqual(normDarks, r.Darks.Normalisation.NormOf(r.Lights.Frames[0].Info));
+        Assert.Equal(eq[2] * normDarks, atHalf.LightNoise, 4);
+        Assert.Equal(2 * atSame.LightNoise, atHalf.LightNoise, 3);
+        // a noisier light hides the master better: fewer darks are needed
+        Assert.True(atHalf.Penalty < atSame.Penalty, $"{atHalf.Penalty} against {atSame.Penalty}");
+    }
+
+    [Fact]
+    public void R024_WhenTheFrameCapLeavesDarksOutTheVerdictDoesNotSayHowManyToLeaveOut()
+    {
+        // forty darks under a cap of twenty: every second one is read, so the twenty are not the folder's frames
+        using SessionFixture s = new SessionFixture().WithDarkSeries(40, i => new SyntheticDark { Seed = 100 + i, Noise = 4, Hot = SyntheticLight.Lattice }).WithLights(5, i => Light(i));
+        DarkSeriesResult r = Run(s, maxFrames: 20);
+        EnoughVerdict e = r.Verdicts.Enough;
+        Assert.Equal(20, e.Frames);
+        Assert.Equal(Verdict.Ok, e.Verdict);
+        Assert.True(e.FramesNeeded < 20, $"needed {e.FramesNeeded}");
+        string verdict = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows[^1].Value;
+        Assert.EndsWith($", sub limita de 10 %; ar ajunge {e.FramesNeeded}", verdict, StringComparison.Ordinal);
+        Assert.DoesNotContain("poti scoate", verdict, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.EndsWith($", under the limit of 10 %; {e.FramesNeeded} would do", DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows[^1].Value, StringComparison.Ordinal);
+        }
+    }
 }

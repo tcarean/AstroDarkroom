@@ -247,7 +247,9 @@ internal static class DarkReport
             [
                 CurveRow(d.Noise, g),
                 new("master", Enough(d, v.Enough), double.IsNaN(v.Enough.MasterNoise) ? null : [$"{F(v.Enough.MasterNoise, 2)} ADU"]),
-                new("verdict", EnoughVerdictText(v.Enough)),
+                FramesRow(v.Enough),
+                new(T("enough from", "ajung de la"), EnoughFrom(v.Enough)),
+                new("verdict", EnoughVerdictText(v.Enough, !d.Frames.Any(f => f.Skipped))),
             ]),
             new(ReportCheck.Index, "INDEX", IndexRows(r)),
         ];
@@ -1752,40 +1754,185 @@ internal static class DarkReport
             $"WARNING: {v.Dead} {(v.Dead == 1 ? "dead pixel" : "dead pixels")}, {v.Saturated} saturated",
             $"ATENTIE: {RoCount(v.Dead)}{(v.Dead == 1 ? "pixel mort" : "pixeli morti")}, {RoCount(v.Saturated)}{(v.Saturated == 1 ? "saturat" : "saturati")}");
 
+    /// <summary>The words of a row of check 9 that a single frame leaves without figures.</summary>
+    /// <returns>The unmeasured line, in the run's language.</returns>
+    private static string FewerThanTwoFrames() => T("UNMEASURED: there are fewer than 2 frames", "NEMASURAT: sunt mai putin de 2 cadre");
+
     /// <summary>
-    /// The <c>zgomot dupa medie</c> row of check 9: the measured and the expected noise of the mean
-    /// of n frames.
+    /// The <c>zgomot dupa medie</c> row of check 9: the last measured point of the noise of the
+    /// mean of n frames, beside what a single frame's noise gave to expect.
     /// </summary>
     /// <param name="nv">The noise-against-n figures.</param>
     /// <returns>The row's value, in the run's language.</returns>
     private static string Curve(NoiseVsN nv)
     {
-        string expected = T("expected", "se astepta");
-        return nv.Curve.Count == 0
-            ? T("UNMEASURED: there are fewer than 2 frames", "NEMASURAT: sunt mai putin de 2 cadre")
-            : string.Join("; ", nv.Curve.Select(p => $"{RunReport.Frames(p.N)}: {F(p.Measured, 2)} ({expected} {F(p.Expected, 2)})"));
+        if (nv.Curve.Count == 0)
+        {
+            return FewerThanTwoFrames();
+        }
+
+        NoisePoint p = nv.Curve[^1];
+        string measured = F(p.Measured, 2), expected = F(p.Expected, 2), single = F(nv.SigmaFrame, 2);
+        return p.N == 1
+            ? T(
+                $"1 frame has {measured} ADU of noise; from the noise of a single frame ({single} ADU), {expected} was expected",
+                $"1 cadru are {measured} ADU de zgomot; din zgomotul unui singur cadru ({single} ADU) se asteptau {expected}")
+            : T(
+                $"the average of {RunReport.Frames(p.N)} has {measured} ADU of noise; from the noise of a single frame ({single} ADU), {expected} was expected",
+                $"media a {RunReport.Frames(p.N)} are {measured} ADU de zgomot; din zgomotul unui singur cadru ({single} ADU) se asteptau {expected}");
     }
 
     /// <summary>
-    /// The <c>zgomot dupa medie</c> row of check 9 (R-024): the console's line, the points joined
-    /// by "; " and the note in brackets, and the same points as a table for the window; without a
-    /// curve the unmeasured line alone, the note still in brackets.
+    /// The <c>zgomot dupa medie</c> row of check 9 (R-024): the last measured point and the note
+    /// of the plane and the crop in brackets; without a curve the unmeasured line, the note still
+    /// in brackets.
     /// </summary>
     /// <param name="nv">The noise-against-n figures.</param>
     /// <param name="g">The reference plane's name.</param>
-    /// <returns>The row, with its table when there is a curve.</returns>
+    /// <returns>The row.</returns>
     private static ReportRow CurveRow(NoiseVsN nv, string g)
     {
         string note = T(
             $"{ScaleReport.PlaneWords(g)}, the central {nv.CropPx} px, ADU; measured from one frame to the next",
             $"{ScaleReport.PlaneWords(g)}, centrul de {nv.CropPx} px, ADU; masurat de la un cadru la altul");
-        return new(T("noise when averaged", "zgomot dupa medie"), Curve(nv) + "  [" + note + "]")
+        return new(T("noise when averaged", "zgomot dupa medie"), Curve(nv) + "  [" + note + "]");
+    }
+
+    /// <summary>A fraction as a percent with its unit: 0.104 with one decimal is "10.4 %".</summary>
+    /// <param name="fraction">The fraction.</param>
+    /// <param name="decimals">The number of decimals.</param>
+    /// <returns>The formatted percent.</returns>
+    private static string Percent(double fraction, int decimals) => F(fraction * 100, decimals) + " %";
+
+    /// <summary>
+    /// The stack's figure of check 9 as a percent with one decimal, or with as many more, up to
+    /// four, as it takes not to print one of <see cref="Th.StackNoiseLimits"/> for a figure that is
+    /// not that limit: "9.96 %" and "9.996 %" beside a limit of 10 %, so the words "under the
+    /// limit" do not stand beside "10.0 %", and a row is not shown at "5.0 %" while the frames for
+    /// 5 % are more than its own. The row <c>ajung de la</c> names every limit, so every limit
+    /// is guarded, not the one in force alone.
+    /// </summary>
+    /// <param name="penalty">How much noisier the stack is, as a fraction; not NaN.</param>
+    /// <returns>The formatted percent.</returns>
+    internal static string StackPercent(double penalty)
+    {
+        const int most = 4;
+        for (int decimals = 1; decimals < most; decimals++)
         {
-            Table = nv.Curve.Count == 0 ? null : new(
-                [T("frames", "cadre"), T("measured", "masurat"), T("expected", "se astepta")],
-                nv.Curve.Select(p => (IReadOnlyList<string>)[RunReport.Frames(p.N), F(p.Measured, 2), F(p.Expected, 2)]).ToList(),
-                note),
+            string text = Percent(penalty, decimals);
+            if (!Th.StackNoiseLimits.Any(limit => limit != penalty && Percent(limit, decimals) == text))
+            {
+                return text;
+            }
+        }
+
+        return Percent(penalty, most);
+    }
+
+    /// <summary>How a number of darks rates, in the run's language.</summary>
+    /// <param name="rating">The rating of the table's row.</param>
+    /// <returns>"too few", "few" or "enough" ("prea putine", "putine" or "ajung").</returns>
+    private static string Rating(FramesRating rating) => rating switch
+    {
+        FramesRating.TooFew => T("too few", "prea putine"),
+        FramesRating.Few => T("few", "putine"),
+        _ => T("enough", "ajung"),
+    };
+
+    /// <summary>
+    /// The <c>cu n cadre</c> row of check 9 (R-024, ADR 0051): what the master would be with fewer
+    /// or more darks, as the console's line (the points joined by "; ", then with lights the note
+    /// of the stack in brackets) and as a table for the window, with the choice of the stack's
+    /// limit when there are lights (R-123).
+    /// </summary>
+    /// <param name="e">Check 9's verdict, with its points.</param>
+    /// <returns>The row; a single unmeasured line without points.</returns>
+    private static ReportRow FramesRow(EnoughVerdict e)
+    {
+        string label = T("with n frames", "cu n cadre");
+        if (e.Points.Count == 0)
+        {
+            return new(label, e.Frames < 2 ? FewerThanTwoFrames() : T("UNMEASURED", "NEMASURAT"));
+        }
+
+        StackLimit? st = e.Stack;
+        // what the stack's figure is compared with: the console's bracket; under the window's table it is led by the column's name
+        string compared = st is null ? "" : T(
+            $"against the stack made with an ideal dark master, that is, one made from very many frames, with no noise of its own; it is the stack of the {st.Lights} lights ({F(st.LightNoise, 1)} ADU of noise each), counted without dithering; with dithering the difference is smaller",
+            $"fata de stack-ul facut cu un master dark ideal, adica din foarte multe cadre, fara zgomot propriu; e stack-ul celor {RoCount(st.Lights)}lights ({F(st.LightNoise, 1)} ADU de zgomot fiecare), socotit fara dithering; cu dithering diferenta e mai mica");
+        string note = compared.Length == 0 ? "" : T("the stack is noisier by: ", "stack mai zgomotos cu: ") + compared;
+        List<string> header = [T("frames", "cadre"), T("master's noise", "zgomotul masterului"), T("against the master of now", "fata de masterul de acum")];
+        if (st is not null)
+        {
+            header.Add(T("the stack is noisier by", "stack mai zgomotos cu"));
+        }
+
+        header.Add(T("how it is", "cum e"));
+        List<string> texts = [];
+        List<IReadOnlyList<string>> rows = [];
+        foreach (FramesPoint p in e.Points)
+        {
+            string noise = F(p.MasterNoise, 2) + " ADU";
+            string against = p.Now ? "" : Signed(p.AgainstNow * 100, 0) + " %";
+            string count = p.N.ToString(CultureInfo.InvariantCulture);
+            List<string> cells = [p.Now ? count + T(" (now)", " (acum)") : count, noise, against];
+            List<string> parts = [];
+            if (!p.Now)
+            {
+                parts.Add(T($"{against} against the master of now", $"{against} fata de masterul de acum"));
+            }
+
+            if (st is not null)
+            {
+                string stack = StackPercent(p.StackPenalty);
+                cells.Add(stack);
+                parts.Add(T($"the stack {stack} noisier", $"stack cu {stack} mai zgomotos"));
+            }
+
+            cells.Add(Rating(p.Rating));
+            parts.Add(Rating(p.Rating));
+            rows.Add(cells);
+            texts.Add(RunReport.Frames(p.N) + (p.Now ? T(" (now)", " (acum)") : "") + ": " + noise + " (" + string.Join("; ", parts) + ")");
+        }
+
+        return new(label, string.Join("; ", texts) + (compared.Length == 0 ? "" : "  [" + compared + "]"))
+        {
+            Table = new(header, rows, note),
+            Choice = st is null ? null : new ReportChoice(
+                T("against an ideal dark master, the stack may be noisier by at most:", "fata de un master dark ideal, stack-ul poate fi mai zgomotos cu cel mult:"),
+                [.. Th.StackNoiseLimits.Select(l => Percent(l, 0))],
+                Th.StackNoiseLimits.ToList().FindIndex(l => Math.Abs(l - st.Limit) < 1e-9)),
         };
+    }
+
+    /// <summary>
+    /// The <c>ajung de la</c> row of check 9 (R-024): the frames the rule in force asks for; with
+    /// lights, the limit in force first and the frames of the other limits after it.
+    /// </summary>
+    /// <param name="e">Check 9's verdict.</param>
+    /// <returns>The row's value, in the run's language.</returns>
+    private static string EnoughFrom(EnoughVerdict e)
+    {
+        if (e.Verdict == Verdict.Unmeasured)
+        {
+            return T("UNMEASURED", "NEMASURAT");
+        }
+
+        if (e.Stack is not StackLimit st)
+        {
+            return T(
+                $"{RunReport.Frames(e.FramesNeeded)}: from there the master's noise is under the file's value step ({e.QuantStep} ADU)",
+                $"{RunReport.Frames(e.FramesNeeded)}: de acolo zgomotul masterului e sub pasul valorilor din fisier ({e.QuantStep} ADU)");
+        }
+
+        string first = T(
+            $"{RunReport.Frames(e.FramesNeeded)} for a stack at most {Percent(st.Limit, 0)} noisier than with an ideal dark master",
+            $"{RunReport.Frames(e.FramesNeeded)} pentru un stack cu cel mult {Percent(st.Limit, 0)} mai zgomotos decat cu un master dark ideal");
+        IEnumerable<string> others = st.Needed
+            .Where(n => Math.Abs(n.Limit - st.Limit) >= 1e-9)
+            .OrderByDescending(n => n.Limit)
+            .Select(n => T($"{n.Frames} for at most {Percent(n.Limit, 0)}", $"{n.Frames} pentru cel mult {Percent(n.Limit, 0)}"));
+        return string.Join("; ", [first, .. others]);
     }
 
     /// <summary>
@@ -1816,23 +1963,54 @@ internal static class DarkReport
             $"{RunReport.Frames(e.Frames)} {(e.Frames == 1 ? "da" : "dau")} un master cu {F(e.MasterNoise, 2)} ADU de zgomot pe pixel ({basis}){half}");
     }
 
-    /// <summary>The verdict row of check 9.</summary>
+    /// <summary>
+    /// The verdict row of check 9 (R-024, ADR 0051): with lights, what the master does to their
+    /// stack against the limit, and how many frames could be left out; without lights, the
+    /// master's noise against the file's value step.
+    /// </summary>
     /// <param name="e">Check 9's verdict.</param>
+    /// <param name="allRead">True when the frame cap left no dark out; false when it did, and the
+    /// frames stacked are then every k-th of the folder's, so the verdict does not say how many
+    /// could be left out. A dark that failed to decode does not count here: it has its own error
+    /// line, and the count is true of the frames that decoded.</param>
     /// <returns>The verdict's words, opening with OK, WARNING or UNMEASURED (OK, ATENTIE or
     /// NEMASURAT in Romanian).</returns>
-    private static string EnoughVerdictText(EnoughVerdict e) => e.Verdict switch
+    private static string EnoughVerdictText(EnoughVerdict e, bool allRead)
     {
-        Verdict.Unmeasured => T("UNMEASURED: a single frame is not a series", "NEMASURAT: un singur cadru nu e o serie"),
-        Verdict.Ok => T(
-            $"OK: {RunReport.Frames(e.Frames)} are enough; the master's noise ({F(e.MasterNoise, 2)} ADU) is under the file's value step ({e.QuantStep} ADU), and it adds to every calibrated light",
-            $"OK: {RunReport.Frames(e.Frames)} ajung; zgomotul masterului ({F(e.MasterNoise, 2)} ADU) e sub pasul valorilor din fisier ({e.QuantStep} ADU), iar el se adauga la fiecare light calibrat"),
-        _ when e.TooFew => T(
-            $"WARNING: only {RunReport.Frames(e.Frames)}; at least {Th.MinDarks} are needed, so that one odd frame does not spoil the master (the master's noise would be {F(e.MasterNoise, 2)} ADU)",
-            $"ATENTIE: doar {RunReport.Frames(e.Frames)}; trebuie cel putin {Th.MinDarks}, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi {F(e.MasterNoise, 2)} ADU)"),
-        _ => T(
-            $"WARNING: the master's noise ({F(e.MasterNoise, 2)} ADU) is above the file's value step ({e.QuantStep} ADU); it would drop under it from {e.FramesNeeded} frames",
-            $"ATENTIE: zgomotul masterului ({F(e.MasterNoise, 2)} ADU) e peste pasul valorilor din fisier ({e.QuantStep} ADU); ar cobori sub el de la {RoCount(e.FramesNeeded)}cadre"),
-    };
+        if (e.Verdict == Verdict.Unmeasured)
+        {
+            return T("UNMEASURED: a single frame is not a series", "NEMASURAT: un singur cadru nu e o serie");
+        }
+
+        if (e.TooFew)
+        {
+            return T(
+                $"WARNING: only {RunReport.Frames(e.Frames)}; at least {Th.MinDarks} are needed, so that one odd frame does not spoil the master (the master's noise would be {F(e.MasterNoise, 2)} ADU)",
+                $"ATENTIE: doar {RunReport.Frames(e.Frames)}; trebuie cel putin {Th.MinDarks}, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi {F(e.MasterNoise, 2)} ADU)");
+        }
+
+        // the frames that could be left out with the verdict still OK
+        int spare = e.Frames - e.FramesNeeded;
+        if (e.Stack is StackLimit st)
+        {
+            string noisier = StackPercent(st.Penalty), limit = Percent(st.Limit, 0);
+            return e.Verdict == Verdict.Ok
+                ? T(
+                    $"OK: {RunReport.Frames(e.Frames)} are enough: the stack of the {st.Lights} lights comes out {noisier} noisier than with an ideal dark master, under the limit of {limit}{(spare > 0 ? $"; {e.FramesNeeded} would do{(allRead ? $", so up to {spare} can be left out" : "")}" : "")}",
+                    $"OK: {RunReport.Frames(e.Frames)} ajung: stack-ul celor {RoCount(st.Lights)}lights iese cu {noisier} mai zgomotos decat cu un master dark ideal, sub limita de {limit}{(spare > 0 ? $"; ar ajunge {e.FramesNeeded}{(allRead ? $", deci poti scoate pana la {spare}" : "")}" : "")}")
+                : T(
+                    $"WARNING: {RunReport.Frames(e.Frames)} are few: the stack of the {st.Lights} lights comes out {noisier} noisier than with an ideal dark master, over the limit of {limit}; {e.FramesNeeded} are needed",
+                    $"ATENTIE: {RunReport.Frames(e.Frames)} sunt putine: stack-ul celor {RoCount(st.Lights)}lights iese cu {noisier} mai zgomotos decat cu un master dark ideal, peste limita de {limit}; trebuie {e.FramesNeeded}");
+        }
+
+        return e.Verdict == Verdict.Ok
+            ? T(
+                $"OK: {RunReport.Frames(e.Frames)} are enough; the master's noise ({F(e.MasterNoise, 2)} ADU) is under the file's value step ({e.QuantStep} ADU), and it adds to every calibrated light{(spare > 0 ? $"; {e.FramesNeeded} would do" : "")}",
+                $"OK: {RunReport.Frames(e.Frames)} ajung; zgomotul masterului ({F(e.MasterNoise, 2)} ADU) e sub pasul valorilor din fisier ({e.QuantStep} ADU), iar el se adauga la fiecare light calibrat{(spare > 0 ? $"; ar ajunge {e.FramesNeeded}" : "")}")
+            : T(
+                $"WARNING: the master's noise ({F(e.MasterNoise, 2)} ADU) is above the file's value step ({e.QuantStep} ADU); it would drop under it from {e.FramesNeeded} frames",
+                $"ATENTIE: zgomotul masterului ({F(e.MasterNoise, 2)} ADU) e peste pasul valorilor din fisier ({e.QuantStep} ADU); ar cobori sub el de la {RoCount(e.FramesNeeded)}cadre");
+    }
 
     /// <summary>A ratio with three decimals, or "-" when NaN.</summary>
     /// <param name="v">The ratio.</param>

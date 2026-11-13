@@ -123,9 +123,46 @@ public class WindowSmokeTests
         });
 
     /// <summary>
-    /// The "Despre" window: its own XAML, a template of the theme, the icon through a decoder
-    /// and links bound to properties, all of which compile with a wrong name.
+    /// Check 9's card with lights: the dropdown of the stack's limit above the five-column table,
+    /// and a pick made on the rendered ComboBox itself.
     /// </summary>
+    [Fact]
+    public async Task R123_TheDropdownOfCheckNineStandsInItsCardAndJudgesAgain()
+    {
+        // twenty darks of noise 4 with five lights of noise 6: enough at 10 %, few at 5 % (R-024)
+        using TestSettings.Own _ = new();
+        using SessionFixture f = new SessionFixture()
+            .WithDarkSeries(20, i => new SyntheticDark { Seed = 100 + i, Noise = 4, Hot = SyntheticLight.Lattice })
+            .WithLights(5, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, Stars = SyntheticLight.ThreeStars });
+        await _sta.InvokeAsync(async () =>
+        {
+            MainViewModel vm = new();
+            await vm.OpenAsync(f.Root);
+            using BindingErrors errors = new();
+            SummaryView view = new() { DataContext = vm };
+            Render(view, h: 2600, name: "tab-summary-stack-limit-10");
+
+            // one dropdown on the whole tab, with the core's two limits and 10 % selected; the table under it has its five columns
+            ComboBox box = Descendants(view).OfType<ComboBox>().Single(c => c.DataContext is RowVm { HasChoice: true });
+            Assert.Equal(["5 %", "10 %"], box.Items.Cast<string>());
+            Assert.Equal(1, box.SelectedIndex);
+            Assert.Equal("fata de un master dark ideal, stack-ul poate fi mai zgomotos cu cel mult:", System.Windows.Automation.AutomationProperties.GetName(box));
+            Assert.Contains(Descendants(view).OfType<TextBlock>(), t => t.Text == "stack mai zgomotos cu");
+            Assert.Contains(Descendants(view).OfType<TextBlock>(), t => t.Text == "20 (acum)");
+
+            // picking 5 % in the dropdown itself: the card is drawn again with the new verdict and the option kept
+            box.SelectedIndex = 0;
+            Assert.Equal(0.05, vm.Result!.Verdicts.Enough.Stack!.Limit);
+            Render(view, h: 2600, name: "tab-summary-stack-limit-5");
+            // the rows' runs are rebuilt at DataBind priority (Emphasis): the new verdict's text waits for them
+            view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            ComboBox again = Descendants(view).OfType<ComboBox>().Single(c => c.DataContext is RowVm { HasChoice: true });
+            Assert.Equal(0, again.SelectedIndex);
+            Assert.Contains(Descendants(view).OfType<TextBlock>(), t => t.Text.Contains("peste limita de 5 %", StringComparison.Ordinal));
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+        });
+    }
+
     [Fact]
     public async Task R071_EveryColumnHeaderOfTheTablesHasAHint()
     {
