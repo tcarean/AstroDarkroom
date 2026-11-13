@@ -342,6 +342,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A file whose name starts with a dot, or that is hidden, is no longer taken for a frame: the
+  `._DSC_0034.NEF` a Mac leaves beside each file of a card were listed as darks that could not
+  be read and, over the frame cap, were read in the place of real darks (R-002; CR-001 of the
+  code review).
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

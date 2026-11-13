@@ -14,7 +14,11 @@ the other stacked FITS, which would otherwise pass for darks. `darks/` absent bu
 `biases/` or `flats/` present is a session without darks, refused for the same reason. Neither
 present means a bare folder of darks, a library: the frames are at the root and no biases or
 lights are looked for, even if such subfolders existed somewhere else. `FramesIn` lists one
-folder: raws when there are any, else FITS, sorted by file name ignoring case.
+folder: raws when there are any, else FITS, sorted by file name ignoring case. It drops, before
+the extension is looked at, every file whose name starts with a dot and every hidden one: the
+`._name` copies a Mac leaves on a card sort before the frames, so they would fail to decode
+first and, over the frame cap, be picked in the darks' place. The listing goes through
+`DirectoryInfo`, which brings each file's attributes with its name.
 
 `Open(path, allowLightsOnly)` has one more shape since ADR 0011: with the flag, a folder whose
 `lights\` holds frames and that has no `darks\` opens with an empty `Darks` (`HasDarks` false,
