@@ -35,6 +35,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The Soft proof tab compares the proof with another image's (R-165, R-166, ADR 0091):
+  `Compare with another image...` puts a second file of the same size through the same paper
+  profile with the same settings and shows the two across a dragged line, as the Colours for
+  paper tab compares its variants; every control acts on both sides, each file has its own
+  share of colours the paper cannot reproduce, `Change the image...` and `Stop comparing`
+  replace the second image or leave the comparison, and the full-screen window does the same.
 - A Colours for paper tab in the window (R-175 to R-178, ADR 0083): the colours the paper cannot
   reproduce, the ones the Soft proof tab paints in red, have their saturation lowered, each along
   its own hue and at its own tone, to the most the paper holds there, in three variants (Exact,

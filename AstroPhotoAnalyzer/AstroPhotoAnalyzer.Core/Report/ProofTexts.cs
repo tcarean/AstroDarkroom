@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ProofTexts.cs - the Soft proof tab's sentences (R-161 to R-163): the problems, the profile's
+// ProofTexts.cs - the Soft proof tab's sentences (R-161 to R-166): the problems, the profile's
 // facts, the legend of the paper's gamut warning with its share, the names and the one-line help of
-// the intents, the caption of the window.
+// the intents, the caption of the window, and the comparison's: the refusal of another size, the
+// legend per image, which side is which.
 //
 // The window writes none of them: it shows them. Every number in them is the profile's or a
 // threshold's, formatted by Fmt (ADR 0012, ADR 0048).
@@ -71,6 +72,36 @@ namespace AstroPhotoAnalyzer
         internal static string PaperGamutLegend(double pct)
             => Tr.Pick($"colours the paper cannot reproduce (the gamut): {Fmt.Pct(pct)} of the pixels (on paper they would come out another tone or colour, by over {Fmt.F0(Thresholds.CurveGamutDeltaE)}; the same rule as in the Curves Editing tab)",
                 $"culori pe care hartia nu le poate reda (gamutul): {Fmt.Pct(pct)} din pixeli (pe hartie ar iesi alt ton sau alta culoare, cu peste {Fmt.F0(Thresholds.CurveGamutDeltaE)}; aceeasi regula ca in tabul Editare Curbe)");
+
+        /// <summary>
+        /// The legend of the paper's gamut warning for one of two compared images: its file
+        /// name, then the legend with its own share (R-166).
+        /// </summary>
+        /// <param name="name">The image's file name, as the label beside the line shows it.</param>
+        /// <param name="pct">The share of that image's pixels outside the paper's gamut, in percent.</param>
+        /// <returns>The sentence.</returns>
+        internal static string PaperGamutLegend(string name, double pct) => name + ": " + PaperGamutLegend(pct);
+
+        /// <summary>
+        /// Why an image of another size is not compared (R-165): both sizes, the analysed
+        /// image's first.
+        /// </summary>
+        /// <param name="w">The analysed image's width, in pixels.</param>
+        /// <param name="h">The analysed image's height, in pixels.</param>
+        /// <param name="otherW">The other image's width, in pixels.</param>
+        /// <param name="otherH">The other image's height, in pixels.</param>
+        /// <returns>The sentence.</returns>
+        internal static string SizeMismatch(int w, int h, int otherW, int otherH)
+            => Tr.Pick($"the two images are not the same size ({Fmt.Dim(w, h)} and {Fmt.Dim(otherW, otherH)} pixels): only images of the same size can be compared",
+                $"cele doua imagini nu au aceeasi marime ({Fmt.Dim(w, h)} si {Fmt.Dim(otherW, otherH)} pixeli): comparatia merge doar intre imagini de aceeasi marime");
+
+        /// <summary>Which side of the comparison's line is which image, and that the line is dragged (R-166).</summary>
+        /// <param name="left">The analysed image's file name, left of the line.</param>
+        /// <param name="right">The other image's file name, right of the line.</param>
+        /// <returns>The sentence.</returns>
+        internal static string CompareSides(string left, string right)
+            => Tr.Pick($"Left of the line: {left}, the image analysed; right of it: {right}, put through the same paper profile with the same settings. Drag the line to move it.",
+                $"In stanga liniei: {left}, imaginea analizata; in dreapta: {right}, trecuta prin acelasi profil de hartie, cu aceleasi setari. Tragi de linie ca s-o muti.");
 
         /// <summary>The name of an intent, as the radio button shows it (R-163).</summary>
         /// <param name="intent">The intent.</param>

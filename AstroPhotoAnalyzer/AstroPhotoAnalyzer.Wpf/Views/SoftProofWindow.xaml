@@ -22,8 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
      image. The tab's controls, the caption, the message, the key hint and a Close button sit
      in a panel laid over the top of the image, hidden until the mouse is over the band the
      panel occupies (PanelShown, in the code-behind, from the band's MouseEnter / MouseLeave,
-     held while the margin list is open); the band keeps its height while hidden, so there is
-     something to point at. The keys G, O, I and Esc are in the code-behind. No figure is
+     held while the margin list is open, and shown too when the tab has a reason in red); the band keeps its height while hidden, so there is
+     something to point at. With another image chosen (R-166) the image is the comparison
+     across a line, as in the tab. The keys G, O, I and Esc are in the code-behind. No figure is
      computed here. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.SoftProofWindow"
@@ -39,12 +40,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <!-- The viewer fits the proof, zooms it with the wheel and pans it with the left button;
          a double click fits it again (ZoomPanViewer). It takes the whole screen. -->
     <Border x:Name="Proof" Background="{Binding MarginBrush}" Padding="48">
-      <local:ZoomPanViewer>
-        <Grid Width="{Binding Width}" Height="{Binding Height}">
-          <Image Source="{Binding Image}" Stretch="None" />
-          <Image Source="{Binding PaperLayer}" Stretch="None" Visibility="{Binding ShowPaperLayer, Converter={StaticResource BoolToVis}}" />
-        </Grid>
-      </local:ZoomPanViewer>
+      <!-- One of the two is shown, as in the tab: the single image, or the comparison with
+           another image across a line (R-166), with a line and a zoom of this window's own. -->
+      <Grid>
+        <local:ZoomPanViewer x:Name="Single" Visibility="{Binding IsComparing, Converter={StaticResource NotBoolToVis}}">
+          <Grid Width="{Binding Width}" Height="{Binding Height}">
+            <Image Source="{Binding Image}" Stretch="None" />
+            <Image Source="{Binding PaperLayer}" Stretch="None" Visibility="{Binding ShowPaperLayer, Converter={StaticResource BoolToVis}}" />
+          </Grid>
+        </local:ZoomPanViewer>
+        <local:BeforeAfterViewer x:Name="Comparison" Visibility="{Binding IsComparing, Converter={StaticResource BoolToVis}}"
+                                 Before="{Binding Image}" BeforeOverlay="{Binding PaperOverlay}"
+                                 After="{Binding OtherImage}" AfterOverlay="{Binding OtherPaperOverlay}"
+                                 ContentWidth="{Binding Width}" ContentHeight="{Binding Height}"
+                                 BeforeText="{Binding ImageName}" AfterText="{Binding OtherName}" />
+      </Grid>
     </Border>
     <!-- The band at the top: transparent, so the mouse is seen over it while the panel is
          hidden; Hidden, not Collapsed, keeps the panel's height in the band. -->
@@ -68,6 +78,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <local:SoftProofControls x:Name="ProofControls" ShowFullScreenButton="False" />
           </DockPanel>
           <TextBlock Text="{Binding Caption}" TextWrapping="Wrap" Style="{StaticResource Muted}" />
+          <!-- In a comparison (R-166): which side of the line is which image. -->
+          <TextBlock Text="{Binding CompareSides}" TextWrapping="Wrap" Style="{StaticResource Muted}"
+                     Visibility="{Binding IsComparing, Converter={StaticResource BoolToVis}}" />
           <!-- "computing", or the reason a table was refused, with the image gone (R-163). -->
           <TextBlock Text="{Binding Message}" TextWrapping="Wrap">
             <TextBlock.Style>

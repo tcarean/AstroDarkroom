@@ -102,7 +102,12 @@ neutral model on L\* alone, and a `white` for a tinted media white; `withB2A: fa
 `withPerceptualB2A: false` make the refused profiles): a grey ramp comes back to itself, the
 paper's white and black appear under the simulation, the third intent crushes the tones under
 the black, the perceptual table lands elsewhere than the colorimetric one, the display step on a
-`ProofProfile.ForTests`, the problems. `SoftProofTabTests` drives
+`ProofProfile.ForTests`, the problems. `SoftProofCompareTests` holds the second image of a
+comparison (R-165): on that profile every grey is inside the paper's gamut and every colour
+outside, so a raster half grey and half red has a mask and a share the analysed image's cannot
+be mistaken for; the refusals are read as sentences. `SoftProofTabTests` drives the comparison
+through `Compare(path)`, synchronous as `Compute()`, and `CompareAsync`; the file dialog is not
+driven. `SoftProofTabTests` drives
 the tab through `Compute()`, the synchronous body, and the async paths through
 `ProofComputation`; `WindowSmokeTests.BindingErrors` is internal so that it can watch the tab's
 and the window's renders there too; `ZoomPanViewerTests` lays the viewer out over a sized child

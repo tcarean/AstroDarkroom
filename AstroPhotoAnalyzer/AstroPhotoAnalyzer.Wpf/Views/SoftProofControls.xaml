@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- SoftProofControls - the controls of the soft proof (R-163), the same in the tab and in the
-     full-screen window over the same view-model: the three intents, the two boxes, the margin
-     and "Full screen". The radio buttons have no GroupName: a GroupName would join every
+     full-screen window over the same view-model: the three intents, the two boxes, the margin,
+     the buttons of the comparison with another image (R-166) and "Full screen". The radio buttons have no GroupName: a GroupName would join every
      instance in the process into one group (docs/design/testing.md), and each instance's
      panel already makes a group of its own. -->
 
@@ -55,6 +55,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.DarkGrey}" Content="{local:T En='Dark grey', Ro='Gri inchis'}" />
         <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.Black}" Content="{local:T En='Black', Ro='Negru'}" />
       </ComboBox>
+    </StackPanel>
+    <!-- The comparison with another image (R-166): one button while a single image is shown, two
+         while two are compared. The two that choose a file open the dialog from the code-behind,
+         over the window this control is in, the full-screen one included. One panel, so that
+         the two buttons of a comparison wrap to the next row together. -->
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+      <Button x:Name="CompareButton" Content="{local:T En='Compare with another image...', Ro='Compara cu alta imagine...'}" Click="ChooseOther"
+              IsEnabled="{Binding CanCompare}" Padding="14,3" VerticalAlignment="Center" Margin="0,0,12,4"
+              Visibility="{Binding IsComparing, Converter={StaticResource NotBoolToVis}}"
+              ToolTip="{local:T En='Choose another image of the same size: it is put through the same paper profile, with the same settings, and shown beside this one, across a line you drag.', Ro='Alegi alta imagine de aceeasi marime: e trecuta prin acelasi profil de hartie, cu aceleasi setari, si aratata langa aceasta, de o parte si de alta a unei linii pe care o tragi.'}" />
+      <Button x:Name="ChangeButton" Content="{local:T En='Change the image...', Ro='Schimba imaginea...'}" Click="ChooseOther"
+              IsEnabled="{Binding CanCompare}" Padding="14,3" VerticalAlignment="Center" Margin="0,0,8,4"
+              Visibility="{Binding IsComparing, Converter={StaticResource BoolToVis}}"
+              ToolTip="{local:T En='Choose another image for the right side of the line.', Ro='Alegi alta imagine pentru partea din dreapta liniei.'}" />
+      <Button x:Name="StopButton" Content="{local:T En='Stop comparing', Ro='Opreste comparatia'}" Command="{Binding StopComparing}"
+              Padding="14,3" VerticalAlignment="Center" Margin="0,0,12,4"
+              Visibility="{Binding IsComparing, Converter={StaticResource BoolToVis}}"
+              ToolTip="{local:T En='Back to this image alone.', Ro='Inapoi la imaginea aceasta singura.'}" />
     </StackPanel>
     <Button Content="{local:T En='Full screen', Ro='Ecran intreg'}" Command="{Binding FullScreen}" Padding="14,3" VerticalAlignment="Center" Margin="0,0,0,4"
             Visibility="{Binding ShowFullScreenButton, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"

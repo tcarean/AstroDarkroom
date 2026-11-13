@@ -733,6 +733,49 @@ public partial class LoggingTests
         Assert.Equal(expected, Timeless(capture, "ProofRun"));
     }
 
+    /// <summary>
+    /// The preparation of a second image, for the soft proof's comparison, writes its own start
+    /// line with the file and the size it must match, and its share or its refusal as its done
+    /// line; a file that cannot be read is a warning with the exception (R-171, R-165).
+    /// </summary>
+    [Fact]
+    public void R171_TheProofOfASecondImageLogsItsFileAndItsOutcome()
+    {
+        using TempWorkspace ws = new();
+        string icc = ws.WriteFile("paper.icc", IccPrinterTestData.V2Lut16("Paper test", 3.5));
+        Raster scene = SyntheticRasters.From(64, 64, 3, (x, y, pl) => x < 32 ? (pl == 0 ? 1f : 0f) : 0.3f);
+        Parameters withProfile = Scenes.OnBuiltForPaper().WithDmaxFromProfile(icc, out string error) ?? throw new InvalidOperationException(error);
+        ProofSet first = ProofRun.Prepare(AnalysisRun.Execute(scene, "memory", withProfile));
+        string missing = ws.PathTo("missing.tif");
+        using LogCapture capture = LogCapture.Start();
+
+        ProofSet other = ProofRun.PrepareOther(first, scene, "other.tif");
+        ProofSet small = ProofRun.PrepareOther(first, SyntheticRasters.Flat(32, 64, 0.3f), "small.tif");
+        ProofSet gone = ProofRun.PrepareOther(first, missing);
+        Raster dark = SyntheticRasters.Flat(64, 64, 0.001f);
+        Assert.True(RasterOps.LooksLinear(dark, out double median));
+        ProofSet linear = ProofRun.PrepareOther(first, dark, "linear.fit");
+
+        Assert.Null(other.Problem);
+        Assert.NotNull(small.Problem);
+        Assert.NotNull(linear.Problem);
+        string[] expected =
+        [
+            "proof-other start path=other.tif against=64x64",
+            "proof-other done outside=" + LogText.Num(other.PctPaper) + " % reduced=64x64 in # (mask #)",
+            "proof-other start path=small.tif against=64x64",
+            "proof-other done refused: another size, 64x32 in #",
+            "proof-other start path=" + missing + " against=64x64",
+            "the image to compare with cannot be read: " + missing,
+            "proof-other done refused: " + gone.Problem + " in #",
+            "proof-other start path=linear.fit against=64x64",
+            "proof-other done refused: the image looks linear, median " + LogText.Num(median) + " under " + LogText.Num(Thresholds.LinearMedianMax) + " in #",
+        ];
+        Assert.Equal(expected, Timeless(capture, "ProofRun"));
+        LogCapture.Captured warning = capture.Events.Single(e => e.Level == NLog.LogLevel.Warn);
+        Assert.IsType<FileNotFoundException>(warning.Exception);
+    }
+
     /// <summary>A FITS written with a suggested curve is one line with its size (R-171, R-145).</summary>
     [Fact]
     public void R171_ASavedCurveIsOneLineWithItsSize()

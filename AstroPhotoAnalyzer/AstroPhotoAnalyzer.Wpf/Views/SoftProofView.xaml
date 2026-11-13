@@ -19,7 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 <!-- SoftProofView - the Soft proof tab (R-163): the intent, the two boxes, the margin, the
      proof inside its margin with the warning layers, the core's facts and legend under it,
-     and "Full screen". Without a profile only the core's sentence shows (R-162). The image
+     "Full screen", and the comparison with another image's proof across a line (R-166).
+     Without a profile only the core's sentence shows (R-162). The image
      takes all the remaining room, which is why the tab is a grid, as the Editare Curbe tab.
      No figure is computed here. -->
 
@@ -37,7 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <!-- The controls, shown once the set is prepared: while a render runs and after one the
          core refused too, so that another intent can be chosen. -->
     <StackPanel Grid.Row="0" Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
-      <local:SoftProofControls Visibility="{Binding HasControls, Converter={StaticResource BoolToVis}}" />
+      <local:SoftProofControls x:Name="Controls" Visibility="{Binding HasControls, Converter={StaticResource BoolToVis}}" />
       <TextBlock Text="{Binding Message}" TextWrapping="Wrap" MaxWidth="900" HorizontalAlignment="Left" Margin="0,4,0,8">
         <TextBlock.Style>
           <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
@@ -56,17 +57,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
          the left button; a double click fits it again (ZoomPanViewer). -->
     <Border Grid.Row="1" Background="{Binding MarginBrush}" CornerRadius="4" Padding="24"
             Visibility="{Binding HasProof, Converter={StaticResource BoolToVis}}">
-      <local:ZoomPanViewer>
-        <Grid Width="{Binding Width}" Height="{Binding Height}">
-          <Image Source="{Binding Image}" Stretch="None" />
-          <Image Source="{Binding PaperLayer}" Stretch="None" Visibility="{Binding ShowPaperLayer, Converter={StaticResource BoolToVis}}" />
-        </Grid>
-      </local:ZoomPanViewer>
+      <!-- One of the two is shown: the single image, or, with another image chosen (R-166), the
+           comparison across a line (BeforeAfterViewer, R-179): the analysed image left of it,
+           the other one right of it, each with its own red layer, named by their files. -->
+      <Grid>
+        <local:ZoomPanViewer x:Name="Single" Visibility="{Binding IsComparing, Converter={StaticResource NotBoolToVis}}">
+          <Grid Width="{Binding Width}" Height="{Binding Height}">
+            <Image Source="{Binding Image}" Stretch="None" />
+            <Image Source="{Binding PaperLayer}" Stretch="None" Visibility="{Binding ShowPaperLayer, Converter={StaticResource BoolToVis}}" />
+          </Grid>
+        </local:ZoomPanViewer>
+        <local:BeforeAfterViewer x:Name="Comparison" Visibility="{Binding IsComparing, Converter={StaticResource BoolToVis}}"
+                                 Before="{Binding Image}" BeforeOverlay="{Binding PaperOverlay}"
+                                 After="{Binding OtherImage}" AfterOverlay="{Binding OtherPaperOverlay}"
+                                 ContentWidth="{Binding Width}" ContentHeight="{Binding Height}"
+                                 BeforeText="{Binding ImageName}" AfterText="{Binding OtherName}" />
+      </Grid>
     </Border>
 
     <StackPanel Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding HasProof, Converter={StaticResource BoolToVis}}">
       <TextBlock Text="{Binding Caption}" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding CompareSides}" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="{Binding IsComparing, Converter={StaticResource BoolToVis}}" />
       <TextBlock Text="{Binding PaperGamutLegend}" TextWrapping="Wrap" Margin="0,4,0,0" />
+      <TextBlock Text="{Binding OtherPaperGamutLegend}" TextWrapping="Wrap" Margin="0,2,0,0" Visibility="{Binding IsComparing, Converter={StaticResource BoolToVis}}" />
       <TextBlock Style="{StaticResource Muted}" Text="{Binding ProfileLine}" TextWrapping="Wrap" Margin="0,6,0,0" />
       <TextBlock Style="{StaticResource Muted}" Text="{Binding PaperWhiteLine}" TextWrapping="Wrap" Margin="0,2,0,0" />
       <TextBlock Style="{StaticResource Muted}" Text="{Binding PaperBlackLine}" TextWrapping="Wrap" Margin="0,2,0,0" />

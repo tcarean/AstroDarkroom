@@ -1,12 +1,14 @@
 # The soft proof
 
-> Written 2026-10-30 with the feature (R-160 to R-164, ADR 0066, ADR 0068). **Covers:**
+> Written 2026-10-30 with the feature (R-160 to R-164, ADR 0066, ADR 0068); the comparison with
+> another image added 2026-11-13 (R-165, R-166, ADR 0091). **Covers:**
 > `AstroPhotoAnalyzer.Core/Analysis/SoftProof.cs`, `AstroPhotoAnalyzer.Core/Runs/ProofRun.cs`,
 > `AstroPhotoAnalyzer.Core/Report/ProofTexts.cs`,
 > `AstroPhotoAnalyzer.Wpf/ViewModels/SoftProofTab.cs`,
 > `AstroPhotoAnalyzer.Wpf/Views/SoftProofView.xaml`,
 > `AstroPhotoAnalyzer.Wpf/Views/SoftProofControls.xaml`,
-> `AstroPhotoAnalyzer.Wpf/Views/SoftProofWindow.xaml`, the `SoftProofWindow` class in
+> `AstroPhotoAnalyzer.Wpf/Views/SoftProofWindow.xaml`, the `SoftProofControls` class in
+> `AstroPhotoAnalyzer.Wpf/Views/ResultViews.xaml.cs`, the `SoftProofWindow` class in
 > `AstroPhotoAnalyzer.Wpf/Views/OverlayWindows.xaml.cs` and
 > `AstroPhotoAnalyzer.Wpf/Presentation/ZoomPanViewer.cs`. A change to the code this describes means
 > this note is updated in the same task, or deleted with the decision it explains.
@@ -17,7 +19,8 @@ The Soft proof tab shows what the paper would do to the image, through the ICC p
 the Dmax came from (R-028, the top bar's profile, R-155), the way Lightroom Classic's soft
 proofing does: a rendering intent, the paper's white and black shown as they are, the paper's
 gamut warning, the image inside a margin, full screen on request. Viewing only: nothing is edited, nothing is written. Without a
-profile the tab shows the core's sentence and nothing else (R-162).
+profile the tab shows the core's sentence and nothing else (R-162). On request it proofs a
+second image file the same way and shows the two across a dragged line (R-165, R-166).
 
 ## The chain (`Analysis/SoftProof.cs`)
 
@@ -82,12 +85,27 @@ proof is shown full screen on a 4K screen too. `Prepare` is timed in the diagnos
 `RunClock` named `proof` (`profile`, `gamut`, `mask`), a refusal as its done line; `Render`
 writes one Debug line per render (`logging.md`).
 
+`PrepareOther(first, path)` prepares a second image for the comparison (R-165, ADR 0091) from
+the analysed image's set, which for that keeps its gamut table (`Gamut`) and the size of the
+image before the reduction (`SourceW`, `SourceH`). The file is read by `ImageLoader.Load`, as
+the analysed image is; whatever the loader or a reader throws becomes the set's `Problem`, its
+message, with a warning in the log. The overload that takes a raster, which the tests use,
+then refuses another size (`ProofTexts.SizeMismatch`, compared on the whole images, so two
+sizes that would reduce alike are still refused) and a linear image (`RasterOps.LooksLinear`,
+the sentence `AnalysisRun.LinearRefusal` gives both runs), and otherwise calls `Reduce`, the
+reduction and the mask loop `Prepare` uses too. The set it gives holds `first.Profile` itself,
+not a profile opened again: `ProofProfile.Table(intent)` is kept on that object, so each
+intent's table is built once and serves both images, and "the same settings" holds by sharing,
+not by convention. `Render` takes either set. A `RunClock` named `proof-other` (`load`, `mask`).
+
 ## The texts (`Report/ProofTexts.cs`)
 
 The sentences, all pairs in the interface language (ADR 0048): the two refusals, "computing",
 the profile's line (its name alone, ADR 0077), the paper white and black lines, the legend with
 its share and the threshold it quotes, the three intents' names and one-line helps (the radio
-buttons' tooltips) and the caption (profile and intent). The window writes none of them.
+buttons' tooltips), the caption (profile and intent) and the comparison's three: the refusal of
+another size with both sizes, the legend that starts with its image's file name, and which side
+of the line is which image. The window writes none of them.
 
 ## The tab and the window (`ViewModels/SoftProofTab.cs`, the three views)
 
@@ -121,12 +139,53 @@ in the view-model, not thresholds, since nothing is measured against them. `Show
 the image inside the same margin and hides the layer (`ShowPaperLayer` is false over the
 original).
 
+The comparison (R-166, ADR 0091). The other image is a `Side`, the record a computation hands
+back for one image (its set, its proof, its three frozen bitmaps): `_other` is the side shown,
+`_otherPath` the file it came from and `_otherFor` the analysed image's path it was chosen
+for. `CompareAsync(path)` (`Compare(path)` is its synchronous body for the tests) runs
+`ProofRun.PrepareOther` and the render on a pool thread under the same run number as every
+other computation, and `TakeOther` either takes the side or, for a file the core refused,
+changes nothing but `Message` and `IsProblem`: what was on screen stays, the single image or
+the earlier comparison. `IsComparing` is the other side's proof beside the analysed image's;
+`OtherImage`, `OtherName`, `OtherPaperGamutLegend` and `CompareSides` are empty without it, and
+`PaperOverlay` and `OtherPaperOverlay` are each side's red layer or null, one property per
+side for the view. `ShowOriginal` swaps both images and a change of intent renders both
+(`RenderAsync` reads `_other` on the window's thread, as it reads the set). While a file is
+being proofed a change of intent starts no render of its own, which would supersede the
+comparison and drop the chosen file (`_comparePending`); the comparison renders both when it
+ends, as the first computation does, whether the file was taken, refused or failed, and that
+render is told to leave the refusal's sentence where it was (`RenderAsync(keepMessage,
+keepProblem)`; the first computation does the same for a comparison that ended at that run). `Clear` runs before every analysis, the same image's too,
+so it drops the side but keeps the file; `Populate` forgets the file when the result is of
+another path; `Prepare` proofs the kept file again from the new set, and `Show` ends the
+comparison with the core's reason, forgetting the file, when it is then refused. `StopCompare`
+forgets it at the user's word, only while nothing is computed, so that a render in flight
+cannot bring the other side back. `EndComparison(failedPath)` forgets it for `MainViewModel`,
+which calls it when an analysis fails: the tab is only cleared then, never populated, and
+without the call the first image opened again would bring the comparison back. It forgets
+nothing when the image that failed is the one the file was chosen for, so that a run of the
+same image that fails (its file held by another program for a moment) costs no comparison.
+
 `SoftProofControls` is one `UserControl` for the controls, used by the tab and by the window
 over the same view-model; its `ShowFullScreenButton` dependency property hides the button in the
 window. The radio buttons carry no `GroupName`: with one, every instance in the process would
-form one group (`testing.md`), and each instance's panel is a group already. `SoftProofView`
+form one group (`testing.md`), and each instance's panel is a group already. Its three comparison buttons sit in one panel, so
+they wrap together: `CompareButton` while one image is shown, `ChangeButton` and `StopButton`
+while two are; the two that choose a file are handled in the control's class (`ChooseOther`,
+in `Views/ResultViews.xaml.cs`), which opens `MainWindow.ChooseImageFile`, the open dialog of
+the main window, over `Window.GetWindow(this)`: pressed in the full-screen window, the dialog
+is owned by it, where one owned by the main window could open behind the full screen (ADR
+0091). `SoftProofView`
 is a grid like `CurvesView`: the controls or the red message, the proof inside a `Border` whose
-background is the margin brush, in a `ZoomPanViewer`, the sentences under it.
+background is the margin brush, the sentences under it. Inside the border are two viewers, one
+of them shown: `Single`, a `ZoomPanViewer` over the image and its layer, and `Comparison`, the
+`BeforeAfterViewer` of the paper fit (`paper-fit.md`) bound to the two images, the two layers
+and the two file names. Two viewers and not one: a `BeforeAfterViewer` without an After image
+still cuts its Before layer at the line. Its line and zoom reset when After empties, so
+entering the comparison starts at the fit; leaving it shows `Single` as it was left, since a
+collapsed viewer keeps its view; a changed file replaces After without passing through null
+and keeps both, its size being the same. `SoftProofWindow` holds
+the same pair, with a line and a zoom of its own.
 
 `Presentation/ZoomPanViewer.cs` is a `Decorator` that fits its child (the grid of the proof and
 its layers, sized to the proof's pixels) and keeps two numbers of its own: the zoom relative to
@@ -155,7 +214,11 @@ the message ("computing" or a refused table's reason, red), the key hint and the
 (`CloseClicked` closes). The panel sits in a transparent `Border`, the band, aligned to the top;
 a style trigger keeps the panel `Hidden` (not `Collapsed`, so the band keeps its height) unless
 the window's `PanelShown` dependency property is true, which the band's `MouseEnter` sets and
-`MouseLeave` clears (`HidePanel`). While the margin list's drop-down is open the `ComboBox`
+`MouseLeave` clears (`HidePanel`). The window also follows the tab's `IsProblem`
+(`TabChanged`, subscribed while the tab is the data context and dropped when the window
+closes, since the tab outlives it): a reason in red, one the tab already has when the window
+gets it included, shows the panel wherever the mouse is, and
+its going hides the panel unless the mouse is over the band or the margin list is open (R-166). While the margin list's drop-down is open the `ComboBox`
 holds a sub-tree mouse capture, so the band sees no `MouseLeave` wherever the mouse goes (the
 list is taller than the band) and the panel stays; `MouseLeave` also skips the hide while the
 list is open, for the same case. When the list closes the capture is released, and the band's

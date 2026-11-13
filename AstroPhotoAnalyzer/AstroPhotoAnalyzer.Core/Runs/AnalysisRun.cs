@@ -187,6 +187,19 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
+        /// The sentence that refuses a linear image (R-015), the same for the analysed image and
+        /// for one the soft proof is compared with (R-165).
+        /// </summary>
+        /// <param name="median">The median <see cref="RasterOps.LooksLinear"/> measured, 0..1.</param>
+        /// <returns>The reason and what to do, in the interface language.</returns>
+        internal static string LinearRefusal(double median)
+            => Tr.Pick(
+                $"the image looks LINEAR (median {Fmt.F4(median)}, under {Fmt.F2(Thresholds.LinearMedianMax)}): the tool measures only finished, stretched images. "
+                + "Stretch it in Siril and analyse the result.",
+                $"imaginea pare LINIARA (mediana {Fmt.F4(median)}, sub {Fmt.F2(Thresholds.LinearMedianMax)}): unealta masoara doar imagini finite, stretch-uite. "
+                + "Stretch-uieste in Siril si analizeaza rezultatul.");
+
+        /// <summary>
         /// The chain proper, as <see cref="Execute(Raster, string, Parameters, IProgress{string})"/>
         /// describes it, each stage timed by <paramref name="clock"/> and each result written to
         /// the diagnostic log at Debug as soon as it is measured, so a stage that throws leaves the
@@ -206,11 +219,7 @@ namespace AstroPhotoAnalyzer
             if (RasterOps.LooksLinear(r, out double median))
             {
                 clock.Done("refused: the image looks linear, median " + LogText.Num(median) + " under " + LogText.Num(Thresholds.LinearMedianMax));
-                throw new RefusedImageException(Tr.Pick(
-                    $"the image looks LINEAR (median {Fmt.F4(median)}, under {Fmt.F2(Thresholds.LinearMedianMax)}): the tool measures only finished, stretched images. "
-                    + "Stretch it in Siril and analyse the result.",
-                    $"imaginea pare LINIARA (mediana {Fmt.F4(median)}, sub {Fmt.F2(Thresholds.LinearMedianMax)}): unealta masoara doar imagini finite, stretch-uite. "
-                    + "Stretch-uieste in Siril si analizeaza rezultatul."));
+                throw new RefusedImageException(LinearRefusal(median));
             }
 
             var res = new AnalysisResult { Path = path, Parameters = p, Raster = r };
