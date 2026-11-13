@@ -70,11 +70,11 @@ first" and "Test before fix"), and a formula change re-validates on the masters.
 | CR-003 | 1 | common | confirmed | The Split tab ignores the folder's chosen lens and its "no filters" box | fixed 6bf3bb55 |
 | CR-004 | 1 | some setups | confirmed | An Adobe non-raw profile is merged with its RAW sibling and can be the one used | fixed 6c8da74b |
 | CR-005 | 1 | some setups | confirmed | The aperture read from a lens name takes a model code for the f-number | fixed b8b270cb |
-| CR-006 | 1 | common | confirmed | The Synthetic tab keeps the previous comparison under a new lens's figures | open |
-| CR-007 | 1 | slip | confirmed | `--expo` gives a verdict on a white level at or below the black level | open |
-| CR-008 | 1 | some setups | to measure | A compressed FITS (a table HDU) is read as an 8-pixel-wide image | open |
-| CR-009 | 1 | some setups | to measure | The Adobe model scales the vertical decentring by the long side | open |
-| CR-010 | 1 | some setups | to measure | The azimuthal asymmetry depends on the orientation on an odd raster | open |
+| CR-006 | 1 | common | confirmed | The Synthetic tab keeps the previous comparison under a new lens's figures | fixed fa414c5e |
+| CR-007 | 1 | slip | confirmed | `--expo` gives a verdict on a white level at or below the black level | fixed c3552133 |
+| CR-008 | 1 | some setups | to measure | A compressed FITS (a table HDU) is read as an 8-pixel-wide image | fixed e3589ec5 |
+| CR-009 | 1 | some setups | to measure | The Adobe model scales the vertical decentring by the long side | fixed 0377b8d9 |
+| CR-010 | 1 | some setups | to measure | The azimuthal asymmetry depends on the orientation on an odd raster | fixed e1e81911 |
 | CR-011 | 2 | slip | confirmed | `-o` naming an input file replaces that file with the PNG | open |
 | CR-012 | 2 | rare | confirmed | Output files are written in place: a failed write leaves a cut file | open |
 | CR-013 | 2 | crafted | confirmed | The FITS reader uses `NAXISn` and `BITPIX` before checking them | open |
@@ -264,6 +264,10 @@ twice.
   whose comparison failed is still said to be written.
 - Test: `ANoToTheOverwriteQuestionKeepsTheOldFile_AndTheResultStays` pins three other fields.
 - Evidence: confirmed for A.
+- Status: fixed fa414c5e (R-135). `RunAsync` clears the comparison when it shows the new
+  request's figures; `CompareAsync` reports its own failure in `CompareError` and leaves the
+  written flat and its "saved" line on screen (case B, shown by a test that spoils the file
+  between the write and the comparison). `R135_...` in `SyntheticTabTests`.
 
 ### CR-007 `--expo` gives a verdict on a white level at or below the black level
 
@@ -279,6 +283,9 @@ twice.
 - Fix direction: check `white > black` in `Analyze`, after the precedence is resolved.
 - Test: `ASaturationAtOrBelowBlack_IsAnError` covers only both given, and `--sat 0`.
 - Evidence: confirmed.
+- Status: fixed c3552133 (R-041). `ExposureAnalyzer.Analyze` refuses `white <= black` after
+  the precedence, with `ExposureReport.ImpossibleScale` naming both levels and where each came
+  from; the console exits 1. `R041_...` in `ExposureAnalyzerTests`.
 
 ### CR-008 A compressed FITS (a table HDU) is read as an 8-pixel-wide image
 
@@ -294,6 +301,12 @@ twice.
 - Test: none (no `BINTABLE` or `.fz` fixture).
 - Evidence: the reader's part is confirmed; what the run then prints (figures on an 8-column
   raster, or the index exception of known issue 3) is to measure on a real compressed file.
+- Status: fixed e3589ec5 (R-136, ADR 0105). Measured first on a file built to the tile
+  compression convention (no real compressed master was at hand): the structure mode printed
+  a whole report and REDO, exit 3, and `--histeq` wrote a picture. `LoadFull` now takes an
+  extension for an image only when its `XTENSION` is `IMAGE`, refuses `ZIMAGE = T` by name and
+  skips any other table with its heap. `R136_...` in `FitsReaderTests`. CR-013 and CR-029,
+  which touch the same loop, stay open.
 
 ### CR-009 The Adobe model scales the vertical decentring by the long side
 
@@ -310,6 +323,13 @@ twice.
 - Evidence: to measure, and the owner's call: the note quotes Adobe's sentence for
   `ImageXCenter` only (`lens-profiles.md:51-54`); Adobe's sentence for `ImageYCenter` has to be
   read before the model changes.
+- Status: fixed 0377b8d9 (R-072, ADR 0106). Adobe's sentence was read: it says "v0 / Dmax"
+  for the vertical centre too. The files say a half on 3:2 and 4:3 alike (1499 files) and
+  RawTherapee multiplies the centres by the image's width and height, so the owner chose that
+  reading: `VignettingModel` counts each centre in its own side, taken from the entry's
+  `ImageWidth` and `ImageLength`. The value 0.536912 quoted above was not found in the
+  installed Canon EOS 50D file; the test uses it as an example of the arithmetic. `R072_...`
+  in `LensProfileTests`.
 
 ### CR-010 The azimuthal asymmetry depends on the orientation on an odd raster
 
@@ -328,6 +348,11 @@ twice.
   rasters are even.
 - Evidence: the mechanism is confirmed; the C# figure is to measure (add 526 x 518 to the
   theory). A formula change: the parity goldens and `/validate` decide.
+- Status: fixed e1e81911 (R-131, ADR 0107). Measured in C#: 4.2164 against 4.2184 points on a
+  459 x 305 raster, 3.3613 against 3.3716 on 526 x 259. The owner chose "in both sectors":
+  `AzimuthalAsymmetry` adds a pixel with `dx` or `dy` of 0 to the two sectors beside that axis
+  (`Metrics.AxisSectors`). No parity golden changed and `/validate` shows no drift (44 of 44).
+  `R131_...` in `StructureAnalyzerTests` and `MetricsTests`.
 
 ## Severity 2: a crash, a hang, or a file overwritten or lost
 

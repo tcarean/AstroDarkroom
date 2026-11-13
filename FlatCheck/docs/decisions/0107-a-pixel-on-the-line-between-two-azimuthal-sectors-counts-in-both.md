@@ -54,8 +54,9 @@ one half has no meaning for a median.
 
 ## Consequences
 
-- On an odd raster the figure moves by about 0.001 to 0.01 points from what it was, and is the
-  same for the frame and its mirrors. On an even raster nothing changes: no pixel has a zero
+- On an odd raster the figure moves by 0.0003 to 0.003 points from what it was (the three
+  rasters measured), and is the same for the frame and its mirrors, which differed by up to
+  0.01. On an even raster nothing changes: no pixel has a zero
   coordinate.
 - The D3300's frames (6016 x 4016, raster 1504 x 1004) are even, so no figure of the validation
   library moves, and no parity golden changes (their fixtures are even too).
