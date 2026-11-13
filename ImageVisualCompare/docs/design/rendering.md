@@ -5,6 +5,7 @@
 > **Covers:** `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml`,
 > `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs`,
 > `src/ImageVisualCompare.Core/Viewport.cs`,
+> `src/ImageVisualCompare.Core/ImagePixel.cs`,
 > `src/ImageVisualCompare.Core/RenderPlan.cs`,
 > `src/ImageVisualCompare.Core/DividerModel.cs`,
 > `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml`,
@@ -82,6 +83,19 @@ half reads 128,0,0 (A over the backdrop), not 128,0,127 (A over B). See ADR 0013
 **Images are sized explicitly in pixels.** `image.Width = pair.Before.Info.PixelWidth` — its
 own size, not the shared canvas, and not the natural size. WPF derives natural size from the file's DPI metadata, so a 72 dpi export would lay out
 larger than its own pixel count and quietly break the 1:1 zoom level. See ADR 0012.
+
+**The read-out names the pixel that is drawn.** `CompareView.OnMouseMove` hands the pointer's
+position to `ReportPointer`, which converts it to physical pixels and asks `Viewport.PixelAt`;
+that returns an `ImagePixel`, whole coordinates, or null off the image. `CursorPixelChanged` is
+raised only when the pixel changes, and `MainWindow.UpdatePixelReadout` reads both bitmaps at
+it. The pointer's position is the corner of the physical pixel it is on, and WPF paints that
+screen pixel from the image point at its centre, so `PixelAt` converts the centre; the step from
+a point to a pixel is taken there and nowhere after it. A centre exactly on the edge between two
+image pixels, or `Viewport.EdgeReach` past it, goes to the pixel before the edge: the display
+adapter paints it so, and a centre that rounding left an ulp to either side of an edge then
+falls on one side. `CompareViewTests` renders the surface into a bitmap and compares the pixel
+drawn with the pixel reported, away from the edges, since the software rasteriser it renders
+with gives an edge to the pixel after it. See ADR 0052.
 
 **Scrollbars float over the image.** Putting them in the layout would shrink the viewport when
 they appear, which changes the fit scale, which can change whether they are needed. See ADR 0019.

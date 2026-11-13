@@ -32,6 +32,18 @@ public sealed class Viewport
     /// <summary>Beyond roughly this point a pixel is a large flat square and more zoom buys nothing.</summary>
     public const double MaxScale = 16.0;
 
+    /// <summary>
+    /// How far past the edge between two image pixels, in image pixels, the centre of a screen
+    /// pixel may be and the screen pixel still be painted from the pixel before the edge.
+    /// Measured on screen with nearest-neighbour drawing at 400%, 800% and 1600% (ADR 0052): a
+    /// centre exactly on an edge, or 1/16384 past it, is painted from the pixel before on nearly
+    /// every screen pixel (435 of 438 on the edge); 1/4096 past, on some and not on others; and
+    /// 1/1024 past, from the pixel after, on every one near the image's origin and on half of
+    /// them near column 3800. The value sits inside that band. It also keeps a centre that
+    /// rounding left an ulp to either side of an edge on one side of it.
+    /// </summary>
+    public const double EdgeReach = 1.0 / 4096;
+
     private double _scale = 1.0;
 
     public double ContentWidth { get; private set; }
@@ -144,27 +156,41 @@ public sealed class Viewport
     public PointD ContentToScreen(double contentX, double contentY) =>
         new((contentX - OffsetX) * _scale, (contentY - OffsetY) * _scale);
 
-    /// <summary>Finds the image pixel under a viewport position.</summary>
-    /// <param name="screenX">The position, in screen space (physical pixels).</param>
-    /// <param name="screenY">The position, in screen space (physical pixels).</param>
+    /// <summary>
+    /// Finds the image pixel drawn on the physical screen pixel the pointer is on (R-028).
+    /// </summary>
+    /// <param name="screenX">
+    /// The pointer's position, in screen space (physical pixels): the left edge of the physical
+    /// pixel it is on. It need not be whole, since the viewport's own origin may sit on a fraction
+    /// of a physical pixel.
+    /// </param>
+    /// <param name="screenY">The top edge of that physical pixel, in the same space.</param>
     /// <returns>
-    /// The point, in image pixels with their fraction; the far edge of the image belongs to no
-    /// pixel. Null when the position falls on the empty margin around the image rather than on
-    /// the image itself, or when there is no content.
+    /// The pixel that holds the image point at the centre of that physical pixel, by its whole
+    /// coordinates; a centre on the edge between two pixels, or within <see cref="EdgeReach"/>
+    /// past it, belongs to the pixel before the edge. Null when the physical pixel shows the
+    /// empty margin around the image or lies past its far edge, and when there is no content.
     /// </returns>
-    public PointD? ContentPointInsideAt(double screenX, double screenY)
+    public ImagePixel? PixelAt(double screenX, double screenY)
     {
         if (!HasContent)
         {
             return null;
         }
 
-        PointD content = ScreenToContent(screenX, screenY);
+        // The image point at the centre of the physical pixel, not at its corner: that is the
+        // point the screen pixel is painted from (ADR 0052).
+        PointD centre = ScreenToContent(screenX + 0.5, screenY + 0.5);
 
-        bool inside = content.X >= 0 && content.Y >= 0
-                      && content.X < ContentWidth && content.Y < ContentHeight;
+        // Pixel k holds the points from just past k + EdgeReach up to k + 1 + EdgeReach: rounding
+        // up and stepping back one gives an edge, and the little past it, to the pixel before.
+        double x = Math.Ceiling(centre.X - EdgeReach) - 1;
+        double y = Math.Ceiling(centre.Y - EdgeReach) - 1;
 
-        return inside ? content : null;
+        // The content's size is a whole number of pixels, so "less than" ends at the last one.
+        bool inside = x >= 0 && y >= 0 && x < ContentWidth && y < ContentHeight;
+
+        return inside ? new ImagePixel((int)x, (int)y) : null;
     }
 
     /// <summary>

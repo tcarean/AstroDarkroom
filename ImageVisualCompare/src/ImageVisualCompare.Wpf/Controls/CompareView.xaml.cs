@@ -71,7 +71,7 @@ public partial class CompareView : UserControl
     private Point? _panAnchor;
     private bool _draggingDivider;
     private bool _updatingScrollBars;
-    private PointD? _cursorContentPoint;
+    private ImagePixel? _cursorPixel;
 
     /// <summary>
     /// True while a repeat of a held key is handled: the zoom it steps is not logged, since a held
@@ -133,7 +133,7 @@ public partial class CompareView : UserControl
     /// the pixel readout, which is often the only way to see a difference too small to notice
     /// by eye.
     /// </summary>
-    public event EventHandler<PointD?>? CursorContentPointChanged;
+    public event EventHandler<ImagePixel?>? CursorPixelChanged;
 
     /// <summary>
     /// Shows a loaded pair: each image at its own pixel size on the shared canvas, zoomed to
@@ -363,7 +363,7 @@ public partial class CompareView : UserControl
             ? Cursors.SizeWE
             : Cursors.Arrow;
 
-        UpdateCursorContentPoint(position);
+        ReportPointer(position);
     }
 
     /// <summary>
@@ -373,7 +373,7 @@ public partial class CompareView : UserControl
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
-        SetCursorContentPoint(null);
+        SetCursorPixel(null);
     }
 
     /// <summary>Ends a divider drag or a pan.</summary>
@@ -546,40 +546,35 @@ public partial class CompareView : UserControl
         Sync();
     }
 
-    /// <summary>Works out the image pixel under a pointer position, and reports it.</summary>
+    /// <summary>
+    /// Works out the image pixel drawn under a pointer position (<see cref="Core.Viewport.PixelAt"/>),
+    /// and reports it. Separate from the mouse handler so a test can give it a position.
+    /// </summary>
     /// <param name="position">
-    /// The pointer, in device-independent pixels from the surface's top-left corner.
+    /// The pointer, in device-independent pixels from the surface's top-left corner, as the mouse
+    /// handlers read it: the top-left corner of the physical pixel the pointer is on.
     /// </param>
-    private void UpdateCursorContentPoint(Point position) =>
-        SetCursorContentPoint(
-            Viewport.ContentPointInsideAt(position.X * _deviceScale, position.Y * _deviceScale));
+    internal void ReportPointer(Point position) =>
+        SetCursorPixel(Viewport.PixelAt(position.X * _deviceScale, position.Y * _deviceScale));
 
     /// <summary>
-    /// Raises <see cref="CursorContentPointChanged"/> when the pointer has moved onto another
-    /// whole pixel, onto the image or off it.
+    /// Raises <see cref="CursorPixelChanged"/> when the pointer has moved onto another image
+    /// pixel, onto the image or off it.
     /// </summary>
-    /// <param name="point">
-    /// The image point under the pointer, in image pixels; null when the pointer is off the
-    /// image.
+    /// <param name="pixel">
+    /// The image pixel under the pointer; null when the pointer is off the image.
     /// </param>
-    private void SetCursorContentPoint(PointD? point)
+    private void SetCursorPixel(ImagePixel? pixel)
     {
-        // Only report whole-pixel changes: the readout cannot show more than that, and a
-        // mouse move of a fraction of a pixel should not make it flicker.
-        if (Same(_cursorContentPoint, point))
+        // Only a change of pixel is reported: the readout shows nothing finer, and a mouse move
+        // inside one pixel should not make it flicker.
+        if (_cursorPixel == pixel)
         {
             return;
         }
 
-        _cursorContentPoint = point;
-        CursorContentPointChanged?.Invoke(this, point);
-
-        static bool Same(PointD? a, PointD? b) => (a, b) switch
-        {
-            (null, null) => true,
-            (not null, not null) => (int)a.Value.X == (int)b.Value.X && (int)a.Value.Y == (int)b.Value.Y,
-            _ => false,
-        };
+        _cursorPixel = pixel;
+        CursorPixelChanged?.Invoke(this, pixel);
     }
 
     /// <summary>Converts a WPF position to physical pixels.</summary>

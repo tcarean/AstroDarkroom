@@ -44,7 +44,7 @@ has none. Everything on screen is dark, whatever the system theme (ADR 0018).
   FITS's (`FloatSamples.cs`), and the layout
   records the controls assign without arithmetic of their own (`RenderPlan.cs`,
   `DividerLayout.cs`, `MinimapGeometry.cs`, `ScrollBarState.cs`, `PairLabelLayout.cs`,
-  `Geometry.cs`, `PointD.cs`),
+  `Geometry.cs`, `PointD.cs`, `ImagePixel.cs`),
   and every text the application shows, in English and Romanian, with the command line that
   chooses between them (`UiText.cs`, `StartupArguments.cs`).
   All of it unit tested.

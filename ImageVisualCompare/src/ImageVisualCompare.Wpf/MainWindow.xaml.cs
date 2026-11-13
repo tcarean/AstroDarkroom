@@ -92,7 +92,7 @@ public partial class MainWindow : Window
         HintText.Text = text.Hint;
 
         Compare.ViewChanged += (_, _) => UpdateZoomReadout();
-        Compare.CursorContentPointChanged += (_, point) => UpdatePixelReadout(point);
+        Compare.CursorPixelChanged += (_, pixel) => UpdatePixelReadout(pixel);
 
         ZoomInButton.Click += (_, _) => Compare.ZoomIn();
         ZoomOutButton.Click += (_, _) => Compare.ZoomOut();
@@ -579,13 +579,13 @@ public partial class MainWindow : Window
     /// frames the interesting differences are often below what the eye picks out of a dark
     /// field, and the numbers settle it.
     /// </summary>
-    /// <param name="point">
-    /// The image point under the pointer, in image pixels; null when the pointer is off the
-    /// image, which clears the readout.
+    /// <param name="pixel">
+    /// The image pixel under the pointer; null when the pointer is off the image, which clears
+    /// the readout.
     /// </param>
-    private void UpdatePixelReadout(PointD? point)
+    private void UpdatePixelReadout(ImagePixel? pixel)
     {
-        if (_pair is null || point is not { } content)
+        if (_pair is null || pixel is not { } under)
         {
             StatusCursor.Text = string.Empty;
             StatusBefore.Text = string.Empty;
@@ -593,12 +593,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        int x = (int)content.X;
-        int y = (int)content.Y;
-
-        StatusCursor.Text = $"{x}, {y}";
-        StatusBefore.Text = $"A {Describe(_pair.Before.Bitmap, x, y, _mode)}";
-        StatusAfter.Text = $"B {Describe(_pair.After.Bitmap, x, y, _mode)}";
+        StatusCursor.Text = $"{under.X}, {under.Y}";
+        StatusBefore.Text = $"A {Describe(_pair.Before.Bitmap, under.X, under.Y, _mode)}";
+        StatusAfter.Text = $"B {Describe(_pair.After.Bitmap, under.X, under.Y, _mode)}";
     }
 
     /// <summary>Reads one pixel of an image for the readout.</summary>

@@ -95,6 +95,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - A click on a toolbar button (`−`, `+`, `Fit`, `100%`, `Histogram`, `False colours`, `Open…`,
   `About`) no longer keeps the keyboard focus: `+`, `−`, the arrows, `Ctrl+0` and `Ctrl+1` work
   right after it, without a click on the image (R-063, ADR 0042).
+- The pixel readout names the pixel that is drawn under the pointer. It could name, and read
+  the values of, the pixel one row or one column before it: at `100%` right after `Fit` on some
+  window sizes (593 of 976 screen rows for a 5938 × 3888 pair on a 1920 × 976 surface), and from
+  400 % up on the first screen row or column of a pixel's square, one in four at 400 % (R-028,
+  ADR 0052).
 
 ### Internal
 

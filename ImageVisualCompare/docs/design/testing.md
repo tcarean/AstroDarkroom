@@ -16,6 +16,7 @@
 > `tests/ImageVisualCompare.Tests/LevelLookupTests.cs`,
 > `tests/ImageVisualCompare.Tests/RainbowTableTests.cs`,
 > `tests/ImageVisualCompare.Tests/MinimapViewTests.cs`,
+> `tests/ImageVisualCompare.Tests/CompareViewTests.cs`,
 > `tests/ImageVisualCompare.Tests/AboutWindowTests.cs`,
 > `tests/ImageVisualCompare.Tests/Win32Resources.cs`,
 > and the WPF files it names, `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`,
@@ -92,7 +93,14 @@ image. `FitsImageLoaderTests` and `WicImageLoaderTests` then load fixtures in ea
 compare bytes, and `ImagePairLoaderTests` checks the fallback to linear for a pair one file of
 which is not shown as stored. `MinimapViewTests` lays the minimap out with `Measure`, `Arrange` and
 `UpdateLayout` at the size it gives itself, then checks a click on the thumbnail's corner and
-the rectangle at the far edge against the thumbnail inside the border. `UiTextTests` builds the
+the rectangle at the far edge against the thumbnail inside the border. `CompareViewTests` lays
+the comparison surface out the same way at 764 × 450, shows a pair whose every pixel carries its
+coordinates in its colour, renders the surface with `RenderTargetBitmap`, and compares, on one
+row and one column of screen pixels, the image pixel drawn with the one `ReportPointer` reports
+(R-028); a screen pixel whose centre is within 1/32 of a physical pixel of an image pixel's edge
+is left out: the software rasteriser that renders the bitmap gives an edge to the pixel after
+it, the display adapter to the pixel before, which is what `PixelAt` follows and `ViewportTests`
+pins on the figures measured on screen (ADR 0052). `UiTextTests` builds the
 main window in Romanian there and reads its toolbar and hint; it and the other Romanian tests run
 alone, in a collection with parallelisation off (`language.md`). `MessageDialog`, `DarkTitleBar`,
 `FileDialogService` and `MemoryHousekeeping.ReleaseImageBuffers` have no test, nor has the main

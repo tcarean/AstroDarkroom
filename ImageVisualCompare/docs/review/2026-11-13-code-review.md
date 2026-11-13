@@ -74,7 +74,7 @@ numbers are those of 2026-11-13; a task finds its lines again by the names the e
 
 | ID | Sev | Reach | Evidence | Title | Status |
 |----|----:|-------|----------|-------|--------|
-| CR-001 | 1 | common | confirmed | The read-out names the neighbouring pixel when the offset is an ulp under a whole number | open |
+| CR-001 | 1 | common | confirmed | The read-out names the neighbouring pixel when the offset is an ulp under a whole number | fixed e4cb8e5d, 42796c8b |
 | CR-002 | 1 | common | to measure | At 100 % the image sits between screen pixels and is drawn interpolated | open |
 | CR-003 | 1 | some setups | to measure | A pair named by relative paths on the command line is read again by those relative paths | open |
 | CR-004 | 1 | some files | to measure | A float TIFF with associated alpha is un-premultiplied, not shown as stored | open |
@@ -111,7 +111,10 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-001. The read-out names the neighbouring pixel when the offset is an ulp under a whole number
 
-- **Severity 1, common, confirmed** (part b: to measure). Status: open.
+- **Severity 1, common, confirmed** (part b: to measure). Status: fixed e4cb8e5d and, after the branch's
+  review, 42796c8b; part (b) was measured on screen and is as described (ADR 0052). `ContentPointInsideAt` is now
+  `Viewport.PixelAt`, `UpdateCursorContentPoint` `CompareView.ReportPointer`, the event
+  `CursorPixelChanged` and the field `_cursorContentPoint` `_cursorPixel`; `Same` is gone.
 - **Where:** `src/ImageVisualCompare.Core/Viewport.cs:134-135` (`ScreenToContent`), `:182-194`
   (`ZoomTo`), `:246` (`ZoomToActualSize`);
   `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs:596-597` (`UpdatePixelReadout`);
