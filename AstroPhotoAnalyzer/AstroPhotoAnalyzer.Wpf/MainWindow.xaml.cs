@@ -140,19 +140,36 @@ namespace AstroPhotoAnalyzer.Wpf
         /// </summary>
         void Choose()
         {
+            string file = ChooseImageFile(this, Tr.Pick("Choose the finished image", "Alege imaginea finita"), null);
+            if (file != null)
+            {
+                Log.Info("open dialog: chose " + file);
+                _ = _vm.OpenAsync(file);
+            }
+            else Log.Info("open dialog: cancelled");
+        }
+
+        /// <summary>
+        /// Shows the dialog that chooses one image file, filtered to the extensions the core
+        /// reads: the one of "Deschide imagine..." and of the soft proof's comparison (R-166),
+        /// so both offer the same kinds of file.
+        /// </summary>
+        /// <param name="owner">The window the dialog opens over; null for none.</param>
+        /// <param name="title">The dialog's title, in the interface language.</param>
+        /// <param name="folder">The folder the dialog starts in; null leaves it to the system.</param>
+        /// <returns>The chosen file's path, or null when the dialog was cancelled.</returns>
+        internal static string ChooseImageFile(Window owner, string title, string folder)
+        {
             string patterns = string.Join(";", ImageLoader.Extensions.Select(x => "*" + x));
             var dlg = new Microsoft.Win32.OpenFileDialog
             {
-                Title = Tr.Pick("Choose the finished image", "Alege imaginea finita"),
+                Title = title,
                 Filter = Tr.Pick($"Images ({patterns})|{patterns}|All files|*.*", $"Imagini ({patterns})|{patterns}|Toate fisierele|*.*"),
                 Multiselect = false,
             };
-            if (dlg.ShowDialog(this) == true)
-            {
-                Log.Info("open dialog: chose " + dlg.FileName);
-                _ = _vm.OpenAsync(dlg.FileName);
-            }
-            else Log.Info("open dialog: cancelled");
+            if (folder != null) dlg.InitialDirectory = folder;
+            bool? chosen = owner == null ? dlg.ShowDialog() : dlg.ShowDialog(owner);
+            return chosen == true ? dlg.FileName : null;
         }
 
         /// <summary>

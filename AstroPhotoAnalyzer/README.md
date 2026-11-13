@@ -229,10 +229,20 @@ nothing is edited, nothing is written. The proof is computed right after the ana
   not reproduce, by the rule of the **Curves Editing** tab, so its share, in the legend under
   the image, is the same figure.
 - **Original** shows the image as it is inside the same margin, for comparison.
+- **Compare with another image...** asks for a second image file and puts it through the same
+  profile with the same settings, then shows the two across a vertical line you drag: this
+  image left of it, the other one right of it, each labelled with its file name, zoomed and
+  moved together. It is meant for two versions of one picture (before and after a curve, the
+  file saved from **Colours for paper**, another stretch), so the second image must have the
+  same size in pixels; one that does not, or that is still linear, is refused with a sentence.
+  Every control acts on both sides, and the legend under the image gives each file's share of
+  colours the paper cannot reproduce. **Change the image...** replaces the second image,
+  **Stop comparing** goes back to one. Opening another image ends the comparison; analysing
+  the same one again keeps it.
 - **Margin**: **Paper white** by default; the others are fixed greys, white to black.
 - In the tab and in the window, the mouse wheel zooms around the cursor, up to 8:1 at 100 % display scaling, dragging
   with the left button pans, and a double click fits the image again.
-- **Full screen** opens the same proof over the whole screen, nothing else: no title bar, the
+- **Full screen** opens the same proof over the whole screen, a comparison included, nothing else: no title bar, the
   margin filling the screen. The controls, with a **Close** button, appear while the mouse is
   over the band they occupy at the top of the screen and hide when it leaves; the keys G and O
   toggle the two boxes, I moves to the next intent, Esc or **Close** leaves the full screen.

@@ -28,6 +28,11 @@
 // Lightroom has was dropped, nothing in this tool needed its other state). The bitmaps are made
 // on the pool thread too, frozen: an overlay over the reduction (2.7 MP on the reference image,
 // up to 2400 px on the long side) would stall the window for a visible moment.
+//
+// On request the tab compares the proof with another image's (R-166, ADR 0091): a second file
+// goes through the same profile, by the core (ProofRun.PrepareOther, R-165), and is shown beside
+// the analysed image across a line. Here are its bitmaps, its name and its legend, which every
+// control follows; the line and the zoom are the view's.
 
 using System;
 using System.Threading.Tasks;
@@ -67,16 +72,22 @@ namespace AstroPhotoAnalyzer.Wpf
         static readonly Color Black = Color.FromRgb(0x00, 0x00, 0x00);
 
         /// <summary>
-        /// What one computation or render hands back from the pool thread: the set, the proof
-        /// and the frozen bitmaps made from them (null bitmaps with a problem). The original and
-        /// the paper layer belong to the set and are made once for it.
+        /// One image of the tab, the analysed one or the one it is compared with, as a
+        /// computation or a render hands it back from the pool thread: the set, the proof and the
+        /// frozen bitmaps made from them (null bitmaps with a problem). The original and the
+        /// paper layer belong to the set and are made once for it.
         /// </summary>
         /// <param name="Set">The prepared set, with or without a problem.</param>
         /// <param name="Proof">The proof; null when the set has a problem.</param>
         /// <param name="Original">The reduced original's bitmap; null with a problem.</param>
         /// <param name="Image">The proof's bitmap; null with a problem.</param>
         /// <param name="Paper">The paper-gamut layer; null with a problem.</param>
-        sealed record Outcome(ProofSet Set, SoftProofResult Proof, BitmapSource Original, BitmapSource Image, BitmapSource Paper);
+        sealed record Side(ProofSet Set, SoftProofResult Proof, BitmapSource Original, BitmapSource Image, BitmapSource Paper);
+
+        /// <summary>What one computation or render hands back: the analysed image and, with a comparison, the other one.</summary>
+        /// <param name="Main">The analysed image's side.</param>
+        /// <param name="Other">The other image's side, its set with a problem when the core refused it; null without a comparison.</param>
+        sealed record Outcome(Side Main, Side Other);
 
         AnalysisResult _result;
         ProofSet _set;
@@ -85,6 +96,16 @@ namespace AstroPhotoAnalyzer.Wpf
         int _run;
         bool _busy, _isProblem;
         string _message;
+
+        // The comparison (R-166): the other image as it is shown, null without one; the file it
+        // came from, kept through an analysis run again so that it is proofed again; and the
+        // analysed image that file was chosen for, since another image ends the comparison.
+        Side _other;
+        string _otherPath, _otherFor;
+
+        // A file is being proofed for the comparison: a change of intent meanwhile must not
+        // start a render of its own, which would supersede it; the comparison renders it after.
+        bool _comparePending;
 
         ProofIntent _intent = ProofIntent.Perceptual;
         bool _showPaper, _showOriginal;
@@ -97,14 +118,18 @@ namespace AstroPhotoAnalyzer.Wpf
         /// </summary>
         static readonly Logger Log = LogManager.GetLogger(Loggers.SoftProof);
 
-        /// <summary>Makes the command; the tab starts empty.</summary>
+        /// <summary>Makes the commands; the tab starts empty.</summary>
         public SoftProofTabViewModel()
         {
             FullScreen = new RelayCommand(() => ProofRequested?.Invoke(this), () => HasProof);
+            StopComparing = new RelayCommand(StopCompare, () => IsComparing && !IsBusy);
         }
 
         /// <summary>Opens the full-screen window over this same view-model (R-163).</summary>
         public ICommand FullScreen { get; }
+
+        /// <summary>"Opreste comparatia" (R-166): back to the single image; only while a comparison is shown and nothing is computed.</summary>
+        public ICommand StopComparing { get; }
 
         /// <summary>The window opens the full-screen window; the view-model only asks for it.</summary>
         public event Action<SoftProofTabViewModel> ProofRequested;
@@ -135,14 +160,27 @@ namespace AstroPhotoAnalyzer.Wpf
                 _intent = value;
                 Log.Info("intent=" + value);
                 Raise(nameof(IsPerceptual)); Raise(nameof(IsRelative)); Raise(nameof(IsRelativeNoBpc));
-                if (HasControls) ProofComputation = RenderAsync();
+                if (HasControls && !_comparePending) ProofComputation = RenderAsync();
             }
         }
 
         public bool ShowPaperGamut { get => _showPaper; set { if (Set(ref _showPaper, value)) { Log.Info("paper gamut warning=" + LogText.Yes(value)); RaiseLayers(); } } }
 
-        /// <summary>"Originalul": the image as it is, inside the same margin, without the warnings.</summary>
-        public bool ShowOriginal { get => _showOriginal; set { if (Set(ref _showOriginal, value)) { Log.Info("original=" + LogText.Yes(value)); Raise(nameof(Image)); RaiseLayers(); } } }
+        /// <summary>
+        /// "Originalul": the image as it is, inside the same margin, without the warnings; in a
+        /// comparison, both images.
+        /// </summary>
+        public bool ShowOriginal
+        {
+            get => _showOriginal;
+            set
+            {
+                if (!Set(ref _showOriginal, value)) return;
+                Log.Info("original=" + LogText.Yes(value));
+                Raise(nameof(Image)); Raise(nameof(OtherImage));
+                RaiseLayers();
+            }
+        }
 
         public ProofMarginChoice Margin { get => _margin; set { if (Set(ref _margin, value)) { Log.Info("margin=" + value); Raise(nameof(MarginBrush)); } } }
 
@@ -157,6 +195,44 @@ namespace AstroPhotoAnalyzer.Wpf
         public BitmapSource PaperLayer => _paperLayer;
 
         public bool ShowPaperLayer => HasProof && !_showOriginal && _showPaper;
+
+        // ---- the comparison with another image (R-166)
+
+        /// <summary>
+        /// Another image is shown beside the analysed one, across the line (R-166): its proof is
+        /// there and so is the analysed image's.
+        /// </summary>
+        public bool IsComparing => HasProof && _other?.Image != null;
+
+        /// <summary>
+        /// A file can be chosen for the comparison: a proof is shown and nothing is being
+        /// computed; the two buttons that open the file dialog follow it.
+        /// </summary>
+        public bool CanCompare => HasProof && !IsBusy;
+
+        /// <summary>The other image's proof, or the image as it is when <see cref="ShowOriginal"/> is on; null without a comparison.</summary>
+        public BitmapSource OtherImage => !IsComparing ? null : _showOriginal ? _other.Original : _other.Image;
+
+        /// <summary>The red layer over the analysed image while its box is on, null otherwise: one property for the comparison's left side.</summary>
+        public BitmapSource PaperOverlay => ShowPaperLayer ? _paperLayer : null;
+
+        /// <summary>The red layer over the other image, by its own pixels, while the box is on; null otherwise.</summary>
+        public BitmapSource OtherPaperOverlay => IsComparing && ShowPaperLayer ? _other.Paper : null;
+
+        /// <summary>The analysed image's file name: the label left of the line.</summary>
+        public string ImageName => _result == null ? "" : System.IO.Path.GetFileName(_result.Path);
+
+        /// <summary>The other image's file name: the label right of the line; empty without a comparison.</summary>
+        public string OtherName => IsComparing ? System.IO.Path.GetFileName(_otherPath) : "";
+
+        /// <summary>The other image's legend, with its file name and its own share (R-166); empty without a comparison.</summary>
+        public string OtherPaperGamutLegend => IsComparing ? ProofTexts.PaperGamutLegend(OtherName, _other.Set.PctPaper) : "";
+
+        /// <summary>The core's sentence saying which side of the line is which image; empty without a comparison.</summary>
+        public string CompareSides => IsComparing ? ProofTexts.CompareSides(ImageName, OtherName) : "";
+
+        /// <summary>The analysed image's folder, where the dialog that chooses the other file starts; null without a file on disk.</summary>
+        public string InputFolder => _result?.FullPath == null || !System.IO.File.Exists(_result.FullPath) ? null : System.IO.Path.GetDirectoryName(_result.FullPath);
 
         /// <summary>The margin's colour: the paper's white, or the chosen fixed background.</summary>
         public Brush MarginBrush
@@ -195,12 +271,25 @@ namespace AstroPhotoAnalyzer.Wpf
         public bool HasControls => _set != null && _set.Problem == null;
 
         public bool HasProof => _proof != null;
-        public bool IsBusy { get => _busy; private set { if (Set(ref _busy, value)) (FullScreen as RelayCommand)?.RaiseCanExecuteChanged(); } }
+        public bool IsBusy
+        {
+            get => _busy;
+            private set
+            {
+                if (!Set(ref _busy, value)) return;
+                Raise(nameof(CanCompare));
+                RaiseCommands();
+            }
+        }
 
-        /// <summary>Why there is no proof (no profile, an unusable one or table), "computing", or an error; null with a proof.</summary>
+        /// <summary>
+        /// Why there is no proof (no profile, an unusable one or table), "computing", an error,
+        /// or why the file chosen for the comparison was refused, the proof staying (R-166); null
+        /// otherwise.
+        /// </summary>
         public string Message { get => _message; private set => Set(ref _message, value); }
 
-        /// <summary>The message is a reason of the core's (R-162): the window shows it in red.</summary>
+        /// <summary>The message is a reason of the core's (R-162, R-165): the window shows it in red.</summary>
         public bool IsProblem { get => _isProblem; private set => Set(ref _isProblem, value); }
 
         /// <summary>The window's title: the image's name.</summary>
@@ -210,7 +299,10 @@ namespace AstroPhotoAnalyzer.Wpf
         public string ProfileLine => _set?.Profile == null ? "" : ProofTexts.ProfileLine(_set.Profile);
         public string PaperWhiteLine => _set?.Profile == null ? "" : ProofTexts.PaperWhiteLine(_set.Profile);
         public string PaperBlackLine => _set?.Profile == null ? "" : ProofTexts.PaperBlackLine(_set.Profile);
-        public string PaperGamutLegend => HasControls ? ProofTexts.PaperGamutLegend(_set.PctPaper) : "";
+
+        /// <summary>The legend with the share of the analysed image; in a comparison it starts with the image's file name (R-166).</summary>
+        public string PaperGamutLegend
+            => !HasControls ? "" : IsComparing ? ProofTexts.PaperGamutLegend(ImageName, _set.PctPaper) : ProofTexts.PaperGamutLegend(_set.PctPaper);
 
         public string PerceptualName => ProofTexts.IntentName(ProofIntent.Perceptual);
         public string RelativeName => ProofTexts.IntentName(ProofIntent.Relative);
@@ -222,31 +314,46 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>
         /// Keeps the result; unlike most tabs it fills nothing itself: MainViewModel starts the
         /// computation after every tab is filled (ADR 0051). Any computation in progress is
-        /// abandoned. The controls keep their state (R-163).
+        /// abandoned. The controls keep their state (R-163). The file of a comparison is kept
+        /// when the analysis is of the image it was chosen for, to be proofed again with it, and
+        /// forgotten for any other image (R-166).
         /// </summary>
         /// <param name="r">The analysis; not null.</param>
         internal override void Populate(AnalysisResult r)
         {
             Reset();
+            if (_otherPath != null && !string.Equals(r.Path, _otherFor, StringComparison.OrdinalIgnoreCase))
+            {
+                Log.Info("comparison ended: another image was opened");
+                _otherPath = _otherFor = null;
+            }
             _result = r;
             HasResult = true;
-            Raise(nameof(Title));
+            Raise(nameof(Title)); Raise(nameof(ImageName));
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Empties the tab. The file of a comparison is not forgotten here: this runs before
+        /// every analysis, the same image's too, and <see cref="Populate"/> decides.
+        /// </summary>
         internal override void Clear()
         {
             base.Clear();
             Reset();
             _result = null;
-            Raise(nameof(Title));
+            Raise(nameof(Title)); Raise(nameof(ImageName));
         }
 
-        /// <summary>Drops the set and the proof and abandons any computation in progress: its result is nobody's any more.</summary>
+        /// <summary>
+        /// Drops the set, the proof and the other image's and abandons any computation in
+        /// progress: its result is nobody's any more.
+        /// </summary>
         void Reset()
         {
             _run++;
             _set = null;
+            _other = null;
+            _comparePending = false;
             DropProof();
             Message = null; IsProblem = false;
             IsBusy = false;
@@ -270,7 +377,7 @@ namespace AstroPhotoAnalyzer.Wpf
             _run++;
             // A computation in flight is superseded: its finally will not touch these.
             IsBusy = false; Message = null; IsProblem = false;
-            Show(Prepare(_result, _intent));
+            Show(Prepare(_result, _intent, _otherPath));
         }
 
         /// <summary>
@@ -287,11 +394,12 @@ namespace AstroPhotoAnalyzer.Wpf
             AnalysisResult result = _result;
             if (result == null) return;
             ProofIntent intent = _intent;
+            string otherPath = _otherPath;
             int run = ++_run;
             IsBusy = true; IsProblem = false; Message = ProofTexts.Computing;
             try
             {
-                Outcome outcome = await Task.Run(() => Prepare(result, intent));
+                Outcome outcome = await Task.Run(() => Prepare(result, intent, otherPath));
                 if (run != _run)
                 {
                     Log.Debug("computation " + LogText.Int(run) + " ended after a newer one started; nothing is shown");
@@ -320,8 +428,9 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Renders the prepared set again on a pool thread, after a change of intent; a late
-        /// outcome is dropped like a late computation. A table the core
+        /// Renders the prepared set again on a pool thread, after a change of intent, and the
+        /// other image's with it in a comparison; a late outcome is dropped like a late
+        /// computation. A table the core
         /// refuses (its Problem) leaves the set, so another intent can still be chosen, and shows
         /// the reason in red with no image.
         /// </summary>
@@ -329,11 +438,14 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             ProofSet set = _set; ProofIntent intent = _intent;
             BitmapSource original = _original, paper = _paperLayer;   // read here, on the window's thread, as the set is
+            Side other = _other;
             int run = ++_run;
             IsBusy = true; IsProblem = false; Message = ProofTexts.Computing;
             try
             {
-                Outcome outcome = await Task.Run(() => Render(set, intent, original, paper));
+                Outcome outcome = await Task.Run(() => new Outcome(
+                    Render(set, intent, original, paper),
+                    other == null ? null : Render(other.Set, intent, other.Original, other.Paper)));
                 if (run == _run) Show(outcome);
             }
             catch (Exception e)
@@ -358,14 +470,31 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
-        /// <summary>The core's two steps and the bitmaps, on whichever thread; a new set, so the original is made too.</summary>
+        /// <summary>
+        /// The core's steps and the bitmaps, on whichever thread; a new set, so the original is
+        /// made too. With a file to compare with, that file is prepared from the new set and
+        /// rendered with it (R-165).
+        /// </summary>
         /// <param name="result">The analysis.</param>
         /// <param name="intent">The intent to render.</param>
-        /// <returns>The outcome; without a proof and bitmaps when the set has a problem.</returns>
-        static Outcome Prepare(AnalysisResult result, ProofIntent intent)
+        /// <param name="otherPath">The file of the comparison to proof again; null without one.</param>
+        /// <returns>The outcome; without a proof and bitmaps when the set has a problem, and then without the other image.</returns>
+        static Outcome Prepare(AnalysisResult result, ProofIntent intent, string otherPath)
         {
             ProofSet set = ProofRun.Prepare(result);
-            return set.Problem == null ? Render(set, intent, null, null) : new Outcome(set, null, null, null, null);
+            if (set.Problem != null) return new Outcome(new Side(set, null, null, null, null), null);
+            return new Outcome(Render(set, intent, null, null), otherPath == null ? null : PrepareOther(set, otherPath, intent));
+        }
+
+        /// <summary>The core's preparation of the file to compare with and its render, with the bitmaps, on whichever thread (R-165).</summary>
+        /// <param name="first">The analysed image's set, without a problem.</param>
+        /// <param name="path">The other image's file.</param>
+        /// <param name="intent">The intent to render.</param>
+        /// <returns>The other image's side; its set alone, with the problem, when the core refused the file.</returns>
+        static Side PrepareOther(ProofSet first, string path, ProofIntent intent)
+        {
+            ProofSet set = ProofRun.PrepareOther(first, path);
+            return set.Problem == null ? Render(set, intent, null, null) : new Side(set, null, null, null, null);
         }
 
         /// <summary>
@@ -376,40 +505,147 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <param name="intent">The intent to render; one the core refuses throws its reason.</param>
         /// <param name="original">The original's bitmap when already made for this set; null to make it.</param>
         /// <param name="paper">The paper layer when already made for this set; null to make it.</param>
-        /// <returns>The outcome, bitmaps included.</returns>
-        static Outcome Render(ProofSet set, ProofIntent intent, BitmapSource original, BitmapSource paper)
+        /// <returns>The image's side, bitmaps included.</returns>
+        static Side Render(ProofSet set, ProofIntent intent, BitmapSource original, BitmapSource paper)
         {
             SoftProofResult proof = ProofRun.Render(set, intent, simulate: true);
             Raster img = proof.Image;
             int w = img.W, h = img.H;
             bool[] outside = set.PaperOutside;
-            return new Outcome(set, proof,
+            return new Side(set, proof,
                 original ?? RasterBitmaps.Region(set.Reduced, 0, 0, w, h),
                 RasterBitmaps.Region(img, 0, 0, w, h),
                 paper ?? RasterBitmaps.Overlay(w, h, (x, y) => outside[y * w + x], PaperColour));
         }
 
-        /// <summary>Takes a set and its proof with their bitmaps; a set with a problem empties the tab and shows it in red.</summary>
+        /// <summary>
+        /// Takes a set and its proof with their bitmaps; a set with a problem empties the tab and
+        /// shows it in red. The other image follows: taken as rendered; gone when the outcome
+        /// has none; and when the core refused its file at this run, the comparison ends, the
+        /// file is forgotten and the reason is shown in red beside the proof (R-166).
+        /// </summary>
         /// <param name="o">The outcome; a set with a problem carries no proof.</param>
         void Show(Outcome o)
         {
-            _set = o.Set;
-            _proof = o.Proof;
+            _set = o.Main.Set;
+            _proof = o.Main.Proof;
             if (_set.Problem != null)
             {
                 _original = _proofImage = _paperLayer = null;
+                _other = null;
                 Message = _set.Problem; IsProblem = true;
                 RaiseProof();
                 return;
             }
-            _original = o.Original;
-            _proofImage = o.Image;
-            _paperLayer = o.Paper;
+            _original = o.Main.Original;
+            _proofImage = o.Main.Image;
+            _paperLayer = o.Main.Paper;
+            Message = null; IsProblem = false;
+            if (o.Other?.Set.Problem != null)
+            {
+                Log.Warn("comparison ended: " + _otherPath + " refused: " + o.Other.Set.Problem);
+                _other = null;
+                _otherPath = _otherFor = null;
+                Message = o.Other.Set.Problem; IsProblem = true;
+            }
+            else _other = o.Other;
+            RaiseProof();
+        }
+
+        // ---- the comparison's commands (R-166)
+
+        /// <summary>
+        /// Proofs another image file through the same profile, with the intent shown, on a pool
+        /// thread, "computing" shown meanwhile, and shows it beside the analysed image across the
+        /// line; a file the core refuses (R-165) leaves what was shown, the single image or the
+        /// earlier comparison, with the reason in red. Nothing happens unless
+        /// <see cref="CanCompare"/>. The task is also <see cref="ProofComputation"/>.
+        /// </summary>
+        /// <param name="path">The other image's file.</param>
+        /// <returns>The computation; completed at once when nothing was started.</returns>
+        internal Task CompareAsync(string path) => CanCompare ? ProofComputation = CompareCore(path) : Task.CompletedTask;
+
+        /// <summary>The body of <see cref="CompareAsync"/>.</summary>
+        /// <param name="path">The other image's file.</param>
+        async Task CompareCore(string path)
+        {
+            ProofSet set = _set; ProofIntent intent = _intent;
+            int run = ++_run;
+            Log.Info("compare with " + path);
+            _comparePending = true;
+            IsBusy = true; IsProblem = false; Message = ProofTexts.Computing;
+            try
+            {
+                Side other = await Task.Run(() => PrepareOther(set, path, intent));
+                if (run != _run)
+                {
+                    Log.Debug("comparison " + LogText.Int(run) + " ended after a newer computation started; nothing is shown");
+                    return;
+                }
+                _comparePending = false;
+                TakeOther(other, path);
+                IsBusy = false;
+                // The intent changed while the file was proofed: both sides are rendered now.
+                if (HasControls && _intent != intent) await RenderAsync();
+            }
+            catch (Exception e)
+            {
+                if (run == _run)
+                {
+                    Log.Error(e, "comparison " + LogText.Int(run) + " failed; the tab shows the message");
+                    Message = MainViewModel.Describe(e); IsProblem = false;
+                }
+                else Log.Debug(e, "comparison " + LogText.Int(run) + " failed after a newer computation started; nothing is shown");
+            }
+            finally
+            {
+                if (run == _run) { _comparePending = false; IsBusy = false; }
+            }
+        }
+
+        /// <summary>The synchronous body of <see cref="CompareAsync"/>, for the tests, as <see cref="Compute"/> is.</summary>
+        /// <param name="path">The other image's file.</param>
+        internal void Compare(string path)
+        {
+            if (!CanCompare) return;
+            _run++;
+            Log.Info("compare with " + path);
+            TakeOther(PrepareOther(_set, path, _intent), path);
+        }
+
+        /// <summary>
+        /// Takes the other image as the comparison's right side, for the analysed image shown;
+        /// one the core refused changes nothing but the message, its reason in red.
+        /// </summary>
+        /// <param name="other">The other image's side, its set with a problem when refused.</param>
+        /// <param name="path">The file it came from.</param>
+        void TakeOther(Side other, string path)
+        {
+            if (other.Set.Problem != null)
+            {
+                Log.Warn("compare with " + path + " refused: " + other.Set.Problem);
+                Message = other.Set.Problem; IsProblem = true;
+                return;
+            }
+            _other = other;
+            _otherPath = path;
+            _otherFor = _result?.Path;
             Message = null; IsProblem = false;
             RaiseProof();
         }
 
-        /// <summary>Raises everything that follows the set and the proof.</summary>
+        /// <summary>"Opreste comparatia": forgets the other image; the analysed image's proof stays as it is.</summary>
+        void StopCompare()
+        {
+            if (!IsComparing || IsBusy) return;
+            Log.Info("comparison stopped");
+            _other = null;
+            _otherPath = _otherFor = null;
+            Message = null; IsProblem = false;
+            RaiseProof();
+        }
+
+        /// <summary>Raises everything that follows the set, the proof and the other image.</summary>
         void RaiseProof()
         {
             Raise(nameof(HasControls)); Raise(nameof(HasProof)); Raise(nameof(Image)); Raise(nameof(Width)); Raise(nameof(Height));
@@ -417,12 +653,24 @@ namespace AstroPhotoAnalyzer.Wpf
             Raise(nameof(Caption)); Raise(nameof(ProfileLine)); Raise(nameof(PaperWhiteLine)); Raise(nameof(PaperBlackLine));
             Raise(nameof(PaperGamutLegend));
             Raise(nameof(MarginBrush)); Raise(nameof(PaperWhiteColour));
+            Raise(nameof(IsComparing)); Raise(nameof(CanCompare)); Raise(nameof(OtherImage)); Raise(nameof(OtherName));
+            Raise(nameof(OtherPaperGamutLegend)); Raise(nameof(CompareSides));
             RaiseLayers();
-            (FullScreen as RelayCommand)?.RaiseCanExecuteChanged();
+            RaiseCommands();
         }
 
-        /// <summary>Raises the layer's visibility.</summary>
-        void RaiseLayers() => Raise(nameof(ShowPaperLayer));
+        /// <summary>Raises the layer's visibility and the two sides' layers.</summary>
+        void RaiseLayers()
+        {
+            Raise(nameof(ShowPaperLayer)); Raise(nameof(PaperOverlay)); Raise(nameof(OtherPaperOverlay));
+        }
+
+        /// <summary>Asks the two commands again whether they can run.</summary>
+        void RaiseCommands()
+        {
+            (FullScreen as RelayCommand)?.RaiseCanExecuteChanged();
+            (StopComparing as RelayCommand)?.RaiseCanExecuteChanged();
+        }
 
         /// <summary>
         /// The full-screen window's keys (R-163): G and O toggle the two boxes, I moves to the

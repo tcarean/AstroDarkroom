@@ -22,7 +22,9 @@
 // (ADR 0051), on the result, and the console never calls it. Prepare opens the profile the Dmax
 // came from, reduces the image and decides once which pixels leave the paper's gamut (the rule
 // of R-144, on the source colours, the same for every intent); Render proofs the reduction
-// through the table of an intent, built on its first use and kept on the profile.
+// through the table of an intent, built on its first use and kept on the profile. PrepareOther
+// does the same for a second image the tab compares the first with (R-165, ADR 0091), from the
+// first image's set: the same profile object and gamut table, its own reduction and mask.
 
 using System;
 using System.Diagnostics;
@@ -50,6 +52,15 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>The share of <see cref="Reduced"/> outside the paper's gamut, in percent.</summary>
         internal double PctPaper { get; init; }
+
+        /// <summary>The table the mask was decided with; a second image is judged by the same one (R-165).</summary>
+        internal GamutTable Gamut { get; init; }
+
+        /// <summary>The width of the image before the reduction, in pixels.</summary>
+        internal int SourceW { get; init; }
+
+        /// <summary>The height of the image before the reduction, in pixels.</summary>
+        internal int SourceH { get; init; }
     }
 
     /// <summary>Prepares and renders the soft proof of an analysed image (ADR 0066).</summary>
@@ -105,7 +116,24 @@ namespace AstroPhotoAnalyzer
                 return new ProofSet { Problem = gamut.Problem };
             }
 
-            Raster reduced = RasterOps.Subsample(a.Raster, Stride(a.Raster));
+            ProofSet set = Reduce(profile, gamut, a.Raster);
+            clock.Lap("mask");
+            clock.Done("outside=" + LogText.Num(set.PctPaper) + " % reduced=" + LogText.Int(set.Reduced.W) + "x" + LogText.Int(set.Reduced.H) + " description=" + LogText.Str(profile.Description)
+                + " dmax=" + LogText.Num(profile.Dmax) + " paperBlackLstar=" + LogText.Num(profile.PaperBlackLstar));
+            return set;
+        }
+
+        /// <summary>
+        /// Reduces an image and marks the pixels of the reduction the paper cannot hold (R-161):
+        /// the usable set of one image, the analysed one or the one it is compared with.
+        /// </summary>
+        /// <param name="profile">The profile the proof goes through; kept on the set as it is.</param>
+        /// <param name="gamut">The gamut table of the same profile, without a problem.</param>
+        /// <param name="img">The whole image, 0..1; a mono one has nothing outside.</param>
+        /// <returns>The set, without a problem.</returns>
+        static ProofSet Reduce(ProofProfile profile, GamutTable gamut, Raster img)
+        {
+            Raster reduced = RasterOps.Subsample(img, Stride(img));
             int w = reduced.W, h = reduced.H;
             var outside = new bool[w * h];
             long count = 0;
@@ -123,10 +151,92 @@ namespace AstroPhotoAnalyzer
                     return n;
                 }, n => { lock (gate) count += n; });
             }
-            var set = new ProofSet { Profile = profile, Reduced = reduced, PaperOutside = outside, PctPaper = outside.Length == 0 ? 0 : 100.0 * count / outside.Length };
+            return new ProofSet
+            {
+                Profile = profile,
+                Gamut = gamut,
+                Reduced = reduced,
+                PaperOutside = outside,
+                PctPaper = outside.Length == 0 ? 0 : 100.0 * count / outside.Length,
+                SourceW = img.W,
+                SourceH = img.H,
+            };
+        }
+
+        /// <summary>
+        /// Reads another image file and prepares it for the comparison with the analysed one
+        /// (R-165), as <see cref="PrepareOther(ProofSet, Raster, string)"/> does. A file that is
+        /// not there, of a kind the program does not read, or that its reader cannot read gives a
+        /// set with the reason as its Problem, never an exception.
+        /// </summary>
+        /// <param name="first">The analysed image's set, without a Problem.</param>
+        /// <param name="path">The other image's file.</param>
+        /// <returns>The other image's set, or one with Problem set.</returns>
+        internal static ProofSet PrepareOther(ProofSet first, string path)
+        {
+            if (first.Problem != null) throw new InvalidOperationException(first.Problem);
+            using RunClock clock = StartOther(first, path);
+            Raster other;
+            try
+            {
+                other = ImageLoader.Load(path);
+            }
+            catch (Exception e)
+            {
+                // The loader's and the readers' messages are written for the user already.
+                Log.Warn(e, "the image to compare with cannot be read: " + path);
+                clock.Done("refused: " + LogText.Str(e.Message));
+                return new ProofSet { Problem = e.Message };
+            }
+            clock.Lap("load");
+            return Other(first, other, clock);
+        }
+
+        /// <summary>
+        /// Prepares another image for the comparison with the analysed one (R-165): refused when
+        /// its size is not the analysed image's or when it looks linear (R-015); otherwise reduced
+        /// by the same rule and its own pixels marked by the same gamut table, on a set that
+        /// holds the analysed image's own profile object, so each intent's table is built once
+        /// for both.
+        /// </summary>
+        /// <param name="first">The analysed image's set, without a Problem.</param>
+        /// <param name="other">The other image, 0..1.</param>
+        /// <param name="path">The other image's path, for the diagnostic log.</param>
+        /// <returns>The other image's set, or one with Problem set.</returns>
+        internal static ProofSet PrepareOther(ProofSet first, Raster other, string path)
+        {
+            if (first.Problem != null) throw new InvalidOperationException(first.Problem);
+            using RunClock clock = StartOther(first, path);
+            return Other(first, other, clock);
+        }
+
+        /// <summary>Starts the clock of a second image's preparation, named <c>proof-other</c>.</summary>
+        /// <param name="first">The analysed image's set.</param>
+        /// <param name="path">The other image's path.</param>
+        /// <returns>The clock, to hold in a <c>using</c>.</returns>
+        static RunClock StartOther(ProofSet first, string path)
+            => RunClock.Start(Log, "proof-other", "path=" + LogText.Str(path) + " against=" + LogText.Int(first.SourceW) + "x" + LogText.Int(first.SourceH));
+
+        /// <summary>The body of the two <c>PrepareOther</c>: the refusals, then the reduction and the mask.</summary>
+        /// <param name="first">The analysed image's set, without a Problem.</param>
+        /// <param name="other">The other image, 0..1.</param>
+        /// <param name="clock">The run's clock; its done line is written here.</param>
+        /// <returns>The other image's set, or one with Problem set.</returns>
+        static ProofSet Other(ProofSet first, Raster other, RunClock clock)
+        {
+            if (other.W != first.SourceW || other.H != first.SourceH)
+            {
+                clock.Done("refused: another size, " + LogText.Int(other.W) + "x" + LogText.Int(other.H));
+                return new ProofSet { Problem = ProofTexts.SizeMismatch(first.SourceW, first.SourceH, other.W, other.H) };
+            }
+            if (RasterOps.LooksLinear(other, out double median))
+            {
+                clock.Done("refused: the image looks linear, median " + LogText.Num(median) + " under " + LogText.Num(Thresholds.LinearMedianMax));
+                return new ProofSet { Problem = AnalysisRun.LinearRefusal(median) };
+            }
+            ProofSet set = Reduce(first.Profile, first.Gamut, other);
             clock.Lap("mask");
-            clock.Done("outside=" + LogText.Num(set.PctPaper) + " % reduced=" + LogText.Int(w) + "x" + LogText.Int(h) + " description=" + LogText.Str(profile.Description)
-                + " dmax=" + LogText.Num(profile.Dmax) + " paperBlackLstar=" + LogText.Num(profile.PaperBlackLstar));
+            clock.Done("outside=" + LogText.Num(set.PctPaper) + " % reduced=" + LogText.Int(set.Reduced.W) + "x" + LogText.Int(set.Reduced.H));
             return set;
         }
 

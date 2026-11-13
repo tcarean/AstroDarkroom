@@ -286,6 +286,7 @@ public class SoftProofTests
         {
             ProofTexts.NoProfile, ProofTexts.Computing, ProofTexts.ProfileLine(p), ProofTexts.PaperWhiteLine(p),
             ProofTexts.PaperBlackLine(p), ProofTexts.PaperGamutLegend(1.4),
+            ProofTexts.PaperGamutLegend("A.fit", 1.4), ProofTexts.SizeMismatch(6000, 4000, 3000, 2000), ProofTexts.CompareSides("A.fit", "B.tif"),
             ProofProfile.Open(Profile(ws, withB2A: false, name: "fara-b2a.icc")).Problem,
             ProofProfile.Open(Profile(ws, withPerceptual: false, name: "fara-b2a0.icc")).Problem,
         };

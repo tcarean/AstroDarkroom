@@ -22,6 +22,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
@@ -69,10 +70,36 @@ namespace AstroPhotoAnalyzer.Wpf
 
     /// <summary>
     /// The soft proof's controls (R-163), shared by the tab and the full-screen window over the
-    /// same view-model; the window hides the "Full screen" button.
+    /// same view-model; the window hides the "Full screen" button. The file dialog of the
+    /// comparison (R-166) is opened here, not by the main window, so that it is owned by the
+    /// window the button was pressed in (ADR 0091).
     /// </summary>
     public partial class SoftProofControls : UserControl
     {
+        /// <summary>The diagnostic log: the comparison's file dialog and its answer (R-171, ADR 0069).</summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
+        /// <summary>
+        /// "Compara cu alta imagine..." and "Schimba imaginea...": asks for an image file, over
+        /// the window this control is in, starting in the analysed image's folder, and has the
+        /// view-model proof it for the comparison; nothing on a cancel.
+        /// </summary>
+        /// <param name="sender">The button; not read.</param>
+        /// <param name="e">The click; not read.</param>
+        void ChooseOther(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is not SoftProofTabViewModel tab) return;
+            string file = MainWindow.ChooseImageFile(Window.GetWindow(this),
+                Tr.Pick("Choose the image to compare with", "Alege imaginea cu care compari"), tab.InputFolder);
+            if (file == null)
+            {
+                Log.Info("compare dialog: cancelled");
+                return;
+            }
+            Log.Info("compare dialog: chose " + file);
+            _ = tab.CompareAsync(file);
+        }
+
         /// <summary>Whether the "Full screen" button is shown; the tab keeps it, the window hides it.</summary>
         public static readonly DependencyProperty ShowFullScreenButtonProperty =
             DependencyProperty.Register(nameof(ShowFullScreenButton), typeof(bool), typeof(SoftProofControls), new PropertyMetadata(true));

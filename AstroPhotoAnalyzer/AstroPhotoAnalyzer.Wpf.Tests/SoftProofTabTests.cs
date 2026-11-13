@@ -303,6 +303,276 @@ public class SoftProofTabTests
         Assert.Contains("Relativ", usable.Caption);
     }
 
+    // ---- R-166: the comparison with another image
+
+    static AnalysisResult ResultAt(string icc, string path)
+    {
+        Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(icc, out string error) ?? throw new Exception(error);
+        return AnalysisRun.Execute(Scenes.DarkSky(), path, p);
+    }
+
+    /// <summary>A TIFF whose left half is a grey and whose right half is a saturated red, outside the test paper's gamut.</summary>
+    static string OtherTiff(TempWorkspace ws, string name = "alta.tif", int w = 512, int h = 512, float grey = 0.5f)
+        => ws.WriteFile(name, TiffTestData.Build16Rgb(w, h,
+            (x, _, c) => RasterOps.Level16(x < w / 2 ? grey : c == 0 ? 0.8f : 0.2f), IccTestData.V2("sRGB test")));
+
+    [Fact]
+    public async Task R166_TheOtherImageIsComparedAndEveryControlActsOnBothSides()
+    {
+        using var ws = new TempWorkspace();
+        AnalysisResult result = Result(Profile(ws));
+        var tab = new SoftProofTabViewModel();
+        Assert.False(tab.CanCompare);
+        tab.Populate(result);
+        tab.Compute();
+        Assert.True(tab.CanCompare);
+        Assert.False(tab.IsComparing);
+        Assert.Null(tab.OtherImage);
+        Assert.False(tab.StopComparing.CanExecute(null));
+        Assert.Equal("memorie", tab.ImageName);
+
+        string other = OtherTiff(ws);
+        Task comparing = tab.CompareAsync(other);
+        Assert.Same(comparing, tab.ProofComputation);
+        Assert.True(tab.IsBusy);
+        Assert.False(tab.CanCompare);
+        Assert.Equal(ProofTexts.Computing, tab.Message);
+        await comparing;
+        Assert.True(tab.IsComparing, tab.Message);
+        Assert.Null(tab.Message);
+        Assert.False(tab.IsBusy);
+        Assert.NotNull(tab.OtherImage);
+        Assert.Equal("alta.tif", tab.OtherName);
+        Assert.True(tab.StopComparing.CanExecute(null));
+        Assert.True(tab.CanCompare);
+
+        // The shares and the sentences are the core's, one legend per image.
+        ProofSet first = ProofRun.Prepare(result);
+        ProofSet second = ProofRun.PrepareOther(first, other);
+        Assert.Null(second.Problem);
+        Assert.Equal(ProofTexts.PaperGamutLegend("memorie", first.PctPaper), tab.PaperGamutLegend);
+        Assert.Equal(ProofTexts.PaperGamutLegend("alta.tif", second.PctPaper), tab.OtherPaperGamutLegend);
+        Assert.Equal(ProofTexts.CompareSides("memorie", "alta.tif"), tab.CompareSides);
+
+        // The warning paints each side by its own pixels, only while its box is on.
+        Assert.Null(tab.PaperOverlay);
+        Assert.Null(tab.OtherPaperOverlay);
+        tab.ShowPaperGamut = true;
+        Assert.Same(tab.PaperLayer, tab.PaperOverlay);
+        Assert.NotNull(tab.OtherPaperOverlay);
+        Assert.NotSame(tab.PaperOverlay, tab.OtherPaperOverlay);
+
+        // "Originalul" shows both as they are, with no red on either.
+        var left = tab.Image;
+        var right = tab.OtherImage;
+        Assert.True(tab.HandleKey(Key.O));
+        Assert.NotSame(left, tab.Image);
+        Assert.NotSame(right, tab.OtherImage);
+        Assert.Null(tab.PaperOverlay);
+        Assert.Null(tab.OtherPaperOverlay);
+        tab.ShowOriginal = false;
+        Assert.Same(left, tab.Image);
+        Assert.Same(right, tab.OtherImage);
+        Assert.NotNull(tab.OtherPaperOverlay);
+
+        // A change of intent renders both again, the comparison kept, the red layers the same.
+        var redRight = tab.OtherPaperOverlay;
+        tab.IsRelative = true;
+        await tab.ProofComputation;
+        Assert.True(tab.IsComparing);
+        Assert.NotSame(left, tab.Image);
+        Assert.NotSame(right, tab.OtherImage);
+        Assert.Same(redRight, tab.OtherPaperOverlay);
+        SoftProofResult core = ProofRun.Render(second, ProofIntent.Relative, simulate: true);
+        Assert.Equal(core.Image.W, tab.Width);
+        Assert.Equal(core.Image.H, tab.Height);
+
+        // "Schimba imaginea...": another file replaces the right side.
+        right = tab.OtherImage;
+        await tab.CompareAsync(OtherTiff(ws, "a-treia.tif", grey: 0.3f));
+        Assert.True(tab.IsComparing, tab.Message);
+        Assert.Equal("a-treia.tif", tab.OtherName);
+        Assert.NotSame(right, tab.OtherImage);
+        Assert.Equal(ProofTexts.CompareSides("memorie", "a-treia.tif"), tab.CompareSides);
+
+        // "Opreste comparatia": the single image of R-163 again, its legend without a name.
+        tab.StopComparing.Execute(null);
+        Assert.False(tab.IsComparing);
+        Assert.Null(tab.OtherImage);
+        Assert.Null(tab.OtherPaperOverlay);
+        Assert.Equal("", tab.OtherPaperGamutLegend);
+        Assert.Equal("", tab.CompareSides);
+        Assert.Equal(ProofTexts.PaperGamutLegend(first.PctPaper), tab.PaperGamutLegend);
+        Assert.True(tab.HasProof);
+        Assert.False(tab.StopComparing.CanExecute(null));
+        Assert.True(tab.CanCompare);
+    }
+
+    [Fact]
+    public void R166_ARefusedFileLeavesWhatWasShownAndAnotherImageEndsTheComparison()
+    {
+        using var ws = new TempWorkspace();
+        string icc = Profile(ws);
+        var tab = new SoftProofTabViewModel();
+        tab.Populate(ResultAt(icc, "prima.tif"));
+        tab.Compute();
+
+        // Refused as the first choice: the single image stays, the reason in red.
+        string small = OtherTiff(ws, "mica.tif", w: 256);
+        tab.Compare(small);
+        Assert.False(tab.IsComparing);
+        Assert.True(tab.HasProof);
+        Assert.NotNull(tab.Image);
+        Assert.True(tab.IsProblem);
+        Assert.Equal(ProofTexts.SizeMismatch(512, 512, 256, 512), tab.Message);
+
+        // A file the core takes clears the reason.
+        string good = OtherTiff(ws);
+        tab.Compare(good);
+        Assert.True(tab.IsComparing, tab.Message);
+        Assert.Null(tab.Message);
+        Assert.False(tab.IsProblem);
+
+        // Refused as a replacement: the earlier comparison stays.
+        var right = tab.OtherImage;
+        tab.Compare(small);
+        Assert.True(tab.IsComparing);
+        Assert.Same(right, tab.OtherImage);
+        Assert.Equal("alta.tif", tab.OtherName);
+        Assert.True(tab.IsProblem);
+        Assert.Equal(ProofTexts.SizeMismatch(512, 512, 256, 512), tab.Message);
+
+        // The same image analysed again keeps the comparison and proofs the other file again.
+        tab.Clear();
+        Assert.False(tab.IsComparing);
+        tab.Populate(ResultAt(icc, "prima.tif"));
+        tab.Compute();
+        Assert.True(tab.IsComparing, tab.Message);
+        Assert.Equal("alta.tif", tab.OtherName);
+        Assert.NotNull(tab.OtherImage);
+        Assert.NotSame(right, tab.OtherImage);
+        Assert.Null(tab.Message);
+
+        // The other file gone by then: the comparison ends, with the reason.
+        File.Delete(good);
+        tab.Clear();
+        tab.Populate(ResultAt(icc, "prima.tif"));
+        tab.Compute();
+        Assert.False(tab.IsComparing);
+        Assert.True(tab.HasProof);
+        Assert.True(tab.IsProblem);
+        Assert.StartsWith("fisierul nu exista: ", tab.Message);
+        // ... and is not tried again at the next run.
+        tab.Clear();
+        tab.Populate(ResultAt(icc, "prima.tif"));
+        tab.Compute();
+        Assert.False(tab.IsComparing);
+        Assert.Null(tab.Message);
+
+        // Another image ends the comparison without a word.
+        tab.Compare(OtherTiff(ws, "din-nou.tif"));
+        Assert.True(tab.IsComparing, tab.Message);
+        tab.Clear();
+        tab.Populate(ResultAt(icc, "a-doua.tif"));
+        tab.Compute();
+        Assert.False(tab.IsComparing);
+        Assert.Null(tab.OtherImage);
+        Assert.Null(tab.Message);
+        Assert.True(tab.HasProof);
+        Assert.Equal("a-doua.tif", tab.ImageName);
+    }
+
+    [Fact]
+    public void R166_TheTabAndTheFullScreenWindowShowTheComparisonAndItsButtons()
+        => _sta.Invoke(() =>
+        {
+            using var ws = new TempWorkspace();
+            using var errors = new WindowSmokeTests.BindingErrors();
+            var tab = new SoftProofTabViewModel();
+            tab.Populate(ResultAt(Profile(ws), "prima.tif"));
+            tab.Compute();
+            var view = new SoftProofView { DataContext = tab };
+            Layout(view);
+
+            // One image: the one button, the single viewer.
+            SoftProofControls controls = view.Controls;
+            Assert.Equal("Compara cu alta imagine...", (string)controls.CompareButton.Content);
+            Assert.Equal(Visibility.Visible, controls.CompareButton.Visibility);
+            Assert.True(controls.CompareButton.IsEnabled);
+            Assert.Equal(Visibility.Collapsed, controls.ChangeButton.Visibility);
+            Assert.Equal(Visibility.Collapsed, controls.StopButton.Visibility);
+            Assert.Equal(Visibility.Visible, view.Single.Visibility);
+            Assert.Equal(Visibility.Collapsed, view.Comparison.Visibility);
+
+            // Comparing: the other two buttons, the line between the two proofs, named by their files.
+            tab.Compare(OtherTiff(ws));
+            Assert.True(tab.IsComparing, tab.Message);
+            Layout(view);
+            Assert.Equal(Visibility.Collapsed, controls.CompareButton.Visibility);
+            Assert.Equal("Schimba imaginea...", (string)controls.ChangeButton.Content);
+            Assert.Equal(Visibility.Visible, controls.ChangeButton.Visibility);
+            Assert.Equal("Opreste comparatia", (string)controls.StopButton.Content);
+            Assert.Equal(Visibility.Visible, controls.StopButton.Visibility);
+            Assert.Equal(Visibility.Collapsed, view.Single.Visibility);
+            Assert.Equal(Visibility.Visible, view.Comparison.Visibility);
+            Assert.Same(tab.Image, view.Comparison.Before);
+            Assert.Same(tab.OtherImage, view.Comparison.After);
+            Assert.Equal("prima.tif", view.Comparison.BeforeText);
+            Assert.Equal("alta.tif", view.Comparison.AfterText);
+            Assert.Equal(512.0, view.Comparison.ContentWidth);
+            Assert.Equal(512.0, view.Comparison.ContentHeight);
+            Assert.Equal(0.5, view.Comparison.DividerPosition);
+
+            // The red layer on each side, its own.
+            Assert.Null(view.Comparison.BeforeOverlay);
+            Assert.Null(view.Comparison.AfterOverlay);
+            tab.ShowPaperGamut = true;
+            Assert.NotNull(view.Comparison.BeforeOverlay);
+            Assert.Same(tab.PaperOverlay, view.Comparison.BeforeOverlay);
+            Assert.Same(tab.OtherPaperOverlay, view.Comparison.AfterOverlay);
+            WindowSmokeTests.Render(view, name: "soft-proof-comparatie");   // saved with APA_DUMP_SCREENS, to look at
+
+            // The full-screen window shows the same comparison, with the same buttons in its panel.
+            var window = new SoftProofWindow { DataContext = tab };
+            try
+            {
+                Layout((FrameworkElement)window.Content);
+                Assert.Equal(Visibility.Visible, window.Comparison.Visibility);
+                Assert.Equal(Visibility.Collapsed, window.Single.Visibility);
+                Assert.Same(tab.Image, window.Comparison.Before);
+                Assert.Same(tab.OtherImage, window.Comparison.After);
+                Assert.Equal("alta.tif", window.Comparison.AfterText);
+                Assert.Equal(Visibility.Visible, window.ProofControls.ChangeButton.Visibility);
+                Assert.Equal(Visibility.Visible, window.ProofControls.StopButton.Visibility);
+                Assert.True(window.HoverPanel.IsAncestorOf(window.ProofControls.StopButton));
+
+                // "Opreste comparatia" brings both back to the single image.
+                tab.StopComparing.Execute(null);
+                Layout((FrameworkElement)window.Content);
+                Layout(view);
+                Assert.Equal(Visibility.Collapsed, window.Comparison.Visibility);
+                Assert.Equal(Visibility.Visible, window.Single.Visibility);
+                Assert.Equal(Visibility.Visible, window.ProofControls.CompareButton.Visibility);
+                Assert.Equal(Visibility.Collapsed, view.Comparison.Visibility);
+                Assert.Equal(Visibility.Visible, view.Single.Visibility);
+                Assert.Null(view.Comparison.After);
+            }
+            finally
+            {
+                window.DataContext = null;
+            }
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+
+            using (Tr.Use(UiLanguage.English))
+            {
+                var english = new SoftProofControls { DataContext = tab };
+                Assert.Equal("Compare with another image...", (string)english.CompareButton.Content);
+                Assert.Equal("Change the image...", (string)english.ChangeButton.Content);
+                Assert.Equal("Stop comparing", (string)english.StopButton.Content);
+            }
+            tab.Clear();
+        });
+
     static void Layout(FrameworkElement el)
     {
         el.Measure(new Size(1400, 860));
