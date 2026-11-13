@@ -354,6 +354,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   check 2 or under `INDEX`; the `INDEX` row of such a set no longer says it was worked out for
   ISO 400 and 120 s (R-052, R-060, R-063, ADR 0053; CR-002 of the code review).
 
+- The noise of the lights' stack in the scale section, and the rows of check 3 that weigh a
+  light found in the darks against it, added the lights' noise in the lights' ADU to the dark
+  master's in the darks' ADU: with lights at twice the darks' ISO the lights' share came out
+  double. The lights' sky and noise are now brought to the darks' settings first, as check 9
+  brings them, and the `sky` row says so when the lights are at other settings than the darks
+  (R-080; CR-003 of the code review). With lights at the darks' settings nothing changes.
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

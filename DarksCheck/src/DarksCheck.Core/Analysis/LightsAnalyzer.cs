@@ -45,7 +45,16 @@ namespace DarksCheck.Core;
 /// pixels.</param>
 /// <param name="AmpRatioQ25">The 25th percentile of those ratios; NaN likewise.</param>
 /// <param name="AmpRatioQ75">The 75th percentile of those ratios; NaN likewise.</param>
-internal sealed record LightFigures(FrameInfo Info, string? Error, bool AssumedSettings, IReadOnlyList<double> SkyMedian, IReadOnlyList<double> SkySigma, IReadOnlyList<double> LocalSigma, int Candidates, int IsolatedHot, double AmpRatioMedian, double AmpRatioQ25, double AmpRatioQ75);
+internal sealed record LightFigures(FrameInfo Info, string? Error, bool AssumedSettings, IReadOnlyList<double> SkyMedian, IReadOnlyList<double> SkySigma, IReadOnlyList<double> LocalSigma, int Candidates, int IsolatedHot, double AmpRatioMedian, double AmpRatioQ25, double AmpRatioQ75)
+{
+    /// <summary>
+    /// What the light's ADU are multiplied by to stand beside the darks' ADU: the darks' factor
+    /// over the light's (<see cref="LightsAnalyzer.FactorOf"/>), above 0. 1 for a light at the
+    /// darks' settings, for one read at them (ADR 0053) and for one without figures; 0.5 for a
+    /// light at twice the darks' ISO.
+    /// </summary>
+    internal double ToDarks { get; init; } = 1;
+}
 
 /// <summary>
 /// At one level of the dark master: how many pixels the master has above it, and how many of those
@@ -228,7 +237,7 @@ internal static class LightsAnalyzer
                     bool assumed = !Normalisation.Says(frame.Info);
                     double normL = FactorOf(frame.Info, darks);
                     (LightFigures f, List<int> isolated) = Measure(frame, w, h, lightBlack, white, normL, assumed, excess, darks.Norm, ampIdx);
-                    frames[i] = f;
+                    frames[i] = f with { ToDarks = darks.Norm / normL };
                     lock (gate)
                     {
                         used++;

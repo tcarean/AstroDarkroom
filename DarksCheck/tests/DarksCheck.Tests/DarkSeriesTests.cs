@@ -939,6 +939,49 @@ public partial class DarkSeriesTests
         Assert.Equal(["a b c", "dd e"], ScaleReport.Wrap("a b c dd e", 5));
     }
 
+    /// <summary>
+    /// CR-003: the stack's noise added the lights' sky noise, in the lights' ADU, to the dark master's,
+    /// in the darks' ADU; lights at twice the darks' ISO doubled the lights' share.
+    /// </summary>
+    [Fact]
+    public void R080_LightsAtTwiceTheIsoGiveTheSameStackFigures()
+    {
+        // one scene at the darks' gain and at twice it: twice the sky, its noise and the hot pixels, declared at ISO 800
+        static SyntheticLight L(int i, double gain) => new() { Seed = 300 + i, Sky = 500 * gain, Noise = 6 * gain, Hot = SyntheticLight.Lattice, HotFactor = gain };
+        static SyntheticDark D(int i) => new() { Seed = 100 + i, Hot = SyntheticLight.Lattice };
+        using SessionFixture same = new SessionFixture().WithDarkSeries(6, D).WithLights(4, i => L(i, 1));
+        using SessionFixture twice = new SessionFixture().WithDarkSeries(6, D).WithLights(4, i => L(i, 2), iso: 800);
+        DarkSeriesResult a = Run(same), b = Run(twice);
+        StackNoise sa = StackNoise.Of(a.Lights, a.ReferencePlane, a.Darks.Noise.MasterNoise)!;
+        StackNoise sb = StackNoise.Of(b.Lights, b.ReferencePlane, b.Darks.Noise.MasterNoise)!;
+
+        // the darks are the same files, so the master's noise is the same figure, in the darks' ADU
+        Assert.Equal(sa.MasterNoiseAdu, sb.MasterNoiseAdu, 9);
+        Assert.False(sa.Scaled);
+        Assert.True(sb.Scaled);
+        Assert.All(a.Lights!.Frames, f => Assert.Equal(1, f.ToDarks, 9));
+        Assert.All(b.Lights!.Frames, f => Assert.Equal(0.5, f.ToDarks, 9));
+        // the lights' figures come to the darks' ADU: half of what the files at ISO 800 hold
+        Assert.InRange(sb.SkyAdu, 0.99 * sa.SkyAdu, 1.01 * sa.SkyAdu);
+        Assert.InRange(sb.SkySigmaAdu, 0.97 * sa.SkySigmaAdu, 1.03 * sa.SkySigmaAdu);
+        Assert.InRange(sb.MeanStackAdu, 0.97 * sa.MeanStackAdu, 1.03 * sa.MeanStackAdu);
+        Assert.InRange(sb.MedianStackAdu, 0.97 * sa.MedianStackAdu, 1.03 * sa.MedianStackAdu);
+        // so a light of 0.79 ADU found in the darks is the same share of either stack's noise
+        Assert.InRange((0.79 / sb.MeanStackAdu) / (0.79 / sa.MeanStackAdu), 0.97, 1.03);
+
+        // the sky row says the figures were worked out for the darks' settings, and only then
+        string Sky(DarkSeriesResult r) => ScaleReport.Rows(r).Single(x => x.Label == Ui.T("sky", "cer")).Value;
+        const string Note = "; lights-urile sunt la alte setari decat dark-urile, asa ca cifrele sunt socotite pentru ISO-ul si expunerea dark-urilor";
+        Assert.DoesNotContain("socotite pentru", Sky(a), StringComparison.Ordinal);
+        Assert.EndsWith(" (pixelii verzi G1, din 4 lights)" + Note, Sky(b), StringComparison.Ordinal);
+        Assert.StartsWith($"pe un light, cerul e la {sb.SkyAdu.ToString("0.0", CultureInfo.InvariantCulture)} ADU peste negru, cu {sb.SkySigmaAdu.ToString("0.0", CultureInfo.InvariantCulture)} ADU de zgomot pe pixel", Sky(b), StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.DoesNotContain("worked out for", Sky(a), StringComparison.Ordinal);
+            Assert.EndsWith("; the lights are at other settings than the darks, so the figures are worked out for the darks' ISO and exposure", Sky(b), StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void R080_TheFirstParagraphSaysWhenTheCameraIsNotInTheTable()
     {

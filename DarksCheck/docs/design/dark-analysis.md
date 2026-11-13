@@ -243,7 +243,13 @@ when the ISO is outside the table. The console writes the rows as
 indent; the window binds `Rows` and `Paragraphs` as they are. `StackNoise.Of` holds the lights'
 sky median, sky sigma and count on the reference plane with the mean and median stack's noise,
 the lights' share sigma / sqrt(N) plus the dark master's noise in quadrature (the master is
-subtracted from every light alike, so its noise does not average out);
+subtracted from every light alike, so its noise does not average out). Both sides of that sum
+are in the darks' raw ADU: each light's sky median and sigma are multiplied by
+`LightFigures.ToDarks`, the darks' factor over the light's, which `LightsAnalyzer.Analyze` sets
+from `FactorOf` when it measures the light, so `StackNoise.Of` needs no settings of its own;
+`StackNoise.Scaled` says a light was not at the darks' settings, and the `cer` row then says the
+figures were worked out for the darks' ISO and exposure. Check 9 brings the noise of a light to
+the darks' settings the same way, through `NoiseOnPlane`.
 `ScaleReport.AgainstMasters` turns a light in raw ADU into the words and the bold parts of its
 ratio to the dark master's noise (`NoiseVsN.MasterNoise`) and to the stack's, used by the
 `ce s-a gasit` row and by check 3's `lumina pe cadre`, `lumina constanta` and

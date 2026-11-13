@@ -132,6 +132,11 @@ internal static class ScaleReport
             new(T("sky", "cer"), g.Stack is StackNoise st
                 ? T($"on a light, the sky is at {F(st.SkyAdu, 1)} ADU above the black, with {F(st.SkySigmaAdu, 1)} ADU of noise per pixel ({PlaneWords(g.Plane)}, from {st.Lights} lights)",
                     $"pe un light, cerul e la {F(st.SkyAdu, 1)} ADU peste negru, cu {F(st.SkySigmaAdu, 1)} ADU de zgomot pe pixel ({PlaneWords(g.Plane)}, din {RoCount(st.Lights)}lights)")
+                    // the figures are the lights' brought to the darks' settings; said only when that changed them (R-080)
+                    + (st.Scaled
+                        ? T("; the lights are at other settings than the darks, so the figures are worked out for the darks' ISO and exposure",
+                            "; lights-urile sunt la alte setari decat dark-urile, asa ca cifrele sunt socotite pentru ISO-ul si expunerea dark-urilor")
+                        : "")
                 : T("no lights in the session", "fara lights in sesiune")),
             new(T("saturation", "saturatie"), T($"at {F(d.White, 0)} ADU the pixel is full and cannot go higher", $"la {F(d.White, 0)} ADU pixelul e plin si nu mai poate creste")
                 + (g.Facts is null ? "" : T($"; per the source, a pixel holds {F(g.Facts.FullWellElectrons, 0)} electrons (full well)", $"; dupa sursa, intr-un pixel incap {F(g.Facts.FullWellElectrons, 0)} electroni (full well)"))),
