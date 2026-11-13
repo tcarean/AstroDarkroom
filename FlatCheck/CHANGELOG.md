@@ -258,6 +258,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (`CameraRawProfile`), not by its name: 529 lenses on the owner's machine are read from their
   raw file alone, and a lens that has only a JPEG profile is listed and refused when chosen,
   with the reason. The three lenses of the validation library are not affected.
+- A lens is no longer left out of the candidates because a model code in its name was read as
+  its aperture (R-018, ADR 0104, the review's CR-005). `TAMRON SP 35mm F_1.4 Di USD F045` was
+  read as f/45, `Zeiss Distagon T 21 f28 ZE` as f/28 and `smc Pentax-F 28mm f/2.8` as f/28 (its
+  focal length), so for a raw that says f/1.4 or f/2.8 the right lens contradicted it and the
+  depth verdict came from another one. A number followed by `mm` is now a focal length, and one
+  outside f/0.7 to f/11 says nothing about the aperture; 37 of the 3242 lens names in the two
+  catalogues are read differently, the Tokina, the Nikkor 35 and the Samyang as before.
 - Typing in the Sintetic tab's lens field no longer freezes the window for half a second at
   every keystroke (R-132, ADR 0099): the text each lens is searched in is built once, while the
   profiles load, and a search takes under a millisecond on 3799 lenses. The same lenses are

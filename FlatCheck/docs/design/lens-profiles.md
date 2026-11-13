@@ -280,7 +280,12 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
 - **Narrowing by name** (`LensSpec`; why, and the Tokina raw that preselected a Nikkor, are
   ADR 0030): `LensSpec.Parse(name)` reads the focal range (first `<n>[-<m>]mm`) and the
   maximum aperture (first `f/<n>`, `F<n>` or `f<n>-<m>` not preceded by a letter, so `AF-S`
-  and `EF` do not match; a prime is `min = max`). `Contradicts` is true only when both sides
+  and `EF` do not match; a prime is `min = max`). Two filters on that number (R-018, ADR 0104,
+  with the 37 names of 3242 they change): one followed by `mm` or `-<m>mm` is a focal length
+  (`FocalTailRx`, anchored where the number ends; "Pentax-F 28mm f/2.8") and the next match is
+  tried; the first one left is the aperture only between `Th.LensNameApertureMin` and
+  `Th.LensNameApertureMax` (0.7 and 11), and otherwise the name gives none ("F045", Zeiss's
+  "f28", "DSC-F707") and no later number is tried. `Contradicts` is true only when both sides
   say something and disagree: focal ends within 1 mm or 5 % (names round), aperture within
   0.25 stops (Nikon's codes step in sixths). On this machine's Adobe folder ID 139 is carried
   by the Tokina AT-X 11-20 F2.8, the Tokina atx-i 11-20 f2.8, the Nikkor 18-200 f3.5-5.6G VR

@@ -850,6 +850,65 @@ public class LensCatalogTests
         Assert.Equal(ap, spec.MaxAperture);
     }
 
+    /// <summary>
+    /// R-018: the aperture of a name is never a model code or a focal length. Before, the first
+    /// "F" with a number was taken: f/45 from Tamron's "F045", f/28 from Zeiss's "f28" and from
+    /// "Pentax-F 28mm" (the names are the catalogues', counted on 2026-11-13: 37 of 3242).
+    /// </summary>
+    [Theory]
+    [InlineData("TAMRON SP 35mm F_1.4 Di USD F045", 35.0, 35.0, null)]   // the underscore hides 1.4; F045 is the model
+    [InlineData("TAMRON SP 35mm F_1.4 Di USD F045N", 35.0, 35.0, null)]
+    [InlineData("Zeiss Distagon T 21 f28 ZE", null, null, null)]         // 2.8 written without its dot: not guessed
+    [InlineData("Zeiss Otus 55 f14 ZE", null, null, null)]
+    [InlineData("smc Pentax-F 28mm f/2.8", 28.0, 28.0, 2.8)]             // "F 28mm" is the focal length
+    [InlineData("Pentax-F 28-80mm f/3.5-4.5", 28.0, 80.0, 3.5)]
+    [InlineData("smc Pentax-F 35-80mm f/4-5.6", 35.0, 80.0, 4.0)]
+    [InlineData("DSC-F707 & compatibles (Standard)", null, null, null)]
+    [InlineData("FinePix F810 & compatibles (Standard)", null, null, null)]
+    [InlineData("120mm f/32.0-4.0", 120.0, 120.0, null)]                 // a range written backwards: not read
+    [InlineData("Canon RF 800mm F11 IS STM", 800.0, 800.0, 11.0)]        // the slowest real maximum aperture
+    [InlineData("Voigtlander 29mm f/0.8 Super Nokton", 29.0, 29.0, 0.8)] // the fastest
+    [InlineData("Distagon 28mm f/2.8 MMJ", 28.0, 28.0, 2.8)]             // "MMJ" is not "mm"
+    public void R018_TheApertureOfANameIsNeverAModelCodeOrAFocalLength(string name, double? min, double? max, double? ap)
+    {
+        var spec = LensSpec.Parse(name);
+        Assert.Equal(min, spec.MinFocalMm);
+        Assert.Equal(max, spec.MaxFocalMm);
+        Assert.Equal(ap, spec.MaxAperture);
+    }
+
+    /// <summary>R-018: the bounds are the thresholds', and they are the ends of what the two
+    /// catalogues hold (0.8 to 11 on 2026-11-13).</summary>
+    [Fact]
+    public void R018_TheApertureBoundsAreTheThresholds()
+    {
+        Assert.Equal(0.7, Th.LensNameApertureMin);
+        Assert.Equal(11.0, Th.LensNameApertureMax);
+        Assert.Equal(11.0, LensSpec.Parse("Lens 500mm F11").MaxAperture);
+        Assert.Null(LensSpec.Parse("Lens 500mm F11.5").MaxAperture);
+        Assert.Equal(0.7, LensSpec.Parse("Lens 50mm f/0.7").MaxAperture);
+        Assert.Null(LensSpec.Parse("Lens 50mm f/0.65").MaxAperture);
+    }
+
+    /// <summary>
+    /// R-018, the harm: for a raw that says 35 mm f/1.4 the Tamron was left out, because its
+    /// name "said" f/45, ten stops away, and the depth verdict came from another lens.
+    /// </summary>
+    [Fact]
+    public void R018_ALensWhoseNameCarriesAModelCodeIsNotLeftOut()
+    {
+        var hits = new[]
+        {
+            new LensChoice(ProfileSource.Adobe, "TAMRON", "TAMRON SP 35mm F_1.4 Di USD F045", "NIKON CORPORATION"),
+            new LensChoice(ProfileSource.Adobe, "Zeiss", "Zeiss Distagon T 35 f14 ZE", "Canon"),
+            new LensChoice(ProfileSource.Lensfun, "Pentax", "smc Pentax-F 28mm f/2.8", "Pentax KAF"),
+        };
+
+        Assert.Equal(new[] { hits[0], hits[1] }, LensCatalog.Narrow(hits, 35, 35, 1.4));
+        Assert.Equal(new[] { hits[1], hits[2] }, LensCatalog.Narrow(hits, 28, 28, 2.8));   // the Zeiss gives no range at all
+        Assert.Equal(new[] { hits[1] }, LensCatalog.Narrow(hits, 28, 28, 4.0));
+    }
+
     [Fact]
     public void Narrow_DropsTheLensesWhoseNameContradictsTheRaw_AndKeepsTheOnesItCannotRead()
     {
