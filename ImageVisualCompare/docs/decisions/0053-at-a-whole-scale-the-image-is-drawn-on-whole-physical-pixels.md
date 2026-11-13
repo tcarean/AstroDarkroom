@@ -46,7 +46,8 @@ square, 0 and 255, and a capture of the screen:
   the last whole pixel of a range that ends a last bit under one.
 - **The two bars of the main window are laid out rounded to whole physical pixels**
   (`UseLayoutRounding` on the toolbar's and the status bar's `Border`, switched off again on the
-  panel inside each). The surface between them then starts and ends on a whole physical pixel.
+  panel inside each, so that what is in a bar is laid out as before and only follows the bar's
+  own size). The surface between them then starts and ends on a whole physical pixel.
   The surface itself, its layers and its images stay unrounded (ADR 0012). When the window
   comes onto a display scaled differently, `MainWindow.OnDpiChanged` asks for the two bars to be
   measured again, since their heights were rounded to the other display's pixels.
@@ -72,7 +73,9 @@ square, 0 and 255, and a capture of the screen:
 - R-022 says it. `ViewportTests` pins the drawn offsets (the review's case, a fractional view,
   every whole stop, the scales that are not whole, a centred image, the end of the range, the
   scale a last bit from whole) and that twenty resizes of one pixel still hold the centre;
-  `RenderPlanTests` the translation; `CompareViewTests` renders the checkerboard at `100%` on
+  `RenderPlanTests` the translation and the squares of a fit a last bit under 400 %;
+  `CompareViewTests` compares what is drawn with what is read at 400 % and 1600 % with a pan
+  the image is not drawn at, and renders the checkerboard at `100%` on
   a surface of odd width and height and compares every screen pixel of an area with the pixel
   stored; `MainWindowTests` lays the window's content out and asks for a whole origin and a
   whole height, also with the toolbar half a pixel taller.
@@ -89,6 +92,14 @@ square, 0 and 255, and a capture of the screen:
 - On screen, at a whole scale, an anchor or a centre holds to within half a physical pixel; the
   pan itself holds exactly (R-023, R-024, R-027), and the scrollbars and the minimap show the
   pan.
+- The status bar is 28 pixels high where it was 27.63, so its texts, centred in it, sit about
+  a fifth of a pixel lower. On a scaled display a bar's border, 1 device-independent pixel,
+  is rounded too, and a bar rounded down can be a fraction of a pixel shorter than what is in
+  it; not measured, and nothing the surface depends on.
+- A fit a last bit under 400 % reads `400%`, is drawn on whole pixels, and is drawn as squares:
+  `RenderPlanner.For` takes a scale within the same tolerance under its threshold as the
+  threshold (R-025). Before, on `main` as well, such a fit was drawn smooth while `−` then `+`
+  gave squares.
 - 200 % and 300 % stay smooth (R-025): a square there is still blended with its neighbours
   along its edges, evenly now on every side.
 - Not measured: a display scaled 125 % or 150 %, none being at hand. There the surface's

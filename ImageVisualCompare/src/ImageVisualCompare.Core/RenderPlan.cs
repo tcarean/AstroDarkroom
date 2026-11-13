@@ -74,7 +74,8 @@ public static class RenderPlanner
     /// The negated drawn offsets as the translation, in image pixels, which at a whole scale
     /// puts the image on whole physical pixels (R-022); the viewport's scale divided by
     /// <paramref name="deviceScale"/>; and <see cref="ImageScalingMode.Pixelated"/> from
-    /// <see cref="PixelatedThreshold"/> up.
+    /// <see cref="PixelatedThreshold"/> up, a scale within <see cref="Viewport.WholeTolerance"/>
+    /// under it counting as it.
     /// </returns>
     public static RenderPlan For(Viewport viewport, double deviceScale)
     {
@@ -85,6 +86,6 @@ public static class RenderPlanner
             -viewport.DrawnOffsetX,
             -viewport.DrawnOffsetY,
             viewport.Scale / deviceScale,
-            viewport.Scale >= PixelatedThreshold ? ImageScalingMode.Pixelated : ImageScalingMode.Smooth);
+            viewport.Scale >= PixelatedThreshold - Viewport.WholeTolerance ? ImageScalingMode.Pixelated : ImageScalingMode.Smooth);
     }
 }

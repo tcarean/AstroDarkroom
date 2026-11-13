@@ -18,7 +18,8 @@
         <!-- The two bars are laid out rounded to whole physical pixels, and only they: the
              comparison surface between them then starts and ends on a whole pixel on any display
              scale, which 100% needs to show one stored pixel per screen pixel (R-022). Rounding
-             is switched off again inside each bar, so nothing in them moves. -->
+             is switched off again inside each bar, so what is in them is laid out as before, and
+             only follows the bar's own size, by a fraction of a pixel. -->
         <Border x:Name="TopBar"
                 Grid.Row="0"
                 Background="{StaticResource ChromeBrush}"

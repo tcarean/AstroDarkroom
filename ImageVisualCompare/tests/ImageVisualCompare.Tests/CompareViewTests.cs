@@ -53,12 +53,16 @@ public class CompareViewTests
     /// at 545 (R-022). The others are its part (b), at scales that are not whole, so that the
     /// image is drawn at the offsets given: each image pixel is a square of screen pixels, and
     /// in each case some of the squares' edges fall in the first half of a screen pixel, where
-    /// a read-out taken at the screen pixel's corner names the pixel before.
+    /// a read-out taken at the screen pixel's corner names the pixel before. The two at whole
+    /// scales have the image drawn a fraction of a pixel from its pan (R-022): the read-out has
+    /// to go by where it is drawn.
     /// </summary>
     [Theory]
     [InlineData("fit then 100%")]
     [InlineData("450% at offsets 300.5, 200.3")]
     [InlineData("1550% at offsets 300.79, 200.36")]
+    [InlineData("400% at a pan of 300.55, 200.45")]
+    [InlineData("1600% at a pan of 300.79, 200.36")]
     [InlineData("ten wheel notches from 100%")]
     public async Task R028_TheSurfaceReportsThePixelItDraws(string state)
     {
@@ -92,6 +96,16 @@ public class CompareViewTests
                 case "1550% at offsets 300.79, 200.36":
                     viewport.ZoomTo(15.5, 0, 0);
                     viewport.SetOffset(300.79, 200.36);
+                    break;
+                case "400% at a pan of 300.55, 200.45":
+                    viewport.ZoomTo(4, 0, 0);
+                    viewport.SetOffset(300.55, 200.45);
+                    Assert.Equal((300.5, 200.5), (viewport.DrawnOffsetX, viewport.DrawnOffsetY));
+                    break;
+                case "1600% at a pan of 300.79, 200.36":
+                    viewport.ZoomTo(16, 0, 0);
+                    viewport.SetOffset(300.79, 200.36);
+                    Assert.Equal((300.8125, 200.375), (viewport.DrawnOffsetX, viewport.DrawnOffsetY));
                     break;
                 default:
                     view.ZoomToActualSize();

@@ -150,5 +150,9 @@ its neighbours at the edges of its square; CR-006; CR-011.
   pixels; ADR 0053 supersedes ADR 0052 in part, the read-out converting through the drawn
   offsets. The harness ran on screen again after each of the two commits of fixes, with no grey
   pixel in any state.
+- A third review, of the branch as it ended, added: a fit a last bit under 400 % is drawn as
+  squares, like the 400 % it reads as; the surface's test has again two cases at whole scales,
+  where the image is drawn off its pan. The plan's "nothing inside them moves" was too strong:
+  the status bar is a third of a pixel higher, and its centred texts moved a fifth of a pixel.
 - The application was not launched on the real pair with its log read (`docs/skills.md`,
   `/wrap-up` step 9): the owner was at the PC. The real window ran on screen in the harness.

@@ -48,7 +48,7 @@ public sealed class Viewport
     /// How near a whole number a scale, or the half of a physical pixel an offset is rounded at,
     /// has to be to count as it: the arithmetic of a zoom leaves both a last bit away.
     /// </summary>
-    private const double WholeTolerance = 1e-9;
+    public const double WholeTolerance = 1e-9;
 
     private double _scale = 1.0;
 
@@ -169,7 +169,10 @@ public sealed class Viewport
     public PointD ScreenToContent(double screenX, double screenY) =>
         new(screenX / _scale + OffsetX, screenY / _scale + OffsetY);
 
-    /// <summary>Converts an image point to the viewport position it is drawn at.</summary>
+    /// <summary>
+    /// Converts an image point to the viewport position the pan puts it at; at a whole scale it
+    /// is drawn up to half a physical pixel from there (<see cref="DrawnOffsetX"/>).
+    /// </summary>
     /// <param name="contentX">The point, in image pixels from the image's left edge.</param>
     /// <param name="contentY">The point, in image pixels from the image's top edge.</param>
     /// <returns>
