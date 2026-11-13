@@ -162,12 +162,18 @@ namespace AstroPhotoAnalyzer.Wpf
         /// A new After image: the line shows only while there is something to compare, and goes
         /// back to the middle when there is nothing, so that the next image starts there (another
         /// variant of the same image replaces After without passing through null, and keeps it).
+        /// A drag in progress ends with the comparison: the pointer has nothing left to move.
         /// </summary>
         void OnAfterChanged()
         {
             bool compares = After != null;
             Overlay.Visibility = compares ? Visibility.Visible : Visibility.Collapsed;
-            if (!compares) _divider.Reset();
+            if (!compares)
+            {
+                EndDividerDrag();
+                if (IsMouseCaptured) ReleaseMouseCapture();
+                _divider.Reset();
+            }
             Place();
         }
 
@@ -217,8 +223,9 @@ namespace AstroPhotoAnalyzer.Wpf
             base.OnPreviewMouseLeftButtonDown(e);
             if (!BeginDividerDrag(e.GetPosition(Viewer))) return;
             // The line's press: taken before the viewer sees it, so it neither pans nor, on a
-            // second click, fits the image again.
-            CaptureMouse();
+            // second click, fits the image again. Without the capture no release would be heard
+            // outside the control, so a drag that cannot hold the mouse is not started.
+            if (!CaptureMouse()) EndDividerDrag();
             e.Handled = true;
         }
 

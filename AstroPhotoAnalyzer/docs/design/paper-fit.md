@@ -206,8 +206,8 @@ pointer, and otherwise shows `SizeWE` over the line, unless the viewer is pannin
 press is the viewer's, and so is the wheel: while a drag holds the mouse here the wheel would
 not reach the viewer, so `OnPreviewMouseWheel` hands it over (`ZoomAt` with the viewer's
 `WheelFactor`). The three drag methods are internal and hold the whole rule, so the tests drive
-a drag without a mouse. `After` going null (the gallery emptied by another image) hides the overlay and puts
-the line back in the middle; another variant replaces `After` without passing through null and
+a drag without a mouse. `After` going null (the gallery emptied by another image) hides the overlay, ends a drag in
+progress and puts the line back in the middle; another variant replaces `After` without passing through null and
 keeps it.
 
 `FitEnlarges` is bound to `PreviewCapped`: false keeps an image smaller than the area at its own

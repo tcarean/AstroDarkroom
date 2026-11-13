@@ -247,7 +247,12 @@ public class GamutFitTabTests
             Assert.NotNull(comparison.BeforeOverlay);
             Assert.Same(tab.Before.Overlay, comparison.BeforeOverlay);
             Assert.Same(tab.Current!.Image, comparison.After);
-            Assert.Same(tab.Current.Overlay, comparison.AfterOverlay);
+            // Nothing is left outside after the fit on this frame, so the variant's layer is
+            // null on both ends: the binding itself is what says the layer would be shown.
+            Assert.Null(tab.Current.Overlay);
+            Assert.Null(comparison.AfterOverlay);
+            Assert.Equal("Current.Overlay", System.Windows.Data.BindingOperations.GetBinding(comparison, BeforeAfterViewer.AfterOverlayProperty)?.Path.Path);
+            Assert.Equal("PreviewCapped", System.Windows.Data.BindingOperations.GetBinding(comparison, BeforeAfterViewer.FitEnlargesProperty)?.Path.Path);
             Assert.Equal(tab.Current.Width, comparison.ContentWidth);
             Assert.Equal(tab.Current.Height, comparison.ContentHeight);
             Assert.Equal("Inainte", comparison.BeforeText);

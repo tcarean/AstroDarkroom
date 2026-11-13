@@ -88,7 +88,8 @@ the original, the rendered pixel on each side of the line (the two layers' too),
 line, the handle and the labels are drawn, after the area changes size too; a drag is driven
 through `BeginDividerDrag`, `DragDividerTo` and `EndDividerDrag`, the methods the mouse handlers
 call, so no test drives the mouse itself (the capture, the cursor, the wheel handed over while
-dragging). `GamutFitTabTests`' render also reads the comparison's bindings back from the view. `ValidationTests`
+dragging). `GamutFitTabTests`' render also reads the comparison's bindings back from the view (the variant's
+layer by its binding's path, since the fixture leaves nothing outside after the fit). `ValidationTests`
 has a fifth kind of case, `gamutfit` (V-016): the run on the plate-solved FITS through the lab's
 baryta profile, the three variants' figures, the recipe, and the two files written into a
 temporary folder and read back against each other.

@@ -279,8 +279,17 @@ public class BeforeAfterViewerTests
             Assert.Equal(0.5, v.DividerPosition, 9);
             v.EndDividerDrag();
 
-            // With nothing to compare there is no line to grab.
+            // The gallery emptied while the line is held: the drag is over, and a pointer still
+            // moving cannot pull the line away from the middle the next image starts at.
+            Assert.True(v.BeginDividerDrag(new Point(200, 150)));
+            v.DragDividerTo(260);
+            Assert.Equal(0.65, v.DividerPosition, 9);
             v.After = null;
+            Assert.Equal(0.5, v.DividerPosition);
+            v.DragDividerTo(320);
+            Assert.Equal(0.5, v.DividerPosition);
+
+            // With nothing to compare there is no line to grab.
             Assert.False(v.BeginDividerDrag(new Point(200, 150)));
         });
 
