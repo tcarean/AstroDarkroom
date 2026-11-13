@@ -77,11 +77,11 @@ rule "Golden files").
 
 | ID | Sev | Reach | Evidence | Title | Status |
 |----|----:|-------|----------|-------|--------|
-| CR-001 | 1 | some setups | confirmed | The session's exposure verdict can come from a rejected frame | open |
-| CR-002 | 1 | some setups | confirmed | Saturated stars vote on focus and elongation under a bright sky | open |
-| CR-003 | 1 | some setups | confirmed | With FITS lights in the folder itself, `result.fit` is counted as a light | open |
-| CR-004 | 1 | some setups | to measure | After a meridian flip no frame is aligned, and a weak fit is accepted as good | open |
-| CR-005 | 1 | some setups | to measure | The sensor pattern reads stars as hot pixels when the frames barely moved | open |
+| CR-001 | 1 | some setups | confirmed | The session's exposure verdict can come from a rejected frame | fixed 9a7b8234 |
+| CR-002 | 1 | some setups | confirmed | Saturated stars vote on focus and elongation under a bright sky | fixed a487d963 |
+| CR-003 | 1 | some setups | confirmed | With FITS lights in the folder itself, `result.fit` is counted as a light | fixed 6267276e |
+| CR-004 | 1 | some setups | to measure | After a meridian flip no frame is aligned, and a weak fit is accepted as good | fixed c8d9a7df |
+| CR-005 | 1 | some setups | to measure | The sensor pattern reads stars as hot pixels when the frames barely moved | fixed 47f3e89f |
 | CR-006 | 1 | some setups | to measure | The pattern's strength is too high on a short session | open |
 | CR-007 | 1 | some setups | owner | A star wider than about 5 px is read too narrow, so a soft frame can pass | open |
 | CR-008 | 1 | some setups | confirmed | A Fujifilm X-Trans raw is measured as a monochrome frame | open |
@@ -138,6 +138,7 @@ rule "Golden files").
 | CR-059 | 4 | - | confirmed | Core tests that cannot fail or do not check what their name says | open |
 | CR-060 | 4 | - | confirmed | Window tests that cannot fail or do not check what their name says | open |
 | CR-061 | 4 | - | confirmed | Design notes and comments that describe other code | open |
+| CR-062 | 4 | - | confirmed | The fixtures' star grid repeats, so frames with no shift register one column over | open |
 
 After the entries: the six findings in the files copied from FlatCheck (CP-1 to CP-6), fixed
 there first, and the cleanup list, which holds what is not a defect.
@@ -160,7 +161,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: none; `R024_ReadNoiseFromTheBiasesGivesTheSwampingRatios` asserts only a ratio above 3.
   A series fixture with biases and a short last frame, asserting the summary's verdict.
 - Evidence: confirmed (the logic was read; the exact figures need the test).
-- Status: open
+- Status: fixed 9a7b8234 (the sample leaves out the frames too short to stack and keeps the trailed ones, the owner's answer of 2026-11-13: ADR 0047; the `NaN %` of CR-029 stays open)
 
 ### CR-002 Saturated stars vote on focus and elongation under a bright sky
 
@@ -184,7 +185,7 @@ there first, and the cleanup list, which holds what is not a defect.
   `BackgroundG = 900` reproduces it.
 - Evidence: confirmed. The prototype has the same formula (`prototype/analyze.py:136`) and the
   Veil sky is 128, so the validation figures do not move.
-- Status: open
+- Status: fixed a487d963 (a star with a raw pixel at the top of the scale is left out of the shapes, the test of the saturated count)
 
 ### CR-003 With FITS lights in the folder itself, `result.fit` is counted as a light
 
@@ -204,7 +205,7 @@ there first, and the cleanup list, which holds what is not a defect.
   two lights.
 - Evidence: confirmed for the listing. How far the figures move depends on what Siril writes in
   the stack's header.
-- Status: open
+- Status: fixed 6267276e (a stack is told by its header, `STACKCNT` or `NCOMBINE` above 1, the owner's answer of 2026-11-13: ADR 0048)
 
 ### CR-004 After a meridian flip no frame is aligned, and a weak fit is accepted as good
 
@@ -227,7 +228,7 @@ there first, and the cleanup list, which holds what is not a defect.
   0.7 and 1.0 degrees asserting "correct or failed, never `Ok` and wrong", and one at 180.
 - Evidence: to measure (case 1 follows from the reading; case 2 is the replica's, whose
   tie-breaking differs from the C#).
-- Status: open
+- Status: fixed c8d9a7df (a fit on under a fifth of the stars fails; the frames after a meridian flip are said, in their reason and in a `meridian flip` row, not measured, the owner's answer of 2026-11-13: ADR 0049, R-087; aligning them is a feature of its own)
 
 ### CR-005 The sensor pattern reads stars as hot pixels when the frames barely moved
 
@@ -246,7 +247,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: the two R046 tests move a 3 px star by 4 px a frame, or do not move at all. Forty crops
   with a 7 px block stepping 0.17 px.
 - Evidence: to measure (the guard was read; the figures are the replica's).
-- Status: open
+- Status: fixed 47f3e89f (the pattern is refused when half the frames sit within three times the stars' width, the owner's answer of 2026-11-13: ADR 0050; V-013's pattern is no longer measured)
 
 ### CR-006 The pattern's strength is too high on a short session
 
@@ -1184,6 +1185,32 @@ In `tests/LightsCheck.Wpf.Tests/`:
 
 - Evidence: confirmed (the reviewers'; the lines of the code files named in other entries were
   opened there).
+- Status: open
+
+### CR-062 The fixtures' star grid repeats, so frames with no shift register one column over
+
+- Added 2026-11-13 by the task that fixed CR-001 to CR-005 (ADR 0046, point 7); not one of the
+  61 entries of the review.
+- Where: `tests/LightsCheck.Tests/SyntheticFrame.cs` (`WithStarGrid`);
+  `tests/LightsCheck.Tests/SessionFixture.cs` (`WithLights(withStars: true)`, `StarLight`);
+  `src/LightsCheck.Core/Analysis/Registration.cs` (`Vote`).
+- What happens: the 40 stars of every synthetic light sit on rows and columns 137 px apart,
+  each moved by a few pixels. The vote for the coarse shift counts the offsets in bins of 8 px.
+  A true shift of exactly 0 px on an axis sits on a bin's edge, the centroids' noise splits its
+  votes between two bins, and the offset of the grid laid one column over, which pairs 22 of
+  the 40 stars, wins. Turned by 180 degrees the grid falls on itself the same way.
+- Case: `SessionFixture.WithLights(3, withStars: true)`, three lights of one field with no
+  shift: the console's table reads `dX 136.7` on frames 2 and 3, a move of 137 px that did not
+  happen. Eight frames drawn at (0.5 i, 0): frames 2, 3 and 5 register at (137.2, -2.1) with 22
+  stars matched of 40. `SessionFixture.Pattern` escapes by its 0.2 px on Y.
+- Should: a fixture field that does not repeat (the `scattered` option added for R-087 draws
+  one), or no frame drawn at a shift of exactly 0 on an axis; and the tests that draw identical
+  frames read for what they assert under those positions.
+- Test: which tests built on `WithLights(withStars: true)` assert a position, a move or a
+  dithering figure was not looked at.
+- Evidence: confirmed on the fixtures (a console run and a test's own output, 2026-11-13). No
+  defect on a sky, which does not repeat: the recorded sessions align every frame on 62 % of
+  the stars or more.
 - Status: open
 
 ## The files copied from FlatCheck
