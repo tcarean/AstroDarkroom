@@ -63,8 +63,9 @@ modifies, moves or writes anything into the frames' folders.
   (ADR 0003). `docs/validation/2026-08-12-smida/` holds their report, JSON, CSV and figures.
 - `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs.
   `docs/validation.md` + `.json` - figures on the real sessions. `docs/design/` - the
-  explanations, per area, read on demand. `docs/plans/` - approved plans. `README.md` - the
-  user documentation, English (ADR 0022).
+  explanations, per area, read on demand. `docs/plans/` - approved plans. `docs/review/` - the
+  findings of the whole-code review of 2026-11-13, fixed one entry per task (ADR 0052).
+  `README.md` - the user documentation, English (ADR 0022).
 - `kit.json` - what the kit's scripts, skills and agent need to know about DarksCheck.
   `docs/skills.md` - DarksCheck's additions to the kit's skills. `scripts/`, `.claude/skills/`,
   `.claude/agents/`, `.claude/rules/kit/` and the process keys of `.claude/settings.json` are
