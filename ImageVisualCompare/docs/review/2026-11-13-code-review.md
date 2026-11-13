@@ -75,7 +75,7 @@ numbers are those of 2026-11-13; a task finds its lines again by the names the e
 | ID | Sev | Reach | Evidence | Title | Status |
 |----|----:|-------|----------|-------|--------|
 | CR-001 | 1 | common | confirmed | The read-out names the neighbouring pixel when the offset is an ulp under a whole number | fixed e4cb8e5d, 42796c8b |
-| CR-002 | 1 | common | to measure | At 100 % the image sits between screen pixels and is drawn interpolated | fixed 4c770ae7, 4f419791, 0c1d11e5 |
+| CR-002 | 1 | common | to measure | At 100 % the image sits between screen pixels and is drawn interpolated | fixed 4c770ae7, 4f419791, 0c1d11e5, 02e63f4d |
 | CR-003 | 1 | some setups | to measure | A pair named by relative paths on the command line is read again by those relative paths | open |
 | CR-004 | 1 | some files | to measure | A float TIFF with associated alpha is un-premultiplied, not shown as stored | open |
 | CR-005 | 1 | some files | owner | A transparent pixel is drawn over black and read unblended; a float RGBA loses its alpha | open |
@@ -148,8 +148,8 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-002. At 100 % the image sits between screen pixels and is drawn interpolated
 
-- **Severity 1, common, to measure.** Status: fixed 4c770ae7 and, after the branch's two
-  reviews, 4f419791 and 0c1d11e5; measured on screen as described,
+- **Severity 1, common, to measure.** Status: fixed 4c770ae7 and, after the branch's three
+  reviews, 4f419791, 0c1d11e5 and 02e63f4d; measured on screen as described,
   and worse: the surface of the main window always ended on a fraction of a pixel (ADR 0053).
   The pan keeps its fraction in `OffsetX`, `OffsetY`; the image is drawn with
   `Viewport.DrawnOffsetX`, `DrawnOffsetY`. Not measured on a scaled display.
