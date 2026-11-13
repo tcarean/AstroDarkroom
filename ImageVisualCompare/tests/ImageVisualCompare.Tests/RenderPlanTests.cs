@@ -41,6 +41,22 @@ public class RenderPlanTests
         Assert.Equal(-240, plan.TranslateY, 6);
     }
 
+    [Fact]
+    public void R022_AtAWholeScale_TheTranslationPutsTheImageOnWholePhysicalPixels()
+    {
+        var viewport = new Viewport();
+        viewport.SetContentSize(5938, 3888);
+        viewport.SetViewportSize(1920, 947);
+        viewport.ZoomToFit();
+        viewport.ZoomToActualSize();
+
+        RenderPlan plan = RenderPlanner.For(viewport, deviceScale: 1.5);
+
+        Assert.Equal(1470.5, viewport.OffsetY, 9);
+        Assert.Equal(-2009, plan.TranslateX);
+        Assert.Equal(-1471, plan.TranslateY);
+    }
+
     [Theory]
     [InlineData(1.0, 2.0)]
     [InlineData(1.25, 1.6)]
@@ -82,6 +98,24 @@ public class RenderPlanTests
         RenderPlan plan = RenderPlanner.For(viewport, deviceScale: 1);
 
         Assert.Equal(expected, plan.ScalingMode);
+    }
+
+    [Fact]
+    public void R025_AFitALastBitUnderFourHundredPercent_ShowsThePixelsToo()
+    {
+        // A view of 460 physical pixels on a display scaled 175 % comes in as
+        // 459.99999999999994, and a 115 pixel wide image then fits at 3.9999999999999996: it
+        // reads 400% and is drawn on whole pixels (R-022), so it is drawn as squares as well.
+        var viewport = new Viewport();
+        viewport.SetContentSize(115, 100);
+        viewport.SetViewportSize(459.99999999999994, 600);
+        viewport.ZoomToFit();
+        Assert.True(viewport.Scale < 4);
+        Assert.Equal(4, viewport.Scale, 9);
+
+        RenderPlan plan = RenderPlanner.For(viewport, deviceScale: 1.75);
+
+        Assert.Equal(ImageScalingMode.Pixelated, plan.ScalingMode);
     }
 
     [Theory]

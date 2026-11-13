@@ -40,6 +40,11 @@ the attribute is set before the first frame and the caption is never white even 
 Windows 11 the caption is set to the exact chrome colour; Windows 10 has no such attribute and
 gets the generic dark caption, which is close but not `#1B1F26`. See ADR 0018.
 
+**The two bars are measured again when the display's scale changes.** `MainWindow.OnDpiChanged`
+invalidates the measure of `TopBar` and `BottomBar`, whose heights `MainWindow.xaml` has rounded
+to whole physical pixels so that the surface between them starts and ends on one; why is in
+`rendering.md` and ADR 0053.
+
 ## One open at a time
 
 `MainWindow.OpenPairAsync` runs a whole open: the file dialogs, the load behind the overlay,

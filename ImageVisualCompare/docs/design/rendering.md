@@ -11,7 +11,8 @@
 > `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml`,
 > `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml.cs`,
 > `src/ImageVisualCompare.Core/MinimapGeometry.cs`,
-> `src/ImageVisualCompare.Wpf/app.manifest`.
+> `src/ImageVisualCompare.Wpf/app.manifest`,
+> and, for its two bars' layout rounding, `src/ImageVisualCompare.Wpf/MainWindow.xaml`.
 > A change to the code this describes means this note is updated in the same task, or
 > deleted with the decision it explains.
 
@@ -84,12 +85,27 @@ half reads 128,0,0 (A over the backdrop), not 128,0,127 (A over B). See ADR 0013
 own size, not the shared canvas, and not the natural size. WPF derives natural size from the file's DPI metadata, so a 72 dpi export would lay out
 larger than its own pixel count and quietly break the 1:1 zoom level. See ADR 0012.
 
+**At a whole scale the image is drawn on whole physical pixels.** `Viewport` holds two pairs of
+offsets. `OffsetX` and `OffsetY` are the pan: what the anchors, the centring, the resize, the
+scrollbars and the minimap work with, fractions and all. `DrawnOffsetX` and `DrawnOffsetY` are
+what the image is drawn with: the pan at a scale that is not whole, and at a whole one the
+nearest offset that lands on whole physical pixels. `RenderPlanner.For` takes the translation
+from the drawn pair and `PixelAt` reads through it; nothing else does. The pan is not rounded
+itself because a rounding dropped at each movement adds up: a window resized pixel by pixel
+would hold the image's edge still, not its centre. For the image to land on the screen's pixels
+the surface has to start on one too, which is what the two bars of `MainWindow.xaml` are laid
+out rounded for (`UseLayoutRounding` on each bar's `Border`, off again inside it, and
+measured again from `MainWindow.OnDpiChanged` when the display's scale changes); the surface
+and its images stay unrounded, since rounding a 5938 pixel wide `Image` to device pixels is
+what the explicit pixel sizes are there to avoid. See ADR 0053.
+
 **The read-out names the pixel that is drawn.** `CompareView.OnMouseMove` hands the pointer's
 position to `ReportPointer`, which converts it to physical pixels and asks `Viewport.PixelAt`;
 that returns an `ImagePixel`, whole coordinates, or null off the image. `CursorPixelChanged` is
 raised only when the pixel changes, and `MainWindow.UpdatePixelReadout` reads both bitmaps at
 it. The pointer's position is the corner of the physical pixel it is on, and WPF paints that
-screen pixel from the image point at its centre, so `PixelAt` converts the centre; the step from
+screen pixel from the image point at its centre, so `PixelAt` converts the centre, through the
+drawn offsets; the step from
 a point to a pixel is taken there and nowhere after it. A centre exactly on the edge between two
 image pixels, or `Viewport.EdgeReach` past it, goes to the pixel before the edge: the display
 adapter paints it so, and a centre that rounding left an ulp to either side of an edge then

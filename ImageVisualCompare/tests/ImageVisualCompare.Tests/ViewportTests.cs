@@ -278,6 +278,191 @@ public class ViewportTests
     }
 
     [Fact]
+    public void R022_AtOneHundredPercent_TheImageIsDrawnOnWholePhysicalPixels()
+    {
+        // CR-002 of the review of 2026-11-13: on a surface of odd height the zoom leaves the
+        // image half a physical pixel off, and every screen row would be two image rows mixed.
+        Viewport viewport = Create(5938, 3888, 1920, 947);
+        viewport.ZoomToFit();
+        viewport.ZoomToActualSize();
+
+        Assert.Equal(2009, viewport.OffsetX, 9);
+        Assert.Equal(1470.5, viewport.OffsetY, 9);
+        Assert.Equal(2009, viewport.DrawnOffsetX);
+        Assert.Equal(1471, viewport.DrawnOffsetY);
+    }
+
+    [Fact]
+    public void R022_AtOneHundredPercent_OnASurfaceOfFractionalHeight_TheImageIsDrawnOnWholePhysicalPixels()
+    {
+        Viewport viewport = Create(5938, 3888, 1920, 946.37);
+        viewport.ZoomToFit();
+        viewport.ZoomToActualSize();
+
+        Assert.Equal(1470.815, viewport.OffsetY, 9);
+        Assert.Equal(1471, viewport.DrawnOffsetY);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(6)]
+    [InlineData(8)]
+    [InlineData(12)]
+    [InlineData(16)]
+    public void R022_AtAWholeScale_TheDrawnOffsetIsTheNearestWholePhysicalPixel(double scale)
+    {
+        Viewport viewport = Create(5938, 3888, 1920, 947);
+        viewport.ZoomTo(scale, 960, 473.5);
+        viewport.SetOffset(1000.3, 700.7);
+
+        Assert.Equal(1000.3, viewport.OffsetX);
+        Assert.Equal(700.7, viewport.OffsetY);
+        Assert.Equal(Math.Floor((1000.3 * scale) + 0.5), viewport.DrawnOffsetX * scale);
+        Assert.Equal(Math.Floor((700.7 * scale) + 0.5), viewport.DrawnOffsetY * scale);
+    }
+
+    [Theory]
+    [InlineData(0.67)]
+    [InlineData(1.5)]
+    [InlineData(4.6)]
+    public void R022_AtAScaleThatIsNotWhole_TheImageIsDrawnAtItsOffset(double scale)
+    {
+        Viewport viewport = Create(5938, 3888, 1920, 947);
+        viewport.ZoomTo(scale, 960, 473.5);
+        viewport.SetOffset(1000.3, 700.7);
+
+        Assert.Equal(1000.3, viewport.DrawnOffsetX);
+        Assert.Equal(700.7, viewport.DrawnOffsetY);
+    }
+
+    [Fact]
+    public void R022_AnImageSmallerThanTheView_IsDrawnOnWholePixels_WithMarginsOnePixelApart()
+    {
+        var viewport = Create(contentWidth: 100, contentHeight: 100, viewportWidth: 401, viewportHeight: 401);
+        viewport.ZoomTo(1.0, 200, 200);
+
+        // 301 pixels of margin cannot be halved: the pan says 150.5 either side, the image is
+        // drawn with 150 before it and 151 after.
+        Assert.Equal(-150.5, viewport.OffsetX, 9);
+        Assert.Equal(-150, viewport.DrawnOffsetX);
+        Assert.Equal(-150, viewport.DrawnOffsetY);
+    }
+
+    [Theory]
+    [InlineData(400.4, 599)]
+    [InlineData(400.6, 599)]
+    [InlineData(400, 600)]
+    public void R022_AtTheEndOfTheRange_TheImageIsNotDrawnPastItsEdge(double viewportSize, double drawn)
+    {
+        var viewport = Create(viewportWidth: viewportSize, viewportHeight: viewportSize);
+        viewport.ZoomTo(1.0, 0, 0);
+        viewport.SetOffset(5000, 5000);
+
+        // A view 400.4 wide ends 599.6 pixels in: the nearest whole pixel, 600, would leave a
+        // strip past the image's edge, so it is drawn at 599.
+        Assert.Equal(1000 - viewportSize, viewport.OffsetX, 9);
+        Assert.Equal(drawn, viewport.DrawnOffsetX);
+        Assert.True(viewport.DrawnOffsetX <= viewport.MaxOffsetX);
+    }
+
+    [Fact]
+    public void R022_AtTheEndOfTheRange_AnEndALastBitUnderAWholePixel_IsThatPixel()
+    {
+        // A view the layout left an ulp over 1921 pixels ends 1078.9999999999998 pixels into a
+        // 3000 pixel image: the image's last column must still be reachable.
+        var viewport = Create(contentWidth: 3000, viewportWidth: 1921.0000000000002);
+        viewport.ZoomTo(1.0, 0, 0);
+        viewport.SetOffset(5000, 0);
+
+        Assert.Equal(1079, viewport.OffsetX, 9);
+        Assert.Equal(1079, viewport.DrawnOffsetX);
+    }
+
+    [Fact]
+    public void R022_AFitALastBitUnderOneHundredPercent_StaysTheFit()
+    {
+        // Taken as 100% the image would be wider than the view by that last bit, and a
+        // scrollbar would show at Fit.
+        var viewport = Create(contentWidth: 1921, contentHeight: 1000, viewportWidth: 1920.9999999999998, viewportHeight: 2000);
+        viewport.ZoomToFit();
+
+        Assert.True(viewport.FitScale < 1);
+        Assert.Equal(viewport.FitScale, viewport.Scale);
+        Assert.False(viewport.CanScrollHorizontally);
+    }
+
+    [Fact]
+    public void R022_AFitALastBitUnderOneHundredPercent_IsStillDrawnOnWholePixels()
+    {
+        // The scale stays the fit, 0.9999999999999999, and reads 100%: the 1001 pixels of
+        // margin above and below must not put the image half a pixel off for that last bit.
+        var viewport = Create(contentWidth: 1921, contentHeight: 1000, viewportWidth: 1920.9999999999998, viewportHeight: 2001);
+        viewport.ZoomToFit();
+
+        Assert.True(viewport.Scale < 1);
+        Assert.Equal(-500.5, viewport.OffsetY, 9);
+        Assert.Equal(-500, viewport.DrawnOffsetY * viewport.Scale, 9);
+        Assert.Equal(0, viewport.DrawnOffsetX * viewport.Scale, 9);
+    }
+
+    [Fact]
+    public void R022_AFitALastBitOverOneHundredPercent_IsOneHundredPercent()
+    {
+        var viewport = Create(contentWidth: 1920, contentHeight: 1000, viewportWidth: 1920.0000000000002, viewportHeight: 2000);
+        viewport.ZoomToFit();
+
+        Assert.True(viewport.FitScale > 1);
+        Assert.Equal(1.0, viewport.Scale);
+        Assert.False(viewport.CanScrollHorizontally);
+    }
+
+    [Fact]
+    public void R027_ResizingOnePixelAtATime_AtOneHundredPercent_StillHoldsTheCentre()
+    {
+        // The pan keeps its half pixel, so twenty resizes do not add up to a shift (R-022).
+        var viewport = Create();
+        viewport.ZoomTo(1.0, 200, 200);
+        viewport.CentreOn(500, 500);
+
+        for (int width = 401; width <= 420; width++)
+        {
+            viewport.SetViewportSize(width, 400);
+        }
+
+        Assert.Equal(500, viewport.ScreenToContent(210, 200).X, 9);
+        Assert.Equal(290, viewport.OffsetX, 9);
+        Assert.Equal(290, viewport.DrawnOffsetX);
+    }
+
+    [Fact]
+    public void R022_AScaleALastBitFromWhole_IsWhole()
+    {
+        // Four wheel notches in and four out give 1.0000000000000002 in doubles.
+        var viewport = Create();
+        viewport.ZoomTo(1.0, 200, 200);
+        for (int notch = 0; notch < 4; notch++)
+        {
+            viewport.ZoomBy(1.15, 137, 291);
+        }
+
+        for (int notch = 0; notch < 4; notch++)
+        {
+            viewport.ZoomBy(1 / 1.15, 137, 291);
+        }
+
+        Assert.Equal(1.0, viewport.Scale);
+
+        viewport.ZoomTo(3 - 1e-12, 200, 200);
+        Assert.Equal(3.0, viewport.Scale);
+
+        viewport.ZoomTo(1.001, 200, 200);
+        Assert.Equal(1.001, viewport.Scale);
+    }
+
+    [Fact]
     public void R028_PixelAt_ReturnsTheImagePixelUnderTheCursor()
     {
         var viewport = Create();
@@ -378,10 +563,9 @@ public class ViewportTests
     [Fact]
     public void R028_PixelAt_AfterFitThen100Percent_AtEveryOddHeightFrom901To1099_SkipsNoRow()
     {
-        // An odd height leaves the image half a physical pixel off (CR-002), so the centre of
-        // every screen row is on the edge between two image rows, and at 14 of the 100 heights
-        // the offset is an ulp under its half: every row must still go the same way, to the row
-        // before the edge, with none read twice and none skipped.
+        // An odd height leaves the pan half a physical pixel off, at 14 of the 100 heights an
+        // ulp under its half. The image is drawn on whole pixels all the same (R-022), and the
+        // rows read are the rows drawn, one after the other, none twice and none skipped.
         var wrong = new List<string>();
         for (int height = 901; height <= 1099; height += 2)
         {
@@ -390,7 +574,8 @@ public class ViewportTests
             viewport.ZoomToActualSize();
             double half = Math.Round(viewport.OffsetY * 2) / 2;
             Assert.Equal(half, viewport.OffsetY, 9);
-            int top = (int)Math.Floor(half);
+            Assert.Equal(Math.Floor(half) + 1, viewport.DrawnOffsetY);
+            int top = (int)viewport.DrawnOffsetY;
 
             int rows = Enumerable.Range(0, height).Count(row => viewport.PixelAt(100, row)?.Y != top + row);
             if (rows > 0)
@@ -405,15 +590,17 @@ public class ViewportTests
     [Fact]
     public void R028_PixelAt_WithTheCentreExactlyOnAnEdge_NamesThePixelBeforeIt()
     {
+        // At a scale that is not whole: at a whole one the image is drawn on whole physical
+        // pixels (R-022) and no centre falls on an edge.
         Viewport viewport = Create(1200, 800, 764, 450);
-        viewport.ZoomTo(4, 0, 0);
-        viewport.SetOffset(300.375, 200.625);
+        viewport.ZoomTo(4.5, 0, 0);
+        viewport.SetOffset(300, 200);
 
-        // The centre of screen column 2 is at 300.375 + 2.5 / 4 = 301, the edge between image
-        // columns 300 and 301, and that of screen row 1 at 200.625 + 1.5 / 4 = 201. The display
-        // adapter paints such a screen pixel from the pixel before the edge (ADR 0052).
-        Assert.Equal(new ImagePixel(300, 200), viewport.PixelAt(2, 1));
-        Assert.Equal(new ImagePixel(301, 201), viewport.PixelAt(3, 2));
+        // The centre of screen column 4 is at 300 + 4.5 / 4.5 = 301, the edge between image
+        // columns 300 and 301, and that of screen row 4 at 201. The display adapter paints such
+        // a screen pixel from the pixel before the edge (ADR 0052).
+        Assert.Equal(new ImagePixel(300, 200), viewport.PixelAt(4, 4));
+        Assert.Equal(new ImagePixel(301, 201), viewport.PixelAt(5, 5));
     }
 
     [Theory]
@@ -421,14 +608,15 @@ public class ViewportTests
     [InlineData(1.0 / 1024, 301)]
     public void R028_PixelAt_WithTheCentreJustPastAnEdge_GoesByWhatTheAdapterPaints(double past, int column)
     {
-        // Measured on screen on these columns (ADR 0052): a centre 1/16384 of an image pixel
-        // past an edge is still painted from the pixel before it, on 156 of 160 screen pixels;
-        // one 1/1024 past is painted from the pixel after it, on all 160.
+        // Measured on screen on these columns, at 400%, 800% and 1600% (ADR 0052): a centre
+        // 1/16384 of an image pixel past an edge is still painted from the pixel before it, on
+        // 156 of 160 screen pixels at 400%; one 1/1024 past is painted from the pixel after it,
+        // on all 160.
         Viewport viewport = Create(1200, 800, 764, 450);
-        viewport.ZoomTo(4, 0, 0);
-        viewport.SetOffset(300.375 + past, 200.625);
+        viewport.ZoomTo(4.5, 0, 0);
+        viewport.SetOffset(300 + past, 200);
 
-        Assert.Equal(column, viewport.PixelAt(2, 0)?.X);
+        Assert.Equal(column, viewport.PixelAt(4, 0)?.X);
     }
 
     [Fact]
@@ -436,24 +624,25 @@ public class ViewportTests
     {
         Assert.Equal(1.0 / 4096, Viewport.EdgeReach);
 
-        // The centre of screen column 2 is at the offset plus 2.5 / 4: exactly EdgeReach past
+        // The centre of screen column 4 is at the offset plus 4.5 / 4.5: exactly EdgeReach past
         // the edge at 301 it is still in column 300, and one ulp further in column 301.
         Viewport viewport = Create(1200, 800, 764, 450);
-        viewport.ZoomTo(4, 0, 0);
+        viewport.ZoomTo(4.5, 0, 0);
 
-        viewport.SetOffset(300.375 + Viewport.EdgeReach, 200.625);
-        Assert.Equal(300, viewport.PixelAt(2, 0)?.X);
+        viewport.SetOffset(300 + Viewport.EdgeReach, 200);
+        Assert.Equal(300, viewport.PixelAt(4, 0)?.X);
 
-        viewport.SetOffset(Math.BitIncrement(300.375 + Viewport.EdgeReach), 200.625);
-        Assert.Equal(301, viewport.PixelAt(2, 0)?.X);
+        viewport.SetOffset(Math.BitIncrement(300 + Viewport.EdgeReach), 200);
+        Assert.Equal(301, viewport.PixelAt(4, 0)?.X);
     }
 
     [Fact]
     public void R028_PixelAt_OnAnOddWidth_AfterFitThen100PercentThenFourSteps_NamesThePixelDrawn()
     {
-        // On a surface of odd width the 100% offset ends in .5 and the 400% one in .375, which
-        // puts the centre of one screen column in four exactly on an edge. Measured on screen:
-        // screen column 10 is painted from image column 506.
+        // On a surface of odd width the 100% pan ends in .5 and the 400% one in .375. Drawn
+        // there, one screen column in four would have its centre exactly on an edge; the image
+        // is drawn at 504.5 instead (R-022), image column 507 starts on screen column 10, and
+        // the read-out goes by where the image is drawn.
         Viewport viewport = Create(1200, 800, 765, 450);
         viewport.ZoomToFit();
         viewport.ZoomToActualSize();
@@ -464,8 +653,11 @@ public class ViewportTests
 
         Assert.Equal(4, viewport.Scale);
         Assert.Equal(504.375, viewport.OffsetX);
-        Assert.Equal(506, viewport.PixelAt(10, 60)?.X);
-        Assert.Equal(507, viewport.PixelAt(11, 60)?.X);
+        Assert.Equal(504.5, viewport.DrawnOffsetX);
+        Assert.Equal(506, viewport.PixelAt(9, 60)?.X);
+        Assert.Equal(507, viewport.PixelAt(10, 60)?.X);
+        Assert.Equal(507, viewport.PixelAt(13, 60)?.X);
+        Assert.Equal(508, viewport.PixelAt(14, 60)?.X);
     }
 
     [Fact]
@@ -481,19 +673,20 @@ public class ViewportTests
     [Fact]
     public void R028_PixelAt_FromFourHundredPercent_NamesThePixelAtThePhysicalPixelsCentre()
     {
+        // 450%, a scale that is not whole, so the image is drawn at these very offsets (R-022).
         Viewport viewport = Create(1200, 800, 764, 450);
-        viewport.ZoomTo(4, 0, 0);
+        viewport.ZoomTo(4.5, 0, 0);
         viewport.SetOffset(300.55, 200.45);
 
-        // Image row 213 starts at screen y (213 - 200.45) x 4 = 50.2: screen row 50, whose centre
-        // is at 50.5, is drawn from it, and screen row 49 from row 212.
-        Assert.Equal(213, viewport.PixelAt(300, 50)?.Y);
-        Assert.Equal(212, viewport.PixelAt(300, 49)?.Y);
+        // Image row 213 starts at screen y (213 - 200.45) x 4.5 = 56.475: screen row 56, whose
+        // centre is at 56.5, is drawn from it, and screen row 55 from row 212.
+        Assert.Equal(213, viewport.PixelAt(300, 56)?.Y);
+        Assert.Equal(212, viewport.PixelAt(300, 55)?.Y);
 
-        // Image column 301 starts at screen x (301 - 300.55) x 4 = 1.8, in the second half of
-        // screen column 1, which is therefore still drawn from column 300.
-        Assert.Equal(300, viewport.PixelAt(1, 50)?.X);
-        Assert.Equal(301, viewport.PixelAt(2, 50)?.X);
+        // Image column 302 starts at screen x (302 - 300.55) x 4.5 = 6.525, in the second half
+        // of screen column 6, which is therefore still drawn from column 301.
+        Assert.Equal(301, viewport.PixelAt(6, 50)?.X);
+        Assert.Equal(302, viewport.PixelAt(7, 50)?.X);
     }
 
     [Fact]

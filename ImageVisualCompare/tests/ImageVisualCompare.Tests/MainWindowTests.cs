@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -64,6 +65,74 @@ public class MainWindowTests
         });
 
         Assert.Same(surface, focused);
+    }
+
+    // CR-002 of the review of 2026-11-13: the status bar's height is not a whole number of
+    // pixels, so the surface above it ended on a fraction of one; and a toolbar whose height is
+    // not whole, as it is on a display scaled 150 %, would make the surface start on one.
+    [Theory]
+    [InlineData(0)]
+    [InlineData(0.5)]
+    public async Task R022_TheSurfaceStartsAndEndsOnWholePhysicalPixels(double addedToTheToolbar)
+    {
+        double top = 0;
+        double height = 0;
+        (double Top, double Height) dips = default;
+
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
+            var root = (Grid)window.Content;
+            double scale = VisualTreeHelper.GetDpi(root).DpiScaleY;
+
+            Thickness padding = window.TopBar.Padding;
+            window.TopBar.Padding = new Thickness(padding.Left, padding.Top, padding.Right, padding.Bottom + (addedToTheToolbar / scale));
+
+            // The window's client area: 768 by 528 device-independent pixels, a whole number of
+            // physical pixels, as a window's is, at 100, 125, 150, 175 and 200 % alike.
+            root.Measure(new Size(768, 528));
+            root.Arrange(new Rect(0, 0, 768, 528));
+            root.UpdateLayout();
+
+            // In physical pixels of the system's scale, which the tests' windows are laid out at.
+            top = window.Compare.TranslatePoint(new Point(0, 0), root).Y * scale;
+            height = window.Compare.ActualHeight * scale;
+            dips = (top / scale, height / scale);
+        });
+
+        Assert.InRange(dips.Top, 30, 60);
+        Assert.InRange(dips.Height, 400, 480);
+        Assert.Equal(Math.Round(top), top, 9);
+        Assert.Equal(Math.Round(height), height, 9);
+    }
+
+    [Fact]
+    public async Task R022_AChangeOfDisplayScale_LaysTheTwoBarsOutAgain()
+    {
+        // The bars' heights are rounded to the pixels of the display the window is on; moved to
+        // a display scaled differently, they have to be measured again even if nothing else of
+        // theirs changed.
+        (bool Top, bool Bottom) before = default;
+        (bool Top, bool Bottom) after = default;
+
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
+            var root = (Grid)window.Content;
+            root.Measure(new Size(768, 528));
+            root.Arrange(new Rect(0, 0, 768, 528));
+            root.UpdateLayout();
+            before = (window.TopBar.IsMeasureValid, window.BottomBar.IsMeasureValid);
+
+            // What WPF calls when the window comes onto a display scaled differently.
+            typeof(MainWindow)
+                .GetMethod("OnDpiChanged", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .Invoke(window, [new DpiScale(1, 1), new DpiScale(1.5, 1.5)]);
+            after = (window.TopBar.IsMeasureValid, window.BottomBar.IsMeasureValid);
+        });
+
+        Assert.Equal((true, true), before);
+        Assert.Equal((false, false), after);
     }
 
     [Fact]

@@ -100,6 +100,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   window sizes (593 of 976 screen rows for a 5938 × 3888 pair on a 1920 × 976 surface), and from
   400 % up on the first screen row or column of a pixel's square, one in four at 400 % (R-028,
   ADR 0052).
+- At `100%` every screen pixel shows exactly one stored pixel. The image could sit between
+  screen pixels and be drawn blended, a pixel spread over two rows or two columns: always in
+  the main window, whose image area ended on a fraction of a pixel, and on any window of odd
+  width or height. At every whole zoom the image is now drawn on whole screen pixels (R-022,
+  ADR 0053).
 
 ### Internal
 

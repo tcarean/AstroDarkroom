@@ -43,7 +43,7 @@ public readonly record struct RenderPlan(
 
 /// <summary>
 /// Turns the viewport's zoom, counted in physical pixels, into a scale in device-independent
-/// pixels; its pan, in image pixels, passes through as the translation.
+/// pixels; the offsets the image is drawn with, in image pixels, pass through as the translation.
 /// </summary>
 public static class RenderPlanner
 {
@@ -62,7 +62,8 @@ public static class RenderPlanner
     /// that conversion backwards is invisible on an unscaled display and wrong everywhere else.
     /// </summary>
     /// <param name="viewport">
-    /// The zoom, in physical screen pixels per image pixel, and the pan, offsets in image
+    /// The zoom, in physical screen pixels per image pixel, and the offsets the image is drawn
+    /// with (<see cref="Viewport.DrawnOffsetX"/>, <see cref="Viewport.DrawnOffsetY"/>), in image
     /// pixels.
     /// </param>
     /// <param name="deviceScale">
@@ -70,9 +71,11 @@ public static class RenderPlanner
     /// greater than 0.
     /// </param>
     /// <returns>
-    /// The negated offsets as the translation, in image pixels; the viewport's scale divided by
+    /// The negated drawn offsets as the translation, in image pixels, which at a whole scale
+    /// puts the image on whole physical pixels (R-022); the viewport's scale divided by
     /// <paramref name="deviceScale"/>; and <see cref="ImageScalingMode.Pixelated"/> from
-    /// <see cref="PixelatedThreshold"/> up.
+    /// <see cref="PixelatedThreshold"/> up, a scale within <see cref="Viewport.WholeTolerance"/>
+    /// under it counting as it.
     /// </returns>
     public static RenderPlan For(Viewport viewport, double deviceScale)
     {
@@ -80,9 +83,9 @@ public static class RenderPlanner
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(deviceScale);
 
         return new RenderPlan(
-            -viewport.OffsetX,
-            -viewport.OffsetY,
+            -viewport.DrawnOffsetX,
+            -viewport.DrawnOffsetY,
             viewport.Scale / deviceScale,
-            viewport.Scale >= PixelatedThreshold ? ImageScalingMode.Pixelated : ImageScalingMode.Smooth);
+            viewport.Scale >= PixelatedThreshold - Viewport.WholeTolerance ? ImageScalingMode.Pixelated : ImageScalingMode.Smooth);
     }
 }
