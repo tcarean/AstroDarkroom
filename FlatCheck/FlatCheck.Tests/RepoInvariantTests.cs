@@ -155,7 +155,8 @@ public class RepoInvariantTests
     /// goes through SirilScriptRun, which always hands it a private copy with -i. The only other
     /// process the code starts is a link a window shows, opened by the shell through
     /// ExternalLink: the About window's links and, since ADR 0073, the Structure tab's link to
-    /// Adobe's DNG Converter (listed on the owner's yes, 2026-10-28). A new launch
+    /// Adobe's DNG Converter (listed on the owner's yes, 2026-10-28), and since ADR 0112 the
+    /// manual the Help button and F1 open (the owner's request, 2026-11-13). A new launch
     /// site in the applications or in a test, written in any of the three forms the pattern
     /// knows (a new Process or ProcessStartInfo, typed or target-typed, or the static Start),
     /// fails here until it is listed on purpose. It is a text scan, so a start reached through

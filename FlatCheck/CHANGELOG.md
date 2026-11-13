@@ -8,6 +8,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The window's top bar has a `Help` (`Ajutor`) button, with an icon, between `Choose folder...` and
+  `About`; it and the F1 key open the manual in the browser at the section of the tab on screen,
+  or at the section on opening a session when no tab shows (R-141, ADR 0112).
 - When LibRaw cannot be loaded, the diagnostic log says why, on a Warn line with the loader's
   exception (R-110, ADR 0085): on Windows, the folder `raw_r.dll` was found in, or that none of
   the folders .NET searches holds it, and which of the four DLLs of Microsoft's Visual C++
@@ -101,6 +104,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- F1 opens the manual instead of `About`, which now opens from its button alone (R-089, R-141,
+  ADR 0112).
 - The structure and `--light` figures no longer depend on the way up a frame is read (R-131, ADR
   0095): the radial model, the asymmetry and the tilt fit are built about the frame's geometric
   centre `((w-1)/2, (h-1)/2)` instead of the index `(w/2, h/2)`, the tilt fit reads every pixel,

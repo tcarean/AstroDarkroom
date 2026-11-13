@@ -39,7 +39,16 @@ window would be four more controls in service of the rarer case.
 What the window adds - a workflow, never an analysis, a threshold or a wording - is ADR 0011
 and ADR 0033. The "Despre" window, which formulates nothing, is ADR 0040; it fits the work
 area of its screen, its cards scrolling, as the launcher's and AstroPhotoAnalyzer's do (R-125,
-ADR 0086). The three viewing
+ADR 0086). The Help button and F1 (R-141, ADR 0112) are one `ApplicationCommands.Help` binding on
+`MainWindow`, whose handler reads the selected tab's `Tag` (a `ManualSection`, set on each
+`TabItem` in the XAML) and the view-model's `HasFolder`, `HasProblem` and `IsRunning`, and asks
+`Presentation/Manual.SectionFor` for the section: the selected tab's when the tabs show (the
+same three conditions as the tabs' style trigger), "Opening a session" for every panel shown
+instead of them. `Manual.Url` makes the address from the anchors GitHub derives from the wiki page's
+headings; the wiki is a repository of its own, so a heading renamed there is renamed in
+`Manual.cs` by hand, and nothing in the gate notices if it is not (the browser then lands at
+the top of the page). The address goes through `MainWindow.OpenAddress`, `ExternalLink.Open`
+outside the tests. The icon is the theme's `HelpIcon`, a `DrawingImage`. The three viewing
 aids around the residual map (the scale switch with its caps from `Th.Resid*`, the legend, the
 shape guide, open by default since R-127 and ADR 0089, its card capped at 300 px by its own
 scroll bar), why the guide is documentation and not a classifier, why End-to-end

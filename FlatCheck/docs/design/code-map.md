@@ -461,8 +461,8 @@ a library extraction and not a copy is ADR 0011.
     `NearestNeighbor` at factor >= 1 so magnified pixels are crisp squares; "fit" is
     capped at 1.0, so a picture smaller than the viewport is shown at its size rather
     than blown up (found on the 128 px test fixtures, where fit came out at 4x).
-  - `Views/AboutWindow.xaml` - the "Despre" window (ADR 0040: what it shows and how it is
-    opened; ADR 0037: the hyperlink handler and why the smoke test renders its content, not
+  - `Views/AboutWindow.xaml` - the "Despre" window (ADR 0040: what it shows; ADR 0112: opened
+    from its button alone, F1 opening the manual; ADR 0037: the hyperlink handler and why the smoke test renders its content, not
     the window). Modal, centred on its owner, `IsCancel` on the close button. No taller than
     the work area of its screen, which the main window passes to its constructor: the cards
     in a `ScrollViewer` named `Cards`, the Close button in a row of its own, the fit and its
@@ -475,6 +475,11 @@ a library extraction and not a copy is ADR 0011.
     (`UseShellExecute`; a computer without a browser only logs it). The "Despre" window and
     the main window catch `Hyperlink.RequestNavigate` on their root and call it (ADR 0037);
     the main window's catches the Structure tab's link to Adobe's DNG Converter (ADR 0073).
+    `Open(string)` opens a bare address, the manual's for the Help button and F1 (R-141).
+  - `Presentation/Manual.cs` - `ManualSection` (the seven sections of the wiki's FlatCheck
+    page the window can open) and `Manual`: the page, each section's address, and
+    `SectionFor`, which section the window's state and selected tab mean (R-141, ADR 0112;
+    `two-applications.md`).
   - `Presentation/RasterBitmaps.cs` - a byte raster straight into a frozen `BitmapSource`
     (`Gray8` / `Rgb24`), no PNG. The maps still go through `PngWriter` because the PNG *is*
     the file the console writes and the window shows those exact bytes; the equalised

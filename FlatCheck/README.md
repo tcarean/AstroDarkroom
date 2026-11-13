@@ -913,7 +913,11 @@ The same explanation is in the window, under the Structure tab's verdict.
 `FlatCheck.Wpf.exe` makes **exactly the same measurements** as `flatcheck.exe`, on a whole session
 folder, with tabs instead of runs. Its six tabs, Structure, End to end, Exposure, Histogram,
 Synthetic and Split, are explained in the window's manual, tab by tab:
-<https://github.com/tcarean/AstroDarkroom/wiki/FlatCheck>. What follows is how to open a folder,
+<https://github.com/tcarean/AstroDarkroom/wiki/FlatCheck>. The window opens it for you: **Help**
+in the top bar, or the **F1** key, opens the manual in your browser at the section of the tab you
+are on (before a folder is open, or when a folder cannot be opened, at the section on opening a
+session). The manual is in English. **About**, beside it, shows
+the version, the licence and the components. What follows is how to open a folder,
 the **Run in Siril** button, the files the window writes, what it remembers, and what it does not
 do.
 

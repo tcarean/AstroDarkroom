@@ -19,7 +19,8 @@
 //
 // Outside a navigation window a Hyperlink only raises RequestNavigate, a routed event: each
 // window that shows links catches it on its root and calls Open here - the "Despre" window for
-// the licence's and the components' links, the main window for the links its tabs show.
+// the licence's and the components' links, the main window for the links its tabs show. The
+// main window also opens the manual here, on its Help button and F1 (R-141).
 
 using System;
 using System.ComponentModel;
@@ -29,8 +30,8 @@ using NLog;
 
 namespace FlatCheck.Wpf
 {
-    /// <summary>Opens the address of a clicked <see cref="System.Windows.Documents.Hyperlink"/>
-    /// in the system's browser.</summary>
+    /// <summary>Opens an address in the system's browser: a clicked
+    /// <see cref="System.Windows.Documents.Hyperlink"/>'s, or the manual's (R-141).</summary>
     internal static class ExternalLink
     {
         /// <summary>The diagnostic log: the link that could not be opened (R-110).</summary>
@@ -46,13 +47,27 @@ namespace FlatCheck.Wpf
         internal static void Open(RequestNavigateEventArgs e)
         {
             e.Handled = true;
+
+            // a relative address has no absolute form (reading it throws): its text goes to the
+            // shell as it is, which refuses it, and the refusal is logged
+            Open(e.Uri.IsAbsoluteUri ? e.Uri.AbsoluteUri : e.Uri.OriginalString);
+        }
+
+        /// <summary>
+        /// Opens an address in the system's browser: a clicked link's, or the manual's for the
+        /// Help button and F1 (R-141). A system without an associated browser is only logged.
+        /// </summary>
+        /// <param name="address">The address: an absolute http or https one for every caller
+        /// today; anything the shell cannot open is logged.</param>
+        internal static void Open(string address)
+        {
             try
             {
-                Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+                Process.Start(new ProcessStartInfo(address) { UseShellExecute = true });
             }
             catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
             {
-                Log.Debug(ex, "the link " + e.Uri + " could not be opened in a browser");
+                Log.Debug(ex, "the link " + address + " could not be opened in a browser");
             }
         }
     }
