@@ -65,8 +65,8 @@ Copyright (C) 2026 Tudor Carean
   9. CATE DARK-URI AJUNG
     zgomot dupa medie  : media a 2 cadre are 2.16 ADU de zgomot; din zgomotul unui singur cadru (3.01 ADU) se asteptau 2.13  [pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul]
     master             : 4 cadre dau un master cu 1.87 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 2.99); un master din 2 cadre facut cu mediana si unul din celelalte 2 facut cu media difera cu 3.06 ADU
-    cu n cadre         : 4 cadre (acum): 1.87 ADU (stack cu 17.9 % mai zgomotos; prea putine); 5 cadre: 1.67 ADU (-11 % fata de acum; stack cu 14.5 % mai zgomotos; prea putine); 10 cadre: 1.18 ADU (-37 % fata de acum; stack cu 7.5 % mai zgomotos; ajung)  [stack-ul e al celor 5 lights (6.7 ADU de zgomot fiecare), fara dithering; cu dithering zgomotul masterului se imprastie si strica mai putin]
-    ajung de la        : 10 cadre pentru un stack cu cel mult 10 % mai zgomotos; 16 pentru cel mult 5 %
+    cu n cadre         : 4 cadre (acum): 1.87 ADU (stack cu 17.9 % mai zgomotos; prea putine); 5 cadre: 1.67 ADU (-11 % fata de masterul de acum; stack cu 14.5 % mai zgomotos; prea putine); 10 cadre: 1.18 ADU (-37 % fata de masterul de acum; stack cu 7.5 % mai zgomotos; ajung)  [stack mai zgomotos cu: fata de stack-ul facut cu un master dark ideal, adica din foarte multe cadre, fara zgomot propriu; e stack-ul celor 5 lights (6.7 ADU de zgomot fiecare), socotit fara dithering; cu dithering diferenta e mai mica]
+    ajung de la        : 10 cadre pentru un stack cu cel mult 10 % mai zgomotos decat cu un master dark ideal; 16 pentru cel mult 5 %
     verdict            : ATENTIE: doar 4 cadre; trebuie cel putin 10, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi 1.87 ADU)
 
   INDEX

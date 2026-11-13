@@ -63,6 +63,15 @@ The owner's answers of 2026-11-12 and 2026-11-13:
    `ReportRow.Choice` holds the core's label, options and the one in force; the window shows them
    and hands the pick back.
 
+7. **The stack's figure is said against an ideal dark master.** The owner read the first words in
+   the window on 2026-11-13 (`stack-ul poate fi mai zgomotos cu cel mult 5 %`, `masterul face
+   stack-ul cu 3.1 % mai zgomotos`) and asked "against what? against now?"; a second wording,
+   `masterul adauga zgomot`, he refused: the master does not add noise, it helps. The words are
+   his: the dropdown, the `ajung de la` row and the verdict say `fata de un master dark ideal` /
+   `decat cu un master dark ideal`, the table's note says once what ideal means (of very many
+   frames, with no noise of its own), and the column about the master's own noise reads `fata de
+   masterul de acum`, so the two comparisons cannot be taken for one another.
+
 ## Alternatives rejected
 
 - **The sky sigma for the stack**, the figure `StackNoise` has: it reads 10 darks as enough for

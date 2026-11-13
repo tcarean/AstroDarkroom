@@ -318,13 +318,15 @@ its row.
   agree), and the predicted noise of the median master, 1.25 x the frame-against-frame noise /
   sqrt(N). Then the row `with n frames`: what the master would be with 5, 10, 15, ... frames, to
   two rows past the frames of the folder: its noise, how that compares with the master of now
-  and, when there are lights, how much noisier the master makes their stack. The master is
-  subtracted from every light alike, so without dithering its noise stays whole in the stack
-  while the lights' own falls with their number; with dithering it spreads and hurts less. The
+  and, when there are lights, how much noisier their stack comes out than with an ideal dark
+  master, one of very many frames, with no noise of its own. A master of few frames keeps some
+  noise; it is subtracted from every light alike, so without dithering that noise stays whole in
+  the stack while the lights' own falls with their number; with dithering the difference is
+  smaller. The
   noise of a light is here how much a pixel differs from its neighbours (the `noise` column of
   the lights table, brought to the darks' ISO and exposure when the lights have others). Every row is rated `too few` (under 10 frames: the median needs them, so
   that one odd frame cannot pull it), `few` or `enough`, and the row `enough from` gives the
-  frames needed: with lights, the fewest that keep the stack within 10 % of what a noiseless
+  frames needed: with lights, the fewest that keep the stack within 10 % of what an ideal dark
   master would leave, and beside them the fewest for 5 %; without lights, the fewest that bring
   the master's noise under the file's quantisation step. Under the frames needed the verdict is
   `WARNING`; otherwise `OK`, and with lights it says how many frames could be left out, which

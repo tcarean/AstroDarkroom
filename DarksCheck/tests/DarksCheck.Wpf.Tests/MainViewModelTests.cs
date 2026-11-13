@@ -140,7 +140,7 @@ public class MainViewModelTests
 
         // the core's label and options, 10 % selected after the analysis; no other row offers a choice
         ChoiceVm choice = Nine("cu n cadre").Choice!;
-        Assert.Equal("stack-ul poate fi mai zgomotos cu cel mult:", choice.Label);
+        Assert.Equal("fata de un master dark ideal, stack-ul poate fi mai zgomotos cu cel mult:", choice.Label);
         Assert.Equal(["5 %", "10 %"], choice.Options);
         Assert.Equal(1, choice.SelectedIndex);
         Assert.Single(vm.Sections.SelectMany(s => s.Rows), row => row.HasChoice);
@@ -154,7 +154,7 @@ public class MainViewModelTests
         Assert.Equal(0.05, vm.Result.Verdicts.Enough.Stack!.Limit);
         Assert.Equal("ATENTIE", Nine("verdict").Verdict);
         Assert.Contains("peste limita de 5 %", Nine("verdict").Rest, StringComparison.Ordinal);
-        Assert.StartsWith(RunReport.Frames(vm.Result.Verdicts.Enough.FramesNeeded) + " pentru un stack cu cel mult 5 % mai zgomotos; ", Nine("ajung de la").Value, StringComparison.Ordinal);
+        Assert.StartsWith(RunReport.Frames(vm.Result.Verdicts.Enough.FramesNeeded) + " pentru un stack cu cel mult 5 % mai zgomotos decat cu un master dark ideal; ", Nine("ajung de la").Value, StringComparison.Ordinal);
         Assert.Equal("putine", Nine("cu n cadre").Table!.Rows.Single(row => row[0] == "20 (acum)")[4]);
         Assert.Equal(0, Nine("cu n cadre").Choice!.SelectedIndex);
         Assert.Contains("peste limita de 5 %", vm.Report, StringComparison.Ordinal);
@@ -183,7 +183,7 @@ public class MainViewModelTests
         MainViewModel plain = new();
         await plain.OpenAsync(alone.Root);
         Assert.DoesNotContain(plain.Sections.SelectMany(s => s.Rows), row => row.HasChoice);
-        Assert.Equal(["cadre", "zgomotul masterului", "fata de acum", "cum e"], plain.Sections.Single(s => s.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "cu n cadre").Table!.Header);
+        Assert.Equal(["cadre", "zgomotul masterului", "fata de masterul de acum", "cum e"], plain.Sections.Single(s => s.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "cu n cadre").Table!.Header);
     }
 
     [Fact]
@@ -375,7 +375,7 @@ public class MainViewModelTests
         RowVm hotVerdict = vm.HotRows.Single(row => row.Label == "verdict");
         Assert.Equal([hotVerdict.Rest], hotVerdict.Lines);
         RowVm curve = vm.Sections.Single(s => s.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "cu n cadre");
-        Assert.Equal(["cadre", "zgomotul masterului", "fata de acum", "stack mai zgomotos cu", "cum e"], curve.Table!.Header);
+        Assert.Equal(["cadre", "zgomotul masterului", "fata de masterul de acum", "stack mai zgomotos cu", "cum e"], curve.Table!.Header);
         Assert.Equal(r.Verdicts.Enough.Points.Count, curve.Table.Rows.Count);
         Assert.All(curve.Table.RowCells, cells => Assert.Equal(TableVm.Columns, cells.Count));
         RowVm overlap = vm.LightRows.Single(row => row.Label == "in masterul dark");

@@ -1442,7 +1442,7 @@ public partial class DarkSeriesTests
         // the table: one row per point, the frames stacked marked, no stack column and no choice without lights
         ReportRow frames = rows[2];
         ReportTable t = Assert.IsType<ReportTable>(frames.Table);
-        Assert.Equal(["cadre", "zgomotul masterului", "fata de acum", "cum e"], t.Header);
+        Assert.Equal(["cadre", "zgomotul masterului", "fata de masterul de acum", "cum e"], t.Header);
         Assert.Equal(4, t.Rows.Count);
         Assert.Equal(["5", RunReport.F(e.Points[0].MasterNoise, 2) + " ADU", "+41 %", "prea putine"], t.Rows[0]);
         Assert.Equal(["10 (acum)", RunReport.F(e.MasterNoise, 2) + " ADU", "", "ajung"], t.Rows[1]);
@@ -1451,8 +1451,8 @@ public partial class DarkSeriesTests
         Assert.Null(frames.Choice);
         // the console's line holds the same figures, point by point
         Assert.Equal(
-            $"5 cadre: {RunReport.F(e.Points[0].MasterNoise, 2)} ADU (+41 % fata de acum; prea putine); 10 cadre (acum): {RunReport.F(e.MasterNoise, 2)} ADU (ajung); "
-            + $"15 cadre: {RunReport.F(e.Points[2].MasterNoise, 2)} ADU (-18 % fata de acum; ajung); 20 de cadre: {RunReport.F(e.Points[3].MasterNoise, 2)} ADU (-29 % fata de acum; ajung)",
+            $"5 cadre: {RunReport.F(e.Points[0].MasterNoise, 2)} ADU (+41 % fata de masterul de acum; prea putine); 10 cadre (acum): {RunReport.F(e.MasterNoise, 2)} ADU (ajung); "
+            + $"15 cadre: {RunReport.F(e.Points[2].MasterNoise, 2)} ADU (-18 % fata de masterul de acum; ajung); 20 de cadre: {RunReport.F(e.Points[3].MasterNoise, 2)} ADU (-29 % fata de masterul de acum; ajung)",
             frames.Value);
 
         Assert.Equal("10 cadre: de acolo zgomotul masterului e sub pasul valorilor din fisier (1 ADU)", rows[3].Value);
@@ -1467,7 +1467,7 @@ public partial class DarkSeriesTests
             IReadOnlyList<ReportRow> en = DarkReport.Sections(r12).Single(x => x.Check == ReportCheck.Enough).Rows;
             Assert.Equal(["noise when averaged", "master", "with n frames", "enough from", "verdict"], en.Select(row => row.Label));
             Assert.StartsWith("the average of 5 frames has ", en[0].Value, StringComparison.Ordinal);
-            Assert.Equal(["frames", "master's noise", "against now", "how it is"], en[2].Table!.Header);
+            Assert.Equal(["frames", "master's noise", "against the master of now", "how it is"], en[2].Table!.Header);
             Assert.Contains("; 12 frames (now): ", en[2].Value, StringComparison.Ordinal);
             Assert.Equal("10 frames: from there the master's noise is under the file's value step (1 ADU)", en[3].Value);
             Assert.EndsWith(" is under the file's value step (1 ADU), and it adds to every calibrated light; 10 would do", en[4].Value, StringComparison.Ordinal);

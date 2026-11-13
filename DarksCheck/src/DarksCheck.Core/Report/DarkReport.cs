@@ -1843,9 +1843,9 @@ internal static class DarkReport
 
         StackLimit? st = e.Stack;
         string note = st is null ? "" : T(
-            $"the stack is that of the {st.Lights} lights ({F(st.LightNoise, 1)} ADU of noise each), without dithering; with dithering the master's noise spreads and hurts less",
-            $"stack-ul e al celor {RoCount(st.Lights)}lights ({F(st.LightNoise, 1)} ADU de zgomot fiecare), fara dithering; cu dithering zgomotul masterului se imprastie si strica mai putin");
-        List<string> header = [T("frames", "cadre"), T("master's noise", "zgomotul masterului"), T("against now", "fata de acum")];
+            $"the stack is noisier by: against the stack made with an ideal dark master, that is one of very many frames, with no noise of its own; it is the stack of the {st.Lights} lights ({F(st.LightNoise, 1)} ADU of noise each), counted without dithering; with dithering the difference is smaller",
+            $"stack mai zgomotos cu: fata de stack-ul facut cu un master dark ideal, adica din foarte multe cadre, fara zgomot propriu; e stack-ul celor {RoCount(st.Lights)}lights ({F(st.LightNoise, 1)} ADU de zgomot fiecare), socotit fara dithering; cu dithering diferenta e mai mica");
+        List<string> header = [T("frames", "cadre"), T("master's noise", "zgomotul masterului"), T("against the master of now", "fata de masterul de acum")];
         if (st is not null)
         {
             header.Add(T("the stack is noisier by", "stack mai zgomotos cu"));
@@ -1863,7 +1863,7 @@ internal static class DarkReport
             List<string> parts = [];
             if (!p.Now)
             {
-                parts.Add(T($"{against} against now", $"{against} fata de acum"));
+                parts.Add(T($"{against} against the master of now", $"{against} fata de masterul de acum"));
             }
 
             if (st is not null)
@@ -1883,7 +1883,7 @@ internal static class DarkReport
         {
             Table = new(header, rows, note),
             Choice = st is null ? null : new ReportChoice(
-                T("the stack may be noisier by at most:", "stack-ul poate fi mai zgomotos cu cel mult:"),
+                T("against an ideal dark master, the stack may be noisier by at most:", "fata de un master dark ideal, stack-ul poate fi mai zgomotos cu cel mult:"),
                 [.. Th.StackNoiseLimits.Select(l => Percent(l, 0))],
                 Th.StackNoiseLimits.ToList().FindIndex(l => Math.Abs(l - st.Limit) < 1e-9)),
         };
@@ -1910,8 +1910,8 @@ internal static class DarkReport
         }
 
         string first = T(
-            $"{RunReport.Frames(e.FramesNeeded)} for a stack at most {Percent(st.Limit, 0)} noisier",
-            $"{RunReport.Frames(e.FramesNeeded)} pentru un stack cu cel mult {Percent(st.Limit, 0)} mai zgomotos");
+            $"{RunReport.Frames(e.FramesNeeded)} for a stack at most {Percent(st.Limit, 0)} noisier than with an ideal dark master",
+            $"{RunReport.Frames(e.FramesNeeded)} pentru un stack cu cel mult {Percent(st.Limit, 0)} mai zgomotos decat cu un master dark ideal");
         IEnumerable<string> others = st.Needed
             .Where(n => Math.Abs(n.Limit - st.Limit) >= 1e-9)
             .OrderByDescending(n => n.Limit)
@@ -1979,11 +1979,11 @@ internal static class DarkReport
             string noisier = StackPercent(st.Penalty, st.Limit), limit = Percent(st.Limit, 0);
             return e.Verdict == Verdict.Ok
                 ? T(
-                    $"OK: {RunReport.Frames(e.Frames)} are enough: the master makes the stack of the {st.Lights} lights {noisier} noisier, under the limit of {limit}{(spare > 0 ? $"; {e.FramesNeeded} would do{(allRead ? $", so up to {spare} can be left out" : "")}" : "")}",
-                    $"OK: {RunReport.Frames(e.Frames)} ajung: masterul face stack-ul celor {RoCount(st.Lights)}lights cu {noisier} mai zgomotos, sub limita de {limit}{(spare > 0 ? $"; ar ajunge {e.FramesNeeded}{(allRead ? $", deci poti scoate pana la {spare}" : "")}" : "")}")
+                    $"OK: {RunReport.Frames(e.Frames)} are enough: the stack of the {st.Lights} lights comes out {noisier} noisier than with an ideal dark master, under the limit of {limit}{(spare > 0 ? $"; {e.FramesNeeded} would do{(allRead ? $", so up to {spare} can be left out" : "")}" : "")}",
+                    $"OK: {RunReport.Frames(e.Frames)} ajung: stack-ul celor {RoCount(st.Lights)}lights iese cu {noisier} mai zgomotos decat cu un master dark ideal, sub limita de {limit}{(spare > 0 ? $"; ar ajunge {e.FramesNeeded}{(allRead ? $", deci poti scoate pana la {spare}" : "")}" : "")}")
                 : T(
-                    $"WARNING: {RunReport.Frames(e.Frames)} are few: the master makes the stack of the {st.Lights} lights {noisier} noisier, over the limit of {limit}; {e.FramesNeeded} are needed",
-                    $"ATENTIE: {RunReport.Frames(e.Frames)} sunt putine: masterul face stack-ul celor {RoCount(st.Lights)}lights cu {noisier} mai zgomotos, peste limita de {limit}; trebuie {e.FramesNeeded}");
+                    $"WARNING: {RunReport.Frames(e.Frames)} are few: the stack of the {st.Lights} lights comes out {noisier} noisier than with an ideal dark master, over the limit of {limit}; {e.FramesNeeded} are needed",
+                    $"ATENTIE: {RunReport.Frames(e.Frames)} sunt putine: stack-ul celor {RoCount(st.Lights)}lights iese cu {noisier} mai zgomotos decat cu un master dark ideal, peste limita de {limit}; trebuie {e.FramesNeeded}");
         }
 
         return e.Verdict == Verdict.Ok

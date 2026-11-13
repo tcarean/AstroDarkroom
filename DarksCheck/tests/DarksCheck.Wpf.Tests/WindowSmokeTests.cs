@@ -146,7 +146,7 @@ public class WindowSmokeTests
             ComboBox box = Descendants(view).OfType<ComboBox>().Single(c => c.DataContext is RowVm { HasChoice: true });
             Assert.Equal(["5 %", "10 %"], box.Items.Cast<string>());
             Assert.Equal(1, box.SelectedIndex);
-            Assert.Equal("stack-ul poate fi mai zgomotos cu cel mult:", System.Windows.Automation.AutomationProperties.GetName(box));
+            Assert.Equal("fata de un master dark ideal, stack-ul poate fi mai zgomotos cu cel mult:", System.Windows.Automation.AutomationProperties.GetName(box));
             Assert.Contains(Descendants(view).OfType<TextBlock>(), t => t.Text == "stack mai zgomotos cu");
             Assert.Contains(Descendants(view).OfType<TextBlock>(), t => t.Text == "20 (acum)");
 
