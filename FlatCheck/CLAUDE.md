@@ -59,7 +59,8 @@ It is not an image processor and it never decides what a shape on a map is.
   ADR 0049; the kit's ADR 0028).
 - `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs. `docs/validation.md`
   + `.json` - figures on the real masters. `docs/design/` - the explanations, per area, read on
-  demand. `docs/plans/` - approved plans. `README.md` - the user guide, English.
+  demand. `docs/plans/` - approved plans. `docs/review/` - the findings of the whole-code review
+  of 2026-11-13, fixed one entry per task (ADR 0100). `README.md` - the user guide, English.
 - The process rules are the kit's, in `.claude/rules/kit/process.md`; FlatCheck's own are in this
   file. The reasons behind the process are in `GHID.md` in the kit folder `ClaudeCodeStarterKit`
   beside this project in the `photo` repository (for people, not loaded).
