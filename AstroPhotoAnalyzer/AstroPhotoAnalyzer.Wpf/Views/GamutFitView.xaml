@@ -17,10 +17,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- GamutFitView - the Culori pentru hartie tab (R-178): the box for the red layer, the
-     gallery with the original and the three variants of the paper fit, the
-     evidence of the variant shown and its save button. The grid of CurvesView: the image takes
-     all the remaining room. No figure is computed here. -->
+<!-- GamutFitView - the Culori pentru hartie tab (R-178): the box for the red layers, the
+     gallery of the three variants of the paper fit, each compared with the original across a
+     line (R-179), the evidence of the variant shown and its save button. The grid of
+     CurvesView: the image takes all the remaining room. No figure is computed here. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.GamutFitView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -38,7 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <TextBlock Text="{local:T En='Colours fitted to the paper:', Ro='Culori potrivite pentru hartie:'}" VerticalAlignment="Center" Margin="0,0,12,0" />
       <CheckBox Content="{local:T En='show what does not fit', Ro='arata ce nu intra'}" IsChecked="{Binding ShowOutside}" Foreground="{StaticResource TextBr}"
                 VerticalAlignment="Center" Margin="0,0,20,0"
-                ToolTip="{local:T En='Paints in red the pixels whose colour the paper still cannot reproduce on the image shown; on the original, the same warning as in the Soft proof tab', Ro='Coloreaza in rosu pixelii a caror culoare hartia tot nu o poate reda pe imaginea aratata; pe original, acelasi avertisment ca in tabul Soft proof'}" />
+                ToolTip="{local:T En='Paints in red the pixels whose colour the paper cannot reproduce: on the Before side those of the original (the same warning as in the Soft proof tab), on the After side those still left after the fit', Ro='Coloreaza in rosu pixelii a caror culoare hartia nu o poate reda: in partea Inainte pe cei din original (acelasi avertisment ca in tabul Soft proof), in partea Dupa pe cei ramasi dupa potrivire'}" />
       <TextBlock Text="{Binding Message}" VerticalAlignment="Center" Margin="16,0,0,0" TextWrapping="Wrap" MaxWidth="900">
         <TextBlock.Style>
           <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
@@ -53,26 +53,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </StackPanel>
 
     <Border Grid.Row="1" x:Name="GalleryArea" Background="{StaticResource PanelBg2}" CornerRadius="4" SizeChanged="GallerySizeChanged">
-      <!-- The preview is at least the size the view shows it at, so the Viewbox only shrinks it;
-           it may enlarge only when the core says the preview was held under its cap, on a very
-           large area (ADR 0084). An image smaller than the area is shown at its own size. -->
-      <Viewbox Stretch="Uniform" Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}">
-        <Viewbox.Style>
-          <Style TargetType="Viewbox">
-            <Setter Property="StretchDirection" Value="DownOnly" />
-            <Style.Triggers>
-              <DataTrigger Binding="{Binding PreviewCapped}" Value="True">
-                <Setter Property="StretchDirection" Value="Both" />
-              </DataTrigger>
-            </Style.Triggers>
-          </Style>
-        </Viewbox.Style>
-        <!-- The image and, over it, the red layer of what the paper cannot hold, the same size. -->
-        <Grid Width="{Binding Current.Width}" Height="{Binding Current.Height}">
-          <Image Source="{Binding Current.Image}" Stretch="None" RenderOptions.BitmapScalingMode="HighQuality" />
-          <Image Source="{Binding Current.Overlay}" Stretch="None" RenderOptions.BitmapScalingMode="HighQuality" />
-        </Grid>
-      </Viewbox>
+      <!-- The original left of the line and the variant shown right of it, each under its red
+           layer of what the paper cannot hold, zoomed and panned together (R-179). The preview
+           is at least the size the view fits it at, so the fit only shrinks it; it may enlarge
+           only when the core says the preview was held under its cap, on a very large area
+           (ADR 0084). An image smaller than the area is fitted at its own size. -->
+      <local:BeforeAfterViewer Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}"
+                               Before="{Binding Before.Image}" BeforeOverlay="{Binding Before.Overlay}"
+                               After="{Binding Current.Image}" AfterOverlay="{Binding Current.Overlay}"
+                               ContentWidth="{Binding Current.Width}" ContentHeight="{Binding Current.Height}"
+                               FitEnlarges="{Binding PreviewCapped}"
+                               BeforeText="{local:T En='Before', Ro='Inainte'}" AfterText="{local:T En='After', Ro='Dupa'}" />
     </Border>
 
     <Grid Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}">
@@ -83,12 +74,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <Button Grid.Column="0" Content="{local:T En='&lt; Back', Ro='&lt; Inapoi'}" Command="{Binding Previous}" Padding="12,3" ToolTip="{local:T En='Left arrow', Ro='Sageata stanga'}" />
+      <Button Grid.Column="0" Content="{local:T En='&lt; Back', Ro='&lt; Precedenta'}" Command="{Binding Previous}" Padding="12,3" ToolTip="{local:T En='Left arrow', Ro='Sageata stanga'}" />
       <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0" MinWidth="170">
         <TextBlock Text="{Binding Current.Name}" FontWeight="SemiBold" />
         <TextBlock Style="{StaticResource Muted}" Text="{Binding Position}" Margin="10,0,0,0" />
       </StackPanel>
-      <Button Grid.Column="2" Content="{local:T En='Next &gt;', Ro='Inainte &gt;'}" Command="{Binding Next}" Padding="12,3" ToolTip="{local:T En='Right arrow', Ro='Sageata dreapta'}" />
+      <Button Grid.Column="2" Content="{local:T En='Next &gt;', Ro='Urmatoarea &gt;'}" Command="{Binding Next}" Padding="12,3" ToolTip="{local:T En='Right arrow', Ro='Sageata dreapta'}" />
       <Button Grid.Column="4" Content="{local:T En='Save as...', Ro='Salveaza ca...'}" Command="{Binding SaveAs}" Padding="12,3" Margin="10,0,0,0"
               ToolTip="{local:T En='A new file with the colours fitted, a FITS or a 16-bit TIFF; the input image is not changed', Ro='Un fisier nou cu culorile potrivite, FITS sau TIFF pe 16 biti; imaginea de intrare nu se modifica'}" />
     </Grid>
@@ -136,6 +127,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </ItemsControl.ItemTemplate>
       </ItemsControl>
       <TextBlock Style="{StaticResource Faint}" Text="{Binding Note}" TextWrapping="Wrap" Margin="0,6,0,0" />
+      <TextBlock Style="{StaticResource Faint}" Text="{Binding ViewerHelp}" TextWrapping="Wrap" Margin="0,2,0,0" />
       <!-- A fixed place, two lines high, for the save message: its appearance does not
            move the image. -->
       <Grid Height="34" Margin="0,4,0,0">

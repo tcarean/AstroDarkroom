@@ -1,0 +1,68 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- BeforeAfterViewer - two images of the same size compared across a vertical line (R-179,
+     ADR 0090): Before left of the line, After right of it, both inside one ZoomPanViewer, so
+     they zoom and pan as one. The inner bindings read the control's own properties (the
+     code-behind makes the control the data context of LayoutRoot); the line, the handle and
+     the labels are placed by the code-behind, from SplitDivider. -->
+
+<UserControl x:Class="AstroPhotoAnalyzer.Wpf.BeforeAfterViewer"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:AstroPhotoAnalyzer.Wpf"
+             Focusable="False">
+  <Grid x:Name="LayoutRoot" ClipToBounds="True">
+    <local:ZoomPanViewer x:Name="Viewer" FitEnlarges="{Binding FitEnlarges}">
+      <Grid Width="{Binding ContentWidth}" Height="{Binding ContentHeight}">
+        <!-- After and its layer underneath, whole; Before and its layer above them, cut at the
+             line: what is left of the line is Before, what is right of it shows After. -->
+        <Image Source="{Binding After}" Stretch="None" />
+        <Image Source="{Binding AfterOverlay}" Stretch="None" />
+        <Grid x:Name="BeforeLayer">
+          <Image Source="{Binding Before}" Stretch="None" />
+          <Image Source="{Binding BeforeOverlay}" Stretch="None" />
+        </Grid>
+      </Grid>
+    </local:ZoomPanViewer>
+
+    <!-- Drawn over the viewer and never hit: the mouse goes to the viewer, and the control asks
+         SplitDivider whether a press is the line's before the viewer sees it. Each part is laid
+         out once, at the top left, and moved by a render translation the code-behind sets: a
+         move of the line changes no layout property, so no part is left where an earlier
+         layout pass had put it. The line takes the area's height from the layout itself. -->
+    <Grid x:Name="Overlay" IsHitTestVisible="False" SnapsToDevicePixels="True" Visibility="Collapsed">
+      <Rectangle x:Name="Line" Fill="{StaticResource AccentBr}" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
+      <Border x:Name="Handle" HorizontalAlignment="Left" VerticalAlignment="Top"
+              CornerRadius="13" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource AccentBr}" BorderThickness="2">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+          <Rectangle Width="10" Height="1.5" Margin="0,2" Fill="{StaticResource AccentBr}" />
+          <Rectangle Width="10" Height="1.5" Margin="0,2" Fill="{StaticResource AccentBr}" />
+          <Rectangle Width="10" Height="1.5" Margin="0,2" Fill="{StaticResource AccentBr}" />
+        </StackPanel>
+      </Border>
+      <Border x:Name="BeforeLabel" HorizontalAlignment="Left" VerticalAlignment="Top" CornerRadius="3" Padding="9,3" Background="#D01B1B1D" BorderBrush="{StaticResource BorderBr}" BorderThickness="1">
+        <TextBlock Text="{Binding BeforeText}" Foreground="{StaticResource TextBr}" FontSize="13" FontWeight="SemiBold" />
+      </Border>
+      <Border x:Name="AfterLabel" HorizontalAlignment="Left" VerticalAlignment="Top" CornerRadius="3" Padding="9,3" Background="#D01B1B1D" BorderBrush="{StaticResource BorderBr}" BorderThickness="1">
+        <TextBlock Text="{Binding AfterText}" Foreground="{StaticResource TextBr}" FontSize="13" FontWeight="SemiBold" />
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

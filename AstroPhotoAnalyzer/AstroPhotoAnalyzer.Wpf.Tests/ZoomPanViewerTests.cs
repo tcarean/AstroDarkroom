@@ -128,4 +128,49 @@ public class ZoomPanViewerTests
             Assert.Equal(1, small.Zoom);
             Assert.Equal(new Point(100, 50), small.Centre);
         });
+
+    [Fact]
+    public void R179_TheViewerCanKeepASmallImageAtItsSizeAndTellsWhenTheViewChanges()
+        => _sta.Invoke(() =>
+        {
+            // The soft proof's viewer enlarges: the default.
+            Assert.True(new ZoomPanViewer().FitEnlarges);
+
+            var small = new ZoomPanViewer { FitEnlarges = false, Child = new Border { Width = 100, Height = 100, Background = Brushes.Gray } };
+            int changes = 0;
+            small.ViewChanged += (_, _) => changes++;
+            small.Measure(new Size(400, 300));
+            small.Arrange(new Rect(0, 0, 400, 300));
+            small.UpdateLayout();
+            Assert.True(changes > 0);
+            Assert.Equal(new Size(400, 300), small.Viewport);
+            Assert.Equal(1, small.FitScale, 9);
+            Assert.Equal(1, small.Scale, 9);
+            // At its own size, in the middle: its columns 0 to 100 sit at 150 to 250.
+            Assert.Equal(0, small.ToChildX(150), 9);
+            Assert.Equal(100, small.ToChildX(250), 9);
+
+            // The zoom still goes up to the maximum, and every move is told.
+            changes = 0;
+            small.ZoomAt(new Point(200, 150), 1000);
+            Assert.Equal(ZoomPanViewer.MaxScale, small.Scale, 9);
+            Assert.True(changes > 0);
+            Assert.Equal(50, small.ToChildX(200), 9);
+            changes = 0;
+            small.PanBy(-8, 0);
+            Assert.True(changes > 0);
+            Assert.Equal(51, small.ToChildX(200), 9);
+            changes = 0;
+            small.Reset();
+            Assert.True(changes > 0);
+
+            // An image larger than the viewport is shrunk to it either way.
+            ZoomPanViewer large = Viewer();
+            large.FitEnlarges = false;
+            large.Measure(new Size(400, 300));
+            large.Arrange(new Rect(0, 0, 400, 300));
+            large.UpdateLayout();
+            Assert.Equal(0.5, large.Scale, 9);
+            Assert.Equal(400, large.ToChildX(200), 9);
+        });
 }

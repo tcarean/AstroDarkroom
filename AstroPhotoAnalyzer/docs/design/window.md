@@ -76,7 +76,7 @@ set and readable, no text comparison left: the setter keeps the two in step.
 | `ResolutionTabViewModel` | `Rows` (count, FWHM, effective detail, the five regions as "Latimea stelelor (FWHM) in <region>", corner/centre; each with a `Description` - what it measures, thresholds interpolated from `Thresholds` - except the four corner rows, which the centre row's description covers), `SizeRows` (mono strings from `ReportWriter.SizeTableRow`/`SizeTableFooter`: "*" on the recommended row, or the note on why there is none); a static note under the table states the star rule and the pixel-grid rule (180 dpi in bold); `DpiRows` (mono strings, the dpi - distance reference scale from `DpiLadder`, window only) |
 | `BackgroundTabViewModel` (the Culoare tab) | `Rows` (the background colour per channel, cast metrics; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `RegionRows` (mono strings as in the report, a region measured on every pixel carrying `EdgeRegion.PixelsNote`, except that a flagged region ends in "! colorat" or "! neutru" - "!" alone on mono), `Guide` (`GuideParagraph`s under the table: the zones, the difference from the sky, the "!" mark, coloured vs neutral with the reference image's two corners, black and white) |
 | `SoftProofTabViewModel` (the Soft proof tab, R-163; its full-screen window, R-164) | the intent, the two boxes, the margin, the proof and its warning layer, the core's lines and legend, `FullScreen` (raises `ProofRequested` with the same view-model); filled by the third run `MainViewModel` starts beside the curves' (`ProofComputation`); the whole area in `soft-proof.md` |
-| `GamutFitTabViewModel` (the Culori pentru hartie tab, R-178) | the gallery of the original and the three variants of the paper fit (`GamutFitGalleryItem`: the bitmap, the red layer of what is still outside, the evidence rows), `ShowOutside` (the box, pushed to every item), `Next`/`Previous`/`SaveAs`, the core's sentences; filled by the fourth run `MainViewModel` starts beside the curves' and the proof's (`GamutFitComputation`); the whole area in `paper-fit.md` |
+| `GamutFitTabViewModel` (the Culori pentru hartie tab, R-178, R-179) | the gallery of the three variants of the paper fit (`GamutFitGalleryItem`: the bitmap, the red layer of what is still outside, the evidence rows) and `Before`, the original they are compared with, `ShowOutside` (the box, pushed to every item and to `Before`), `Next`/`Previous`/`SaveAs`, the core's sentences and `ViewerHelp`; filled by the fourth run `MainViewModel` starts beside the curves' and the proof's (`GamutFitComputation`); the whole area in `paper-fit.md` |
 
 Tables are pre-aligned mono strings, the same the report writes, rendered with
 `MonoRowTemplate`; the alternative was a template per table for the same text.
@@ -141,10 +141,12 @@ most tests). Before the tab is first shown no size has been reported, so the fir
 uses `Thresholds.CurvePreviewDefaultWidth` x `Height`; the previews are made at least as large as
 the view shows them, the image's aspect fitted into the area (`CurveRun.PreviewStride`, the
 largest step that still covers the fitted size, never over `CurvePreviewMaxPixels`, ADR 0084),
-and the view's `Viewbox` shrinks them to fit (`DownOnly`), with the bitmaps scaled at high
-quality, so the image fills the area; only when the core says the preview was held under the cap
-(`CurveSet.PreviewCapped`, `GamutFitSet.PreviewCapped`, the tab's `PreviewCapped`) does a style
-trigger let it enlarge, so an image smaller than the area stays at its own size. `SetGallerySize`, called at
+and the view shrinks them to fit, with the bitmaps scaled at high quality, so the image fills
+the area; only when the core says the preview was held under the cap (`CurveSet.PreviewCapped`,
+`GamutFitSet.PreviewCapped`, the tab's `PreviewCapped`) may the view enlarge it, so an image
+smaller than the area stays at its own size: in `CurvesView` a `Viewbox` that is `DownOnly`
+unless a style trigger says otherwise, in `GamutFitView` the comparison's `FitEnlarges`
+(`paper-fit.md`). `SetGallerySize`, called at
 every layout pass, compares the step the new size allows with the step the last computation was
 asked for (`_askedWidth` x `_askedHeight`) and runs `ComputeAsync` again by itself when the new
 one is finer (`Computation` holds it for the tests); the gallery shown stays until the new one
@@ -179,9 +181,11 @@ filled like the Editare Curbe tab by a run after the analysis, `ProofRun`; the t
 the same view-model and their keys are described in `soft-proof.md`.
 
 **The Culori pentru hartie tab** (`ViewModels/GamutFitTab.cs`, `Views/GamutFitView.xaml`; R-178,
-ADR 0083): between the two, filled like the Editare Curbe tab by a run after the analysis,
-`GamutFitRun`, with the same gallery pattern (the run number, the stacked evidence, the save
-through `SaveRequested`) plus the box of the red layer; described in `paper-fit.md`. The arrow
+R-179, ADR 0083, ADR 0090): between the two, filled like the Editare Curbe tab by a run after
+the analysis, `GamutFitRun`, with the same gallery pattern (the run number, the stacked evidence,
+the save through `SaveRequested`) plus the box of the red layers and, in place of the single
+image, the comparison with the original across a line (`Presentation/BeforeAfterViewer.xaml`,
+`Presentation/SplitDivider.cs`); described in `paper-fit.md`. The arrow
 keys of `MainWindow.GalleryKeys` serve whichever of the two gallery tabs is selected.
 
 **The curve window** (`Views/CurveWindow.xaml`, `CurveWindowViewModel`; R-147): the table of
@@ -193,7 +197,7 @@ of the Raport tab's "fiindca" block (`Theme/Dark.xaml`, `RecommendationRowTempla
 block's inlines are rebuilt from both, the label semi-bold and then the `Because`, the parts
 between the core's `**` marks (`Fmt.Strong`) as `Bold`, an unclosed mark kept as text; the
 label is a property and not content because a XAML attribute is applied before the content,
-which put the label after the text. `Presentation/ZoomPanViewer.cs` is the soft proof's viewer (`soft-proof.md`). `Presentation/CurveCanvas.cs` draws in `OnRender`, after `BarsCanvas`: grid with tick labels,
+which put the label after the text. `Presentation/ZoomPanViewer.cs` is the soft proof's viewer (`soft-proof.md`), which the paper fit's comparison holds too (`paper-fit.md`). `Presentation/CurveCanvas.cs` draws in `OnRender`, after `BarsCanvas`: grid with tick labels,
 the diagonal, the sampled curve, the control points, a dotted vertical with a rotated label
 per class; the output axis ends at the largest value drawn. Not modal, not maximised, Esc
 closes it.

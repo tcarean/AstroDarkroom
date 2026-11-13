@@ -16,14 +16,18 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // ZoomPanViewer.cs - a viewer that fits its child, zooms it with the wheel around the cursor and
-// pans it with the left button (R-163): the soft proof's image in the tab and in the window.
+// pans it with the left button (R-163): the soft proof's image in the tab and in the window,
+// and, inside BeforeAfterViewer, the paper fit's comparison (R-179).
 //
 // The state is the view's: the zoom relative to the fit (1 = the whole image in the viewport)
 // and the point of the child at the viewport's centre, in the child's own units, so that a
 // resize of the viewport, or a new image of the same size, keeps what was looked at. The zoom
 // is clamped between the fit and MaxScale child units per device-independent pixel, the centre
 // so that the child never leaves the viewport. The child is arranged at its natural size and
-// drawn through a scale and a translation; nothing is computed about the image here.
+// drawn through a scale and a translation; nothing is computed about the image here. Whoever
+// lays something over the viewer in step with the view (the comparison's line) listens to
+// ViewChanged and reads the view back through Viewport and ToChildX, which are right inside an
+// arrange pass too, when RenderSize is still the old one.
 
 using System;
 using System.Windows;
@@ -61,6 +65,7 @@ namespace AstroPhotoAnalyzer.Wpf
         double _zoom = 1;
         Point _centre;
         Size _childSize;
+        Size _viewport;
         bool _centred;
         Point _dragStart;
         Point _dragCentre;
@@ -88,6 +93,32 @@ namespace AstroPhotoAnalyzer.Wpf
             set => SetValue(BackgroundProperty, value);
         }
 
+        /// <summary>
+        /// Whether the fit may enlarge a child smaller than the viewport (the soft proof's rule,
+        /// the default); false keeps such a child at its own size, one device-independent pixel
+        /// per unit, and still shrinks a larger one (the gallery's rule, R-146).
+        /// </summary>
+        public static readonly DependencyProperty FitEnlargesProperty =
+            DependencyProperty.Register(nameof(FitEnlarges), typeof(bool), typeof(ZoomPanViewer), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsArrange));
+
+        public bool FitEnlarges
+        {
+            get => (bool)GetValue(FitEnlargesProperty);
+            set => SetValue(FitEnlargesProperty, value);
+        }
+
+        /// <summary>
+        /// Raised after the scale and the translation were set: a zoom, a pan, a reset, an
+        /// arrange. The view is read back through <see cref="Viewport"/> and <see cref="ToChildX"/>.
+        /// </summary>
+        public event EventHandler ViewChanged;
+
+        /// <summary>
+        /// The viewport's size the view was last set for, in device-independent pixels; inside an
+        /// arrange pass it is already the new size, which RenderSize is not yet.
+        /// </summary>
+        public Size Viewport => _viewport;
+
         /// <summary>The zoom relative to the fit: 1 shows the whole child, 2 twice as large.</summary>
         public double Zoom => _zoom;
 
@@ -98,7 +129,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public Point Centre => _centre;
 
         /// <summary>The scale that fits the whole child in the viewport, 1 when either is empty.</summary>
-        public double FitScale => FitScaleFor(RenderSize, _childSize);
+        public double FitScale => FitScaleFor(RenderSize, _childSize, FitEnlarges);
 
         /// <summary>
         /// Zooms around a point of the viewport, keeping the child under it in place as far as the
@@ -148,6 +179,18 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             double scale = Scale;
             return scale <= 0 ? at : new Point(_centre.X + (at.X - RenderSize.Width / 2) / scale, _centre.Y + (at.Y - RenderSize.Height / 2) / scale);
+        }
+
+        /// <summary>
+        /// The child's x under an x of the viewport, read from the transforms as they are set,
+        /// so that it is right inside an arrange pass too (see <see cref="ViewChanged"/>).
+        /// </summary>
+        /// <param name="x">The x, in the viewer's device-independent pixels.</param>
+        /// <returns>The x in the child's units; it may fall outside the child.</returns>
+        public double ToChildX(double x)
+        {
+            double scale = _scale.ScaleX;
+            return scale <= 0 ? x : (x - _translate.X) / scale;
         }
 
         /// <inheritdoc/>
@@ -245,8 +288,9 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <param name="viewport">The viewport's size, in device-independent pixels.</param>
         void Apply(Size viewport)
         {
-            double fit = FitScaleFor(viewport, _childSize);
+            double fit = FitScaleFor(viewport, _childSize, FitEnlarges);
             if (fit <= 0 || double.IsInfinity(fit)) return;
+            _viewport = viewport;
             // A viewport grown since the zoom was chosen must not carry the scale past MaxScale.
             _zoom = Math.Min(_zoom, Math.Max(1, MaxScale / fit));
             double scale = fit * _zoom;
@@ -257,6 +301,7 @@ namespace AstroPhotoAnalyzer.Wpf
             _translate.X = viewport.Width / 2 - _centre.X * scale;
             _translate.Y = viewport.Height / 2 - _centre.Y * scale;
             if (Child != null) RenderOptions.SetBitmapScalingMode(Child, scale >= PixelScale ? BitmapScalingMode.NearestNeighbor : BitmapScalingMode.HighQuality);
+            ViewChanged?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>The centre along one axis, clamped as <see cref="Apply(Size)"/> says.</summary>
@@ -270,11 +315,13 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>The scale that fits a child in a viewport, both axes; 1 when either is empty.</summary>
         /// <param name="viewport">The viewport's size.</param>
         /// <param name="child">The child's size.</param>
+        /// <param name="enlarge">Whether a child smaller than the viewport is enlarged to it; false caps the scale at 1.</param>
         /// <returns>The scale, positive.</returns>
-        static double FitScaleFor(Size viewport, Size child)
+        static double FitScaleFor(Size viewport, Size child, bool enlarge)
         {
             if (child.Width <= 0 || child.Height <= 0 || viewport.Width <= 0 || viewport.Height <= 0) return 1;
-            return Math.Min(viewport.Width / child.Width, viewport.Height / child.Height);
+            double fit = Math.Min(viewport.Width / child.Width, viewport.Height / child.Height);
+            return enlarge ? fit : Math.Min(1, fit);
         }
     }
 }

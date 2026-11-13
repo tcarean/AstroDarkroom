@@ -1,11 +1,15 @@
 # The paper fit
 
-> Written 2026-11-06 with the feature (R-175 to R-178, ADR 0083). **Covers:**
+> Written 2026-11-06 with the feature (R-175 to R-178, ADR 0083); the comparison with the
+> original added 2026-11-13 (R-179, ADR 0090). **Covers:**
 > `AstroPhotoAnalyzer.Core/Analysis/GamutFit.cs`, `AstroPhotoAnalyzer.Core/Runs/GamutFitRun.cs`,
 > `AstroPhotoAnalyzer.Core/Report/GamutFitTexts.cs`, `AstroPhotoAnalyzer.Core/Input/TiffWriter.cs`,
 > `AstroPhotoAnalyzer.Core/Input/IccProfiles.cs`, `AstroPhotoAnalyzer.Wpf/ViewModels/GamutFitTab.cs`,
-> `AstroPhotoAnalyzer.Wpf/Views/GamutFitView.xaml` and the `GamutFitView` class in
-> `AstroPhotoAnalyzer.Wpf/Views/ResultViews.xaml.cs`. A change to the code this describes means
+> `AstroPhotoAnalyzer.Wpf/Views/GamutFitView.xaml`, the `GamutFitView` class in
+> `AstroPhotoAnalyzer.Wpf/Views/ResultViews.xaml.cs`,
+> `AstroPhotoAnalyzer.Wpf/Presentation/BeforeAfterViewer.xaml`,
+> `AstroPhotoAnalyzer.Wpf/Presentation/BeforeAfterViewer.xaml.cs` and
+> `AstroPhotoAnalyzer.Wpf/Presentation/SplitDivider.cs`. A change to the code this describes means
 > this note is updated in the same task, or deleted with the decision it explains.
 
 ## What it does
@@ -14,8 +18,9 @@ The Culori pentru hartie tab takes the pixels the Soft proof tab marks (the rule
 the whole colour difference after the compensated round trip through the profile over
 `CurveGamutDeltaE`) and lowers their chroma, each along its own hue and at its own L\*, to the
 largest chroma the paper holds there; L\* and hue never move. Three variants differ by their
-knee; the tab shows them in a gallery like Editare Curbe, with the red layer of what is still
-outside, and saves one as a new FITS or 16-bit TIFF. The owner's question behind it, the
+knee; the tab shows them in a gallery like Editare Curbe, each beside the original across a
+line the user drags, with a red layer on each side of what the paper cannot hold there, and
+saves one as a new FITS or 16-bit TIFF. The owner's question behind it, the
 measurements and the alternatives are in ADR 0083.
 
 ## The table (`GamutFitTable`)
@@ -145,19 +150,69 @@ own: nothing copied from anyone's file.
 result, `MainViewModel` starts `ComputeAsync` beside the other two once every tab is filled,
 the tab runs it again by itself when its area allows a finer preview, as the curves tab does
 (ADR 0084; `Compute(w, h)` for the tests, `Computation` to await); the run number
-`_run` makes a late result nobody's. `Show` makes, once per item, the bitmap
-(`RasterBitmaps.Region`) and the red layer (`RasterBitmaps.Overlay` over the set's mask, the
-soft proof's half-transparent red; null when nothing is outside), the evidence rows from
-`GamutFitTexts.EvidenceRows`, and keeps on each item the variant without its preview, so the
-rasters are dropped once drawn; the original's rows are `GamutFitTexts.OriginalRows` on the
-first variant's figures before its fit. The box `ShowOutside`, on by default and back on at
-`Reset` (ADR 0084), is pushed to every
-item (`GamutFitGalleryItem.ShowOutside`), whose `Overlay` is its layer or null accordingly, so the
-view binds one property; `Reset` turns the box off. `SaveAs` raises `SaveRequested` with
+`_run` makes a late result nobody's, and a recompute keeps the position in the gallery (`Show`
+clamps `_index`, which only `Reset` and a problem put back at the first), so the variant looked
+at stays when a larger area brings finer previews. `Show` makes, once per set, the original's item and one
+item per variant: the bitmap (`RasterBitmaps.Region`) and the red layer (`RasterBitmaps.Overlay`
+over the set's mask, the soft proof's half-transparent red; null when nothing is outside), and,
+for a variant, the evidence rows from `GamutFitTexts.EvidenceRows`, with the variant kept
+without its preview, so the rasters are dropped once drawn. The original is no position of the
+gallery (ADR 0090): `Items` holds the three variants and `Before` the original, the same object
+whatever variant is shown, with no evidence of its own, since every variant's rows hold its
+share. The box `ShowOutside`, on by default and back on at `Reset` (ADR 0084), is pushed to
+every item and to `Before` (`GamutFitGalleryItem.ShowOutside`), whose `Overlay` is its layer or
+null accordingly, so the view binds one property per side. `SaveAs` raises `SaveRequested` with
 `GamutFitTexts.ProposedFileName` (the input's kind), the window shows a dialog whose filter puts
 that kind first (`MainWindow.SaveGamutFit`), `Save(path)` calls `GamutFitExport.Save`. The view
-is `CurvesView`'s grid without the purpose radios: the box, the message (red on a
-problem), the image with the layer over it inside the `Viewbox`, Back/Name/Position/Next,
-`Salveaza ca...`, the stacked evidence (only the current item's visible, so the image never
-moves), the core's note, the save message's fixed place. The arrow keys are the window's
-`GalleryKeys`, which serve whichever of the two gallery tabs is selected.
+is `CurvesView`'s grid without the purpose radios: the box, the message (red on a problem), the
+comparison of the next section, Back/Name/Position/Next, `Salveaza ca...`, the stacked evidence
+(only the current item's visible, so the image never moves), the core's note, the view-model's
+`ViewerHelp` (which side of the line is which and the viewer's gestures, its maximum
+interpolated from `ZoomPanViewer.MaxScale`), the save message's fixed place. The arrow keys are
+the window's `GalleryKeys`, which serve whichever of the two gallery tabs is selected.
+
+## The comparison (`Presentation/BeforeAfterViewer.xaml`, `Presentation/SplitDivider.cs`)
+
+`BeforeAfterViewer` is a `UserControl` whose dependency properties are the two images, their two
+layers, the size they share, the two label texts and `FitEnlarges`; its inner bindings read
+them through `LayoutRoot.DataContext`, which is the control itself, so the bindings set where
+the control is used keep the data context it inherits. Inside is one `ZoomPanViewer`
+(`soft-proof.md`) whose child grid holds After and its layer and, above them, the `BeforeLayer`
+grid with Before and its layer: one viewer, so one scale and one translation, and the two images
+cannot drift apart.
+
+The line is `SplitDivider`, ImageVisualCompare's `DividerModel` copied (ADR 0090): its place as
+a fraction of the viewport's width (0.5 at the start), `MoveTo` for a drag, the handle's
+rectangle, the hit test (within `LineGrabTolerance` of the line at any height, or on the
+handle) and `LabelFits`. It knows no element: the control draws what it places and asks it what
+a press grabs, so the drawing and the hit test cannot disagree.
+
+The line belongs to the viewport, but the viewer transforms its child, so the cut of
+`BeforeLayer` is a `Clip` in the child's units, `ToChildX(line x)` wide: `Place` sets it again
+at every `ViewChanged` of the viewer (a zoom, a pan, a reset, an arrange) and at every move of
+the line. `Place` also sets the render translations of the line, the handle and the two labels,
+which sit in an overlay grid over the viewer, not hit-testable, each laid out once at the top
+left, and hides a label whose side has no room for it. `Place` sets no layout property, on
+purpose: it runs inside the viewer's arrange pass, and the first version, which set the line's
+`Height` and `Canvas.Left` there, left the line where the previous pass had put it once the
+tab's area changed size (the line started 66 pixels under the top in the tab's render);
+`BeforeAfterViewerTests` holds that case. The line takes its height from the layout itself.
+
+The mouse: `OnPreviewMouseLeftButtonDown` calls `BeginDividerDrag`, which asks
+`SplitDivider.HitTest` and, on a hit, remembers how far from the line the press landed; the
+control then captures the mouse and handles the event on the way down, so the viewer never sees
+the line's press (no pan, no double-click fit). `OnPreviewMouseMove` calls `DragDividerTo`
+while the line is dragged, which keeps that distance, so the line does not jump under the
+pointer, and otherwise shows `SizeWE` over the line, unless the viewer is panning. Every other
+press is the viewer's, and so is the wheel: while a drag holds the mouse here the wheel would
+not reach the viewer, so `OnPreviewMouseWheel` hands it over (`ZoomAt` with the viewer's
+`WheelFactor`). The three drag methods are internal and hold the whole rule, so the tests drive
+a drag without a mouse. `After` going null (the gallery emptied by another image) hides the overlay, ends a drag in
+progress, puts the line back in the middle and the viewer back at the fit (by itself the viewer
+resets only for a child of another size, so two images of the same size would share a zoom); another variant replaces `After` without passing through null and
+keeps it.
+
+`FitEnlarges` is bound to `PreviewCapped`: false keeps an image smaller than the area at its own
+size, the rule the `Viewbox`'s `DownOnly` held before the comparison (ADR 0084). A recompute for
+a larger area changes the child's size, so the viewer goes back to the fit (R-163); the line
+stays where it was put.
