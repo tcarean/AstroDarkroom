@@ -283,7 +283,8 @@ public class LightsAndIndexTests
         Assert.Equal(MatchVerdict.Unmatched, m.Verdict);
         Assert.InRange(m.Ratio, -0.05, 0.05);
         Assert.True(m.Q25 <= 0);
-        Assert.True(double.IsNaN(r.LightsIndex) || r.LightsIndex <= 0.05 * r.Index.Index);
+        // no index for such lights (R-064): the old bound, at most 0.05 of the darks' index, let any negative through (CR-004)
+        Assert.True(double.IsNaN(r.LightsIndex), $"lights' index {r.LightsIndex}");
         string report = Report(r);
         Assert.Contains("verdict            : ATENTIE: nu se potrivesc: in lights nu se vad pixelii fierbinti ai dark-ului (de ", report, StringComparison.Ordinal);
         Assert.Contains(" ori cat in dark; poate reducerea de zgomot din aparat, alt aparat sau cadre rotite?)", report, StringComparison.Ordinal);
@@ -1048,6 +1049,65 @@ public class LightsAndIndexTests
         // the lights are at the partner's temperature: chained ratio 1.3 x (1 / 1.3) = 1, direct subtraction
         Assert.Contains("    lights / partener  : pixelii fierbinti sunt in lights de 1.0", report, StringComparison.Ordinal);
         Assert.Contains("    verdict partener   : OK: partenerul se poate scadea asa cum e; in lights pixelii fierbinti sunt de 1.0", report, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// CR-004: lights with in-camera noise reduction read a ratio around zero, and the darks' index
+    /// times it was printed as `idx-0 (-0.00 times the dark)`.
+    /// </summary>
+    [Fact]
+    public void R064_LightsThatDoNotShowTheDarksHotPixelsHaveNoIndex()
+    {
+        using SessionFixture none = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, 0));
+        DarkSeriesResult r = Run(none);
+        MatchFigures m = r.Lights!.LightsOverDark;
+        Assert.True(m.Absent);
+        Assert.True(double.IsNaN(r.LightsIndex), $"lights' index {r.LightsIndex}");
+        Assert.True(double.IsNaN(IndexAnalyzer.EquivalentIndex(r.Index, m)));
+        IReadOnlyList<ReportSection> sections = DarkReport.Sections(r);
+        IReadOnlyList<ReportRow> check2 = sections.Single(x => x.Check == ReportCheck.Lights).Rows, index = sections.Single(x => x.Check == ReportCheck.Index).Rows;
+        Assert.DoesNotContain(check2, row => row.Label == "index lights");
+        Assert.DoesNotContain(index, row => row.Label == "lights");
+        // the darks keep theirs, and the verdict still says what was seen
+        Assert.Contains(check2, row => row.Label == "index dark-uri" && row.Value == r.Index.Tag);
+        Assert.Contains(check2, row => row.Label == "verdict" && row.Value.StartsWith("ATENTIE: nu se potrivesc: in lights nu se vad pixelii fierbinti ai dark-ului", StringComparison.Ordinal));
+        Assert.DoesNotMatch(@"idx-?0(?![0-9])", Report(r));
+
+        // the rule itself: the ratios sit around zero, by the median or by the first quartile, on an unmatched verdict only
+        Assert.True(new MatchFigures(5, -0.004, -0.02, 0.01, double.NaN, MatchVerdict.Unmatched).Absent);
+        Assert.True(new MatchFigures(5, 0.01, -0.01, 0.03, -39.9, MatchVerdict.Unmatched).Absent);
+        Assert.False(new MatchFigures(5, 1.6, 1.5, 1.7, 4.1, MatchVerdict.Unmatched).Absent);
+        Assert.False(new MatchFigures(5, 0.5, -0.1, 0.6, -6, MatchVerdict.CosmeticOnly).Absent);
+        Assert.False(MatchFigures.None.Absent);
+        Assert.True(double.IsNaN(IndexAnalyzer.EquivalentIndex(r.Index, new MatchFigures(5, 0.01, -0.01, 0.03, -39.9, MatchVerdict.Unmatched))));
+        Assert.Equal(1.6 * r.Index.Index, IndexAnalyzer.EquivalentIndex(r.Index, new MatchFigures(5, 1.6, 1.5, 1.7, 4.1, MatchVerdict.Unmatched)), 9);
+
+        // lights that show them keep both rows
+        using SessionFixture same = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i));
+        DarkSeriesResult rs = Run(same);
+        Assert.False(rs.Lights!.LightsOverDark.Absent);
+        Assert.Contains(DarkReport.Sections(rs).Single(x => x.Check == ReportCheck.Lights).Rows, row => row.Label == "index lights");
+        Assert.Contains(DarkReport.Sections(rs).Single(x => x.Check == ReportCheck.Index).Rows, row => row.Label == "lights");
+    }
+
+    /// <summary>CR-004: a lights-only session was labelled `...-idx-0`, a name the next run does not strip.</summary>
+    [Fact]
+    public void R066_ALightsOnlySessionWhoseLightsShowNoHotPixelIsLabelledIdxDash()
+    {
+        using SessionFixture alone = new SessionFixture().WithLights(4, i => Light(i, 0));
+        using SessionFixture library = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);
+        DarkSeriesResult r = Run(alone, library.Root);
+        Assert.Equal(library.Root, r.DarksFromPartner);
+        Assert.True(r.Lights!.LightsOverDark.Absent);
+        Assert.True(double.IsNaN(r.LightsIndex), $"lights' index {r.LightsIndex}");
+        Assert.Equal("idx-", r.LabelTag);
+        Assert.Equal(Path.GetFileName(alone.Root) + "-idx-", r.Label);
+        string report = Report(r);
+        Assert.Contains("    eticheta           : " + r.Label + Environment.NewLine, report, StringComparison.Ordinal);
+        Assert.DoesNotContain("index lights", report, StringComparison.Ordinal);
+        // the partner keeps its own index and label on its row
+        Assert.Contains("    dark-uri (partener): " + r.Index.Tag + " (", report, StringComparison.Ordinal);
+        Assert.Contains("; eticheta " + Path.GetFileName(library.Root) + "-" + r.Index.Tag, report, StringComparison.Ordinal);
     }
 
     [Fact]

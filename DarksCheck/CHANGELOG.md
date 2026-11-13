@@ -361,6 +361,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   brings them, and the `sky` row says so when the lights are at other settings than the darks
   (R-080; CR-003 of the code review). With lights at the darks' settings nothing changes.
 
+- Lights that do not show the dark's hot pixels (in-camera noise reduction, another camera,
+  rotated frames) got an index all the same, `idx-0` or `idx0`, beside a verdict that says the
+  hot pixels do not show, and a session with lights and no darks was labelled with it. Such
+  lights now have no index: the `index lights` and `lights` rows are left out and the label
+  reads `-idx-` (R-064, R-066; CR-004 of the code review).
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

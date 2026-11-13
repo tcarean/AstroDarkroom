@@ -94,6 +94,14 @@ internal sealed record IndexFigures(double Index, int RankLow, int RankHigh, int
 internal sealed record MatchFigures(int Pixels, double Ratio, double Q25, double Q75, double DeltaCelsius, MatchVerdict Verdict)
 {
     internal static readonly MatchFigures None = new(0, double.NaN, double.NaN, double.NaN, double.NaN, MatchVerdict.Unmeasured);
+
+    /// <summary>
+    /// True when the set shows none of the master's hot pixels (R-052): the verdict is
+    /// <see cref="MatchVerdict.Unmatched"/> and the ratios sit around zero, the median or the first
+    /// quartile at or under 0. A measurement, not a missing one, but no ratio to build on: such
+    /// lights have no equivalent index (R-064) and no trace of a subtraction to speak of.
+    /// </summary>
+    internal bool Absent => Verdict == MatchVerdict.Unmatched && (Ratio <= 0 || Q25 <= 0);
 }
 
 /// <summary>
@@ -212,7 +220,9 @@ internal static partial class IndexAnalyzer
 
     /// <summary>
     /// The lights' equivalent index: the darks' index times the lights-over-dark ratio (R-064); NaN
-    /// when either is not measured.
+    /// when either is not measured, and when the lights show none of the dark's hot pixels
+    /// (<see cref="MatchFigures.Absent"/>): the product with a ratio around zero is no index, and
+    /// its tag would read `idx-0` or `idx0`.
     /// </summary>
     /// <param name="index">The darks' index; not null.</param>
     /// <param name="lightsOverDark">The lights over the darks' master; not null.</param>
@@ -221,7 +231,7 @@ internal static partial class IndexAnalyzer
     {
         ArgumentNullException.ThrowIfNull(index);
         ArgumentNullException.ThrowIfNull(lightsOverDark);
-        return lightsOverDark.Verdict == MatchVerdict.Unmeasured ? double.NaN : index.Index * lightsOverDark.Ratio;
+        return lightsOverDark.Verdict == MatchVerdict.Unmeasured || lightsOverDark.Absent ? double.NaN : index.Index * lightsOverDark.Ratio;
     }
 
     /// <summary>

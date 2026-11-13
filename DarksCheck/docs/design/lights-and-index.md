@@ -151,7 +151,12 @@ and in the overlap levels, and sets `PartnerAnalysis.Silent` for the report's li
 the partner's index is ranked before that, at its own factor. `Chain` gives the lights against the partner: the
 product of the two medians, lights over darks times darks over partner, judged by `Judge` as
 one ratio; `EquivalentIndex` gives the lights' equivalent index, the darks' index times the
-lights-over-dark ratio. Both are carried in the result (`DarkSeriesResult.LightsIndex`,
+lights-over-dark ratio, and NaN when that ratio is unmeasured or `MatchFigures.Absent`: lights
+that show none of the dark's hot pixels have a ratio around zero, and its product with the
+index would be tagged `idx-0` or `idx0`. `Absent` is the one spelling of that case (an
+unmatched verdict with the median or the first quartile at or under 0); the report's
+`TraceRow` and `MatchText` read it, and since the report prints the lights' index only when
+it is a number, the two rows drop out and a lights-only session is labelled `-idx-`. Both are carried in the result (`DarkSeriesResult.LightsIndex`,
 `PartnerAnalysis.LightsOverPartner`), so the report and the window only format them.
 
 ## Measured

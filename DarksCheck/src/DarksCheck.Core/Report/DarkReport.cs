@@ -353,8 +353,7 @@ internal static class DarkReport
     private static string? TraceRow(MatchFigures m, TraceFigures t)
     {
         // ratios that sit around zero are the "hot pixels do not show" verdict of MatchText: no subtraction to speak of
-        bool absent = m.Verdict == MatchVerdict.Unmatched && (m.Ratio <= 0 || m.Q25 <= 0);
-        if (m.Verdict == MatchVerdict.Unmeasured || absent || !(m.Ratio > 0) || t.Pixels == 0 || double.IsNaN(t.Median))
+        if (m.Verdict == MatchVerdict.Unmeasured || m.Absent || !(m.Ratio > 0) || t.Pixels == 0 || double.IsNaN(t.Median))
         {
             return null;
         }
@@ -423,7 +422,9 @@ internal static class DarkReport
     /// </summary>
     /// <param name="r">The run's result.</param>
     /// <returns>The tag (<c>idx157</c>) and the parenthesis with its leading space; null without
-    /// lights or when the lights' index is not measured.</returns>
+    /// lights or when the lights have no index: not measured, or lights that show none of the
+    /// dark's hot pixels (R-064), <see cref="DarkSeriesResult.LightsIndex"/> being NaN for
+    /// both.</returns>
     private static (string Tag, string About)? LightsLike(DarkSeriesResult r)
     {
         if (r.Lights is not LightsAnalysis l || double.IsNaN(r.LightsIndex))
@@ -833,7 +834,7 @@ internal static class DarkReport
     {
         ArgumentNullException.ThrowIfNull(m);
         string atMaster = partner ? T("at the partner", "la partener") : T("in the dark", "in dark");
-        if (m.Verdict == MatchVerdict.Unmatched && (m.Ratio <= 0 || m.Q25 <= 0))
+        if (m.Absent)
         {
             // the ratios sit around zero: the set shows none of the master's hot pixels
             return T(
