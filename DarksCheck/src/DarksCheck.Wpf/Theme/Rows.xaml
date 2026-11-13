@@ -30,7 +30,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   </ResourceDictionary.MergedDictionaries>
 
   <!-- A row's figures as a small table (R-024, R-051): the core's column names over its rows,
-       the columns sized together, and the core's note under them. -->
+       the columns sized together, and the core's note under them. Five columns, the widest
+       table (check 9's); a narrower one leaves the last ones empty (TableVm fills its cells). -->
   <DataTemplate x:Key="ReportTable">
     <StackPanel Grid.IsSharedSizeScope="True" Margin="0,2,0,0">
       <Grid>
@@ -38,12 +39,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn0" />
           <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn1" />
           <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn2" />
+          <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn3" />
+          <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn4" />
         </Grid.ColumnDefinitions>
-        <TextBlock Grid.Column="0" Style="{StaticResource Muted}" Text="{Binding Header[0]}" Margin="0,0,22,2" />
-        <TextBlock Grid.Column="1" Style="{StaticResource Muted}" Text="{Binding Header[1]}" TextAlignment="Right" Margin="0,0,22,2" />
-        <TextBlock Grid.Column="2" Style="{StaticResource Muted}" Text="{Binding Header[2]}" TextAlignment="Right" Margin="0,0,0,2" />
+        <TextBlock Grid.Column="0" Style="{StaticResource Muted}" Text="{Binding HeaderCells[0]}" Margin="0,0,0,2" />
+        <TextBlock Grid.Column="1" Style="{StaticResource Muted}" Text="{Binding HeaderCells[1]}" TextAlignment="Right" Margin="22,0,0,2" />
+        <TextBlock Grid.Column="2" Style="{StaticResource Muted}" Text="{Binding HeaderCells[2]}" TextAlignment="Right" Margin="22,0,0,2" />
+        <TextBlock Grid.Column="3" Style="{StaticResource Muted}" Text="{Binding HeaderCells[3]}" TextAlignment="Right" Margin="22,0,0,2" />
+        <TextBlock Grid.Column="4" Style="{StaticResource Muted}" Text="{Binding HeaderCells[4]}" TextAlignment="Right" Margin="22,0,0,2" />
       </Grid>
-      <ItemsControl ItemsSource="{Binding Rows}">
+      <ItemsControl ItemsSource="{Binding RowCells}">
         <ItemsControl.ItemTemplate>
           <DataTemplate>
             <Grid>
@@ -51,10 +56,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn0" />
                 <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn1" />
                 <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn2" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn3" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="TableColumn4" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="{Binding [0]}" Margin="0,0,22,1" />
-              <TextBlock Grid.Column="1" Text="{Binding [1]}" TextAlignment="Right" Margin="0,0,22,1" />
-              <TextBlock Grid.Column="2" Text="{Binding [2]}" TextAlignment="Right" Margin="0,0,0,1" />
+              <TextBlock Grid.Column="0" Text="{Binding [0]}" Margin="0,0,0,1" />
+              <TextBlock Grid.Column="1" Text="{Binding [1]}" TextAlignment="Right" Margin="22,0,0,1" />
+              <TextBlock Grid.Column="2" Text="{Binding [2]}" TextAlignment="Right" Margin="22,0,0,1" />
+              <TextBlock Grid.Column="3" Text="{Binding [3]}" TextAlignment="Right" Margin="22,0,0,1" />
+              <TextBlock Grid.Column="4" Text="{Binding [4]}" TextAlignment="Right" Margin="22,0,0,1" />
             </Grid>
           </DataTemplate>
         </ItemsControl.ItemTemplate>
@@ -86,6 +95,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
+        <!-- the row's choice above its table (R-123): check 9's limit of the stack's noise, the core's label and options -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,6"
+                    Visibility="{Binding HasChoice, Converter={StaticResource BoolToVis}}">
+          <TextBlock Style="{StaticResource Muted}" Text="{Binding Choice.Label}" VerticalAlignment="Center" Margin="0,0,8,0" />
+          <ComboBox ItemsSource="{Binding Choice.Options}" SelectedIndex="{Binding Choice.SelectedIndex, Mode=TwoWay}"
+                    MinWidth="72" VerticalAlignment="Center" AutomationProperties.Name="{Binding Choice.Label}" />
+        </StackPanel>
         <ContentControl Content="{Binding Table}" ContentTemplate="{StaticResource ReportTable}" Focusable="False"
                         Visibility="{Binding HasTable, Converter={StaticResource BoolToVis}}" />
       </StackPanel>

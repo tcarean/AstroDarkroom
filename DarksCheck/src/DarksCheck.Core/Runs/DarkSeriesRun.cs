@@ -301,6 +301,16 @@ internal static class DarkSeriesRun
             {
                 Log.Debug("lights: " + LogText.Figures(lights, "Frames"));
             }
+
+            if (lights is not null)
+            {
+                // check 9 is judged against the lights' stack once they are measured (R-024, ADR 0051)
+                verdicts = verdicts with { Enough = DarkVerdictAnalyzer.EnoughOf(darks, lights, refPlane, Th.StackNoiseLimit) };
+                if (Log.IsDebugEnabled)
+                {
+                    Log.Debug("enough, against the lights' stack: " + LogText.Figures(verdicts.Enough));
+                }
+            }
         }
 
         PartnerAnalysis? partner = null;
@@ -338,6 +348,21 @@ internal static class DarkSeriesRun
         DarkSeriesResult result = new(inv, darks, biases, biasError, dc, verdicts, refPlane, index, label, lightsIndex, lights, lightsError, partner, partnerError, darksFromPartner, partnerLabel, labelTag);
         clock.Done(Outcome(result));
         return result;
+    }
+
+    /// <summary>
+    /// A finished run with check 9 judged at another limit of the stack's noise (R-024, ADR 0051):
+    /// the frames needed, the table's ratings and the verdict follow the limit; nothing is read or
+    /// measured again, and every other figure is the same object.
+    /// </summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <param name="limit">How much noisier the lights' stack may be, as a fraction above 0 (one
+    /// of <see cref="Th.StackNoiseLimits"/>); without measured lights it changes nothing.</param>
+    /// <returns>The result with that verdict of check 9.</returns>
+    internal static DarkSeriesResult WithStackLimit(DarkSeriesResult r, double limit)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        return r with { Verdicts = r.Verdicts with { Enough = DarkVerdictAnalyzer.EnoughOf(r.Darks, r.Lights, r.ReferencePlane, limit) } };
     }
 
     /// <summary>

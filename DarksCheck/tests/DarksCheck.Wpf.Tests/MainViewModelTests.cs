@@ -127,6 +127,60 @@ public class MainViewModelTests
     }
 
     [Fact]
+    public async Task R123_ChoosingTheStackLimitJudgesCheckNineAgainWithoutReadingAFrame()
+    {
+        // twenty darks of noise 4 with five lights of noise 6: enough at 10 %, few at 5 % (R-024)
+        using SessionFixture f = new SessionFixture()
+            .WithDarkSeries(20, i => new SyntheticDark { Seed = 100 + i, Noise = 4, Hot = SyntheticLight.Lattice })
+            .WithLights(5, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, Stars = SyntheticLight.ThreeStars });
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        DarkSeriesResult first = vm.Result!;
+        RowVm Nine(string label) => vm.Sections.Single(s => s.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Single(row => row.Label == label);
+
+        // the core's label and options, 10 % selected after the analysis; no other row offers a choice
+        ChoiceVm choice = Nine("cu n cadre").Choice!;
+        Assert.Equal("stack-ul poate fi mai zgomotos cu cel mult:", choice.Label);
+        Assert.Equal(["5 %", "10 %"], choice.Options);
+        Assert.Equal(1, choice.SelectedIndex);
+        Assert.Single(vm.Sections.SelectMany(s => s.Rows), row => row.HasChoice);
+        Assert.Equal("OK", Nine("verdict").Verdict);
+        string leaks = vm.Sections[1].Rows[^1].Value;
+
+        // 5 %: the verdict, the frames needed, the ratings and the report's text follow; the figures are the same objects
+        choice.SelectedIndex = 0;
+        Assert.Same(first.Darks, vm.Result!.Darks);
+        Assert.Same(first.Lights, vm.Result.Lights);
+        Assert.Equal(0.05, vm.Result.Verdicts.Enough.Stack!.Limit);
+        Assert.Equal("ATENTIE", Nine("verdict").Verdict);
+        Assert.Contains("peste limita de 5 %", Nine("verdict").Rest, StringComparison.Ordinal);
+        Assert.StartsWith(RunReport.Frames(vm.Result.Verdicts.Enough.FramesNeeded) + " pentru un stack cu cel mult 5 % mai zgomotos; ", Nine("ajung de la").Value, StringComparison.Ordinal);
+        Assert.Equal("putine", Nine("cu n cadre").Table!.Rows.Single(row => row[0] == "20 (acum)")[4]);
+        Assert.Equal(0, Nine("cu n cadre").Choice!.SelectedIndex);
+        Assert.Contains("peste limita de 5 %", vm.Report, StringComparison.Ordinal);
+        Assert.Equal(leaks, vm.Sections[1].Rows[^1].Value);
+
+        // the same option again does nothing; an index outside the options neither
+        DarkSeriesResult strict = vm.Result;
+        Nine("cu n cadre").Choice!.SelectedIndex = 0;
+        Nine("cu n cadre").Choice!.SelectedIndex = 7;
+        vm.ChooseStackLimit(-1);
+        Assert.Same(strict, vm.Result);
+
+        // back at 10 %: the first verdict
+        Nine("cu n cadre").Choice!.SelectedIndex = 1;
+        Assert.Equal("OK", Nine("verdict").Verdict);
+        Assert.Equal(first.Verdicts.Enough.FramesNeeded, vm.Result.Verdicts.Enough.FramesNeeded);
+
+        // without lights there is no stack to limit: no choice
+        using SessionFixture alone = new SessionFixture().WithDarkSeries(10, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
+        MainViewModel plain = new();
+        await plain.OpenAsync(alone.Root);
+        Assert.DoesNotContain(plain.Sections.SelectMany(s => s.Rows), row => row.HasChoice);
+        Assert.Equal(["cadre", "zgomotul masterului", "fata de acum", "cum e"], plain.Sections.Single(s => s.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "cu n cadre").Table!.Header);
+    }
+
+    [Fact]
     public async Task R071_WithoutAnEndTheWarmingChartKeepsTheOneGuide()
     {
         // five darks: under the six the end of the series of R-023 needs
@@ -314,9 +368,10 @@ public class MainViewModelTests
         Assert.Null(stability.Table);
         RowVm hotVerdict = vm.HotRows.Single(row => row.Label == "verdict");
         Assert.Equal([hotVerdict.Rest], hotVerdict.Lines);
-        RowVm curve = vm.Sections.Single(s => s.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "zgomot dupa medie");
-        Assert.Equal(["cadre", "masurat", "se astepta"], curve.Table!.Header);
-        Assert.Equal(r.Darks.Noise.Curve.Count, curve.Table.Rows.Count);
+        RowVm curve = vm.Sections.Single(s => s.Title.StartsWith("9.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "cu n cadre");
+        Assert.Equal(["cadre", "zgomotul masterului", "fata de acum", "stack mai zgomotos cu", "cum e"], curve.Table!.Header);
+        Assert.Equal(r.Verdicts.Enough.Points.Count, curve.Table.Rows.Count);
+        Assert.All(curve.Table.RowCells, cells => Assert.Equal(TableVm.Columns, cells.Count));
         RowVm overlap = vm.LightRows.Single(row => row.Label == "in masterul dark");
         Assert.Equal(["prag", "pixeli", "procent"], overlap.Table!.Header);
         Assert.Equal(4, overlap.Table.Rows.Count);

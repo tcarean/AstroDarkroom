@@ -53,8 +53,10 @@ Copyright (C) 2026 Tudor Carean
     verdict            : OK: niciun pixel mort sau saturat pe master
 
   9. CATE DARK-URI AJUNG
-    zgomot dupa medie  : 1 cadru: 2.99 (se astepta 3.01); 2 cadre: 2.16 (se astepta 2.13); 4 cadre: 1.52 (se astepta 1.51); 5 cadre: 1.35 (se astepta 1.35)  [pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul]
+    zgomot dupa medie  : media a 5 cadre are 1.35 ADU de zgomot; din zgomotul unui singur cadru (3.01 ADU) se asteptau 1.35  [pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul]
     master             : 12 cadre dau un master cu 1.08 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 2.99); un master din 6 cadre facut cu mediana si unul din celelalte 6 facut cu media difera cu 1.77 ADU
+    cu n cadre         : 5 cadre: 1.67 ADU (+55 % fata de acum; prea putine); 10 cadre: 1.18 ADU (+10 % fata de acum; putine); 12 cadre (acum): 1.08 ADU (putine); 15 cadre: 0.97 ADU (-11 % fata de acum; ajung); 20 de cadre: 0.84 ADU (-23 % fata de acum; ajung)
+    ajung de la        : 15 cadre: de acolo zgomotul masterului e sub pasul valorilor din fisier (1 ADU)
     verdict            : ATENTIE: zgomotul masterului (1.08 ADU) e peste pasul valorilor din fisier (1 ADU); ar cobori sub el de la 15 cadre
 
   INDEX

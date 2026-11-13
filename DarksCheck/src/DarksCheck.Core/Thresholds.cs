@@ -286,6 +286,34 @@ internal static class Th
     /// </summary>
     internal const double MedianNoiseFactor = 1.2533;
 
+    /// <summary>
+    /// With lights, the darks are enough when the master's noise makes the lights' stack at most
+    /// this much noisier (0.10 = 10 %), the stack counted without dithering. The owner's choice of
+    /// 2026-11-13 (ADR 0051), measured that day with the noise of a light against its neighbours:
+    /// 11 darks at Smida (20 darks, 32 lights) and for the -2 °C darks with the Veil lights of
+    /// 2026-11-08 (35 darks, 83 lights), 39 for the 15.8 °C library with the Veil lights of
+    /// 2026-10-06 (30 darks, 87 lights).
+    /// </summary>
+    internal const double StackNoiseLimit = 0.10;
+
+    /// <summary>
+    /// The limits the window offers for <see cref="StackNoiseLimit"/>, in rising order: 5 % asks
+    /// for 22, 22 and 80 darks on the three pairs measured on 2026-11-13 (ADR 0051).
+    /// </summary>
+    internal static readonly IReadOnlyList<double> StackNoiseLimits = [0.05, 0.10];
+
+    /// <summary>
+    /// The step of check 9's table of frame counts: a row every this many frames, the counts the
+    /// owner asked for (5, 10, 15, ...).
+    /// </summary>
+    internal const int FramesTableStep = 5;
+
+    /// <summary>
+    /// How many rows of <see cref="FramesTableStep"/> the table goes past the frames stacked, to
+    /// show what more darks would bring; past them only the row of the frames needed is added.
+    /// </summary>
+    internal const int FramesTablePast = 2;
+
     // --- the lights against the dark (R-050, check 2) ---
 
     /// <summary>

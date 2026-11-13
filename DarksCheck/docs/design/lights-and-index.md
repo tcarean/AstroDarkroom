@@ -118,7 +118,9 @@ high)` is the same rule with a `Direct` band of its own; the plain `Judge` passe
 
 A set of lights against its darks is judged with a wider `Direct` band when a plain subtraction
 leaves little (R-067, ADR 0044). `LightsAnalyzer.TracesOf` runs at the end of `Analyze`, on
-figures already there. The noise of a light per CFA position is the median over the decoded
+figures already there. The noise of a light per CFA position (`LightsAnalyzer.NoiseOnPlane`,
+which also says how many lights gave it, and which check 9 reads for the lights' stack, ADR 0051)
+is the median over the decoded
 lights of `LightFigures.LocalSigma[p]`, each divided by its own normalisation (the darks' for a
 light with assumed settings), so in ADU-eq. For every amplitude pixel (`ampIdx`) on a position
 whose noise is positive, the master's excess in ADU-eq over that noise is the trace it leaves

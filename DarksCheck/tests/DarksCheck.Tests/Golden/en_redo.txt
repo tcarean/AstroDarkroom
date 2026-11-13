@@ -53,8 +53,10 @@ Copyright (C) 2026 Tudor Carean
     verdict            : OK: no dead or saturated pixel in the master
 
   9. HOW MANY DARKS ARE ENOUGH
-    noise when averaged: 1 frame: 2.99 (expected 3.01); 2 frames: 2.16 (expected 2.13); 4 frames: 1.52 (expected 1.51); 5 frames: 1.35 (expected 1.35)  [the green pixels G1, the central 192 px, ADU; measured from one frame to the next]
+    noise when averaged: the average of 5 frames has 1.35 ADU of noise; from the noise of a single frame (3.01 ADU), 1.35 was expected  [the green pixels G1, the central 192 px, ADU; measured from one frame to the next]
     master             : 12 frames give a master with 1.08 ADU of noise per pixel (from the noise from one frame to the next, 2.99); a master of 6 frames made with the median and one of the other 6 made with the mean differ by 1.77 ADU
+    with n frames      : 5 frames: 1.67 ADU (+55 % against now; too few); 10 frames: 1.18 ADU (+10 % against now; few); 12 frames (now): 1.08 ADU (few); 15 frames: 0.97 ADU (-11 % against now; enough); 20 frames: 0.84 ADU (-23 % against now; enough)
+    enough from        : 15 frames: from there the master's noise is under the file's value step (1 ADU)
     verdict            : WARNING: the master's noise (1.08 ADU) is above the file's value step (1 ADU); it would drop under it from 15 frames
 
   INDEX

@@ -284,3 +284,17 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   session without darks against the library; V-012 asks the same lights against the same
   library with `--lights` and keeps V-007's figures to the digit. The figures of V-007 stay in
   the History above. Eleven cases are left.
+- 2026-11-13: check 9 gained its table of frame counts and, with lights, judges the darks
+  against the lights' stack (R-024, R-123, ADR 0051: `DarkVerdictAnalyzer.EnoughOf`, four new
+  constants in `Thresholds.cs`; no recorded formula or constant changed). All eleven cases run
+  with `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 11, Passed: 11, Total
+  time: 12.2306 Minutes`; every session was present, and no figure moved outside its tolerance.
+  The `enough` verdict of the five darks cases stays `Ok`: four have no lights and keep the rule
+  of the value step, and the Smida darks need 11 frames at 10 % with their 32 lights and have
+  20. The figures the change was measured on, by the console of the branch the same day (not
+  recorded in `validation.json`): the temporal sigma, the lights and their noise against the
+  neighbours are 3.40 ADU, 83 and 26.27 ADU for the -2 °C darks with the Veil lights of
+  2026-11-08 (the pair of V-013), 1.426, 32 and 6.77 for Smida (V-005), 4.83, 87 and 19.79 for
+  the library with the Veil lights of 2026-10-06 (V-012); the stack comes out 3.1 % noisier at
+  35 darks, 5.4 % at 20 and 12.8 % at 30, and 11 / 11 / 39 darks are needed at 10 %, 22 / 22 /
+  80 at 5 %.

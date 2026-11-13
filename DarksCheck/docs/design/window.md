@@ -108,9 +108,20 @@ they only set it. The `Partner` and `LightsFrom` setters alone run nothing.
   occurrence of every bold substring that stands as a figure of its own, longest first, never
   overlapping; the rebuild is deferred to the end of the binding pass so the two properties
   cost one) as plain and bold runs (ADR 0016), or, for a row with one, its `Table` in place
-  of the text through the `ReportTable` template: a header grid and one grid per row, three `Auto`
-  columns in one `Grid.IsSharedSizeScope` so they line up, the figures right-aligned, the
+  of the text through the `ReportTable` template: a header grid and one grid per row, five `Auto`
+  columns in one `Grid.IsSharedSizeScope` so they line up (`TableVm.Columns`, the width of check
+  9's table; `TableVm.HeaderCells` and `RowCells` fill a narrower table's cells with empty ones,
+  so the template binds five cells whatever the core gave), the figures right-aligned, the
   core's note in the muted style under them;
+- a row of a Rezumat card whose `ReportRow.Choice` is set (check 9's `cu n cadre`, with lights)
+  becomes a `RowVm` with a `ChoiceVm` (`CardRow`): the core's label and options and the selected
+  index, whose setter calls `MainViewModel.ChooseStackLimit` for another valid index. The
+  `ReportRow` template draws it above the table as the muted label and a `ComboBox` bound both
+  ways to `SelectedIndex`. `ChooseStackLimit` takes the limit at that index of
+  `Th.StackNoiseLimits`, asks `DarkSeriesRun.WithStackLimit` for the result judged at it and
+  calls `Populate` again, so every tab, the report's text included, is shaped from the new
+  result and the dropdown is drawn anew with the core's selected option; no frame is read, and a
+  new analysis starts at the core's default again (R-123, ADR 0051);
 - the tab `Explicatii scara ADU` (`ScaleView`) binds `ScaleRows` (`ScaleReport.Rows` as
   `RowVm`, the `ReportRow` template) and `ScaleParagraphs` (`ScaleReport.Paragraphs`, one
   wrapped `TextBlock` each) under `ScaleTitle`, the core's title;
@@ -232,7 +243,12 @@ the lattice hot pixels, three biases, four lights at 1.3 of the darks, a partner
 `PresentationTraceSources`; with `DARKSCHECK_DUMP_SCREENS=<folder>` each render is saved as a
 PNG. `StaFixture` is the one STA thread with a `Dispatcher.Run` loop the view-model's awaits
 need; the assembly disables test parallelization. `MainViewModelTests` cover R-070 to R-076
-without a window, the report tab against `Program.Run`'s text. `AutomationTreeTests` (R-079)
+without a window, the report tab against `Program.Run`'s text. R-123 is tested twice, on twenty
+noisy darks with five lights, which are enough at 10 % and few at 5 %: `MainViewModelTests` sets
+the `ChoiceVm`'s index and reads the cards, the report and the result's own objects; a smoke test
+sets the rendered `ComboBox`'s `SelectedIndex` and reads the redrawn card, after an empty
+`Dispatcher.Invoke` at `ContextIdle`, since `Emphasis` rebuilds a row's runs in a deferred
+dispatcher call the forced layout does not wait for. `AutomationTreeTests` (R-079)
 select each tab of a window over the same session and ask the automation peers in process: the
 tab's content under its item, once, and under no other tab's item. Keyboard focus needs a
 window on screen, which no test shows, so the second test makes WPF's own lookup of the stock
