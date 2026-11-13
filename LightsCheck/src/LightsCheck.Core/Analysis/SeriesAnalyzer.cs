@@ -58,6 +58,7 @@ internal enum FlagKind
     Unregistered,
     ShortExposure,
     OtherExposure,
+    AfterFlip,
 }
 
 /// <summary>
@@ -68,7 +69,8 @@ internal enum FlagKind
 /// <param name="Kind">What the flag is about.</param>
 /// <param name="Value">
 /// The measured value: the median elongation, the FWHM in pixels, the star count, the background's
-/// change in percent or the trail count; 0 for an unreadable or unregistered frame.
+/// change in percent or the trail count; 0 for an unreadable or unregistered frame and for one
+/// taken after a meridian flip.
 /// </param>
 /// <param name="Threshold">
 /// The threshold <paramref name="Value"/> was judged against, in its units; 0 where none applies.
@@ -305,7 +307,8 @@ internal enum PolarAlignment
 /// size.
 /// </param>
 /// <param name="Swamping">
-/// The swamping figures of the first, the middle and the last measured frames; null without the
+/// The swamping figures of the first, the middle and the last of the measured frames that are not
+/// too short to stack (R-085), or of the measured frames when all of them are; null without the
 /// read noise.
 /// </param>
 /// <param name="SwampingFrames">
@@ -535,9 +538,11 @@ internal static class SeriesAnalyzer
                 flags[i].Add(new FrameFlag(FlagKind.Trails, m.Trails.Count, 0));
             }
 
+            // A frame without a position: taken after a meridian flip when the registration
+            // found it turned upside down (R-087), not aligned otherwise. A note either way.
             if (f.Registration is null || !f.Registration.Ok)
             {
-                flags[i].Add(new FrameFlag(FlagKind.Unregistered, 0, 0));
+                flags[i].Add(new FrameFlag(f.Registration is { Flipped: true } ? FlagKind.AfterFlip : FlagKind.Unregistered, 0, 0));
             }
         }
 
@@ -822,13 +827,22 @@ internal static class SeriesAnalyzer
             }
         }
 
-        // Swamping on the first, the middle and the last measured frames.
+        // Swamping on the first, the middle and the last measured frames, the ones too short to
+        // stack left out: such a frame has almost no sky, and its ratio would pass for the
+        // session's (R-024, R-085). When every measured frame is that short they are all there
+        // is, and they are sampled: the figures printed are then theirs, and so is the verdict.
+        // With no light measured at all the sample stays empty.
         List<IReadOnlyList<ChannelNoise>>? swamping = null;
         List<int> swampingFrames = [];
         if (readNoise is not null)
         {
             swamping = [];
-            List<int> measured = Enumerable.Range(0, n).Where(i => frames[i].Measurement is not null).ToList();
+            List<int> measured = Enumerable.Range(0, n).Where(i => frames[i].Measurement is not null && !shortExposure[i]).ToList();
+            if (measured.Count == 0)
+            {
+                measured = Enumerable.Range(0, n).Where(i => frames[i].Measurement is not null).ToList();
+            }
+
             foreach (int i in new[] { 0, measured.Count / 2, measured.Count - 1 }.Distinct())
             {
                 if (i >= 0 && i < measured.Count)

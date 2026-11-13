@@ -32,7 +32,7 @@ Copyright (C) 2026 Tudor Carean
     sky background (good frames, first -> last): 2000 -> 2001 ADU on green, above the black level (+0 %)
     read noise         : R 12.0  G1 12.0  G2 12.0  B 12.0 ADU (the noise the sensor adds to every frame, measured from two biases)
     frame   1          : R: sky 399, shot/read 10.1, extra noise 4.8 %  G1: sky 2002, shot/read 10.1, extra noise 4.8 %  G2: sky 2001, shot/read 10.2, extra noise 4.8 %  B: sky 2300, shot/read 10.0, extra noise 4.9 %
-    frame   7          : R: sky 401, shot/read 10.2, extra noise 4.8 %  G1: sky 2000, shot/read 10.3, extra noise 4.7 %  G2: sky 2001, shot/read 10.3, extra noise 4.7 %  B: sky 2301, shot/read 10.2, extra noise 4.8 %
+    frame   6          : R: sky 521, shot/read 10.3, extra noise 4.8 %  G1: sky 2600, shot/read 10.1, extra noise 4.8 %  G2: sky 2602, shot/read 10.2, extra noise 4.8 %  B: sky 2991, shot/read 10.1, extra noise 4.8 %
     frame  13          : R: sky 400, shot/read 10.0, extra noise 4.9 %  G1: sky 2002, shot/read 10.2, extra noise 4.8 %  G2: sky 2000, shot/read 10.1, extra noise 4.9 %  B: sky 2301, shot/read 10.0, extra noise 4.9 %
     what it means      : shot/read from 10 up: the sky covers the read noise, which adds under 5 %; under 10: the channel suffers from the read noise, and longer exposures would help
 

@@ -254,7 +254,8 @@ internal static class SeriesRun
         DitherAnalysis dither = DitherAnalyzer.Analyze(x, y, cadence.PauseSeconds);
         clock.Lap("dither");
         // The crops (1 MB apiece) are dropped once the pattern is read.
-        SensorPattern pattern = PatternAnalyzer.Analyze(crops, frames.Select(f => f.Measurement?.Channels).ToList(), dither);
+        SensorPattern pattern = PatternAnalyzer.Analyze(crops, frames.Select(f => f.Measurement?.Channels).ToList(), dither, x, y,
+            frames.Select(f => f.Measurement?.FwhmMedian).ToList());
         Array.Clear(crops);
         clock.Lap("pattern");
 

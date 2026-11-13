@@ -62,13 +62,55 @@ public class PatternAnalyzerTests
     private static IReadOnlyList<ChannelLevel> Channels() =>
         [new("R", 'R', 1000, 0, 0, FrameSigma), new("G1", 'G', 1000, 0, 0, FrameSigma), new("G2", 'G', 1000, 0, 0, FrameSigma), new("B", 'B', 1000, 0, 0, FrameSigma)];
 
-    /// <summary>n frames whose positions step by <paramref name="step"/> px each, so the clusters at 3 px are what the step makes them.</summary>
-    private static DitherAnalysis Dither(int n, double step)
+    /// <summary>
+    /// The pattern of crops whose frames step by <paramref name="step"/> px each along X, so the
+    /// groups of frames are what the step makes them; every frame's stars are
+    /// <paramref name="width"/> px wide, or have no width.
+    /// </summary>
+    private static SensorPattern Analyze(PatternCrop?[] crops, IReadOnlyList<ChannelLevel>?[] channels, double step, double? width = 3.0)
     {
+        int n = crops.Length;
         double?[] x = Enumerable.Range(0, n).Select(i => (double?)(i * step)).ToArray();
         double?[] y = new double?[n];
         Array.Fill(y, 0.0);
-        return DitherAnalyzer.Analyze(x, y, new double?[n]);
+        return PatternAnalyzer.Analyze(crops, channels, DitherAnalyzer.Analyze(x, y, new double?[n]), x, y, Enumerable.Repeat(width, n).ToArray());
+    }
+
+    /// <summary>
+    /// A crop of noise with six Gaussian stars of <paramref name="fwhm"/> px, 30 to 280 sigma
+    /// high, the same stars in every frame, moved by <paramref name="dx"/> px along X.
+    /// </summary>
+    private static PatternCrop StarCrop(int seed, double fwhm, double dx)
+    {
+        float[] d = Crop(seed, []).Data;
+        // Crop draws its own 3 x 3 block at (10..12, 20..22): taken back out, the stars below stand alone.
+        for (int y = 20; y < 23; y++)
+        {
+            for (int x = 10; x < 13; x++)
+            {
+                d[y * Size + x] -= 500;
+            }
+        }
+
+        double sigma = fwhm / 2.3548;
+        (double X, double Y, double Peak)[] stars = [(12, 12, 300), (30, 15, 2800), (45, 28, 900), (14, 40, 1800), (33, 47, 600), (48, 52, 2400)];
+        foreach ((double sx, double sy, double peak) in stars)
+        {
+            double cx = sx + dx;
+            for (int y = 0; y < Size; y++)
+            {
+                for (int x = 0; x < Size; x++)
+                {
+                    double r2 = (x - cx) * (x - cx) + (y - sy) * (y - sy);
+                    if (r2 < 25 * sigma * sigma)
+                    {
+                        d[y * Size + x] += (float)(peak * Math.Exp(-r2 / (2 * sigma * sigma)));
+                    }
+                }
+            }
+        }
+
+        return new PatternCrop(Size, d);
     }
 
     private static readonly IReadOnlyList<(int X, int Y, double Adu)> Pattern =
@@ -84,7 +126,7 @@ public class PatternAnalyzerTests
         PatternCrop?[] crops = Enumerable.Range(0, n).Select(i => (PatternCrop?)Crop(i, Pattern, dx: 4 * i)).ToArray();
         IReadOnlyList<ChannelLevel>?[] ch = Enumerable.Repeat(Channels(), n).ToArray();
 
-        SensorPattern p = PatternAnalyzer.Analyze(crops, ch, Dither(n, 4));
+        SensorPattern p = Analyze(crops, ch, 4);
 
         Assert.Equal(PatternStatus.Measured, p.Status);
         Assert.Equal(n, p.Frames);
@@ -104,13 +146,13 @@ public class PatternAnalyzerTests
     public void R046_FewerThanSevenFramesOrNoRegistrationGiveNoFigure()
     {
         PatternCrop?[] six = Enumerable.Range(0, 6).Select(i => (PatternCrop?)Crop(i, Pattern)).ToArray();
-        Assert.Equal(PatternStatus.TooFewFrames, PatternAnalyzer.Analyze(six, Enumerable.Repeat(Channels(), 6).ToArray(), Dither(6, 4)).Status);
+        Assert.Equal(PatternStatus.TooFewFrames, Analyze(six, Enumerable.Repeat(Channels(), 6).ToArray(), 4).Status);
 
         PatternCrop?[] eight = Enumerable.Range(0, 8).Select(i => (PatternCrop?)Crop(i, Pattern)).ToArray();
         DitherAnalysis none = DitherAnalyzer.Analyze(new double?[8], new double?[8], new double?[8]);
-        Assert.Equal(PatternStatus.Unregistered, PatternAnalyzer.Analyze(eight, Enumerable.Repeat(Channels(), 8).ToArray(), none).Status);
+        Assert.Equal(PatternStatus.Unregistered, PatternAnalyzer.Analyze(eight, Enumerable.Repeat(Channels(), 8).ToArray(), none, new double?[8], new double?[8], new double?[8]).Status);
 
-        Assert.Equal(PatternStatus.NoCrops, PatternAnalyzer.Analyze(new PatternCrop?[3], new IReadOnlyList<ChannelLevel>?[3], Dither(3, 4)).Status);
+        Assert.Equal(PatternStatus.NoCrops, Analyze(new PatternCrop?[3], new IReadOnlyList<ChannelLevel>?[3], 4).Status);
     }
 
     /// <summary>Frames that stayed put put the same star on the same pixels in every frame: the median would read it as pattern, so nothing is read.</summary>
@@ -118,9 +160,75 @@ public class PatternAnalyzerTests
     public void R046_FramesThatDidNotMoveGiveNoFigure()
     {
         PatternCrop?[] crops = Enumerable.Range(0, 10).Select(i => (PatternCrop?)Crop(i, Pattern)).ToArray();
-        SensorPattern p = PatternAnalyzer.Analyze(crops, Enumerable.Repeat(Channels(), 10).ToArray(), Dither(10, 0.2));
+        SensorPattern p = Analyze(crops, Enumerable.Repeat(Channels(), 10).ToArray(), 0.2);
         Assert.Equal(PatternStatus.FramesDidNotMove, p.Status);
         Assert.Equal(10, p.Frames);
+    }
+
+    /// <summary>
+    /// Forty frames that were not dithered and drifted 0.17 px a frame, 6.6 px in all, with stars
+    /// 4.2 px wide: no three-pixel group holds half the frames, yet every star sits on its own
+    /// pixels in most of them, and the median would count it as hot pixels. Judged at three star
+    /// widths the frames did not move, and nothing is read (R-046, CR-005 of the review of
+    /// 2026-11-13).
+    /// </summary>
+    [Fact]
+    public void R046_StarsThatDriftSlowlyWithoutDitheringGiveNoFigure()
+    {
+        const int n = 40;
+        PatternCrop?[] crops = Enumerable.Range(0, n).Select(i => (PatternCrop?)StarCrop(i, 4.2, 0.17 * i)).ToArray();
+
+        SensorPattern p = Analyze(crops, Enumerable.Repeat(Channels(), n).ToArray(), 0.17, width: 4.2);
+
+        Assert.Equal(PatternStatus.FramesDidNotMove, p.Status);
+        Assert.Equal(0, p.Hot);
+        Assert.Equal(12.6, p.ClusterRadiusPx, 6);
+        Assert.Equal(n, p.LargestCluster);
+    }
+
+    /// <summary>
+    /// The same stars on frames 4 px apart: three or four frames share a group at three star
+    /// widths, the stars move off every pixel, and the figure is read with no star in it.
+    /// </summary>
+    [Fact]
+    public void R046_StarsThatMoveWithTheDitherLeaveNoHotPixel()
+    {
+        const int n = 40;
+        PatternCrop?[] crops = Enumerable.Range(0, n).Select(i => (PatternCrop?)StarCrop(i, 4.2, 4.0 * (i % 10))).ToArray();
+        double?[] x = Enumerable.Range(0, n).Select(i => (double?)(4.0 * (i % 10))).ToArray();
+        double?[] y = new double?[n];
+        Array.Fill(y, 0.0);
+
+        SensorPattern p = PatternAnalyzer.Analyze(crops, Enumerable.Repeat(Channels(), n).ToArray(), DitherAnalyzer.Analyze(x, y, new double?[n]), x, y, Enumerable.Repeat((double?)4.2, n).ToArray());
+
+        Assert.Equal(PatternStatus.Measured, p.Status);
+        Assert.Equal(16, p.LargestCluster);   // the positions 0, 4, 8 and 12 px, four frames at each
+        Assert.Equal(0, p.Hot);
+    }
+
+    /// <summary>
+    /// The distance the group is judged at is three times the stars' width, and 3 px when that
+    /// is smaller or no frame has a width: twelve frames 4 px apart are spread enough for stars
+    /// 3 px wide (three frames within 9 px), not for stars 8 px wide (seven within 24 px), nor
+    /// for stars 7 px wide, where the group is exactly half the frames (six within 21 px).
+    /// </summary>
+    [Theory]
+    [InlineData(3.0, 9.0, 3, true)]
+    [InlineData(6.0, 18.0, 5, true)]
+    [InlineData(7.0, 21.0, 6, false)]
+    [InlineData(8.0, 24.0, 7, false)]
+    [InlineData(0.5, 3.0, 1, true)]
+    [InlineData(null, 3.0, 1, true)]
+    public void R046_TheGroupIsJudgedAtThreeTimesTheStarsWidth(double? width, double radius, int largest, bool measured)
+    {
+        const int n = 12;
+        PatternCrop?[] crops = Enumerable.Range(0, n).Select(i => (PatternCrop?)Crop(i, Pattern, dx: 4 * i)).ToArray();
+
+        SensorPattern p = Analyze(crops, Enumerable.Repeat(Channels(), n).ToArray(), 4, width);
+
+        Assert.Equal(measured ? PatternStatus.Measured : PatternStatus.FramesDidNotMove, p.Status);
+        Assert.Equal(radius, p.ClusterRadiusPx, 6);
+        Assert.Equal(largest, p.LargestCluster);
     }
 
     /// <summary>The crop is cut at an even row and column, so a pixel's CFA position in the crop is its position in the frame.</summary>

@@ -47,7 +47,8 @@ MySessionFolder\
 ```
 
 - The lights are the frames of `lights\`. A folder without `lights\` but with frames of its own
-  is taken as the lights; an empty `lights\` is an error, never a fall-back to the root of the
+  is taken as the lights; a stacked result beside them is told by its header and is not counted
+  as a light. An empty `lights\` is an error, never a fall-back to the root of the
   session, where `result.fit` and the other results of the stacking sit.
 - The frames are the camera raws (`.nef`, `.cr2`, `.cr3`, `.arw`, `.dng`, `.raf`, `.pef`) when the folder
   has any, otherwise its FITS files (`.fit`, `.fits`, `.fts`); the two kinds are never mixed. They
@@ -111,7 +112,8 @@ minutes. The report's sections:
 - **FOCUS**: the stars' width (FWHM) on the good frames, at the start and at the end of the night
   and in three zones (centre, middle, edge), and the verdict.
 - **EXPOSURE AND NOISE**: the sky background, the read noise of each channel (the noise the sensor
-  adds to every frame), and on the first, the middle and the last frame the shot/read ratio of each
+  adds to every frame), and on the first, the middle and the last frame (one too short to stack
+  is skipped) the shot/read ratio of each
   channel: from 10 up the sky covers the read noise; under 10 the channel suffers from the read
   noise, and longer exposures would help.
 - **DEW**: the light around the bright stars (the halo) and the star count at the start and at the
@@ -131,6 +133,9 @@ minutes. The report's sections:
 - **DITHERING**: the pauses and the moves (a step of 5 px or more), how often (every how many
   frames), how far, on which axes and which way, and how close the frames are to each other (the
   nearest other frame, the different spots, the runs of frames in a row in the same spot); then:
+  - `meridian flip`, the first row, only when frames were taken after one: which frames. Their
+    image is turned upside down against the others; they stay in the stack, and the dithering,
+    the drift, the field rotation and the fixed pattern are measured on the other frames only;
   - `scale`: how far on the sky the mount must move the frame for 5 px and for 10 px, at the
     session's focal length;
   - `pattern in the stack`: how much of one frame's pattern stays after stacking, against 1
@@ -138,7 +143,9 @@ minutes. The report's sections:
   - `fixed pattern`: the sensor's fixed pattern, read from the frames laid one on another without
     aligning them, so that the stars move with the dithers and only the pattern stays: its
     strength on each channel, in ADU and as a share of one frame's noise, the hot pixels per
-    million pixels, and whether the session has darks to take it out;
+    million pixels, and whether the session has darks to take it out. It is not measured when
+    half the frames or more stayed within three times the stars' width of one spot: the stars
+    could not then be told apart from the pattern;
   - the verdict, for walking noise and for hot pixels, with its figures (below).
 - **REJECTED**: each bad frame with its reason, its threshold and the axis of its trail, and each
   frame that could not be read. The marginal frames stay in, your choice; their list is in

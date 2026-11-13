@@ -504,6 +504,23 @@ internal static class DitherAnalyzer
     }
 
     /// <summary>
+    /// The frames of the largest group of the greedy clustering at <paramref name="radius"/>:
+    /// the figure the sensor's pattern is refused by, at a distance that follows the stars'
+    /// width (R-046).
+    /// </summary>
+    /// <param name="x">Per frame, the X position, in pixels; null where the frame has none. Not null.</param>
+    /// <param name="y">Per frame, the Y position, in pixels, null where X is. Not null.</param>
+    /// <param name="radius">The largest distance from a group's first frame, in pixels, included.</param>
+    /// <returns>The frames of the largest group; 0 when no frame has a position.</returns>
+    internal static int LargestCluster(IReadOnlyList<double?> x, IReadOnlyList<double?> y, double radius)
+    {
+        ArgumentNullException.ThrowIfNull(x);
+        ArgumentNullException.ThrowIfNull(y);
+        List<int> reg = Enumerable.Range(0, Math.Min(x.Count, y.Count)).Where(i => x[i] is not null && y[i] is not null).ToList();
+        return Clusters(x, y, reg, radius).DefaultIfEmpty(0).Max();
+    }
+
+    /// <summary>
     /// Greedy clustering: a frame joins the first cluster whose seed is within
     /// <paramref name="radius"/>, else seeds a new one. The sizes, one per cluster, in the
     /// order the seeds appeared; the count is the distinct positions.

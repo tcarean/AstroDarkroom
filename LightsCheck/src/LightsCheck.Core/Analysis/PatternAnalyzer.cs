@@ -105,6 +105,25 @@ internal sealed record SensorPattern(
     internal double HotPerMpx => Pixels > 0 ? 1e6 * Hot / Pixels : 0;
 
     /// <summary>
+    /// The distance, in pixels, the frames' groups were judged at before the median was read:
+    /// <see cref="Th.PatternClusterWidths"/> times the stars' width, <see cref="Th.CoverageTight"/>
+    /// at least; 0 when the analysis stopped before that rule.
+    /// </summary>
+    internal double ClusterRadiusPx { get; init; }
+
+    /// <summary>
+    /// The frames of the largest group within <see cref="ClusterRadiusPx"/>; 0 when the analysis
+    /// stopped before that rule.
+    /// </summary>
+    internal int LargestCluster { get; init; }
+
+    /// <summary>
+    /// Whether <see cref="ClusterRadiusPx"/> came from the stars' width, as against the floor of
+    /// <see cref="Th.CoverageTight"/>, which the report words differently.
+    /// </summary>
+    internal bool ClusterByStarWidth { get; init; }
+
+    /// <summary>
     /// The pattern's sigma as a fraction of one frame's noise, per position; NaN where either is
     /// unknown.
     /// </summary>
@@ -137,9 +156,10 @@ internal static class PatternAnalyzer
     /// <paramref name="crops"/> and <paramref name="channels"/> are per frame (null where the
     /// frame was not measured); only the crops of registered frames of the first crop's size
     /// count, since the rule below reads the registered positions. The median is
-    /// read only when at least Th.PatternMinFrames frames give it and the largest cluster of
-    /// frames at Th.CoverageTight holds under Th.PatternClusterFraction of the registered
-    /// frames, so no pixel sees a star in half the frames or more.
+    /// read only when at least Th.PatternMinFrames frames give it and the largest group of
+    /// frames within Th.PatternClusterWidths times the stars' width (Th.CoverageTight at least)
+    /// holds under Th.PatternClusterFraction of the registered frames, so no pixel sees a star
+    /// in half the frames or more.
     /// </summary>
     /// <param name="crops">
     /// Per frame, its central crop; null where the frame was not measured. Not null.
@@ -148,17 +168,29 @@ internal static class PatternAnalyzer
     /// Per frame, its channel levels; null where the frame was not measured. Not null.
     /// </param>
     /// <param name="dither">
-    /// The series' dithering, in the same frame order, for the positions and the largest cluster.
+    /// The series' dithering, in the same frame order, for which frames have a position and how
+    /// many. Not null.
+    /// </param>
+    /// <param name="x">
+    /// Per frame, its registered X position, in pixels; null where the frame has none. Not null.
+    /// </param>
+    /// <param name="y">Per frame, its registered Y position, in pixels; null where X is. Not null.</param>
+    /// <param name="fwhm">
+    /// Per frame, the median width (FWHM) of its stars, in pixels; null where the frame has none.
     /// Not null.
     /// </param>
     /// <returns>
     /// The measured pattern, or an empty one whose status says why it was not read.
     /// </returns>
-    internal static SensorPattern Analyze(IReadOnlyList<PatternCrop?> crops, IReadOnlyList<IReadOnlyList<ChannelLevel>?> channels, DitherAnalysis dither)
+    internal static SensorPattern Analyze(IReadOnlyList<PatternCrop?> crops, IReadOnlyList<IReadOnlyList<ChannelLevel>?> channels, DitherAnalysis dither,
+        IReadOnlyList<double?> x, IReadOnlyList<double?> y, IReadOnlyList<double?> fwhm)
     {
         ArgumentNullException.ThrowIfNull(crops);
         ArgumentNullException.ThrowIfNull(channels);
         ArgumentNullException.ThrowIfNull(dither);
+        ArgumentNullException.ThrowIfNull(x);
+        ArgumentNullException.ThrowIfNull(y);
+        ArgumentNullException.ThrowIfNull(fwhm);
         PatternCrop? first = crops.FirstOrDefault(c => c is not null);
         if (first is null)
         {
@@ -177,9 +209,16 @@ internal static class PatternAnalyzer
             return SensorPattern.Empty(PatternStatus.TooFewFrames, used.Count);
         }
 
-        if (dither.LargestClusterTight >= Th.PatternClusterFraction * dither.Registered)
+        // The frames must have moved by more than a star covers. A bright star's core is wider
+        // than its FWHM, and a pixel between two groups of frames closer than that sees the star
+        // from both: the groups are judged at a distance that follows the stars' width.
+        List<double> widths = used.Where(i => i < fwhm.Count && fwhm[i] is not null).Select(i => fwhm[i]!.Value).ToList();
+        double byWidth = widths.Count > 0 ? Th.PatternClusterWidths * Raster.Percentile(widths, 50) : 0;
+        double radius = Math.Max(Th.CoverageTight, byWidth);
+        int largest = DitherAnalyzer.LargestCluster(x, y, radius);
+        if (largest >= Th.PatternClusterFraction * dither.Registered)
         {
-            return SensorPattern.Empty(PatternStatus.FramesDidNotMove, used.Count);
+            return SensorPattern.Empty(PatternStatus.FramesDidNotMove, used.Count) with { ClusterRadiusPx = radius, LargestCluster = largest, ClusterByStarWidth = byWidth > Th.CoverageTight };
         }
 
         Raster median = Median(crops, used, size);
@@ -223,7 +262,12 @@ internal static class PatternAnalyzer
             hot += hp.Count(v => v > Th.PatternHotSigma * fs);
         }
 
-        return new SensorPattern(PatternStatus.Measured, used.Count, size, pixels, hot, names, patternSigma, frameSigma);
+        return new SensorPattern(PatternStatus.Measured, used.Count, size, pixels, hot, names, patternSigma, frameSigma)
+        {
+            ClusterRadiusPx = radius,
+            LargestCluster = largest,
+            ClusterByStarWidth = byWidth > Th.CoverageTight,
+        };
     }
 
     /// <summary>

@@ -49,12 +49,12 @@ its `PixelPitchSource` key, not by the scale line's words (`logging.md`).
 The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
 (`frame-analysis.md`), each with a doc comment, the value there only. Registration,
 `VoteStars`, `VoteRange`, `VoteBin`, `MatchToleranceCoarse`, `MatchToleranceFine`,
-`MatchIterations`, `MinMatches`; dithering, `DitherStep`, `DitherPause`, `DitherSizeBounds`,
+`MatchIterations`, `MinMatches`, `MinMatchFraction`; dithering, `DitherStep`, `DitherPause`, `DitherSizeBounds`,
 `AxisStep`, `CoverageTight`, `CoverageMid`, `CoverageLoose`, `RunMinFrames`,
 `HotPixelRunMax`; the drift-aware verdict and the pattern, `WalkingStreakVisible`,
 `WalkingSharedFraction`, `PatternPilingFactor`,
 `PatternCrop`, `PatternHotSigma`, `PatternMinFrames`, `PatternClusterFraction`,
-`PatternSharePx`; the drift pairs and the polar alignment, `DriftMinPairs`,
+`PatternClusterWidths`, `PatternSharePx`; the drift pairs and the polar alignment, `DriftMinPairs`,
 `PolarDriftFwhmFraction`, `PolarRotationMinHours`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
 `CloudStarFraction`, `BackgroundJumpPct`, `BackgroundNeighbours`; trends, `TrendFrames`,
 `DewFwhmRise`, `DewHaloRise`, `FocusHeldFraction`, `SwampingRatioOk`; the RA axis from the
@@ -71,6 +71,20 @@ where the reference's centre lands in the frame, so a dither that moved the moun
 as a positive Dx. Rotation is `atan2(b, a)`. With fewer than 10 matches the frame has no
 position; on the Veil frames 500 to 550 of 600 match with an RMS of 0.3 to 0.8 px.
 
+Two things are not the prototype's (ADR 0049). `Align`, the registration proper, also fails
+when its last round matched under `Th.MinMatchFraction` of the shorter list: the vote is for one
+shift, so a field turned by 0.7 degrees or more smears it (at 1 degree the offset at a corner
+of a D3300 frame is 63 px from the one at the centre, eight bins), the rounds then start from a
+wrong shift, and a fit can settle on some
+ten stars that happen to pair up, with a shift and a rotation of its own. And `Register` calls
+`Align` a second time for a frame that failed, with the frame's stars turned by 180 degrees
+about (width, height) / 2: a frame taken after a meridian flip is the same field upside down,
+which no shift maps, and turned back it aligns like any other. Such a frame comes back failed
+with `Flipped` set and still has no position: its place on the sensor says nothing against the
+frames before the flip, whose pattern lands elsewhere on the sky. `SeriesAnalyzer` flags it
+`AfterFlip` in place of `Unregistered`, and `SeriesReport.FlipRows` puts the `meridian flip` row
+before the others of DITHERING, in the console's rows and in the window's (R-087).
+
 ## Dithering (`DitherAnalyzer`)
 
 Steps are differences of consecutive positions; a step needs both frames registered. A move
@@ -82,8 +96,9 @@ within the radius of the stretch's first frame. `SpotRun` is the per-frame view 
 10 px, filled from `runsLoose` (the ordinal in the run, its length, its first frame; null
 outside a run), for the table cell and the map ring of R-034 (ADR 0011). `Clusters` is the
 greedy clustering behind the distinct counts; its sizes also give `LargestClusterTight`, the
-biggest group of frames at 3 px, which the pattern analyzer reads to know whether a pixel can
-have seen a star in half the frames. `SharingPairs` counts the pairs of registered frames
+biggest group of frames at 3 px, which only the diagnostic log reads since 2026-11-13, and,
+through `LargestCluster(x, y, radius)`, the biggest group at the distance the pattern analyzer
+asks for, to know whether a pixel can have seen a star in half the frames. `SharingPairs` counts the pairs of registered frames
 closer than `Th.PatternSharePx`, and `PatternSurviving` is `(n + 2 pairs) / n^2`, how much of
 one frame's pattern the mean of the stack keeps (R-048): the n copies of 1/n each, plus the
 pairs that put the same pixels on the same pixels.
@@ -159,10 +174,19 @@ modelled: the lower bound is that much soft on a field that sets.
 (the shorter side rounded down to even on a small frame), starting at an even row and column
 so the crop's CFA phase is the frame's. `PatternAnalyzer.Analyze` keeps the crops of the first
 crop's size, refuses with a status under `Th.PatternMinFrames` crops, under two registered
-frames, or when `DitherAnalysis.LargestClusterTight` reaches `Th.PatternClusterFraction` of
-the registered frames (the frames stayed put: a star would sit on the same pixels in half the
+frames, or when the largest group of frames reaches `Th.PatternClusterFraction` of the
+registered frames (the frames stayed put: a star would sit on the same pixels in half the
 frames and the median would read it as pattern), and otherwise builds the per-pixel median
-across the crops with `Raster.Median` on a reused buffer. The frames are not registered on
+across the crops with `Raster.Median` on a reused buffer. The group is
+`DitherAnalyzer.LargestCluster` on the positions `SeriesRun` hands over, the greedy clustering
+of the dithering tables at a distance of `Th.PatternClusterWidths` times the stars' width (the
+median over the frames used of `FrameMeasurement.FwhmMedian`), `Th.CoverageTight` at least and
+when no frame has a width; `SensorPattern` keeps the distance, the group and whether the width
+set it, for the report's sentence. The distance follows the stars because what must move off a
+pixel is a star's core, and a bright one's is wider than its FWHM: a pixel between two groups
+of frames closer than that sees the star from both. Until 2026-11-13 the distance was 3 px
+whatever the stars, and on the Smida session two stars were counted as 13 hot pixels (ADR
+0050). The frames are not registered on
 purpose: the sky and the stars move with the dither and the drift, the sensor does not, and
 the median of n frames carries about 1.25 / sqrt(n) of one frame's noise, so a warm pixel of 3
 sigma stands clear of it from 7 frames on. Per CFA position the median goes through
@@ -247,7 +271,11 @@ pixel minus its 5 x 5 median in the same window, which overestimates sigma by a 
 so it is corrected by the ratio of the pair sigma to the same estimator on the bias. The shot
 variance is total minus read; the swamping ratio shot over read variance; the penalty
 `sqrt(1 + 1/ratio) - 1`. On Veil: 9 to 11 in red, 40 to 60 in green and blue, as the hand
-report found.
+report found. `SeriesAnalyzer` takes the sample: the first, the middle and the last of the
+measured frames, those flagged `ShortExposure` left out (unless every measured frame is,
+when they are sampled all the same), since a frame with almost no sky
+reads a ratio near zero that the summary's verdict, the weakest channel of the sample, would
+take for the session's (ADR 0047).
 
 ## The report and the files (`SeriesReport`, `SeriesOutputs`)
 

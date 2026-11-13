@@ -66,7 +66,9 @@ internal static class Th
     internal const double ShapePeakSigmas = 20.0;
 
     /// <summary>
-    /// ... and below this fraction of the scale, so a saturated star does not vote on shape.
+    /// ... and below this fraction of the scale, the peak taken above the sky. A saturated star
+    /// does not vote on shape whatever the sky: the analyzer also leaves out a star with a raw
+    /// pixel within <see cref="SaturationMargin"/> of the top.
     /// </summary>
     internal const double ShapePeakMaxFraction = 0.8;
 
@@ -171,6 +173,15 @@ internal static class Th
 
     /// <summary>Fewer matched stars than this and the registration failed.</summary>
     internal const int MinMatches = 10;
+
+    /// <summary>
+    /// ... and so did one whose last round matched under this fraction of the shorter of the two
+    /// star lists. Measured on 2026-11-13 (ADR 0049): a wrong fit, of a field turned by 0.7 or
+    /// 1.0 degrees, held on 10 and 11 stars of 576 and 580 (2 %); a right one matched 92 % or
+    /// more on the synthetic fields and at least 62 %, 84 % and 90 % on the three recorded
+    /// sessions.
+    /// </summary>
+    internal const double MinMatchFraction = 0.2;
 
     // ---- dithering (R-019 to R-021)
 
@@ -291,10 +302,22 @@ internal static class Th
     internal const int PatternMinFrames = 7;
 
     /// <summary>
-    /// The median is clean of stars while the largest cluster of frames at CoverageTight holds
-    /// under this fraction of the registered frames.
+    /// The median is clean of stars while the largest group of frames within
+    /// <see cref="PatternClusterWidths"/> star widths holds under this fraction of the registered
+    /// frames.
     /// </summary>
     internal const double PatternClusterFraction = 0.5;
+
+    /// <summary>
+    /// The distance that group is judged at, in widths (FWHM) of the session's stars, never under
+    /// <see cref="CoverageTight"/>: a bright star's core is wider than its FWHM, and two groups of
+    /// frames closer than this put it on the same pixels. Measured on 2026-11-13 (ADR 0050): at
+    /// three widths the Smida session's largest group is 20 frames of 32 (13 of its 14 hot
+    /// pixels were two stars) and the Veil sessions' 12 of 87 and 9 of 82; synthetic frames
+    /// drifting 0.17 to 0.5 px a frame are refused, and those moving 1 px or more a frame, which
+    /// read no false hot pixel, are measured.
+    /// </summary>
+    internal const double PatternClusterWidths = 3.0;
 
     // ---- frame classes (R-022)
 

@@ -184,6 +184,38 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   libraw's own exception; the reader now reports it as an unreadable file, `<file>: libraw nu
   poate citi fisierul`, so the console prints the `EROARE:` line and exits 1 (R-007, ADRs 0019
   and 0020).
+- The exposure verdict of the summary could come from a frame too short to stack: the three
+  frames the shot/read ratio is measured on (the first, the middle and the last) are now taken
+  among the frames that are not under half the usual exposure, so a 0.2 s last frame no longer
+  turns the session's verdict to `MARGINAL` (R-024, ADR 0047; CR-001 of the review of
+  2026-11-13).
+- Under a bright sky (from about 20 % of the scale: light pollution, the moon, a long exposure)
+  saturated stars were measured for width and elongation, and being the brightest they came
+  first, though a clipped star reads wider than it is. A saturated star is now left out of the
+  shapes whatever the sky (R-014; CR-002 of the review of 2026-11-13).
+- With FITS lights directly in the folder (no `lights\`), Siril's stacked result beside them
+  (`result.fit`) was counted as a light: one frame too many, with the stack's exposure, time,
+  stars and sky in the session's figures. A FITS whose header says it is a stack (`STACKCNT` or
+  `NCOMBINE` above 1) is no longer a light, whatever its name (R-002, ADR 0048; CR-003 of the
+  review of 2026-11-13).
+- A frame turned against the first by about 0.7 degrees or more could come back as aligned on
+  some ten stars of 600, with a wrong position: two dither moves that did not happen. An
+  alignment that matches under a fifth of the stars now fails, and the frame reads `could not be
+  aligned` (R-018, ADR 0049; CR-004 of the review of 2026-11-13).
+- After a meridian flip no frame could be aligned, and nothing said that the dithering, the
+  drift and the fixed pattern described the first part of the night only. Such a frame is now
+  recognised (it aligns when turned upside down): its reason reads `taken after the meridian
+  flip ...` and DITHERING opens with a `meridian flip` row that names the frames and says what
+  the figures cover. The frames after the flip are still not measured for position (R-087, ADR
+  0049; CR-004).
+- The fixed pattern counted stars as hot pixels when the frames had barely moved: it was read
+  whenever no group of frames within 3 px held half of them, whatever the stars' width, so a
+  bright star sitting between two close groups of frames, or frames drifting slowly without
+  dithering, left it in. On the Milky Way session of 2026-08-12 (20 mm, three spots) 13 of the
+  14 hot pixels were two stars. The group is now judged within three times the stars' width,
+  and such a session reads `cannot be measured (the frames stayed in place too much ...; the
+  largest group within 13 px, three times the stars' width, has 20 frames of 32)` (R-046, ADR
+  0050; CR-005 of the review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).
@@ -202,6 +234,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   three short frames deleted, no darks, and the stack's plate solve at the root, which gives the
   RA axis; its drift and walking-noise figures move with the frames (1.19 px per exposure instead
   of 1.97), its verdicts stay. No code changed.
+- The validation cases V-001, V-008 and V-014 follow their session folders as they are on
+  2026-11-13: 30 and 35 darks where there were none. Both sessions hold a plate-solved stack at
+  their root again, and keep their RA axis and polar figures (`docs/validation.md`). V-013's
+  fixed pattern is no longer measured (CR-005, above). No code changed for the three.
 
 ## [1.0.0] - 2026-10-25
 
