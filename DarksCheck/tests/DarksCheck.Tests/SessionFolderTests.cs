@@ -95,7 +95,10 @@ public class SessionFolderTests
         Assert.Empty(SessionFolder.FramesIn(only.Dir));
     }
 
-    /// <summary>CR-001's second case: 35 darks with 35 sidecars were over the cap of 60, so 18 good darks were skipped.</summary>
+    /// <summary>
+    /// CR-001 on a whole session: sidecars beside every frame of every group leave the three lists as
+    /// they were. The frame cap picks from these lists, so a file that is not listed takes no dark's place.
+    /// </summary>
     [Fact]
     public void R002_SidecarsBesideTheDarksLeaveTheSessionAsItIs()
     {

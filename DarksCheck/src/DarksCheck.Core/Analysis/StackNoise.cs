@@ -38,16 +38,22 @@ namespace DarksCheck.Core;
 internal sealed record StackNoise(double SkyAdu, double SkySigmaAdu, int Lights, double MasterNoiseAdu)
 {
     /// <summary>
-    /// True when a light is at other settings than the darks, so its figures were brought to the
-    /// darks' before they entered the medians (<see cref="LightFigures.ToDarks"/> is not 1).
+    /// True when a light is at other settings than the darks as check 1 judges it (R-007):
+    /// another ISO, or an exposure further than <see cref="Th.ExposureTolerance"/> from the
+    /// darks'. Every light's figures are brought to the darks' settings, also one a hair off
+    /// their exposure; this says the bringing is worth a word in the report.
     /// </summary>
     internal bool Scaled { get; init; }
 
     /// <summary>
-    /// How far from 1 a light's <see cref="LightFigures.ToDarks"/> must be for the light to count
-    /// as being at other settings than the darks: above the rounding of two equal factors.
+    /// Whether a factor to the darks' ADU is that of a light at other settings than the darks:
+    /// further from 1 than <see cref="Th.ExposureTolerance"/> of the larger of the two factors,
+    /// which for one ISO is <see cref="MatchAnalyzer.SameExposure"/>'s bound on the two exposures;
+    /// an ISO step is always beyond it.
     /// </summary>
-    private const double ScaledTolerance = 1e-9;
+    /// <param name="toDarks">The light's <see cref="LightFigures.ToDarks"/>, above 0.</param>
+    /// <returns>True when the light is at other settings.</returns>
+    internal static bool OtherSettings(double toDarks) => Math.Abs(toDarks - 1) > Th.ExposureTolerance * Math.Max(toDarks, 1);
 
     /// <summary>The lights' share of the mean stack's per-pixel noise, sigma / sqrt(N).</summary>
     internal double LightsShareAdu => SkySigmaAdu / Math.Sqrt(Lights);
@@ -87,7 +93,7 @@ internal sealed record StackNoise(double SkyAdu, double SkySigmaAdu, int Lights,
                 // master's noise below is in the darks' ADU, and the two add in one unit
                 sky.Add(f.SkyMedian[referencePlane] * f.ToDarks);
                 sigma.Add(f.SkySigma[referencePlane] * f.ToDarks);
-                scaled |= Math.Abs(f.ToDarks - 1) > ScaledTolerance;
+                scaled |= OtherSettings(f.ToDarks);
             }
         }
 

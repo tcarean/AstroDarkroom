@@ -245,6 +245,17 @@ public class LightsAndIndexTests
         Assert.Contains("    ATENTIE            : dark-urile partenerului nu spun ISO-ul sau expunerea; s-au comparat cu ale sesiunii ca facute la aceleasi setari", ra, StringComparison.Ordinal);
         Assert.Contains("    dark-uri / partener: pixelii fierbinti sunt in dark-urile sesiunii de 1.0", ra, StringComparison.Ordinal);
 
+        // the count above is 0 on both sides (120 ADU against a level of 200), so the level itself is pinned here:
+        // darks 2.5 times as hot pass the session's 200 ADU in the file (50 ADU-eq at ISO 1600), and the silent
+        // partner's 120 ADU, read at the same factor, stay under it; at its own factor of 1 they passed 50
+        using SessionFixture hotter = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice, HotFactor = 2.5 }, iso: 1600);
+        PartnerAnalysis ph = Assert.IsType<PartnerAnalysis>(Run(hotter, partnerSilent.Root).Partner);
+        Assert.Equal(SilentSide.Partner, ph.Silent);
+        Assert.InRange(ph.OwnOverPartner.Ratio, 2.4, 2.6);
+        Assert.Equal(20, ph.OwnHot50);
+        Assert.Equal(0, ph.OwnHot50InPartner50);
+        Assert.Equal(0, ph.PartnerHot50);
+
         // the session is the silent one
         DarkSeriesResult b = Run(silent, partnerAt1600.Root);
         PartnerAnalysis pb = Assert.IsType<PartnerAnalysis>(b.Partner);

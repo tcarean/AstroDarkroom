@@ -982,6 +982,42 @@ public partial class DarkSeriesTests
         }
     }
 
+    /// <summary>
+    /// Review of the CR-003 fix: a light a hair off the darks' exposure, as one of a real session's
+    /// was (118.5 s among 119.2 s), made the sky row say the lights are at other settings, under a
+    /// check 1 that calls them the same.
+    /// </summary>
+    [Fact]
+    public void R080_LightsWithinTheExposureToleranceAreNotCalledOtherSettings()
+    {
+        static SyntheticLight L(int i) => new() { Seed = 300 + i, Hot = SyntheticLight.Lattice };
+        static SyntheticDark D(int i) => new() { Seed = 100 + i, Hot = SyntheticLight.Lattice };
+        static string Sky(DarkSeriesResult r) => ScaleReport.Rows(r).Single(x => x.Label == "cer").Value;
+
+        // darks of 120 s, lights of 118.5 s: 1.25 % apart, inside the 2 % check 1 calls one exposure
+        using SessionFixture near = new SessionFixture().WithDarkSeries(6, D).WithLights(4, L, exposure: 118.5);
+        DarkSeriesResult rn = Run(near);
+        Assert.Equal(Verdict.Ok, rn.Inventory.Match.DarksVsLights);
+        // the figures are still brought to the darks' exposure, as check 9 brings them
+        Assert.All(rn.Lights!.Frames, f => Assert.Equal(120 / 118.5, f.ToDarks, 9));
+        Assert.False(StackNoise.Of(rn.Lights, rn.ReferencePlane, rn.Darks.Noise.MasterNoise)!.Scaled);
+        Assert.DoesNotContain("socotite pentru", Sky(rn), StringComparison.Ordinal);
+        Assert.EndsWith(" (pixelii verzi G1, din 4 lights)", Sky(rn), StringComparison.Ordinal);
+
+        // the same the other way round, lights a little longer than the darks
+        using SessionFixture nearLong = new SessionFixture().WithDarkSeries(6, D).WithLights(4, L, exposure: 122);
+        DarkSeriesResult rl = Run(nearLong);
+        Assert.Equal(Verdict.Ok, rl.Inventory.Match.DarksVsLights);
+        Assert.False(StackNoise.Of(rl.Lights, rl.ReferencePlane, rl.Darks.Noise.MasterNoise)!.Scaled);
+
+        // 110 s is another exposure for check 1, and for the row
+        using SessionFixture far = new SessionFixture().WithDarkSeries(6, D).WithLights(4, L, exposure: 110);
+        DarkSeriesResult rf = Run(far);
+        Assert.Equal(Verdict.Warning, rf.Inventory.Match.DarksVsLights);
+        Assert.True(StackNoise.Of(rf.Lights, rf.ReferencePlane, rf.Darks.Noise.MasterNoise)!.Scaled);
+        Assert.EndsWith("; lights-urile sunt la alte setari decat dark-urile, asa ca cifrele sunt socotite pentru ISO-ul si expunerea dark-urilor", Sky(rf), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R080_TheFirstParagraphSaysWhenTheCameraIsNotInTheTable()
     {

@@ -110,7 +110,8 @@ internal sealed record TraceFigures(int Pixels, double PerUnit, double Median, i
 /// subtraction leaves, and the verdict (R-050 to R-052, R-067).
 /// </summary>
 /// <param name="Used">How many lights decoded, at least 1.</param>
-/// <param name="AssumedSettings">How many were read at the darks' settings.</param>
+/// <param name="AssumedSettings">How many do not say their ISO or exposure and were read at the
+/// darks' settings; the lights that say theirs while the darks do not are <see cref="DarksSilent"/>.</param>
 /// <param name="Frames">Every light, in file order.</param>
 /// <param name="PersistentThreshold">The lights a pixel must be isolated-hot in to be
 /// persistent: ceil(<see cref="Th.PersistentFraction"/> x used).</param>
@@ -441,8 +442,8 @@ internal static class LightsAnalyzer
     /// <param name="h">The mosaic's height.</param>
     /// <param name="black">The light's black level, in raw ADU.</param>
     /// <param name="white">The light's white level, in raw ADU.</param>
-    /// <param name="normL">The light's normalisation factor.</param>
-    /// <param name="assumed">True when the light was read at the darks' settings.</param>
+    /// <param name="normL">The factor the light's ADU are divided by (<see cref="FactorOf"/>).</param>
+    /// <param name="assumed">True when the light does not say its ISO or its exposure.</param>
     /// <param name="darkExcess">The dark master minus its black, row-major, in raw ADU.</param>
     /// <param name="normD">The darks' normalisation factor.</param>
     /// <param name="ampIdx">The mosaic indices of the dark's amplitude pixels.</param>

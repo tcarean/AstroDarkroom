@@ -205,7 +205,8 @@ another limit, reading nothing again (the window's dropdown, R-123).
 
 With lights it takes `LightsAnalyzer.NoiseOnPlane` on the reference plane: the median over the
 decoded lights of `LightFigures.LocalSigma` (how much a pixel differs from its neighbours), each
-divided by its own normalisation, and how many lights gave it; times the darks' normalisation
+divided by its factor (`LightsAnalyzer.FactorOf`: its own, or the darks' when either set does
+not say its settings, ADR 0053), and how many lights gave it; times the darks' normalisation
 it is `StackLimit.LightNoise`, in the darks' raw ADU, so it compares with the master's noise.
 `StackLimit.ShareAdu` is that noise over sqrt(lights), the lights' own part of the stack's
 noise. The master is subtracted from every light alike, so without dithering its noise adds
@@ -251,7 +252,9 @@ subtracted from every light alike, so its noise does not average out). Both side
 are in the darks' raw ADU: each light's sky median and sigma are multiplied by
 `LightFigures.ToDarks`, the darks' factor over the light's, which `LightsAnalyzer.Analyze` sets
 from `FactorOf` when it measures the light, so `StackNoise.Of` needs no settings of its own;
-`StackNoise.Scaled` says a light was not at the darks' settings, and the `cer` row then says the
+`StackNoise.Scaled` says a light was not at the darks' settings as check 1 judges them
+(`StackNoise.OtherSettings`: a factor further from 1 than `Th.ExposureTolerance`, so a light a
+hair off the darks' exposure is brought to it without a word), and the `cer` row then says the
 figures were worked out for the darks' ISO and exposure. Check 9 brings the noise of a light to
 the darks' settings the same way, through `NoiseOnPlane`.
 `ScaleReport.AgainstMasters` turns a light in raw ADU into the words and the bold parts of its
@@ -289,7 +292,8 @@ first decoded frame's settings and the stack's normalisation, the index and labe
 master, the session's darks over it (`IndexAnalyzer.SharedRatios`, the partner as reference),
 the lights over it (`IndexAnalyzer.Chain`), and the overlap of the two hot-pixel sets at
 `Th.PartnerOverlapAdu` (50 ADU-eq): the session's pixels above 50 that the partner has above
-50, and the partner's above 50 that the session has above `Th.HotAdu`, each at its own
+50, and the partner's above 50 that the session has above `Th.HotAdu`, each at its own (the
+partner's at the session's when one of the two does not say its settings, ADR 0053)
 normalisation. Each group is released before the next is decoded. A
 failure of the lights or of the partner is an error carried in the result (`LightsError`,
 `PartnerError`), printed in its section, and does not stop the rest of the report. `DarkReport`

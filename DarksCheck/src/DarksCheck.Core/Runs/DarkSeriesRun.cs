@@ -66,7 +66,7 @@ internal sealed record RunProgress(string Phase, int Done, int Total);
 /// <param name="Index">The darks' index (R-060).</param>
 /// <param name="Label">The label for the darks' folder name (R-061).</param>
 /// <param name="LightsIndex">The lights' equivalent index (R-064); NaN without measured
-/// lights.</param>
+/// lights, and for lights that show none of the dark's hot pixels.</param>
 /// <param name="Lights">The lights measured against the dark, or null when there are no lights or
 /// they failed.</param>
 /// <param name="LightsError">Why the lights could not be measured (in the run's language), or

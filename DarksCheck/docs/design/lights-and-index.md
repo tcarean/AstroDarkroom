@@ -104,7 +104,7 @@ folder's.
 ## The matching
 
 `SharedRatios(own, reference)` walks both masters, same size, and keeps the pixels both have
-above `Th.MatchMinAdu` (20 ADU-eq, each at its own normalisation) and both under
+above `Th.MatchMinAdu` (20 ADU-eq, each at the normalisation the caller passes for it) and both under
 `Th.AmplitudeMaxFraction` of white, returning the per-pixel ratio of normalised excesses.
 `Match` reduces any list of ratios to a `MatchFigures`: the median, the quartiles, the degrees
 `Th.DoublingCelsius x log2(median)` and the verdict `Judge`: `Direct` within
@@ -124,8 +124,8 @@ leaves little (R-067, ADR 0044). `LightsAnalyzer.TracesOf` runs at the end of `A
 figures already there. The noise of a light per CFA position (`LightsAnalyzer.NoiseOnPlane`,
 which also says how many lights gave it, and which check 9 reads for the lights' stack, ADR 0051)
 is the median over the decoded
-lights of `LightFigures.LocalSigma[p]`, each divided by its own normalisation (the darks' for a
-light with assumed settings), so in ADU-eq. For every amplitude pixel (`ampIdx`) on a position
+lights of `LightFigures.LocalSigma[p]`, each divided by its own normalisation (the darks' when the
+light or the darks do not say their settings, `FactorOf`), so in ADU-eq. For every amplitude pixel (`ampIdx`) on a position
 whose noise is positive, the master's excess in ADU-eq over that noise is the trace it leaves
 per unit of `|ratio - 1|`; the position of mosaic index `i` is `(((i / w) & 1) << 1) | ((i % w)
 & 1)`, the order `LocalSigma` is filled in. `TraceFigures.PerUnit` is the median of those, `k`.
