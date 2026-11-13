@@ -39,11 +39,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         TextOptions.TextFormattingMode="Display"
         Hyperlink.RequestNavigate="OpenLink">
 
-  <!-- "Despre" goes through ApplicationCommands.Help, whose default gesture is F1: the button
-       and the key reach the same handler without a command on the view-model - which may not
-       open windows, so as to stay testable. -->
+  <!-- "Help" goes through ApplicationCommands.Help, whose default gesture is F1: the button
+       and the key reach the same handler, which opens the manual at the section of what is on
+       screen (R-141, ADR 0112). "About" opens from its own button only. -->
   <Window.CommandBindings>
-    <CommandBinding Command="Help" Executed="ShowAbout" />
+    <CommandBinding Command="Help" Executed="ShowHelp" />
   </Window.CommandBindings>
 
   <Grid>
@@ -84,9 +84,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <Button Content="{l:T En='Choose folder...', Ro='Alege folder...'}" Click="ChooseFolder"
                   IsEnabled="{Binding CanChooseFolder}" />
 
-          <!-- rightmost, at the edge of the bar; it stays active during the analysis too, because
-               it touches nothing of what runs -->
-          <Button Content="{l:T En='About', Ro='Despre'}" Command="Help" ToolTip="{l:T En='Version, licence, components (F1)', Ro='Versiune, licenta, componente (F1)'}"
+          <!-- Help and About stay active during the analysis too, because they touch nothing of
+               what runs. Help's icon is the theme's HelpIcon; the automation name is the word,
+               since the content is not a plain string. -->
+          <Button Command="Help" Margin="10,0,0,0"
+                  AutomationProperties.Name="{l:T En='Help', Ro='Ajutor'}"
+                  ToolTip="{l:T En='The manual, at the section of this tab (F1)', Ro='Manualul, la sectiunea tabului curent (F1)'}">
+            <StackPanel Orientation="Horizontal">
+              <Image Source="{StaticResource HelpIcon}" Width="16" Height="16" VerticalAlignment="Center" />
+              <TextBlock Text="{l:T En='Help', Ro='Ajutor'}" Margin="7,0,0,0" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+
+          <!-- rightmost, at the edge of the bar -->
+          <Button Content="{l:T En='About', Ro='Despre'}" Click="ShowAbout" ToolTip="{l:T En='Version, licence, components', Ro='Versiune, licenta, componente'}"
                   Margin="10,0,0,0" />
         </StackPanel>
       </Grid>
@@ -189,22 +200,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </Style>
         </local:AccessibleTabControl.Style>
 
-        <TabItem Header="{l:T En='Structure', Ro='Structura'}">
+        <!-- each tab's Tag is its section of the manual, which Help and F1 open (R-141) -->
+        <TabItem Header="{l:T En='Structure', Ro='Structura'}" Tag="{x:Static local:ManualSection.Structure}">
           <local:StructureView DataContext="{Binding Structure}" />
         </TabItem>
-        <TabItem Header="End to end">
+        <TabItem Header="End to end" Tag="{x:Static local:ManualSection.EndToEnd}">
           <local:LightView DataContext="{Binding Light}" />
         </TabItem>
-        <TabItem Header="{l:T En='Exposure', Ro='Expunere'}">
+        <TabItem Header="{l:T En='Exposure', Ro='Expunere'}" Tag="{x:Static local:ManualSection.Exposure}">
           <local:ExposureView DataContext="{Binding Exposure}" />
         </TabItem>
-        <TabItem Header="Histogram">
+        <TabItem Header="Histogram" Tag="{x:Static local:ManualSection.Histogram}">
           <local:HistEqView DataContext="{Binding HistEq}" />
         </TabItem>
-        <TabItem Header="{l:T En='Synthetic', Ro='Sintetic'}">
+        <TabItem Header="{l:T En='Synthetic', Ro='Sintetic'}" Tag="{x:Static local:ManualSection.Synthetic}">
           <local:SyntheticView DataContext="{Binding Synthetic}" />
         </TabItem>
-        <TabItem Header="Split">
+        <TabItem Header="Split" Tag="{x:Static local:ManualSection.Split}">
           <local:SplitView DataContext="{Binding Split}" />
         </TabItem>
       </local:AccessibleTabControl>

@@ -19,7 +19,8 @@
 //
 // Outside a navigation window a Hyperlink only raises RequestNavigate, a routed event: each
 // window that shows links catches it on its root and calls Open here - the "Despre" window for
-// the licence's and the components' links, the main window for the links its tabs show.
+// the licence's and the components' links, the main window for the links its tabs show. The
+// main window also opens the manual here, on its Help button and F1 (R-141).
 
 using System;
 using System.ComponentModel;
@@ -46,13 +47,23 @@ namespace FlatCheck.Wpf
         internal static void Open(RequestNavigateEventArgs e)
         {
             e.Handled = true;
+            Open(e.Uri.AbsoluteUri);
+        }
+
+        /// <summary>
+        /// Opens an address in the system's browser: a clicked link's, or the manual's for the
+        /// Help button and F1 (R-141). A system without an associated browser is only logged.
+        /// </summary>
+        /// <param name="address">An absolute http or https address.</param>
+        internal static void Open(string address)
+        {
             try
             {
-                Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+                Process.Start(new ProcessStartInfo(address) { UseShellExecute = true });
             }
             catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
             {
-                Log.Debug(ex, "the link " + e.Uri + " could not be opened in a browser");
+                Log.Debug(ex, "the link " + address + " could not be opened in a browser");
             }
         }
     }

@@ -66,7 +66,7 @@ namespace FlatCheck.Wpf
         static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
         /// <summary>Opens a link of the window, the licence's or a component's, in the system's
-        /// browser, through <see cref="ExternalLink.Open"/>.</summary>
+        /// browser, through <see cref="ExternalLink.Open(System.Windows.Navigation.RequestNavigateEventArgs)"/>.</summary>
         /// <param name="sender">The window, where the link's event arrives.</param>
         /// <param name="e">The navigation; marked handled.</param>
         void OpenLink(object sender, RequestNavigateEventArgs e) => ExternalLink.Open(e);

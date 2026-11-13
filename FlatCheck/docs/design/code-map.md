@@ -475,6 +475,11 @@ a library extraction and not a copy is ADR 0011.
     (`UseShellExecute`; a computer without a browser only logs it). The "Despre" window and
     the main window catch `Hyperlink.RequestNavigate` on their root and call it (ADR 0037);
     the main window's catches the Structure tab's link to Adobe's DNG Converter (ADR 0073).
+    `Open(string)` opens a bare address, the manual's for the Help button and F1 (R-141).
+  - `Presentation/Manual.cs` - `ManualSection` (the eight sections of the wiki's FlatCheck
+    page the window can open) and `Manual`: the page, each section's address, and
+    `SectionFor`, which section the window's state and selected tab mean (R-141, ADR 0112;
+    `two-applications.md`).
   - `Presentation/RasterBitmaps.cs` - a byte raster straight into a frozen `BitmapSource`
     (`Gray8` / `Rgb24`), no PNG. The maps still go through `PngWriter` because the PNG *is*
     the file the console writes and the window shows those exact bytes; the equalised

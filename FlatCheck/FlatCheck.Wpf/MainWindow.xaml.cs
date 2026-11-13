@@ -19,8 +19,8 @@
 //
 // Everything that means a decision sits in MainViewModel. Here remain only the main window's
 // own dialogs and child windows (the folder dialog, the "Despre" window, the Siril run window,
-// the question when closing during a split), the links the tabs show, opened in the browser,
-// and the request to DWM to darken the title bar.
+// the question when closing during a split), the links the tabs show and the manual (Help, F1),
+// opened in the browser, and the request to DWM to darken the title bar.
 // The other dialogs live in their views (SirilRunWindow's stop question), or reach a
 // view-model only as a delegate it is given (the Sintetic tab's overwrite
 // question, MainViewModel.AskOnScreen by default), so that a test can answer
@@ -109,18 +109,41 @@ namespace FlatCheck.Wpf
             })));
         }
 
-        /// <summary>The "Despre" button and F1, through ApplicationCommands.Help - see
-        /// MainWindow.xaml. The window fits the work area of this window's screen (R-125).</summary>
-        /// <param name="sender">The window.</param>
-        /// <param name="e">The command.</param>
-        void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        /// <summary>The "Despre" button. The window fits the work area of this window's screen
+        /// (R-125).</summary>
+        /// <param name="sender">The button.</param>
+        /// <param name="e">The click.</param>
+        void ShowAbout(object sender, RoutedEventArgs e)
         {
             Log.Info("About opened");
             new AboutWindow(ScreenArea.WorkAreaOf(this)) { Owner = this }.ShowDialog();
         }
 
+        /// <summary>The view-model the window is bound to, for the tests that drive the window
+        /// through a folder.</summary>
+        internal MainViewModel ViewModel => _vm;
+
+        /// <summary>Opens an address in the browser; <see cref="ExternalLink.Open(string)"/>,
+        /// replaced in the tests so that no browser starts.</summary>
+        internal System.Action<string> OpenAddress { get; set; } = ExternalLink.Open;
+
+        /// <summary>
+        /// The Help button and F1, through ApplicationCommands.Help - see MainWindow.xaml: the
+        /// manual at the section of what is on screen, the selected tab's read from its Tag
+        /// (R-141, ADR 0112).
+        /// </summary>
+        /// <param name="sender">The window.</param>
+        /// <param name="e">The command.</param>
+        void ShowHelp(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            var tab = (Tabs.SelectedItem as System.Windows.Controls.TabItem)?.Tag as ManualSection?;
+            string address = Manual.Url(Manual.SectionFor(_vm.HasFolder, _vm.HasProblem, _vm.IsRunning, tab));
+            Log.Info("Help opened: " + address);
+            OpenAddress(address);
+        }
+
         /// <summary>A link clicked in a tab - the Structure tab's link to Adobe's DNG Converter
-        /// (R-113) - opened in the browser through <see cref="ExternalLink.Open"/>.</summary>
+        /// (R-113) - opened in the browser through <see cref="ExternalLink.Open(System.Windows.Navigation.RequestNavigateEventArgs)"/>.</summary>
         /// <param name="sender">The window, where the link's event arrives.</param>
         /// <param name="e">The navigation; marked handled.</param>
         void OpenLink(object sender, System.Windows.Navigation.RequestNavigateEventArgs e) => ExternalLink.Open(e);
