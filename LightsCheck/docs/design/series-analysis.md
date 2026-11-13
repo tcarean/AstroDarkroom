@@ -173,10 +173,19 @@ modelled: the lower bound is that much soft on a field that sets.
 (the shorter side rounded down to even on a small frame), starting at an even row and column
 so the crop's CFA phase is the frame's. `PatternAnalyzer.Analyze` keeps the crops of the first
 crop's size, refuses with a status under `Th.PatternMinFrames` crops, under two registered
-frames, or when `DitherAnalysis.LargestClusterTight` reaches `Th.PatternClusterFraction` of
-the registered frames (the frames stayed put: a star would sit on the same pixels in half the
+frames, or when the largest group of frames reaches `Th.PatternClusterFraction` of the
+registered frames (the frames stayed put: a star would sit on the same pixels in half the
 frames and the median would read it as pattern), and otherwise builds the per-pixel median
-across the crops with `Raster.Median` on a reused buffer. The frames are not registered on
+across the crops with `Raster.Median` on a reused buffer. The group is
+`DitherAnalyzer.LargestCluster` on the positions `SeriesRun` hands over, the greedy clustering
+of the dithering tables at a distance of `Th.PatternClusterWidths` times the stars' width (the
+median over the frames used of `FrameMeasurement.FwhmMedian`), `Th.CoverageTight` at least and
+when no frame has a width; `SensorPattern` keeps the distance, the group and whether the width
+set it, for the report's sentence. The distance follows the stars because what must move off a
+pixel is a star's core, and a bright one's is wider than its FWHM: a pixel between two groups
+of frames closer than that sees the star from both. Until 2026-11-13 the distance was 3 px
+whatever the stars, and on the Smida session two stars were counted as 13 hot pixels (ADR
+0050). The frames are not registered on
 purpose: the sky and the stars move with the dither and the drift, the sensor does not, and
 the median of n frames carries about 1.25 / sqrt(n) of one frame's noise, so a warm pixel of 3
 sigma stands clear of it from 7 frames on. Per CFA position the median goes through

@@ -989,8 +989,8 @@ internal static class SeriesReport
             PatternStatus.TooFewFrames => T($"cannot be measured (fewer than {Th.PatternMinFrames.ToString(Inv)} frames measured)", $"nu se poate masura (mai putin de {RoCount(Th.PatternMinFrames)}cadre masurate)"),
             PatternStatus.Unregistered => T("cannot be measured (the frames could not be aligned)", "nu se poate masura (cadrele nu s-au putut alinia)"),
             PatternStatus.FramesDidNotMove => T(
-                $"cannot be measured (the frames stayed in place too much and the stars cannot be told apart from the pattern; the largest group in the same spot (within {RunReport.F(Th.CoverageTight, 0)} px) has {FramesWord(r.Dither.LargestClusterTight)} of {r.Dither.Registered.ToString(Inv)})",
-                $"nu se poate masura (cadrele au stat prea mult pe loc si stelele nu se pot desparti de pattern; cel mai mare grup in acelasi loc (la {RunReport.F(Th.CoverageTight, 0)} px) are {FramesWord(r.Dither.LargestClusterTight)} din {r.Dither.Registered.ToString(Inv)})"),
+                $"cannot be measured (the frames stayed in place too much and the stars cannot be told apart from the pattern; {StayedGroup(r)})",
+                $"nu se poate masura (cadrele au stat prea mult pe loc si stelele nu se pot desparti de pattern; {StayedGroup(r)})"),
             _ => T("cannot be measured (no frame read)", "nu se poate masura (niciun cadru citit)"),
         };
         return new(PatternLabel, $"{value}; {darks}");
@@ -1142,6 +1142,27 @@ internal static class SeriesReport
             ]),
             new(T("runs in the same spot", "grupuri in acelasi loc"), [T("distance", "distanta"), T("frames", "cadrele"), T("how many", "cate"), T("how long", "cat timp")], runs),
         ];
+    }
+
+    /// <summary>
+    /// The group of frames the fixed pattern was refused by, in plain words (R-046): its
+    /// distance, three times the stars' width, and its frames of those aligned; the distance
+    /// alone when it is the floor of <see cref="Th.CoverageTight"/>.
+    /// </summary>
+    /// <param name="r">The result of the series run, its pattern refused for frames that stayed.</param>
+    /// <returns>
+    /// `the largest group within 13 px, three times the stars' width, has 20 frames of 32`, or
+    /// `the largest group in the same spot (within 3 px) has 12 frames of 32`.
+    /// </returns>
+    private static string StayedGroup(SeriesResult r)
+    {
+        SensorPattern p = r.Pattern;
+        string px = RunReport.F(p.ClusterRadiusPx, 0), group = FramesWord(p.LargestCluster), all = r.Dither.Registered.ToString(Inv);
+        // Three is said in words; another value of the constant would be said as a figure.
+        string widths = Th.PatternClusterWidths == 3.0 ? T("three times", "de trei ori") : T($"{RunReport.F(Th.PatternClusterWidths, 1)} times", $"de {RunReport.F(Th.PatternClusterWidths, 1)} ori");
+        return p.ClusterByStarWidth
+            ? T($"the largest group within {px} px, {widths} the stars' width, has {group} of {all}", $"cel mai mare grup aflat la cel mult {px} px, {widths} latimea stelelor, are {group} din {all}")
+            : T($"the largest group in the same spot (within {px} px) has {group} of {all}", $"cel mai mare grup in acelasi loc (la {px} px) are {group} din {all}");
     }
 
     /// <summary>

@@ -48,7 +48,8 @@ first part of the night with no word about it. The owner chose on 2026-11-13.
   night is the part of CR-004 a user meets; saying it costs one more registration of the frames
   that failed.
 - **A limit on the fit's residual instead of the share.** The wrong fits read 1.8 px against
-  0.8 px at most on the real frames: a factor of 2, where the share separates by 30.
+  0.8 px at most on the Veil frames of 2026-10-06 (`frames.csv`, column `rms`): a factor of 2,
+  where the share separates by 30.
 - **A vote that follows a rotation.** It would align the frames at 1 degree and more that fail
   today; no recorded session turns by more than 8.5 arcminutes, and a failed frame says so.
 

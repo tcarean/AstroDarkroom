@@ -1,7 +1,7 @@
 # 0015. The walking-noise verdict reads the drift per exposure, and the sensor's pattern comes from the lights' median
 
 Date: 2026-10-10
-Status: accepted 2026-10-10; the `Ok` by the dither rule before the dash is read superseded by 0039
+Status: accepted 2026-10-10; the `Ok` by the dither rule before the dash is read superseded by 0039; the 3 px distance at which the frames' largest cluster is judged before the pattern is read superseded by 0050
 
 ## Context
 

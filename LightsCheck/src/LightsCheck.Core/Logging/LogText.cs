@@ -241,7 +241,8 @@ internal static class LogText
         IEnumerable<string> positions = Enumerable.Range(0, Math.Min(p.Names.Count, Math.Min(p.PatternSigma.Count, p.FrameSigma.Count)))
             .Select(i => p.Names[i] + ": pattern " + Num(p.PatternSigma[i]) + " frame " + Num(p.FrameSigma[i]));
         return "status=" + p.Status + " frames=" + Int(p.Frames) + " cropSize=" + Int(p.CropSize) + " pixels=" + Int(p.Pixels)
-            + " hot=" + Int(p.Hot) + " hotPerMpx=" + Num(p.HotPerMpx) + " sigma=" + List(positions);
+            + " hot=" + Int(p.Hot) + " hotPerMpx=" + Num(p.HotPerMpx) + " clusterRadius=" + Num(p.ClusterRadiusPx)
+            + " largestCluster=" + Int(p.LargestCluster) + " sigma=" + List(positions);
     }
 
     /// <summary>The read noise per CFA position, from the pair of biases.</summary>

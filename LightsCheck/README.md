@@ -142,7 +142,9 @@ minutes. The report's sections:
   - `fixed pattern`: the sensor's fixed pattern, read from the frames laid one on another without
     aligning them, so that the stars move with the dithers and only the pattern stays: its
     strength on each channel, in ADU and as a share of one frame's noise, the hot pixels per
-    million pixels, and whether the session has darks to take it out;
+    million pixels, and whether the session has darks to take it out. It is not measured when
+    half the frames or more stayed within three times the stars' width of one spot: the stars
+    could not then be told apart from the pattern;
   - the verdict, for walking noise and for hot pixels, with its figures (below).
 - **REJECTED**: each bad frame with its reason, its threshold and the axis of its trail, and each
   frame that could not be read. The marginal frames stay in, your choice; their list is in

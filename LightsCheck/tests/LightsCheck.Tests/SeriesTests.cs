@@ -123,6 +123,37 @@ public class SeriesTests
         Assert.StartsWith("cadrul 87 (1 din 87) e facut dupa meridian flip; ", SeriesReport.FlipText([87], 87), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Eight frames that drifted half a pixel each, 3.5 px in all: every one is within three star
+    /// widths of the first, the fixed pattern is not read, and its row says the group and the
+    /// distance it was judged at (R-046). The frames after the first sit 0.3 px down: the
+    /// fixture's star grid repeats every 137 px, and with a shift of exactly 0 on an axis the
+    /// vote, split between two bins, loses to the grid laid one column over.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R046_FramesWithinThreeStarWidthsSayTheGroupAndItsDistance(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        List<SeriesFrame> frames = Enumerable.Range(0, 8).Select(i => new SeriesFrame(0.5 * i, i == 0 ? 0 : 0.3, 1.0, 1)).ToList();
+        using SessionFixture f = new SessionFixture().WithStarSeries(frames);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+
+        Assert.Equal(PatternStatus.FramesDidNotMove, r.Pattern.Status);
+        Assert.True(r.Pattern.ClusterByStarWidth);
+        Assert.InRange(r.Pattern.ClusterRadiusPx, 3 * 2.8, 3 * 3.6);   // three times the width the 3.0 px stars read
+        Assert.Equal(3 * r.Series.SessionFwhm!.Value, r.Pattern.ClusterRadiusPx, 6);
+        Assert.Equal(8, r.Pattern.LargestCluster);
+        string px = r.Pattern.ClusterRadiusPx.ToString("F0", CultureInfo.InvariantCulture);
+        string value = Assert.Single(SeriesReport.DitherRows(r), x => x.Label == (english ? "fixed pattern" : "pattern fix")).Value;
+        Assert.StartsWith(
+            english
+                ? $"cannot be measured (the frames stayed in place too much and the stars cannot be told apart from the pattern; the largest group within {px} px, three times the stars' width, has 8 frames of 8); "
+                : $"nu se poate masura (cadrele au stat prea mult pe loc si stelele nu se pot desparti de pattern; cel mai mare grup aflat la cel mult {px} px, de trei ori latimea stelelor, are 8 cadre din 8); ",
+            value, StringComparison.Ordinal);
+    }
+
     /// <summary>Every class and flag of R-022, end to end on files: the golden series-classes.txt pins the words, this pins the kinds.</summary>
     [Fact]
     public void R022_EveryClassAndFlagAppearsOnTheSyntheticClassesSession()

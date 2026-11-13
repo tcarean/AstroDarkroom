@@ -208,6 +208,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   flip ...` and DITHERING opens with a `meridian flip` row that names the frames and says what
   the figures cover. The frames after the flip are still not measured for position (R-087, ADR
   0049; CR-004).
+- The fixed pattern counted stars as hot pixels when the frames had barely moved: it was read
+  whenever no group of frames within 3 px held half of them, whatever the stars' width, so a
+  bright star sitting between two close groups of frames, or frames drifting slowly without
+  dithering, left it in. On the Milky Way session of 2026-08-12 (20 mm, three spots) 13 of the
+  14 hot pixels were two stars. The group is now judged within three times the stars' width,
+  and such a session reads `cannot be measured (the frames stayed in place too much ...; the
+  largest group within 13 px, three times the stars' width, has 20 frames of 32)` (R-046, ADR
+  0050; CR-005 of the review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

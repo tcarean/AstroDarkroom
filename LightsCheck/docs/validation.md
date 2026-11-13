@@ -37,7 +37,7 @@ scripts in `prototype/`, which read the same libraw through rawpy).
 | V-009 | same, the whole session | words | the trail axis word `RA` on all 22 bad and all 17 marginal frames (angles 77 to 89 degrees in absolute value, coherence 0.94 and 0.86 or more); the `acelasi loc` cells `1/4 de la 57` to `4/4 de la 57` on 57 to 60, `1/10 de la 61` to `10/10 de la 61` on 61 to 70, `-` on 71 and 72 | 2026-10-09 |
 | V-010 | same, the whole session | tables | the five dithering tables of R-036, cell by cell: how often (every 1 frame 12 times, 2 frames 22, 3 once, 4 three times, 5 and 6 once each), how far (median 13.29 px = 81.2", 79.6" until 2026-10-27 at 3.92 um, 10 moves of 5-10 px, 23 of 10-20, 8 of 20+), direction (X = DEC: 6 alone, 11 plus, 2 minus; Y = RA: 28 alone, 11 plus, 24 minus; both 7), coverage (70 frames within 3 px of another, 79 within 5 with 38 distinct spots and 8 runs, 86 within 10 with 25 and 11), the 8 runs at 5 px and the 11 at 10 px with their minutes (61-70, 10 frames, 22 min) | 2026-10-09 |
 | V-012 | `Milkyway-Core/2026-08-12-Smida` (Nikon D3300, Tokina 11-20 at 20 mm f/2.8, SA GTi, a dark site) | inventory | 32 lights, 30 biases, 20 darks, `Nikon D3300`, 119.2 s at ISO 400, first start 2026-08-12 23:22:25, span 4996 s (1 h 23 min), duty 76.3 % | 2026-10-10 |
-| V-013 | same, the whole session | series | 32 good, none marginal or bad; 32 registered; 2 moves, 31 pauses, 29 pauses without a move (the dither of a 135 mm night is under 2 px at 40.4 "/px); 3 distinct spots at 5 and at 10 px, none isolated, longest run at 10 px 12 frames (9-20); median move 15.52 px; rotation -6.3 arcmin; drift -0.07 px/min along Y (-2.8 "/min) over 29 pairs with a pause, approximate, since no two frames were shot back to back; polar alignment not measurable for the same reason; session FWHM 4.17 px; read noise G1 1.3 ADU; swamping of R on frame 1 10.1; RA axis unknown (no solved FITS at the root, no trailed frame); focus held, no dew, hot pixels `ATENTIE` (12 consecutive frames within 3 px), drift 0.17 px per exposure, a dash of 1.9 px in the run of 12, no frame in a stretch whose dash reaches 3 px (R-084), word `Static`; 20 darks; pattern measured on 32 crops: sigma 1.1 / 1.2 / 1.2 / 0.9 ADU on R / G1 / G2 / B (21, 19, 18 and 16 % of a frame's noise), 55 hot pixels per megapixel; 23.4 % of one frame's pattern survives in the mean (104 pairs within 1.5 px; ideal 3.1 %) | 2026-10-10 |
+| V-013 | same, the whole session | series | 32 good, none marginal or bad; 32 registered; 2 moves, 31 pauses, 29 pauses without a move (the dither of a 135 mm night is under 2 px at 40.4 "/px); 3 distinct spots at 5 and at 10 px, none isolated, longest run at 10 px 12 frames (9-20); median move 15.52 px; rotation -6.3 arcmin; drift -0.07 px/min along Y (-2.8 "/min) over 29 pairs with a pause, approximate, since no two frames were shot back to back; polar alignment not measurable for the same reason; session FWHM 4.17 px; read noise G1 1.3 ADU; swamping of R on frame 1 10.1; RA axis unknown (no solved FITS at the root, no trailed frame); focus held, no dew, hot pixels `ATENTIE` (12 consecutive frames within 3 px), drift 0.17 px per exposure, a dash of 1.9 px in the run of 12, no frame in a stretch whose dash reaches 3 px (R-084), word `Static`; 20 darks; pattern not measured, the frames stayed in place too much (the largest group within 12.5 px, three times the stars' width, has 20 frames of 32; ADR 0050); 23.4 % of one frame's pattern survives in the mean (104 pairs within 1.5 px; ideal 3.1 %) | 2026-10-10, the pattern 2026-11-13 |
 | V-011 | same, the whole session | moves | the `dithering` cells of R-038 on ten frames, in the symbol form of R-040 under its default keys (3: `DEC 13 px ↑ S`, 17: `DEC 28 px ↑ S`, 61: `RA 17 px ← V`, 6: `RA 12 px → E`, 5 and 19 and 80 with both components, 1 and 62 `-`) and, over the 41 moves, 24 components west, 11 east, 11 south, 2 north; the nine DEC jumps of 12 px or more the hand analysis counted are all south | 2026-10-10, the arrows re-worded 2026-11-07 |
 | V-014 | `Veil/2026-11-06` (Nikon D3300, Samyang 135 f/2.0, SA GTi; 30 biases, no darks; at the root `result_9908s.fit`, the plate-solved stack of 83 frames) | series | 80 good / 2 marginal / 0 bad (the three short frames of a failing intervalometer, R-085, deleted from `lights\` by the owner on 2026-11-07), the marginal ones 4 and 59 (`DSC_0061`); frame 50 (`DSC_0051`), a 137.5 s shot, good with a note; 82 registered; 75 moves (>= 5 px), 81 pauses, 6 pauses without a move; 52 distinct spots at 5 px, 37 at 10 px, 14 isolated, longest run at 10 px 4 frames (11-14); median move 17.14 px = 104.7"; rotation 5.4 arcmin; drift +0.00 / -0.59 px/min over 6 pairs with a pause, approximate (X / Y); session FWHM 4.70 px; read noise G1 3.0 ADU; swamping of R on frame 1 11.6; RA along Y (from the solved FITS at the root, declination +31.5 degrees); focus held, no dew, hot pixels fine; drift 1.19 px per exposure, a dash of 3.6 px in the run of 4, 4 frames in the one stretch whose dash reaches 3 px (4.9 %, R-084), word `Ok`; polar alignment unknown (under 3 pairs of frames in a row without a pause or a move); no darks; pattern measured on 82 crops: sigma 1.1 / 2.4 / 2.3 / 1.5 ADU on R / G1 / G2 / B (8, 9, 9 and 5 % of a frame's noise), 0 hot pixels per megapixel; 1.5 % of one frame's pattern survives in the mean (8 pairs within 1.5 px; ideal 1.2 %) | 2026-11-07, re-recorded the same evening |
 
@@ -99,6 +99,33 @@ drift instead of editing the figures.
 
 ## History
 
+- 2026-11-13: the first five findings of the code review are fixed (CR-001 to CR-005, ADRs 0047
+  to 0050). One figure moves, at the owner's word in the plan
+  `docs/plans/2026-11-13-fix-cr-001-to-cr-005.md`: V-013's pattern, `Measured` with sigma 1.1 /
+  1.2 / 1.2 / 0.9 ADU and 55 hot pixels per megapixel, becomes `FramesDidNotMove` with no
+  figures. The pattern is now refused when half the frames or more sit within three times the
+  stars' width (12.5 px on Smida, where 20 of 32 do); 13 of the 14 hot pixels behind the 55
+  were two stars (ADR 0050). All 14 cases re-run before the change of the figure with
+  `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Failed: 5, Passed: 9, Skipped: 0, Total:
+  14, Duration: 14 m 53 s`. V-013 failed on that status alone, every other figure of the
+  session as recorded. V-011 (`frame 2: cell 'RA 5 px', expected 'RA 5 px ← V'`) failed as
+  recorded since 2026-10-27, and V-008 would have failed on its polar figures for the same
+  reason, the Veil session of 2026-10-06 holding no solved FITS at its root. Three failures are
+  the folders', not the code's, and their figures are **not re-recorded here; the owner decides**:
+  - V-001 and V-008, `darks`: recorded 0, measured 30. `Veil\2026-10-06-3h\darks\` was made on
+    2026-11-08 at 17:31, after that day's run, and holds 30 raws.
+  - V-014, `raAxis`: recorded `Y`, measured `Unknown`, and `darks`: recorded 0, measured 35. On
+    2026-11-09 the plate-solved `result_9908s.fit` at the root of `Veil\2026-11-06` was replaced
+    by `result_9873s.fit` (82 frames), which carries no plate solve, and `darks\` was added.
+  Every figure of V-008, V-013 and V-014, read side by side without stopping at the first
+  difference, equals its recorded one within its tolerance except those named above: the class
+  counts and the bad frames, the registered frames, the moves and pauses, the spots, the median
+  move, the rotation, the drift, the session FWHM (3.11 against 3.12 and 4.71 against 4.70 px,
+  tolerance 0.05), the read noise, the swamping of R on frame 1 (the sample still frames 1, 44
+  and 87, and 1, 42 and 82), the walking figures and words, the patterns of the two Veil
+  sessions (largest groups of 12 of 87 within 9.8 px and 9 of 82 within 14.1 px) and the pattern
+  surviving. The six frame cases V-002 to V-007 pass, so no saturated star left out of the
+  shapes (CR-002) moves a frame figure beyond its tolerance.
 - 2026-11-08: a median the user reads is said `on average` / `in medie` (ADR 0043); no figure
   of the analysis changed. At the owner's word the same day, before the run, V-010's first
   `cat de mult` cell became `in medie` (was `de obicei`), its `13.29 px = 81.2"` and its

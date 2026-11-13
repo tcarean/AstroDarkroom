@@ -302,10 +302,22 @@ internal static class Th
     internal const int PatternMinFrames = 7;
 
     /// <summary>
-    /// The median is clean of stars while the largest cluster of frames at CoverageTight holds
-    /// under this fraction of the registered frames.
+    /// The median is clean of stars while the largest group of frames within
+    /// <see cref="PatternClusterWidths"/> star widths holds under this fraction of the registered
+    /// frames.
     /// </summary>
     internal const double PatternClusterFraction = 0.5;
+
+    /// <summary>
+    /// The distance that group is judged at, in widths (FWHM) of the session's stars, never under
+    /// <see cref="CoverageTight"/>: a bright star's core is wider than its FWHM, and two groups of
+    /// frames closer than this put it on the same pixels. Measured on 2026-11-13 (ADR 0050): at
+    /// three widths the Smida session's largest group is 20 frames of 32 (13 of its 14 hot
+    /// pixels were two stars) and the Veil sessions' 12 of 87 and 9 of 82; synthetic frames
+    /// drifting 0.17 to 0.5 px a frame are refused, and those moving 1 px or more a frame, which
+    /// read no false hot pixel, are measured.
+    /// </summary>
+    internal const double PatternClusterWidths = 3.0;
 
     // ---- frame classes (R-022)
 
