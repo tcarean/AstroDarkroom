@@ -8,6 +8,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- In Romanian the buttons that move through the Curves Editing and Colours for paper galleries
+  are `Precedenta` and `Urmatoarea` (were `Inapoi` and `Inainte`), so that `Inainte` names one
+  thing on the screen, the Before side of the comparison (ADR 0090).
 - Two figures that are averages are called averages (R-091, ADR 0087): the width of the flat
   areas on the 8-bit sky, which the Format recommendation, Appendix C and the Export tab called
   what a flat area "usually" measures, and the level of the values JPEG changes, which they
@@ -40,6 +43,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   to the whole image as a new FITS, or as a 16-bit uncompressed TIFF with the input's ICC profile
   (the standard sRGB when it had none), written by the tool's own writer; the input is never
   modified.
+- In the Colours for paper tab each variant is compared with the original across a vertical
+  line you drag, labelled Before and After (R-179, ADR 0090): the buttons change the After side
+  only, the original is no longer a position of the list (1 / 3), and the red warning is painted
+  on both sides, each its own. The image zooms with the mouse wheel around the cursor and moves
+  by dragging, as in the Soft proof tab, the two sides together.
 
 - A diagnostic log, for bug reports (R-170 to R-173, ADR 0069): each application writes
   `log\AstroPhotoAnalyzer.log` or `log\AstroPhotoAnalyzer.Wpf.log` beside its executable (or

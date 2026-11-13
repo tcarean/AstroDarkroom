@@ -15,13 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// GamutFitTab.cs - the Culori pentru hartie tab (R-178): the gallery of the original and the
-// three variants of the paper fit, the red layer of what the paper still cannot hold, the
-// evidence of each, the saving as a new FITS or 16-bit TIFF.
+// GamutFitTab.cs - the Culori pentru hartie tab (R-178): the gallery of the three variants of
+// the paper fit, each shown beside the original (R-179), the red layers of what the paper
+// cannot hold, the evidence of each variant, the saving as a new FITS or 16-bit TIFF.
 //
 // It computes nothing: the variants, the previews, the masks, the figures and the sentences
 // come from GamutFitRun; the saving is GamutFitExport's. Here are only the position in the
-// gallery, the box, the commands and the bitmaps. Like Editare Curbe, the content is a run
+// gallery, the box, the commands and the bitmaps; the comparison's line and the zoom are the
+// view's, unknown here (ADR 0090). Like Editare Curbe, the content is a run
 // after the analysis: MainViewModel starts it once the other tabs are filled (ADR 0051), and
 // the tab runs it again by itself when the gallery's area allows a finer preview (ADR 0084).
 
@@ -37,7 +38,10 @@ using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
-    /// <summary>An image of the gallery: the original or a variant of the fit.</summary>
+    /// <summary>
+    /// An image of the tab: a variant of the fit, a position of the gallery, or the original,
+    /// which is the other side of the comparison and no position (R-179).
+    /// </summary>
     public sealed class GamutFitGalleryItem : ObservableObject
     {
         bool _isCurrent, _showOutside;
@@ -65,7 +69,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>The box's state, pushed by the tab so the layer follows it.</summary>
         internal bool ShowOutside { get => _showOutside; set { if (Set(ref _showOutside, value)) Raise(nameof(Overlay)); } }
 
-        /// <summary>The evidence lines, with the core's warning mark; the original's are the figures of the image as it is.</summary>
+        /// <summary>The evidence lines of a variant, with the core's warning mark; the original has none.</summary>
         public IReadOnlyList<CurveEvidenceRow> EvidenceRows { get; init; } = Array.Empty<CurveEvidenceRow>();
 
         internal GamutFitVariant Variant { get; init; }
@@ -74,8 +78,8 @@ namespace AstroPhotoAnalyzer.Wpf
     /// <summary>
     /// The Culori pentru hartie tab (R-178): filled after an analysis by the computation
     /// MainViewModel starts, recomputed when its area allows finer previews, with the gallery of
-    /// the original and the three variants, browsed with Next and Previous, each saveable as a
-    /// new FITS or TIFF.
+    /// the three variants, browsed with Next and Previous and each saveable as a new FITS or
+    /// TIFF, and the original they are compared with.
     /// </summary>
     public sealed class GamutFitTabViewModel : ResultTabViewModel
     {
@@ -91,6 +95,7 @@ namespace AstroPhotoAnalyzer.Wpf
         AnalysisResult _result;
         GamutFitSet _set;
         IReadOnlyList<GamutFitGalleryItem> _items = Array.Empty<GamutFitGalleryItem>();
+        GamutFitGalleryItem _before;
         int _index, _width = Thresholds.CurvePreviewDefaultWidth, _height = Thresholds.CurvePreviewDefaultHeight;
 
         // The size the last computation was asked for; 0 before any.
@@ -126,7 +131,10 @@ namespace AstroPhotoAnalyzer.Wpf
         /// </summary>
         internal Task Computation { get; private set; } = Task.CompletedTask;
 
-        /// <summary>The box "arata ce nu intra": the red layer on the shown item (R-178).</summary>
+        /// <summary>
+        /// The box "arata ce nu intra": the red layer on the original and on the variant shown,
+        /// each its own (R-178).
+        /// </summary>
         public bool ShowOutside
         {
             get => _showOutside;
@@ -134,6 +142,7 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 if (!Set(ref _showOutside, value)) return;
                 foreach (GamutFitGalleryItem i in _items) i.ShowOutside = value;
+                if (_before != null) _before.ShowOutside = value;
                 Log.Debug("show outside=" + value);
             }
         }
@@ -141,6 +150,27 @@ namespace AstroPhotoAnalyzer.Wpf
         public IReadOnlyList<GamutFitGalleryItem> Items { get => _items; private set => Set(ref _items, value); }
         public bool HasGallery => _items.Count > 0;
         public GamutFitGalleryItem Current => _items.Count == 0 ? null : _items[_index];
+
+        /// <summary>
+        /// The original at the previews' size, with its own red layer: the left side of the
+        /// comparison, the same whatever variant is shown (R-179); null without a gallery.
+        /// </summary>
+        public GamutFitGalleryItem Before { get => _before; private set => Set(ref _before, value); }
+
+        /// <summary>
+        /// The sentence under the image: which side of the line is which, and how to zoom and
+        /// move, the maximum being the viewer's own (R-179).
+        /// </summary>
+        public string ViewerHelp
+        {
+            get
+            {
+                string max = Fmt.F0(ZoomPanViewer.MaxScale);
+                return Tr.Pick(
+                    $"Left of the line is the image as it is (Before), right of it the fitted one (After); drag the line to move it. The mouse wheel zooms around the cursor, up to {max}:1 (one pixel of the copy becomes a square of {max} x {max} screen pixels, with Windows display scaling at 100 %); hold the left button and drag to move the image; a double click fits it again.",
+                    $"In stanga liniei e imaginea asa cum este (Inainte), in dreapta cea potrivita (Dupa); tragi de linie ca sa o muti. Rotita mouse-ului mareste in jurul cursorului, pana la {max}:1 (un pixel al copiei devine un patrat de {max} x {max} pixeli pe ecran, cu scalarea Windows la 100 %); tii apasat butonul stang si tragi ca sa muti imaginea; dublu-clic o potriveste din nou.");
+            }
+        }
         public string Position => _items.Count == 0 ? "" : $"{_index + 1} / {_items.Count}";
 
         /// <summary>Why there is nothing to show, or the computation's error; null when the gallery exists.</summary>
@@ -184,8 +214,8 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
-        /// <summary>Whether the current item is a variant, not the original: what SaveAs needs.</summary>
-        /// <returns>True on a variant; false on the original or with no gallery.</returns>
+        /// <summary>Whether there is a variant shown: what SaveAs needs.</summary>
+        /// <returns>True with a gallery; false with none.</returns>
         bool HasVariant() => Current?.Variant != null;
 
         /// <summary>
@@ -209,7 +239,7 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Empties the tab, turns the box off and abandons any computation in progress: its
+        /// Empties the tab, puts the box back on and abandons any computation in progress: its
         /// result is nobody's any more.
         /// </summary>
         void Reset()
@@ -218,6 +248,7 @@ namespace AstroPhotoAnalyzer.Wpf
             _askedWidth = _askedHeight = 0;
             _set = null;
             _index = 0;
+            Before = null;
             Items = Array.Empty<GamutFitGalleryItem>();
             Message = null; IsProblem = false; SaveMessage = null; SaveError = null; PreviewCapped = false;
             if (Set(ref _showOutside, true, nameof(ShowOutside))) Log.Debug("show outside=True (reset)");
@@ -290,6 +321,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 // not depend on the size), so the asked size goes back to "nothing to redo".
                 _askedWidth = _askedHeight = 0;
                 _set = null;
+                Before = null;
                 Items = Array.Empty<GamutFitGalleryItem>();
                 Message = set.Problem;
                 IsProblem = true;
@@ -299,24 +331,31 @@ namespace AstroPhotoAnalyzer.Wpf
             // The previews' rasters are no longer needed once the bitmaps exist: the items and
             // the set keep the variants without them. The table and the knees stay, for the save.
             GamutFitVariant[] stripped = set.Variants.Select(v => v with { Preview = null, Outside = null }).ToArray();
-            var items = new List<GamutFitGalleryItem> { Item(CurveTexts.Original, set.OriginalPreview, set.OriginalOutside, null, set.Recipe, stripped[0].Evidence) };
-            for (int i = 0; i < set.Variants.Count; i++) items.Add(Item(stripped[i].Name, set.Variants[i].Preview, set.Variants[i].Outside, stripped[i], set.Recipe, null));
+            // The original is the other side of the comparison, the same for every variant, and
+            // no position of the gallery (R-179).
+            GamutFitGalleryItem before = Item(CurveTexts.Original, set.OriginalPreview, set.OriginalOutside, null, set.Recipe);
+            var items = new List<GamutFitGalleryItem>();
+            for (int i = 0; i < set.Variants.Count; i++) items.Add(Item(stripped[i].Name, set.Variants[i].Preview, set.Variants[i].Outside, stripped[i], set.Recipe));
             _set = set with { OriginalPreview = null, OriginalOutside = null, Variants = stripped };
             Message = null;
-            Items = items;
+            before.ShowOutside = _showOutside;
             foreach (GamutFitGalleryItem i in items) i.ShowOutside = _showOutside;
+            Before = before;
+            Items = items;
             RaiseGallery();
         }
 
-        /// <summary>One gallery item: its bitmap, its layer and its evidence, formatted by the core.</summary>
+        /// <summary>
+        /// One image of the tab: its bitmap, its layer and, for a variant, its evidence,
+        /// formatted by the core.
+        /// </summary>
         /// <param name="name">The item's name, as the gallery shows it.</param>
         /// <param name="preview">The preview raster, at the gallery's size.</param>
         /// <param name="outside">Per preview pixel, whether the paper cannot hold it; may be null.</param>
-        /// <param name="v">The variant, without its preview; null for the original.</param>
-        /// <param name="recipe">The recipe, for the evidence.</param>
-        /// <param name="before">For the original, a variant's evidence, whose figures before the fit are its rows; null for a variant.</param>
+        /// <param name="v">The variant, without its preview; null for the original, which carries no evidence.</param>
+        /// <param name="recipe">The recipe, for a variant's evidence.</param>
         /// <returns>The item, not yet current.</returns>
-        static GamutFitGalleryItem Item(string name, Raster preview, bool[] outside, GamutFitVariant v, GamutFitRecipe recipe, GamutFitEvidence before)
+        static GamutFitGalleryItem Item(string name, Raster preview, bool[] outside, GamutFitVariant v, GamutFitRecipe recipe)
         {
             int w = preview.W, h = preview.H;
             bool any = outside != null && outside.Any(o => o);
@@ -327,8 +366,9 @@ namespace AstroPhotoAnalyzer.Wpf
                 Width = w,
                 Height = h,
                 OutsideLayer = any ? RasterBitmaps.Overlay(w, h, (x, y) => outside[y * w + x], OutsideColour) : null,
-                EvidenceRows = (v == null ? GamutFitTexts.OriginalRows(before, recipe) : GamutFitTexts.EvidenceRows(v, recipe))
-                    .Select(r => new CurveEvidenceRow { Text = r.Text, IsWarning = r.Warning }).ToArray(),
+                EvidenceRows = v == null
+                    ? Array.Empty<CurveEvidenceRow>()
+                    : GamutFitTexts.EvidenceRows(v, recipe).Select(r => new CurveEvidenceRow { Text = r.Text, IsWarning = r.Warning }).ToArray(),
                 Variant = v,
             };
         }

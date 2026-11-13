@@ -79,8 +79,13 @@ knees touching more as they come down and keeping a run's steps just past the ed
 band and factor. The TIFF writer is checked by the tool's reader and by a hand-written tag reader
 in the test, and the two exports on a FITS input through the hand-built printer profile. `GamutFitTabTests`
 drives the tab through `Compute(w, h)`, the synchronous body, on a frame with a saturated patch
-that the hand-built profile prints as grey: the gallery, the box and its layer, the save of both
-kinds and the refusal over the input, the sentence without a profile, the render. `ValidationTests`
+that the hand-built profile prints as grey: the gallery of three beside the original, the box
+and the two layers, the save of both kinds and the refusal over the input, the sentence without
+a profile, the render. `SplitDividerTests` holds the line's rules with no window;
+`BeforeAfterViewerTests` lays the comparison out over two flat grey images, moves the line and
+the view by hand (`MoveDividerTo`, the viewer's `ZoomAt` and `PanBy`) and reads back the cut of
+the original, the rendered pixel on each side of the line, and where the line, the handle and
+the labels are drawn, after the area changes size too; no test drives the mouse itself. `ValidationTests`
 has a fifth kind of case, `gamutfit` (V-016): the run on the plate-solved FITS through the lab's
 baryta profile, the three variants' figures, the recipe, and the two files written into a
 temporary folder and read back against each other.
@@ -97,4 +102,4 @@ the black, the perceptual table lands elsewhere than the colorimetric one, the d
 the tab through `Compute()`, the synchronous body, and the async paths through
 `ProofComputation`; `WindowSmokeTests.BindingErrors` is internal so that it can watch the tab's
 and the window's renders there too; `ZoomPanViewerTests` lays the viewer out over a sized child
-and drives `ZoomAt`, `PanBy` and `Reset` by hand. `ValidationTests` has a fourth kind of case, `proof` (V-015).
+and drives `ZoomAt`, `PanBy` and `Reset` by hand, and checks `FitEnlarges`, `ViewChanged` and `ToChildX` (R-179). `ValidationTests` has a fourth kind of case, `proof` (V-015).

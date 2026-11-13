@@ -15,8 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// GamutFitTabTests - the Culori pentru hartie tab (R-178, ADR 0083): the gallery of the
-// original and the three variants, the red layer, the save, the sentence without a profile.
+// GamutFitTabTests - the Culori pentru hartie tab (R-178, ADR 0083, ADR 0090): the gallery of
+// the three variants beside the original, the red layers, the save, the sentence without a
+// profile.
 
 using AstroPhotoAnalyzer.Tests;
 
@@ -63,53 +64,72 @@ public class GamutFitTabTests
     }
 
     [Fact]
-    public void R178_TheGalleryHoldsTheOriginalAndTheThreeVariantsAndTheRedLayerFollowsTheBox()
+    public void R178_TheGalleryHoldsTheThreeVariantsBesideTheOriginalAndTheRedLayersFollowTheBox()
     {
         using var ws = new TempWorkspace();
         var tab = new GamutFitTabViewModel();
         Assert.False(tab.HasGallery);
+        Assert.Null(tab.Before);
         Assert.True(tab.ShowOutside);   // on by default (R-178)
         tab.Populate(Result(ws, withProfile: true));
         Assert.False(tab.HasGallery);   // filled by the computation MainViewModel starts, not by Populate
 
         tab.Compute(400, 300);
         Assert.True(tab.HasGallery, tab.Message);
-        Assert.Equal(new[] { "Originalul", "Exacta", "Lina", "Foarte lina" }, tab.Items.Select(i => i.Name).ToArray());
-        Assert.Equal("1 / 4", tab.Position);
-        Assert.Equal("Originalul", tab.Current!.Name);
-        Assert.False(tab.SaveAs.CanExecute(null));
-        Assert.NotNull(tab.Current.Overlay);   // the box is on: the original's warning of R-161 over the patch
-        Assert.Equal(tab.Current.Image.PixelWidth, tab.Current.Overlay!.PixelWidth);
-        // The original carries the figures of the image as it is: the share outside, the dark
-        // share and the recipe, in plain words.
-        Assert.Contains(tab.Current.EvidenceRows, r => r.Text.StartsWith("culori pe care hartia nu le poate reda:") && r.Text.Contains("%"));
-        Assert.Contains(tab.Current.EvidenceRows, r => r.Text.Contains("tonuri inchise"));
-        Assert.Contains(tab.Current.EvidenceRows, r => r.Text.StartsWith("de mana"));
-        Assert.DoesNotContain(tab.Current.EvidenceRows, r => r.Text.Contains("dupa"));
-
-        tab.ShowOutside = false;
-        Assert.Null(tab.Current.Overlay);   // the box off: no layer
-        tab.ShowOutside = true;
-
-        tab.Next.Execute(null);
-        Assert.Equal("Exacta", tab.Current.Name);
-        Assert.Equal("2 / 4", tab.Position);
+        // The original is no position of the gallery: it is the other side of the comparison.
+        Assert.Equal(new[] { "Exacta", "Lina", "Foarte lina" }, tab.Items.Select(i => i.Name).ToArray());
+        Assert.Equal("1 / 3", tab.Position);
+        Assert.Equal("Exacta", tab.Current!.Name);
         Assert.True(tab.SaveAs.CanExecute(null));
-        Assert.Null(tab.Current.Overlay);   // nothing is left outside after the fit
+        Assert.False(tab.Previous.CanExecute(null));
+
+        GamutFitGalleryItem before = tab.Before!;
+        Assert.NotNull(before);
+        Assert.Equal(tab.Current.Width, before.Width);
+        Assert.Equal(tab.Current.Height, before.Height);
+        Assert.Equal(tab.Current.Image.PixelWidth, before.Image.PixelWidth);
+        Assert.NotSame(tab.Current.Image, before.Image);
+        Assert.NotNull(before.Overlay);   // the box is on: the original's warning of R-161 over the patch
+        Assert.Equal(before.Image.PixelWidth, before.Overlay!.PixelWidth);
+        Assert.Empty(before.EvidenceRows);   // its share is in every variant's evidence
+        Assert.Null(tab.Current.Overlay);    // nothing is left outside after the fit
         Assert.Contains(tab.Current.EvidenceRows, r => r.Text.Contains("inainte") && r.Text.Contains("%"));
         Assert.Contains(tab.Current.EvidenceRows, r => r.Text.Contains("dupa"));
+        Assert.Contains(tab.Current.EvidenceRows, r => r.Text.Contains("tonuri inchise"));
+        Assert.Contains(tab.Current.EvidenceRows, r => r.Text.StartsWith("de mana"));
         Assert.DoesNotContain(tab.Current.EvidenceRows, r => r.Text.Contains("median") || r.Text.Contains("percentil") || r.Text.Contains("croma"));
 
-        tab.Next.Execute(null); tab.Next.Execute(null);
+        // The box paints both sides, each its own layer.
+        tab.ShowOutside = false;
+        Assert.Null(before.Overlay);
+        Assert.Null(tab.Current.Overlay);
+        tab.ShowOutside = true;
+        Assert.NotNull(before.Overlay);
+
+        // The buttons change the variant only: the original stays the same image.
+        tab.Next.Execute(null);
+        Assert.Equal("Lina", tab.Current.Name);
+        Assert.Equal("2 / 3", tab.Position);
+        Assert.Same(before, tab.Before);
+        Assert.True(tab.SaveAs.CanExecute(null));
+        tab.Next.Execute(null);
         Assert.Equal("Foarte lina", tab.Current.Name);
         Assert.False(tab.Next.CanExecute(null));
+        Assert.True(tab.SaveAs.CanExecute(null));
         tab.Previous.Execute(null);
         Assert.Equal("Lina", tab.Current.Name);
+        Assert.Same(before, tab.Before);
+
+        // The sentence under the image: which side is which, and the viewer's own maximum.
+        Assert.Contains("(Inainte)", tab.ViewerHelp);
+        Assert.Contains("(Dupa)", tab.ViewerHelp);
+        Assert.Contains($"{ZoomPanViewer.MaxScale:0}:1", tab.ViewerHelp);
 
         // Another image empties the gallery; the box goes back to its default, on.
         tab.ShowOutside = false;
         tab.Populate(Result(ws, withProfile: true));
         Assert.False(tab.HasGallery);
+        Assert.Null(tab.Before);
         Assert.True(tab.ShowOutside);
     }
 
@@ -139,7 +159,8 @@ public class GamutFitTabTests
         Assert.False(tab.IsBusy);
         Assert.Equal(w, tab.Current!.Width);
         Assert.True(tab.ShowOutside);                 // the box survives the recompute
-        Assert.NotNull(tab.Current.Overlay);           // and its layer is on the new original
+        Assert.Equal(w, tab.Before!.Width);            // the original is recomputed with the variants
+        Assert.NotNull(tab.Before.Overlay);            // and its layer is on the new original
     }
 
     [Fact]
@@ -151,7 +172,6 @@ public class GamutFitTabTests
         tab.Compute(400, 300);
         Assert.True(tab.HasGallery, tab.Message);
         Assert.Equal(ws.Dir, tab.InputFolder);
-        tab.Next.Execute(null);
 
         string? proposed = null;
         tab.SaveRequested += name => proposed = name;

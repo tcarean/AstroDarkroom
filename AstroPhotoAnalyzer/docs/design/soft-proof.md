@@ -139,6 +139,14 @@ neighbour, so that the zoom shows the proof's pixels; the left button drags with
 resets; the centre is clamped so that the child never leaves the viewport (centred along an axis
 where it is smaller). The child is arranged at its natural size under a scale and a translation.
 View state only: the view-model knows nothing of it.
+The viewer also serves the paper fit's comparison (`BeforeAfterViewer`, `paper-fit.md`; R-179),
+which needs two things the soft proof does not. `FitEnlarges`, true by default, says whether
+the fit may enlarge a child smaller than the viewport; false caps the fit scale at 1, the
+gallery's rule that a small image is not blown up (ADR 0084), the zoom still reaching
+`MaxScale`. `ViewChanged` is raised at the end of `Apply`, after the two transforms are set,
+for whoever lays something over the viewer in step with the view; `Viewport` (the size the view
+was last set for) and `ToChildX` (read from the transforms themselves) give the view back
+correctly inside an arrange pass too, when `RenderSize` is still the old size.
 `SoftProofWindow` is a borderless window over the whole screen (`WindowStyle` `None`,
 `WindowState` `Maximized`, `ResizeMode` `NoResize`; R-164, ADR 0068), non-modal, over the tab's
 own view-model (so the window's state is the tab's): the margin brush filling the window behind

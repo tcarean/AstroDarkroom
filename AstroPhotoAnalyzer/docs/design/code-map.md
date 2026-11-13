@@ -70,14 +70,16 @@ AstroPhotoAnalyzer.Wpf/
   Presentation/AppIcon.cs, BarsCanvas.cs, CurveCanvas.cs, Converters.cs, RasterBitmaps.cs, VerdictPalette.cs,
                TExtension.cs (a XAML text in both languages), Emphasis.cs (a because's ** marks in bold, R-112),
                AccessibleTabControl.cs (the window's tabs, their content in the UI Automation tree, R-157),
-               ZoomPanViewer.cs (the soft proof's viewer: wheel zoom, drag pan, double-click fit, R-163)
+               ZoomPanViewer.cs (the soft proof's viewer: wheel zoom, drag pan, double-click fit, R-163),
+               BeforeAfterViewer.xaml(.cs) (two images compared across a dragged line, over that viewer, R-179),
+               SplitDivider.cs (the line: its place, its handle, what a press grabs, R-179)
   ViewModels/MainViewModel.cs, ParameterFields.cs, ResultTabs.cs, Rows.cs, AboutViewModel.cs,
              MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131),
              IccPickerViewModel.cs (the profile window, R-132),
              WindowSettings.cs (the remembered settings file, R-156),
              CurvesTab.cs (the Editare Curbe tab and the curve window, R-146, R-147),
              SoftProofTab.cs (the Soft proof tab and its window, R-163),
-             GamutFitTab.cs (the Culori pentru hartie tab, R-178)
+             GamutFitTab.cs (the Culori pentru hartie tab, R-178, R-179)
   Views/ReportView, TonesView, ExportView, ResolutionView, BackgroundView, CurvesView, GamutFitView, SoftProofView,
         SoftProofControls (.xaml),
         ResultViews.xaml.cs, AboutWindow.xaml(.cs), BusyOverlay.xaml(.cs),

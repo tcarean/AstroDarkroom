@@ -105,7 +105,7 @@ each tab shows.
 | **Resolution** | The stars' FWHM, in the centre and in the four corners, and the real detail it leaves; the table of print sizes; the scale of dpi against viewing distance. |
 | **Colour** | The background colour, R / G / B, taken on the sky patches, with its chroma in L\*a\*b\*, which decides the cast, and the two level figures that name its direction; the four corners and the four edges against it, each on its own sky pixels, a flagged one marked "! coloured" or "! neutral"; how to read them. |
 | **Curves Editing** | Suggested contrast curves, computed with the analysis: see below. |
-| **Colours for paper** | The image with the colours the paper cannot reproduce fitted to it, in three variants, to save as a new FITS or 16-bit TIFF: see below. |
+| **Colours for paper** | The image with the colours the paper cannot reproduce fitted to it, in three variants, each compared with the original across a line you drag, to save as a new FITS or 16-bit TIFF: see below. |
 | **Soft proof** | What the paper would do to the image, through its ICC profile, the way Lightroom soft-proofs: see below. |
 
 **Save the report...** writes `Report.txt` beside the image by default (`Raport.txt` in
@@ -179,15 +179,21 @@ proof** tab paints in red, the colours the paper cannot reproduce, and lowers th
 each along its own hue and at its own tone, to the most the paper holds there: the tone and the
 hue of every pixel stay what they were. It is computed right after the analysis, like the curves.
 
-- The gallery shows **The original** and three variants: **Exact** changes only the colours the
-  paper cannot hold, each losing just enough saturation to fit; **Soft** and **Softer** ease the
-  colours near the paper's limit too, from 90 % and 80 % of it, so that a run of growing
-  saturation keeps its steps instead of ending flat. **Back**, **Next** and the arrow keys move
-  between them.
-- **Show what does not fit**, on by default, paints in red, on the image shown, the pixels whose
-  colour the paper still cannot reproduce; on the original it is the Soft proof tab's warning,
-  and under the original are its figures: the share of colours the paper cannot reproduce, how
-  many of them are dark tones, and the recipe for doing it by hand.
+- The image is a comparison: left of a vertical line is the image as it is, labelled
+  **Before**, right of it the fitted one, labelled **After**. Drag the line, or the handle in
+  its middle, to move it across the image; at the left edge only the fitted image is left, at
+  the right edge only the original.
+- The mouse wheel zooms around the cursor, up to 8:1 on the reduced copy the tab shows; hold the
+  left button and drag to move the image; a double click fits it again. The two sides zoom and
+  move together, and the line stays where you put it.
+- There are three variants: **Exact** changes only the colours the paper cannot hold, each
+  losing just enough saturation to fit; **Soft** and **Softer** ease the colours near the
+  paper's limit too, from 90 % and 80 % of it, so that a run of growing saturation keeps its
+  steps instead of ending flat. **Back**, **Next** and the arrow keys move between them: only
+  the After side changes, Before is always the original.
+- **Show what does not fit**, on by default, paints in red the pixels whose colour the paper
+  cannot reproduce: on the Before side those of the original, the Soft proof tab's warning, and
+  on the After side those still left after the fit.
 - Under each variant: the share of colours the paper cannot reproduce before and after, how many
   pixels changed and how much saturation they lose, how many of the colours outside are dark
   tones, and the recipe for doing it by hand in another program (a mask on the tones under a

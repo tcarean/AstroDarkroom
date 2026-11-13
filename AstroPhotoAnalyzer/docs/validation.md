@@ -216,6 +216,13 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
+- 2026-11-13 (ADR 0090, the paper fit compared with the original across a line,
+  `docs/plans/2026-11-12-compare-the-paper-fit-with-the-original.md`): the one change under
+  `Report/` is a removal, `GamutFitTexts.OriginalRows`, the rows the window showed under the
+  original; no formula and no sentence of a recorded figure moved. Re-run on the branch from its
+  worktree, the twelve files read where they are (`check-testdata.ps1` with `APA_TESTDATA_LARGE`:
+  twelve `ok`): the sixteen cases and the eleven `StarPairTests` cases pass (27 passed, none
+  `NOT MEASURED`, 3.7 min), every recorded figure inside its tolerance.
 - 2026-11-08 (ADR 0088, the large test data moves out of the repository): the twelve files of the
   manifest moved from the main checkout's `AstroPhotoAnalyzer.Tests/testdata/large/` to
   `E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer`, 1 368 MB before and after, the twelve

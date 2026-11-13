@@ -82,12 +82,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ColumnDefinition Width="Auto" />
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <Button Grid.Column="0" Content="{local:T En='&lt; Back', Ro='&lt; Inapoi'}" Command="{Binding Previous}" Padding="12,3" ToolTip="{local:T En='Left arrow', Ro='Sageata stanga'}" />
+      <Button Grid.Column="0" Content="{local:T En='&lt; Back', Ro='&lt; Precedenta'}" Command="{Binding Previous}" Padding="12,3" ToolTip="{local:T En='Left arrow', Ro='Sageata stanga'}" />
       <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0" MinWidth="170">
         <TextBlock Text="{Binding Current.Name}" FontWeight="SemiBold" />
         <TextBlock Style="{StaticResource Muted}" Text="{Binding Position}" Margin="10,0,0,0" />
       </StackPanel>
-      <Button Grid.Column="2" Content="{local:T En='Next &gt;', Ro='Inainte &gt;'}" Command="{Binding Next}" Padding="12,3" ToolTip="{local:T En='Right arrow', Ro='Sageata dreapta'}" />
+      <Button Grid.Column="2" Content="{local:T En='Next &gt;', Ro='Urmatoarea &gt;'}" Command="{Binding Next}" Padding="12,3" ToolTip="{local:T En='Right arrow', Ro='Sageata dreapta'}" />
       <Button Grid.Column="4" Content="{local:T En='Curve...', Ro='Curba...'}" Command="{Binding OpenCurve}" Padding="12,3"
               ToolTip="{local:T En='The table of points and the graph of the curve, to redo it by hand in Siril', Ro='Tabelul punctelor si graficul curbei, ca sa o refaci de mana in Siril'}" />
       <Button Grid.Column="5" Content="{local:T En='Save as...', Ro='Salveaza ca...'}" Command="{Binding SaveAs}" Padding="12,3" Margin="10,0,0,0"
