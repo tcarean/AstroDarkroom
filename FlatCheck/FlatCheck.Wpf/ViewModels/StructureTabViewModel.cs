@@ -704,7 +704,7 @@ namespace FlatCheck.Wpf
             if (!SaveReport(session)) return;
             try
             {
-                File.WriteAllBytes(session.ResidualPngPath, png);
+                OutputFile.WriteAllBytes(session.ResidualPngPath, png);
                 Log.Info("wrote " + session.ResidualPngPath + " (" + LogText.KiB(png.Length) + ")");
             }
             catch (Exception e)
@@ -724,7 +724,7 @@ namespace FlatCheck.Wpf
             SaveError = "";
             try
             {
-                File.WriteAllText(session.ResultTextPath, Report);
+                OutputFile.WriteAllText(session.ResultTextPath, Report);
                 SavedTo = session.ResultTextPath;
                 Log.Info("wrote " + session.ResultTextPath + " (" + LogText.FileKiB(session.ResultTextPath) + ")");
                 return true;

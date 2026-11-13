@@ -508,6 +508,36 @@ public class SyntheticTabTests
     }
 
     /// <summary>
+    /// R-138: the flat is written beside the earlier one and then replaces it, so a write cut
+    /// half way leaves the earlier flat whole. The earlier file's second name keeps its bytes;
+    /// until 2026-11-13 the new flat was streamed into the earlier file, and the second name
+    /// showed the new bytes.
+    /// </summary>
+    [Fact]
+    public async Task R138_TheWrittenFlatReplacesTheEarlierFileAndNeverWritesIntoIt()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f, confirm: _ => true);
+        using (ws)
+        {
+            await vm.Pending;
+            byte[] old = Enumerable.Repeat((byte)0x55, 5000).ToArray();
+            File.WriteAllBytes(vm.Target, old);
+            string oldFile = SecondName.Of(vm.Target);
+            vm.Search = "nikon corporation";
+            vm.SelectedLens = vm.Lenses[0];
+            vm.FStopText = "2.8";
+
+            await vm.RunAsync();
+
+            Assert.Equal(vm.Target, vm.SavedTo);
+            Assert.Equal(old, File.ReadAllBytes(oldFile));
+            Assert.Equal(-32, FitsReader.LoadFull(File.ReadAllBytes(vm.Target)).Bitpix);
+            Assert.False(File.Exists(vm.Target + OutputFile.TemporarySuffix));
+        }
+    }
+
+    /// <summary>
     /// R-135: a comparison on screen belongs to the figures above it. Lens X is written and
     /// compared; lens Y is selected, Write is pressed and the overwrite refused. Before, the
     /// tab showed Y's profile line and depth rows over X's verdict, table and map.

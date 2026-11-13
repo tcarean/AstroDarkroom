@@ -676,8 +676,8 @@ namespace FlatCheck.Wpf
             SaveError = "";
             try
             {
-                File.WriteAllText(session.SplitResultTextPath, Report);
-                File.WriteAllBytes(session.SplitPngPath, png);
+                OutputFile.WriteAllText(session.SplitResultTextPath, Report);
+                OutputFile.WriteAllBytes(session.SplitPngPath, png);
                 SavedTo = session.SplitResultTextPath;
                 Log.Info("wrote " + session.SplitResultTextPath + " (" + LogText.FileKiB(session.SplitResultTextPath) + ")");
                 Log.Info("wrote " + session.SplitPngPath + " (" + LogText.KiB(png.Length) + ")");

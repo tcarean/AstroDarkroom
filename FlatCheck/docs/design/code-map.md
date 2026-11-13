@@ -64,6 +64,17 @@ a library extraction and not a copy is ADR 0011.
     removal, ADR 0080). The rows go out from the raster's last to its first, the reader's order
     undone, so the file keeps its reference's order and Siril shows it the way up it was
     analysed; a file with no `ROWORDER` card to copy gets `ROWORDER= 'BOTTOM-UP'` (R-130).
+  - `OutputFile.cs` - how every file written for the user reaches the disk (R-138, ADR 0109):
+    `Write(path, Action<Stream>)` streams into `<path>.tmp` beside the target and then moves
+    that file over the target, so the name holds the earlier file until the new one is whole;
+    `WriteAllBytes` and `WriteAllText` (UTF-8, no byte order mark) go through it. The seven
+    callers are the console's `SaveMap` and `RunSynthetic` and the window's Synthetic, Structure
+    and Split saves. A failed write deletes the temporary file and rethrows; a failed move (on
+    Windows a target another program holds open, or a read-only one, is not replaced) becomes
+    an `IOException` that names the target, since the system's own message names nothing. The
+    temporary name is fixed, not random, so a leftover is overwritten instead of piling up.
+    `SessionSettings.Write` has the same two steps of its own for `flatcheck.json`, with a
+    failure that is logged and not thrown.
   - `IFrameReader.cs` - the contract each input format implements: `Handles(path)` and
     `Load(path) -> LoadedFrame`. The only interface in the codebase, and the reason
     `ImageLoader` knows no reader's API.

@@ -161,7 +161,9 @@ every test calls, with two `StringWriter`s. In order:
 Each mode has one static `RunX(Options, TextWriter[, TextWriter err])` that calls its
 `XRun.Execute(...)` in `FlatCheck.Core/Runs/`, writes the map(s) through `SaveMap` (which also
 prints the `map saved` line via `RunReport.WriteMapSaved`) and returns either the verdict
-string or an exit code:
+string or an exit code. `SaveMap` and `RunSynthetic` write through `OutputFile` (a temporary
+file beside the target, then one move: R-138, `code-map.md`), so a run that fails while it
+writes leaves the earlier file whole:
 
 - A mode with a verdict returns the verdict and the chain wraps it in `ExitFor(string)`
   (`OK` / `PERFECT` / `BUN` → 0, `Stats.NotApplicable` → 1, `SUSPECT` / `ACCEPTABIL` /

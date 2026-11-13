@@ -232,6 +232,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A write that fails half way no longer leaves a cut file under the real name (R-138, ADR 0109,
+  the review's CR-012). Every file FlatCheck writes (the map and the synthetic flat of the
+  console; the synthetic flat, the Structure report and map and the Split report and mosaic of
+  the window) was written into the existing file, which the write first emptied: a full disk, a
+  drive that dropped or the window closed during the 96 MB of a synthetic flat left a FITS with
+  a whole header and cut data, and the earlier good file was gone. The bytes now go to
+  `<name>.tmp` beside the target, which replaces it in one move at the end, so the name always
+  holds a whole file. A target that another program holds open, or a read-only one, is not
+  replaced: the write fails with a sentence that names the file and the two causes.
 - The console no longer writes its picture over a file it has just read (R-137, ADR 0108, the
   review's CR-011). `flatcheck master.fit -o master.fit` printed the report and then replaced
   the master with the PNG; the same happened to the second flat of `--against`, to the `--raw`
