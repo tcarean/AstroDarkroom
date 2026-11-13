@@ -92,6 +92,55 @@ public class SessionFolderTests
         Assert.Null(f.BiasesDir);
     }
 
+    /// <summary>
+    /// Without lights/ the folder also holds what the stacking wrote: a FITS whose header counts
+    /// more than one stacked frame, in Siril's keyword or the common one, is not a light (R-002).
+    /// </summary>
+    [Theory]
+    [InlineData("STACKCNT")]
+    [InlineData("NCOMBINE")]
+    public void R002_AStackBesideFitsLightsInTheFolderItselfIsNotALight(string keyword)
+    {
+        using SessionFixture s = new SessionFixture().WithLights(2, inSubfolder: false);
+        File.WriteAllBytes(Path.Combine(s.Root, "result.fit"), Stack(keyword, "50"));
+
+        SessionFolder f = SessionFolder.Open(s.Root);
+
+        Assert.Equal(s.Root, f.LightsDir);
+        Assert.Equal(["DSC_0001.fit", "DSC_0002.fit"], f.Lights.Select(Path.GetFileName));
+    }
+
+    /// <summary>
+    /// Only a header that says so takes a FITS out of the lights: one that cannot be read stays,
+    /// so its row can say the error, and so does a frame that counts itself alone (R-002).
+    /// </summary>
+    [Fact]
+    public void R002_AFitsThatCannotBeReadOrCountsOneFrameStaysALight()
+    {
+        using SessionFixture s = new SessionFixture().WithLights(2, inSubfolder: false);
+        File.WriteAllBytes(Path.Combine(s.Root, "broken.fit"), [1, 2, 3]);
+        File.WriteAllBytes(Path.Combine(s.Root, "single.fit"), Stack("STACKCNT", "1"));
+
+        SessionFolder f = SessionFolder.Open(s.Root);
+
+        Assert.Equal(["broken.fit", "DSC_0001.fit", "DSC_0002.fit", "single.fit"], f.Lights.Select(Path.GetFileName));
+    }
+
+    /// <summary>A folder whose only FITS is a stack holds no light, and says so as any folder without frames does (R-002).</summary>
+    [Fact]
+    public void R002_AFolderWithOnlyAStackHasNoFrame()
+    {
+        using TempWorkspace ws = new();
+        File.WriteAllBytes(ws.PathTo("result.fit"), Stack("STACKCNT", "82"));
+
+        InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => SessionFolder.Open(ws.Dir));
+        Assert.Contains(ws.Dir, e.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>A small FITS with a light's cards and one more, the count of stacked frames.</summary>
+    private static byte[] Stack(string keyword, string count) =>
+        FitsTestData.BuildFits(32, 24, (x, y) => 300, bitpix: 16, extraCards: [.. SessionFixture.Cards(SessionFixture.FirstStart, 120.2), FitsTestData.Card(keyword, count)]);
+
     [Fact]
     public void R002_BiasesAreOptionalAndListedWhenPresent()
     {

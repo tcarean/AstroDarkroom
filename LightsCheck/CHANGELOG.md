@@ -193,6 +193,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   saturated stars were measured for width and elongation, and being the brightest they came
   first, though a clipped star reads wider than it is. A saturated star is now left out of the
   shapes whatever the sky (R-014; CR-002 of the review of 2026-11-13).
+- With FITS lights directly in the folder (no `lights\`), Siril's stacked result beside them
+  (`result.fit`) was counted as a light: one frame too many, with the stack's exposure, time,
+  stars and sky in the session's figures. A FITS whose header says it is a stack (`STACKCNT` or
+  `NCOMBINE` above 1) is no longer a light, whatever its name (R-002, ADR 0048; CR-003 of the
+  review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

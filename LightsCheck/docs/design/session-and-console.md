@@ -12,7 +12,11 @@ how the code does it.
 `SessionFolder.Open(path)` resolves the full path and throws `DirectoryNotFoundException`
 when it is missing. When `lights/` exists it is the lights folder, empty or not (an empty one
 throws, never falls back to the root, which holds `result.fit` and the other stacked
-results); otherwise the folder itself is. `FramesIn(dir)` lists one folder's frames: the
+results); otherwise the folder itself is, and then `WithoutStacks` drops from its FITS frames
+the ones whose header counts more than one stacked frame (`StackedFrames`: the larger of
+`STACKCNT`, Siril's, and `NCOMBINE`; one header read per file, only in this case, and a header
+that cannot be read counts none, so the file stays a light and its row says the error; ADR
+0048), with a log line per file left out. `FramesIn(dir)` lists one folder's frames: the
 camera raws (`RawReader.IsRawPath`) when there are any, else the FITS files
 (`FitsReader.IsFitsPath`), sorted by file name with an ordinal case-insensitive compare, so
 `DSC_0010` follows `DSC_0009` and a lower-case extension changes nothing. No frames at all

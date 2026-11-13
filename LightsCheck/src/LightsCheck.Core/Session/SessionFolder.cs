@@ -22,8 +22,8 @@ namespace LightsCheck.Core;
 
 /// <summary>
 /// A Siril session folder as LightsCheck reads it (R-002, ADR 0004): the lights in
-/// <c>lights/</c>, or in the folder itself when it holds frames directly; the biases in
-/// <c>biases/</c>, optional; the darks in <c>darks/</c>, optional and only counted, never read
+/// <c>lights/</c>, or in the folder itself when it holds frames directly, a stacked result
+/// beside them left out by its header (ADR 0048); the biases in <c>biases/</c>, optional; the darks in <c>darks/</c>, optional and only counted, never read
 /// (R-042). Nothing is ever written into it.
 /// </summary>
 internal sealed class SessionFolder
@@ -83,8 +83,9 @@ internal sealed class SessionFolder
     /// <summary>
     /// Opens the folder. When <c>lights/</c> exists it is the lights folder, empty or not: a
     /// session root also holds the stacked results (<c>result.fit</c>), which must never pass
-    /// for lights. Without <c>lights/</c> the folder itself must hold the frames. A missing
-    /// folder throws <see cref="DirectoryNotFoundException"/>, a folder without frames
+    /// for lights. Without <c>lights/</c> the folder itself must hold the frames, and a FITS
+    /// among them whose header counts more than one stacked frame is left out
+    /// (<see cref="StackedFrames"/>). A missing folder throws <see cref="DirectoryNotFoundException"/>, a folder without frames
     /// <see cref="InvalidOperationException"/>, both with the path in the message.
     /// </summary>
     /// <param name="path">
@@ -107,6 +108,11 @@ internal sealed class SessionFolder
         }
 
         IReadOnlyList<string> lights = FramesIn(lightsDir);
+        if (lightsDir == root)
+        {
+            lights = WithoutStacks(lights);
+        }
+
         if (lights.Count == 0)
         {
             throw new InvalidOperationException(
@@ -128,6 +134,60 @@ internal sealed class SessionFolder
     /// here, its exception is the caller's line.
     /// </summary>
     private static readonly Logger Log = LogManager.GetLogger(nameof(SessionFolder));
+
+    /// <summary>
+    /// The frames of a folder that holds its lights directly, without the stacked results that
+    /// sit beside them when the lights are FITS files (R-002, ADR 0048); each file left out is
+    /// named in the log. Raws are returned as they are: a stack is never a raw.
+    /// </summary>
+    /// <param name="frames">The folder's frames, as <see cref="FramesIn"/> lists them.</param>
+    /// <returns>The same list without the FITS files that are stacks, in the same order.</returns>
+    private static IReadOnlyList<string> WithoutStacks(IReadOnlyList<string> frames)
+    {
+        if (frames.Count == 0 || !FitsReader.IsFitsPath(frames[0]))
+        {
+            return frames;
+        }
+
+        List<string> lights = new(frames.Count);
+        foreach (string frame in frames)
+        {
+            int stacked = StackedFrames(frame);
+            if (stacked > 1)
+            {
+                Log.Info(frame + " left out of the lights: its header says it is a stack of " + LogText.Int(stacked) + " frames");
+            }
+            else
+            {
+                lights.Add(frame);
+            }
+        }
+
+        return lights;
+    }
+
+    /// <summary>
+    /// How many frames a FITS file says were stacked into it: the larger of <c>STACKCNT</c>,
+    /// which Siril writes in a stack, and <c>NCOMBINE</c>, the keyword other programs use.
+    /// </summary>
+    /// <param name="path">The FITS file; only its header is read.</param>
+    /// <returns>
+    /// The count; 0 when the header carries neither keyword or cannot be read, so such a file
+    /// stays a light and its own row says the error.
+    /// </returns>
+    internal static int StackedFrames(string path)
+    {
+        try
+        {
+            IReadOnlyDictionary<string, string> header = FitsReader.LoadHeader(path);
+            double count = Math.Max(FitsReader.HDbl(header, "STACKCNT", 0), FitsReader.HDbl(header, "NCOMBINE", 0));
+            return count >= int.MaxValue ? int.MaxValue : (int)count;
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+            return 0;
+        }
+    }
 
     /// <summary>
     /// The frames of one folder, sorted by file name (ordinal, case-insensitive, so DSC_0010

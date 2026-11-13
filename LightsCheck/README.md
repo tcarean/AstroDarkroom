@@ -47,7 +47,8 @@ MySessionFolder\
 ```
 
 - The lights are the frames of `lights\`. A folder without `lights\` but with frames of its own
-  is taken as the lights; an empty `lights\` is an error, never a fall-back to the root of the
+  is taken as the lights; a stacked result beside them is told by its header and is not counted
+  as a light. An empty `lights\` is an error, never a fall-back to the root of the
   session, where `result.fit` and the other results of the stacking sit.
 - The frames are the camera raws (`.nef`, `.cr2`, `.cr3`, `.arw`, `.dng`, `.raf`, `.pef`) when the folder
   has any, otherwise its FITS files (`.fit`, `.fits`, `.fts`); the two kinds are never mixed. They
