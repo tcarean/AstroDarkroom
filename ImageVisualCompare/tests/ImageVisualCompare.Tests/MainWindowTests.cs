@@ -77,6 +77,7 @@ public class MainWindowTests
     {
         double top = 0;
         double height = 0;
+        (double Top, double Height) dips = default;
 
         await WpfThread.RunAsync(() =>
         {
@@ -84,23 +85,51 @@ public class MainWindowTests
             var root = (Grid)window.Content;
             double scale = VisualTreeHelper.GetDpi(root).DpiScaleY;
 
-            var toolbar = (Border)root.Children[0];
-            Thickness padding = toolbar.Padding;
-            toolbar.Padding = new Thickness(padding.Left, padding.Top, padding.Right, padding.Bottom + (addedToTheToolbar / scale));
+            Thickness padding = window.TopBar.Padding;
+            window.TopBar.Padding = new Thickness(padding.Left, padding.Top, padding.Right, padding.Bottom + (addedToTheToolbar / scale));
 
-            // The window's client area, a whole number of physical pixels as a window's is.
-            root.Measure(new Size(764 / scale, 521 / scale));
-            root.Arrange(new Rect(0, 0, 764 / scale, 521 / scale));
+            // The window's client area: 768 by 528 device-independent pixels, a whole number of
+            // physical pixels, as a window's is, at 100, 125, 150, 175 and 200 % alike.
+            root.Measure(new Size(768, 528));
+            root.Arrange(new Rect(0, 0, 768, 528));
             root.UpdateLayout();
 
+            // In physical pixels of the system's scale, which the tests' windows are laid out at.
             top = window.Compare.TranslatePoint(new Point(0, 0), root).Y * scale;
             height = window.Compare.ActualHeight * scale;
+            dips = (top / scale, height / scale);
         });
 
-        Assert.InRange(top, 30, 60);
-        Assert.InRange(height, 400, 480);
+        Assert.InRange(dips.Top, 30, 60);
+        Assert.InRange(dips.Height, 400, 480);
         Assert.Equal(Math.Round(top), top, 9);
         Assert.Equal(Math.Round(height), height, 9);
+    }
+
+    [Fact]
+    public async Task R022_AChangeOfDisplayScale_LaysTheTwoBarsOutAgain()
+    {
+        // The bars' heights are rounded to the pixels of the display the window is on; moved to
+        // a display scaled differently, they have to be measured again even if nothing else of
+        // theirs changed.
+        (bool Top, bool Bottom) before = default;
+        (bool Top, bool Bottom) after = default;
+
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
+            var root = (Grid)window.Content;
+            root.Measure(new Size(768, 528));
+            root.Arrange(new Rect(0, 0, 768, 528));
+            root.UpdateLayout();
+            before = (window.TopBar.IsMeasureValid, window.BottomBar.IsMeasureValid);
+
+            window.OnDisplayScaleChanged();
+            after = (window.TopBar.IsMeasureValid, window.BottomBar.IsMeasureValid);
+        });
+
+        Assert.Equal((true, true), before);
+        Assert.Equal((false, false), after);
     }
 
     [Fact]

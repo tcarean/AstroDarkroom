@@ -31,18 +31,23 @@ square, 0 and 255, and a capture of the screen:
 
 - **The pan stays exact, what is drawn is snapped.** `Viewport.OffsetX` and `OffsetY` are the
   pan, as before. `Viewport.DrawnOffsetX` and `DrawnOffsetY` are the offsets the image is drawn
-  with: the same at a scale that is not whole, and at a whole scale (the ladder's stops from 1
-  up) the offset whose product with the scale is the nearest whole number of physical pixels, a
+  with: the same at a scale that is not whole, and at a whole scale (100, 200, 300, 400, 600,
+  800, 1200 and 1600 % of the ladder) the offset whose product with the scale is the nearest whole number of physical pixels, a
   half going up, and on an axis the image overflows never one past the end of the range.
   `RenderPlanner.For` translates by them, and `Viewport.PixelAt` reads through them, so the
   read-out goes on naming the pixel drawn (ADR 0052).
 - **A scale a last bit from a whole number is that number.** Four wheel notches in and four out
-  give 1.0000000000000002; within 1e-9 of a whole number, from 1 up, the scale is taken as it.
-  The same tolerance decides a half when an offset is rounded.
+  give 1.0000000000000002; within 1e-9 of a whole number, from 1 up, the scale is taken as it,
+  but for a fit a last bit under a whole number, which stays the fit: taken as whole, the image
+  would be wider than the view by that bit and a scrollbar would show at `Fit` (the residue of
+  CR-011, by another way in). The same tolerance decides a half when an offset is rounded, and
+  the last whole pixel of a range that ends a last bit under one.
 - **The two bars of the main window are laid out rounded to whole physical pixels**
   (`UseLayoutRounding` on the toolbar's and the status bar's `Border`, switched off again on the
   panel inside each). The surface between them then starts and ends on a whole physical pixel.
-  The surface itself, its layers and its images stay unrounded (ADR 0012).
+  The surface itself, its layers and its images stay unrounded (ADR 0012). When the window
+  comes onto a display scaled differently, `MainWindow.OnDpiChanged` asks for the two bars to be
+  measured again, since their heights were rounded to the other display's pixels.
 
 ## Alternatives rejected
 
@@ -86,9 +91,11 @@ square, 0 and 255, and a capture of the screen:
   along its edges, evenly now on every side.
 - Not measured: a display scaled 125 % or 150 %, none being at hand. There the surface's
   origin rests on WPF's layout rounding, checked here only by making the toolbar half a pixel
-  taller at a scale of 1.
+  taller at a scale of 1. Nor a window dragged from one display to another scaled differently:
+  whether WPF measures the bars again by itself there is not known, so the window asks for it,
+  and a test pins only that it asks.
 - Five tests written for ADR 0052 set offsets at 400 % that are no longer drawn as set
   (300.375, 300.55, 504.375). Four moved to 450 %, where the image is drawn at its offsets and
   a centre can still fall on an edge; the fifth, the odd-width state, now pins the drawn offset
   504.5 and the columns read through it. The odd-heights test reads its first row from the
-  drawn offset.
+  drawn offset. Two cases of the surface's test moved to 450 % and 1550 % for the same reason.

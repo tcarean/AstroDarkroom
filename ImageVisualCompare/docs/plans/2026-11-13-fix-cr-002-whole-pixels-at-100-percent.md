@@ -141,5 +141,10 @@ its neighbours at the edges of its square; CR-006; CR-011.
 - The harness's own "origin on screen" came from `PointToScreen`, which rounds to whole pixels;
   the origin is now read inside the client area, with its fraction. The figures of ADR 0052 do
   not rest on it.
+- One wheel notch in and one out, which the plan names, gives exactly 1 in doubles; four in
+  and four out give 1.0000000000000002, and that is the case tested and measured against.
+- The review of the branch added: a fit a last bit under 100 % stays the fit (settled, it showed
+  a scrollbar at `Fit`); the two bars are measured again when the display's scale changes; the
+  window's test no longer assumes a system scale of 100 %.
 - The application was not launched on the real pair with its log read (`docs/skills.md`,
   `/wrap-up` step 9): the owner was at the PC. The real window ran on screen in the harness.

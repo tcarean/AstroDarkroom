@@ -60,10 +60,13 @@ public sealed class Viewport
 
     public double ViewportHeight { get; private set; }
 
-    /// <summary>Content-space coordinate drawn at the left edge of the viewport.</summary>
+    /// <summary>
+    /// The pan: the content-space coordinate at the left edge of the viewport, with its
+    /// fraction. The image is drawn with <see cref="DrawnOffsetX"/>.
+    /// </summary>
     public double OffsetX { get; private set; }
 
-    /// <summary>Content-space coordinate drawn at the top edge of the viewport.</summary>
+    /// <summary>The pan's content-space coordinate at the top edge of the viewport.</summary>
     public double OffsetY { get; private set; }
 
     /// <summary>
@@ -155,7 +158,11 @@ public sealed class Viewport
         ClampOffsets();
     }
 
-    /// <summary>Converts a viewport position to the image point drawn there.</summary>
+    /// <summary>
+    /// Converts a viewport position to the image point the pan puts there. At a whole scale the
+    /// image is drawn up to half a physical pixel from it (<see cref="DrawnOffsetX"/>); the
+    /// pixel drawn at a position is <see cref="PixelAt"/>'s to say.
+    /// </summary>
     /// <param name="screenX">The position, in screen space (physical pixels).</param>
     /// <param name="screenY">The position, in screen space (physical pixels).</param>
     /// <returns>The point, in image pixels; it may lie off the image.</returns>
@@ -220,7 +227,8 @@ public sealed class Viewport
     /// </summary>
     /// <param name="scale">
     /// The new scale, 1 being one image pixel per physical screen pixel; clamped to
-    /// <see cref="MinScale"/> and <see cref="MaxScale"/>.
+    /// <see cref="MinScale"/> and <see cref="MaxScale"/>, and taken as a whole number when it
+    /// is a last bit from one (<see cref="Settled"/>).
     /// </param>
     /// <param name="anchorScreenX">The anchor, in screen space (physical pixels).</param>
     /// <param name="anchorScreenY">The anchor, in screen space (physical pixels).</param>
@@ -315,11 +323,11 @@ public sealed class Viewport
 
     /// <summary>Sets the offsets directly, for scrollbar and minimap driven panning.</summary>
     /// <param name="offsetX">
-    /// The image x to draw at the viewport's left edge, in image pixels; clamped like every
-    /// other movement.
+    /// The image x the pan puts at the viewport's left edge, in image pixels; clamped like
+    /// every other movement.
     /// </param>
     /// <param name="offsetY">
-    /// The image y to draw at the viewport's top edge, in image pixels; clamped too.
+    /// The image y the pan puts at the viewport's top edge, in image pixels; clamped too.
     /// </param>
     public void SetOffset(double offsetX, double offsetY)
     {
@@ -339,7 +347,8 @@ public sealed class Viewport
 
     /// <summary>
     /// Brings the scale back between <see cref="MinScale"/> and <see cref="MaxScale"/> after a
-    /// size changed; leaves it alone while there is no content.
+    /// size changed, a last bit from a whole number taken as that number
+    /// (<see cref="Settled"/>); leaves it alone while there is no content.
     /// </summary>
     private void ClampScale()
     {
@@ -357,12 +366,21 @@ public sealed class Viewport
     /// <param name="scale">The scale, already between the floor and the ceiling.</param>
     /// <returns>
     /// The whole number within <see cref="WholeTolerance"/> of the scale, from 1 up; otherwise
-    /// the scale as given.
+    /// the scale as given, and also when the scale shows the whole image and the whole number
+    /// would not.
     /// </returns>
-    private static double Settled(double scale)
+    private double Settled(double scale)
     {
         double whole = Math.Round(scale);
-        return whole >= 1 && Math.Abs(scale - whole) < WholeTolerance ? whole : scale;
+        if (whole < 1 || Math.Abs(scale - whole) >= WholeTolerance)
+        {
+            return scale;
+        }
+
+        // A fit a last bit under a whole number stays the fit: at the whole number the image
+        // would be larger than the view by that bit, and a scrollbar would show at Fit.
+        double fit = FitScale;
+        return scale <= fit && whole > fit ? scale : whole;
     }
 
     /// <summary>

@@ -134,6 +134,29 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
+    /// Lays the two bars out again when the window comes onto a display scaled differently.
+    /// </summary>
+    /// <param name="oldDpi">The scale before; not read.</param>
+    /// <param name="newDpi">The scale after; not read.</param>
+    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+    {
+        base.OnDpiChanged(oldDpi, newDpi);
+        OnDisplayScaleChanged();
+    }
+
+    /// <summary>
+    /// Asks for the toolbar and the status bar to be measured again: their heights are rounded
+    /// to whole physical pixels of the display the window is on (R-022), and WPF measures an
+    /// element again only when something it depends on changed, which a move to another display
+    /// may not do. Separate from <see cref="OnDpiChanged"/> so a test can call it.
+    /// </summary>
+    internal void OnDisplayScaleChanged()
+    {
+        TopBar.InvalidateMeasure();
+        BottomBar.InvalidateMeasure();
+    }
+
+    /// <summary>
     /// Says, before anything is asked, that the <c>--lang</c> of the command line named no
     /// language this program has, and that the interface is English (R-102); does nothing when
     /// there is nothing to say.

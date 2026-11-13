@@ -11,7 +11,8 @@
 > `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml`,
 > `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml.cs`,
 > `src/ImageVisualCompare.Core/MinimapGeometry.cs`,
-> `src/ImageVisualCompare.Wpf/app.manifest`.
+> `src/ImageVisualCompare.Wpf/app.manifest`,
+> and, for its two bars' layout rounding, `src/ImageVisualCompare.Wpf/MainWindow.xaml`.
 > A change to the code this describes means this note is updated in the same task, or
 > deleted with the decision it explains.
 
@@ -93,7 +94,8 @@ from the drawn pair and `PixelAt` reads through it; nothing else does. The pan i
 itself because a rounding dropped at each movement adds up: a window resized pixel by pixel
 would hold the image's edge still, not its centre. For the image to land on the screen's pixels
 the surface has to start on one too, which is what the two bars of `MainWindow.xaml` are laid
-out rounded for (`UseLayoutRounding` on each bar's `Border`, off again inside it); the surface
+out rounded for (`UseLayoutRounding` on each bar's `Border`, off again inside it, and
+measured again from `MainWindow.OnDpiChanged` when the display's scale changes); the surface
 and its images stay unrounded, since rounding a 5938 pixel wide `Image` to device pixels is
 what the explicit pixel sizes are there to avoid. See ADR 0053.
 

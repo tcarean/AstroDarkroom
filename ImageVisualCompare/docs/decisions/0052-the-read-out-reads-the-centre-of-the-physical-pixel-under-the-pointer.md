@@ -87,6 +87,10 @@ edge from the pixel after it (0 of 148 columns and 0 of 85 rows from the pixel b
 
 ## Alternatives rejected
 
+(Restated 2026-11-13: "converts that point with `ScreenToContent`" in the decision is, since
+ADR 0053, through the offsets the image is drawn with, which at a whole scale are not the pan's
+that `ScreenToContent` uses.)
+
 - **Keep the offsets whole at a whole scale and leave the read-out alone.** That is CR-002's
   direction and settles part (a) only: at 400 % and above a fractional offset is ordinary, after
   any wheel zoom, and part (b) stays.
@@ -111,7 +115,8 @@ edge from the pixel after it (0 of 148 columns and 0 of 85 rows from the pixel b
 ## Consequences
 
 - R-028 says it. `ViewportTests` has the review's case, the even heights from 900 to 1100, the
-  odd ones, an offset set an ulp under, the 400 % case, a centre exactly on an edge and just
+  odd ones, an offset set an ulp under, the 400 % case (Restated 2026-11-13: at 450 % since ADR 0053,
+  with the edge cases after it), a centre exactly on an edge and just
   past one, and the odd-width state above; `CompareViewTests` renders the surface and compares,
   screen pixel by screen pixel, the image pixel drawn with the one reported.
 - Measured again on screen after the change: the 1200 × 800 pair on surfaces 764 and 765 wide
@@ -147,7 +152,8 @@ edge from the pixel after it (0 of 148 columns and 0 of 85 rows from the pixel b
   pixel that holds the screen pixel's centre. From 100 % up that is the one that weighs most in
   the blend, unless the centre is on an edge, where the two weigh the same and the one before
   is named; below 100 % a screen pixel covers several image pixels and the one named is one of
-  them. At 100 % with the image a fraction of a pixel off (CR-002, still open) the read-out
+  them. At 100 % with the image a fraction of a pixel off (CR-002, still open; Restated 2026-11-13:
+  closed by ADR 0053) the read-out
   before named the lighter of the two: on the surface above, the vertical offset was 174.815
   and every row read was the one above the row drawn at 81.5 %.
 - (Restated 2026-11-13: since ADR 0053 the image is not drawn half a pixel off at 100 %; what

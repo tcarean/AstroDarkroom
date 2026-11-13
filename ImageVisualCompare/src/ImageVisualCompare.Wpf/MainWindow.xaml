@@ -19,7 +19,8 @@
              comparison surface between them then starts and ends on a whole pixel on any display
              scale, which 100% needs to show one stored pixel per screen pixel (R-022). Rounding
              is switched off again inside each bar, so nothing in them moves. -->
-        <Border Grid.Row="0"
+        <Border x:Name="TopBar"
+                Grid.Row="0"
                 Background="{StaticResource ChromeBrush}"
                 BorderBrush="{StaticResource ChromeBorderBrush}"
                 BorderThickness="0,0,0,1"
@@ -79,7 +80,8 @@
 
         <controls:CompareView x:Name="Compare" Grid.Row="1" />
 
-        <Border Grid.Row="2"
+        <Border x:Name="BottomBar"
+                Grid.Row="2"
                 Background="{StaticResource ChromeBrush}"
                 BorderBrush="{StaticResource ChromeBorderBrush}"
                 BorderThickness="0,1,0,0"

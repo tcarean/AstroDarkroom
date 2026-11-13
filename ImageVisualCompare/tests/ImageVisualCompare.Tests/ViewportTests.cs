@@ -369,6 +369,43 @@ public class ViewportTests
     }
 
     [Fact]
+    public void R022_AtTheEndOfTheRange_AnEndALastBitUnderAWholePixel_IsThatPixel()
+    {
+        // A view the layout left an ulp over 1921 pixels ends 1078.9999999999998 pixels into a
+        // 3000 pixel image: the image's last column must still be reachable.
+        var viewport = Create(contentWidth: 3000, viewportWidth: 1921.0000000000002);
+        viewport.ZoomTo(1.0, 0, 0);
+        viewport.SetOffset(5000, 0);
+
+        Assert.Equal(1079, viewport.OffsetX, 9);
+        Assert.Equal(1079, viewport.DrawnOffsetX);
+    }
+
+    [Fact]
+    public void R022_AFitALastBitUnderOneHundredPercent_StaysTheFit()
+    {
+        // Taken as 100% the image would be wider than the view by that last bit, and a
+        // scrollbar would show at Fit.
+        var viewport = Create(contentWidth: 1921, contentHeight: 1000, viewportWidth: 1920.9999999999998, viewportHeight: 2000);
+        viewport.ZoomToFit();
+
+        Assert.True(viewport.FitScale < 1);
+        Assert.Equal(viewport.FitScale, viewport.Scale);
+        Assert.False(viewport.CanScrollHorizontally);
+    }
+
+    [Fact]
+    public void R022_AFitALastBitOverOneHundredPercent_IsOneHundredPercent()
+    {
+        var viewport = Create(contentWidth: 1920, contentHeight: 1000, viewportWidth: 1920.0000000000002, viewportHeight: 2000);
+        viewport.ZoomToFit();
+
+        Assert.True(viewport.FitScale > 1);
+        Assert.Equal(1.0, viewport.Scale);
+        Assert.False(viewport.CanScrollHorizontally);
+    }
+
+    [Fact]
     public void R027_ResizingOnePixelAtATime_AtOneHundredPercent_StillHoldsTheCentre()
     {
         // The pan keeps its half pixel, so twenty resizes do not add up to a shift (R-022).
