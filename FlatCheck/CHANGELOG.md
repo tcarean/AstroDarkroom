@@ -232,6 +232,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A compressed FITS is refused with a sentence that says so (R-136, ADR 0105, the review's
+  CR-008). A file saved with Siril's FITS compression, or packed with `fpack`, holds its image
+  as a table; the reader took the table for a picture 8 pixels wide, so the structure mode
+  printed a whole report and REDO on bytes that are not pixels, and `--histeq` wrote a picture
+  of them. Every mode now stops with `FITS: the image is stored compressed ... Save the file
+  without compression.`, exit 1. Other table extensions are skipped, and an image extension
+  after them is read.
 - `--expo` no longer gives a verdict on a white level at or below the black level (R-041, the
   review's CR-007). Only `--sat` against `--black` was checked; an option against the file's
   own level was not. `flat.NEF --expo --sat 100` on a raw whose black is 150 said the file

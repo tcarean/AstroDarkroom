@@ -39,6 +39,13 @@ NEF itself. Failing that, in Siril it means the **Conversion** tab (add NEFs →
 *not* Open + Save, which debayers and normalises. The mode detects and rejects both
 failure modes (see "Raw-file sanity gate" in `modes-expo.md`).
 
+The image of a FITS is its primary HDU or an `IMAGE` extension, never a table (R-136, ADR
+0105): `FitsReader.LoadFull` refuses a `BINTABLE` whose `ZIMAGE` is `T`, the tile-compressed
+image Siril's FITS compression and `fpack` write, with a sentence that says so, and steps over
+any other table by its rows and its heap (`|BITPIX| / 8 * GCOUNT * (PCOUNT + NAXIS1 * NAXIS2)`).
+Until 2026-11-13 any HDU with two axes was the image, and a compressed 1536 x 1024 frame was
+measured as a frame 8 pixels wide.
+
 Accepted formats: FITS (`.fit`/`.fits`/`.fts` - though the extension is never
 actually checked, see `known-issues.md` item 2), BITPIX 8/16/32/-32/-64, mono or colour; and
 camera raw (`.nef`/`.cr2`/`.cr3`/`.arw`/`.dng`/`.raf`), where the extension **is**

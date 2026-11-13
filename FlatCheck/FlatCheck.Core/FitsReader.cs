@@ -69,6 +69,15 @@ namespace FlatCheck
         static string NotSimple => T("FITS: the file does not begin with SIMPLE.", "FITS: fisierul nu incepe cu SIMPLE.");
         static string HeaderIncomplete => T("FITS: incomplete header.", "FITS: header incomplet.");
 
+        /// <summary>The refusal of a file whose image is stored as a tile-compressed table
+        /// (R-136, ADR 0105): it says what the file is and what to do, since the pixels are
+        /// there and only this reader cannot take them.</summary>
+        static string CompressedImage => T(
+            "FITS: the image is stored compressed (tile compression, as Siril's FITS compression or fpack write it), "
+          + "which FlatCheck does not read. Save the file without compression.",
+            "FITS: imaginea e stocata comprimat (compresie pe dale, cum o scriu compresia FITS din Siril sau fpack), "
+          + "iar FlatCheck nu o citeste. Salveaza fisierul fara compresie.");
+
         /// <summary>
         /// The refusal of a data area shorter than its header declares, a copy cut
         /// mid-transfer (R-009). Both counts are in the message so the reader of the error sees
@@ -331,6 +340,26 @@ namespace FlatCheck
 
                 int bitpix = HInt(hdr, "BITPIX", 0);
                 int naxis = HInt(hdr, "NAXIS", 0);
+
+                // An extension is an image only when it says so. A table's NAXIS1 x NAXIS2 are
+                // its row length and row count, with BITPIX 8, so it would pass for a 2D image
+                // of bytes: a tile-compressed image (one 8-byte descriptor per tile) came out as
+                // a frame 8 pixels wide and was measured (R-136).
+                if (hdr.TryGetValue("XTENSION", out string xtension) && !xtension.StartsWith("IMAGE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (hdr.TryGetValue("ZIMAGE", out string zimage) && zimage == "T")
+                        throw new InvalidDataException(CompressedImage);
+                    // Any other table: step over its rows and its heap (PCOUNT bytes after the
+                    // rows, which NAXISn do not count) and look at the next HDU.
+                    long rowBytes = 1;
+                    for (int ax = 1; ax <= naxis; ax++) rowBytes *= HInt(hdr, "NAXIS" + ax, 1);
+                    long tableBytes = Math.Abs(bitpix) / 8 * (long)HInt(hdr, "GCOUNT", 1) * (HInt(hdr, "PCOUNT", 0) + (naxis > 0 ? rowBytes : 0));
+                    if (pos + tableBytes > raw.Length)
+                        throw new InvalidDataException(DataCut(tableBytes, raw.Length - pos));
+                    pos += (int)((tableBytes + 2879) / 2880 * 2880);
+                    continue;
+                }
+
                 if (naxis < 2)
                 {
                     // an HDU without an image (e.g. an empty primary) - skip its data (0) and go on

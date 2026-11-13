@@ -231,6 +231,148 @@ public class FitsReaderTests
         Assert.Throws<InvalidDataException>(() => Load(truncated));
     }
 
+    /// <summary>One HDU: the cards, END, the padding, then <paramref name="dataBytes"/> bytes
+    /// that are not zero (so a table read as an image would show), padded to a block.</summary>
+    static byte[] Hdu(IEnumerable<string> cards, int dataBytes)
+    {
+        var head = new System.Text.StringBuilder();
+        foreach (string c in cards) head.Append(c.PadRight(FitsTestData.CardSize));
+        head.Append("END".PadRight(FitsTestData.CardSize));
+        while (head.Length % FitsTestData.BlockSize != 0) head.Append(' ');
+        byte[] h = System.Text.Encoding.ASCII.GetBytes(head.ToString());
+        var all = new byte[h.Length + (dataBytes + FitsTestData.BlockSize - 1) / FitsTestData.BlockSize * FitsTestData.BlockSize];
+        Array.Copy(h, all, h.Length);
+        for (int i = 0; i < dataBytes; i++) all[h.Length + i] = (byte)(i * 37 % 251 + 1);
+        return all;
+    }
+
+    /// <summary>An empty primary HDU, as a file whose image is in an extension starts.</summary>
+    static byte[] EmptyPrimary() => Hdu(new[]
+    {
+        FitsTestData.Card("SIMPLE", "T"), FitsTestData.Card("BITPIX", "16"), FitsTestData.Card("NAXIS", "0"), FitsTestData.Card("EXTEND", "T"),
+    }, 0);
+
+    /// <summary>A binary table of <paramref name="rows"/> rows of 8 bytes with a heap, the
+    /// shape of a tile-compressed image (one variable-length column); with
+    /// <paramref name="compressedImage"/> it carries the ZIMAGE cards fpack and Siril write.</summary>
+    static byte[] Table(int rows, int heap, bool compressedImage, int imageWidth = 1536)
+    {
+        var cards = new List<string>
+        {
+            "XTENSION= 'BINTABLE'", FitsTestData.Card("BITPIX", "8"), FitsTestData.Card("NAXIS", "2"),
+            FitsTestData.Card("NAXIS1", "8"), FitsTestData.Card("NAXIS2", rows.ToString()),
+            FitsTestData.Card("PCOUNT", heap.ToString()), FitsTestData.Card("GCOUNT", "1"), FitsTestData.Card("TFIELDS", "1"),
+            "TTYPE1  = 'COMPRESSED_DATA'", "TFORM1  = '1PB(2500)'",
+        };
+        if (compressedImage)
+            cards.AddRange(new[]
+            {
+                FitsTestData.Card("ZIMAGE", "T"), FitsTestData.Card("ZBITPIX", "16"), FitsTestData.Card("ZNAXIS", "2"),
+                FitsTestData.Card("ZNAXIS1", imageWidth.ToString()), FitsTestData.Card("ZNAXIS2", rows.ToString()), "ZCMPTYPE= 'RICE_1  '",
+            });
+        return Hdu(cards, 8 * rows + heap);
+    }
+
+    /// <summary>An image HDU made into an extension: the first card, SIMPLE, replaced by
+    /// XTENSION = 'IMAGE'.</summary>
+    static byte[] ImageExtension(int w, int h, Func<int, int, double> pixel)
+    {
+        byte[] hdu = FitsTestData.BuildFits(w, h, pixel, bitpix: 16);
+        byte[] card = System.Text.Encoding.ASCII.GetBytes("XTENSION= 'IMAGE   '".PadRight(FitsTestData.CardSize));
+        Array.Copy(card, hdu, card.Length);
+        return hdu;
+    }
+
+    /// <summary>
+    /// R-136: a tile-compressed FITS, as fpack and Siril's FITS compression write it, is refused
+    /// by name. Before, the table's rows were read as an image 8 pixels wide (its BITPIX is 8,
+    /// its NAXIS1 is 8) and every mode went on with the bytes of the heap descriptors.
+    /// </summary>
+    [Fact]
+    public void R136_ATileCompressedFitsIsRefusedByName()
+    {
+        byte[] file = EmptyPrimary().Concat(Table(rows: 1024, heap: 400000, compressedImage: true)).ToArray();
+
+        var ex = Assert.Throws<InvalidDataException>(() => Load(file));
+        Assert.Equal("FITS: imaginea e stocata comprimat (compresie pe dale, cum o scriu compresia FITS din Siril sau fpack), "
+                   + "iar FlatCheck nu o citeste. Salveaza fisierul fara compresie.", ex.Message);
+        using (Ui.Use(UiLanguage.English))
+            Assert.Equal("FITS: the image is stored compressed (tile compression, as Siril's FITS compression or fpack write it), "
+                       + "which FlatCheck does not read. Save the file without compression.",
+                         Assert.Throws<InvalidDataException>(() => Load(file)).Message);
+    }
+
+    /// <summary>R-136 from the console: every mode stops at the same sentence, exit 1, and
+    /// prints no verdict and writes no picture. The structure mode printed REDO, exit 3, and
+    /// --histeq wrote a picture, exit 0.</summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData("--expo")]
+    [InlineData("--histeq")]
+    [InlineData("--light")]
+    public void R136_EveryModeOfTheConsoleRefusesACompressedFits(string mode)
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("compressed.fit", EmptyPrimary().Concat(Table(rows: 1024, heap: 400000, compressedImage: true)).ToArray());
+        string png = ws.PathTo("out.png");
+        var args = new List<string> { path, "-o", png };
+        if (mode.Length > 0) args.Add(mode);
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+
+        int exit = FlatCheckCli.Run(args.ToArray(), stdout, stderr);
+
+        Assert.Equal(1, exit);
+        Assert.Contains("FITS: imaginea e stocata comprimat", stderr.ToString());
+        Assert.DoesNotContain("VERDICT", stdout.ToString());
+        Assert.False(File.Exists(png));
+    }
+
+    /// <summary>
+    /// R-136: a table that is not a compressed image is skipped whole, heap included, and the
+    /// image extension after it is the image. Before, the table was the image; and had it been
+    /// skipped by its NAXISn alone, the heap would have been parsed as the next header.
+    /// </summary>
+    [Fact]
+    public void R136_APlainTableIsSkippedWithItsHeap_AndTheImageExtensionAfterItIsRead()
+    {
+        byte[] file = EmptyPrimary()
+            .Concat(Table(rows: 100, heap: 5000, compressedImage: false))
+            .Concat(ImageExtension(6, 4, (x, y) => 100 + 10 * y + x)).ToArray();
+
+        Img img = Load(file);
+
+        Assert.Equal(6, img.W);
+        Assert.Equal(4, img.H);
+        Assert.Equal(100, img.At(0, 0), 6);      // the fixture writes the scene as the raster reads it (bottom-up)
+        Assert.Equal(135, img.At(3, 5), 6);
+        Assert.Equal(113, img.At(1, 3), 6);
+    }
+
+    /// <summary>R-136: a table alone is no image.</summary>
+    [Fact]
+    public void R136_AFileWithOnlyATableHasNoImage()
+    {
+        byte[] file = EmptyPrimary().Concat(Table(rows: 100, heap: 5000, compressedImage: false)).ToArray();
+
+        var ex = Assert.Throws<Exception>(() => Load(file));
+
+        Assert.Equal("FITS: niciun HDU cu imagine 2D gasit.", ex.Message);
+    }
+
+    /// <summary>R-136: a table cut short is the cut file of R-009, heap counted.</summary>
+    [Fact]
+    public void R136_ATableCutShortIsRefusedAsCutData()
+    {
+        byte[] whole = EmptyPrimary().Concat(Table(rows: 100, heap: 5000, compressedImage: false)).ToArray();
+        byte[] cut = whole.Take(whole.Length - FitsTestData.BlockSize).ToArray();   // 5800 bytes of table, 2880 fewer in the file
+
+        var ex = Assert.Throws<InvalidDataException>(() => Load(cut));
+
+        Assert.StartsWith("FITS: date trunchiate", ex.Message);
+        Assert.Contains("5800", ex.Message);
+    }
+
     /// <summary>
     /// R-009: a valid header for a 4 x 4 16-bit image (32 bytes of pixels) followed by only 8
     /// data bytes is refused with InvalidDataException naming both counts, before any sample
