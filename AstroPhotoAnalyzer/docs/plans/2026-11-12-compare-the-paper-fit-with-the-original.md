@@ -193,3 +193,9 @@ What deviated from the plan above, and why:
   zooms while the line is held, a recompute keeps the variant shown, the drag is testable
   without a mouse, and tests were added for the two layers, an area the image does not fill and
   the view's bindings; `window.md` no longer says this tab uses a `Viewbox`.
+- A third review, of the whole branch, asked for by the owner (a subagent, 2026-11-13), found
+  one risk that two new tests then confirmed: the zoom survived a new image of the same size as
+  the last, since the viewer resets only for a child of another size. The comparison now puts
+  the viewer back at the fit when it empties. The same commit holds, by tests, that a new image
+  starts at the first variant, that a finer copy goes back to the fit and keeps the line, and
+  that the box reaches every variant.

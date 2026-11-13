@@ -60,7 +60,7 @@ recommendation, and answered in chat.
 
 - R-178 and R-146 say so and R-179 is new; `SplitDividerTests`, `BeforeAfterViewerTests`,
   `ZoomPanViewerTests` and `GamutFitTabTests` hold the line's rules, the clip under zoom and pan,
-  the two additions of the viewer and the gallery of three. A drag is tested through the
+  the viewer's additions and the gallery of three. A drag is tested through the
   methods the mouse handlers call; the mouse itself (the capture, the cursor, the wheel handed
   to the viewer while the line is held) is not driven by a test and is checked in the running
   window.

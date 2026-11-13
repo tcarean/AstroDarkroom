@@ -159,10 +159,12 @@ namespace AstroPhotoAnalyzer.Wpf
         internal void EndDividerDrag() => _dragging = false;
 
         /// <summary>
-        /// A new After image: the line shows only while there is something to compare, and goes
-        /// back to the middle when there is nothing, so that the next image starts there (another
-        /// variant of the same image replaces After without passing through null, and keeps it).
-        /// A drag in progress ends with the comparison: the pointer has nothing left to move.
+        /// A new After image: the line shows only while there is something to compare. When
+        /// there is nothing, the line goes back to the middle and the view to the fit, so that
+        /// the next image starts whole whatever its size (the viewer by itself resets only for a
+        /// child of another size); another variant of the same image replaces After without
+        /// passing through null, and keeps both. A drag in progress ends with the comparison:
+        /// the pointer has nothing left to move.
         /// </summary>
         void OnAfterChanged()
         {
@@ -173,6 +175,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 EndDividerDrag();
                 if (IsMouseCaptured) ReleaseMouseCapture();
                 _divider.Reset();
+                Viewer.Reset();
             }
             Place();
         }

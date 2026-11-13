@@ -343,7 +343,7 @@ namespace AstroPhotoAnalyzer.Wpf
             foreach (GamutFitGalleryItem i in items) i.ShowOutside = _showOutside;
             // A recompute of the same image (a larger area) keeps the variant looked at; a new
             // image starts at the first, since Reset put the position there.
-            _index = Math.Clamp(_index, 0, items.Count - 1);
+            _index = Math.Clamp(_index, 0, Math.Max(0, items.Count - 1));
             Before = before;
             Items = items;
             RaiseGallery();

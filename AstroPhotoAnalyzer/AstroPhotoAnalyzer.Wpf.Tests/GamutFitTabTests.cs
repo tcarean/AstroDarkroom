@@ -99,12 +99,16 @@ public class GamutFitTabTests
         Assert.Contains(tab.Current.EvidenceRows, r => r.Text.StartsWith("de mana"));
         Assert.DoesNotContain(tab.Current.EvidenceRows, r => r.Text.Contains("median") || r.Text.Contains("percentil") || r.Text.Contains("croma"));
 
-        // The box paints both sides, each its own layer.
+        // The box paints both sides, each its own layer: it reaches the original and every
+        // variant (on this frame no variant has anything left to paint, so their state is read).
+        Assert.All(tab.Items, i => Assert.True(i.ShowOutside));
         tab.ShowOutside = false;
         Assert.Null(before.Overlay);
         Assert.Null(tab.Current.Overlay);
+        Assert.All(tab.Items, i => Assert.False(i.ShowOutside));
         tab.ShowOutside = true;
         Assert.NotNull(before.Overlay);
+        Assert.All(tab.Items, i => Assert.True(i.ShowOutside));
 
         // The buttons change the variant only: the original stays the same image.
         tab.Next.Execute(null);
@@ -131,6 +135,15 @@ public class GamutFitTabTests
         Assert.False(tab.HasGallery);
         Assert.Null(tab.Before);
         Assert.True(tab.ShowOutside);
+
+        // The new image starts at the first variant, wherever the last one was left (Lina),
+        // and a gallery made with the box off is made with no layer shown.
+        tab.ShowOutside = false;
+        tab.Compute(400, 300);
+        Assert.Equal("Exacta", tab.Current!.Name);
+        Assert.Equal("1 / 3", tab.Position);
+        Assert.Null(tab.Before!.Overlay);
+        Assert.All(tab.Items, i => Assert.False(i.ShowOutside));
     }
 
     [Fact]
@@ -267,5 +280,21 @@ public class GamutFitTabTests
             Assert.Same(tab.Before.Image, comparison.Before);
             tab.ShowOutside = false;
             Assert.Null(comparison.BeforeOverlay);
+
+            // Another image opened: the tab empties through its bindings, and the next gallery,
+            // of the same size, starts whole with the line in the middle (the controls keep
+            // nothing between images, R-178).
+            comparison.MoveDividerTo(100);
+            comparison.Viewer.ZoomAt(new System.Windows.Point(0, 0), 2);
+            Assert.Equal(2, comparison.Viewer.Zoom);
+            tab.Populate(Result(ws, withProfile: true));
+            Assert.Null(comparison.After);
+            Assert.Null(comparison.Before);
+            Assert.Equal(0.5, comparison.DividerPosition);
+            tab.Compute(400, 300);
+            view.UpdateLayout();
+            Assert.Same(tab.Current!.Image, comparison.After);
+            Assert.Equal(1, comparison.Viewer.Zoom);
+            Assert.Equal(0.5, comparison.DividerPosition);
         });
 }

@@ -185,7 +185,8 @@ hue of every pixel stay what they were. It is computed right after the analysis,
   the right edge only the original.
 - The mouse wheel zooms around the cursor, up to 8:1 on the reduced copy the tab shows; hold the
   left button and drag to move the image; a double click fits it again. The two sides zoom and
-  move together, and the line stays where you put it.
+  move together, and the line stays where you put it. When the window grows enough for a finer
+  copy, the gallery is made again and the image is shown whole once more.
 - There are three variants: **Exact** changes only the colours the paper cannot hold, each
   losing just enough saturation to fit; **Soft** and **Softer** ease the colours near the
   paper's limit too, from 90 % and 80 % of it, so that a run of growing saturation keeps its

@@ -18,8 +18,9 @@ The Culori pentru hartie tab takes the pixels the Soft proof tab marks (the rule
 the whole colour difference after the compensated round trip through the profile over
 `CurveGamutDeltaE`) and lowers their chroma, each along its own hue and at its own L\*, to the
 largest chroma the paper holds there; L\* and hue never move. Three variants differ by their
-knee; the tab shows them in a gallery like Editare Curbe, with the red layer of what is still
-outside, and saves one as a new FITS or 16-bit TIFF. The owner's question behind it, the
+knee; the tab shows them in a gallery like Editare Curbe, each beside the original across a
+line the user drags, with a red layer on each side of what the paper cannot hold there, and
+saves one as a new FITS or 16-bit TIFF. The owner's question behind it, the
 measurements and the alternatives are in ADR 0083.
 
 ## The table (`GamutFitTable`)
@@ -207,7 +208,8 @@ press is the viewer's, and so is the wheel: while a drag holds the mouse here th
 not reach the viewer, so `OnPreviewMouseWheel` hands it over (`ZoomAt` with the viewer's
 `WheelFactor`). The three drag methods are internal and hold the whole rule, so the tests drive
 a drag without a mouse. `After` going null (the gallery emptied by another image) hides the overlay, ends a drag in
-progress and puts the line back in the middle; another variant replaces `After` without passing through null and
+progress, puts the line back in the middle and the viewer back at the fit (by itself the viewer
+resets only for a child of another size, so two images of the same size would share a zoom); another variant replaces `After` without passing through null and
 keeps it.
 
 `FitEnlarges` is bound to `PreviewCapped`: false keeps an image smaller than the area at its own

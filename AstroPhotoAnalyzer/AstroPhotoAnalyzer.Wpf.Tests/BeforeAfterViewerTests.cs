@@ -224,11 +224,13 @@ public class BeforeAfterViewerTests
             BeforeAfterViewer v = Comparison();
             Assert.Equal(Visibility.Visible, v.Overlay.Visibility);
             v.MoveDividerTo(100);
+            v.Viewer.ZoomAt(new Point(0, 0), 2);
 
-            // Another variant of the same image keeps the line: only After changed.
+            // Another variant of the same image keeps the line and the zoom: only After changed.
             v.After = Image(800, 600, 120);
             Layout(v, 400, 300);
             Assert.Equal(0.25, v.DividerPosition);
+            Assert.Equal(2, v.Viewer.Zoom);
 
             // The gallery emptied (another image opened): nothing to compare, the line goes home.
             v.Before = null;
@@ -237,12 +239,40 @@ public class BeforeAfterViewerTests
             Assert.NotEqual(Visibility.Visible, v.Overlay.Visibility);
             Assert.Equal(0.5, v.DividerPosition);
 
+            // The next image, of the same size as the last: it starts whole, not at the zoom
+            // the last one was left at, with the line in the middle.
             v.Before = Image(800, 600, BeforeLevel);
             v.After = Image(800, 600, AfterLevel);
             Layout(v, 400, 300);
             Assert.Equal(Visibility.Visible, v.Overlay.Visibility);
             Assert.Equal(0.5, v.DividerPosition);
+            Assert.Equal(1, v.Viewer.Zoom);
             Assert.Equal(400, ClipRight(v), 9);
+        });
+
+    [Fact]
+    public void R179_AFinerCopyOfTheSameImageGoesBackToTheFitAndKeepsTheLine()
+        => _sta.Invoke(() =>
+        {
+            BeforeAfterViewer v = Comparison();
+            v.MoveDividerTo(100);
+            v.Viewer.ZoomAt(new Point(0, 0), 2);
+            Assert.Equal(100, ClipRight(v), 9);
+
+            // The gallery computed again at twice the size (R-178): the images are replaced
+            // without the comparison emptying, so the line stays; the copy has another size, so
+            // the viewer shows the whole of it (R-163), and the cut is said in the new pixels.
+            v.Before = Image(1600, 1200, BeforeLevel);
+            v.After = Image(1600, 1200, AfterLevel);
+            v.ContentWidth = 1600;
+            v.ContentHeight = 1200;
+            Layout(v, 400, 300);
+            Assert.Equal(0.25, v.DividerPosition);
+            Assert.Equal(1, v.Viewer.Zoom);
+            Assert.Equal(0.25, v.Viewer.Scale, 9);
+            Assert.Equal(400, ClipRight(v), 9);
+            Assert.Equal(BeforeLevel, Seen(v, 90, 100));
+            Assert.Equal(AfterLevel, Seen(v, 110, 100));
         });
 
     [Fact]
