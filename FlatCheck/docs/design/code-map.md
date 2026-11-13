@@ -352,7 +352,12 @@ a library extraction and not a copy is ADR 0011.
     wrapper, the only place a process is started besides `Presentation/ExternalLink`, which
     opens the windows' links: every run gets a
     private copy of Siril's settings with `-i`, in `%TEMP%\FlatCheck\siril-<guid>`, deleted
-    after the exit (ADR 0055); plus the `SirilRunner` delegate the tests replace).
+    after the exit (ADR 0055); a stop kills the process tree from the cancellation's callback,
+    where `Kill` catches everything the kill can throw, the `AggregateException` for a child
+    that could not be ended included, and the wait for the exit, which is also the wait for
+    the output to close, is bounded by `OutputGrace` after the kill once `siril-cli` itself is
+    gone, so a surviving child that holds the output open does not keep the run "running"
+    (R-140, ADR 0111); plus the `SirilRunner` delegate the tests replace).
     `SplitPlan` is the disk rule of the Split tab (ADR 0054): the frames, whether the count
     divides, each part's copy
     list (every bias, at most `MaxLights` lights, the part's flats), the temp root under

@@ -232,6 +232,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- Stopping a Siril run no longer closes the window when a program Siril started cannot be
+  stopped, and the run no longer stays "running" until that program ends by itself (R-140, ADR
+  0111, the review's CR-015). Measured with a child that refuses to be ended: the stop threw
+  an error nothing caught, and, with that caught, the run waited the 20 s the child lived,
+  because the wait for Siril's exit also waits for its output to close. The stop now logs the
+  process it could not end and the run is reported as stopped at most 2 s after Siril itself
+  is gone. An ordinary stop is unchanged.
 - A lens profile whose name has digits other than 0 to 9 (full-width or Arabic-Indic ones, in
   a profile the user adds) no longer stops the lens identification (R-018, ADR 0110, the
   review's CR-014). The search that reads every name of the catalogue for its focal range
