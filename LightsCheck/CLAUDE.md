@@ -63,8 +63,9 @@ neither computes a number itself. It never modifies, moves or writes anything in
   (ADR 0003). `docs/validation/2026-10-06-veil/` holds their report and CSV.
 - `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs.
   `docs/validation.md` + `.json` - figures on the real sessions. `docs/design/` - the
-  explanations, per area, read on demand. `docs/plans/` - approved plans. `README.md` - the
-  user documentation, English (ADR 0024).
+  explanations, per area, read on demand. `docs/plans/` - approved plans. `docs/review/` - the
+  findings of the whole-code review of 2026-11-13, fixed one entry per task (ADR 0046).
+  `README.md` - the user documentation, English (ADR 0024).
 - `kit.json` - what the kit's scripts, skills and agent need to know about LightsCheck.
   `docs/skills.md` - LightsCheck's additions to the kit's skills. `scripts/`, `.claude/skills/`,
   `.claude/agents/`, `.claude/rules/kit/` and the process keys of `.claude/settings.json` are
