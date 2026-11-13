@@ -300,6 +300,77 @@ public class SirilScriptRunTests
         Assert.Empty(Copies(ws));
     }
 
+    /// <summary>What the fake siril-cli starts for R-140: a PowerShell that denies everyone the
+    /// right to terminate it (as a process of another user does), says its process id on a
+    /// PORNIT line and ends by itself after <see cref="ChildLifeSeconds"/> seconds.</summary>
+    const string ProtectedChild = """
+        Add-Type -TypeDefinition @"
+        using System; using System.Runtime.InteropServices;
+        public static class P {
+          [DllImport("advapi32.dll", SetLastError=true, CharSet=CharSet.Unicode)] public static extern bool ConvertStringSecurityDescriptorToSecurityDescriptor(string s, uint rev, out IntPtr sd, out uint len);
+          [DllImport("advapi32.dll", SetLastError=true)] public static extern bool SetKernelObjectSecurity(IntPtr h, int info, IntPtr sd);
+          [DllImport("kernel32.dll")] public static extern IntPtr GetCurrentProcess();
+        }
+        "@
+        $sd = [IntPtr]::Zero; $len = [uint32]0
+        [void][P]::ConvertStringSecurityDescriptorToSecurityDescriptor("D:P(D;;0x0001;;;WD)(A;;GA;;;WD)", 1, [ref]$sd, [ref]$len)
+        [void][P]::SetKernelObjectSecurity([P]::GetCurrentProcess(), 4, $sd)
+        Write-Output "PORNIT $PID"
+        Start-Sleep -Seconds 8
+        """;
+
+    const int ChildLifeSeconds = 8;
+
+    /// <summary>Whether a process is still running; false once it is gone.</summary>
+    static bool Alive(int pid)
+    {
+        try { using var p = System.Diagnostics.Process.GetProcessById(pid); return !p.HasExited; }
+        catch (ArgumentException) { return false; }
+    }
+
+    /// <summary>
+    /// R-140: a stop ends the run even when a process Siril started cannot be killed. The
+    /// kill ends siril-cli and reports the child it could not end with an AggregateException,
+    /// which left the cancellation and, in the window, closed it; and the wait for the exit
+    /// also waits for the output to close, which the child holds open for as long as it
+    /// lives. Now the stop does not throw, and the run is reported as stopped while the child
+    /// is still alive.
+    /// </summary>
+    [Fact]
+    public async Task R140_AStopEndsTheRunEvenWhenAChildOfSirilCannotBeKilled()
+    {
+        using var ws = new TempWorkspace();
+        File.WriteAllText(ws.PathTo("protect.ps1"), ProtectedChild);
+        string cli = FakeCli(ws, "powershell -NoProfile -ExecutionPolicy Bypass -File \"%~dp0protect.ps1\"\r\n");
+        var started = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var cts = new CancellationTokenSource();
+
+        Task<int> run = SirilScriptRun.For(cli, ws.Dir, ws.PathTo("proba.ssf"), null, ws.Dir)(
+            l => { if (l.StartsWith("PORNIT ", StringComparison.Ordinal)) started.TrySetResult(int.Parse(l.Substring(7))); }, cts.Token);
+        // A machine that does not let the child start (a policy or an antivirus that blocks the
+        // script) cannot meet the case: the fake siril-cli then ends by itself and there is
+        // nothing to stop. Like the tests that need Siril installed, this one then checks
+        // nothing.
+        if (await Task.WhenAny(started.Task, run).WaitAsync(TimeSpan.FromSeconds(60)) != started.Task) return;
+        int child = await started.Task;
+        try
+        {
+            cts.Cancel();                                       // threw AggregateException
+
+            // It came only when the child ended. Where the caller may end the child after all
+            // (an elevated shell that hands its debug privilege on), the kill is an ordinary
+            // one and the run ends at once: the same two facts hold.
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => run.WaitAsync(SirilScriptRun.OutputGrace + TimeSpan.FromSeconds(3)));
+            Assert.Empty(Copies(ws));
+        }
+        finally
+        {
+            // the child ends by itself; until then it holds the workspace as its folder
+            for (int i = 0; i < 2 * (ChildLifeSeconds + 20) && Alive(child); i++) await Task.Delay(500);
+        }
+    }
+
     /// <summary>
     /// A config that exists but cannot be read (here held open exclusively) stops the run
     /// before it starts, with the file named on screen: Siril does not quietly work with the

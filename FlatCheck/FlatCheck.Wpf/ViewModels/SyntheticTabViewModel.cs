@@ -680,11 +680,9 @@ namespace FlatCheck.Wpf
                 }
                 try
                 {
-                    await Task.Run(() =>
-                    {
-                        using var fs = new FileStream(target, FileMode.Create, FileAccess.Write);
-                        SyntheticRun.WriteFits(outcome, master, fs);
-                    }, ct).ConfigureAwait(true);
+                    // through a temporary file: a write cut half way (the window closed, the
+                    // disk full) leaves the earlier flat whole, never a cut one (R-138)
+                    await Task.Run(() => OutputFile.Write(target, fs => SyntheticRun.WriteFits(outcome, master, fs)), ct).ConfigureAwait(true);
                     text.WriteLine(SyntheticReport.SavedLine(target));
                     SavedTo = target;
                     Log.Info("wrote " + target + " (" + LogText.FileKiB(target) + ")");

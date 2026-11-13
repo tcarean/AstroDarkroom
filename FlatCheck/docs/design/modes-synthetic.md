@@ -112,7 +112,8 @@ waiting for the opening chain, metadata only; a raw libraw cannot open leaves th
 so), the sources panel collapsed by default (ADR 0028; it is documentation, not a
 precondition, and `SyntheticReport.AdobeWhere` / `LensfunWhere` keep console and window
 saying the same), the write button that runs only on a click (ADR 0036; takes the heavy-run gate, ADR 0061, asks
-before overwriting, never the session's master), and the comparison - `AgainstRun` on the
+before overwriting, never the session's master, and writes through `OutputFile`, so the flat
+beside the master is the earlier one until the new one is whole, R-138), and the comparison - `AgainstRun` on the
 master and the file just written: the verdict, the three-column rows and the map on a
 switchable scale. **The comparison follows the write by itself** (`RunAsync` chains
 `CompareAsync(Report)`, which appends to the write's report instead of starting a second

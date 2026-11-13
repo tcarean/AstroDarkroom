@@ -231,6 +231,16 @@ namespace FlatCheck
             if (o.Synthetic != null && SamePath(o.Synthetic, o.Image))
                 return o.Fail(T("--synthetic cannot write over the reference frame; give another path", "--synthetic nu poate scrie peste cadrul de referinta; da alta cale"));
 
+            // Nor over any other file the run reads, and the map neither (R-137, ADR 0108):
+            // "master.fit -o master.fit" printed its report and then replaced the master with
+            // the PNG. Checked whatever the mode, a mode that writes no map included: such a
+            // line is a slip, and a refusal costs less than a guess. A series' frames are
+            // known only from the disk, so FlatCheckCli checks those (SeriesFrameAtOutput).
+            if (o.Synthetic != null && SamePath(o.Synthetic, o.Raw))
+                return o.Fail(T("--synthetic cannot write over the raw given with --raw; give another path", "--synthetic nu poate scrie peste raw-ul dat cu --raw; da alta cale"));
+            if (SamePath(o.OutPng, o.Image) || SamePath(o.OutPng, o.Against) || SamePath(o.OutPng, o.Raw))
+                return o.Fail(T($"-o cannot write the picture over an input file ({o.OutPng}); give another path", $"-o nu poate scrie poza peste un fisier de intrare ({o.OutPng}); da alta cale"));
+
             // --rainbow modifies the --histeq picture and nothing else: alone it is a typo, and
             // a plain picture written in silence would hide it (R-104).
             if (o.Rainbow && !o.Histeq)
@@ -259,6 +269,24 @@ namespace FlatCheck
              : o.Light ? Mode.Light
              : Mode.Structure;
 
+        /// <summary>
+        /// The frame of a <c>--light</c> series that <c>-o</c> would be written over (R-137):
+        /// the one check of an output against the inputs that needs the disk, so it is the
+        /// run's and not the parse's. Lists the folder as the series run will; what that
+        /// listing throws on a folder that cannot be read is thrown here.
+        /// </summary>
+        /// <returns>The refusal, in the run's language, when <see cref="Image"/> is a folder,
+        /// the mode is <c>--light</c> and <see cref="OutPng"/> names a file the pattern
+        /// matches there; null otherwise.</returns>
+        internal string SeriesFrameAtOutput()
+        {
+            if (Mode != Mode.Light || !System.IO.Directory.Exists(Image)) return null;
+            foreach (string frame in SeriesFinder.Find(Image, Pattern))
+                if (SamePath(OutPng, frame))
+                    return T($"-o cannot write the picture over a frame of the series ({OutPng}); give another path", $"-o nu poate scrie poza peste un cadru din serie ({OutPng}); da alta cale");
+            return null;
+        }
+
         /// <summary>Records the parse error.</summary>
         /// <param name="message">The error, in the run's language, as the user will read it.</param>
         /// <returns>This instance, so a parse can end with <c>return o.Fail(...)</c>.</returns>
@@ -270,7 +298,7 @@ namespace FlatCheck
         /// <param name="b">Another path, or null.</param>
         /// <returns>True when both name the same file; false when either is null. A path
         /// that cannot be normalised is compared as text, ignoring case.</returns>
-        static bool SamePath(string a, string b)
+        internal static bool SamePath(string a, string b)
         {
             if (a == null || b == null) return false;
             string fa, fb;

@@ -45,7 +45,15 @@ a library extraction and not a copy is ADR 0011.
     a sample is read, `LoadFull` checks that the file holds the data area the header declares
     (`NAXISn` product times `|BITPIX| / 8`) and refuses a shorter one with the two byte counts
     ("data cut short"); the check runs for every HDU, the skipped ones too, and counts the data
-    alone, so a last HDU without its padding to 2880 bytes is read (R-009). `LoadHeader` does
+    alone, so a last HDU without its padding to 2880 bytes is read (R-009). Before that size is
+    computed, `LoadFull` refuses a header it cannot be computed from (R-139): `NAXIS` outside 0
+    to 999 (in a table too, before its axes are walked), a `NAXISn` below 0, and, in an HDU with data, a `BITPIX` that is missing or none of
+    the standard's six; the product of the axes is taken in checked arithmetic, one that does
+    not fit 64 bits being the cut-data refusal, and `NextHdu` is the one step to the next
+    header, which cannot go backwards (a negative axis used to send the walk back onto the
+    header it had just read, for ever). An HDU is the image only with two axes or more and none
+    of them empty; a `BITPIX` of 64 is refused there, before the pixels are allocated, and
+    only stepped over elsewhere. `LoadHeader` does
     not check the data area, so this is one of the refusals the two reads do not share: the header
     of such a file is intact and the Sintetic tab can still use it. Another is the compressed
     image of R-136: `LoadFull` refuses the table, `LoadHeader` answers on the empty primary HDU. `LoadFull` fills the raster
@@ -64,6 +72,20 @@ a library extraction and not a copy is ADR 0011.
     removal, ADR 0080). The rows go out from the raster's last to its first, the reader's order
     undone, so the file keeps its reference's order and Siril shows it the way up it was
     analysed; a file with no `ROWORDER` card to copy gets `ROWORDER= 'BOTTOM-UP'` (R-130).
+  - `OutputFile.cs` - how every file written for the user reaches the disk (R-138, ADR 0109):
+    `Write(path, Action<Stream>)` streams into `<path>.tmp` beside the target and then moves
+    that file over the target, so the name holds the earlier file until the new one is whole;
+    `WriteAllBytes` and `WriteAllText` (UTF-8, no byte order mark) go through it. The seven
+    callers are the console's `SaveMap` and `RunSynthetic` and the window's Synthetic, Structure
+    and Split saves. A failed write deletes the temporary file and rethrows; a failed move (on
+    Windows a target another program holds open, or a read-only one, is not replaced) becomes
+    an `IOException` that names the target, since the system's own message names nothing. Two
+    targets do not take that road: a device (`IsDevice`: the device namespace on Windows, where
+    `NUL` resolves, `/dev/` elsewhere) is written into directly, and a folder is refused by
+    name before anything is written. The
+    temporary name is fixed, not random, so a leftover is overwritten instead of piling up.
+    `SessionSettings.Write` has the same two steps of its own for `flatcheck.json`, with a
+    failure that is logged and not thrown.
   - `IFrameReader.cs` - the contract each input format implements: `Handles(path)` and
     `Load(path) -> LoadedFrame`. The only interface in the codebase, and the reason
     `ImageLoader` knows no reader's API.
@@ -333,7 +355,12 @@ a library extraction and not a copy is ADR 0011.
     wrapper, the only place a process is started besides `Presentation/ExternalLink`, which
     opens the windows' links: every run gets a
     private copy of Siril's settings with `-i`, in `%TEMP%\FlatCheck\siril-<guid>`, deleted
-    after the exit (ADR 0055); plus the `SirilRunner` delegate the tests replace).
+    after the exit (ADR 0055); a stop kills the process tree from the cancellation's callback,
+    where `Kill` catches everything the kill can throw, the `AggregateException` for a child
+    that could not be ended included, and the wait for the exit, which is also the wait for
+    the output to close, is bounded by `OutputGrace` after the kill, or after the exit of a
+    `siril-cli` that outlived it (waited for alone, in steps of `ExitPollMs`), so a surviving child that holds the output open does not keep the run "running"
+    (R-140, ADR 0111); plus the `SirilRunner` delegate the tests replace).
     `SplitPlan` is the disk rule of the Split tab (ADR 0054): the frames, whether the count
     divides, each part's copy
     list (every bias, at most `MaxLights` lights, the part's flats), the temp root under

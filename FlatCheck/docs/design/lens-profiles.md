@@ -303,7 +303,12 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   (`FocalTailRx`, anchored where the number ends; "Pentax-F 28mm f/2.8") and the next match is
   tried; the first one left is the aperture only between `Th.LensNameApertureMin` and
   `Th.LensNameApertureMax` (0.7 and 11), and otherwise the name gives none ("F045", Zeiss's
-  "f28", "DSC-F707") and no later number is tried. `Contradicts` is true only when both sides
+  "f28", "DSC-F707") and no later number is tried. A third filter is on how a number is
+  written (`LensSpec.Number`, R-018, ADR 0110): the patterns' `\d` matches every Unicode
+  digit, so a number is found whole, and it is read only when the invariant parse takes it,
+  that is with the digits 0 to 9 alone; a full-width `１３５mm` or an `f/1.٨` gives no focal
+  range and no aperture instead of the `FormatException` it threw until 2026-11-13, and is not
+  read by its ASCII part either (`f/1`). `Contradicts` is true only when both sides
   say something and disagree: focal ends within 1 mm or 5 % (names round), aperture within
   0.25 stops (Nikon's codes step in sixths). On this machine's Adobe folder ID 139 is carried
   by the Tokina AT-X 11-20 F2.8, the Tokina atx-i 11-20 f2.8, the Nikkor 18-200 f3.5-5.6G VR

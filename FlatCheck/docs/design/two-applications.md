@@ -134,7 +134,8 @@ with `FilteredLensNote()` instead of the gap. The tab keeps what a flip needs - 
 `RecompareAsync`: the same guarded run, `StructureRun.Recompare` on the kept result (the
 comparison or the plain outcome, and the report), then `Populate` and `SaveReport`, the report
 alone; the raster, the map cache and `Map` are untouched, and `flatcheck.png` on disk is
-already right. `Save` is `SaveReport` plus the PNG. The box is bound `IsEnabled` to `!IsBusy`,
+already right. `Save` is `SaveReport` plus the PNG; both files, like the Split tab's two, are
+written through `OutputFile` (R-138). The box is bound `IsEnabled` to `!IsBusy`,
 so a flip never lands in the middle of the tab's own run; `Reset` drops the kept pieces and the
 settings, not the box, which the next folder's file sets. The recompare is deliberately outside
 the heavy-run gate (ADR 0061): it loads no pixels - the master's header, the raw's metadata and

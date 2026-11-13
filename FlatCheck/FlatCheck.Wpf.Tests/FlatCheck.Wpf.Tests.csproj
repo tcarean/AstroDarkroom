@@ -57,6 +57,9 @@
          same way. -->
     <Compile Include="..\FlatCheck.Tests\LogCapture.cs" Link="Shared\LogCapture.cs" />
     <Compile Include="..\FlatCheck.Tests\UnlistableFolder.cs" Link="Shared\UnlistableFolder.cs" />
+    <!-- SecondName gives a file a hard link, which is how a test sees that a write replaced
+         the earlier file instead of writing into it (R-138). -->
+    <Compile Include="..\FlatCheck.Tests\SecondName.cs" Link="Shared\SecondName.cs" />
   </ItemGroup>
 
 </Project>

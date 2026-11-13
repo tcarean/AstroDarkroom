@@ -129,6 +129,15 @@ namespace FlatCheck
             int code;
             try
             {
+                // The one output-over-input check that needs the disk (R-137); inside the try,
+                // so a folder that cannot be listed fails as the series run itself would.
+                string clash = o.SeriesFrameAtOutput();
+                if (clash != null)
+                {
+                    Log.Warn("refused the arguments: " + clash);
+                    stderr.WriteLine(ErrorPrefix + clash);
+                    return 1;
+                }
                 switch (o.Mode)
                 {
                     case Mode.Lenses: code = RunLenses(o, stdout); break;
@@ -319,8 +328,7 @@ namespace FlatCheck
                 err.WriteLine(ErrorPrefix + run.Refusal.Split('\n')[0]);
                 return run.RefusedChoice ? 2 : 1;
             }
-            using (var fs = new FileStream(o.Synthetic, FileMode.Create, FileAccess.Write))
-                SyntheticRun.WriteFits(run, o.Image, fs);
+            OutputFile.Write(o.Synthetic, fs => SyntheticRun.WriteFits(run, o.Image, fs));
             Log.Info("wrote " + o.Synthetic + " (" + LogText.FileKiB(o.Synthetic) + ")");
             w.WriteLine(SyntheticReport.SavedLine(o.Synthetic));
             return 0;
@@ -338,13 +346,14 @@ namespace FlatCheck
             return run.Result.Verdict;
         }
 
-        /// <summary>Writes a map to disk, overwriting, and announces it.</summary>
+        /// <summary>Writes a map to disk, replacing an earlier one whole (R-138), and announces
+        /// it.</summary>
         /// <param name="path">Where the PNG goes.</param>
         /// <param name="png">The PNG bytes.</param>
         /// <param name="w">Where the announcement line is written.</param>
         static void SaveMap(string path, byte[] png, TextWriter w)
         {
-            File.WriteAllBytes(path, png);
+            OutputFile.WriteAllBytes(path, png);
             Log.Info("wrote " + path + " (" + LogText.KiB(png.Length) + ")");
             RunReport.WriteMapSaved(path, w);
         }

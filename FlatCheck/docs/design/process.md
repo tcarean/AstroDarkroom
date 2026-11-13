@@ -115,9 +115,13 @@ tests and documents; this section is that list, in the order the work goes.
   `R003_FlagBeforePath_GivesTheSameResultAsFlagAfterPath` in `GoldenOutputTests`). The parser
   collects every non-flag token as positional and, after the loop, wants exactly one; none
   with `--lenses`, which is a list and needs no input.
-- Cross-argument checks come after the loop, in the same method: `--synthetic`
-  refuses to write over the input (`SamePath`, case-insensitive on Windows), and `--sat` must
-  exceed `--black`. Mode flags are **not** mutually validated here
+- Cross-argument checks come after the loop, in the same method: no output is written over a
+  file the run reads (R-137, ADR 0108: `--synthetic` against the input and `--raw`, `-o`
+  against the input, `--against` and `--raw`, by `SamePath`, full paths compared without case
+  on Windows, whatever the mode), and `--sat` must exceed `--black`. One such check needs the
+  disk and so is the run's: `Options.SeriesFrameAtOutput` lists a `--light` folder as the
+  series run will and `FlatCheckCli.RunIn` refuses an `-o` that names one of its frames, inside
+  its `try`, before the dispatch. Mode flags are **not** mutually validated here
   (`HisteqAndExpoTogether_BothStaySet`): `flat.fit --histeq --expo` parses cleanly with both
   set, and dispatch decides.
 
@@ -157,7 +161,9 @@ every test calls, with two `StringWriter`s. In order:
 Each mode has one static `RunX(Options, TextWriter[, TextWriter err])` that calls its
 `XRun.Execute(...)` in `FlatCheck.Core/Runs/`, writes the map(s) through `SaveMap` (which also
 prints the `map saved` line via `RunReport.WriteMapSaved`) and returns either the verdict
-string or an exit code:
+string or an exit code. `SaveMap` and `RunSynthetic` write through `OutputFile` (a temporary
+file beside the target, then one move: R-138, `code-map.md`), so a run that fails while it
+writes leaves the earlier file whole:
 
 - A mode with a verdict returns the verdict and the chain wraps it in `ExitFor(string)`
   (`OK` / `PERFECT` / `BUN` → 0, `Stats.NotApplicable` → 1, `SUSPECT` / `ACCEPTABIL` /

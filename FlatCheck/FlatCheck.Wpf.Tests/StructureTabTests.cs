@@ -87,6 +87,26 @@ public class StructureTabTests
         Assert.NotEmpty(vm.Verdict);
     }
 
+    /// <summary>R-138: the report and the map replace the earlier files and are never written
+    /// into them; each earlier file's second name keeps its bytes.</summary>
+    [Fact]
+    public async Task R138_TheSavedReportAndMapReplaceTheEarlierFilesAndNeverWriteIntoThem()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        byte[] old = Enumerable.Repeat((byte)0x55, 5000).ToArray();
+        File.WriteAllBytes(f.Session.ResultTextPath, old);
+        File.WriteAllBytes(f.Session.ResidualPngPath, old);
+        string oldReport = SecondName.Of(f.Session.ResultTextPath), oldMap = SecondName.Of(f.Session.ResidualPngPath);
+
+        var vm = await Run(f);
+
+        Assert.Equal(f.Session.ResultTextPath, vm.SavedTo);
+        Assert.Equal(old, File.ReadAllBytes(oldReport));
+        Assert.Equal(old, File.ReadAllBytes(oldMap));
+        Assert.Equal(vm.Report, File.ReadAllText(f.Session.ResultTextPath));
+        Assert.NotEqual(old, File.ReadAllBytes(f.Session.ResidualPngPath));
+    }
+
     /// <summary>
     /// R-081 and R-090, literally: the saved file must hold EXACTLY the console's output. It
     /// is compared with the text produced by the same layer flatcheck.exe uses - so if

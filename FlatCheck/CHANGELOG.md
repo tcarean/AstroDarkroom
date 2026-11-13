@@ -232,6 +232,41 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- Stopping a Siril run no longer closes the window when a program Siril started cannot be
+  stopped, and the run no longer stays "running" until that program ends by itself (R-140, ADR
+  0111, the review's CR-015). Measured with a child that refuses to be ended: the stop threw
+  an error nothing caught, and, with that caught, the run waited the 20 s the child lived,
+  because the wait for Siril's exit also waits for its output to close. The stop now logs the
+  process it could not end and the run is reported as stopped at most 2 s after Siril itself
+  is gone. An ordinary stop is unchanged.
+- A lens profile whose name has digits other than 0 to 9 (full-width or Arabic-Indic ones, in
+  a profile the user adds) no longer stops the lens identification (R-018, ADR 0110, the
+  review's CR-014). The search that reads every name of the catalogue for its focal range
+  threw on that one name, for every raw that reached it. Such a number is now not read: the
+  name says no range or no aperture, and contradicts nothing. No profile Adobe or lensfun
+  ships has such a name.
+- A FITS whose header cannot be right is refused by name instead of hanging or crashing the
+  run (R-139, the review's CR-013). A negative `NAXISn` sent the reader back onto the header it
+  had just read, for ever (`BITPIX = 8`, `NAXIS1 = -2880`, `NAXIS2 = 2`); a header without
+  `BITPIX` let any `NAXIS1` x `NAXIS2` through to the allocation and ended in an overflow
+  error; a cube of no planes ended in an error out of the row copy. Each is now a sentence that
+  names the card (`FITS: invalid header: NAXIS1 = -2880; an axis cannot be shorter than 0.`),
+  exit `1`, before any pixel is allocated. Only a broken or crafted file reaches it.
+- A write that fails half way no longer leaves a cut file under the real name (R-138, ADR 0109,
+  the review's CR-012). Every file FlatCheck writes (the map and the synthetic flat of the
+  console; the synthetic flat, the Structure report and map and the Split report and mosaic of
+  the window) was written into the existing file, which the write first emptied: a full disk, a
+  drive that dropped or the window closed during the 96 MB of a synthetic flat left a FITS with
+  a whole header and cut data, and the earlier good file was gone. The bytes now go to
+  `<name>.tmp` beside the target, which replaces it in one move at the end, so the name always
+  holds a whole file. A target that another program holds open, or a read-only one, is not
+  replaced: the write fails with a sentence that names the file and the two causes.
+- The console no longer writes its picture over a file it has just read (R-137, ADR 0108, the
+  review's CR-011). `flatcheck master.fit -o master.fit` printed the report and then replaced
+  the master with the PNG; the same happened to the second flat of `--against`, to the `--raw`
+  file and to a frame of a `--light` folder, and `--synthetic` could be pointed at the `--raw`
+  file. Each is now refused before anything runs, exit `1`, with a sentence that names the
+  output. An `-o` that names any other file still replaces it.
 - The azimuthal asymmetry no longer depends on which way up a frame is read when its analysis
   raster has an odd width or height (R-131, ADR 0107, the review's CR-010). The pixels of the
   centre column or row lie exactly between two of the twelve sectors and went always to the

@@ -47,7 +47,10 @@
 //
 // Cancellation kills the process (and its children - Siril starts gspawn helpers), and is
 // reported as an OperationCanceledException, not as an exit code: a code would look like a
-// failure of the script, and it is not one.
+// failure of the script, and it is not one. A child that cannot be killed (a process the user
+// may not terminate) neither throws out of the stop nor holds the run: once siril-cli itself
+// has exited, the run waits OutputGrace for the output to close and is then reported as
+// stopped (R-140, ADR 0111).
 
 using System;
 using System.Diagnostics;
@@ -75,6 +78,16 @@ namespace FlatCheck.Wpf
     /// </summary>
     internal static class SirilScriptRun
     {
+        /// <summary>How long after the kill a stopped run still waits for siril-cli's output
+        /// to close, once siril-cli itself has exited (R-140, ADR 0111). The output closes at
+        /// once when every process of the tree was ended; it stays open only while a process
+        /// that could not be ended holds it.</summary>
+        internal static readonly TimeSpan OutputGrace = TimeSpan.FromSeconds(2);
+
+        /// <summary>How often, in milliseconds, a stopped run looks whether a siril-cli that
+        /// outlived the kill has exited.</summary>
+        const int ExitPollMs = 250;
+
         /// <summary>Where the copies of the settings sit, one siril-&lt;guid&gt; folder per
         /// run - beside the Split tab's splits.</summary>
         static string PrivateRoot => Path.Combine(Path.GetTempPath(), "FlatCheck");
@@ -112,7 +125,9 @@ namespace FlatCheck.Wpf
         /// every output line, waits for the exit and deletes the folder. Throws an
         /// <see cref="IOException"/> before starting anything when the settings cannot be
         /// read, and an <see cref="OperationCanceledException"/> after the process was killed
-        /// on cancellation.
+        /// on cancellation: when siril-cli has exited and its output has closed, or
+        /// <see cref="OutputGrace"/> after the kill when a process it started could not be
+        /// killed and still holds the output (R-140).
         /// </summary>
         /// <param name="cliPath">The full path of siril-cli.exe.</param>
         /// <param name="folder">The session folder.</param>
@@ -169,12 +184,39 @@ namespace FlatCheck.Wpf
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
 
-                using (ct.Register(() => Kill(process)))
+                // The wait is for the exit and for the output to close. On cancellation the
+                // process is killed through Register, it exits, its output closes and the wait
+                // ends normally - only then is the cancellation reported. The token is not the
+                // run's: it only bounds the wait for the output after a kill (R-140), which a
+                // process that could not be killed holds open for as long as it lives (20 s in
+                // the measurement of ADR 0111).
+                using var outputWait = new CancellationTokenSource();
+                using (ct.Register(() => { Kill(process); outputWait.CancelAfter(OutputGrace); }))
                 {
-                    // No token here: on cancellation the process is killed through Register, it
-                    // exits, and the wait ends normally - only then is the cancellation
-                    // reported.
-                    await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+                    try { await process.WaitForExitAsync(outputWait.Token).ConfigureAwait(false); }
+                    catch (OperationCanceledException)
+                    {
+                        bool outputOpen = true;
+                        if (!process.HasExited)
+                        {
+                            // siril-cli itself outlived the kill: a run is never called stopped
+                            // while Siril still works in the session folder. The wait is for
+                            // the process alone (a wait with a time limit does not also wait
+                            // for the output), and the output then gets its grace again.
+                            Log.Warn("siril-cli is still running " + LogText.Seconds(OutputGrace) + " after the kill; waiting for it to exit");
+                            await Task.Run(() => { while (!process.WaitForExit(ExitPollMs)) { } }).ConfigureAwait(false);
+                            using var afterExit = new CancellationTokenSource(OutputGrace);
+                            try
+                            {
+                                await process.WaitForExitAsync(afterExit.Token).ConfigureAwait(false);
+                                outputOpen = false;
+                            }
+                            catch (OperationCanceledException) { }
+                        }
+                        if (outputOpen)
+                            Log.Warn("siril-cli has exited, but its output is still open " + LogText.Seconds(OutputGrace)
+                                     + " later: a process it started is still running; the run is reported as stopped");
+                    }
                 }
 
                 ct.ThrowIfCancellationRequested();
@@ -229,7 +271,8 @@ namespace FlatCheck.Wpf
         static readonly Logger Log = LogManager.GetLogger(Loggers.Siril);
 
         /// <summary>Kills the process and its children, if it is still running; never
-        /// throws.</summary>
+        /// throws. It runs inside the cancellation's callback, so anything it threw would
+        /// leave <c>Cancel()</c> and, from a button, close the window (R-140).</summary>
         /// <param name="p">The siril-cli process.</param>
         static void Kill(Process p)
         {
@@ -240,6 +283,12 @@ namespace FlatCheck.Wpf
                     Log.Info("killing siril-cli and its children, the run was stopped");
                     p.Kill(entireProcessTree: true);
                 }
+            }
+            catch (AggregateException e)
+            {
+                // Kill(entireProcessTree) ends every process it can and then reports the ones
+                // it could not, together: a process the user may not terminate.
+                Log.Warn(e, "not every process siril-cli started could be killed; one of them goes on running");
             }
             catch (Exception e) when (e is InvalidOperationException || e is System.ComponentModel.Win32Exception)
             {
