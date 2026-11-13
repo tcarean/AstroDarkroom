@@ -746,6 +746,7 @@ mid-field excess of section 8; it needs a new box measurement on the master.
   is loaded, without waiting for the opening chain, through `ImageLoader.LoadInfo` (metadata
   only, no pixel decoded, ADR 0030); a raw libraw cannot open leaves the f-stop empty and says
   so.
-- The window's comparison follows the write by itself (`SyntheticTabViewModel.RunAsync`
+- The window's comparison follows the write by itself, and never outlives the figures it
+  belongs to (R-135, `modes-synthetic.md`) (`SyntheticTabViewModel.RunAsync`
   chains `CompareAsync(Report)` after a real write; the report is one text with one
   banner). "Compara cu masterul" runs it alone, for a file written earlier.

@@ -507,6 +507,111 @@ public class SyntheticTabTests
         }
     }
 
+    /// <summary>
+    /// R-135: a comparison on screen belongs to the figures above it. Lens X is written and
+    /// compared; lens Y is selected, Write is pressed and the overwrite refused. Before, the
+    /// tab showed Y's profile line and depth rows over X's verdict, table and map.
+    /// </summary>
+    [Fact]
+    public async Task R135_ANoToTheOverwriteLeavesNoComparisonOfTheLensBefore()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f, confirm: _ => false);     // asked only when the file exists: the second write
+        using (ws)
+        {
+            await vm.Pending;
+            vm.Search = "nikon corporation";
+            vm.SelectedLens = vm.Lenses[0];
+            vm.FStopText = "2.8";
+            await vm.RunAsync();
+            AssertComparison(vm);                             // X written and compared
+            string profileOfX = vm.ProfileLine;
+            byte[] written = File.ReadAllBytes(vm.Target);
+
+            vm.Search = "";
+            vm.SelectedLens = vm.Lenses.First(l => l.Choice.Source == ProfileSource.Lensfun);
+            await vm.RunAsync();
+
+            Assert.True(vm.HasResult, vm.ErrorText);
+            Assert.NotEqual(profileOfX, vm.ProfileLine);      // Y's figures
+            Assert.Contains("lensfun", vm.ProfileLine);
+            Assert.Contains(vm.Target, vm.SaveError);         // nothing written
+            Assert.Equal(written, File.ReadAllBytes(vm.Target));
+            Assert.False(vm.HasCompare);                      // and nothing of X's comparison
+            Assert.Empty(vm.CompareVerdict);
+            Assert.Empty(vm.CompareVerdictDetail);
+            Assert.Empty(vm.CompareTable);
+            Assert.Null(vm.CompareMap);
+            Assert.Empty(vm.MapLegend);
+        }
+    }
+
+    /// <summary>
+    /// R-135: a comparison that fails after the write does not take the write with it. The
+    /// file is spoiled between the write and the comparison (the Saved event fires there).
+    /// Before, the tab showed "The analysis failed", lost the saved line and kept the
+    /// comparison of the lens written before.
+    /// </summary>
+    [Fact]
+    public async Task R135_AComparisonThatFailsAfterTheWriteKeepsTheWrittenFlatOnScreen()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f, confirm: _ => true);
+        using (ws)
+        {
+            await vm.Pending;
+            vm.Search = "nikon corporation";
+            vm.SelectedLens = vm.Lenses[0];
+            vm.FStopText = "2.8";
+            await vm.RunAsync();
+            AssertComparison(vm);
+
+            vm.Saved += path => File.WriteAllText(path, "not a FITS any more");
+            await vm.RunAsync();
+
+            Assert.False(vm.HasError, vm.ErrorText);          // not the "analysis failed" screen
+            Assert.True(vm.HasResult);
+            Assert.Equal(vm.Target, vm.SavedTo);
+            Assert.NotEmpty(vm.ProfileLine);
+            Assert.StartsWith("Flatul a fost scris, dar comparatia cu masterul a esuat:", vm.CompareError);
+            Assert.False(vm.HasCompare);
+            Assert.Empty(vm.CompareTable);
+            Assert.Null(vm.CompareMap);
+
+            // the button alone, on the same spoiled file: its own sentence, still no stale table
+            await vm.CompareAsync();
+            Assert.False(vm.HasError, vm.ErrorText);
+            Assert.StartsWith("Comparatia cu masterul a esuat:", vm.CompareError);
+            Assert.False(vm.HasCompare);
+            Assert.Equal(vm.Target, vm.SavedTo);              // the write of before still stands
+        }
+    }
+
+    /// <summary>R-135: the failure line goes when the next write and comparison succeed.</summary>
+    [Fact]
+    public async Task R135_TheFailureLineGoesWithTheNextGoodComparison()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f, confirm: _ => true);
+        using (ws)
+        {
+            await vm.Pending;
+            vm.Search = "nikon corporation";
+            vm.SelectedLens = vm.Lenses[0];
+            vm.FStopText = "2.8";
+            bool spoil = true;
+            vm.Saved += path => { if (spoil) File.WriteAllText(path, "not a FITS any more"); };
+            await vm.RunAsync();
+            Assert.NotEmpty(vm.CompareError);
+
+            spoil = false;
+            await vm.RunAsync();
+
+            Assert.Empty(vm.CompareError);
+            AssertComparison(vm);
+        }
+    }
+
     [Fact]
     public async Task WithoutALensOrAnFStopTheButtonRefusesWithTheReason()
     {

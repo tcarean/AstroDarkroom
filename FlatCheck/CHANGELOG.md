@@ -232,6 +232,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The Synthetic tab no longer shows one lens's comparison under another lens's figures (R-135,
+  the review's CR-006). After a flat was written and compared, choosing another lens, pressing
+  Write and answering No to the overwrite question left the new lens's profile line and depth
+  rows above the verdict, the table and the map of the lens written before, with nothing to
+  say whose they were. The comparison now leaves the screen as soon as the figures above it
+  change. And a comparison that fails after the file was written says so in a line of its own:
+  the written flat's figures and the "saved" line stay, where the tab used to show "The
+  analysis failed" and keep the older comparison.
 - The camera's crop and mount are no longer taken from a longer model name that contains the
   camera's (R-133, ADR 0101, the review's CR-001): a `Nikon D750` read the D7500's crop 1.534
   where its own is 1.0, a `Canon EOS R5` the R50 V's, a `Pentax K-1` the K100D Super's, and any

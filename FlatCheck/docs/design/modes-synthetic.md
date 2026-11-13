@@ -119,6 +119,14 @@ switchable scale. **The comparison follows the write by itself** (`RunAsync` cha
 banner) after a real write - not after a refused overwrite, whose old file may be another
 lens's, and not after a write error. The first cut needed a second click, and the screen
 after "Scrie" - depth table, no comparison - was reported as a bug. "Compara cu masterul"
-stays for a file written in an earlier session. The catalog is located once, in the
+stays for a file written in an earlier session. **The comparison on screen is the one of
+the figures above it** (R-135, the review's CR-006): `RunAsync` calls `ClearCompare` when it
+shows the new request's figures, before the overwrite question, so a "No" leaves the new
+lens's depth rows over nothing, never over the verdict, table and map of the lens written
+before (the view shows the block on `HasCompare` alone). `CompareAsync` catches its own
+failure: it clears the comparison, sets `CompareError` (`SessionMessages.
+SyntheticCompareFailed`, one wording after a write, one for the button) and returns, so
+`RunGuardedAsync` never puts its "The analysis failed" screen over a file that was written and
+the "saved" line stays; a cancellation still goes through. The catalog is located once, in the
 background, on the first `Attach` (`Func<ProfileSources>` in the `MainViewModel`
 constructor for the tests). `SyntheticTabTests` and two smoke renders pin it.
