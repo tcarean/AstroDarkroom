@@ -34,6 +34,19 @@ close, which the surviving child holds open (20 s here, until it ended by itself
 The other four are `confirmed` by reading; their lines were read again today and each case
 becomes the failing test.
 
+Corrected after the approval, on the same day (the plan below is the one the owner saw):
+
+- CR-012: a reader that holds the old file open cannot show that the old file is not written
+  into, because Windows does not replace an open file by a move at all (measured:
+  `UnauthorizedAccessException` whatever the sharing). The tests give the old file a second
+  name (a hard link) instead, and a target that cannot be replaced got a sentence of its own
+  that names the file (R-138), since the system's message names nothing.
+- CR-014: the patterns keep `\d` and the parse refuses a number with other digits. With
+  `[0-9]` in the patterns an `f/1.٨` would have been read as f/1 by its ASCII part, a wrong
+  figure where the owner's choice is "the name does not say" (ADR 0110).
+- CR-013: one case more than planned, found by its test: a header that declares one axis and
+  still carries a `NAXIS2` card is stepped over like the cube of no planes.
+
 ## The fixes
 
 ### 1. CR-011: an output never replaces an input (new R-137, ADR 0108)

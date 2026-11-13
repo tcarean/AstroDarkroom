@@ -248,7 +248,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - A FITS whose header cannot be right is refused by name instead of hanging or crashing the
   run (R-139, the review's CR-013). A negative `NAXISn` sent the reader back onto the header it
   had just read, for ever (`BITPIX = 8`, `NAXIS1 = -2880`, `NAXIS2 = 2`); a header without
-  `BITPIX` let any `NAXIS1` x `NAXIS2` through to the allocation and ended in an out-of-memory
+  `BITPIX` let any `NAXIS1` x `NAXIS2` through to the allocation and ended in an overflow
   error; a cube of no planes ended in an error out of the row copy. Each is now a sentence that
   names the card (`FITS: invalid header: NAXIS1 = -2880; an axis cannot be shorter than 0.`),
   exit `1`, before any pixel is allocated. Only a broken or crafted file reaches it.

@@ -75,11 +75,11 @@ first" and "Test before fix"), and a formula change re-validates on the masters.
 | CR-008 | 1 | some setups | to measure | A compressed FITS (a table HDU) is read as an 8-pixel-wide image | fixed e3589ec5 |
 | CR-009 | 1 | some setups | to measure | The Adobe model scales the vertical decentring by the long side | fixed 0377b8d9 |
 | CR-010 | 1 | some setups | to measure | The azimuthal asymmetry depends on the orientation on an odd raster | fixed e1e81911 |
-| CR-011 | 2 | slip | confirmed | `-o` naming an input file replaces that file with the PNG | open |
-| CR-012 | 2 | rare | confirmed | Output files are written in place: a failed write leaves a cut file | open |
-| CR-013 | 2 | crafted | confirmed | The FITS reader uses `NAXISn` and `BITPIX` before checking them | open |
-| CR-014 | 2 | rare | confirmed | A lens name with non-ASCII digits throws out of the identification | open |
-| CR-015 | 2 | rare | to measure | Stopping Siril can crash the window when a child process cannot be killed | open |
+| CR-011 | 2 | slip | confirmed | `-o` naming an input file replaces that file with the PNG | fixed 6e210b34 |
+| CR-012 | 2 | rare | confirmed | Output files are written in place: a failed write leaves a cut file | fixed 77c20f95 |
+| CR-013 | 2 | crafted | confirmed | The FITS reader uses `NAXISn` and `BITPIX` before checking them | fixed 96efd6a4 |
+| CR-014 | 2 | rare | confirmed | A lens name with non-ASCII digits throws out of the identification | fixed 411deeb8 |
+| CR-015 | 2 | rare | to measure | Stopping Siril can crash the window when a child process cannot be killed | fixed f4aa182b |
 | CR-016 | 3 | rare | confirmed | An input folder that cannot be listed leaves a dead Run button and no log line | open |
 | CR-017 | 3 | slip | confirmed | A `--lens` text that matches nothing is reported as "no raw" | open |
 | CR-018 | 3 | some setups | confirmed | The "focal length / aperture not known" texts say "no raw" when a raw was read | open |
@@ -371,6 +371,12 @@ twice.
 - Should: the refusal the existing guard gives, before anything runs.
 - Test: none.
 - Evidence: confirmed.
+- Status: fixed 6e210b34 (R-137, ADR 0108). The owner chose to protect the files the run
+  reads, not every name with a FITS or raw extension: `Options.Parse` refuses `-o` against the
+  input, `--against` and `--raw`, and `--synthetic` against `--raw` too, whatever the mode;
+  `FlatCheckCli` refuses an `-o` that names a frame of a `--light` folder before the series
+  runs. `R137_...` in `OutputOverInputTests`. Left as it is: a file reached under two different
+  full paths (a hard link, a junction) is not recognised.
 
 ### CR-012 Output files are written in place: a failed write leaves a cut file
 
@@ -386,6 +392,15 @@ twice.
   with a temporary file and a move.
 - Test: none.
 - Evidence: confirmed (the window-close timing is to measure).
+- Status: fixed 77c20f95 (R-138, ADR 0109). The owner chose every file the program writes, not
+  only the three named here: the seven writes (the console's map and synthetic flat; the
+  window's synthetic flat, the Structure report and map, the Split report and mosaic) go
+  through `OutputFile`, which writes `<name>.tmp` beside the target and moves it over the
+  target at the end. The window-close timing was not measured: whatever ends the write, the
+  earlier file is no longer opened for writing. Measured instead: Windows does not replace a
+  file another program holds open, so that write now fails with a sentence that names the
+  file. `R138_...` in `OutputFileTests` and `SyntheticTabTests`. CR-040, on the same save
+  methods, stays open.
 
 ### CR-013 The FITS reader uses `NAXISn` and `BITPIX` before checking them
 
@@ -397,6 +412,14 @@ twice.
   "unsupported BITPIX".
 - Should: both refused by name before any allocation.
 - Evidence: confirmed by reading; only a broken or crafted file reaches it.
+- Status: fixed 96efd6a4 (R-139). The failing tests showed both: the header above never came
+  back, and a header without `BITPIX` ended in an overflow error. `LoadFull` now refuses, for
+  every HDU that is not a table and before any size is computed, `NAXIS` outside 0 to 999, a
+  `NAXISn` below 0 and a missing or non-standard `BITPIX`; the size is taken without overflow
+  and the step to the next HDU cannot go backwards. Found while fixing: an HDU with an empty
+  axis (`NAXIS3 = 0`) or one axis and a stray `NAXIS2` threw out of the row copy, and is now
+  stepped over. `R139_...` in `FitsReaderTests`. CR-029 and CR-048 (the header-only read) stay
+  open.
 
 ### CR-014 A lens name with non-ASCII digits throws out of the identification
 
@@ -408,6 +431,12 @@ twice.
   raw that reaches it. No shipped or installed name has such digits (the reviewer checked).
 - Fix direction: `[0-9]` and `TryParse`.
 - Evidence: confirmed (language semantics).
+- Status: fixed 411deeb8 (R-018, ADR 0110). The owner chose "the name does not say" over
+  converting the digits. `LensSpec.Parse` reads a number through `TryParse`, so one written
+  with other digits gives no focal range or no aperture and nothing throws. The patterns keep
+  `\d`, against the direction above: with `[0-9]` an `f/1.٨` would have been read as f/1 by
+  its ASCII part. `R018_ANameIsReadWithTheDigitsZeroToNineOnly` and
+  `R018_OneNameWithOtherDigitsDoesNotStopTheIdentification` in `LensProfileTests.cs`.
 
 ### CR-015 Stopping Siril can crash the window when a child process cannot be killed
 
@@ -418,6 +447,12 @@ twice.
   cancellation callback, so the exception leaves `Cancel()` in `SirilRunViewModel.cs:226` and
   `SplitTabViewModel.cs:604`, which catch `ObjectDisposedException` only.
 - Evidence: the code is confirmed; a child that refuses to die is to measure.
+- Status: fixed f4aa182b (R-140, ADR 0111). Measured with a child that denies its own
+  termination: the stop threw `AggregateException` out of `Cancel()`, and with that caught the
+  run still waited the 20 s the child lived, since the wait for the exit also waits for the
+  output to close. `Kill` now catches it, and the run is reported as stopped at most 2 s after
+  `siril-cli` itself is gone (the owner's choice over catching alone). No real Siril run was
+  seen to leave such a child. `R140_...` in `SirilRunTests.cs`.
 
 ## Severity 3: a wrong text or a wrong display
 

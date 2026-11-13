@@ -480,8 +480,8 @@ public class FitsReaderTests
 
     /// <summary>
     /// R-139: without BITPIX a sample has no size, so the bound of R-009 saw 0 bytes of data
-    /// and let any NAXIS1 x NAXIS2 through to the allocation: an out-of-memory error for
-    /// 100000 x 100000. Refused by name now, missing or not a number, before any size is
+    /// and let any NAXIS1 x NAXIS2 through to the allocation: an OverflowException for
+    /// 100000 x 100000, more than an array holds. Refused by name now, missing or not a number, before any size is
     /// computed.
     /// </summary>
     [Theory]
