@@ -5,11 +5,11 @@
       "id": "V-001",
       "kind": "inventory",
       "session": "Veil/2026-10-06-3h",
-      "measuredOn": "2026-10-09",
+      "measuredOn": "2026-10-09, the darks 2026-11-13",
       "expected": {
         "lights": 87,
         "biases": 30,
-        "darks": 0,
+        "darks": 30,
         "camera": "Nikon D3300",
         "exposureSeconds": 120.2,
         "iso": 1600,
@@ -77,7 +77,7 @@
       "id": "V-008",
       "kind": "series",
       "session": "Veil/2026-10-06-3h",
-      "measuredOn": "2026-10-09, the drift and polar figures 2026-10-24",
+      "measuredOn": "2026-10-09, the drift and polar figures 2026-10-24, the darks and the polar figures without a solve 2026-11-13",
       "expected": {
         "good": 48, "marginal": 17, "bad": 22,
         "badFrames": [1, 13, 15, 17, 18, 20, 22, 23, 25, 27, 38, 43, 45, 50, 52, 54, 56, 60, 63, 68, 70, 76],
@@ -87,8 +87,8 @@
         "readNoiseG1": 2.9, "swampingRFrame1": 9.4,
         "raAxis": "Y", "focusHeld": true, "dew": false, "hotPixelsOk": true,
         "driftPerExposurePx": 1.52, "walkingStreakPx": 13.7, "walkingSharedFrames": 53, "walkingNoise": "Insufficient",
-        "darks": 0, "patternStatus": "Measured", "patternHotPerMpx": 4, "patternSigmaAdu": [1.4, 2.1, 2.1, 2.3], "patternSurvivingPct": 1.6,
-        "driftPairs": 36, "driftApproximate": false, "polarErrorMinArcmin": 4.5, "polarErrorMaxArcmin": 6.7, "polarDriftMaxPx": 0.46, "polarAlignment": "Ok"
+        "darks": 30, "patternStatus": "Measured", "patternHotPerMpx": 4, "patternSigmaAdu": [1.4, 2.1, 2.1, 2.3], "patternSurvivingPct": 1.6,
+        "driftPairs": 36, "driftApproximate": false, "polarErrorMinArcmin": 4.5, "polarErrorMaxArcmin": null, "polarDriftMaxPx": null, "polarAlignment": "Unknown"
       },
       "tolerance": { "px": 0.1, "arcmin": 0.3, "fwhm": 0.05, "adu": 0.1, "ratio": 0.3, "perMpx": 8, "pct": 0.2 }
     },
@@ -179,7 +179,7 @@
       "id": "V-014",
       "kind": "series",
       "session": "Veil/2026-11-06",
-      "measuredOn": "2026-11-07",
+      "measuredOn": "2026-11-07, the RA axis and the darks 2026-11-13",
       "expected": {
         "good": 80, "marginal": 2, "bad": 0,
         "badFrames": [],
@@ -187,9 +187,9 @@
         "distinctMid": 52, "distinctLoose": 37, "isolated": 14, "longestRunLoose": 4,
         "medianMove": 17.14, "rotationArcmin": 5.4, "driftYPerMin": -0.59, "sessionFwhm": 4.70,
         "readNoiseG1": 3.0, "swampingRFrame1": 11.6,
-        "raAxis": "Y", "focusHeld": true, "dew": false, "hotPixelsOk": true,
+        "raAxis": "Unknown", "focusHeld": true, "dew": false, "hotPixelsOk": true,
         "driftPerExposurePx": 1.19, "walkingStreakPx": 3.6, "walkingSharedFrames": 4, "walkingNoise": "Ok",
-        "darks": 0, "patternStatus": "Measured", "patternHotPerMpx": 0, "patternSigmaAdu": [1.1, 2.4, 2.3, 1.5], "patternSurvivingPct": 1.5,
+        "darks": 35, "patternStatus": "Measured", "patternHotPerMpx": 0, "patternSigmaAdu": [1.1, 2.4, 2.3, 1.5], "patternSurvivingPct": 1.5,
         "driftPairs": 6, "driftApproximate": true, "polarAlignment": "Unknown"
       },
       "tolerance": { "px": 0.1, "arcmin": 0.3, "fwhm": 0.05, "adu": 0.1, "ratio": 0.3, "perMpx": 8, "pct": 0.2 }
