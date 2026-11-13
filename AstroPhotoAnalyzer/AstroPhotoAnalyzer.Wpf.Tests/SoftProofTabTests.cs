@@ -483,6 +483,100 @@ public class SoftProofTabTests
     }
 
     [Fact]
+    public async Task R166_AChangeOfIntentWhileAFileIsProofedRendersBothAfterItAndKeepsARefusal()
+    {
+        using var ws = new TempWorkspace();
+        string icc = Profile(ws);
+        var tab = new SoftProofTabViewModel();
+        tab.Populate(ResultAt(icc, "prima.tif"));
+        tab.Compute();
+        ProofProfile profile = ProofRun.Prepare(ResultAt(icc, "prima.tif")).Profile;
+
+        // The intent changes while the file is proofed: no render of its own starts, which
+        // would drop the chosen file, and the comparison is rendered with the new intent.
+        Task comparing = tab.CompareAsync(OtherTiff(ws));
+        tab.IsRelative = true;
+        Assert.Same(comparing, tab.ProofComputation);
+        await comparing;
+        Assert.True(tab.IsComparing, tab.Message);
+        Assert.False(tab.IsBusy);
+        Assert.Null(tab.Message);
+        Assert.Equal(ProofTexts.Caption(profile, ProofIntent.Relative), tab.Caption);
+
+        // A file refused on the pool thread: the earlier comparison stays, the reason in red.
+        var right = tab.OtherImage;
+        await tab.CompareAsync(OtherTiff(ws, "mica.tif", w: 256));
+        Assert.False(tab.IsBusy);
+        Assert.True(tab.IsComparing);
+        Assert.Same(right, tab.OtherImage);
+        Assert.True(tab.IsProblem);
+        Assert.Equal(ProofTexts.SizeMismatch(512, 512, 256, 512), tab.Message);
+
+        // Refused with the intent changed meanwhile: both sides are rendered on the new
+        // intent, and that render leaves the reason where it was.
+        Task refused = tab.CompareAsync(OtherTiff(ws, "mica-2.tif", w: 256));
+        tab.IsPerceptual = true;
+        await refused;
+        Assert.False(tab.IsBusy);
+        Assert.True(tab.IsComparing);
+        Assert.Equal("alta.tif", tab.OtherName);
+        Assert.NotSame(right, tab.OtherImage);
+        Assert.Equal(ProofTexts.Caption(profile, ProofIntent.Perceptual), tab.Caption);
+        Assert.True(tab.IsProblem);
+        Assert.Equal(ProofTexts.SizeMismatch(512, 512, 256, 512), tab.Message);
+
+        // A file still being proofed when the tab is emptied touches nothing when it ends.
+        Task late = tab.CompareAsync(OtherTiff(ws, "tarzie.tif"));
+        tab.Clear();
+        await late;
+        Assert.False(tab.IsComparing);
+        Assert.False(tab.IsBusy);
+        Assert.Null(tab.Message);
+        Assert.Null(tab.OtherImage);
+    }
+
+    [Fact]
+    public async Task R166_AnImageThatCannotBeAnalysedEndsTheComparisonToo()
+    {
+        using var ws = new TempWorkspace();
+        string tif = WindowSmokeTests.DarkTiff(ws);
+        var vm = new MainViewModel();
+        Assert.True(vm.Parameters.UseProfile(new IccProfileRow(IccPaperBlack.Read(Profile(ws)))));
+        await vm.OpenAsync(tif);
+        await vm.ProofComputation;
+        Assert.True(vm.SoftProof.HasProof, vm.SoftProof.Message);
+        await vm.SoftProof.CompareAsync(OtherTiff(ws));
+        Assert.True(vm.SoftProof.IsComparing, vm.SoftProof.Message);
+        Assert.Equal("cer-intunecat.tif", vm.SoftProof.ImageName);
+
+        // The same image analysed again, as the window runs it, keeps the comparison.
+        await vm.RunAsync();
+        await vm.ProofComputation;
+        Assert.True(vm.SoftProof.IsComparing, vm.SoftProof.Message);
+        Assert.Equal("alta.tif", vm.SoftProof.OtherName);
+
+        // Another image, one that cannot be read: its tab is only emptied, never filled.
+        await vm.OpenAsync(ws.WriteFile("stricata.tif", new byte[] { 1, 2, 3 }));
+        Assert.False(vm.HasResult);
+        Assert.False(string.IsNullOrEmpty(vm.Error));
+
+        // The first image opened again comes back alone.
+        await vm.OpenAsync(tif);
+        await vm.ProofComputation;
+        Assert.True(vm.SoftProof.HasProof, vm.SoftProof.Message);
+        Assert.False(vm.SoftProof.IsComparing);
+        Assert.Null(vm.SoftProof.Message);
+    }
+
+    /// <summary>The alpha of one pixel of a layer: 0 where nothing is painted.</summary>
+    static byte AlphaAt(System.Windows.Media.Imaging.BitmapSource layer, int x, int y)
+    {
+        var pixel = new byte[4];
+        new System.Windows.Media.Imaging.FormatConvertedBitmap(layer, PixelFormats.Bgra32, null, 0).CopyPixels(new Int32Rect(x, y, 1, 1), pixel, 4, 0);
+        return pixel[3];
+    }
+
+    [Fact]
     public void R166_TheTabAndTheFullScreenWindowShowTheComparisonAndItsButtons()
         => _sta.Invoke(() =>
         {
@@ -530,7 +624,20 @@ public class SoftProofTabTests
             Assert.NotNull(view.Comparison.BeforeOverlay);
             Assert.Same(tab.PaperOverlay, view.Comparison.BeforeOverlay);
             Assert.Same(tab.OtherPaperOverlay, view.Comparison.AfterOverlay);
+            // ... by the other file's own pixels: nothing over its grey half, red over its red half.
+            Assert.Equal(0, AlphaAt(tab.OtherPaperOverlay, 10, 10));
+            Assert.True(AlphaAt(tab.OtherPaperOverlay, 500, 10) > 0);
             WindowSmokeTests.Render(view, name: "soft-proof-comparatie");   // saved with APA_DUMP_SCREENS, to look at
+
+            // "Schimba imaginea...": the right side changes, the line stays where it was put.
+            view.Comparison.MoveDividerTo(100);
+            double moved = view.Comparison.DividerPosition;
+            Assert.NotEqual(0.5, moved);
+            tab.Compare(OtherTiff(ws, "a-treia.tif", grey: 0.3f));
+            Layout(view);
+            Assert.Equal("a-treia.tif", view.Comparison.AfterText);
+            Assert.Same(tab.OtherImage, view.Comparison.After);
+            Assert.Equal(moved, view.Comparison.DividerPosition);
 
             // The full-screen window shows the same comparison, with the same buttons in its panel.
             var window = new SoftProofWindow { DataContext = tab };
@@ -541,10 +648,20 @@ public class SoftProofTabTests
                 Assert.Equal(Visibility.Collapsed, window.Single.Visibility);
                 Assert.Same(tab.Image, window.Comparison.Before);
                 Assert.Same(tab.OtherImage, window.Comparison.After);
-                Assert.Equal("alta.tif", window.Comparison.AfterText);
+                Assert.Equal("a-treia.tif", window.Comparison.AfterText);
                 Assert.Equal(Visibility.Visible, window.ProofControls.ChangeButton.Visibility);
                 Assert.Equal(Visibility.Visible, window.ProofControls.StopButton.Visibility);
                 Assert.True(window.HoverPanel.IsAncestorOf(window.ProofControls.StopButton));
+
+                // A refused file shows the panel though the mouse is elsewhere, so that its
+                // sentence is seen; the panel hides again when the sentence goes.
+                Assert.False(window.PanelShown);
+                tab.Compare(OtherTiff(ws, "mica.tif", w: 256));
+                Assert.True(tab.IsProblem);
+                Assert.True(window.PanelShown);
+                tab.Compare(OtherTiff(ws, "buna.tif"));
+                Assert.False(tab.IsProblem);
+                Assert.False(window.PanelShown);
 
                 // "Opreste comparatia" brings both back to the single image.
                 tab.StopComparing.Execute(null);

@@ -752,9 +752,13 @@ public partial class LoggingTests
         ProofSet other = ProofRun.PrepareOther(first, scene, "other.tif");
         ProofSet small = ProofRun.PrepareOther(first, SyntheticRasters.Flat(32, 64, 0.3f), "small.tif");
         ProofSet gone = ProofRun.PrepareOther(first, missing);
+        Raster dark = SyntheticRasters.Flat(64, 64, 0.001f);
+        Assert.True(RasterOps.LooksLinear(dark, out double median));
+        ProofSet linear = ProofRun.PrepareOther(first, dark, "linear.fit");
 
         Assert.Null(other.Problem);
         Assert.NotNull(small.Problem);
+        Assert.NotNull(linear.Problem);
         string[] expected =
         [
             "proof-other start path=other.tif against=64x64",
@@ -764,6 +768,8 @@ public partial class LoggingTests
             "proof-other start path=" + missing + " against=64x64",
             "the image to compare with cannot be read: " + missing,
             "proof-other done refused: " + gone.Problem + " in #",
+            "proof-other start path=linear.fit against=64x64",
+            "proof-other done refused: the image looks linear, median " + LogText.Num(median) + " under " + LogText.Num(Thresholds.LinearMedianMax) + " in #",
         ];
         Assert.Equal(expected, Timeless(capture, "ProofRun"));
         LogCapture.Captured warning = capture.Events.Single(e => e.Level == NLog.LogLevel.Warn);

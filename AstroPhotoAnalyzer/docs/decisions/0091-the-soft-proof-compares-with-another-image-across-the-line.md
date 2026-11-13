@@ -68,8 +68,14 @@ with a recommendation, and accepted as recommended.
 - `ProofSet` keeps the gamut table and the analysed image's size, so that the other image is
   judged by the same table and its size compared without the analysis.
 - The tab and the full-screen window each hold two viewers, the single one and the comparison,
-  one of them shown: entering and leaving the compare mode starts at the fit, and a changed
-  file keeps the line and the zoom, since its size is the same.
+  one of them shown: entering the compare mode starts at the fit, leaving it shows the single
+  image as it was left, and a changed file keeps the line and the zoom, since its size is the
+  same.
+- The full-screen window's panel, hidden unless the mouse is over its band (ADR 0068), also
+  shows while the tab has a reason in red: after the file dialog the mouse is rarely at the top,
+  and a refusal nobody sees looks like a button that did nothing (the review of 2026-11-13).
+- An analysis that fails ends the comparison too (`MainViewModel` tells the tab), so that the
+  first image opened again comes back alone (the same review).
 - `ProofTexts` changed, which is under `Report/`: `/validate` runs before the task ends.
 - Left for a task of its own if wanted: two sizes; a key for the compare mode in full screen;
   remembering the other file.

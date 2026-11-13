@@ -153,12 +153,16 @@ side for the view. `ShowOriginal` swaps both images and a change of intent rende
 (`RenderAsync` reads `_other` on the window's thread, as it reads the set). While a file is
 being proofed a change of intent starts no render of its own, which would supersede the
 comparison and drop the chosen file (`_comparePending`); the comparison renders both when it
-ends, as the first computation does. `Clear` runs before every analysis, the same image's too,
+ends, as the first computation does, whether the file was taken, refused or failed, and that
+render is told to leave the refusal's sentence where it was (`RenderAsync(keepMessage,
+keepProblem)`; the first computation does the same for a comparison that ended at that run). `Clear` runs before every analysis, the same image's too,
 so it drops the side but keeps the file; `Populate` forgets the file when the result is of
 another path; `Prepare` proofs the kept file again from the new set, and `Show` ends the
 comparison with the core's reason, forgetting the file, when it is then refused. `StopCompare`
 forgets it at the user's word, only while nothing is computed, so that a render in flight
-cannot bring the other side back.
+cannot bring the other side back. `EndComparison` forgets it for `MainViewModel`, which calls
+it when an analysis fails: the tab is only cleared then, never populated, and without the call
+the first image opened again would bring the comparison back.
 
 `SoftProofControls` is one `UserControl` for the controls, used by the tab and by the window
 over the same view-model; its `ShowFullScreenButton` dependency property hides the button in the
@@ -175,9 +179,10 @@ background is the margin brush, the sentences under it. Inside the border are tw
 of them shown: `Single`, a `ZoomPanViewer` over the image and its layer, and `Comparison`, the
 `BeforeAfterViewer` of the paper fit (`paper-fit.md`) bound to the two images, the two layers
 and the two file names. Two viewers and not one: a `BeforeAfterViewer` without an After image
-still cuts its Before layer at the line, and its line and zoom reset when After empties, so
-entering and leaving the comparison start at the fit either way; a changed file replaces After
-without passing through null and keeps both, its size being the same. `SoftProofWindow` holds
+still cuts its Before layer at the line. Its line and zoom reset when After empties, so
+entering the comparison starts at the fit; leaving it shows `Single` as it was left, since a
+collapsed viewer keeps its view; a changed file replaces After without passing through null
+and keeps both, its size being the same. `SoftProofWindow` holds
 the same pair, with a line and a zoom of its own.
 
 `Presentation/ZoomPanViewer.cs` is a `Decorator` that fits its child (the grid of the proof and
@@ -207,7 +212,10 @@ the message ("computing" or a refused table's reason, red), the key hint and the
 (`CloseClicked` closes). The panel sits in a transparent `Border`, the band, aligned to the top;
 a style trigger keeps the panel `Hidden` (not `Collapsed`, so the band keeps its height) unless
 the window's `PanelShown` dependency property is true, which the band's `MouseEnter` sets and
-`MouseLeave` clears (`HidePanel`). While the margin list's drop-down is open the `ComboBox`
+`MouseLeave` clears (`HidePanel`). The window also follows the tab's `IsProblem`
+(`TabChanged`, subscribed while the tab is the data context and dropped when the window
+closes, since the tab outlives it): a reason in red shows the panel wherever the mouse is, and
+its going hides the panel unless the mouse is over the band or the margin list is open (R-166). While the margin list's drop-down is open the `ComboBox`
 holds a sub-tree mouse capture, so the band sees no `MouseLeave` wherever the mouse goes (the
 list is taller than the band) and the panel stays; `MouseLeave` also skips the hide while the
 list is open, for the same case. When the list closes the capture is released, and the band's

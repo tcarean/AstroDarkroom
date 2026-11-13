@@ -408,8 +408,9 @@ namespace AstroPhotoAnalyzer.Wpf
                 Show(outcome);
                 IsBusy = false;
                 // The intent changed while the table was built: the proof shown is the old
-                // one's, so render the new one now rather than wait for the next change.
-                if (HasControls && _intent != intent) await RenderAsync();
+                // one's, so render the new one now rather than wait for the next change. A
+                // comparison that ended at this run keeps its reason through that render.
+                if (HasControls && _intent != intent) await RenderAsync(Message, IsProblem);
             }
             catch (Exception e)
             {
@@ -434,7 +435,13 @@ namespace AstroPhotoAnalyzer.Wpf
         /// refuses (its Problem) leaves the set, so another intent can still be chosen, and shows
         /// the reason in red with no image.
         /// </summary>
-        async Task RenderAsync()
+        /// <param name="keepMessage">
+        /// A message shown before this render that must still be there after it, since the render
+        /// was not the user's answer to it: the reason a file of the comparison was refused, when
+        /// the intent had changed meanwhile (R-166); null for none.
+        /// </param>
+        /// <param name="keepProblem">Whether <paramref name="keepMessage"/> is a reason of the core's, shown in red.</param>
+        async Task RenderAsync(string keepMessage = null, bool keepProblem = false)
         {
             ProofSet set = _set; ProofIntent intent = _intent;
             BitmapSource original = _original, paper = _paperLayer;   // read here, on the window's thread, as the set is
@@ -446,7 +453,12 @@ namespace AstroPhotoAnalyzer.Wpf
                 Outcome outcome = await Task.Run(() => new Outcome(
                     Render(set, intent, original, paper),
                     other == null ? null : Render(other.Set, intent, other.Original, other.Paper)));
-                if (run == _run) Show(outcome);
+                if (run != _run) return;
+                Show(outcome);
+                if (keepMessage != null)
+                {
+                    Message = keepMessage; IsProblem = keepProblem;
+                }
             }
             catch (Exception e)
             {
@@ -582,11 +594,7 @@ namespace AstroPhotoAnalyzer.Wpf
                     Log.Debug("comparison " + LogText.Int(run) + " ended after a newer computation started; nothing is shown");
                     return;
                 }
-                _comparePending = false;
                 TakeOther(other, path);
-                IsBusy = false;
-                // The intent changed while the file was proofed: both sides are rendered now.
-                if (HasControls && _intent != intent) await RenderAsync();
             }
             catch (Exception e)
             {
@@ -601,6 +609,10 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 if (run == _run) { _comparePending = false; IsBusy = false; }
             }
+            // The intent changed while the file was proofed, when no render of its own could
+            // start: what is shown, one image or two, is rendered now, and the reason of a
+            // refusal or a failure stays through that render.
+            if (run == _run && HasControls && _intent != intent) await RenderAsync(Message, IsProblem);
         }
 
         /// <summary>The synchronous body of <see cref="CompareAsync"/>, for the tests, as <see cref="Compute"/> is.</summary>
@@ -631,6 +643,20 @@ namespace AstroPhotoAnalyzer.Wpf
             _otherPath = path;
             _otherFor = _result?.Path;
             Message = null; IsProblem = false;
+            RaiseProof();
+        }
+
+        /// <summary>
+        /// Forgets the file of a comparison, shown or kept for the next run: the main view-model
+        /// calls it when an analysis fails, so that an image that could not be analysed ends the
+        /// comparison as one that could does (R-166), and the first image opened again comes back alone.
+        /// </summary>
+        internal void EndComparison()
+        {
+            if (_otherPath == null) return;
+            Log.Info("comparison ended: the analysis failed");
+            _other = null;
+            _otherPath = _otherFor = null;
             RaiseProof();
         }
 

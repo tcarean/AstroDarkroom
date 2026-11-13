@@ -20,6 +20,7 @@
 // screen (R-163, R-164). The behaviour is in the view-models; here only the dark title bar and
 // Esc, and, for the soft proof window, its hover panel and its keys.
 
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 
@@ -90,6 +91,15 @@ namespace AstroPhotoAnalyzer.Wpf
             PanelZone.MouseEnter += (_, _) => PanelShown = true;
             PanelZone.MouseLeave += (_, _) => { if (!ProofControls.MarginList.IsDropDownOpen) HidePanel(); };
             ProofControls.MarginList.DropDownClosed += (_, _) => { if (!PanelZone.IsMouseOver) HidePanel(); };
+            // A reason shown in red is in the panel, which the mouse is rarely over when it
+            // comes (a file dialog was just closed): the tab's IsProblem shows the panel
+            // (R-166). The tab outlives this window, so the window lets go of it when closed.
+            DataContextChanged += (_, e) =>
+            {
+                if (e.OldValue is INotifyPropertyChanged before) before.PropertyChanged -= TabChanged;
+                if (e.NewValue is INotifyPropertyChanged now) now.PropertyChanged += TabChanged;
+            };
+            Closed += (_, _) => { if (DataContext is INotifyPropertyChanged tab) tab.PropertyChanged -= TabChanged; };
             PreviewKeyDown += (_, e) =>
             {
                 if (e.Key == Key.Escape) { Close(); e.Handled = true; return; }
@@ -114,6 +124,21 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             PanelShown = false;
             if (HoverPanel.IsKeyboardFocusWithin) Focus();
+        }
+
+        /// <summary>
+        /// Shows the panel when the tab gets a reason to show in red (a file refused for the
+        /// comparison, an intent the core refuses), so that the sentence is seen wherever the
+        /// mouse is (R-166), and hides it when the reason goes, unless the mouse is over the band
+        /// or the margin list is open.
+        /// </summary>
+        /// <param name="sender">The tab's view-model.</param>
+        /// <param name="e">The property that changed; only <c>IsProblem</c> is read.</param>
+        void TabChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != nameof(SoftProofTabViewModel.IsProblem) || sender is not SoftProofTabViewModel tab) return;
+            if (tab.IsProblem) PanelShown = true;
+            else if (!PanelZone.IsMouseOver && !ProofControls.MarginList.IsDropDownOpen) HidePanel();
         }
 
         /// <summary>The panel's Close button (R-164): closes the window, as Esc does.</summary>
