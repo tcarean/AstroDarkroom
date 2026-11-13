@@ -110,6 +110,12 @@ internal static class Planes
     internal static (double Sigma, double Median) ClippedSigma(float[] plane)
     {
         ArgumentNullException.ThrowIfNull(plane);
+        if (plane.Length == 0)
+        {
+            // nothing was measured: a sigma of 0 would read as a measured silence (CR-005)
+            return (double.NaN, double.NaN);
+        }
+
         int k = Math.Max(1, plane.Length / SigmaSampleMax);
         int n = (plane.Length + k - 1) / k;
         float[] x = new float[n];

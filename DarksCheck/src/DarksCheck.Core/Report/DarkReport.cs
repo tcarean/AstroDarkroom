@@ -288,6 +288,14 @@ internal static class DarkReport
                 $"{RoCount(l.AssumedSettings)}{(l.AssumedSettings == 1 ? "light nu spune ISO-ul sau expunerea; s-au luat cele ale dark-urilor" : "lights nu spun ISO-ul sau expunerea; s-au luat cele ale dark-urilor")} (1 ADU-eq = {F(r.Darks.Norm, 2)} ADU)")));
         }
 
+        if (l.DarksSilent > 0)
+        {
+            // the mirror case (ADR 0053): the lights say their settings, the darks do not
+            rows.Add(new(T("WARNING", "ATENTIE"), T(
+                "the darks do not give their ISO or exposure; they were compared with the lights as made at the same settings",
+                "dark-urile nu spun ISO-ul sau expunerea; s-au comparat cu lights-urile ca facute la aceleasi setari")));
+        }
+
         bool one = l.Persistent == 1;
         string seen = one ? T("1 hot pixel shows", "1 pixel fierbinte se vede") : T($"{l.Persistent} hot pixels show", $"{RoCount(l.Persistent)}pixeli fierbinti se vad");
         rows.Add(new(T("hot pixels", "pixeli fierbinti"), T(
@@ -345,8 +353,7 @@ internal static class DarkReport
     private static string? TraceRow(MatchFigures m, TraceFigures t)
     {
         // ratios that sit around zero are the "hot pixels do not show" verdict of MatchText: no subtraction to speak of
-        bool absent = m.Verdict == MatchVerdict.Unmatched && (m.Ratio <= 0 || m.Q25 <= 0);
-        if (m.Verdict == MatchVerdict.Unmeasured || absent || !(m.Ratio > 0) || t.Pixels == 0 || double.IsNaN(t.Median))
+        if (m.Verdict == MatchVerdict.Unmeasured || m.Absent || !(m.Ratio > 0) || t.Pixels == 0 || double.IsNaN(t.Median))
         {
             return null;
         }
@@ -415,7 +422,9 @@ internal static class DarkReport
     /// </summary>
     /// <param name="r">The run's result.</param>
     /// <returns>The tag (<c>idx157</c>) and the parenthesis with its leading space; null without
-    /// lights or when the lights' index is not measured.</returns>
+    /// lights or when the lights have no index: not measured, or lights that show none of the
+    /// dark's hot pixels (R-064), <see cref="DarkSeriesResult.LightsIndex"/> being NaN for
+    /// both.</returns>
     private static (string Tag, string About)? LightsLike(DarkSeriesResult r)
     {
         if (r.Lights is not LightsAnalysis l || double.IsNaN(r.LightsIndex))
@@ -441,11 +450,17 @@ internal static class DarkReport
         DarkSeriesAnalysis d = r.Darks;
         IndexFigures ix = r.Index;
         double mpx = d.Width * (double)d.Height / 1e6;
+        // a set that does not say its settings is not worked out for the reference ones (R-060)
+        string workedOut = d.SaysSettings
+            ? T($"worked out for ISO {F(Th.NormIso, 0)} and {F(Th.NormExposureSeconds, 0)} s", $"socotita pentru ISO {F(Th.NormIso, 0)} si {F(Th.NormExposureSeconds, 0)} s")
+            : T("in ADU of the file, as the files do not give the ISO or the exposure", "in ADU din fisier, pentru ca fisierele nu spun ISO-ul sau expunerea");
+        // and its figure is then in the file's ADU, as the row's ending says
+        string unit = d.SaysSettings ? "ADU-eq" : "ADU";
         List<ReportRow> rows =
         [
             new(r.DarksFromPartner is null ? T("darks", "dark-uri") : T("darks (partner)", "dark-uri (partener)"), T(
-                $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: the average value of the hot pixels at places {ix.RankLow + 1} .. {ix.RankHigh}, counting from the hottest, that is {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} per Mpx of {F(mpx, mpx < 1 ? 2 : 1)} Mpx; worked out for ISO {F(Th.NormIso, 0)} and {F(Th.NormExposureSeconds, 0)} s)",
-                $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile {ix.RankLow + 1} .. {ix.RankHigh}, numarand de la cel mai fierbinte, adica {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} pe fiecare Mpx din {F(mpx, mpx < 1 ? 2 : 1)} Mpx; socotita pentru ISO {F(Th.NormIso, 0)} si {F(Th.NormExposureSeconds, 0)} s)")
+                $"{ix.Tag} ({F(ix.Index, 1)} {unit}: the average value of the hot pixels at places {ix.RankLow + 1} .. {ix.RankHigh}, counting from the hottest, that is {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} per Mpx of {F(mpx, mpx < 1 ? 2 : 1)} Mpx; {workedOut})",
+                $"{ix.Tag} ({F(ix.Index, 1)} {unit}: valoarea medie a pixelilor fierbinti de pe locurile {ix.RankLow + 1} .. {ix.RankHigh}, numarand de la cel mai fierbinte, adica {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} pe fiecare Mpx din {F(mpx, mpx < 1 ? 2 : 1)} Mpx; {workedOut})")
                 // the partner's label stands on the partner's row, the session's own on `eticheta` (R-066)
                 + (r.DarksFromPartnerLabel is string partnerLabel ? T($"; label {partnerLabel}", $"; eticheta {partnerLabel}") : "")),
             new(T("label", "eticheta"), r.Label),
@@ -464,14 +479,28 @@ internal static class DarkReport
         {
             MatchFigures m = p.OwnOverPartner;
             string settings = p.Iso is double iso && p.ExposureSeconds is double e ? $"ISO {F(iso, 0)}, {InventoryReport.Exposure(e)} s" : T("unknown settings", "setari necunoscute");
+            // a partner with unknown settings has its index in its file's ADU (R-063)
+            string partnerUnit = p.Iso is double && p.ExposureSeconds is double ? "ADU-eq" : "ADU";
             rows.Add(new(T("partner", "partener"), T(
-                $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} ADU-eq; frames read {p.Used} of {p.Frames}, {settings}); label {p.Label}",
-                $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} ADU-eq; cadre citite {p.Used} din {p.Frames}, {settings}); eticheta {p.Label}")));
+                $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} {partnerUnit}; frames read {p.Used} of {p.Frames}, {settings}); label {p.Label}",
+                $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} {partnerUnit}; cadre citite {p.Used} din {p.Frames}, {settings}); eticheta {p.Label}")));
             if (p.Failed > 0)
             {
                 rows.Add(new(T("WARNING", "ATENTIE"), T(
                     $"{p.Failed} {(p.Failed == 1 ? "dark of the partner could not be used" : "darks of the partner could not be used")} (the first: {p.FirstError})",
                     $"{RoCount(p.Failed)}{(p.Failed == 1 ? "dark al partenerului nu s-a putut folosi" : "dark-uri ale partenerului nu s-au putut folosi")} (primul: {p.FirstError})")));
+            }
+
+            if (p.Silent != SilentSide.None)
+            {
+                // one set does not say its settings: the two were compared as made at the same (R-063, ADR 0053)
+                rows.Add(new(T("WARNING", "ATENTIE"), p.Silent == SilentSide.Partner
+                    ? T(
+                        "the partner's darks do not give their ISO or exposure; they were compared with the session's as made at the same settings",
+                        "dark-urile partenerului nu spun ISO-ul sau expunerea; s-au comparat cu ale sesiunii ca facute la aceleasi setari")
+                    : T(
+                        "the session's darks do not give their ISO or exposure; they were compared with the partner's as made at the same settings",
+                        "dark-urile sesiunii nu spun ISO-ul sau expunerea; s-au comparat cu ale partenerului ca facute la aceleasi setari")));
             }
 
             string partnerWords = T("the partner", "partenerul");
@@ -809,7 +838,7 @@ internal static class DarkReport
     {
         ArgumentNullException.ThrowIfNull(m);
         string atMaster = partner ? T("at the partner", "la partener") : T("in the dark", "in dark");
-        if (m.Verdict == MatchVerdict.Unmatched && (m.Ratio <= 0 || m.Q25 <= 0))
+        if (m.Absent)
         {
             // the ratios sit around zero: the set shows none of the master's hot pixels
             return T(

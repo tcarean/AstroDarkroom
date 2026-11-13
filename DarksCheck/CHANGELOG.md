@@ -342,6 +342,41 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A file whose name starts with a dot, or that is hidden, is no longer taken for a frame: the
+  `._DSC_0034.NEF` a Mac leaves beside each file of a card were listed as darks that could not
+  be read and, over the frame cap, were read in the place of real darks (R-002; CR-001 of the
+  code review).
+
+- A set that does not say its ISO or its exposure (a FITS without `ISOSPEED`) was compared at
+  factor 1 with a set that says its own: lights at ISO 1600 read a quarter of such darks at the
+  same temperature, and so did darks against such a partner. The two are now compared as made
+  at the same settings, as a light without an ISO already was, and an `ATENTIE` line says so in
+  check 2 or under `INDEX`; the `INDEX` row of such a set no longer says it was worked out for
+  ISO 400 and 120 s and gives its figure in `ADU`, as the partner's row does for a partner with
+  unknown settings, and the window's text under the label says the index is then in the file's
+  ADU and compares only with sets made at the same settings (R-052, R-060, R-063, R-087,
+  ADR 0053; CR-002 of the code review).
+
+- The noise of the lights' stack in the scale section, and the rows of check 3 that weigh a
+  light found in the darks against it, added the lights' noise in the lights' ADU to the dark
+  master's in the darks' ADU: with lights at twice the darks' ISO the lights' share came out
+  double. The lights' sky and noise are now brought to the darks' settings first, as check 9
+  brings them, and the `sky` row and the paragraph under the table say so when the lights are
+  at other settings than the darks (R-080; CR-003 of the code review). With lights at the darks' settings nothing changes.
+
+- Lights that do not show the dark's hot pixels (in-camera noise reduction, another camera,
+  rotated frames) got an index all the same, `idx-0` or `idx0`, beside a verdict that says the
+  hot pixels do not show, and a session with lights and no darks was labelled with it. Such
+  lights now have no index: the `index lights` and `lights` rows are left out and the label
+  reads `-idx-` (R-064, R-066; CR-004 of the code review).
+
+- Darks whose level sits above the hot-pixel threshold in every pixel (a warm sensor, or
+  biases with a lower pedestal) read a master noise of 0.00 ADU, and check 9 said `OK` on it:
+  the noise was read only on the pixels under the threshold above the black, and there were
+  none. The quiet pixels are now chosen against the master's own level in the central crop, so
+  the noise is measured on such a set too, and is no longer skewed when only part of the pixels
+  pass the threshold (R-024, ADR 0054; CR-005 of the code review).
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

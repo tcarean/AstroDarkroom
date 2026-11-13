@@ -27,7 +27,13 @@ the darks does not apply, since no light is kept (ADR 0041). A light of another
 size than the darks, or one that fails to decode, is listed with its error. A FITS light has no
 black level of its own and takes the darks' black (the pedestal is the camera's); a raw brings
 libraw's. A light that does not say its ISO or its exposure is taken at the darks'
-normalisation and marked `AssumedSettings`. The loop writes the diagnostic log as it goes, one
+normalisation and marked `AssumedSettings`. A light that says them while the darks do not
+(`DarkSeriesAnalysis.SaysSettings` false) is taken at the darks' normalisation too, is not
+marked, and is counted in `LightsAnalysis.DarksSilent` for the report's line (ADR 0053). The `INDEX` rows follow the same flag: `DarkReport.IndexRows` gives the
+darks' figure in `ADU` and ends the row with the files not saying their settings, where a set
+that says them reads `ADU-eq` and the reference settings, and the partner's row gives `ADU`
+beside `setari necunoscute`. `FactorOf` is that rule, and the only place it is written:
+`Analyze` reads the ratio with it and `NoiseOnPlane` the noise of a light. The loop writes the diagnostic log as it goes, one
 line per light measured with its time, the working set and its figures, and a light that failed
 with its exception (ADR 0025, `logging.md`); `Measure` and the rest of the file write nothing.
 
@@ -60,7 +66,7 @@ lights, or a pixel the dark does not show.
 The **amplitude** of a light is read at the master's hot pixels (`ampIdx`: above `Th.HotAdu`
 in ADU-eq, under `Th.AmplitudeMaxFraction` of white): the median and quartiles over those
 pixels of the light's local excess over the master's excess, each divided by its own
-normalisation (`FrameStack.NormOf`), so lights at ISO 800 against darks at ISO 400 read 1 when
+normalisation (the light's by `FactorOf`, below), so lights at ISO 800 against darks at ISO 400 read 1 when
 the sensor was equally warm. The night's figure is the median over the lights of their medians
 (`IndexAnalyzer.Match`), with the first and the last light's ratios beside it, because the
 first lights of a night run cold (0.72 on Smida, 1.0 from the fifteenth minute).
@@ -101,8 +107,8 @@ folder's.
 ## The matching
 
 `SharedRatios(own, reference)` walks both masters, same size, and keeps the pixels both have
-above `Th.MatchMinAdu` (20 ADU-eq, each at its own normalisation) and both under
-`Th.AmplitudeMaxFraction` of white, returning the per-pixel ratio of normalised excesses.
+above `Th.MatchMinAdu` (20 ADU-eq, each at the normalisation the caller passes for it) and both
+under `Th.AmplitudeMaxFraction` of white, returning the per-pixel ratio of normalised excesses.
 `Match` reduces any list of ratios to a `MatchFigures`: the median, the quartiles, the degrees
 `Th.DoublingCelsius x log2(median)` and the verdict `Judge`: `Direct` within
 `Th.MatchDirectLow .. MatchDirectHigh` (0.9 .. 1.1), `WithOpt` within `Th.MatchOptLow ..
@@ -121,8 +127,9 @@ leaves little (R-067, ADR 0044). `LightsAnalyzer.TracesOf` runs at the end of `A
 figures already there. The noise of a light per CFA position (`LightsAnalyzer.NoiseOnPlane`,
 which also says how many lights gave it, and which check 9 reads for the lights' stack, ADR 0051)
 is the median over the decoded
-lights of `LightFigures.LocalSigma[p]`, each divided by its own normalisation (the darks' for a
-light with assumed settings), so in ADU-eq. For every amplitude pixel (`ampIdx`) on a position
+lights of `LightFigures.LocalSigma[p]`, each divided by its own normalisation (the darks' when
+the light or the darks do not say their settings, `FactorOf`), so in ADU-eq. For every amplitude
+pixel (`ampIdx`) on a position
 whose noise is positive, the master's excess in ADU-eq over that noise is the trace it leaves
 per unit of `|ratio - 1|`; the position of mosaic index `i` is `(((i / w) & 1) << 1) | ((i % w)
 & 1)`, the order `LocalSigma` is filled in. `TraceFigures.PerUnit` is the median of those, `k`.
@@ -142,10 +149,18 @@ only the ratio, so the partner's verdicts and the lights' index do not move. No 
 For a partner (`--against`) the run calls `SharedRatios` with the session's master as `own`
 and the partner's median master as `reference`, then `Match`; how the partner is opened,
 decoded and reduced to its master, and how the overlap of the two hot-pixel sets is counted,
-is `MatchPartner` in `dark-analysis.md`. `Chain` gives the lights against the partner: the
+is `MatchPartner` in `dark-analysis.md`. When one of the two sets says its settings and the
+other does not, `MatchPartner` passes the session's factor for the partner too, in the ratio
+and in the overlap levels, and sets `PartnerAnalysis.Silent` for the report's line (ADR 0053);
+the partner's index is ranked before that, at its own factor. `Chain` gives the lights against the partner: the
 product of the two medians, lights over darks times darks over partner, judged by `Judge` as
 one ratio; `EquivalentIndex` gives the lights' equivalent index, the darks' index times the
-lights-over-dark ratio. Both are carried in the result (`DarkSeriesResult.LightsIndex`,
+lights-over-dark ratio, and NaN when that ratio is unmeasured or `MatchFigures.Absent`: lights
+that show none of the dark's hot pixels have a ratio around zero, and its product with the
+index would be tagged `idx-0` or `idx0`. `Absent` is the one spelling of that case (an
+unmatched verdict with the median or the first quartile at or under 0); the report's
+`TraceRow` and `MatchText` read it, and since the report prints the lights' index only when
+it is a number, the two rows drop out and a lights-only session is labelled `-idx-`. Both are carried in the result (`DarkSeriesResult.LightsIndex`,
 `PartnerAnalysis.LightsOverPartner`), so the report and the window only format them.
 
 ## Measured

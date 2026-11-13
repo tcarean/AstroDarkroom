@@ -745,6 +745,48 @@ public class MainViewModelTests
         Assert.Equal(WindowTexts.IndexLead, vm.IndexLead);
     }
 
+    /// <summary>
+    /// The text under the label said the index is worked out for ISO 400 and 120 s also for darks that do not
+    /// say their ISO, above an INDEX row that says it is in the file's ADU.
+    /// </summary>
+    [Fact]
+    public async Task R087_TheTextUnderTheLabelSaysWhenTheFilesDoNotGiveTheSettings()
+    {
+        using TestSettings.Own _ = new();
+        using SessionFixture silent = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice }, iso: null);
+        using SessionFixture known = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice });
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(silent.Root);
+        Assert.True(vm.HasResult);
+        Assert.False(vm.Result!.Darks.SaysSettings);
+        Assert.Equal(WindowTexts.IndexLeadNoSettings, vm.IndexLead);
+        Assert.StartsWith(
+            "Indexul e un numar pentru cat de cald a fost senzorul: valoarea medie a pixelilor fierbinti din master de pe locurile 5-20 pe fiecare megapixel, numarand de la cel mai fierbinte. "
+            + "Fisierele acestui set nu spun ISO-ul sau expunerea, asa ca indexul e in ADU din fisier si se compara doar cu seturi facute la aceleasi setari. "
+            + "Cu cat senzorul a fost mai cald, cu atat indexul e mai mare. Eticheta e numele folderului plus idx si indexul rotunjit",
+            vm.IndexLead,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("socotita pentru ISO", vm.IndexLead, StringComparison.Ordinal);
+
+        // darks that say their settings keep the usual text
+        await vm.OpenAsync(known.Root);
+        Assert.True(vm.Result!.Darks.SaysSettings);
+        Assert.Equal(WindowTexts.IndexLead, vm.IndexLead);
+        Assert.Contains("numarand de la cel mai fierbinte, socotita pentru ISO 400 si 120 s. Cu cat senzorul", vm.IndexLead, StringComparison.Ordinal);
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.StartsWith(
+                "The index is a number for how warm the sensor was: the average value of the master's hot pixels at places 5-20 per megapixel, counting from the hottest. "
+                + "This set's files do not give the ISO or the exposure, so the index is in ADU of the file and compares only with sets made at the same settings. "
+                + "The warmer the sensor, the higher the index. The label is the folder's name plus idx and the rounded index",
+                WindowTexts.IndexLeadNoSettings,
+                StringComparison.Ordinal);
+            Assert.Contains("counting from the hottest, worked out for ISO 400 and 120 s. The warmer the sensor", WindowTexts.IndexLead, StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void TheNumbersAreParsedWithTheInvariantCulture()
     {

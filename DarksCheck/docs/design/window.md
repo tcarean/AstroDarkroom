@@ -156,7 +156,9 @@ they only set it. The `Partner` and `LightsFrom` setters alone run nothing.
 - `Label` and `Tag` are the result's `Label` and `LabelTag` (the tag the label ends with,
   decided in `DarkSeriesRun`: the darks' index tag, or the lights' for a folder whose darks are
   the partner's, R-066); `IndexLead`, the text under the label, is `WindowTexts.IndexLead` or,
-  for such a folder, `IndexLeadLights`, raised with the result; `Partner` is the folder of
+  for such a folder, `IndexLeadLights`, or, for darks that do not say their ISO or exposure
+  (`DarkSeriesAnalysis.SaysSettings` false, the core's answer), `IndexLeadNoSettings` (R-087),
+  raised with the result; `Partner` is the folder of
   `--against`.
 
 The problem card has a second button, `Alege partener...` (R-077): the Index tab's

@@ -204,13 +204,20 @@ internal sealed class SessionFolder
     /// <summary>
     /// The frames of one folder, sorted by file name (ordinal, case-insensitive, so DSC_0010
     /// follows DSC_0009). Camera raws when there are any; otherwise FITS files. The two are
-    /// not mixed: a folder with both holds converted copies beside the originals.
+    /// not mixed: a folder with both holds converted copies beside the originals. A file whose
+    /// name starts with a dot or that is hidden is no frame whatever its extension (R-002): the
+    /// <c>._DSC_0034.NEF</c> a Mac leaves beside each file of a card it has touched sorts before
+    /// the frames and would take their places under the frame cap.
     /// </summary>
     /// <param name="dir">The folder to list; it must exist.</param>
     /// <returns>The full paths of its frames, sorted; empty when it holds none.</returns>
     internal static IReadOnlyList<string> FramesIn(string dir)
     {
-        string[] files = Directory.GetFiles(dir);
+        // the attributes come with the listing, so no file is asked for them one by one
+        List<string> files = new DirectoryInfo(dir).EnumerateFiles()
+            .Where(f => !f.Name.StartsWith('.') && (f.Attributes & FileAttributes.Hidden) == 0)
+            .Select(f => f.FullName)
+            .ToList();
         List<string> raws = files.Where(RawReader.IsRawPath).ToList();
         List<string> chosen = raws.Count > 0 ? raws : files.Where(FitsReader.IsFitsPath).ToList();
         chosen.Sort((a, b) => string.Compare(Path.GetFileName(a), Path.GetFileName(b), StringComparison.OrdinalIgnoreCase));

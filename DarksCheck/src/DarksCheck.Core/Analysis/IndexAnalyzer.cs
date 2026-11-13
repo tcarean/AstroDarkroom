@@ -94,6 +94,14 @@ internal sealed record IndexFigures(double Index, int RankLow, int RankHigh, int
 internal sealed record MatchFigures(int Pixels, double Ratio, double Q25, double Q75, double DeltaCelsius, MatchVerdict Verdict)
 {
     internal static readonly MatchFigures None = new(0, double.NaN, double.NaN, double.NaN, double.NaN, MatchVerdict.Unmeasured);
+
+    /// <summary>
+    /// True when the set shows none of the master's hot pixels (R-052): the verdict is
+    /// <see cref="MatchVerdict.Unmatched"/> and the ratios sit around zero, the median or the first
+    /// quartile at or under 0. A measurement, not a missing one, but no ratio to build on: such
+    /// lights have no equivalent index (R-064) and no trace of a subtraction to speak of.
+    /// </summary>
+    internal bool Absent => Verdict == MatchVerdict.Unmatched && (Ratio <= 0 || Q25 <= 0);
 }
 
 /// <summary>
@@ -212,7 +220,9 @@ internal static partial class IndexAnalyzer
 
     /// <summary>
     /// The lights' equivalent index: the darks' index times the lights-over-dark ratio (R-064); NaN
-    /// when either is not measured.
+    /// when either is not measured, and when the lights show none of the dark's hot pixels
+    /// (<see cref="MatchFigures.Absent"/>): the product with a ratio around zero is no index, and
+    /// its tag would read `idx-0` or `idx0`.
     /// </summary>
     /// <param name="index">The darks' index; not null.</param>
     /// <param name="lightsOverDark">The lights over the darks' master; not null.</param>
@@ -221,7 +231,7 @@ internal static partial class IndexAnalyzer
     {
         ArgumentNullException.ThrowIfNull(index);
         ArgumentNullException.ThrowIfNull(lightsOverDark);
-        return lightsOverDark.Verdict == MatchVerdict.Unmeasured ? double.NaN : index.Index * lightsOverDark.Ratio;
+        return lightsOverDark.Verdict == MatchVerdict.Unmeasured || lightsOverDark.Absent ? double.NaN : index.Index * lightsOverDark.Ratio;
     }
 
     /// <summary>
@@ -388,4 +398,29 @@ internal sealed record PartnerAnalysis(
     int OwnHot50,
     int OwnHot50InPartner50,
     int PartnerHot50,
-    int PartnerHot50InOwn20);
+    int PartnerHot50InOwn20)
+{
+    /// <summary>
+    /// Which of the two sets does not say its ISO or its exposure while the other does (R-063,
+    /// ADR 0053): the partner's master was then read at the session's darks' factor for
+    /// <see cref="OwnOverPartner"/> and the overlap, the two compared as made at the same
+    /// settings; <see cref="Norm"/> and <see cref="Index"/> stay at the partner's own factor.
+    /// </summary>
+    internal SilentSide Silent { get; init; }
+}
+
+/// <summary>
+/// Which of two compared sets of darks does not say its ISO or its exposure while the other does
+/// (ADR 0053).
+/// </summary>
+internal enum SilentSide
+{
+    /// <summary>Both say their settings, or neither does: each is read at its own factor.</summary>
+    None,
+
+    /// <summary>The open folder's darks do not say theirs; the partner's do.</summary>
+    Own,
+
+    /// <summary>The partner's darks do not say theirs; the open folder's do.</summary>
+    Partner,
+}

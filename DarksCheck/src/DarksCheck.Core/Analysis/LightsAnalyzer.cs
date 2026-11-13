@@ -45,7 +45,26 @@ namespace DarksCheck.Core;
 /// pixels.</param>
 /// <param name="AmpRatioQ25">The 25th percentile of those ratios; NaN likewise.</param>
 /// <param name="AmpRatioQ75">The 75th percentile of those ratios; NaN likewise.</param>
-internal sealed record LightFigures(FrameInfo Info, string? Error, bool AssumedSettings, IReadOnlyList<double> SkyMedian, IReadOnlyList<double> SkySigma, IReadOnlyList<double> LocalSigma, int Candidates, int IsolatedHot, double AmpRatioMedian, double AmpRatioQ25, double AmpRatioQ75);
+internal sealed record LightFigures(FrameInfo Info, string? Error, bool AssumedSettings, IReadOnlyList<double> SkyMedian, IReadOnlyList<double> SkySigma, IReadOnlyList<double> LocalSigma, int Candidates, int IsolatedHot, double AmpRatioMedian, double AmpRatioQ25, double AmpRatioQ75)
+{
+    /// <summary>
+    /// What the light's ADU are multiplied by to stand beside the darks' ADU: the darks' factor
+    /// over the light's (<see cref="LightsAnalyzer.FactorOf"/>), above 0. 1 for a light at the
+    /// darks' settings, for one read at them (ADR 0053) and for one without figures; 0.5 for a
+    /// light at twice the darks' ISO.
+    /// </summary>
+    internal double ToDarks { get; init; } = 1;
+
+    /// <summary>
+    /// True when the light's ISO or exposure is not the darks', by the rule that decides whether
+    /// a frame belongs to a stack and that check 1 applies (<see cref="FrameStack.SameSettings"/>:
+    /// another ISO, or an exposure further than <see cref="Th.ExposureTolerance"/>); false when
+    /// either side does not say a setting, and for a light without figures. It is read from the
+    /// settings, not from <see cref="ToDarks"/>: twice the ISO at half the exposure has a factor
+    /// of 1 and is still another setting.
+    /// </summary>
+    internal bool OtherSettings { get; init; }
+}
 
 /// <summary>
 /// At one level of the dark master: how many pixels the master has above it, and how many of those
@@ -101,7 +120,8 @@ internal sealed record TraceFigures(int Pixels, double PerUnit, double Median, i
 /// subtraction leaves, and the verdict (R-050 to R-052, R-067).
 /// </summary>
 /// <param name="Used">How many lights decoded, at least 1.</param>
-/// <param name="AssumedSettings">How many were read at the darks' settings.</param>
+/// <param name="AssumedSettings">How many do not say their ISO or exposure and were read at the
+/// darks' settings; the lights that say theirs while the darks do not are <see cref="DarksSilent"/>.</param>
 /// <param name="Frames">Every light, in file order.</param>
 /// <param name="PersistentThreshold">The lights a pixel must be isolated-hot in to be
 /// persistent: ceil(<see cref="Th.PersistentFraction"/> x used).</param>
@@ -144,6 +164,13 @@ internal sealed record LightsAnalysis(
     /// <param name="ratio">The amplitude ratio; NaN for unmeasured.</param>
     /// <returns>The verdict.</returns>
     internal MatchVerdict Judge(double ratio) => IndexAnalyzer.Judge(ratio, Traces.DirectLow, Traces.DirectHigh);
+
+    /// <summary>
+    /// How many decoded lights say their ISO and exposure while the darks do not (R-052, ADR
+    /// 0053): they were read at the darks' factor, the two sets compared as made at the same
+    /// settings; 0 when the darks say theirs.
+    /// </summary>
+    internal int DarksSilent { get; init; }
 }
 
 /// <summary>
@@ -196,6 +223,8 @@ internal static class LightsAnalyzer
             }
         }
 
+        // the darks' ISO and exposure, which each light's are held against (LightFigures.OtherSettings)
+        FrameInfo? darkSettings = darks.FirstStacked;
         int[] counts = new int[w * h];
         LightFigures[] frames = new LightFigures[n];
         object gate = new();
@@ -218,10 +247,10 @@ internal static class LightsAnalyzer
                     // a light that does not say its ISO or exposure is taken at the darks'
                     // settings, the usual case and the one check 1 verifies, and the light is
                     // marked
-                    bool assumed = frame.Info.Iso is not double || frame.Info.ExposureSeconds is not double;
-                    double normL = assumed ? darks.Norm : darks.Normalisation.NormOf(frame.Info);
+                    bool assumed = !Normalisation.Says(frame.Info);
+                    double normL = FactorOf(frame.Info, darks);
                     (LightFigures f, List<int> isolated) = Measure(frame, w, h, lightBlack, white, normL, assumed, excess, darks.Norm, ampIdx);
-                    frames[i] = f;
+                    frames[i] = f with { ToDarks = darks.Norm / normL, OtherSettings = darkSettings is not null && !FrameStack.SameSettings(frame.Info, darkSettings) };
                     lock (gate)
                     {
                         used++;
@@ -307,14 +336,36 @@ internal static class LightsAnalyzer
             match = match with { Verdict = MatchVerdict.Direct };
         }
 
+        // the lights that say their settings while the darks do not: read at the darks' factor, and the report says so
+        int darksSilent = darks.SaysSettings ? 0 : frames.Count(f => f.Error is null && !f.AssumedSettings);
         return new LightsAnalysis(used, frames.Count(f => f.AssumedSettings), frames, threshold, persistent, hist, overlap, missedExcess.Count,
             missedExcess.Count == 0 ? double.NaN : Planes.Median([.. missedExcess]), ampIdx.Count, match,
-            ok.Length == 0 ? double.NaN : ok[0].AmpRatioMedian, ok.Length == 0 ? double.NaN : ok[^1].AmpRatioMedian, traces);
+            ok.Length == 0 ? double.NaN : ok[0].AmpRatioMedian, ok.Length == 0 ? double.NaN : ok[^1].AmpRatioMedian, traces)
+        {
+            DarksSilent = darksSilent,
+        };
+    }
+
+    /// <summary>
+    /// The factor a light's ADU are divided by when it is compared with these darks (R-052, ADR
+    /// 0053): the light's own, from its ISO and exposure, when both the light and the darks say
+    /// their settings; the darks' factor when either does not, the two then being compared as
+    /// made at the same settings.
+    /// </summary>
+    /// <param name="light">The light's metadata; not null.</param>
+    /// <param name="darks">The darks' figures, with their factor and settings; not null.</param>
+    /// <returns>The factor, above 0.</returns>
+    internal static double FactorOf(FrameInfo light, DarkSeriesAnalysis darks)
+    {
+        ArgumentNullException.ThrowIfNull(light);
+        ArgumentNullException.ThrowIfNull(darks);
+        return Normalisation.Says(light) && darks.SaysSettings ? darks.Normalisation.NormOf(light) : darks.Norm;
     }
 
     /// <summary>
     /// The noise of a light on one CFA position (R-067, R-024): the median over the lights of the
-    /// local sigma (how much a pixel differs from its neighbours), each light at its own settings.
+    /// local sigma (how much a pixel differs from its neighbours), each light at its own settings
+    /// (at the darks' when either set does not say its own, <see cref="FactorOf"/>).
     /// </summary>
     /// <param name="frames">Every light's figures; those that decoded with a positive local sigma
     /// on the position give the noise.</param>
@@ -326,7 +377,7 @@ internal static class LightsAnalyzer
     {
         float[] sigmas = frames
             .Where(f => f.Error is null && f.LocalSigma.Count == 4 && f.LocalSigma[plane] > 0)
-            .Select(f => (float)(f.LocalSigma[plane] / (f.AssumedSettings ? darks.Norm : darks.Normalisation.NormOf(f.Info))))
+            .Select(f => (float)(f.LocalSigma[plane] / FactorOf(f.Info, darks)))
             .ToArray();
         return (sigmas.Length == 0 ? double.NaN : Planes.Median(sigmas), sigmas.Length);
     }
@@ -403,8 +454,8 @@ internal static class LightsAnalyzer
     /// <param name="h">The mosaic's height.</param>
     /// <param name="black">The light's black level, in raw ADU.</param>
     /// <param name="white">The light's white level, in raw ADU.</param>
-    /// <param name="normL">The light's normalisation factor.</param>
-    /// <param name="assumed">True when the light was read at the darks' settings.</param>
+    /// <param name="normL">The factor the light's ADU are divided by (<see cref="FactorOf"/>).</param>
+    /// <param name="assumed">True when the light does not say its ISO or its exposure.</param>
     /// <param name="darkExcess">The dark master minus its black, row-major, in raw ADU.</param>
     /// <param name="normD">The darks' normalisation factor.</param>
     /// <param name="ampIdx">The mosaic indices of the dark's amplitude pixels.</param>

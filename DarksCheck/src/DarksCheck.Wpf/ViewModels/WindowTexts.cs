@@ -130,6 +130,19 @@ internal static class WindowTexts
         + $"pe fiecare megapixel, numarand de la cel mai fierbinte, socotita pentru ISO {RunReport.F(Th.NormIso, 0)} si {RunReport.F(Th.NormExposureSeconds, 0)} s. Cu cat senzorul a fost mai cald, cu atat indexul e mai mare. "
         + "Eticheta e numele folderului plus idx si indexul rotunjit (idx- cand indexul nu se poate masura): o copiezi si redenumesti tu folderul; programul nu scrie si nu redenumeste nimic in folderele cu poze.");
 
+    /// <summary>
+    /// The text under the label of a folder whose darks do not say their ISO or exposure (R-087):
+    /// <see cref="IndexLead"/> without "worked out for ISO 400 and 120 s", which is not true of
+    /// such a set, and with what that means for the number, as the INDEX row under it says it.
+    /// </summary>
+    internal static string IndexLeadNoSettings => T(
+        $"The index is a number for how warm the sensor was: the average value of the master's hot pixels at places {RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)} "
+        + "per megapixel, counting from the hottest. This set's files do not give the ISO or the exposure, so the index is in ADU of the file and compares only with sets made at the same settings. The warmer the sensor, the higher the index. "
+        + "The label is the folder's name plus idx and the rounded index (idx- when the index cannot be measured): you copy it and rename the folder yourself; the program writes and renames nothing in the photo folders.",
+        $"Indexul e un numar pentru cat de cald a fost senzorul: valoarea medie a pixelilor fierbinti din master de pe locurile {RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)} "
+        + "pe fiecare megapixel, numarand de la cel mai fierbinte. Fisierele acestui set nu spun ISO-ul sau expunerea, asa ca indexul e in ADU din fisier si se compara doar cu seturi facute la aceleasi setari. Cu cat senzorul a fost mai cald, cu atat indexul e mai mare. "
+        + "Eticheta e numele folderului plus idx si indexul rotunjit (idx- cand indexul nu se poate masura): o copiezi si redenumesti tu folderul; programul nu scrie si nu redenumeste nimic in folderele cu poze.");
+
     internal static string NoDarkMap => T(
         $"No map: the frames are smaller than {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px.",
         $"Nu e harta: cadrele sunt mai mici de {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px.");

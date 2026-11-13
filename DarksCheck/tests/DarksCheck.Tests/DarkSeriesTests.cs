@@ -939,6 +939,152 @@ public partial class DarkSeriesTests
         Assert.Equal(["a b c", "dd e"], ScaleReport.Wrap("a b c dd e", 5));
     }
 
+    /// <summary>
+    /// CR-003: the stack's noise added the lights' sky noise, in the lights' ADU, to the dark master's,
+    /// in the darks' ADU; lights at twice the darks' ISO doubled the lights' share.
+    /// </summary>
+    [Fact]
+    public void R080_LightsAtTwiceTheIsoGiveTheSameStackFigures()
+    {
+        // one scene at the darks' gain and at twice it: twice the sky, its noise and the hot pixels, declared at ISO 800
+        static SyntheticLight L(int i, double gain) => new() { Seed = 300 + i, Sky = 500 * gain, Noise = 6 * gain, Hot = SyntheticLight.Lattice, HotFactor = gain };
+        static SyntheticDark D(int i) => new() { Seed = 100 + i, Hot = SyntheticLight.Lattice };
+        using SessionFixture same = new SessionFixture().WithDarkSeries(6, D).WithLights(4, i => L(i, 1));
+        using SessionFixture twice = new SessionFixture().WithDarkSeries(6, D).WithLights(4, i => L(i, 2), iso: 800);
+        DarkSeriesResult a = Run(same), b = Run(twice);
+        StackNoise sa = StackNoise.Of(a.Lights, a.ReferencePlane, a.Darks.Noise.MasterNoise)!;
+        StackNoise sb = StackNoise.Of(b.Lights, b.ReferencePlane, b.Darks.Noise.MasterNoise)!;
+
+        // the darks are the same files, so the master's noise is the same figure, in the darks' ADU
+        Assert.Equal(sa.MasterNoiseAdu, sb.MasterNoiseAdu, 9);
+        Assert.False(sa.Scaled);
+        Assert.True(sb.Scaled);
+        Assert.All(a.Lights!.Frames, f => Assert.Equal(1, f.ToDarks, 9));
+        Assert.All(b.Lights!.Frames, f => Assert.Equal(0.5, f.ToDarks, 9));
+        // the lights' figures come to the darks' ADU: half of what the files at ISO 800 hold
+        Assert.InRange(sb.SkyAdu, 0.99 * sa.SkyAdu, 1.01 * sa.SkyAdu);
+        Assert.InRange(sb.SkySigmaAdu, 0.97 * sa.SkySigmaAdu, 1.03 * sa.SkySigmaAdu);
+        Assert.InRange(sb.MeanStackAdu, 0.97 * sa.MeanStackAdu, 1.03 * sa.MeanStackAdu);
+        Assert.InRange(sb.MedianStackAdu, 0.97 * sa.MedianStackAdu, 1.03 * sa.MedianStackAdu);
+        // so a light of 0.79 ADU found in the darks is the same share of either stack's noise
+        Assert.InRange((0.79 / sb.MeanStackAdu) / (0.79 / sa.MeanStackAdu), 0.97, 1.03);
+
+        // the sky row says the figures were worked out for the darks' settings, and only then
+        string Sky(DarkSeriesResult r) => ScaleReport.Rows(r).Single(x => x.Label == Ui.T("sky", "cer")).Value;
+        const string Note = "; lights-urile sunt la alte setari decat dark-urile, asa ca cifrele sunt socotite pentru ISO-ul si expunerea dark-urilor";
+        Assert.DoesNotContain("socotite pentru", Sky(a), StringComparison.Ordinal);
+        Assert.EndsWith(" (pixelii verzi G1, din 4 lights)" + Note, Sky(b), StringComparison.Ordinal);
+        Assert.StartsWith($"pe un light, cerul e la {sb.SkyAdu.ToString("0.0", CultureInfo.InvariantCulture)} ADU peste negru, cu {sb.SkySigmaAdu.ToString("0.0", CultureInfo.InvariantCulture)} ADU de zgomot pe pixel", Sky(b), StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.DoesNotContain("worked out for", Sky(a), StringComparison.Ordinal);
+            Assert.EndsWith("; the lights are at other settings than the darks, so the figures are worked out for the darks' ISO and exposure", Sky(b), StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>
+    /// Review of the CR-003 fix: a light a hair off the darks' exposure, as one of a real session's
+    /// was (118.5 s among 119.2 s), made the sky row say the lights are at other settings, under a
+    /// check 1 that calls them the same.
+    /// </summary>
+    [Fact]
+    public void R080_LightsWithinTheExposureToleranceAreNotCalledOtherSettings()
+    {
+        static SyntheticLight L(int i) => new() { Seed = 300 + i, Hot = SyntheticLight.Lattice };
+        static SyntheticDark D(int i) => new() { Seed = 100 + i, Hot = SyntheticLight.Lattice };
+        static string Sky(DarkSeriesResult r) => ScaleReport.Rows(r).Single(x => x.Label == "cer").Value;
+
+        // darks of 120 s, lights of 118.5 s: 1.25 % apart, inside the 2 % check 1 calls one exposure
+        using SessionFixture near = new SessionFixture().WithDarkSeries(6, D).WithLights(4, L, exposure: 118.5);
+        DarkSeriesResult rn = Run(near);
+        Assert.Equal(Verdict.Ok, rn.Inventory.Match.DarksVsLights);
+        // the figures are still brought to the darks' exposure, as check 9 brings them
+        Assert.All(rn.Lights!.Frames, f => Assert.Equal(120 / 118.5, f.ToDarks, 9));
+        Assert.False(StackNoise.Of(rn.Lights, rn.ReferencePlane, rn.Darks.Noise.MasterNoise)!.Scaled);
+        Assert.DoesNotContain("socotite pentru", Sky(rn), StringComparison.Ordinal);
+        Assert.EndsWith(" (pixelii verzi G1, din 4 lights)", Sky(rn), StringComparison.Ordinal);
+
+        // the same the other way round, lights a little longer than the darks
+        using SessionFixture nearLong = new SessionFixture().WithDarkSeries(6, D).WithLights(4, L, exposure: 122);
+        DarkSeriesResult rl = Run(nearLong);
+        Assert.Equal(Verdict.Ok, rl.Inventory.Match.DarksVsLights);
+        Assert.False(StackNoise.Of(rl.Lights, rl.ReferencePlane, rl.Darks.Noise.MasterNoise)!.Scaled);
+
+        // 110 s is another exposure for check 1, and for the row
+        using SessionFixture far = new SessionFixture().WithDarkSeries(6, D).WithLights(4, L, exposure: 110);
+        DarkSeriesResult rf = Run(far);
+        Assert.Equal(Verdict.Warning, rf.Inventory.Match.DarksVsLights);
+        Assert.True(StackNoise.Of(rf.Lights, rf.ReferencePlane, rf.Darks.Noise.MasterNoise)!.Scaled);
+        Assert.EndsWith("; lights-urile sunt la alte setari decat dark-urile, asa ca cifrele sunt socotite pentru ISO-ul si expunerea dark-urilor", Sky(rf), StringComparison.Ordinal);
+
+        // the second review: the note is decided by the settings themselves, as check 1 and the stack compare them,
+        // not rebuilt from the factor. Exactly at the 2 % (100 s against 98 s) check 1 says the same exposure;
+        // the factor 100 / 98 falls just beyond it in floating point
+        using SessionFixture bound = new SessionFixture().WithDarkSeries(6, D, exposure: 100).WithLights(4, L, exposure: 98);
+        DarkSeriesResult rb = Run(bound);
+        Assert.Equal(Verdict.Ok, rb.Inventory.Match.DarksVsLights);
+        Assert.False(StackNoise.Of(rb.Lights, rb.ReferencePlane, rb.Darks.Noise.MasterNoise)!.Scaled);
+        // just outside it, 120 s against 117.5 s
+        using SessionFixture outside = new SessionFixture().WithDarkSeries(6, D).WithLights(4, L, exposure: 117.5);
+        DarkSeriesResult ro = Run(outside);
+        Assert.Equal(Verdict.Warning, ro.Inventory.Match.DarksVsLights);
+        Assert.True(StackNoise.Of(ro.Lights, ro.ReferencePlane, ro.Darks.Noise.MasterNoise)!.Scaled);
+
+        // twice the ISO and half the exposure: the factor is exactly 1 and no figure moves, yet the lights are at
+        // other settings, as check 1 says in the same report
+        using SessionFixture cancel = new SessionFixture().WithDarkSeries(6, D).WithLights(4, L, exposure: 60, iso: 800);
+        DarkSeriesResult rc = Run(cancel);
+        Assert.Equal(Verdict.Warning, rc.Inventory.Match.DarksVsLights);
+        Assert.All(rc.Lights!.Frames, f => Assert.Equal(1, f.ToDarks, 9));
+        Assert.All(rc.Lights.Frames, f => Assert.True(f.OtherSettings));
+        Assert.True(StackNoise.Of(rc.Lights, rc.ReferencePlane, rc.Darks.Noise.MasterNoise)!.Scaled);
+
+        // one stray test frame among lights at the darks' settings: check 1 names the lights by their usual
+        // setting, and the row's figures are those of the other four, so no note
+        using SessionFixture stray = new SessionFixture().WithDarkSeries(6, D).WithLights(4, L);
+        File.WriteAllBytes(Path.Combine(stray.LightsDir, "light_0005.fit"), L(4).Build(SessionFixture.FirstStart.AddSeconds(-3000), 30, 400));
+        DarkSeriesResult rs = Run(stray);
+        Assert.Equal(Verdict.Ok, rs.Inventory.Match.DarksVsLights);
+        Assert.Equal(5, rs.Lights!.Used);
+        Assert.Equal(1, rs.Lights.Frames.Count(f => f.OtherSettings));
+        Assert.False(StackNoise.Of(rs.Lights, rs.ReferencePlane, rs.Darks.Noise.MasterNoise)!.Scaled);
+        Assert.EndsWith(" (pixelii verzi G1, din 5 lights)", Sky(rs), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The third paragraph gives the lights' sky and noise as the `cer` row does, brought to the darks'
+    /// settings; with lights at other settings it now opens by saying so, in the row's words.
+    /// </summary>
+    [Fact]
+    public void R080_TheThirdParagraphSaysWhenTheLightsAreAtOtherSettings()
+    {
+        static SyntheticLight L(int i, double gain) => new() { Seed = 300 + i, Sky = 500 * gain, Noise = 6 * gain, Hot = SyntheticLight.Lattice, HotFactor = gain };
+        static SyntheticDark D(int i) => new() { Seed = 100 + i, Hot = SyntheticLight.Lattice };
+        using SessionFixture same = new SessionFixture().WithDarkSeries(6, D).WithLights(4, i => L(i, 1));
+        using SessionFixture twice = new SessionFixture().WithDarkSeries(6, D).WithLights(4, i => L(i, 2), iso: 800);
+        DarkSeriesResult a = Run(same), b = Run(twice);
+        string pa = ScaleReport.Paragraphs(a)[2], pb = ScaleReport.Paragraphs(b)[2];
+
+        Assert.StartsWith("Fata de cer: pe un light al acestei sesiuni cerul e la ", pa, StringComparison.Ordinal);
+        Assert.DoesNotContain("alte setari", pa, StringComparison.Ordinal);
+        const string Opening = "Fata de cer: lights-urile sunt la alte setari decat dark-urile, asa ca cifrele lor sunt socotite aici pentru ISO-ul si expunerea dark-urilor. Pe un light al acestei sesiuni cerul e la ";
+        Assert.StartsWith(Opening, pb, StringComparison.Ordinal);
+        // the rest of the paragraph is the one every session has, from the sky's figure on
+        string Rest(string p) => p[p.IndexOf(" ADU peste negru, deci 1 ADU e ", StringComparison.Ordinal)..];
+        Assert.Contains(" In stack-ul celor 4 lights zgomotul pe pixel scade la ", Rest(pb), StringComparison.Ordinal);
+        Assert.EndsWith("Iar o greseala de 1 ADU din master ramane 1 ADU in stack.", pb, StringComparison.Ordinal);
+        Assert.Equal(Rest(pa).Split(". ").Length, Rest(pb).Split(". ").Length);
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.StartsWith("Against the sky: on a light of this session the sky is at ", ScaleReport.Paragraphs(a)[2], StringComparison.Ordinal);
+            Assert.StartsWith(
+                "Against the sky: the lights are at other settings than the darks, so their figures are worked out here for the darks' ISO and exposure. On a light of this session the sky is at ",
+                ScaleReport.Paragraphs(b)[2],
+                StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void R080_TheFirstParagraphSaysWhenTheCameraIsNotInTheTable()
     {
@@ -1177,6 +1323,55 @@ public partial class DarkSeriesTests
         Assert.Contains("    glow / constant    : NEMASURAT: seria s-a incalzit prea putin ca sa se poata desparti glow-ul de lumina constanta (pixelii fierbinti variaza doar cu 0.0", sw.ToString(), StringComparison.Ordinal);
         Assert.Contains(", peste pragul de 1.0: scurgere de lumina sau glow", sw.ToString(), StringComparison.Ordinal);
         Assert.InRange(r.Verdicts.Pattern.GlowAdu, 2.5, 3.5);
+    }
+
+    /// <summary>
+    /// CR-005: darks whose level sits above the hot threshold in every pixel left no quiet pixel in the
+    /// crop, the noise curve read 0 on nothing, and check 9 said OK on a master noise of 0.00 ADU.
+    /// </summary>
+    [Theory]
+    [InlineData(230)] // every pixel 30 ADU above the biases' black: all "hot" against a threshold of 20
+    [InlineData(219)] // the level just under the threshold: the upper part of the crop's pixels was cut off
+    public void R024_ASetWarmAboveTheHotThresholdStillMeasuresItsNoise(double pedestal)
+    {
+        // the same noise, frame by frame, on a level of 200 and on a higher one; the biases set the black at 200 for both
+        static SyntheticDark D(int i, double level) => new() { Seed = 100 + i, Noise = 3, Pedestal = level, Hot = SyntheticDark.OnePerLevel };
+        using SessionFixture plain = new SessionFixture().WithDarkSeries(12, i => D(i, 200), biases: 4);
+        using SessionFixture warm = new SessionFixture().WithDarkSeries(12, i => D(i, pedestal), biases: 4);
+        DarkSeriesResult rp = Run(plain), rw = Run(warm);
+        Assert.Equal(200, rp.Darks.Black, 0);
+        Assert.Equal(rp.Darks.Black, rw.Darks.Black, 9);
+        NoiseVsN np = rp.Darks.Noise, nw = rw.Darks.Noise;
+
+        // a constant level changes no difference between two frames: every point of the curve is the plain series'
+        Assert.InRange(np.TemporalSigma, 2.7, 3.3);
+        Assert.Equal(np.TemporalSigma, nw.TemporalSigma, 6);
+        Assert.Equal(np.Curve.Select(p => p.N), nw.Curve.Select(p => p.N));
+        Assert.All(np.Curve.Zip(nw.Curve), pair => Assert.Equal(pair.First.Measured, pair.Second.Measured, 6));
+        Assert.Equal(np.MedianHalfVsMeanHalf, nw.MedianHalfVsMeanHalf, 6);
+        Assert.InRange(nw.MasterNoise, 0.9, 1.3);
+        Assert.Equal(np.MasterNoise, nw.MasterNoise, 6);
+
+        // and check 9 judges the two alike, on a noise that was measured
+        EnoughVerdict ep = rp.Verdicts.Enough, ew = rw.Verdicts.Enough;
+        Assert.Equal(ep.Verdict, ew.Verdict);
+        Assert.Equal(ep.FramesNeeded, ew.FramesNeeded);
+        using StringWriter sw = new();
+        DarkReport.Write(rw, sw);
+        Assert.DoesNotContain("0.00 ADU de zgomot pe pixel", sw.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("zgomotul masterului (0.00 ADU)", sw.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>CR-005: the sigma of no value at all was 0, a measured silence, where the comment promised NaN.</summary>
+    [Fact]
+    public void R024_TheClippedSigmaOfNoValueIsUnmeasuredNotZero()
+    {
+        (double sigma, double median) = Planes.ClippedSigma([]);
+        Assert.True(double.IsNaN(sigma), $"sigma {sigma}");
+        Assert.True(double.IsNaN(median), $"median {median}");
+        (double one, double level) = Planes.ClippedSigma([7f, 7f, 7f]);
+        Assert.Equal(0, one, 9);
+        Assert.Equal(7, level, 9);
     }
 
     [Fact]

@@ -60,6 +60,64 @@ public class SessionFolderTests
         Assert.Equal(["a.fit", "b.fits", "c.fts"], SessionFolder.FramesIn(ws.Dir).Select(f => Path.GetFileName(f)).ToArray());
     }
 
+    /// <summary>
+    /// CR-001: a card a Mac has touched holds `._DSC_0034.NEF` beside every file; they sorted first
+    /// and took the darks' places under the frame cap.
+    /// </summary>
+    [Fact]
+    public void R002_SidecarAndHiddenFilesAreNotFrames()
+    {
+        using TempWorkspace ws = new();
+        foreach (string name in new[] { "DSC_0002.NEF", "._DSC_0002.NEF", "DSC_0001.NEF", "._DSC_0001.NEF", ".trashed.nef", "hidden.NEF" })
+        {
+            File.WriteAllBytes(ws.PathTo(name), [0]);
+        }
+
+        File.SetAttributes(ws.PathTo("hidden.NEF"), File.GetAttributes(ws.PathTo("hidden.NEF")) | FileAttributes.Hidden);
+
+        Assert.Equal(["DSC_0001.NEF", "DSC_0002.NEF"], SessionFolder.FramesIn(ws.Dir).Select(f => Path.GetFileName(f)).ToArray());
+    }
+
+    /// <summary>The same for FITS: sidecars alone do not make a folder of frames, and raws beside them still win.</summary>
+    [Fact]
+    public void R002_SidecarFitsAreNotFramesEither()
+    {
+        using TempWorkspace ws = new();
+        foreach (string name in new[] { "._dark_00001.fit", "dark_00001.fit", "._dark_00002.fit", "dark_00002.fit" })
+        {
+            File.WriteAllBytes(ws.PathTo(name), [0]);
+        }
+
+        Assert.Equal(["dark_00001.fit", "dark_00002.fit"], SessionFolder.FramesIn(ws.Dir).Select(f => Path.GetFileName(f)).ToArray());
+
+        using TempWorkspace only = new();
+        File.WriteAllBytes(only.PathTo("._dark_00001.fit"), [0]);
+        Assert.Empty(SessionFolder.FramesIn(only.Dir));
+    }
+
+    /// <summary>
+    /// CR-001 on a whole session: sidecars beside every frame of every group leave the three lists as
+    /// they were. The frame cap picks from these lists, so a file that is not listed takes no dark's place.
+    /// </summary>
+    [Fact]
+    public void R002_SidecarsBesideTheDarksLeaveTheSessionAsItIs()
+    {
+        using SessionFixture s = new SessionFixture().WithDarks(3, biases: 2, lights: 2);
+        foreach (string dir in new[] { s.DarksDir, s.BiasesDir, s.LightsDir })
+        {
+            foreach (string frame in Directory.GetFiles(dir))
+            {
+                File.WriteAllBytes(Path.Combine(dir, "._" + Path.GetFileName(frame)), [0, 5, 22, 7]);
+            }
+        }
+
+        SessionFolder session = SessionFolder.Open(s.Root);
+        Assert.Equal(3, session.Darks.Count);
+        Assert.Equal(2, session.Biases.Count);
+        Assert.Equal(2, session.Lights.Count);
+        Assert.DoesNotContain(session.Darks.Concat(session.Biases).Concat(session.Lights), f => Path.GetFileName(f).StartsWith('.'));
+    }
+
     /// <summary>A session root holds result.fit and friends: an empty darks/ must not fall back to them.</summary>
     [Fact]
     public void R002_AnEmptyDarksSubfolderIsAnErrorNotAFallbackToTheRoot()

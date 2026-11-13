@@ -40,7 +40,8 @@ internal sealed class SyntheticDark
     /// <summary>Five hot pixels, one per level of <c>Th.HotLevelsAdu</c>: 15, 30, 60, 150 and 600 ADU above the pedestal.</summary>
     internal static readonly IReadOnlyList<(int X, int Y, double Adu)> OnePerLevel = [(10, 10, 15), (21, 20, 30), (30, 31, 60), (41, 41, 150), (50, 50, 600)];
 
-    internal byte[] Build(DateTime start, double exposure = 120, double iso = 400)
+    /// <summary>The frame as a FITS; a null <paramref name="iso"/> leaves the ISOSPEED card out.</summary>
+    internal byte[] Build(DateTime start, double exposure = 120, double? iso = 400)
     {
         double[] field = new double[Width * Height];
         Random rng = new(Seed);

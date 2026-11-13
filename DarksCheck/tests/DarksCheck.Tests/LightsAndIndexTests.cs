@@ -154,6 +154,150 @@ public class LightsAndIndexTests
         Assert.Contains("ATENTIE            : 3 lights nu spun ISO-ul sau expunerea; s-au luat cele ale dark-urilor (1 ADU-eq = 1.00 ADU)", Report(rn), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// CR-002: darks that do not say their ISO were read at factor 1 against lights at their own, so
+    /// lights at ISO 1600 and the darks' temperature read a quarter of the dark.
+    /// </summary>
+    [Fact]
+    public void R052_DarksThatDoNotSayTheirSettingsAreComparedWithTheLightsAsMadeAtTheSame()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark, iso: null).WithLights(3, i => Light(i), iso: 1600);
+        DarkSeriesResult r = Run(s);
+        LightsAnalysis l = r.Lights!;
+        Assert.False(r.Darks.SaysSettings);
+        Assert.InRange(l.LightsOverDark.Ratio, 0.95, 1.05);
+        Assert.Equal(MatchVerdict.Direct, l.LightsOverDark.Verdict);
+        // the lights say their settings: they are not the ones assumed, the darks are
+        Assert.Equal(0, l.AssumedSettings);
+        Assert.Equal(3, l.DarksSilent);
+        Assert.InRange(r.LightsIndex, 0.95 * r.Index.Index, 1.05 * r.Index.Index);
+        // check 9 reads the lights' noise at the same factor: about 6.5 ADU, not a quarter of it
+        Assert.InRange(r.Verdicts.Enough.Stack!.LightNoise, 5.5, 7.8);
+
+        string report = Report(r);
+        Assert.Contains("    ATENTIE            : dark-urile nu spun ISO-ul sau expunerea; s-au comparat cu lights-urile ca facute la aceleasi setari", report, StringComparison.Ordinal);
+        Assert.DoesNotContain("s-au luat cele ale dark-urilor", report, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Contains("    WARNING            : the darks do not give their ISO or exposure; they were compared with the lights as made at the same settings", Report(r), StringComparison.Ordinal);
+        }
+
+        // darks and lights that both say theirs: no such line, and none when neither does (the lights' own line stands)
+        using SessionFixture both = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i));
+        DarkSeriesResult rb = Run(both);
+        Assert.True(rb.Darks.SaysSettings);
+        Assert.Equal(0, rb.Lights!.DarksSilent);
+        Assert.DoesNotContain("ca facute la aceleasi setari", Report(rb), StringComparison.Ordinal);
+        using SessionFixture neither = new SessionFixture().WithDarkSeries(6, Dark, iso: null).WithLights(3, i => Light(i), iso: null);
+        DarkSeriesResult rn = Run(neither);
+        Assert.Equal(3, rn.Lights!.AssumedSettings);
+        Assert.Equal(0, rn.Lights.DarksSilent);
+        Assert.InRange(rn.Lights.LightsOverDark.Ratio, 0.95, 1.05);
+        Assert.DoesNotContain("ca facute la aceleasi setari", Report(rn), StringComparison.Ordinal);
+    }
+
+    /// <summary>CR-002 (c): the INDEX row said "worked out for ISO 400 and 120 s" of a set that does not say its ISO.</summary>
+    [Fact]
+    public void R060_TheIndexRowSaysWhenTheFilesDoNotGiveTheSettings()
+    {
+        using SessionFixture silent = new SessionFixture().WithDarkSeries(6, Dark, iso: null);
+        using SessionFixture known = new SessionFixture().WithDarkSeries(6, Dark);
+        DarkSeriesResult rs = Run(silent), rk = Run(known);
+        Assert.Contains("; in ADU din fisier, pentru ca fisierele nu spun ISO-ul sau expunerea)", Report(rs), StringComparison.Ordinal);
+        Assert.DoesNotContain("socotita pentru ISO 400", Report(rs), StringComparison.Ordinal);
+        Assert.Contains("; socotita pentru ISO 400 si 120 s)", Report(rk), StringComparison.Ordinal);
+        Assert.DoesNotContain("in ADU din fisier, pentru ca", Report(rk), StringComparison.Ordinal);
+        // and the figure's unit follows: ADU for the set that does not say its settings, ADU-eq for the one that does
+        Assert.Matches(@"dark-uri           : idx\d+ \(\d+\.\d ADU: valoarea medie a pixelilor fierbinti", Report(rs));
+        Assert.DoesNotContain(" ADU-eq: valoarea medie", Report(rs), StringComparison.Ordinal);
+        Assert.Matches(@"dark-uri           : idx\d+ \(\d+\.\d ADU-eq: valoarea medie a pixelilor fierbinti", Report(rk));
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Matches(@"darks              : idx\d+ \(\d+\.\d ADU: the average value of the hot pixels", Report(rs));
+            Assert.Matches(@"darks              : idx\d+ \(\d+\.\d ADU-eq: the average value of the hot pixels", Report(rk));
+            Assert.Contains("; in ADU of the file, as the files do not give the ISO or the exposure)", Report(rs), StringComparison.Ordinal);
+            Assert.DoesNotContain("worked out for ISO 400", Report(rs), StringComparison.Ordinal);
+            Assert.Contains("; worked out for ISO 400 and 120 s)", Report(rk), StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>
+    /// CR-002 (b): a partner that does not say its ISO was read at factor 1 against darks at their own,
+    /// so the same darks at ISO 1600 read 0.25 of it, and 4 times it the other way round.
+    /// </summary>
+    [Fact]
+    public void R063_APartnerOrASessionThatDoesNotSayItsSettingsIsComparedAsMadeAtTheSame()
+    {
+        static SyntheticDark PartnerDark(int i) => new() { Seed = 700 + i, Hot = SyntheticLight.Lattice };
+        using SessionFixture at1600 = new SessionFixture().WithDarkSeries(6, Dark, iso: 1600);
+        using SessionFixture silent = new SessionFixture().WithDarkSeries(6, Dark, iso: null);
+        using SessionFixture partnerSilent = new SessionFixture().WithDarkSeries(5, PartnerDark, iso: null, inSubfolder: false);
+        using SessionFixture partnerAt1600 = new SessionFixture().WithDarkSeries(5, PartnerDark, iso: 1600, inSubfolder: false);
+
+        // the partner is the silent one
+        DarkSeriesResult a = Run(at1600, partnerSilent.Root);
+        PartnerAnalysis pa = Assert.IsType<PartnerAnalysis>(a.Partner);
+        Assert.Equal(SilentSide.Partner, pa.Silent);
+        Assert.Equal(20, pa.OwnOverPartner.Pixels);
+        Assert.InRange(pa.OwnOverPartner.Ratio, 0.95, 1.05);
+        Assert.Equal(MatchVerdict.Direct, pa.OwnOverPartner.Verdict);
+        // the overlap levels are read at one factor too: the same pixels on both sides
+        Assert.Equal(pa.OwnHot50, pa.PartnerHot50);
+        // each index stays at its own factor
+        Assert.Equal(1, pa.Norm);
+        Assert.InRange(pa.Index.Index, 114, 126);
+        string ra = Report(a);
+        Assert.Contains(", setari necunoscute); eticheta ", ra, StringComparison.Ordinal);
+        // the partner's own figure is in the file's ADU then, and the row says ADU, not ADU-eq
+        Assert.Matches(@"partener           : .*: idx\d+ \(\d+\.\d ADU; cadre citite 5 din 5, setari necunoscute\); eticheta ", ra);
+        Assert.Contains("    ATENTIE            : dark-urile partenerului nu spun ISO-ul sau expunerea; s-au comparat cu ale sesiunii ca facute la aceleasi setari", ra, StringComparison.Ordinal);
+        Assert.Contains("    dark-uri / partener: pixelii fierbinti sunt in dark-urile sesiunii de 1.0", ra, StringComparison.Ordinal);
+
+        // the count above is 0 on both sides (120 ADU against a level of 200), so the level itself is pinned here:
+        // darks 2.5 times as hot pass the session's 200 ADU in the file (50 ADU-eq at ISO 1600), and the silent
+        // partner's 120 ADU, read at the same factor, stay under it; at its own factor of 1 they passed 50
+        using SessionFixture hotter = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice, HotFactor = 2.5 }, iso: 1600);
+        PartnerAnalysis ph = Assert.IsType<PartnerAnalysis>(Run(hotter, partnerSilent.Root).Partner);
+        Assert.Equal(SilentSide.Partner, ph.Silent);
+        Assert.InRange(ph.OwnOverPartner.Ratio, 2.4, 2.6);
+        Assert.Equal(20, ph.OwnHot50);
+        Assert.Equal(0, ph.OwnHot50InPartner50);
+        Assert.Equal(0, ph.PartnerHot50);
+
+        // the session is the silent one
+        DarkSeriesResult b = Run(silent, partnerAt1600.Root);
+        PartnerAnalysis pb = Assert.IsType<PartnerAnalysis>(b.Partner);
+        Assert.Equal(SilentSide.Own, pb.Silent);
+        Assert.Equal(20, pb.OwnOverPartner.Pixels);
+        Assert.InRange(pb.OwnOverPartner.Ratio, 0.95, 1.05);
+        Assert.Equal(20, pb.OwnHot50);
+        Assert.Equal(pb.OwnHot50, pb.PartnerHot50);
+        Assert.Equal(4, pb.Norm);
+        string rb = Report(b);
+        Assert.Contains("    ATENTIE            : dark-urile sesiunii nu spun ISO-ul sau expunerea; s-au comparat cu ale partenerului ca facute la aceleasi setari", rb, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Contains("    WARNING            : the partner's darks do not give their ISO or exposure; they were compared with the session's as made at the same settings", Report(a), StringComparison.Ordinal);
+            Assert.Contains("    WARNING            : the session's darks do not give their ISO or exposure; they were compared with the partner's as made at the same settings", Report(b), StringComparison.Ordinal);
+        }
+
+        // both say theirs, or neither: each at its own factor as before, and no line
+        DarkSeriesResult c = Run(at1600, partnerAt1600.Root);
+        Assert.Equal(SilentSide.None, c.Partner!.Silent);
+        Assert.InRange(c.Partner.OwnOverPartner.Ratio, 0.95, 1.05);
+        Assert.DoesNotContain("ca facute la aceleasi setari", Report(c), StringComparison.Ordinal);
+        Assert.Matches(@"partener           : .*: idx\d+ \(\d+\.\d ADU-eq; cadre citite 5 din 5, ISO 1600, 120\.0 s\); eticheta ", Report(c));
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Matches(@"partner            : .*: idx\d+ \(\d+\.\d ADU; frames read 5 of 5, unknown settings\); label ", Report(a));
+            Assert.Matches(@"partner            : .*: idx\d+ \(\d+\.\d ADU-eq; frames read 5 of 5, ISO 1600, 120\.0 s\); label ", Report(c));
+        }
+        DarkSeriesResult d = Run(silent, partnerSilent.Root);
+        Assert.Equal(SilentSide.None, d.Partner!.Silent);
+        Assert.InRange(d.Partner.OwnOverPartner.Ratio, 0.95, 1.05);
+        Assert.DoesNotContain("ca facute la aceleasi setari", Report(d), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R052_LightsWithoutTheMastersHotPixelsAreUnmatchedNotUnmeasured()
     {
@@ -164,7 +308,8 @@ public class LightsAndIndexTests
         Assert.Equal(MatchVerdict.Unmatched, m.Verdict);
         Assert.InRange(m.Ratio, -0.05, 0.05);
         Assert.True(m.Q25 <= 0);
-        Assert.True(double.IsNaN(r.LightsIndex) || r.LightsIndex <= 0.05 * r.Index.Index);
+        // no index for such lights (R-064): the old bound, at most 0.05 of the darks' index, let any negative through (CR-004)
+        Assert.True(double.IsNaN(r.LightsIndex), $"lights' index {r.LightsIndex}");
         string report = Report(r);
         Assert.Contains("verdict            : ATENTIE: nu se potrivesc: in lights nu se vad pixelii fierbinti ai dark-ului (de ", report, StringComparison.Ordinal);
         Assert.Contains(" ori cat in dark; poate reducerea de zgomot din aparat, alt aparat sau cadre rotite?)", report, StringComparison.Ordinal);
@@ -929,6 +1074,65 @@ public class LightsAndIndexTests
         // the lights are at the partner's temperature: chained ratio 1.3 x (1 / 1.3) = 1, direct subtraction
         Assert.Contains("    lights / partener  : pixelii fierbinti sunt in lights de 1.0", report, StringComparison.Ordinal);
         Assert.Contains("    verdict partener   : OK: partenerul se poate scadea asa cum e; in lights pixelii fierbinti sunt de 1.0", report, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// CR-004: lights with in-camera noise reduction read a ratio around zero, and the darks' index
+    /// times it was printed as `idx-0 (-0.00 times the dark)`.
+    /// </summary>
+    [Fact]
+    public void R064_LightsThatDoNotShowTheDarksHotPixelsHaveNoIndex()
+    {
+        using SessionFixture none = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, 0));
+        DarkSeriesResult r = Run(none);
+        MatchFigures m = r.Lights!.LightsOverDark;
+        Assert.True(m.Absent);
+        Assert.True(double.IsNaN(r.LightsIndex), $"lights' index {r.LightsIndex}");
+        Assert.True(double.IsNaN(IndexAnalyzer.EquivalentIndex(r.Index, m)));
+        IReadOnlyList<ReportSection> sections = DarkReport.Sections(r);
+        IReadOnlyList<ReportRow> check2 = sections.Single(x => x.Check == ReportCheck.Lights).Rows, index = sections.Single(x => x.Check == ReportCheck.Index).Rows;
+        Assert.DoesNotContain(check2, row => row.Label == "index lights");
+        Assert.DoesNotContain(index, row => row.Label == "lights");
+        // the darks keep theirs, and the verdict still says what was seen
+        Assert.Contains(check2, row => row.Label == "index dark-uri" && row.Value == r.Index.Tag);
+        Assert.Contains(check2, row => row.Label == "verdict" && row.Value.StartsWith("ATENTIE: nu se potrivesc: in lights nu se vad pixelii fierbinti ai dark-ului", StringComparison.Ordinal));
+        Assert.DoesNotMatch(@"idx-?0(?![0-9])", Report(r));
+
+        // the rule itself: the ratios sit around zero, by the median or by the first quartile, on an unmatched verdict only
+        Assert.True(new MatchFigures(5, -0.004, -0.02, 0.01, double.NaN, MatchVerdict.Unmatched).Absent);
+        Assert.True(new MatchFigures(5, 0.01, -0.01, 0.03, -39.9, MatchVerdict.Unmatched).Absent);
+        Assert.False(new MatchFigures(5, 1.6, 1.5, 1.7, 4.1, MatchVerdict.Unmatched).Absent);
+        Assert.False(new MatchFigures(5, 0.5, -0.1, 0.6, -6, MatchVerdict.CosmeticOnly).Absent);
+        Assert.False(MatchFigures.None.Absent);
+        Assert.True(double.IsNaN(IndexAnalyzer.EquivalentIndex(r.Index, new MatchFigures(5, 0.01, -0.01, 0.03, -39.9, MatchVerdict.Unmatched))));
+        Assert.Equal(1.6 * r.Index.Index, IndexAnalyzer.EquivalentIndex(r.Index, new MatchFigures(5, 1.6, 1.5, 1.7, 4.1, MatchVerdict.Unmatched)), 9);
+
+        // lights that show them keep both rows
+        using SessionFixture same = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i));
+        DarkSeriesResult rs = Run(same);
+        Assert.False(rs.Lights!.LightsOverDark.Absent);
+        Assert.Contains(DarkReport.Sections(rs).Single(x => x.Check == ReportCheck.Lights).Rows, row => row.Label == "index lights");
+        Assert.Contains(DarkReport.Sections(rs).Single(x => x.Check == ReportCheck.Index).Rows, row => row.Label == "lights");
+    }
+
+    /// <summary>CR-004: a lights-only session was labelled `...-idx-0`, a name the next run does not strip.</summary>
+    [Fact]
+    public void R066_ALightsOnlySessionWhoseLightsShowNoHotPixelIsLabelledIdxDash()
+    {
+        using SessionFixture alone = new SessionFixture().WithLights(4, i => Light(i, 0));
+        using SessionFixture library = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);
+        DarkSeriesResult r = Run(alone, library.Root);
+        Assert.Equal(library.Root, r.DarksFromPartner);
+        Assert.True(r.Lights!.LightsOverDark.Absent);
+        Assert.True(double.IsNaN(r.LightsIndex), $"lights' index {r.LightsIndex}");
+        Assert.Equal("idx-", r.LabelTag);
+        Assert.Equal(Path.GetFileName(alone.Root) + "-idx-", r.Label);
+        string report = Report(r);
+        Assert.Contains("    eticheta           : " + r.Label + Environment.NewLine, report, StringComparison.Ordinal);
+        Assert.DoesNotContain("index lights", report, StringComparison.Ordinal);
+        // the partner keeps its own index and label on its row
+        Assert.Contains("    dark-uri (partener): " + r.Index.Tag + " (", report, StringComparison.Ordinal);
+        Assert.Contains("; eticheta " + Path.GetFileName(library.Root) + "-" + r.Index.Tag, report, StringComparison.Ordinal);
     }
 
     [Fact]

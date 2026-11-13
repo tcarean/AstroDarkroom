@@ -88,11 +88,11 @@ each pair has the same defect unless the entry says otherwise.
 
 | ID | Sev | Reach | Evidence | Title | Status |
 |----|----:|-------|----------|-------|--------|
-| CR-001 | 1 | some setups | confirmed | Sidecar and hidden files with a frame extension are frames; over the cap they take the places of darks | open |
-| CR-002 | 1 | some setups | confirmed | A set that does not say its ISO is compared at factor 1 with a set that does | open |
-| CR-003 | 1 | some setups | confirmed | The noise of the lights' stack adds the lights' ADU to the darks' ADU when their settings differ | open |
-| CR-004 | 1 | some setups | confirmed | Lights that do not show the dark's hot pixels get an index of `idx-0` or `idx0`, and a lights-only session is labelled with it | open |
-| CR-005 | 1 | some setups | confirmed | A set whose central pixels all sit above the hot threshold reads a master noise of 0.00 ADU, and check 9 says OK | open |
+| CR-001 | 1 | some setups | confirmed | Sidecar and hidden files with a frame extension are frames; over the cap they take the places of darks | fixed 26c91d91 |
+| CR-002 | 1 | some setups | confirmed | A set that does not say its ISO is compared at factor 1 with a set that does | fixed c1670706 |
+| CR-003 | 1 | some setups | confirmed | The noise of the lights' stack adds the lights' ADU to the darks' ADU when their settings differ | fixed 7ae97219 |
+| CR-004 | 1 | some setups | confirmed | Lights that do not show the dark's hot pixels get an index of `idx-0` or `idx0`, and a lights-only session is labelled with it | fixed 215e8591 |
+| CR-005 | 1 | some setups | confirmed | A set whose central pixels all sit above the hot threshold reads a master noise of 0.00 ADU, and check 9 says OK | fixed c9a1efbe |
 | CR-006 | 1 | some setups | owner | `OK: the dark can be subtracted as it is` is said from the normalised ratio, also when the lights are at another ISO or exposure | open |
 | CR-007 | 1 | some setups | owner | Without lights, check 9 asks for a master noise under one value step, which on a camera with steps of 1 means a hundred darks | open |
 | CR-008 | 1 | some setups | owner | With 61 to 119 darks only 31 to 60 are read | open |
@@ -197,7 +197,7 @@ five of them are of severity 1.
 - Should: such files are not listed.
 - Test: none. `._DSC_0001.fit` added to a fixture, asserting the count.
 - Evidence: confirmed. Same as LightsCheck's CR-032.
-- Status: open
+- Status: fixed 26c91d91
 
 ### CR-002 A set that does not say its ISO is compared at factor 1 with a set that does
 
@@ -217,7 +217,7 @@ five of them are of severity 1.
 - Test: `R052_TheRatioIsReadPerLightAndNormalisedByTheLightsOwnSettings` covers lights without
   ISO. `WithDarkSeries(..., iso: null)` with lights at ISO 800; a partner built with `iso: null`.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed c1670706
 
 ### CR-003 The noise of the lights' stack adds the lights' ADU to the darks' ADU when their settings differ
 
@@ -239,7 +239,7 @@ five of them are of severity 1.
   settings. Lights at twice the ISO should read the same ratio as lights at the same ISO with
   half the sky sigma.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed 7ae97219 (the unit; which noise of a light the scale section takes is still CR-029)
 
 ### CR-004 Lights that do not show the dark's hot pixels get an index of `idx-0` or `idx0`, and a lights-only session is labelled with it
 
@@ -260,7 +260,7 @@ five of them are of severity 1.
 - Test: `R052_LightsWithoutTheMastersHotPixelsAreUnmatchedNotUnmeasured` asserts
   `IsNaN(r.LightsIndex) || r.LightsIndex <= 0.05 * r.Index.Index`, which accepts any negative.
 - Evidence: confirmed (the tag texts by the reviewer's script; the code read).
-- Status: open
+- Status: fixed 215e8591
 
 ### CR-005 A set whose central pixels all sit above the hot threshold reads a master noise of 0.00 ADU, and check 9 says OK
 
@@ -280,7 +280,7 @@ five of them are of severity 1.
   to the master's own level.
 - Test: none. A series with `Pedestal = 230` against biases at 200.
 - Evidence: confirmed on the code path; which cameras reach it is not known.
-- Status: open
+- Status: fixed c9a1efbe
 
 ### CR-006 `OK: the dark can be subtracted as it is` is said from the normalised ratio, also when the lights are at another ISO or exposure
 

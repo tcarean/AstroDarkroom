@@ -91,7 +91,11 @@ pixel, the frames where it stays above half the threshold; the random-telegraph 
 are the reference plane's pixels whose temporal std exceeds `Th.RtsSigmaFactor` times the
 median per-frame sigma (the prototype's `sig1`). The noise curve averages the first n frames
 against the next n on the central crop, hot pixels masked out, and compares with
-sigma / sqrt(n).
+sigma / sqrt(n). The mask (`NoiseCurve`'s `quietMask`) keeps a pixel of the crop when the
+median master has it less than the hot threshold above the crop's own median level, so it never
+empties: half the crop lies at or under that level (ADR 0054). `MeanDiff` and the half against
+half read only those pixels. `Planes.ClippedSigma` answers NaN, not 0, for an empty array, so a
+figure read on nothing can only come out unmeasured.
 
 ## The biases and the dark current
 
@@ -201,7 +205,8 @@ another limit, reading nothing again (the window's dropdown, R-123).
 
 With lights it takes `LightsAnalyzer.NoiseOnPlane` on the reference plane: the median over the
 decoded lights of `LightFigures.LocalSigma` (how much a pixel differs from its neighbours), each
-divided by its own normalisation, and how many lights gave it; times the darks' normalisation
+divided by its factor (`LightsAnalyzer.FactorOf`: its own, or the darks' when either set does
+not say its settings, ADR 0053), and how many lights gave it; times the darks' normalisation
 it is `StackLimit.LightNoise`, in the darks' raw ADU, so it compares with the master's noise.
 `StackLimit.ShareAdu` is that noise over sqrt(lights), the lights' own part of the stack's
 noise. The master is subtracted from every light alike, so without dithering its noise adds
@@ -243,7 +248,20 @@ when the ISO is outside the table. The console writes the rows as
 indent; the window binds `Rows` and `Paragraphs` as they are. `StackNoise.Of` holds the lights'
 sky median, sky sigma and count on the reference plane with the mean and median stack's noise,
 the lights' share sigma / sqrt(N) plus the dark master's noise in quadrature (the master is
-subtracted from every light alike, so its noise does not average out);
+subtracted from every light alike, so its noise does not average out). Both sides of that sum
+are in the darks' raw ADU: each light's sky median and sigma are multiplied by
+`LightFigures.ToDarks`, the darks' factor over the light's, which `LightsAnalyzer.Analyze` sets
+from `FactorOf` when it measures the light, so `StackNoise.Of` needs no settings of its own;
+`StackNoise.Scaled` says that more than half of those lights are at other settings than the
+darks, so the medians are those of brought figures. A light is at other settings when
+`FrameStack.SameSettings` says so of its metadata and the darks' (`LightFigures.OtherSettings`,
+set beside `ToDarks`; `DarkSeriesAnalysis.FirstStacked` is the darks' side): the rule that keeps
+a frame in a stack, with check 1's tolerance on the exposure. It is not read back from the
+factor, which is exactly 1 for twice the ISO at half the exposure and falls on either side of
+the tolerance by rounding. When `Scaled` is true the `cer` row says the
+figures were worked out for the darks' ISO and exposure, and the third paragraph, which gives
+the same figures, opens with that sentence (`Paragraphs`, `onALight`). Check 9 brings the noise of a light to
+the darks' settings the same way, through `NoiseOnPlane`.
 `ScaleReport.AgainstMasters` turns a light in raw ADU into the words and the bold parts of its
 ratio to the dark master's noise (`NoiseVsN.MasterNoise`) and to the stack's, used by the
 `ce s-a gasit` row and by check 3's `lumina pe cadre`, `lumina constanta` and
@@ -279,7 +297,8 @@ first decoded frame's settings and the stack's normalisation, the index and labe
 master, the session's darks over it (`IndexAnalyzer.SharedRatios`, the partner as reference),
 the lights over it (`IndexAnalyzer.Chain`), and the overlap of the two hot-pixel sets at
 `Th.PartnerOverlapAdu` (50 ADU-eq): the session's pixels above 50 that the partner has above
-50, and the partner's above 50 that the session has above `Th.HotAdu`, each at its own
+50, and the partner's above 50 that the session has above `Th.HotAdu`, each at its own (the
+partner's at the session's when one of the two does not say its settings, ADR 0053)
 normalisation. Each group is released before the next is decoded. A
 failure of the lights or of the partner is an error carried in the result (`LightsError`,
 `PartnerError`), printed in its section, and does not stop the rest of the report. `DarkReport`
@@ -378,7 +397,8 @@ verdict, the ratings and the frames of every limit are decided on the unrounded 
 `index dark-uri` (`index partener` when the darks are the partner's), the darks' tag, and
 `index lights`, the lights' equivalent tag with the parenthesis INDEX's `lights` row also uses,
 both from `LightsLike` (`IndexFigures.TagFor` on `LightsIndex`; null, and no row, when it is
-not measured), then the verdict (R-056).
+NaN: not measured, or lights that show none of the dark's hot pixels, R-064), then the verdict
+(R-056).
 
 ## Measured
 
