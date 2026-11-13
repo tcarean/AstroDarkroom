@@ -150,9 +150,17 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
 - **lensfun** (`LensfunReader.ReadXml`): `<camera>` (maker, model + `lang` aliases, mount,
   cropfactor), `<lens>` (same, plus `<calibration><vignetting model="pa" .../>`) and the
   `<mount>` definitions at a file's root (`<name>` and its `<compat>` list, `LensfunMount`);
-  lenses without vignetting are dropped. `LensfunData.CropOf(name)` matches the camera
-  model or an alias by containment on letters and digits only, longest match wins
-  ("NIKON D3300" → 1.523); `MountsOf(name)` finds the camera the same way and gives its mount
+  lenses without vignetting are dropped. `LensfunData.CameraOf(name)` finds the body (R-133,
+  ADR 0101, with the counts on the shipped table): the names are cut into words, runs of
+  letters and digits upper-cased (`Words`); the first entry whose model or alias has exactly
+  the file's words is the camera; without one, the entry one of whose names stands whole in
+  the file's name, word for word and side by side (`StandsIn`: "Nikon D3300" in "Nikon
+  Corporation NIKON D3300"), the name with the most letters winning. A table name that only
+  contains the file's name never matches ("Nikon D7500" for a "Nikon D750", the crossing the
+  review of 2026-11-13 found: until then the match was containment on letters, either way
+  round). `CropOf(name)` is that camera's crop ("NIKON D3300" → 1.523), and
+  `LensIdentification.Identify` prints the camera's table model as the crop's source;
+  `MountsOf(name)` finds the camera the same way and gives its mount
   plus that mount's compat list ("NIKON D3300" → `Nikon F AF` with `Nikon F`, `Nikon F AI`,
   `Nikon F AI-S`, `M42`, `M39/1`, `DKL`, `T2`, `Generic`; a mount without a definition is
   itself alone), or null for a camera the table does not know or knows without a mount

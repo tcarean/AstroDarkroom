@@ -232,6 +232,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The camera's crop and mount are no longer taken from a longer model name that contains the
+  camera's (R-133, ADR 0101, the review's CR-001): a `Nikon D750` read the D7500's crop 1.534
+  where its own is 1.0, a `Canon EOS R5` the R50 V's, a `Pentax K-1` the K100D Super's, and any
+  `QHY...` camera the Pentax Q's 5.53, so the profile's depth and the depth verdict were those
+  of another sensor. On the shipped lensfun table 137 camera names landed on a body with
+  another crop; now none does. The D3300 was not affected. The crop line names the table's
+  model.
 - Typing in the Sintetic tab's lens field no longer freezes the window for half a second at
   every keystroke (R-132, ADR 0099): the text each lens is searched in is built once, while the
   profiles load, and a search takes under a millisecond on 3799 lenses. The same lenses are

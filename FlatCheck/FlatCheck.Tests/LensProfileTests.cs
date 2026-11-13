@@ -206,6 +206,100 @@ public class LensProfileReaderTests
         Assert.Null(d.CropOf(null));
     }
 
+    /// <summary>A lensfun document of cameras only, each row "model|alias|crop" (the alias may
+    /// be empty), in the order given.</summary>
+    static LensfunData CameraTable(params string[] rows)
+    {
+        var xml = new System.Text.StringBuilder("<lensdatabase version=\"2\">");
+        foreach (string row in rows)
+        {
+            string[] p = row.Split('|');
+            xml.Append("<camera><maker>Maker</maker><model>").Append(p[0]).Append("</model>");
+            if (p[1].Length > 0) xml.Append("<model lang=\"en\">").Append(p[1]).Append("</model>");
+            xml.Append("<mount>Mount of ").Append(p[0]).Append("</mount><cropfactor>").Append(p[2]).Append("</cropfactor></camera>");
+        }
+        return LensfunReader.ReadXml(xml.Append("</lensdatabase>").ToString(), "cameras.xml");
+    }
+
+    /// <summary>The pairs the review of 2026-11-13 found crossed (CR-001): each short name
+    /// beside the longer one that contains it, and the Pentax Q with its one-letter alias.</summary>
+    static LensfunData CrossedCameras() => CameraTable(
+        "Nikon D7500|D7500|1.534", "Nikon D750|D750|1.0",
+        "Nikon D7000|D7000|1.523", "Nikon D700|D700|1.0",
+        "Nikon D800E|D800E|1.0", "Nikon D80|D80|1.523",
+        "Nikon Z fc|Z fc|1.531", "Nikon Z f|Z f|1.0",
+        "Canon EOS R50 V||1.613", "Canon EOS R5||1.0",
+        "Pentax K100D Super||1.531", "Pentax K-1||1.0",
+        "Pentax Q|Q|5.53");
+
+    /// <summary>
+    /// R-133: the camera is the table's entry of that very name, or the one whose words all
+    /// stand in the file's name; a longer table name never wins over the exact one, a part of a
+    /// word is no match, and a name with nothing to compare finds nothing.
+    /// </summary>
+    [Theory]
+    [InlineData("Nikon D750", "Nikon D750")]
+    [InlineData("NIKON D750", "Nikon D750")]
+    [InlineData("Nikon D7500", "Nikon D7500")]
+    [InlineData("Nikon D700", "Nikon D700")]
+    [InlineData("Nikon D80", "Nikon D80")]
+    [InlineData("NIKON Z f", "Nikon Z f")]
+    [InlineData("Nikon Z fc", "Nikon Z fc")]
+    [InlineData("Canon EOS R5", "Canon EOS R5")]
+    [InlineData("Pentax K-1", "Pentax K-1")]
+    [InlineData("PENTAX Q", "Pentax Q")]
+    [InlineData("D750", "Nikon D750")]                              // the alias, exactly
+    [InlineData("Nikon Corporation NIKON D750", "Nikon D750")]      // the table's words inside the file's name
+    [InlineData("QHY5III678C", null)]                               // "Q" is a word of its own, not a letter of another
+    [InlineData("Nikon D75", null)]                                 // a table name that only contains the file's name
+    [InlineData("Nikon D9999", null)]
+    [InlineData("---", null)]                                       // nothing to compare
+    [InlineData("", null)]
+    public void R133_TheCameraIsTheTablesEntryOfThatName_NeverALongerOne(string camera, string model)
+    {
+        LensfunData d = CrossedCameras();
+        Assert.Equal(model, d.CameraOf(camera)?.Model);
+        if (model == null)
+        {
+            Assert.Null(d.CropOf(camera));
+            Assert.Null(d.MountsOf(camera));
+        }
+        else Assert.Equal(new[] { "Mount of " + model }, d.MountsOf(camera));
+    }
+
+    /// <summary>R-133 on the figures: the D750 is a full-frame body, the Z f too, the D80 is
+    /// not; before, each took the crop of the longer name.</summary>
+    [Fact]
+    public void R133_TheCropIsTheBodysOwn()
+    {
+        LensfunData d = CrossedCameras();
+        Assert.Equal(1.0, d.CropOf("NIKON D750")!.Value, 9);
+        Assert.Equal(1.523, d.CropOf("NIKON D80")!.Value, 9);
+        Assert.Equal(1.0, d.CropOf("NIKON Z f")!.Value, 9);
+        Assert.Equal(1.0, d.CropOf("Canon EOS R5")!.Value, 9);
+        Assert.Equal(1.0, d.CropOf("PENTAX K-1")!.Value, 9);
+    }
+
+    /// <summary>R-133 on the shipped table: every camera, asked for by each of its names, is
+    /// found in an entry that carries that very name (1053 cameras on 2026-11-13, of which the
+    /// rule before sent 137 names to a body with another crop).</summary>
+    [Fact]
+    public void R133_EveryCameraOfTheShippedTableIsFoundUnderItsOwnName()
+    {
+        LensfunData d = LensfunReader.ReadDirectory(Path.Combine(TestData.RepoDir(), ProfileLocator.LensfunFolderName));
+        Assert.True(d.Cameras.Count > 1000, "the shipped lensfun folder was not read");
+        static string Letters(string s) => new string(s.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+        var wrong = new List<string>();
+        foreach (LensfunCamera c in d.Cameras)
+            foreach (string name in new[] { c.Model }.Concat(c.Aliases))
+            {
+                LensfunCamera found = d.CameraOf(name);
+                bool same = found != null && new[] { found.Model }.Concat(found.Aliases).Any(n => Letters(n) == Letters(name));
+                if (!same) wrong.Add($"{name} -> {found?.Model ?? "nothing"}");
+            }
+        Assert.True(wrong.Count == 0, string.Join("; ", wrong.Take(20)));
+    }
+
     /// <summary>
     /// The shipped database holds the Nikkor 35 f/1.8G DX twice - once calibrated on an APS-C
     /// body, once on a D780 - with the same maker, model and mount. They are two lenses in the
