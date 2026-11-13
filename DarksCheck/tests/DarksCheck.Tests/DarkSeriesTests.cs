@@ -1222,6 +1222,55 @@ public partial class DarkSeriesTests
         Assert.InRange(r.Verdicts.Pattern.GlowAdu, 2.5, 3.5);
     }
 
+    /// <summary>
+    /// CR-005: darks whose level sits above the hot threshold in every pixel left no quiet pixel in the
+    /// crop, the noise curve read 0 on nothing, and check 9 said OK on a master noise of 0.00 ADU.
+    /// </summary>
+    [Theory]
+    [InlineData(230)] // every pixel 30 ADU above the biases' black: all "hot" against a threshold of 20
+    [InlineData(219)] // the level just under the threshold: the upper part of the crop's pixels was cut off
+    public void R024_ASetWarmAboveTheHotThresholdStillMeasuresItsNoise(double pedestal)
+    {
+        // the same noise, frame by frame, on a level of 200 and on a higher one; the biases set the black at 200 for both
+        static SyntheticDark D(int i, double level) => new() { Seed = 100 + i, Noise = 3, Pedestal = level, Hot = SyntheticDark.OnePerLevel };
+        using SessionFixture plain = new SessionFixture().WithDarkSeries(12, i => D(i, 200), biases: 4);
+        using SessionFixture warm = new SessionFixture().WithDarkSeries(12, i => D(i, pedestal), biases: 4);
+        DarkSeriesResult rp = Run(plain), rw = Run(warm);
+        Assert.Equal(200, rp.Darks.Black, 0);
+        Assert.Equal(rp.Darks.Black, rw.Darks.Black, 9);
+        NoiseVsN np = rp.Darks.Noise, nw = rw.Darks.Noise;
+
+        // a constant level changes no difference between two frames: every point of the curve is the plain series'
+        Assert.InRange(np.TemporalSigma, 2.7, 3.3);
+        Assert.Equal(np.TemporalSigma, nw.TemporalSigma, 6);
+        Assert.Equal(np.Curve.Select(p => p.N), nw.Curve.Select(p => p.N));
+        Assert.All(np.Curve.Zip(nw.Curve), pair => Assert.Equal(pair.First.Measured, pair.Second.Measured, 6));
+        Assert.Equal(np.MedianHalfVsMeanHalf, nw.MedianHalfVsMeanHalf, 6);
+        Assert.InRange(nw.MasterNoise, 0.9, 1.3);
+        Assert.Equal(np.MasterNoise, nw.MasterNoise, 6);
+
+        // and check 9 judges the two alike, on a noise that was measured
+        EnoughVerdict ep = rp.Verdicts.Enough, ew = rw.Verdicts.Enough;
+        Assert.Equal(ep.Verdict, ew.Verdict);
+        Assert.Equal(ep.FramesNeeded, ew.FramesNeeded);
+        using StringWriter sw = new();
+        DarkReport.Write(rw, sw);
+        Assert.DoesNotContain("0.00 ADU de zgomot pe pixel", sw.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("zgomotul masterului (0.00 ADU)", sw.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>CR-005: the sigma of no value at all was 0, a measured silence, where the comment promised NaN.</summary>
+    [Fact]
+    public void R024_TheClippedSigmaOfNoValueIsUnmeasuredNotZero()
+    {
+        (double sigma, double median) = Planes.ClippedSigma([]);
+        Assert.True(double.IsNaN(sigma), $"sigma {sigma}");
+        Assert.True(double.IsNaN(median), $"median {median}");
+        (double one, double level) = Planes.ClippedSigma([7f, 7f, 7f]);
+        Assert.Equal(0, one, 9);
+        Assert.Equal(7, level, 9);
+    }
+
     [Fact]
     public void R024_TheNoiseOfTheMeanFollowsSqrtNAndTenCleanFramesAreEnough()
     {

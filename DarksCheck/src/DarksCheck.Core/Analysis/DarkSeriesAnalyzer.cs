@@ -901,14 +901,15 @@ internal static class DarkSeriesAnalyzer
 
     /// <summary>
     /// The noise curve on a centred crop of the reference plane, at most
-    /// <see cref="Th.NoiseCropPx"/> mosaic pixels on a side, at the pixels under the hot threshold.
+    /// <see cref="Th.NoiseCropPx"/> mosaic pixels on a side, at the crop's quiet pixels: those the
+    /// median master has less than the hot threshold above the crop's median level.
     /// </summary>
     /// <param name="decoded">The decoded frames.</param>
     /// <param name="excess">The median master minus the black, row-major.</param>
     /// <param name="w">The mosaic's width.</param>
     /// <param name="h">The mosaic's height.</param>
     /// <param name="refPlane">The reference CFA position.</param>
-    /// <param name="hotT">The hot threshold, in raw ADU above black.</param>
+    /// <param name="hotT">The hot threshold, in raw ADU, read here above the crop's level.</param>
     /// <param name="frames">Every frame's figures, for the typical frame sigma.</param>
     /// <returns>The curve and the master's noise.</returns>
     private static NoiseVsN NoiseCurve(IReadOnlyList<StackFrame> decoded, float[] excess, int w, int h, int refPlane, double hotT, DarkFrameFigures[] frames)
@@ -937,14 +938,25 @@ internal static class DarkSeriesAnalyzer
             crops[k] = c;
         }
 
-        bool[] quietMask = new bool[side * side];
+        // The quiet pixels are those less than the hot threshold above the crop's own level in the
+        // master, its median, not above the black (R-024, ADR 0054): on a set whose dark level
+        // sits above the threshold everywhere, a threshold above the black left no pixel, and one
+        // that sits near it cut the crop's upper part off. At least half the crop is always quiet.
+        float[] cropExcess = new float[side * side];
         for (int j = 0; j < side; j++)
         {
             int row = (y0 + pr + 2 * j) * w + x0 + pc;
             for (int i = 0; i < side; i++)
             {
-                quietMask[j * side + i] = excess[row + 2 * i] < hotT;
+                cropExcess[j * side + i] = excess[row + 2 * i];
             }
+        }
+
+        double level = Planes.Median(cropExcess);
+        bool[] quietMask = new bool[side * side];
+        for (int i = 0; i < quietMask.Length; i++)
+        {
+            quietMask[i] = cropExcess[i] - level < hotT;
         }
 
         double sigmaFrame = Planes.Median([.. frames.Where(f => f.Error is null).Select(f => (float)f.Planes[refPlane].Sigma)]);

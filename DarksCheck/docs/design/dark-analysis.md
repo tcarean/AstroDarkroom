@@ -91,7 +91,11 @@ pixel, the frames where it stays above half the threshold; the random-telegraph 
 are the reference plane's pixels whose temporal std exceeds `Th.RtsSigmaFactor` times the
 median per-frame sigma (the prototype's `sig1`). The noise curve averages the first n frames
 against the next n on the central crop, hot pixels masked out, and compares with
-sigma / sqrt(n).
+sigma / sqrt(n). The mask (`NoiseCurve`'s `quietMask`) keeps a pixel of the crop when the
+median master has it less than the hot threshold above the crop's own median level, so it never
+empties: half the crop lies at or under that level (ADR 0054). `MeanDiff` and the half against
+half read only those pixels. `Planes.ClippedSigma` answers NaN, not 0, for an empty array, so a
+figure read on nothing can only come out unmeasured.
 
 ## The biases and the dark current
 
@@ -384,7 +388,8 @@ verdict, the ratings and the frames of every limit are decided on the unrounded 
 `index dark-uri` (`index partener` when the darks are the partner's), the darks' tag, and
 `index lights`, the lights' equivalent tag with the parenthesis INDEX's `lights` row also uses,
 both from `LightsLike` (`IndexFigures.TagFor` on `LightsIndex`; null, and no row, when it is
-not measured), then the verdict (R-056).
+NaN: not measured, or lights that show none of the dark's hot pixels, R-064), then the verdict
+(R-056).
 
 ## Measured
 

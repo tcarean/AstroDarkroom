@@ -367,6 +367,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   lights now have no index: the `index lights` and `lights` rows are left out and the label
   reads `-idx-` (R-064, R-066; CR-004 of the code review).
 
+- Darks whose level sits above the hot-pixel threshold in every pixel (a warm sensor, or
+  biases with a lower pedestal) read a master noise of 0.00 ADU, and check 9 said `OK` on it:
+  the noise was read only on the pixels under the threshold above the black, and there were
+  none. The quiet pixels are now chosen against the master's own level in the central crop, so
+  the noise is measured on such a set too, and is no longer skewed when only part of the pixels
+  pass the threshold (R-024, ADR 0054; CR-005 of the code review).
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 
