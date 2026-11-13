@@ -49,12 +49,12 @@ its `PixelPitchSource` key, not by the scale line's words (`logging.md`).
 The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
 (`frame-analysis.md`), each with a doc comment, the value there only. Registration,
 `VoteStars`, `VoteRange`, `VoteBin`, `MatchToleranceCoarse`, `MatchToleranceFine`,
-`MatchIterations`, `MinMatches`; dithering, `DitherStep`, `DitherPause`, `DitherSizeBounds`,
+`MatchIterations`, `MinMatches`, `MinMatchFraction`; dithering, `DitherStep`, `DitherPause`, `DitherSizeBounds`,
 `AxisStep`, `CoverageTight`, `CoverageMid`, `CoverageLoose`, `RunMinFrames`,
 `HotPixelRunMax`; the drift-aware verdict and the pattern, `WalkingStreakVisible`,
 `WalkingSharedFraction`, `PatternPilingFactor`,
 `PatternCrop`, `PatternHotSigma`, `PatternMinFrames`, `PatternClusterFraction`,
-`PatternSharePx`; the drift pairs and the polar alignment, `DriftMinPairs`,
+`PatternClusterWidths`, `PatternSharePx`; the drift pairs and the polar alignment, `DriftMinPairs`,
 `PolarDriftFwhmFraction`, `PolarRotationMinHours`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
 `CloudStarFraction`, `BackgroundJumpPct`, `BackgroundNeighbours`; trends, `TrendFrames`,
 `DewFwhmRise`, `DewHaloRise`, `FocusHeldFraction`, `SwampingRatioOk`; the RA axis from the

@@ -830,7 +830,8 @@ internal static class SeriesAnalyzer
         // Swamping on the first, the middle and the last measured frames, the ones too short to
         // stack left out: such a frame has almost no sky, and its ratio would pass for the
         // session's (R-024, R-085). When every measured frame is that short they are all there
-        // is, and they are sampled: an empty sample would read as no read noise at all.
+        // is, and they are sampled: the figures printed are then theirs, and so is the verdict.
+        // With no light measured at all the sample stays empty.
         List<IReadOnlyList<ChannelNoise>>? swamping = null;
         List<int> swampingFrames = [];
         if (readNoise is not null)

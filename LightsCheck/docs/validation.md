@@ -84,9 +84,11 @@ with a MAD sigma on the same raws and 1162 on the green channel of Siril's debay
 calibrated frames (`pp_light_*.fit`, where the interpolation spreads a pixel of any colour over
 several green ones); the count sat on the pattern's steep tail, so it went (ADR 0015). Smida's
 pattern (ISO 400 in August: a lower noise floor and more dark current) was taken out by its
-master dark and never moved; its figures may hold some star residue, since three groups of
-8 to 12 frames sit within 2 px and a pixel under a star in two of the groups sees it in over
-half the frames; the rule of R-046 only bounds the largest group.
+master dark and never moved; its figures held star residue, since three groups of 8 to 12
+frames sit within 2 px and a pixel under a star in two of the groups sees it in over half the
+frames: 13 of its 14 hot pixels were two stars. The rule of R-046 bounded only the largest
+group at 3 px; since 2026-11-13 it judges the groups within three times the stars' width and
+refuses the session, which has no pattern figures any more (ADR 0050).
 
 ## How to re-measure
 
@@ -101,7 +103,8 @@ drift instead of editing the figures.
 
 - 2026-11-14: the owner plate-solved the stack at the root of the Veil session of 2026-11-06
   as well (`result_9873s.fit`, 82 frames, solved on 2026-11-13 at 23:15, `CRVAL2`
-  +31.55). Every figure of V-014 measured on the folder as it then was: the RA axis `Y`, from
+  +31.55) and said so ("Am facut plate solving si pe V-014"), the session having said it would
+  then re-record the case as it had V-008. Every figure of V-014 measured on the folder as it then was: the RA axis `Y`, from
   the plate solve again; darks 35; every other figure as recorded. The RA axis the entry of
   "2026-11-13, later" had recorded as `Unknown` goes back to `Y`, what it was until that entry.
   Re-run alone with `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Failed: 0,
@@ -109,7 +112,10 @@ drift instead of editing the figures.
 - 2026-11-13, night: the owner plate-solved a stack of the Veil session of 2026-10-06 and left
   it at the session's root (`result.fit`, 80 frames, written by Siril 1.4.4 on 2026-11-13 at
   23:17, `CRVAL2` +31.66), the first solved FITS there since 2026-10-27, and asked for V-008 to
-  be checked again. Every figure of V-008 measured on the folder as it then was: the RA axis
+  be checked again ("am facut platesolving pt V-008. verifica din nou"), the session having
+  said that a solved FITS at the root and a re-recording would bring the polar check back. The
+  word to re-record was not said a second time: the figures below are the ones the owner had
+  recorded until the entry before this one, not new ones. Every figure of V-008 measured on the folder as it then was: the RA axis
   `Y`, from the plate solve again; polar upper bound 6.7', drift per exposure at that bound
   0.45 px, word `Ok`, the tracking's rotation 1.09'/h; the lower bound 4.6'; darks 30; every
   other figure as recorded. The three polar figures the entry below had recorded as none go

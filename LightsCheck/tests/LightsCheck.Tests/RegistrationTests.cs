@@ -140,7 +140,8 @@ public class RegistrationTests
 
     /// <summary>
     /// The fifth is of the shorter list: a frame under thin cloud that kept 60 of the reference's
-    /// 600 stars aligns on those 60, a tenth of the reference's list (R-018).
+    /// 600 stars aligns on those 60, a tenth of the reference's list, and so does a full frame
+    /// against a reference of 60 stars, a tenth of the frame's (R-018).
     /// </summary>
     [Fact]
     public void R018_TheShareIsOfTheShorterListSoAFrameWithFewStarsAligns()
@@ -154,6 +155,14 @@ public class RegistrationTests
         Assert.Equal(60, r.Matches);
         Assert.Equal(20, r.Dx, 0.01);
         Assert.Equal(-10, r.Dy, 0.01);
+
+        // The other way round: the reference is the short list, the frame holds its 60 stars and 540 others.
+        List<RegistrationStar> shortReference = reference.Take(60).ToList();
+        List<RegistrationStar> fullFrame = [.. frame, .. Field(540, 77).Select(s => new RegistrationStar(s.X, s.Y, 10))];
+        RegistrationResult mirrored = Registration.Register(shortReference, fullFrame, W, H);
+        Assert.True(mirrored.Ok);
+        Assert.InRange(mirrored.Matches, 60, 60);
+        Assert.Equal(20, mirrored.Dx, 0.01);
     }
 
     /// <summary>

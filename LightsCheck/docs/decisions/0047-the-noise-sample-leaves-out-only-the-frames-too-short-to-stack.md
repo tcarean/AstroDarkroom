@@ -37,4 +37,10 @@ the exposure.
 `R024_WhenEveryMeasuredFrameIsTooShortTheSampleIsThoseFrames` guard it. No recorded figure moves: no
 session of `docs/validation.md` holds a short frame. The `NaN %` the summary could print beside
 such a ratio is CR-029 of the same list, still open: a ratio at or under zero can also come from
-float lights with raw biases.
+float lights with raw biases. Two cases keep a sentence that does not fit, both for CR-038 of
+that list, which holds the summary's sentences about the biases. When every measured frame is
+too short (the frames of the usual exposure could not be measured, their headers could), the
+sample is the short frames and the verdict is theirs, `MARGINAL` with a ratio near zero: the
+figures are those frames' own and the rows name them, where an empty sample printed `the
+biases are missing` beside a measured read noise. And when no light was measured at all the
+sample is empty and that sentence is still printed.
