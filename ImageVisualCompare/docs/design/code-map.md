@@ -14,7 +14,9 @@
   here is pure and unit tested.
   - `Viewport.cs` — the single source of truth for zoom and pan. Screen space is **physical
     pixels**, content space is image pixels. Holds `Scale`, `OffsetX/Y`, the clamping rules,
-    and anchored zoom.
+    anchored zoom, and the image pixel drawn under the pointer (`PixelAt`, ADR 0052).
+  - `ImagePixel.cs` — one pixel of the canvas by its whole coordinates: what `PixelAt` returns
+    and the read-out names.
   - `DividerModel.cs` — the split line as a fraction of viewport width, plus hit testing.
   - `ZoomLadder.cs` — the discrete stops the `+`/`−` buttons step through. The wheel zooms
     continuously, so an off-ladder scale can be current at any time; `Next`/`Previous`

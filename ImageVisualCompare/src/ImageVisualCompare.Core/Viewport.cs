@@ -144,27 +144,36 @@ public sealed class Viewport
     public PointD ContentToScreen(double contentX, double contentY) =>
         new((contentX - OffsetX) * _scale, (contentY - OffsetY) * _scale);
 
-    /// <summary>Finds the image pixel under a viewport position.</summary>
-    /// <param name="screenX">The position, in screen space (physical pixels).</param>
-    /// <param name="screenY">The position, in screen space (physical pixels).</param>
+    /// <summary>
+    /// Finds the image pixel drawn on the physical screen pixel the pointer is on (R-028).
+    /// </summary>
+    /// <param name="screenX">
+    /// The pointer's position, in screen space (physical pixels): the left edge of the physical
+    /// pixel it is on. It need not be whole, since the viewport's own origin may sit on a fraction
+    /// of a physical pixel.
+    /// </param>
+    /// <param name="screenY">The top edge of that physical pixel, in the same space.</param>
     /// <returns>
-    /// The point, in image pixels with their fraction; the far edge of the image belongs to no
-    /// pixel. Null when the position falls on the empty margin around the image rather than on
-    /// the image itself, or when there is no content.
+    /// The pixel, by its whole coordinates. Null when the physical pixel shows the empty margin
+    /// around the image or lies past its far edge, and when there is no content.
     /// </returns>
-    public PointD? ContentPointInsideAt(double screenX, double screenY)
+    public ImagePixel? PixelAt(double screenX, double screenY)
     {
         if (!HasContent)
         {
             return null;
         }
 
-        PointD content = ScreenToContent(screenX, screenY);
+        // The image point at the centre of the physical pixel, not at its corner: that is the
+        // point the screen pixel is painted from, and it is half a pixel away from every edge
+        // an offset an ulp short of a whole number could push it across (ADR 0052).
+        PointD centre = ScreenToContent(screenX + 0.5, screenY + 0.5);
 
-        bool inside = content.X >= 0 && content.Y >= 0
-                      && content.X < ContentWidth && content.Y < ContentHeight;
+        bool inside = centre.X >= 0 && centre.Y >= 0
+                      && centre.X < ContentWidth && centre.Y < ContentHeight;
 
-        return inside ? content : null;
+        // Not negative here, so cutting the fraction off is rounding down.
+        return inside ? new ImagePixel((int)centre.X, (int)centre.Y) : null;
     }
 
     /// <summary>
