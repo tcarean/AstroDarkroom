@@ -75,6 +75,32 @@ namespace FlatCheck
             double sin2 = Math.Sin(2 * t0);
             return (sector, Math.Cos(2 * t0), (dx >= 0) == (dy >= 0) ? sin2 : -sin2);
         }
+
+        /// <summary>
+        /// The two sectors that meet on a half-axis, for a pixel that lies exactly on it: the
+        /// one <see cref="Azimuth"/> gives (the side where the zero coordinate counts as
+        /// positive) and its neighbour across the axis. On a raster of odd width or height the
+        /// centre column or row is such a line; a mirror leaves it in place and so turns one
+        /// side into the other, which is why a sector statistic takes the pixel in both
+        /// (R-131, ADR 0107).
+        /// </summary>
+        /// <param name="dx">The pixel's x minus the centre's x.</param>
+        /// <param name="dy">The pixel's y minus the centre's y. One of the two is exactly 0 and
+        /// the other is not.</param>
+        /// <param name="sectors">How many equal sectors on the circle, a multiple of 4.</param>
+        /// <returns>The two sectors, numbered as <see cref="Azimuth"/> numbers them; always
+        /// different.</returns>
+        internal static (int first, int second) AxisSectors(double dx, double dy, int sectors)
+        {
+            int perQuadrant = sectors / 4, half = sectors / 2;
+            if (dy == 0)
+                // the positive x half-axis lies between quadrants I and IV, the negative one
+                // between II and III; the sectors beside it are the first of each quadrant
+                return dx > 0 ? (half, half - 1) : (sectors - 1, 0);
+            // the y axis: between I and II above the centre, between III and IV below it; the
+            // sectors beside it are the last of each quadrant
+            return dy > 0 ? (half + perQuadrant - 1, sectors - perQuadrant) : (perQuadrant - 1, half - perQuadrant);
+        }
         // ========================================================= geometry
         /// <summary>
         /// The fit of a paraboloid on log(I). Two different things come out of the same fit:
@@ -546,7 +572,9 @@ namespace FlatCheck
         /// <summary>
         /// The azimuthal asymmetry: per ring, between 0.15 and 1 of the inscribed radius, the
         /// peak-to-peak of the sector medians over their median. A ring is reported only when at
-        /// most one sector has fewer than 8 pixels.
+        /// most one sector has fewer than 8 pixels. A pixel exactly on the line between two
+        /// sectors (the centre column or row of an odd raster) counts whole in both
+        /// (<see cref="AxisSectors"/>), so a raster and its mirror give the same figure (R-131).
         /// </summary>
         /// <param name="img">The raster.</param>
         /// <param name="cx">The centre's column, in pixels; the sensor's centre.</param>
@@ -569,10 +597,19 @@ namespace FlatCheck
                     double dx = x - cx, dy = y - cy;
                     double r = Math.Sqrt(dx * dx + dy * dy);
                     if (r < edges[0] || r >= edges[nrings]) continue;
-                    int s = Azimuth(dx, dy, nsect).sector;
                     int ri = -1;
                     for (int i = 0; i < nrings; i++) if (r >= edges[i] && r < edges[i + 1]) { ri = i; break; }
-                    if (ri >= 0) buckets[ri, s].Add(img.At(y, x));
+                    if (ri < 0) continue;
+                    if (dx == 0 || dy == 0)
+                    {
+                        // On the line between two sectors: in both, whole. One side only, as
+                        // before, is the other side after a mirror (the centre itself, where
+                        // both are 0, lies inside the first ring's inner edge and never gets here).
+                        var (first, second) = AxisSectors(dx, dy, nsect);
+                        buckets[ri, first].Add(img.At(y, x));
+                        buckets[ri, second].Add(img.At(y, x));
+                    }
+                    else buckets[ri, Azimuth(dx, dy, nsect).sector].Add(img.At(y, x));
                 }
             var outl = new List<(double, double)>();
             for (int i = 0; i < nrings; i++)

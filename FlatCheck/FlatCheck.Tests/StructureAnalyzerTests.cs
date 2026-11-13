@@ -186,6 +186,34 @@ public class StructureAnalyzerTests
     /// x 530, odd leftovers both ways for the 40-tile grid (790 = 41 x 19 + 11, 530 = 27 x 19 +
     /// 17).
     /// </summary>
+    /// <summary>
+    /// R-131 on rasters of odd size, which the theory above does not reach: 918 x 610 gives a
+    /// raster 459 x 305, 1052 x 518 one of 526 x 259. The centre column and row are then lines
+    /// of pixels exactly between two azimuthal sectors. Before, each went to one side, a mirror
+    /// left the line in place and so moved it to the other sector: the asymmetry read 4.2164
+    /// one way up and 4.2184 the other on 459 x 305 (the review's CR-010, measured 2026-11-13).
+    /// </summary>
+    [Theory]
+    [InlineData(918, 610)]
+    [InlineData(1052, 518)]
+    [InlineData(918, 520)]
+    public void R131_TheAzimuthalAsymmetryIsTheSame_WhenAnOddRasterIsMirrored(int W, int H)
+    {
+        Func<int, int, double> scene = (x, y) =>
+        {
+            double dx = (x - (W - 1) / 2.0) / W, dy = (y - (H - 1) / 2.0) / W;
+            return 2000 * (1 - 2.4 * (dx * dx + dy * dy)) * (1 + 0.06 * x / W) * (1 + 0.02 * y / H)
+                 * (1 + 0.004 * (((x * 73856093) ^ (y * 19349663)) % 1000) / 1000.0);
+        };
+        var a = StructureAnalyzer.Analyze(TestImages.From(W, H, scene));
+        var r = StructureAnalyzer.Analyze(TestImages.From(W, H, (x, y) => scene(x, H - 1 - y)));
+        var c = StructureAnalyzer.Analyze(TestImages.From(W, H, (x, y) => scene(W - 1 - x, y)));
+
+        Assert.True(a.Width % 2 == 1 || a.Height % 2 == 1, $"the raster {a.Width} x {a.Height} is not odd");
+        string report = $"{a.Width} x {a.Height}: {a.AzimuthalMaxPct:0.000000000} rows {r.AzimuthalMaxPct:0.000000000} cols {c.AzimuthalMaxPct:0.000000000}";
+        Assert.True(Math.Abs(a.AzimuthalMaxPct - r.AzimuthalMaxPct) < 1e-9 && Math.Abs(a.AzimuthalMaxPct - c.AzimuthalMaxPct) < 1e-9, report);
+    }
+
     [Theory]
     [InlineData(1536, 1024)]
     [InlineData(1580, 1060)]

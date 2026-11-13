@@ -182,7 +182,13 @@ issue 5 and negligible at analysis resolution; ADR 0013 has the figures and the 
 `0.15·r_ins` to `r_ins`, 12 angular sectors. Per ring: median of each sector, then
 `(max - min)/median × 100`. Restricted to the **inscribed** radius because only
 there is every azimuth sampled - out in the corners the comparison would be
-invalid. Rings needing at least `nsect - 1` populated sectors.
+invalid. Rings needing at least `nsect - 1` populated sectors. On a raster of odd width or
+height the centre column or row lies exactly on the line between two sectors (`dx` or `dy` is
+0, and the sector lines at the multiples of 90 degrees are the only ones a pixel centre can
+sit on); each such pixel is added whole to both sectors (`Metrics.AxisSectors`), because a
+mirror leaves the line where it is and so would hand it to the other sector (R-131, ADR 0107).
+`Azimuth` itself still puts a zero on the positive side: the ring fit, its other caller, works
+on the symmetrised raster, where the two sides hold the same values.
 
 **`LargeScalePtp(resid, ntiles = 40)`** - block-means the residual into ~40-wide tiles
 over the **whole frame** and returns `p95 - p5`. Why the tiles, why the whole frame and no

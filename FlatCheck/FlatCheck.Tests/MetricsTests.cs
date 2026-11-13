@@ -460,6 +460,61 @@ public class MetricsTests
 
     // ---------------------------------------------------------------- AzimuthalAsymmetry
 
+    /// <summary>
+    /// R-131: every ring's asymmetry is the same for a raster and its two mirrors, on odd
+    /// rasters too (263 x 259; 1376 x 917, the analysis raster of an 8256 x 5504 frame). The
+    /// pixels of the centre column and row sit on the line between two sectors and count in
+    /// both.
+    /// </summary>
+    [Theory]
+    [InlineData(263, 259)]
+    [InlineData(1376, 917)]
+    [InlineData(264, 260)]
+    public void R131_AzimuthalAsymmetry_IsTheSameForARasterAndItsMirrors(int w, int h)
+    {
+        var img = Make(w, h, (x, y) =>
+        {
+            double dx = (x - (w - 1) / 2.0) / w, dy = (y - (h - 1) / 2.0) / w;
+            return 2000 * (1 - 2.4 * (dx * dx + dy * dy)) * (1 + 0.06 * x / w) * (1 + 0.02 * y / h)
+                 * (1 + 0.004 * (((x * 73856093) ^ (y * 19349663)) % 1000) / 1000.0);
+        });
+        double cx = Metrics.Centre(w), cy = Metrics.Centre(h);
+
+        var a = Metrics.AzimuthalAsymmetry(img, cx, cy);
+        var rows = Metrics.AzimuthalAsymmetry(MirrorRows(img), cx, cy);
+        var cols = Metrics.AzimuthalAsymmetry(MirrorCols(img), cx, cy);
+
+        Assert.Equal(10, a.Count);
+        Assert.Equal(a.Count, rows.Count);
+        Assert.Equal(a.Count, cols.Count);
+        for (int i = 0; i < a.Count; i++)
+        {
+            Assert.True(Math.Abs(a[i].ptp - rows[i].ptp) < 1e-9, $"ring {i}, rows: {a[i].ptp:0.000000000} against {rows[i].ptp:0.000000000}");
+            Assert.True(Math.Abs(a[i].ptp - cols[i].ptp) < 1e-9, $"ring {i}, columns: {a[i].ptp:0.000000000} against {cols[i].ptp:0.000000000}");
+        }
+    }
+
+    /// <summary>
+    /// R-131: the two sectors that meet on each half-axis are the ones `Azimuth` gives a hair
+    /// to either side of it, for any sector count that is a multiple of 4.
+    /// </summary>
+    [Theory]
+    [InlineData(12)]
+    [InlineData(8)]
+    [InlineData(4)]
+    public void R131_AxisSectors_AreTheSectorsOnEitherSideOfTheAxis(int sectors)
+    {
+        const double e = 1e-9;
+        foreach (var (dx, dy) in new[] { (5.0, 0.0), (-5.0, 0.0), (0.0, 5.0), (0.0, -5.0) })
+        {
+            var (first, second) = Metrics.AxisSectors(dx, dy, sectors);
+            int s1 = dx == 0 ? Metrics.Azimuth(e, dy, sectors).sector : Metrics.Azimuth(dx, e, sectors).sector;
+            int s2 = dx == 0 ? Metrics.Azimuth(-e, dy, sectors).sector : Metrics.Azimuth(dx, -e, sectors).sector;
+            Assert.Equal(new[] { s1, s2 }.OrderBy(s => s), new[] { first, second }.OrderBy(s => s));
+            Assert.NotEqual(first, second);
+        }
+    }
+
     [Fact]
     public void AzimuthalAsymmetry_OnARadialField_IsEssentiallyZero()
     {

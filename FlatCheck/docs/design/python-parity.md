@@ -142,3 +142,7 @@ of known issue 5, are ADR 0016 and ADR 0013.
   band's edge, and the `--expo` percentages are. A C#-only call, like the rest. From here on the
   parity goldens pin the C# of 2026-11-09, and the confirmation they carry for the structure and
   light figures is that of the symmetry tests (`R131_*`), not of the prototype.
+- On 2026-11-13 a pixel exactly on the line between two sectors of the azimuthal asymmetry
+  began to count in both (R-131, ADR 0107). It happens only on a raster of odd width or
+  height; every parity fixture has an even raster, so no parity golden changed, byte for
+  byte. A C#-only call: the prototype put such a pixel on one side.

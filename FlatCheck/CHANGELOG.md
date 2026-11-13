@@ -232,6 +232,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The azimuthal asymmetry no longer depends on which way up a frame is read when its analysis
+  raster has an odd width or height (R-131, ADR 0107, the review's CR-010). The pixels of the
+  centre column or row lie exactly between two of the twelve sectors and went always to the
+  same side, so a mirrored frame put them in the other sector: 4.2164 against 4.2184 points on
+  a 459 x 305 raster, 3.3613 against 3.3716 on 526 x 259. They now count in both sectors. Even
+  rasters are untouched, among them the D3300's 1504 x 1004: no figure of the validation
+  library and no golden text changed.
 - The vertical decentring of an Adobe profile is no longer 1.5 times too large (R-072, ADR
   0106, the review's CR-009). A profile may say that the lens's axis is not at the centre of
   the frame; the vertical value was read as a fraction of the long side, as Adobe's document
