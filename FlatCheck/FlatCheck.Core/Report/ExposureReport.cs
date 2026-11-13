@@ -259,6 +259,40 @@ namespace FlatCheck
                 ? $"{r.ChannelLabel(i),-2} (CFA[{i / 2},{i % 2}])"
                 : r.ChannelLabel(i);
 
+        /// <summary>
+        /// The refusal of a scale on which nothing can be measured: a white level at or below
+        /// the black level (R-041). It names both values and where each came from, so the
+        /// person sees which of the two to correct.
+        /// </summary>
+        /// <param name="white">The white level that resulted, ADU.</param>
+        /// <param name="whiteFrom">Where it came from: the option, the file or the guess.</param>
+        /// <param name="black">The black level that resulted, ADU.</param>
+        /// <param name="blackFrom">Where it came from: the option, the file, or nowhere (0).</param>
+        /// <returns>One line, in the interface language.</returns>
+        internal static string ImpossibleScale(double white, ScaleOrigin whiteFrom, double black, ScaleOrigin blackFrom)
+        {
+            string w = white.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            string b = black.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            return T($"--expo: the white level ({w}, {ScaleFrom(whiteFrom, "--sat")}) must be above the black level ({b}, {ScaleFrom(blackFrom, "--black")}). "
+                   + "Give --sat and --black with the right values.",
+                     $"--expo: nivelul de alb ({w}, {ScaleFrom(whiteFrom, "--sat")}) trebuie sa fie peste nivelul de negru ({b}, {ScaleFrom(blackFrom, "--black")}). "
+                   + "Da --sat si --black cu valorile corecte.");
+        }
+
+        /// <summary>Where a level came from, in words.</summary>
+        /// <param name="from">The origin.</param>
+        /// <param name="option">The option that gives this level, named when the origin is the
+        /// command line.</param>
+        /// <returns>"from --sat", "from the file", "guessed from the brightest pixel" or "none
+        /// given", in the interface language.</returns>
+        static string ScaleFrom(ScaleOrigin from, string option) => from switch
+        {
+            ScaleOrigin.Option => T($"from {option}", $"din {option}"),
+            ScaleOrigin.File => T("from the file", "din fisier"),
+            ScaleOrigin.Guess => T("guessed from the brightest pixel", "ghicit din cel mai luminos pixel"),
+            _ => T("none given", "nedat"),
+        };
+
         /// <summary>The label of the target band, for the drawing: "tinta 50-65 %".</summary>
         /// <param name="b">The bands the verdict was given on.</param>
         /// <returns>The label, with "sky" in it on the sky scale.</returns>

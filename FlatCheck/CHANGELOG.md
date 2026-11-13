@@ -232,6 +232,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- `--expo` no longer gives a verdict on a white level at or below the black level (R-041, the
+  review's CR-007). Only `--sat` against `--black` was checked; an option against the file's
+  own level was not. `flat.NEF --expo --sat 100` on a raw whose black is 150 said the file
+  "does not look like a raw flat", and `flat.fit --expo --black 8192` on a 12-bit FITS read
+  the centre at 151 % and said TOO HIGH, lower the exposure. Both now stop with one sentence
+  that names the two levels and where each came from, exit 1.
 - The Synthetic tab no longer shows one lens's comparison under another lens's figures (R-135,
   the review's CR-006). After a flat was written and compared, choosing another lens, pressing
   Write and answering No to the overwrite question left the new lens's profile line and depth
