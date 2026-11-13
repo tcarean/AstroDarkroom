@@ -41,6 +41,22 @@ public class RenderPlanTests
         Assert.Equal(-240, plan.TranslateY, 6);
     }
 
+    [Fact]
+    public void R022_AtAWholeScale_TheTranslationPutsTheImageOnWholePhysicalPixels()
+    {
+        var viewport = new Viewport();
+        viewport.SetContentSize(5938, 3888);
+        viewport.SetViewportSize(1920, 947);
+        viewport.ZoomToFit();
+        viewport.ZoomToActualSize();
+
+        RenderPlan plan = RenderPlanner.For(viewport, deviceScale: 1.5);
+
+        Assert.Equal(1470.5, viewport.OffsetY, 9);
+        Assert.Equal(-2009, plan.TranslateX);
+        Assert.Equal(-1471, plan.TranslateY);
+    }
+
     [Theory]
     [InlineData(1.0, 2.0)]
     [InlineData(1.25, 1.6)]

@@ -100,7 +100,11 @@ row and one column of screen pixels, the image pixel drawn with the one `ReportP
 (R-028); a screen pixel whose centre is within 1/32 of a physical pixel of an image pixel's edge
 is left out: the software rasteriser that renders the bitmap gives an edge to the pixel after
 it, the display adapter to the pixel before, which is what `PixelAt` follows and `ViewportTests`
-pins on the figures measured on screen (ADR 0052). `UiTextTests` builds the
+pins on the figures measured on screen (ADR 0052). Its other test shows a checkerboard of one
+pixel a square at `100%` on a surface of odd width and height and compares every screen pixel of
+an area with the pixel stored (R-022, ADR 0053); `MainWindowTests` lays the window's content out
+at a whole size, never shown, and asks that the surface start and end on a whole physical pixel,
+also with the toolbar made half a pixel taller. `UiTextTests` builds the
 main window in Romanian there and reads its toolbar and hint; it and the other Romanian tests run
 alone, in a collection with parallelisation off (`language.md`). `MessageDialog`, `DarkTitleBar`,
 `FileDialogService` and `MemoryHousekeeping.ReleaseImageBuffers` have no test, nor has the main

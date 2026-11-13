@@ -44,6 +44,12 @@ public sealed class Viewport
     /// </summary>
     public const double EdgeReach = 1.0 / 4096;
 
+    /// <summary>
+    /// How near a whole number a scale, or the half of a physical pixel an offset is rounded at,
+    /// has to be to count as it: the arithmetic of a zoom leaves both a last bit away.
+    /// </summary>
+    private const double WholeTolerance = 1e-9;
+
     private double _scale = 1.0;
 
     public double ContentWidth { get; private set; }
@@ -59,6 +65,16 @@ public sealed class Viewport
 
     /// <summary>Content-space coordinate drawn at the top edge of the viewport.</summary>
     public double OffsetY { get; private set; }
+
+    /// <summary>
+    /// The content-space coordinate the image is drawn with at the left edge of the viewport:
+    /// <see cref="OffsetX"/>, but at a whole scale the nearest one that puts the image on whole
+    /// physical pixels (R-022).
+    /// </summary>
+    public double DrawnOffsetX => Drawn(OffsetX, ContentWidth, ViewportWidth);
+
+    /// <summary>The same for the top edge: <see cref="OffsetY"/> as it is drawn.</summary>
+    public double DrawnOffsetY => Drawn(OffsetY, ContentHeight, ViewportHeight);
 
     public double Scale => _scale;
 
@@ -180,7 +196,10 @@ public sealed class Viewport
 
         // The image point at the centre of the physical pixel, not at its corner: that is the
         // point the screen pixel is painted from (ADR 0052).
-        PointD centre = ScreenToContent(screenX + 0.5, screenY + 0.5);
+        // Through the offsets the image is drawn with, which at a whole scale are not the pan's.
+        var centre = new PointD(
+            ((screenX + 0.5) / _scale) + DrawnOffsetX,
+            ((screenY + 0.5) / _scale) + DrawnOffsetY);
 
         // Pixel k holds the points from just past k + EdgeReach up to k + 1 + EdgeReach: rounding
         // up and stepping back one gives an edge, and the little past it, to the pixel before.
@@ -213,7 +232,7 @@ public sealed class Viewport
         }
 
         PointD anchor = ScreenToContent(anchorScreenX, anchorScreenY);
-        _scale = Math.Clamp(scale, MinScale, MaxScale);
+        _scale = Settled(Math.Clamp(scale, MinScale, MaxScale));
         OffsetX = anchor.X - anchorScreenX / _scale;
         OffsetY = anchor.Y - anchorScreenY / _scale;
         ClampOffsets();
@@ -264,7 +283,7 @@ public sealed class Viewport
             return;
         }
 
-        _scale = Math.Clamp(FitScale, MinScale, MaxScale);
+        _scale = Settled(Math.Clamp(FitScale, MinScale, MaxScale));
         ClampOffsets();
     }
 
@@ -326,8 +345,57 @@ public sealed class Viewport
     {
         if (HasContent)
         {
-            _scale = Math.Clamp(_scale, MinScale, MaxScale);
+            _scale = Settled(Math.Clamp(_scale, MinScale, MaxScale));
         }
+    }
+
+    /// <summary>
+    /// Takes a scale a last bit away from a whole number as that number: four wheel notches in
+    /// and four out give 1.0000000000000002, which is meant as 100% and has to be drawn as it
+    /// (R-022).
+    /// </summary>
+    /// <param name="scale">The scale, already between the floor and the ceiling.</param>
+    /// <returns>
+    /// The whole number within <see cref="WholeTolerance"/> of the scale, from 1 up; otherwise
+    /// the scale as given.
+    /// </returns>
+    private static double Settled(double scale)
+    {
+        double whole = Math.Round(scale);
+        return whole >= 1 && Math.Abs(scale - whole) < WholeTolerance ? whole : scale;
+    }
+
+    /// <summary>
+    /// The offset the image is drawn with on one axis: the pan's, but at a whole scale the
+    /// nearest that puts the image on whole physical pixels (R-022).
+    /// </summary>
+    /// <param name="offset">The pan on the axis, in image pixels; negative when the image is centred.</param>
+    /// <param name="content">The image's size on the axis, in image pixels.</param>
+    /// <param name="viewport">The view's size on the axis, in physical pixels; it need not be whole.</param>
+    /// <returns>
+    /// The offset itself at a scale that is not a whole number; at a whole one, the offset whose
+    /// product with the scale is the nearest whole number of physical pixels, a half going up,
+    /// and on an axis the image overflows never one that would leave the view past the image's
+    /// far edge.
+    /// </returns>
+    private double Drawn(double offset, double content, double viewport)
+    {
+        if (!HasContent || _scale < 1 || _scale != Math.Floor(_scale))
+        {
+            return offset;
+        }
+
+        double pixels = Math.Floor((offset * _scale) + 0.5 + WholeTolerance);
+
+        // On a view that does not end on a whole pixel the nearest pixel can be past the end of
+        // the range; the last whole one inside it is drawn instead.
+        double last = (content * _scale) - viewport;
+        if (last > 0)
+        {
+            pixels = Math.Min(pixels, Math.Floor(last + WholeTolerance));
+        }
+
+        return pixels / _scale;
     }
 
     /// <summary>

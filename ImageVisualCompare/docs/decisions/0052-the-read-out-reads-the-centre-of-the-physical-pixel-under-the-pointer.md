@@ -40,7 +40,9 @@ in four at 400 %), and where it falls in the second half it was right.
 fix, names the pixel after an edge that the centre is exactly on. The review of the branch
 pointed at the states where that happens, and they are ordinary ones: `Fit`, `100%`, `+` four
 times on a surface of odd width leaves the horizontal offset ending in .375, and one screen
-column in four has its centre on an edge. Measured on screen the same day, with offsets that put
+column in four has its centre on an edge. (Restated 2026-11-13: since ADR 0053 the image is
+drawn on whole physical pixels at a whole scale, so that state no longer puts a centre on an
+edge; one can still fall on an edge at a scale that is not whole.) Measured on screen the same day, with offsets that put
 the centres exactly on edges (300.375 and 200.625 at 400 %, 300.3125 and 200.4375 at 800 %,
 300.21875 and 200.53125 at 1600 %):
 
@@ -128,7 +130,9 @@ edge from the pixel after it (0 of 148 columns and 0 of 85 rows from the pixel b
   follow it.
 - Under software rendering (Remote Desktop, or a render tier of 0, which the log gives at
   `Debug`) a screen pixel whose centre is exactly on an edge is painted from the pixel after it
-  and read as the one before: one column in four at 400 % in the states above.
+  and read as the one before: one column in four at 400 % in the states above. (Restated
+  2026-11-13: not at a whole scale any more, ADR 0053; at a scale that is not whole, wherever a
+  centre falls on an edge.)
   `CompareViewTests` renders with that rasteriser, so it leaves out a screen pixel whose centre
   is within 1/32 of a physical pixel of an edge; besides the ties, that rasteriser steps along a
   row in fixed point and painted the next pixel on four screen pixels of a 764 pixel row whose
@@ -146,8 +150,9 @@ edge from the pixel after it (0 of 148 columns and 0 of 85 rows from the pixel b
   them. At 100 % with the image a fraction of a pixel off (CR-002, still open) the read-out
   before named the lighter of the two: on the surface above, the vertical offset was 174.815
   and every row read was the one above the row drawn at 81.5 %.
-- At 100 % with the image exactly half a pixel off, on a surface of odd width, every screen
-  pixel is on an edge. All of them read the pixel before, also when the zoom left the offset
+- (Restated 2026-11-13: since ADR 0053 the image is not drawn half a pixel off at 100 %; what
+  follows held between the two decisions.) At 100 % with the image exactly half a pixel off, on
+  a surface of odd width, every screen pixel is on an edge. All of them read the pixel before, also when the zoom left the offset
   an ulp under its half: no row is read twice and none is skipped.
 - A canvas drawn thinner than one screen pixel, an extreme shape at `Fit`, may have no screen
   pixel whose centre is on it, and then reads nothing anywhere.

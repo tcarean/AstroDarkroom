@@ -15,12 +15,17 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
+        <!-- The two bars are laid out rounded to whole physical pixels, and only they: the
+             comparison surface between them then starts and ends on a whole pixel on any display
+             scale, which 100% needs to show one stored pixel per screen pixel (R-022). Rounding
+             is switched off again inside each bar, so nothing in them moves. -->
         <Border Grid.Row="0"
                 Background="{StaticResource ChromeBrush}"
                 BorderBrush="{StaticResource ChromeBorderBrush}"
                 BorderThickness="0,0,0,1"
-                Padding="12,8">
-            <Grid>
+                Padding="12,8"
+                UseLayoutRounding="True">
+            <Grid UseLayoutRounding="False">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
@@ -78,8 +83,9 @@
                 Background="{StaticResource ChromeBrush}"
                 BorderBrush="{StaticResource ChromeBorderBrush}"
                 BorderThickness="0,1,0,0"
-                Padding="12,6">
-            <DockPanel>
+                Padding="12,6"
+                UseLayoutRounding="True">
+            <DockPanel UseLayoutRounding="False">
                 <!-- GPLv3 asks that every copy carry the notice, so it is on screen for the
                      whole run. Docked right so it is never the thing that gets clipped when
                      the window narrows. -->

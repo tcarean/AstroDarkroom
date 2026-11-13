@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -64,6 +65,42 @@ public class MainWindowTests
         });
 
         Assert.Same(surface, focused);
+    }
+
+    // CR-002 of the review of 2026-11-13: the status bar's height is not a whole number of
+    // pixels, so the surface above it ended on a fraction of one; and a toolbar whose height is
+    // not whole, as it is on a display scaled 150 %, would make the surface start on one.
+    [Theory]
+    [InlineData(0)]
+    [InlineData(0.5)]
+    public async Task R022_TheSurfaceStartsAndEndsOnWholePhysicalPixels(double addedToTheToolbar)
+    {
+        double top = 0;
+        double height = 0;
+
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
+            var root = (Grid)window.Content;
+            double scale = VisualTreeHelper.GetDpi(root).DpiScaleY;
+
+            var toolbar = (Border)root.Children[0];
+            Thickness padding = toolbar.Padding;
+            toolbar.Padding = new Thickness(padding.Left, padding.Top, padding.Right, padding.Bottom + (addedToTheToolbar / scale));
+
+            // The window's client area, a whole number of physical pixels as a window's is.
+            root.Measure(new Size(764 / scale, 521 / scale));
+            root.Arrange(new Rect(0, 0, 764 / scale, 521 / scale));
+            root.UpdateLayout();
+
+            top = window.Compare.TranslatePoint(new Point(0, 0), root).Y * scale;
+            height = window.Compare.ActualHeight * scale;
+        });
+
+        Assert.InRange(top, 30, 60);
+        Assert.InRange(height, 400, 480);
+        Assert.Equal(Math.Round(top), top, 9);
+        Assert.Equal(Math.Round(height), height, 9);
     }
 
     [Fact]
