@@ -32,7 +32,7 @@ Copyright (C) 2026 Tudor Carean
     fondul cerului (cadrele bune, primele -> ultimele): 2000 -> 2001 ADU pe verde, peste nivelul de negru (+0 %)
     zgomot de citire   : R 12.0  G1 12.0  G2 12.0  B 12.0 ADU (zgomotul pe care il adauga senzorul la fiecare cadru, masurat din doua bias-uri)
     cadrul   1         : R: cer 399, shot/citire 10.1, zgomot in plus 4.8 %  G1: cer 2002, shot/citire 10.1, zgomot in plus 4.8 %  G2: cer 2001, shot/citire 10.2, zgomot in plus 4.8 %  B: cer 2300, shot/citire 10.0, zgomot in plus 4.9 %
-    cadrul   7         : R: cer 401, shot/citire 10.2, zgomot in plus 4.8 %  G1: cer 2000, shot/citire 10.3, zgomot in plus 4.7 %  G2: cer 2001, shot/citire 10.3, zgomot in plus 4.7 %  B: cer 2301, shot/citire 10.2, zgomot in plus 4.8 %
+    cadrul   6         : R: cer 521, shot/citire 10.3, zgomot in plus 4.8 %  G1: cer 2600, shot/citire 10.1, zgomot in plus 4.8 %  G2: cer 2602, shot/citire 10.2, zgomot in plus 4.8 %  B: cer 2991, shot/citire 10.1, zgomot in plus 4.8 %
     cadrul  13         : R: cer 400, shot/citire 10.0, zgomot in plus 4.9 %  G1: cer 2002, shot/citire 10.2, zgomot in plus 4.8 %  G2: cer 2000, shot/citire 10.1, zgomot in plus 4.9 %  B: cer 2301, shot/citire 10.0, zgomot in plus 4.9 %
     ce inseamna        : shot/citire de la 10 in sus: cerul acopera zgomotul de citire, care adauga sub 5 %; sub 10: canalul sufera de zgomotul de citire, iar expuneri mai lungi ar ajuta
 

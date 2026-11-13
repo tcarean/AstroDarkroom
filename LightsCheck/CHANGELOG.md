@@ -184,6 +184,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   libraw's own exception; the reader now reports it as an unreadable file, `<file>: libraw nu
   poate citi fisierul`, so the console prints the `EROARE:` line and exits 1 (R-007, ADRs 0019
   and 0020).
+- The exposure verdict of the summary could come from a frame too short to stack: the three
+  frames the shot/read ratio is measured on (the first, the middle and the last) are now taken
+  among the frames that are not under half the usual exposure, so a 0.2 s last frame no longer
+  turns the session's verdict to `MARGINAL` (R-024, ADR 0047; CR-001 of the review of
+  2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

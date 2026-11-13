@@ -247,7 +247,10 @@ pixel minus its 5 x 5 median in the same window, which overestimates sigma by a 
 so it is corrected by the ratio of the pair sigma to the same estimator on the bias. The shot
 variance is total minus read; the swamping ratio shot over read variance; the penalty
 `sqrt(1 + 1/ratio) - 1`. On Veil: 9 to 11 in red, 40 to 60 in green and blue, as the hand
-report found.
+report found. `SeriesAnalyzer` takes the sample: the first, the middle and the last of the
+measured frames, those flagged `ShortExposure` left out, since a frame with almost no sky
+reads a ratio near zero that the summary's verdict, the weakest channel of the sample, would
+take for the session's (ADR 0047).
 
 ## The report and the files (`SeriesReport`, `SeriesOutputs`)
 

@@ -444,6 +444,33 @@ public class SeriesAnalyzerTests
         Assert.Equal(1, s.BadCount);
     }
 
+    /// <summary>
+    /// The noise sample is the first, the middle and the last of the frames that are not too
+    /// short to stack: a 0.2 s last frame, whose channels hold the read noise alone, is not in
+    /// it, so no ratio of the sample is the short frame's (R-024, R-085).
+    /// </summary>
+    [Fact]
+    public void R024_AFrameTooShortToStackIsNotInTheNoiseSample()
+    {
+        List<ChannelLevel> dark = [new("R", 'R', 0, 0, 0, 1.5), new("G1", 'G', 1, 0, 0, 1.5), new("G2", 'G', 1, 0, 0, 1.5), new("B", 'B', 0, 0, 0, 1.5)];
+        AnalyzedFrame[] frames =
+        [
+            Frame(1, Measurement(3.0, 1.1, 10000, 120)), Frame(2, Measurement(3.0, 1.1, 10000, 120)),
+            Frame(3, Measurement(3.0, 1.1, 10000, 120)), Frame(4, Measurement(3.0, 1.1, 10000, 120)),
+            Frame(5, Measurement(3.0, 1.1, 100, 1) with { Channels = dark }, exposure: 0.2),
+        ];
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+        double?[] zeros = [0, 0, 0, 0, 0];
+        // A read noise of 1.5 ADU under the 5, 10, 10 and 6 ADU of the lights' channels: ratios of 10.1, 43, 43 and 15.
+        ReadNoise[] readNoise = [new("R", 1.5, 1.5), new("G1", 1.5, 1.5), new("G2", 1.5, 1.5), new("B", 1.5, 1.5)];
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, DitherAnalyzer.Analyze(zeros, zeros, c.PauseSeconds), readNoise, null);
+
+        Assert.Equal(FrameClass.Bad, s.Classes[4]);
+        Assert.Equal([1, 3, 4], s.SwampingFrames);
+        Assert.All(s.Swamping!.SelectMany(x => x), n => Assert.True(n.SwampingRatio >= Th.SwampingRatioOk, $"{n.Name} ratio {n.SwampingRatio}"));
+    }
+
     /// <summary>The usual exposure on a tie is the longer one, exactly half of it is not under it, and no frame with an exposure means no usual one and no flag (R-085).</summary>
     [Fact]
     public void R085_TheUsualExposureTakesTheLongerOnATieAndIsNullWithoutOne()

@@ -305,8 +305,8 @@ internal enum PolarAlignment
 /// size.
 /// </param>
 /// <param name="Swamping">
-/// The swamping figures of the first, the middle and the last measured frames; null without the
-/// read noise.
+/// The swamping figures of the first, the middle and the last of the measured frames that are not
+/// too short to stack (R-085); null without the read noise.
 /// </param>
 /// <param name="SwampingFrames">
 /// The <see cref="FrameInfo.Index"/> of each frame of <paramref name="Swamping"/>, in the same
@@ -822,13 +822,15 @@ internal static class SeriesAnalyzer
             }
         }
 
-        // Swamping on the first, the middle and the last measured frames.
+        // Swamping on the first, the middle and the last measured frames, the ones too short to
+        // stack left out: such a frame has almost no sky, and its ratio would pass for the
+        // session's (R-024, R-085).
         List<IReadOnlyList<ChannelNoise>>? swamping = null;
         List<int> swampingFrames = [];
         if (readNoise is not null)
         {
             swamping = [];
-            List<int> measured = Enumerable.Range(0, n).Where(i => frames[i].Measurement is not null).ToList();
+            List<int> measured = Enumerable.Range(0, n).Where(i => frames[i].Measurement is not null && !shortExposure[i]).ToList();
             foreach (int i in new[] { 0, measured.Count / 2, measured.Count - 1 }.Distinct())
             {
                 if (i >= 0 && i < measured.Count)
