@@ -65,7 +65,8 @@ a seventh analysis tool and never changes a component.
   `docs/validation.md` + `.json` - no measured figures: the launcher computes nothing.
   `docs/design/` - the design notes, read on demand. `docs/plans/` - approved plans; the plan
   of the whole suite is the kit's `docs/plans/2026-10-24-build-the-astro-darkroom-suite.md`.
-  `README.md` - the user documentation, English (ADR 0009).
+  `docs/review/` - the findings of the whole-code review of 2026-11-13, fixed one entry per
+  task (ADR 0025). `README.md` - the user documentation, English (ADR 0009).
 - `kit.json` - what the kit's scripts, skills and agent need to know about AstroDarkroom,
   the suite's publish list included. `docs/skills.md` - AstroDarkroom's additions to the kit's
   skills. `scripts/`, `.claude/skills/`, `.claude/agents/`, `.claude/rules/kit/` and the process
