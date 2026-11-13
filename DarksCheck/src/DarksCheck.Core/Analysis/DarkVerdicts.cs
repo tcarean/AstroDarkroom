@@ -175,8 +175,9 @@ internal enum FramesRating
 /// ADU of the darks.</param>
 /// <param name="AgainstNow">That noise against the noise with the frames stacked, as a fraction:
 /// 0.87 is 87 % more, -0.06 is 6 % less, 0 on the row of the frames stacked.</param>
-/// <param name="StackPenalty">How much noisier the master makes the lights' stack, as a fraction
-/// (0.104 is 10.4 %), without dithering; NaN without measured lights.</param>
+/// <param name="StackPenalty">How much noisier the lights' stack comes out than with an ideal
+/// master, one with no noise of its own, as a fraction (0.104 is 10.4 %), without dithering; NaN
+/// without measured lights.</param>
 /// <param name="Rating">Too few, few or enough, by the rule of the verdict.</param>
 /// <param name="Now">True on the row of the frames stacked.</param>
 internal sealed record FramesPoint(int N, double MasterNoise, double AgainstNow, double StackPenalty, FramesRating Rating, bool Now);
@@ -322,7 +323,8 @@ internal static class DarkVerdictAnalyzer
     /// <summary>
     /// Check 9 (R-024, ADR 0051): whether the darks are enough, the frames needed and the table of
     /// what fewer or more darks would give. With measured lights the frames needed keep the lights'
-    /// stack within <paramref name="limit"/> of what a noiseless master would leave; without them
+    /// stack within <paramref name="limit"/> of what an ideal master, one with no noise of its
+    /// own, would leave; without them
     /// the median master's noise must be under <see cref="Th.MasterNoiseVsStep"/> x the
     /// quantisation step. Either way at least <see cref="Th.MinDarks"/>.
     /// </summary>
@@ -396,8 +398,9 @@ internal static class DarkVerdictAnalyzer
     }
 
     /// <summary>
-    /// How much noisier a master makes the lights' stack: the master's noise does not average out
-    /// over the lights, so it adds in quadrature to their share.
+    /// How much noisier the lights' stack comes out with a master than with an ideal one, with no
+    /// noise of its own: the master's noise does not average out over the lights, so it adds in
+    /// quadrature to their share.
     /// </summary>
     /// <param name="masterNoise">The master's per-pixel noise, in raw ADU of the darks.</param>
     /// <param name="share">The lights' share of the stack's noise, in the same ADU; above 0.</param>

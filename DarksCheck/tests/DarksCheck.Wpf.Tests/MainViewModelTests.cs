@@ -148,7 +148,13 @@ public class MainViewModelTests
         string leaks = vm.Sections[1].Rows[^1].Value;
 
         // 5 %: the verdict, the frames needed, the ratings and the report's text follow; the figures are the same objects
-        choice.SelectedIndex = 0;
+        using (LogCapture capture = LogCapture.Start())
+        {
+            choice.SelectedIndex = 0;
+            // the pick has its line in the log, with what check 9 then reads (R-101)
+            Assert.Contains("check 9 judged again: the stack may be 5 % noisier; enough=Warning framesNeeded=" + vm.Result!.Verdicts.Enough.FramesNeeded.ToString(CultureInfo.InvariantCulture), capture.Messages);
+        }
+
         Assert.Same(first.Darks, vm.Result!.Darks);
         Assert.Same(first.Lights, vm.Result.Lights);
         Assert.Equal(0.05, vm.Result.Verdicts.Enough.Stack!.Limit);

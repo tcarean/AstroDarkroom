@@ -370,9 +370,9 @@ after it, and `EnoughVerdictText` the verdict, with the frames that could be lef
 (`Frames - FramesNeeded`) when there are any and no dark was skipped by the frame cap: `Frames`
 is `DarkSeriesAnalysis.Used`, the frames read, which above the cap are every k-th of the
 folder's, so the table's `(acum)` row and the frames needed speak of the frames read.
-`StackPercent` prints the stack's figure with one decimal, or two when one would print the limit
-for a figure on the other side of it, since the verdict and the ratings are decided on the
-unrounded figure. Check 2 ends with
+`StackPercent` prints the stack's figure with one decimal, or with more, up to four, while the
+text would be that of one of `Th.StackNoiseLimits` for a figure that is not that limit, since the
+verdict, the ratings and the frames of every limit are decided on the unrounded figure. Check 2 ends with
 `index dark-uri` (`index partener` when the darks are the partner's), the darks' tag, and
 `index lights`, the lights' equivalent tag with the parenthesis INDEX's `lights` row also uses,
 both from `LightsLike` (`IndexFigures.TagFor` on `LightsIndex`; null, and no row, when it is

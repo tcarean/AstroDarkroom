@@ -1805,15 +1805,29 @@ internal static class DarkReport
     private static string Percent(double fraction, int decimals) => F(fraction * 100, decimals) + " %";
 
     /// <summary>
-    /// The stack's figure of check 9 as a percent with one decimal, or with two when one decimal
-    /// would print the limit itself for a figure that is not the limit: "9.96 %" under a limit of
-    /// 10 %, so the words "under the limit" never stand beside "10.0 %".
+    /// The stack's figure of check 9 as a percent with one decimal, or with as many more, up to
+    /// four, as it takes not to print one of <see cref="Th.StackNoiseLimits"/> for a figure that is
+    /// not that limit: "9.96 %" and "9.996 %" beside a limit of 10 %, so the words "under the
+    /// limit" do not stand beside "10.0 %", and a row is not shown at "5.0 %" while the frames for
+    /// 5 % are more than its own. The row <c>ajung de la</c> names every limit, so every limit
+    /// is guarded, not the one in force alone.
     /// </summary>
-    /// <param name="penalty">How much noisier the stack is, as a fraction.</param>
-    /// <param name="limit">The limit in force, as a fraction.</param>
+    /// <param name="penalty">How much noisier the stack is, as a fraction; not NaN.</param>
     /// <returns>The formatted percent.</returns>
-    internal static string StackPercent(double penalty, double limit) =>
-        penalty != limit && Percent(penalty, 1) == Percent(limit, 1) ? Percent(penalty, 2) : Percent(penalty, 1);
+    internal static string StackPercent(double penalty)
+    {
+        const int most = 4;
+        for (int decimals = 1; decimals < most; decimals++)
+        {
+            string text = Percent(penalty, decimals);
+            if (!Th.StackNoiseLimits.Any(limit => limit != penalty && Percent(limit, decimals) == text))
+            {
+                return text;
+            }
+        }
+
+        return Percent(penalty, most);
+    }
 
     /// <summary>How a number of darks rates, in the run's language.</summary>
     /// <param name="rating">The rating of the table's row.</param>
@@ -1868,7 +1882,7 @@ internal static class DarkReport
 
             if (st is not null)
             {
-                string stack = StackPercent(p.StackPenalty, st.Limit);
+                string stack = StackPercent(p.StackPenalty);
                 cells.Add(stack);
                 parts.Add(T($"the stack {stack} noisier", $"stack cu {stack} mai zgomotos"));
             }
@@ -1953,9 +1967,10 @@ internal static class DarkReport
     /// master's noise against the file's value step.
     /// </summary>
     /// <param name="e">Check 9's verdict.</param>
-    /// <param name="allRead">True when every dark of the folder was read; false when the frame
-    /// cap left some out, and the frames stacked are then not the folder's, so the verdict does
-    /// not say how many could be left out.</param>
+    /// <param name="allRead">True when the frame cap left no dark out; false when it did, and the
+    /// frames stacked are then every k-th of the folder's, so the verdict does not say how many
+    /// could be left out. A dark that failed to decode does not count here: it has its own error
+    /// line, and the count is true of the frames that decoded.</param>
     /// <returns>The verdict's words, opening with OK, WARNING or UNMEASURED (OK, ATENTIE or
     /// NEMASURAT in Romanian).</returns>
     private static string EnoughVerdictText(EnoughVerdict e, bool allRead)
@@ -1976,7 +1991,7 @@ internal static class DarkReport
         int spare = e.Frames - e.FramesNeeded;
         if (e.Stack is StackLimit st)
         {
-            string noisier = StackPercent(st.Penalty, st.Limit), limit = Percent(st.Limit, 0);
+            string noisier = StackPercent(st.Penalty), limit = Percent(st.Limit, 0);
             return e.Verdict == Verdict.Ok
                 ? T(
                     $"OK: {RunReport.Frames(e.Frames)} are enough: the stack of the {st.Lights} lights comes out {noisier} noisier than with an ideal dark master, under the limit of {limit}{(spare > 0 ? $"; {e.FramesNeeded} would do{(allRead ? $", so up to {spare} can be left out" : "")}" : "")}",

@@ -1540,16 +1540,22 @@ public partial class DarkSeriesTests
     }
 
     [Fact]
-    public void R024_AStackFigureThatRoundsToTheLimitIsPrintedWithTwoDecimals()
+    public void R024_AStackFigureThatRoundsToALimitIsPrintedWithMoreDecimals()
     {
-        // one decimal would print the limit itself beside "under the limit" or "over the limit"
-        Assert.Equal("9.96 %", DarkReport.StackPercent(0.0996, 0.10));
-        Assert.Equal("10.04 %", DarkReport.StackPercent(0.1004, 0.10));
-        Assert.Equal("4.96 %", DarkReport.StackPercent(0.0496, 0.05));
-        // away from the limit, and on the limit itself, one decimal
-        Assert.Equal("10.4 %", DarkReport.StackPercent(0.104, 0.10));
-        Assert.Equal("3.1 %", DarkReport.StackPercent(0.031, 0.10));
-        Assert.Equal("10.0 %", DarkReport.StackPercent(0.10, 0.10));
+        // one decimal would print a limit itself beside "under the limit" or "over the limit"
+        Assert.Equal("9.96 %", DarkReport.StackPercent(0.0996));
+        Assert.Equal("10.04 %", DarkReport.StackPercent(0.1004));
+        Assert.Equal("4.96 %", DarkReport.StackPercent(0.0496));
+        // the other limit is guarded too: the row "ajung de la" names both
+        Assert.Equal("5.03 %", DarkReport.StackPercent(0.0503));
+        // closer still: as many decimals as it takes, to four
+        Assert.Equal("9.996 %", DarkReport.StackPercent(0.09996));
+        Assert.Equal("10.0004 %", DarkReport.StackPercent(0.100004));
+        // away from the limits, and on a limit itself, one decimal
+        Assert.Equal("10.4 %", DarkReport.StackPercent(0.104));
+        Assert.Equal("3.1 %", DarkReport.StackPercent(0.031));
+        Assert.Equal("10.0 %", DarkReport.StackPercent(0.10));
+        Assert.Equal("5.0 %", DarkReport.StackPercent(0.05));
     }
 
     [Fact]

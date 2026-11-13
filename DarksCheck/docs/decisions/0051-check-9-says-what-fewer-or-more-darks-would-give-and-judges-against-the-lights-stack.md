@@ -39,12 +39,12 @@ The owner's answers of 2026-11-12 and 2026-11-13:
 
 1. **A table of frame counts.** The row `cu n cadre` gives, for every 5 frames under the frames
    stacked, for the frames stacked, for two more steps of 5 and for the frames needed when they
-   lie beyond: the master's noise, that noise against now, with lights how much noisier the
-   master makes their stack, and a rating (`prea putine` under `Th.MinDarks`, `putine` under the
+   lie beyond: the master's noise, that noise against the master of now, with lights how much
+   noisier their stack comes out than with an ideal dark master, and a rating (`prea putine` under `Th.MinDarks`, `putine` under the
    frames needed, `ajung`). A row `ajung de la` names the frames needed.
-2. **With lights, enough is judged against their stack.** The darks are enough when the master
-   makes the stack at most `Th.StackNoiseLimit` (10 %) noisier than a noiseless master would
-   leave it, and at least `Th.MinDarks`. The stack is counted without dithering, the worst case:
+2. **With lights, enough is judged against their stack.** The darks are enough when the stack
+   comes out at most `Th.StackNoiseLimit` (10 %) noisier than an ideal dark master, one with no
+   noise of its own, would leave it, and at least `Th.MinDarks`. The stack is counted without dithering, the worst case:
    the master is subtracted from every light alike, so its noise stays whole while the lights'
    own falls with their number; the row's note says that with dithering it is less. Without
    lights the rule of before stands: the master's noise under the value step.

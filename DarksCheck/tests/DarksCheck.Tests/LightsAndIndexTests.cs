@@ -1228,6 +1228,18 @@ public class LightsAndIndexTests
         Assert.Equal("putine", strictFrames.Table!.Rows[3][4]);
         Assert.Equal(0, strictFrames.Choice!.Selected);
 
+        // a figure that one decimal would print as the limit keeps its decimals, in the verdict and in the table
+        DarkSeriesResult near = r with
+        {
+            Verdicts = r.Verdicts with
+            {
+                Enough = e with { Stack = st with { Penalty = 0.0996 }, Points = [.. e.Points.Select(p => p.Now ? p with { StackPenalty = 0.0996 } : p)] },
+            },
+        };
+        IReadOnlyList<ReportRow> nearRows = DarkReport.Sections(near).Single(x => x.Check == ReportCheck.Enough).Rows;
+        Assert.Contains(" iese cu 9.96 % mai zgomotos decat cu un master dark ideal, sub limita de 10 %", nearRows[^1].Value, StringComparison.Ordinal);
+        Assert.Equal("9.96 %", nearRows.Single(row => row.Label == "cu n cadre").Table!.Rows[3][3]);
+
         // the same rows in English
         using (Ui.Use(UiLanguage.English))
         {
@@ -1277,5 +1289,9 @@ public class LightsAndIndexTests
         string verdict = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows[^1].Value;
         Assert.EndsWith($", sub limita de 10 %; ar ajunge {e.FramesNeeded}", verdict, StringComparison.Ordinal);
         Assert.DoesNotContain("poti scoate", verdict, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.EndsWith($", under the limit of 10 %; {e.FramesNeeded} would do", DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows[^1].Value, StringComparison.Ordinal);
+        }
     }
 }
