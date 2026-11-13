@@ -68,9 +68,9 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
   `docs/skills.md` - this project's additions to the kit's skills. `scripts/`,
   `.claude/skills/`, `.claude/agents/`, `.claude/rules/kit/` and the process keys of
   `.claude/settings.json` are the kit's, the same here (ADR 0002; the kit's ADRs 0017, 0018, 0028).
-- `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs. `docs/validation.md`
-  + `.json` - figures on the reference image. `docs/design/` - the explanations, per area, read on
-  demand. `docs/plans/` - approved plans. `README.md` - the user documentation, English (ADR 0050).
+- `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs. `docs/validation.md` + `.json` - figures on
+  the reference image. `docs/design/` - the explanations, per area, read on demand. `docs/plans/` - approved plans.
+  `docs/review/` - the whole-code review's findings (ADR 0092). `README.md` - the user documentation, English (ADR 0050).
 - The process rules are the kit's, in `.claude/rules/kit/process.md`; this project's own are in
   this file. The reasons behind the process are in `GHID.md` in the kit folder
   `ClaudeCodeStarterKit` beside this project in the `photo` repository (for people, not loaded).
