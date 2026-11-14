@@ -747,6 +747,39 @@ public class StructureReportTests
         Assert.Equal("focala nu se stie - nici FOCALLEN in master, si nici raw-ul nu o da; da --focal <mm>", self);
     }
 
+    /// <summary>
+    /// CR-019: with lensfun profiles only and a crop nobody knows, the gap printed "(unknown -
+    /// the profile's calibration sensor is taken)". Nothing is taken there: the lensfun rows
+    /// were skipped. It says why the crop is not known instead: the camera is not in lensfun's
+    /// table, or no file names the camera.
+    /// </summary>
+    [Fact]
+    public void R017_TheCropGapSaysWhyTheCropIsNotKnown_AndTakesNothing()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var r = Result(FitsTestData.Radial(512, 512));
+        LensChoice lensfun = sources.Catalog.Lenses.First(l => l.Source == ProfileSource.Lensfun);
+        string Gap(string? camera)
+        {
+            LoadedFrame master = MasterFrame(), raw = RawFrame();
+            master.Camera = raw.Camera = camera;
+            ShotIdentity shot = LensIdentification.Identify(master, raw, sources, rawName: "x.NEF");
+            VignettingComparison c = VignettingComparer.Analyze(r, shot, sources.Catalog, new[] { lensfun });
+            Assert.Equal(ComparisonGap.NoCrop, c.Gap);
+            return StructureReport.GapText(new StructureOutcome(r, c, shot, null));
+        }
+
+        Assert.Equal("doar profile lensfun, si crop-ul aparatului nu se stie (\"Pentax K-1\" nu e in baza lensfun); da --crop <factor>", Gap("Pentax K-1"));
+        Assert.Equal("doar profile lensfun, si crop-ul aparatului nu se stie (fisierele nu spun ce aparat e); da --crop <factor>", Gap(null));
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("lensfun profiles only, and the camera's crop is not known (\"Pentax K-1\" is not in the lensfun database); give --crop <factor>", Gap("Pentax K-1"));
+            Assert.Equal("lensfun profiles only, and the camera's crop is not known (the files do not say which camera it is); give --crop <factor>", Gap(null));
+            Assert.DoesNotContain("is taken", Gap("Pentax K-1"));
+        }
+    }
+
     [Fact]
     public void EveryGapHasWordsAndNoneOfThemUsesDiacritics()
     {

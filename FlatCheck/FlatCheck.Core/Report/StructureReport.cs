@@ -507,8 +507,13 @@ namespace FlatCheck
                          + (HadRaw(o) ? T("; give --fstop <f>", "; da --fstop <f>")
                                       : T("; give --fstop <f> or --raw <file>", "; da --fstop <f> sau --raw <fisier>"));
                 case ComparisonGap.NoCrop:
-                    return T($"lensfun profiles only, and the camera's crop is not known ({shot?.CropSource}); give --crop <factor>",
-                             $"doar profile lensfun, si crop-ul aparatului nu se stie ({shot?.CropSource}); da --crop <factor>");
+                    // Why the crop is not known, in the words of the --synthetic refusal. Not
+                    // the identity's CropSource: that text says the profile's calibration
+                    // sensor is taken, which holds for an Adobe profile, and here the lensfun
+                    // rows were skipped.
+                    return T("lensfun profiles only, and the camera's crop is not known (", "doar profile lensfun, si crop-ul aparatului nu se stie (")
+                         + SyntheticReport.WhyNoCrop(shot?.Camera, T("the files do not say which camera it is", "fisierele nu spun ce aparat e"))
+                         + T("); give --crop <factor>", "); da --crop <factor>");
                 default:
                     return "";
             }

@@ -237,6 +237,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The reason `the camera's crop is not known` no longer adds `(unknown - the profile's calibration
+  sensor is taken)`, which is false there (the lensfun profiles are left out): it says the camera
+  is not in the lensfun database, or that no file names the camera. The `--synthetic` report's
+  crop row says `unknown` once, not twice (R-017, R-072, the review's CR-019).
 - The reasons `the focal length is not known` and `the aperture is not known` no longer say there
   was no raw when one was read: they name the file that does not give the value and stop
   offering `--raw`; when the raw could not be read they say so, with the error (R-106, R-017,

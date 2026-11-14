@@ -658,7 +658,7 @@ is run on it, so the two sides share the half-pixel artefact and the 5 % box.
 | `NoVignettingProfile` | lenses were found, by the text or by the raw, and none has a vignetting profile for raw files (R-134); `Unprofiled` names them |
 | `NoFocal` | the focal length is unknown: no `FOCALLEN`, no raw, no `--focal` |
 | `NoFStop` | the aperture is unknown: Siril does not write it, and there was no raw and no `--fstop` |
-| `NoCrop` | only lensfun profiles, and the camera's crop factor is unknown |
+| `NoCrop` | only lensfun profiles, and the camera's crop factor is unknown; the report says why with `SyntheticReport.WhyNoCrop` (the camera is not in lensfun's table, or nothing names it), never with `ShotIdentity.CropSource`, whose "the calibration sensor is taken" holds for an Adobe profile only |
 
 The gap order is the order of `VignettingComparer.Analyze`: an empty catalog is reported before
 a missing raw, because it is the deeper cause; an unknown catalog (`null`) is not a cause, so

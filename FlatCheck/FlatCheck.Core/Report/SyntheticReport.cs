@@ -79,11 +79,12 @@ namespace FlatCheck
         /// </summary>
         /// <param name="r">The synthetic flat built.</param>
         /// <param name="req">The request, with the crop's source.</param>
-        /// <returns>The crop and its source, or "necunoscut" with the profile's SFF.</returns>
+        /// <returns>The crop and its source, or "necunoscut" with what stands in for it: the
+        /// profile's calibration sensor, and its SFF.</returns>
         internal static string CropLine(SyntheticFlatResult r, SyntheticRequest req)
             => r.CameraCrop <= 0
-                ? T($"unknown  ({req.CropSource}; SFF {Fmt(r.Profile.Model.CropFactor, "0.###")})",
-                    $"necunoscut  ({req.CropSource}; SFF {Fmt(r.Profile.Model.CropFactor, "0.###")})")
+                ? T($"unknown  (the profile's calibration sensor is taken; SFF {Fmt(r.Profile.Model.CropFactor, "0.###")})",
+                    $"necunoscut  (se ia senzorul de calibrare al profilului; SFF {Fmt(r.Profile.Model.CropFactor, "0.###")})")
                 : $"{Fmt(r.CameraCrop, "0.###")}  ({req.CropSource})";
 
         /// <summary>
@@ -424,10 +425,22 @@ namespace FlatCheck
         internal static string NoCrop(string camera)
             => T("SYNTHETIC FLAT: the lensfun profile needs the camera's crop factor, and ",
                  "FLAT SINTETIC: profilul lensfun are nevoie de crop factor-ul aparatului, si ")
-             + (camera == null
-                 ? T("the reference frame does not say which camera it is", "cadrul de referinta nu spune ce aparat e")
-                 : T($"\"{camera}\" is not in the lensfun database", $"\"{camera}\" nu e in baza lensfun"))
+             + WhyNoCrop(camera, T("the reference frame does not say which camera it is", "cadrul de referinta nu spune ce aparat e"))
              + T($". Give --crop <factor>: {SensorFormats.Describe()}.", $". Da --crop <factor>: {SensorFormats.Describe()}.");
+
+        /// <summary>
+        /// Why the camera's crop is not known, when no option gave it: the camera's name is in
+        /// no entry of lensfun's camera table, or nothing names the camera. One wording for the
+        /// --synthetic refusal and the structure comparison's crop gap.
+        /// </summary>
+        /// <param name="camera">The camera's name; null or empty when nothing says it.</param>
+        /// <param name="unnamed">The words for "nothing names the camera", ready to print: the
+        /// caller knows which frames were asked.</param>
+        /// <returns>The clause, without punctuation around it.</returns>
+        internal static string WhyNoCrop(string camera, string unnamed)
+            => string.IsNullOrEmpty(camera)
+                ? unnamed
+                : T($"\"{camera}\" is not in the lensfun database", $"\"{camera}\" nu e in baza lensfun");
 
         /// <summary>The refusal when the chosen lens's files give no vignetting profile for raw
         /// data: Adobe ships files for a lens measured for distortion or colour only (1275 of the
