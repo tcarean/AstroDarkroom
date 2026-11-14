@@ -74,11 +74,11 @@ both languages (the rule "Two interface languages").
 
 | ID | Sev | Reach | Evidence | Title | Status |
 |----|----:|-------|----------|-------|--------|
-| CR-001 | 1 | slip | confirmed | The window says 1.0.0 in a zip and a `release.json` that say 0.9.0 | open |
-| CR-002 | 2 | rare | confirmed | A half surrogate escape in `release.json` or `settings.json` stops the launcher at start | open |
-| CR-003 | 3 | common | to measure | Each tool of a downloaded zip asks again before its first start, and "Don't run" is shown as a failure | open |
-| CR-004 | 3 | common | owner | One Romanian word spelled two ways: `vinietarea` and `vignetarea` | open |
-| CR-005 | 3 | some setups | to measure | The main window is taller than the screen of a 1080p laptop at 125 % or 150 % | open |
+| CR-001 | 1 | slip | confirmed | The window says 1.0.0 in a zip and a `release.json` that say 0.9.0 | rejected: the owner chose a rule, no code (ADR 0029) |
+| CR-002 | 2 | rare | confirmed | A half surrogate escape in `release.json` or `settings.json` stops the launcher at start | fixed b8f5a26c |
+| CR-003 | 3 | common | to measure | Each tool of a downloaded zip asks again before its first start, and "Don't run" is shown as a failure | fixed f548982b |
+| CR-004 | 3 | common | owner | One Romanian word spelled two ways: `vinietarea` and `vignetarea` | fixed 395a788a |
+| CR-005 | 3 | some setups | to measure | The main window is taller than the screen of a 1080p laptop at 125 % or 150 % | fixed 176c68e7 |
 | CR-006 | 3 | rare | confirmed | The box of a failed start says the failure twice, the second time in English | open |
 | CR-007 | 3 | rare | confirmed | About lists the launcher among the components when `release.json` has no `name` | open |
 | CR-008 | 4 | slip | confirmed | Above `info` the log has no first line: no version, and a fallback is not announced | open |
@@ -96,6 +96,7 @@ both languages (the rule "Two interface languages").
 | CR-020 | 4 | - | confirmed | Core tests that cannot fail or check less than their name | open |
 | CR-021 | 4 | - | confirmed | Log tests that cannot fail or check less than their name | open |
 | CR-022 | 4 | - | confirmed | Notes and comments that describe other code | open |
+| CR-023 | 4 | some setups | confirmed | The guard that keeps "Despre" on its screen is undone by WPF's own placement | open |
 
 After the entries: the cleanup list, which holds what is not a defect.
 
@@ -128,7 +129,10 @@ After the entries: the cleanup list, which holds what is not a defect.
   agree can be tested.
 - Evidence: confirmed (the file's product version and `release.json` were read). Whether the
   0.9.0 zip was given to anyone is not known here; if it was not, the entry is a 4.
-- Status: open
+- Status: rejected: the owner's call of 2026-11-14 (ADR 0029, 91f3beb0), the first of the three
+  ways out and no code: a package published with `-PublishOnly` under another number than
+  `<Version>` is a trial and is never handed out, and `docs/skills.md` says so at `/release` and
+  `/wrap-up`. No release had been cut by then, so the 0.9.0 zip is such a trial.
 
 ## Severity 2: a crash, a hang, a file where it must not be
 
@@ -158,7 +162,10 @@ After the entries: the cleanup list, which holds what is not a defect.
   kind is `String`, `GetString()` throws `System.InvalidOperationException: Cannot read
   incomplete UTF-16 JSON text as string with missing low surrogate`, which is not a
   `JsonException`.
-- Status: open
+- Status: fixed b8f5a26c, and for the same escape in a key, which the review of the branch
+  found still throwing from `TryGetProperty`, in the commit that follows c8d7cd71 on the branch
+  (`ReleaseManifest.Text` and `Find` turn the exception into the `JsonException` both readers
+  catch)
 
 ## Severity 3: a wrong text or a wrong display
 
@@ -183,7 +190,10 @@ After the entries: the cleanup list, which holds what is not a defect.
   Explorer on a machine that has not run the suite, and shows which prompts appear.
 - Evidence: to measure. The lines were read; that the shell prompts for each marked executable
   and a direct start does not is how Windows is documented to behave, not something seen here.
-- Status: open
+- Status: fixed f548982b (the owner's call of 2026-11-14: a direct start, `Launcher.StartInfo`;
+  measured first, ADR 0027: Windows' rule for a marked file started through the shell is "ask",
+  and the same file started directly runs without a question; the prompt itself was not brought
+  up on a screen)
 
 ### CR-004 One Romanian word spelled two ways: `vinietarea` and `vignetarea`
 
@@ -200,7 +210,7 @@ After the entries: the cleanup list, which holds what is not a defect.
   (`docs/requirements.md:19`), so a change there is a requirement edit and a test edit, at the
   owner's word. Nothing pins the word in `Prerequisites`.
 - Evidence: owner. That the two differ was read.
-- Status: open
+- Status: fixed 395a788a (the owner's call of 2026-11-14: `vignetarea`, ADR 0026)
 
 ### CR-005 The main window is taller than the screen of a 1080p laptop at 125 % or 150 %
 
@@ -226,7 +236,9 @@ After the entries: the cleanup list, which holds what is not a defect.
   descriptions and the one-line summary at 125 % and 150 %: ADRs 0017 and 0024 measured them at
   100 % only, and `Display` text formatting snaps the letters' widths to the pixels of each
   scale.
-- Status: open
+- Status: fixed 176c68e7 (measured first, ADR 0028: 848 DIP, 884 with the runtime's warning;
+  R-020. The window was shown at work areas of 825 and 690 DIP by a measuring program, not on a
+  real screen at 125 % or 150 %)
 
 ### CR-006 The box of a failed start says the failure twice, the second time in English
 
@@ -592,6 +604,34 @@ In `tests/AstroDarkroom.Tests/LoggingTests.cs` unless said.
   and CR-017.
 
 - Evidence: confirmed (read).
+- Status: open
+
+### CR-023 The guard that keeps "Despre" on its screen is undone by WPF's own placement
+
+Added on 2026-11-14 by the task that fixed CR-005, which measured it on the way.
+
+- Where: `src/AstroDarkroom.Wpf/AboutWindow.xaml.cs`, the constructor (`Loaded += (_, _) =>
+  FitInto(workArea)`) and `FitInto` (`Top = WindowFit.Top(...)`); R-016 and
+  `docs/design/launcher.md`, which call the move a guard that holds the window's place.
+- What happens: for a window sized to its content WPF raises `Loaded` during the first layout,
+  before `SourceInitialized`, and then sets the window's place again from its own computation.
+  A `Top` set in `Loaded` is replaced. So the guard never acts: "Despre" is where WPF puts a
+  window centred on its owner, which is inside the owner screen's work area, as ADR 0013
+  measured.
+- Case: none seen. The requirement holds today by WPF's placement alone, which is what the
+  guard was added not to rest on (ADR 0013).
+- Should: the move made when the window has its handle (`SourceInitialized`), as the main
+  window's fit is (ADR 0028), where a `Top` that is set holds; or the guard removed and the
+  requirement saying it rests on WPF.
+- Test: none; the window has no tests. Measured as ADR 0028 does.
+- Evidence: confirmed by measurement on 2026-11-14, on .NET 8, on a plain window of the same
+  kind (sized to its content, centred on an owner off the screen): `Loaded` came first, a `Top`
+  set there was back at WPF's value by `SourceInitialized`, and one set in `SourceInitialized`
+  held. "Despre" itself was not shown: WPF would have placed it on the owner's screen. Its
+  Debug line is written on `Loaded` too; whether the place it records is the final one was not
+  settled (it was in the one case measured; the main window's old `Loaded` line in
+  `docs/plans/2026-10-30-add-a-diagnostic-log-with-nlog.md`, `680x743 at (-1300,141)`, reads as
+  a place computed before the size to content).
 - Status: open
 
 ## Cleanup

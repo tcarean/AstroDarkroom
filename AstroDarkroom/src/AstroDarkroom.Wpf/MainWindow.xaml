@@ -22,7 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
      Everything shown comes from AppRow, built from the core; the labels are assigned by the
      code behind, in the current language (Relabel), but for the banner and the copyright, the
      same in both, which the constructor sets once, so no user text is written here; the
-     window's own code starts the process the core planned. -->
+     window's own code starts the process the core planned. As tall as its content, but no
+     taller than its screen's work area, which the code behind sets as its MaxHeight: then the
+     rows scroll, in the one row that stretches, and the two bars stay in view (R-020). -->
 
 <Window x:Class="AstroDarkroom.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -43,7 +45,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   <Grid>
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto" />
-      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
@@ -71,7 +73,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Border>
 
     <!-- ============================================================ the apps -->
-    <ItemsControl x:Name="Rows" Grid.Row="1" Margin="20,16,20,6" Focusable="False">
+    <!-- In a scroll viewer, for a screen lower than the window (R-020). Transparent, not null:
+         the wheel scrolls over the margins and the gaps between the cards too. Not focusable:
+         Tab goes from button to button, and the focused one comes into view. Its
+         own template: the scroll bar is drawn over the rows' right margin instead of beside
+         them, so the cards keep their width, and every description its two lines (ADR 0017),
+         when the bar shows. -->
+    <ScrollViewer x:Name="RowsScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" Focusable="False" Background="Transparent">
+      <ScrollViewer.Template>
+        <ControlTemplate TargetType="ScrollViewer">
+          <Grid Background="{TemplateBinding Background}">
+            <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" CanContentScroll="{TemplateBinding CanContentScroll}" />
+            <ScrollBar x:Name="PART_VerticalScrollBar" HorizontalAlignment="Right" Orientation="Vertical"
+                       Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}"
+                       Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
+          </Grid>
+        </ControlTemplate>
+      </ScrollViewer.Template>
+    <ItemsControl x:Name="Rows" Margin="20,16,20,6" Focusable="False">
       <ItemsControl.ItemTemplate>
         <DataTemplate DataType="{x:Type local:AppRow}">
           <Border Style="{StaticResource Card}" Margin="0,0,0,10" Padding="16,12">
@@ -109,6 +129,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </DataTemplate>
       </ItemsControl.ItemTemplate>
     </ItemsControl>
+    </ScrollViewer>
 
     <!-- ============================================================ the bottom bar -->
     <Border Grid.Row="2" Background="{StaticResource PanelBg}"

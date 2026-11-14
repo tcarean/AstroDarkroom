@@ -30,7 +30,7 @@ public class LauncherTests
         SuiteApp[] expected =
         [
             new("DarksCheck", "DarksCheck", "Verifica dark-urile unei sesiuni sau biblioteci: scurgeri de lumina, deriva termica, zgomot, pixeli fierbinti si morti, si daca au temperatura light-urilor.", "DarksCheck.Wpf.exe", "darkscheck.ico"),
-            new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv: expunerea, simetria, vinietarea fata de profilul obiectivului si daca corecteaza un light real; face un flat din profil.", "FlatCheck.Wpf.exe", "flatcheck.ico"),
+            new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv: expunerea, simetria, vignetarea fata de profilul obiectivului si daca corecteaza un light real; face un flat din profil.", "FlatCheck.Wpf.exe", "flatcheck.ico"),
             new("LightsCheck", "LightsCheck", "Verifica light-urile unei nopti: ce cadre sa lasi afara din stack si de ce, deriva monturii, dithering-ul, alinierea polara, ce sa schimbi data viitoare.", "LightsCheck.Wpf.exe", "lightscheck.ico"),
             new("ImageVisualCompare", "ImageVisualCompare", "Compara doua variante ale unei imagini cu un slider inainte/dupa (doua stretch-uri, cu si fara stele), pixel cu pixel; arata gradientii slabi.", "ImageVisualCompare.Wpf.exe", "ImageVisualCompare.ico"),
             new("WCS_Copy", "CopyWcs", "Copiaza plate solve-ul unui FITS inapoi in varianta lui procesata, care l-a pierdut pe drum, ca adnotarile si cataloagele sa regaseasca cerul.", "CopyWcs.Wpf.exe", "copywcs.ico"),
@@ -102,6 +102,26 @@ public class LauncherTests
         Assert.Equal("Lipseste AstroPhotoAnalyzer.Wpf.exe", ex.Message);
     }
 
+    /// <summary>
+    /// CR-003: a start through the shell makes Windows ask again, for each tool, the question it
+    /// asks of a downloaded program; the launcher's own start has answered it, so the tools are
+    /// started directly, with the plan's file, folder and arguments.
+    /// </summary>
+    [Fact]
+    public void R003_TheStartIsDirect_NotThroughTheShell()
+    {
+        using TempWorkspace ws = new();
+        string exe = ws.Touch("FlatCheck.Wpf.exe");
+        LaunchPlan plan = Launcher.Plan(App("FlatCheck"), new SuiteFolder(ws.Root));
+
+        System.Diagnostics.ProcessStartInfo info = Launcher.StartInfo(plan);
+        Assert.False(info.UseShellExecute);
+        Assert.Equal(exe, info.FileName);
+        Assert.Equal(ws.Root, info.WorkingDirectory);
+        Assert.Equal("--lang=ro", info.Arguments);
+        Assert.Empty(info.Verb);
+    }
+
     [Fact]
     public void R004_ReleaseJson_GivesTheSuiteVersionAndEachComponent()
     {
@@ -144,6 +164,36 @@ public class LauncherTests
         Assert.Null(ReleaseManifest.TryRead(ws.Write("broken.json", "{ not json")));
         Assert.Null(ReleaseManifest.TryRead(ws.Write("array.json", "[1, 2]")));
         Assert.Null(ReleaseManifest.TryRead(ws.Write("no-components.json", """{ "version": "0.1.0" }""")));
+    }
+
+    /// <summary>
+    /// CR-002: JSON accepts a <c>\u</c> escape that is half of a surrogate pair, and the string
+    /// then cannot be decoded; the file gives nothing, with a Warn line, and nothing is thrown,
+    /// whichever key holds the string.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"components":[{"name":"FlatCheck","version":"\ud83d"}]}""")]
+    [InlineData("""{"name":"\ud83d","components":[]}""")]
+    // In a key, where the lookup of another key meets it: of "components", of the suite's
+    // "name", of a component's "name" and of each of a component's two flags. A lookup decodes
+    // a key only when the name looked for is shorter than the key as written and begins as the
+    // key does before its escape, so each row's key is one its lookup has to decode.
+    [InlineData("""{"components":[],"\ud83d-note":1}""")]
+    [InlineData("""{"components":[],"\ud83d":1}""")]
+    [InlineData("""{"components":[{"name":"FlatCheck","\ud83dxyz":"1"}]}""")]
+    [InlineData("""{"components":[{"name":"FlatCheck","version":"1.0.0","commit":"c","unrel\ud83d":true}]}""")]
+    [InlineData("""{"components":[{"name":"FlatCheck","version":"1.0.0","commit":"c","cl\ud83d":true}]}""")]
+    public void R004_AStringThatCannotBeDecoded_LeavesTheVersionsUnknown(string json)
+    {
+        using TempWorkspace ws = new();
+        string path = ws.Write("release.json", json);
+        using LogCapture capture = LogCapture.Start();
+
+        Assert.Null(ReleaseManifest.TryRead(path));
+
+        LogCapture.Captured line = Assert.Single(capture.Events);
+        Assert.Equal((NLog.LogLevel.Warn, path + " could not be read; the versions are unknown"), (line.Level, line.Message));
+        Assert.IsAssignableFrom<System.Text.Json.JsonException>(line.Exception);
     }
 
     [Fact]

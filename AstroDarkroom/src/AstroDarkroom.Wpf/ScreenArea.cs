@@ -24,7 +24,7 @@ using NLog;
 namespace AstroDarkroom.Wpf;
 
 /// <summary>
-/// The work area of the screen a window is on (R-016): WPF knows the primary screen's only
+/// The work area of the screen a window is on (R-016, R-020): WPF knows the primary screen's only
 /// (<see cref="SystemParameters.WorkArea"/>), so Windows is asked for the screen nearest the
 /// window and its area without the taskbar. That comes back in the pixels Windows gives this
 /// process: physical ones for a per-monitor aware process, the system DPI's for a system aware
@@ -59,7 +59,7 @@ internal static partial class ScreenArea
     /// The work area of the screen <paramref name="window"/> is on, in its device-independent
     /// pixels: the screen nearest it, without the taskbar.
     /// </summary>
-    /// <param name="window">A window; one that is shown, so that it has a handle and a screen.</param>
+    /// <param name="window">A window; one that has its handle (from SourceInitialized on), so that it has a screen.</param>
     /// <returns>The area; the primary screen's when the window has no handle or Windows gives no answer.</returns>
     internal static Rect WorkAreaOf(Window window)
     {

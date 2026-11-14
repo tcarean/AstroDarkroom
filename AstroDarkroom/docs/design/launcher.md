@@ -17,7 +17,7 @@ The launcher is two layers: a core that answers three questions about a folder (
 exist, which of them are there, how to start one), reads two files (`release.json`, the
 language setting) and words every answer in one of two languages, and a window that asks those
 questions at start-up and at every change of language and shows the answers. The requirements
-are R-001 to R-010 and R-015 to R-019 in `docs/requirements.md`; the choice of a compiled-in catalogue
+are R-001 to R-010 and R-015 to R-020 in `docs/requirements.md`; the choice of a compiled-in catalogue
 over a scan of the folder is ADR 0002, the split with no test project for the window is ADR
 0001, the two languages and the live switch are ADR 0006. What the launcher writes to its
 diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
@@ -57,14 +57,26 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   shared desktop runtime, `lensfun/`, `LICENSE`) where it expects them, and the arguments as one
   string, `--lang=` plus the code of `Ui.Current`, the one-token form every component's window
   accepts (a string rather than a list keeps the record's value equality). An unavailable app
-  throws `InvalidOperationException` with the reason; the core never calls `Process.Start`.
+  throws `InvalidOperationException` with the reason. `Launcher.StartInfo(plan)` turns the plan
+  into the `ProcessStartInfo` the window starts: the same file, folder and arguments, with
+  `UseShellExecute` false, a direct start (R-003, ADR 0027); the core never calls
+  `Process.Start`.
 - `ReleaseManifest.TryRead(path)` parses the file `scripts/release.ps1` writes
   (`name`, `version`, `date`, `commit`, `components[]` with `name`, `version`, `commit`,
   `unreleased`, `clean`) with `System.Text.Json` and no model binding: every key is read with
   `TryGetProperty` and a type check, a string key that is wrong reads as `""`, a boolean one
   as `false`, a component that is not an object is skipped. Only three things make it return
   null: no file, no JSON object, no `components` array, besides a file it cannot read; each
-  read leaves one line in the diagnostic log, the versions or why there are none.
+  read leaves one line in the diagnostic log, the versions or why there are none. A file it
+  cannot read includes one whose string cannot be decoded: `JsonDocument.Parse` accepts a `\u`
+  escape that is half of a surrogate pair, and then `GetString()` throws
+  `InvalidOperationException` for such a value, and so does `TryGetProperty` for such a key
+  when it has to decode it to compare it, which it does for another name than the key's own too
+  (measured on .NET 8: only when the name looked for is shorter than the key as written and
+  begins as the key does before its escape; a key the lookup never decodes, or one in an object
+  nobody looks into, is not seen, and the file is read as if it were sound). Every lookup goes through
+  `ReleaseManifest.Find`, which with `ReleaseManifest.Text` turns it into the `JsonException` both
+  readers catch, so the language setting gives no language for such a file either.
   `ReleaseInfo.Find(name)` is the lookup the rows use, by `SuiteApp.Folder`.
 - `VersionInfo` reads `<Version>` and `<Copyright>` back from the assembly attributes MSBuild
   writes from `Directory.Build.props`; `Banner` is `"Astro Darkroom " + Value`, and `Copyright`
@@ -99,8 +111,9 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
 - `WindowFit.Top(top, height, areaTop, areaHeight)` keeps a window inside a work area (R-016,
   ADR 0013): its own top when it fits, the area's top or the top that puts its bottom on the
   area's when it runs past one edge, the area's top when it is as tall as the area or taller.
-  Plain numbers in device-independent pixels; the window brings the area. It is a guard: WPF
-  places "Despre" there already (below).
+  Plain numbers in device-independent pixels; the window brings the area. For "Despre" it is a
+  guard: WPF places that window there already (below). The main window needs it: capped to its
+  screen after WPF centred it at its full height, it starts above the area (R-020).
 
 ## The window
 
@@ -151,6 +164,30 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   (`ToolTipService.ShowOnDisabled`), since the reason is the one thing a disabled row must
   tell. The window does not watch the folder: a file that appears or goes away is seen at the
   next relabel, or at the click, where a missing file becomes a message box instead of a crash.
+- `MainWindow` fits its screen (R-020, ADR 0028). Its content is a grid of three rows: the top
+  bar and the bottom bar in rows of their own height, and between them, in the star row, a
+  `ScrollViewer` named `RowsScroll` around the rows' `ItemsControl`; with the window sized to
+  its content the star row is as tall as the rows, so on a screen where everything fits nothing
+  changes. On `SourceInitialized`, when the window has its handle and WPF has sized and placed
+  it, `FitInto` takes the work area of its screen from `ScreenArea.WorkAreaOf`, sets `MaxHeight`
+  to the area's height, which resizes the window at once when its content is taller, and passes
+  `Top` through `WindowFit.Top`: WPF centred the window by the height its content asked for, so
+  a capped one starts above the area. Not on `Loaded`: for a window sized to its content WPF
+  raises `Loaded` before `SourceInitialized`, during the first layout, and then puts its own
+  place back over a `Top` set there (measured on 2026-11-14 on .NET 8). The fit is made once: a
+  window dragged to a lower screen keeps its height. `RowsScroll` has a transparent background,
+  so the wheel scrolls it over the margins and the gaps between the cards, and takes no focus:
+  Tab goes from button to button, and WPF brings the focused button into view (the button, not
+  its whole card; a row whose tool is missing has no button Tab can reach, and the wheel shows
+  it). Its
+  template is its own, written in `MainWindow.xaml`: the content fills the viewer and the scroll
+  bar is drawn over it at the right, inside the rows' 20 px margin (the bar is 17 px wide, the
+  cards end 3 px before it), where the default template puts the bar beside the content and
+  takes its width from the cards; so the description column stays 416 px and every description
+  keeps its two lines when the bar shows (at 399 px the Romanian description of DarksCheck took
+  three at 125 %). The line of the log about the window (`LogShown`) is written on
+  `ContentRendered`, when the scroll range is known, with the capped size, the area and whether
+  the rows scroll.
 - The selector is two `RadioButton`s in the `LanguageChoice` style of `App.xaml` (the buttons'
   look, the checked one on the accent border), `English` and `Romana`, each with its language
   in its `Tag`. Each button's content is a horizontal panel: its flag, an `Image` in the `Flag`
@@ -161,8 +198,11 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   (ADR 0007). The constructor checks the current one, which fires `LanguageChecked` for a
   language equal to `Ui.Default` and so changes nothing; a click sets `Ui.Default`, writes the
   setting and calls `Relabel()`, so every text and every row changes at once.
-- `OpenApp` asks `Launcher.Plan` and calls `Process.Start` with `UseShellExecute`, the plan's
-  working directory and its arguments string, disposing the returned handle at
+- `OpenApp` asks `Launcher.Plan` and calls `Process.Start` with `Launcher.StartInfo(plan)`, a
+  direct start and not one through the shell: the shell applies Windows' check of downloaded
+  files to each executable that carries the mark of the web, so every tool of a downloaded zip
+  would ask again at its first start, after the user had accepted the launcher (ADR 0027). It
+  disposes the returned handle at
   once (the started app is not affected). `Win32Exception` (Windows refused the start) and
   `InvalidOperationException` (the file went away) end in a message box with the row's title.
   The start asked for and its outcome go to the diagnostic log; the started process's id is
@@ -173,7 +213,8 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   `Relabel()` fills from `VcRuntime.Warning`, then a `Hyperlink` in `AccentBr` whose `Run` shows
   `VcRuntime.DownloadUrl` and whose `NavigateUri` the constructor sets to it (the inlines touch
   in the XAML, so no space slips in before the link). `OpenRuntimeLink` starts the URI's
-  `OriginalString` through the shell, as `OpenApp` starts an app, and logs it; a
+  `OriginalString` through the shell, which a web address needs (the tools are started
+  directly), and logs it; a
   `Win32Exception` or `InvalidOperationException` ends in a message box with the address and an
   Error line. `RecheckRuntime`, on each `Activated` while the list holds a file, asks
   `NativeProbe.MissingRuntime()` again: an answer that differs from the list replaces it, goes
