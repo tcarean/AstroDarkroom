@@ -37,7 +37,8 @@ public partial class App : Application
 
     /// <summary>
     /// A pair named on the command line, so the tool can be launched straight from a folder
-    /// without walking through both dialogs. Null unless two existing files were given.
+    /// without walking through both dialogs, held by the files' full paths. Null unless two
+    /// existing files were given.
     /// </summary>
     private static ImagePairSelection? _startupSelection;
 
@@ -89,8 +90,9 @@ public partial class App : Application
     /// <summary>
     /// Sets the interface language from <c>--lang</c> (R-100), keeps a value it did not
     /// understand for the main window to report (R-102), and keeps the first two of the other
-    /// arguments as the pair to open when both are existing files; anything else leaves the
-    /// choice to the dialogs. Each of the three is a line of the diagnostic log (R-121).
+    /// arguments as the pair to open when both are existing files, by their full paths (R-002);
+    /// anything else leaves the choice to the dialogs. Each of the three is a line of the
+    /// diagnostic log (R-121).
     /// Separate from <see cref="OnStartup"/> so a test can run it without an application.
     /// </summary>
     /// <param name="args">The command line's arguments, as the process received them.</param>
@@ -112,8 +114,13 @@ public partial class App : Application
         IReadOnlyList<string> paths = arguments.Paths;
         if (paths.Count >= 2 && File.Exists(paths[0]) && File.Exists(paths[1]))
         {
-            _startupSelection = new ImagePairSelection(paths[0], paths[1]);
-            Log.Info("the command line names the pair A=" + paths[0] + " B=" + paths[1]
+            // Made full here, once: a relative name is read against the current folder, which a
+            // Windows open dialog may move, and the pair is read again at every switch of display
+            // mode; and a bare name has no folder for the dialogs to open in (R-002).
+            string before = Path.GetFullPath(paths[0]);
+            string after = Path.GetFullPath(paths[1]);
+            _startupSelection = new ImagePairSelection(before, after);
+            Log.Info("the command line names the pair A=" + before + " B=" + after
                 + (paths.Count > 2 ? "; " + LogText.Int(paths.Count - 2) + " more argument(s) ignored" : string.Empty));
         }
         else if (paths.Count > 0)

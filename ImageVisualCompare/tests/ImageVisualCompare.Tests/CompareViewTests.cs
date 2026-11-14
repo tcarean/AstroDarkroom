@@ -165,6 +165,72 @@ public class CompareViewTests
     }
 
     /// <summary>
+    /// CR-006 of the review of 2026-11-13. The surface reported a pixel only from a mouse move:
+    /// a zoom under a pointer at rest left the pixel that was under it before, and a pair put in
+    /// place of the one shown was not reported at all when the pixel was the same.
+    /// </summary>
+    [Fact]
+    public async Task R051_TheSurfaceReportsThePixelUnderARestingPointer_WhenTheViewOrThePairChanges()
+    {
+        var reported = new List<ImagePixel?>();
+        ImagePixel? atFit = null;
+        ImagePixel? atActualSize = null;
+        int afterTheZoom = 0;
+        int afterThePair = 0;
+        int afterLeaving = 0;
+        int outside = 0;
+
+        await WpfThread.RunAsync(() =>
+        {
+            ImagePair pair = CodedPair(1854, 800);
+            var view = new CompareView();
+            view.Measure(new Size(SurfaceWidth, SurfaceHeight));
+            view.Arrange(new Rect(0, 0, SurfaceWidth, SurfaceHeight));
+            view.UpdateLayout();
+            view.SetPair(pair);
+            view.CursorPixelChanged += (_, pixel) => reported.Add(pixel);
+
+            // The pointer comes to rest, once.
+            view.ReportPointer(new Point(100, 80));
+            atFit = reported[^1];
+
+            view.ZoomToActualSize();
+            atActualSize = view.Viewport.PixelAt(100, 80);
+            afterTheZoom = reported.Count;
+            Assert.Equal(atActualSize, reported[^1]);
+
+            // The same pixel, of other bitmaps: reported again, for the values to be read again.
+            view.ReplacePair(pair);
+            afterThePair = reported.Count;
+            Assert.Equal(atActualSize, reported[^1]);
+
+            // A position off the surface, as a drag that holds the mouse gives, is no pixel.
+            view.ReportPointer(new Point(-5, 80));
+            outside = reported.Count;
+            Assert.Null(reported[^1]);
+
+            // Once the pointer has left, a zoom has nothing to report.
+            view.ReportPointer(new Point(100, 80));
+            view.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0)
+            {
+                RoutedEvent = System.Windows.Input.Mouse.MouseLeaveEvent,
+            });
+            Assert.Null(reported[^1]);
+            int left = reported.Count;
+            view.ZoomIn();
+            afterLeaving = reported.Count - left;
+        });
+
+        Assert.NotNull(atFit);
+        Assert.NotNull(atActualSize);
+        Assert.NotEqual(atFit, atActualSize);
+        Assert.Equal(2, afterTheZoom);
+        Assert.Equal(3, afterThePair);
+        Assert.Equal(4, outside);
+        Assert.Equal(0, afterLeaving);
+    }
+
+    /// <summary>
     /// CR-002 of the review of 2026-11-13. On a surface of odd width and height the pan after
     /// <c>Fit</c> then <c>100%</c> ends in a half on both axes; drawn there, every screen pixel
     /// would be four image pixels mixed, and on a checkerboard an even grey.

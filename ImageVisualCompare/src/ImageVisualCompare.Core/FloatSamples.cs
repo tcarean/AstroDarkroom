@@ -28,8 +28,8 @@ public static class FloatSamples
     /// <summary>
     /// Converts one row of float samples to sixteen-bit samples laid out as
     /// <see cref="DisplayRenderer"/> takes them: the planes one after another, red, green,
-    /// blue, or the single gray plane, each sample <see cref="FitsScale.SixteenBit"/> of its
-    /// value on the full scale.
+    /// blue, or the single gray plane, each sample <see cref="FitsScale.SixteenBitOfFloat"/> of
+    /// its value on the full scale, in single precision as a float FITS's sample is (R-015).
     /// </summary>
     /// <param name="samples">
     /// The row: one float a pixel when <paramref name="gray"/>, otherwise four, red, green, blue
@@ -50,14 +50,14 @@ public static class FloatSamples
     /// </returns>
     public static long ToSixteenBit(ReadOnlySpan<float> samples, bool gray, Span<ushort> planesRow, double fullScale)
     {
-        double toSixteenBits = FitsScale.ToSixteenBits(fullScale);
+        float toUnit = FitsScale.ToUnitSingle(fullScale);
         long above = 0;
 
         if (gray)
         {
             for (int x = 0; x < samples.Length; x++)
             {
-                planesRow[x] = FitsScale.SixteenBit(samples[x] * toSixteenBits);
+                planesRow[x] = FitsScale.SixteenBitOfFloat(samples[x], toUnit);
                 above += FitsScale.IsAboveThreshold(samples[x]) ? 1 : 0;
             }
 
@@ -70,7 +70,7 @@ public static class FloatSamples
             for (int channel = 0; channel < 3; channel++)
             {
                 float value = samples[(x * 4) + channel];
-                planesRow[(channel * width) + x] = FitsScale.SixteenBit(value * toSixteenBits);
+                planesRow[(channel * width) + x] = FitsScale.SixteenBitOfFloat(value, toUnit);
                 above += FitsScale.IsAboveThreshold(value) ? 1 : 0;
             }
         }
@@ -80,7 +80,8 @@ public static class FloatSamples
 
     /// <summary>
     /// Converts one row of float samples to Bgra32 in the linear display: each channel at the
-    /// level <see cref="FitsScale.Level"/> gives the sample on the full scale, and alpha 255.
+    /// high byte of the sample <see cref="ToSixteenBit"/> gives it on the full scale, and alpha
+    /// 255.
     /// The loaders go through <see cref="ToSixteenBit"/> and a <see cref="DisplayRenderer"/>
     /// of their own; this is the one-call form the R-091 tests pin the levels through, and it
     /// allocates a row and a renderer per call.

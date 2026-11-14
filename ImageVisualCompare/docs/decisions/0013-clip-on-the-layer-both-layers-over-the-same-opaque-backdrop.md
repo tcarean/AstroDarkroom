@@ -1,7 +1,7 @@
 # 0013. The clip goes on the layer, never on the image; both layers draw over the same opaque backdrop: same brush, size and transform
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; that a file's transparency is shown over the backdrop superseded by 0054
 
 ## Context
 

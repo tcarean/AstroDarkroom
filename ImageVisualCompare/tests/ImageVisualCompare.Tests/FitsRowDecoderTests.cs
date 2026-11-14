@@ -195,6 +195,16 @@ public class FitsRowDecoderTests
         Assert.Equal(expected, PlanesRow(FitsFixture.Image(bitPix, 1, 1, 1, [stored]), 0)[0]);
     }
 
+    // CR-007 of the review of 2026-11-13: 0.8359426259994507 is the float 0x3F560056, which
+    // Siril shows and exports as 54784 (level 214); in double precision it was 54783 (213).
+    [Theory]
+    [InlineData(-32)]
+    [InlineData(-64)]
+    public void R015_ReadPlaneRow_BringsAFloatToSixteenBitsInSinglePrecision(int bitPix)
+    {
+        Assert.Equal(54784, PlanesRow(FitsFixture.Image(bitPix, 1, 1, 1, [0.8359426259994507]), 0)[0]);
+    }
+
     [Fact]
     public void R111_ReadFileRow_LaysThePlanesOutOneAfterAnother_RedFirst()
     {

@@ -105,6 +105,27 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the main window, whose image area ended on a fraction of a pixel, and on any window of odd
   width or height. At every whole zoom the image is now drawn on whole screen pixels (R-022,
   ADR 0053).
+- A pair named on the command line by relative paths (`ImageVisualCompare.Wpf.exe a.fit b.fit`)
+  is held by its full paths. `Open…`, `Change A…` and `Change B…` then open in the files' folder,
+  where they opened wherever Windows chose, and a switch of display mode reads the same two
+  files again whatever folder an open dialog was last in (R-002).
+- A float TIFF whose transparency is stored already multiplied into its colours (associated
+  alpha) is shown as stored. Its colours were divided by the alpha first: a pixel stored as 0.2
+  at an alpha of 0.5 showed at level 102, where the same values in a FITS show at 51, and a
+  fully transparent pixel showed black whatever it held (R-091).
+- Transparency is no longer shown: every image is drawn solid, in the colours Windows decodes
+  for its pixels, as a FITS and a float TIFF already were. A half-transparent pixel holding 200 was drawn at 100
+  over the black background while the status bar read 200, so a PNG with transparency could
+  look different from an export without it while the two readouts were equal (R-010, ADR 0054).
+- The pixel readout follows what is under a pointer that does not move: after `H` or `F`, after
+  `Change A…` or `Change B…`, after a zoom or a pan, and while the line is dragged. It was
+  written only when the pointer reached another pixel, so it could go on showing the values of
+  the images that were on screen before (R-051).
+- A float FITS or float TIFF shows the levels of the 16-bit PNG or TIFF Siril exports of it,
+  for every value. The 16-bit step was computed in double precision where Siril computes it in
+  single: 127 of the float values between 0.5 and 1 came out one level lower than in Siril's
+  export, a difference of one level that was in neither file. None of the five real float
+  stacks measured had such a pixel (R-015, ADR 0055).
 
 ### Internal
 
