@@ -300,8 +300,8 @@ internal static class Program
             w.WriteLine("  --threads N   cate cadre se citesc in acelasi timp (implicit jumatate din");
             w.WriteLine("                nucleele procesorului).");
             w.WriteLine("  --max-frames N  cate cadre dintr-un grup se tin in memorie (implicit " + maxFrames + ", 48 MB fiecare la 24 MP);");
-            w.WriteLine("                daca sunt mai multe, se citesc doar unele, la distante egale (de exemplu");
-            w.WriteLine("                unul din doua), iar restul apar in tabel ca sarite; lights-urile se masoara toate.");
+            w.WriteLine("                daca sunt mai multe, se citesc doar unele, la distante egale, iar restul");
+            w.WriteLine("                apar in tabel ca sarite; lights-urile se masoara toate.");
             w.WriteLine("  --inventory   doar ce scrie in fisiere, fara sa citeasca pixelii: ora, expunerea si");
             w.WriteLine("                ISO-ul fiecarui cadru, cat de des s-au facut cadrele si pauzele dintre");
             w.WriteLine("                ele, daca dark-urile se potrivesc cu lights-urile.");
@@ -336,8 +336,8 @@ internal static class Program
             w.WriteLine("  --threads N   how many frames are read at the same time (default: half the");
             w.WriteLine("                cores of the processor).");
             w.WriteLine("  --max-frames N  how many frames of a group are held in memory (default " + maxFrames + ", 48 MB each at 24 MP);");
-            w.WriteLine("                if there are more, only some are read, evenly spaced (one in two, for");
-            w.WriteLine("                example), and the rest are in the table as skipped; every light is measured.");
+            w.WriteLine("                if there are more, only some are read, evenly spaced, and the rest are");
+            w.WriteLine("                in the table as skipped; every light is measured.");
             w.WriteLine("  --inventory   only what the files say, without reading the pixels: the time, the");
             w.WriteLine("                exposure and the ISO of each frame, how often the frames were taken and");
             w.WriteLine("                the gaps between them, whether the darks match the lights.");

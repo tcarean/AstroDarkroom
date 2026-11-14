@@ -163,6 +163,55 @@ public class WindowSmokeTests
         });
     }
 
+    /// <summary>
+    /// Darks at ISO 400 with lights at ISO 800 (CR-006): check 1's match and check 2's verdict are the
+    /// core's alert rows, and the window draws them large and in the theme's red; the other rows stay as they were.
+    /// </summary>
+    [Fact]
+    public async Task R124_DarksThatDoNotHaveTheLightsSettingsStandOutLargeAndRed()
+    {
+        using TestSettings.Own _ = new();
+        using SessionFixture f = new SessionFixture()
+            .WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice })
+            .WithLights(3, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 2, Stars = SyntheticLight.ThreeStars }, iso: 800);
+        await _sta.InvokeAsync(async () =>
+        {
+            MainViewModel vm = new();
+            await vm.OpenAsync(f.Root);
+            Assert.Equal(["potrivire"], vm.SessionRows.Where(r => r.Alert).Select(r => r.Label));
+            RowVm verdict = Assert.Single(vm.LightRows, r => r.Alert);
+            Assert.Equal("verdict", verdict.Label);
+            Assert.StartsWith("nu scadea dark-ul asa cum e", verdict.Rest, StringComparison.Ordinal);
+
+            using BindingErrors errors = new();
+            SummaryView view = new() { DataContext = vm };
+            Render(view, h: 2600, name: "tab-summary-other-settings");
+            // the rows' runs are built at DataBind priority (Emphasis)
+            view.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            Color bad = ((SolidColorBrush)view.FindResource("BadBr")).Color;
+            List<TextBlock> texts = Descendants(view).OfType<TextBlock>().ToList();
+            string match = "dark-urile (120.0 s, ISO 400) nu au setarile lights-urilor (120.0 s, ISO 800)", advice = "nu scadea dark-ul asa cum e";
+            foreach (string start in (string[])[match, advice])
+            {
+                TextBlock alert = texts.First(t => t.Text.StartsWith(start, StringComparison.Ordinal));
+                Assert.Equal(bad, ((SolidColorBrush)alert.Foreground).Color);
+                Assert.Equal(16, alert.FontSize);
+                Assert.Equal(FontWeights.SemiBold, alert.FontWeight);
+            }
+
+            // the verdict word of an alert row sits on the red chip, 14 px
+            TextBlock chip = texts.First(t => t.Text == "ATENTIE" && t.FontSize == 14);
+            Assert.Equal(bad, ((SolidColorBrush)((Border)VisualTreeHelper.GetParent(chip)).Background).Color);
+
+            // an ordinary row keeps the theme's text
+            RowVm plain = vm.SessionRows.First(r => !r.Alert && !r.HasVerdict);
+            TextBlock ordinary = texts.First(t => t.Text == plain.Rest);
+            Assert.NotEqual(bad, ((SolidColorBrush)ordinary.Foreground).Color);
+            Assert.True(ordinary.FontSize < 16, $"font size {ordinary.FontSize}");
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+        });
+    }
+
     [Fact]
     public async Task R071_EveryColumnHeaderOfTheTablesHasAHint()
     {

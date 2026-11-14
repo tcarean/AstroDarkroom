@@ -392,7 +392,7 @@ public partial class LanguageWindowTests
                 Assert.Contains(english ? "the program reads and measures the biases, the darks and the lights, then works out the index and the label." : "programul citeste si masoara bias-urile, dark-urile si lights-urile, apoi socoteste indexul si eticheta.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "How many frames are read at the same time; blank = half the cores of the processor" : "Cate cadre se citesc in acelasi timp; gol = jumatate din nucleele procesorului", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "SIGNAL / ISO STOP" : "SEMNAL / TREAPTA ISO", all, StringComparison.Ordinal);
-                Assert.Contains(english ? "only some are read, evenly spaced (one in two, for example). The lights are all measured." : "se citesc doar unele, la distante egale (de exemplu unul din doua). Lights-urile se masoara toate.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "only some are read, evenly spaced. The lights are all measured." : "se citesc doar unele, la distante egale. Lights-urile se masoara toate.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "Match with lights" : "Potrivire cu lights", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "2 = the signal doubles at every stop (D3300)" : "2 = semnalul se dubleaza la fiecare treapta (D3300)", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "(what the sensor gathers from its own heat)" : "(ce aduna senzorul din caldura lui)", all, StringComparison.Ordinal);

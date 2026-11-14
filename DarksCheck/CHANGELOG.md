@@ -377,6 +377,43 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the noise is measured on such a set too, and is no longer skewed when only part of the pixels
   pass the threshold (R-024, ADR 0054; CR-005 of the code review).
 
+- Lights at another ISO or exposure than the darks no longer read `OK: the dark can be
+  subtracted as it is`: the ratio compares the two with both brought to one setting, so it said
+  1.00 at the same temperature while in the files each hot pixel was, say, twice as high in the
+  light. The verdict now says not to subtract the dark as it is, names both settings and the
+  ratio in the files, and advises new darks at the lights' settings first, then `-opt` or the
+  cosmetic correction; the row `what is left` is worked out on the files; a partner made at
+  other settings gets the same verdict. In the window check 1's `match` and these verdicts are
+  drawn large and in red (R-052, R-063, R-067, R-124, ADR 0055; CR-006 of the code review). With
+  lights at the darks' settings nothing changes.
+
+- Without lights, check 9 no longer asks for a master noise under one step of the file's
+  values: that made the answer turn on the camera, ten darks on one whose values go 2 by 2 and
+  over a hundred on one whose values go 1 by 1, for the same noise. A folder opened without
+  lights is now judged on the minimum of ten darks alone; from ten on the verdict is `OK` and
+  says that whether they are enough shows only against the lights (`--lights`), and the table's
+  rows from ten frames up carry no rating (R-024, ADR 0056; CR-007 of the code review). With
+  lights nothing changes.
+
+- A folder with more darks or biases than the frame cap is read up to the cap: one file in k
+  was read, so 61 darks under the cap of 60 gave a master of 31, and 119 one of 60. Exactly as
+  many files as the cap are now read, from the first to the last at even distances, and a
+  skipped frame says so (R-027, ADR 0057; CR-008 of the code review). Up to the cap nothing
+  changes.
+
+- Check 1's `match` no longer reads `UNMEASURED` when the darks and the lights are known to
+  differ: frames that give the exposure and no ISO (a capture program that writes the gain),
+  darks of 300 s against lights of 120 s, now read `WARNING`, naming the two exposures and
+  saying that the frames do not state the ISO; the same for ISOs that differ without an
+  exposure. `UNMEASURED` stays for a setting not given with nothing known to differ (R-007,
+  ADR 0058; CR-009 of the code review).
+
+- Biases at another ISO than the darks are no longer used: nothing compared the two, so their
+  read noise stood under the darks' noise in check 5, their map was subtracted from the darks'
+  in check 3, and FITS darks took their black from them. Such biases are now left out of every
+  figure, with a `WARNING` line that names the two ISOs, and the run exits 1, as for biases of
+  another size (R-041, ADR 0059; CR-010 of the code review).
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

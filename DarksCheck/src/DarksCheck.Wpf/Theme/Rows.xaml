@@ -72,9 +72,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </StackPanel>
   </DataTemplate>
 
+  <!-- The chip of a row that must stand out (R-124): the verdict word on the theme's red, larger
+       than the ordinary chip. -->
+  <DataTemplate x:Key="AlertChip">
+    <Border Background="{StaticResource BadBr}" CornerRadius="3" Padding="9,3" VerticalAlignment="Center">
+      <TextBlock Text="{Binding}" Foreground="#16161A" FontSize="14" FontWeight="Bold" />
+    </Border>
+  </DataTemplate>
+
   <!-- A report row (R-071): the label, the verdict chip when the row carries a verdict word,
        and the rest of the text: its statements one under the other, or its table when it has
-       one. Shared by every tab that lists rows. -->
+       one. A row the core marks as an alert (R-124: darks that do not have the lights' settings)
+       has its chip and its text large and red. Shared by every tab that lists rows. -->
   <DataTemplate x:Key="ReportRow">
     <Grid Margin="0,0,0,8">
       <Grid.ColumnDefinitions>
@@ -83,7 +92,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ColumnDefinition Width="*" />
       </Grid.ColumnDefinitions>
       <TextBlock Grid.Column="0" Style="{StaticResource Muted}" Text="{Binding Label}" TextWrapping="Wrap" Margin="0,0,12,0" />
-      <ContentControl Grid.Column="1" Content="{Binding Verdict}" ContentTemplate="{StaticResource VerdictChip}"
+      <ContentControl x:Name="Chip" Grid.Column="1" Content="{Binding Verdict}" ContentTemplate="{StaticResource VerdictChip}"
                       Margin="0,0,10,0" VerticalAlignment="Top"
                       Visibility="{Binding HasVerdict, Converter={StaticResource BoolToVis}}" />
       <StackPanel Grid.Column="2">
@@ -91,7 +100,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ItemsControl ItemsSource="{Binding Lines}">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <TextBlock local:Emphasis.Text="{Binding}" local:Emphasis.Bold="{Binding DataContext.Bold, RelativeSource={RelativeSource AncestorType=ItemsControl}}" TextWrapping="Wrap" />
+              <TextBlock local:Emphasis.Text="{Binding}" local:Emphasis.Bold="{Binding DataContext.Bold, RelativeSource={RelativeSource AncestorType=ItemsControl}}" TextWrapping="Wrap">
+                <TextBlock.Style>
+                  <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding DataContext.Alert, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True">
+                        <Setter Property="Foreground" Value="{StaticResource BadBr}" />
+                        <Setter Property="FontSize" Value="16" />
+                        <Setter Property="FontWeight" Value="SemiBold" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </TextBlock.Style>
+              </TextBlock>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
@@ -106,6 +127,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                         Visibility="{Binding HasTable, Converter={StaticResource BoolToVis}}" />
       </StackPanel>
     </Grid>
+    <DataTemplate.Triggers>
+      <DataTrigger Binding="{Binding Alert}" Value="True">
+        <Setter TargetName="Chip" Property="ContentTemplate" Value="{StaticResource AlertChip}" />
+      </DataTrigger>
+    </DataTemplate.Triggers>
   </DataTemplate>
 
   <!-- A settings field of the top bar (R-075): the theme's field, its border red while the
