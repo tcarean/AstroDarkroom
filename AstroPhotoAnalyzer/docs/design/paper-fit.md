@@ -71,8 +71,9 @@ fitted pixels of the plate-solved FITS were still outside by the exact rule with
 since the pixels outside are dark, where one 8-bit step is a unit of L\* and tens of degrees of
 hue and the edge moves by more than the tolerance within a cell. The judge is a step function
 of the 8-bit colour, not monotone in chroma, so a pixel the knees move inward can land on a
-colour the judge calls outside: V-016 reads 0.02 % left after `Lina` against 0.001 % after
-`Exacta`, under the figure's precision.
+colour the judge calls outside: V-016 reads 0.006 % left after `Lina` against 0.001 % after
+`Exacta`, under the figure's precision (0.02 % before ADR 0093, when the pixels the judge
+rejected inside the edge were never moved).
 
 Whether a pixel is outside is not read off that edge (`Decide`, ADR 0093): the judge is asked
 about the pixel as it is, on its own samples (`GamutFitTable.JudgeOfPixel`, which the run sets

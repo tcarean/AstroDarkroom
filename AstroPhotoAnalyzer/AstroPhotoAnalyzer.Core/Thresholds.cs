@@ -852,7 +852,7 @@ namespace AstroPhotoAnalyzer
         /// of the edge, so that a gradient of growing saturation keeps its steps instead of
         /// flattening on the edge. Measured 2026-11-06 with the probe of ADR 0083: touches 4.06 %
         /// of the FITS's pixels (2.26 % of the TIFF's), the chroma given up 0.47 (0.74) at the
-        /// median; V-016 reads 3.81 % and 0.41 on the tonal subsample.
+        /// median; V-016 reads 3.81 % and 0.43 on the tonal subsample.
         /// </summary>
         internal const double GamutFitKneeSoft = 0.9;
 

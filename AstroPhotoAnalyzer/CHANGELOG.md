@@ -233,7 +233,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   saved file still showed them in red while the tab said next to none were left: 0.042 % left
   against 0.0005 % reported on the plate-solved FITS through the baryta profile, 0.056 % against
   0.0001 % through the canvas. The share outside as is now equals the Soft proof tab's, and a
-  pixel that judge keeps is no longer cut.
+  pixel that judge keeps is no longer cut. The validation case V-016 is re-recorded with the
+  judge's figures (1.94 % of the reference FITS outside as is, for 1.91 %).
 
 - The Colours for paper tab counts a grey pixel whose tone the paper cannot make (R-175, ADR
   0094; CR-002): it stays as it is, as before, and is now in the share outside, in the share
