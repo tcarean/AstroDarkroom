@@ -146,6 +146,27 @@ public class LauncherTests
         Assert.Null(ReleaseManifest.TryRead(ws.Write("no-components.json", """{ "version": "0.1.0" }""")));
     }
 
+    /// <summary>
+    /// CR-002: JSON accepts a <c>\u</c> escape that is half of a surrogate pair, and the string
+    /// then cannot be decoded; the file gives nothing, with a Warn line, and nothing is thrown,
+    /// whichever key holds the string.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"components":[{"name":"FlatCheck","version":"\ud83d"}]}""")]
+    [InlineData("""{"name":"\ud83d","components":[]}""")]
+    public void R004_AStringThatCannotBeDecoded_LeavesTheVersionsUnknown(string json)
+    {
+        using TempWorkspace ws = new();
+        string path = ws.Write("release.json", json);
+        using LogCapture capture = LogCapture.Start();
+
+        Assert.Null(ReleaseManifest.TryRead(path));
+
+        LogCapture.Captured line = Assert.Single(capture.Events);
+        Assert.Equal((NLog.LogLevel.Warn, path + " could not be read; the versions are unknown"), (line.Level, line.Message));
+        Assert.IsAssignableFrom<System.Text.Json.JsonException>(line.Exception);
+    }
+
     [Fact]
     public void R004_AMissingOrMistypedKey_ReadsAsEmptyOrFalse()
     {

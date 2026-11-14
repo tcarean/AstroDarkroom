@@ -64,7 +64,11 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   `TryGetProperty` and a type check, a string key that is wrong reads as `""`, a boolean one
   as `false`, a component that is not an object is skipped. Only three things make it return
   null: no file, no JSON object, no `components` array, besides a file it cannot read; each
-  read leaves one line in the diagnostic log, the versions or why there are none.
+  read leaves one line in the diagnostic log, the versions or why there are none. A file it
+  cannot read includes one whose string cannot be decoded: `JsonDocument.Parse` accepts a `\u`
+  escape that is half of a surrogate pair and `GetString()` then throws
+  `InvalidOperationException`, which `ReleaseManifest.Text` turns into the `JsonException` both
+  readers catch, so the language setting gives no language for such a file either.
   `ReleaseInfo.Find(name)` is the lookup the rows use, by `SuiteApp.Folder`.
 - `VersionInfo` reads `<Version>` and `<Copyright>` back from the assembly attributes MSBuild
   writes from `Directory.Build.props`; `Banner` is `"Astro Darkroom " + Value`, and `Copyright`
