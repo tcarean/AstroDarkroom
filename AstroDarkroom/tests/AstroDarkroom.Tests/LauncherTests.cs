@@ -174,6 +174,12 @@ public class LauncherTests
     [Theory]
     [InlineData("""{"components":[{"name":"FlatCheck","version":"\ud83d"}]}""")]
     [InlineData("""{"name":"\ud83d","components":[]}""")]
+    // In a key, where the lookup of another key meets it: of "components", of the suite's
+    // "name", of a component's "name" and of a component's flag.
+    [InlineData("""{"components":[],"\ud83d-note":1}""")]
+    [InlineData("""{"components":[],"\ud83d":1}""")]
+    [InlineData("""{"components":[{"name":"FlatCheck","\ud83dxyz":"1"}]}""")]
+    [InlineData("""{"components":[{"name":"FlatCheck","version":"1.0.0","commit":"c","\ud83d-unreleased":true}]}""")]
     public void R004_AStringThatCannotBeDecoded_LeavesTheVersionsUnknown(string json)
     {
         using TempWorkspace ws = new();

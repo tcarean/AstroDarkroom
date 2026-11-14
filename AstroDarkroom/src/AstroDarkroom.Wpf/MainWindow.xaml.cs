@@ -127,15 +127,16 @@ public partial class MainWindow : Window
     /// handle: WPF has sized it to its content and placed it by then. The height is capped at the
     /// area's, so a window whose content is taller is as tall as the area and its rows scroll
     /// between the two bars; then its top goes through <see cref="WindowFit.Top"/>, since WPF
-    /// placed it by the height its content asked for. A window that fits where it opened is not
-    /// changed.
+    /// placed it by the height its content asked for (that height or the capped one gives the
+    /// same top: a window as tall as the area or taller goes to the area's top). A window that
+    /// fits where it opened is not changed.
     /// </summary>
     /// <param name="workArea">The work area of the window's screen, in device-independent pixels.</param>
     private void FitInto(Rect workArea)
     {
         _workArea = workArea;
         MaxHeight = workArea.Height;
-        Top = WindowFit.Top(Top, Math.Min(ActualHeight, workArea.Height), workArea.Top, workArea.Height);
+        Top = WindowFit.Top(Top, ActualHeight, workArea.Top, workArea.Height);
     }
 
     /// <summary>

@@ -64,11 +64,16 @@ public class WindowFitTests
 
     [Theory]
     [InlineData(96.0, 848.0, 0.0, 1040.0, 96.0)]    // it fits, centred on a 1080p screen at 100 %: unchanged
-    [InlineData(-11.5, 825.0, 0.0, 825.0, 0.0)]     // 125 %: capped to the area's 825, centred at 848 it started above the area
-    [InlineData(-79.0, 690.0, 0.0, 690.0, 0.0)]     // 150 %: capped to 690 (R-020's example)
-    [InlineData(28.5, 825.0, 40.0, 825.0, 40.0)]    // a taskbar at the top: the area starts under it
+    [InlineData(-11.5, 848.0, 0.0, 825.0, 0.0)]     // 125 %: taller than the area's 825, centred it started above the area
+    [InlineData(-11.5, 825.0, 0.0, 825.0, 0.0)]     // the same window once its height is capped: the same top
+    [InlineData(-79.0, 848.0, 0.0, 690.0, 0.0)]     // 150 %: the area's top (R-020's example)
+    [InlineData(-97.0, 884.0, 0.0, 690.0, 0.0)]     // with the warning of R-018, 884 DIP high
+    [InlineData(28.5, 848.0, 40.0, 825.0, 40.0)]    // a taskbar at the top: the area starts under it
     public void R020_TheMainWindowsTopKeepsItInsideTheWorkArea(double top, double height, double areaTop, double areaHeight, double expected)
     {
+        // The numbers the main window hands the core: its measured heights (ADR 0028) and the
+        // tops WPF's centring gives them. They pin the core's answers for R-020; that the window
+        // asks is not tested (ADR 0001).
         Assert.Equal(expected, WindowFit.Top(top, height, areaTop, areaHeight));
     }
 

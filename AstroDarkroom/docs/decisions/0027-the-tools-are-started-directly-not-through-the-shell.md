@@ -62,5 +62,9 @@ it. A tool started by hand from the folder, not from the launcher, is still aske
 was checked on 2026-11-14 by clicking the real window's Open button, off the screen, on a
 stand-in executable marked as downloaded, which ran with `--lang=ro` and `--lang=en` in the
 suite folder. A tool that one day needs elevation could not be started this way (Windows refuses
-a direct start of such a file with error 740); none does. The suite's wiki still says Windows
+a direct start of such a file with error 740); none does. A direct start also lets the tool
+inherit the launcher's inheritable handles, which a shell start did not (.NET 8 asks Windows for
+it at every direct start): a launcher started by a double click has none, but one started with
+its output redirected to a file or a pipe keeps that file or pipe open in every tool it starts,
+until the tool closes. The suite's wiki still says Windows
 may ask "the first time you start them"; it is the owner's to reword.

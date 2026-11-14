@@ -162,7 +162,10 @@ After the entries: the cleanup list, which holds what is not a defect.
   kind is `String`, `GetString()` throws `System.InvalidOperationException: Cannot read
   incomplete UTF-16 JSON text as string with missing low surrogate`, which is not a
   `JsonException`.
-- Status: fixed b8f5a26c (`ReleaseManifest.Text` turns the exception into the `JsonException` both readers catch)
+- Status: fixed b8f5a26c, and for the same escape in a key, which the review of the branch
+  found still throwing from `TryGetProperty`, in the commit that follows c8d7cd71 on the branch
+  (`ReleaseManifest.Text` and `Find` turn the exception into the `JsonException` both readers
+  catch)
 
 ## Severity 3: a wrong text or a wrong display
 
@@ -624,7 +627,11 @@ Added on 2026-11-14 by the task that fixed CR-005, which measured it on the way.
 - Evidence: confirmed by measurement on 2026-11-14, on .NET 8, on a plain window of the same
   kind (sized to its content, centred on an owner off the screen): `Loaded` came first, a `Top`
   set there was back at WPF's value by `SourceInitialized`, and one set in `SourceInitialized`
-  held. "Despre" itself was not shown: WPF would have placed it on the owner's screen.
+  held. "Despre" itself was not shown: WPF would have placed it on the owner's screen. Its
+  Debug line is written on `Loaded` too; whether the place it records is the final one was not
+  settled (it was in the one case measured; the main window's old `Loaded` line in
+  `docs/plans/2026-10-30-add-a-diagnostic-log-with-nlog.md`, `680x743 at (-1300,141)`, reads as
+  a place computed before the size to content).
 - Status: open
 
 ## Cleanup

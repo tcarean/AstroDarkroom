@@ -137,11 +137,13 @@ public class LanguageTests
     /// no language, with a Warn line, and nothing is thrown: the launcher starts in English
     /// instead of stopping at every start.
     /// </summary>
-    [Fact]
-    public void R007_AStringThatCannotBeDecoded_GivesNoLanguage()
+    [Theory]
+    [InlineData("""{"language":"\ud800"}""")]
+    [InlineData("""{"language":"ro","\ud800 broken":1}""")]   // in a key, which the lookup of "language" meets
+    public void R007_AStringThatCannotBeDecoded_GivesNoLanguage(string json)
     {
         using TempWorkspace ws = new();
-        string path = ws.Write("settings.json", """{"language":"\ud800"}""");
+        string path = ws.Write("settings.json", json);
         using LogCapture capture = LogCapture.Start();
 
         Assert.Null(LanguageSetting.TryRead(path));

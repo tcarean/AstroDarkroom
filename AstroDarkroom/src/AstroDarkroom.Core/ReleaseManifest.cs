@@ -80,7 +80,7 @@ public static class ReleaseManifest
             using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
             JsonElement root = doc.RootElement;
             if (root.ValueKind != JsonValueKind.Object
-                || !root.TryGetProperty("components", out JsonElement components)
+                || !Find(root, "components", out JsonElement components)
                 || components.ValueKind != JsonValueKind.Array)
             {
                 Log.Warn(path + " is not a release manifest ("
@@ -121,7 +121,7 @@ public static class ReleaseManifest
     /// </exception>
     internal static string Text(JsonElement element, string name)
     {
-        if (!element.TryGetProperty(name, out JsonElement value) || value.ValueKind != JsonValueKind.String)
+        if (!Find(element, name, out JsonElement value) || value.ValueKind != JsonValueKind.String)
         {
             return "";
         }
@@ -137,11 +137,36 @@ public static class ReleaseManifest
     }
 
     /// <summary>
+    /// Looks a property up, the one lookup of this file. The lookup compares the name with the
+    /// object's keys, and decodes a key that holds an escape to do so: a key with a <c>\u</c>
+    /// escape that is half of a surrogate pair makes it throw, whichever name is looked for.
+    /// </summary>
+    /// <param name="element">The object to look in; a JSON object.</param>
+    /// <param name="name">The property name.</param>
+    /// <param name="value">The property's value when the object has it; undefined otherwise.</param>
+    /// <returns>True when the object has the property.</returns>
+    /// <exception cref="JsonException">
+    /// A key of the object cannot be decoded. Thrown as the exception of a file that is not JSON,
+    /// so both readers give nothing for such a file (R-004, R-007).
+    /// </exception>
+    private static bool Find(JsonElement element, string name, out JsonElement value)
+    {
+        try
+        {
+            return element.TryGetProperty(name, out value);
+        }
+        catch (InvalidOperationException e)
+        {
+            throw new JsonException("a key cannot be decoded, met while looking for \"" + name + "\"", e);
+        }
+    }
+
+    /// <summary>
     /// A boolean property.
     /// </summary>
     /// <param name="element">The object to read from.</param>
     /// <param name="name">The property name.</param>
     /// <returns>Its value, or false when it is missing or not a boolean.</returns>
     private static bool Flag(JsonElement element, string name)
-        => element.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.True;
+        => Find(element, name, out JsonElement value) && value.ValueKind == JsonValueKind.True;
 }

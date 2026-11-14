@@ -75,7 +75,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <!-- ============================================================ the apps -->
     <!-- In a scroll viewer, for a screen lower than the window (R-020). Transparent, not null:
          the wheel scrolls over the margins and the gaps between the cards too. Not focusable:
-         Tab goes from button to button, and the row of the focused one comes into view. Its
+         Tab goes from button to button, and the focused one comes into view. Its
          own template: the scroll bar is drawn over the rows' right margin instead of beside
          them, so the cards keep their width, and every description its two lines (ADR 0017),
          when the bar shows. -->

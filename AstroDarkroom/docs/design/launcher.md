@@ -17,7 +17,7 @@ The launcher is two layers: a core that answers three questions about a folder (
 exist, which of them are there, how to start one), reads two files (`release.json`, the
 language setting) and words every answer in one of two languages, and a window that asks those
 questions at start-up and at every change of language and shows the answers. The requirements
-are R-001 to R-010 and R-015 to R-019 in `docs/requirements.md`; the choice of a compiled-in catalogue
+are R-001 to R-010 and R-015 to R-020 in `docs/requirements.md`; the choice of a compiled-in catalogue
 over a scan of the folder is ADR 0002, the split with no test project for the window is ADR
 0001, the two languages and the live switch are ADR 0006. What the launcher writes to its
 diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
@@ -69,8 +69,10 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   null: no file, no JSON object, no `components` array, besides a file it cannot read; each
   read leaves one line in the diagnostic log, the versions or why there are none. A file it
   cannot read includes one whose string cannot be decoded: `JsonDocument.Parse` accepts a `\u`
-  escape that is half of a surrogate pair and `GetString()` then throws
-  `InvalidOperationException`, which `ReleaseManifest.Text` turns into the `JsonException` both
+  escape that is half of a surrogate pair, and then `GetString()` throws
+  `InvalidOperationException` for such a value, and so does `TryGetProperty` for such a key,
+  whichever name it looks for, since it decodes the keys it compares. Every lookup goes through
+  `ReleaseManifest.Find`, which with `ReleaseManifest.Text` turns it into the `JsonException` both
   readers catch, so the language setting gives no language for such a file either.
   `ReleaseInfo.Find(name)` is the lookup the rows use, by `SuiteApp.Folder`.
 - `VersionInfo` reads `<Version>` and `<Copyright>` back from the assembly attributes MSBuild
@@ -172,7 +174,9 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   place back over a `Top` set there (measured on 2026-11-14 on .NET 8). The fit is made once: a
   window dragged to a lower screen keeps its height. `RowsScroll` has a transparent background,
   so the wheel scrolls it over the margins and the gaps between the cards, and takes no focus:
-  Tab goes from button to button, and WPF brings the focused button's row into view. Its
+  Tab goes from button to button, and WPF brings the focused button into view (the button, not
+  its whole card; a row whose tool is missing has no button Tab can reach, and the wheel shows
+  it). Its
   template is its own, written in `MainWindow.xaml`: the content fills the viewer and the scroll
   bar is drawn over it at the right, inside the rows' 20 px margin (the bar is 17 px wide, the
   cards end 3 px before it), where the default template puts the bar beside the content and
