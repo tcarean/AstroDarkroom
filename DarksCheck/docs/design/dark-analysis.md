@@ -106,6 +106,14 @@ plane. `DarkMinusBias` subtracts the two binned mean maps: the dark current per 
 in regions; its median on the Smida session is 0.14 ADU, below one quantisation step, which
 is why a dark's value lies in its hot pixels (the report of 2026-10-11).
 
+Biases are used only when they can stand under the darks. `DarkSeriesRun.Run` leaves them out,
+with the reason in `DarkSeriesResult.BiasError` and a null `Biases`, in three cases: none
+decodes (`BiasAnalyzer.Analyze` throws), their size is not the darks' (`DarkMinusBias` throws,
+after both groups are measured), or their ISO is not the darks' (ADR 0059). The last is decided
+before a bias is read, on the inventory's dominant settings (`inv.Match.Biases` and
+`inv.Match.Darks`, the partner's darks in a lights-only run), both ISOs given: the biases'
+stack is then never loaded, so it gives the darks no black either.
+
 ## The warming and the end of the series
 
 `DarkSeriesAnalyzer.WarmingOf` reads check 4 from every frame's amplitude ratio (the median,

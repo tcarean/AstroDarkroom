@@ -408,6 +408,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   exposure. `UNMEASURED` stays for a setting not given with nothing known to differ (R-007,
   ADR 0058; CR-009 of the code review).
 
+- Biases at another ISO than the darks are no longer used: nothing compared the two, so their
+  read noise stood under the darks' noise in check 5, their map was subtracted from the darks'
+  in check 3, and FITS darks took their black from them. Such biases are now left out of every
+  figure, with a `WARNING` line that names the two ISOs, and the run exits 1, as for biases of
+  another size (R-041, ADR 0059; CR-010 of the code review).
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

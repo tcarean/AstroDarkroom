@@ -198,16 +198,31 @@ internal static class DarkSeriesRun
         double? biasBlack = null;
         if (inv.Session.Biases.Count > 0)
         {
-            try
+            // Biases at another ISO than the darks have another read noise and another readout
+            // pattern: they are left out before a pixel of theirs is read, as biases of another
+            // size are (R-041, ADR 0059), so a FITS dark does not take its black from them either.
+            // The two ISOs are the inventory's, the dominant one of each group; biases or darks
+            // that do not give theirs cannot be told apart and are used.
+            if (inv.Match.Biases?.Iso is double biasIso && inv.Match.Darks?.Iso is double darkIso && biasIso != darkIso)
             {
-                FrameStack bstack = FrameStack.Load(inv.Session.Biases, threads, options.MaxFrames, Phase(T("Reading the biases", "Se citesc bias-urile"), progress), normalisation: nz, cancel: cancel);
-                biases = BiasAnalyzer.Analyze(bstack, threads);
-                biasBlack = bstack.BlackEstimated ? bstack.Black : null;
+                biasError = T(
+                    $"the biases are at ISO {RunReport.F(biasIso, 0)}, the darks at ISO {RunReport.F(darkIso, 0)}",
+                    $"bias-urile sunt la ISO {RunReport.F(biasIso, 0)}, dark-urile la ISO {RunReport.F(darkIso, 0)}");
+                Log.Warn("the biases are left out of the run: ISO " + LogText.Num(biasIso) + ", the darks ISO " + LogText.Num(darkIso) + "; the report says so");
             }
-            catch (InvalidOperationException e)
+            else
             {
-                Log.Warn(e, "the biases could not be used; the report says why");
-                biasError = e.Message;
+                try
+                {
+                    FrameStack bstack = FrameStack.Load(inv.Session.Biases, threads, options.MaxFrames, Phase(T("Reading the biases", "Se citesc bias-urile"), progress), normalisation: nz, cancel: cancel);
+                    biases = BiasAnalyzer.Analyze(bstack, threads);
+                    biasBlack = bstack.BlackEstimated ? bstack.Black : null;
+                }
+                catch (InvalidOperationException e)
+                {
+                    Log.Warn(e, "the biases could not be used; the report says why");
+                    biasError = e.Message;
+                }
             }
 
             // The biases' stack (16-bit mosaics, 48 MB each at 24 MP) is garbage now; collected

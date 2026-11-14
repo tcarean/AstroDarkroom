@@ -1577,6 +1577,49 @@ public partial class DarkSeriesTests
     }
 
     /// <summary>
+    /// CR-010: nothing compared the biases' ISO with the darks', so biases at ISO 400 gave the read noise, the
+    /// bias map and, for FITS darks, the black of darks at ISO 1600. They are left out, as biases of another size.
+    /// </summary>
+    [Fact]
+    public void R041_BiasesAtAnotherIsoThanTheDarksAreReportedAndLeftOut()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, Plain, iso: 1600).WithBiases(3);
+        DarkSeriesResult r = Run(s);
+        Assert.Null(r.Biases);
+        Assert.Null(r.DarkCurrent);
+        Assert.Equal("bias-urile sunt la ISO 400, dark-urile la ISO 1600", r.BiasError);
+        Assert.True(r.HasErrors);
+        Assert.False(r.Verdicts.Leak.FromDarkMinusBias);
+        Assert.Null(r.Verdicts.Noise.ReadNoise);
+        using StringWriter sw = new();
+        DarkReport.Write(r, sw);
+        Assert.Contains("    ATENTIE            : bias-urile nu s-au putut folosi: bias-urile sunt la ISO 400, dark-urile la ISO 1600", sw.ToString(), StringComparison.Ordinal);
+        // the darks' black is their own, not the one of the biases left out
+        Assert.Contains("negrul luat din valoarea medie a cadrului 1", sw.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("negrul luat din bias-uri", sw.ToString(), StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("the biases are at ISO 400, the darks at ISO 1600", Run(s).BiasError);
+        }
+
+        // biases that do not give their ISO cannot be told apart and are used, as before
+        using SessionFixture silent = new SessionFixture().WithDarkSeries(4, Plain, iso: 1600);
+        Directory.CreateDirectory(silent.BiasesDir);
+        for (int i = 0; i < 3; i++)
+        {
+            File.WriteAllBytes(Path.Combine(silent.BiasesDir, $"bias_{i + 1:0000}.fit"), new SyntheticDark { Seed = 500 + i, Noise = 2 }.Build(SessionFixture.FirstStart.AddSeconds(-3600 + i), 0.0002, null));
+        }
+
+        DarkSeriesResult rs = Run(silent);
+        Assert.Null(rs.BiasError);
+        Assert.Equal(3, rs.Biases!.Used);
+
+        // and biases at the darks' ISO, as ever
+        using SessionFixture same = new SessionFixture().WithDarkSeries(4, Plain, biases: 3, iso: 1600);
+        Assert.Null(Run(same).BiasError);
+    }
+
+    /// <summary>
     /// CR-008: above the cap one file in k was read, k = ceil(count / cap), so 61 darks under the cap of 60 gave
     /// 31 and five under a cap of 2 gave files 1 and 4. Exactly the cap is read, from the first file to the last
     /// at even distances (ADR 0057).
