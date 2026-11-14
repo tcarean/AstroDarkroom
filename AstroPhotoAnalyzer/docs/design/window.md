@@ -19,7 +19,7 @@ with its "Scoate" button (R-155: `ParameterFields.ProfileText`, red through a st
 `SaveMessage` / `SaveError`, as the Editare Curbe tab has for its own save); left column `ParameterFields` card with
 "Analizeaza" (the WCS field, R-027, under the target background); right: a placeholder when nothing is loaded, an error card when the run
 failed, otherwise a `TabControl` with Raport, Tonuri, Export, Rezolutie, Culoare,
-Editare Curbe, Culori pentru hartie, Soft proof (the Preview tab was removed on 2026-10-30, ADR 0067);
+Editare Curbe, Culori pentru hartie, Soft proof, Crop with aspect ratio (the Preview tab was removed on 2026-10-30, ADR 0067);
 `BusyOverlay` over the right side while running. "Fundal" names one thing, the
 sky; Tonuri measures its *level* (`BackgroundMedian`, "Nivelul fundalului") and Culoare
 its *colour* (`BackgroundResult.Levels`, "Culoarea fundalului"), and every label, row
@@ -176,8 +176,8 @@ window show the save dialog with the core's proposed name, then `Save(path)` cal
 `CurveExport.Save` and shows `SaveMessage` or `SaveError`.
 
 **The Soft proof tab and its window** (`ViewModels/SoftProofTab.cs`, `Views/SoftProofView.xaml`,
-`Views/SoftProofControls.xaml`, `Views/SoftProofWindow.xaml`; R-163, ADR 0066): the last tab,
-filled like the Editare Curbe tab by a run after the analysis, `ProofRun`; the tab, the window over
+`Views/SoftProofControls.xaml`, `Views/SoftProofWindow.xaml`; R-163, ADR 0066): the last but
+one tab, filled like the Editare Curbe tab by a run after the analysis, `ProofRun`; the tab, the window over
 the same view-model, their keys and the comparison with another image's proof (R-166, ADR 0091)
 are described in `soft-proof.md`.
 
@@ -188,6 +188,13 @@ the save through `SaveRequested`) plus the box of the red layers and, in place o
 image, the comparison with the original across a line (`Presentation/BeforeAfterViewer.xaml`,
 `Presentation/SplitDivider.cs`); described in `paper-fit.md`. The arrow
 keys of `MainWindow.GalleryKeys` serve whichever of the two gallery tabs is selected.
+
+**The Crop with aspect ratio tab** (`ViewModels/CropTab.cs`, `Views/CropView.xaml`,
+`Presentation/CropViewer.cs`; R-183, ADR 0093): the last tab, filled by `Populate` itself, with
+no run after the analysis: the frame's two sizes, the image on the whole area with the crop
+rectangle the core makes of them, dragged with the mouse, and the save of what it keeps as a
+file of the input's kind; described in `crop.md`. Its two fields are kept from one image to
+the next, `Clear` leaving them: the frame does not change with the image.
 
 **The curve window** (`Views/CurveWindow.xaml`, `CurveWindowViewModel`; R-147): the table of
 control points (label, input, output at three decimals, the class's L\* before and after) and

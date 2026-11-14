@@ -1,0 +1,112 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- CropView - the Crop with aspect ratio tab (R-183): the two sizes of the frame, the image on
+     the whole remaining area with the crop rectangle over it, what the rectangle keeps and
+     cuts, what the save writes, and the save button. No figure is computed here: the rectangle
+     and every sentence are the core's. -->
+
+<UserControl x:Class="AstroPhotoAnalyzer.Wpf.CropView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:AstroPhotoAnalyzer.Wpf">
+  <Grid Margin="20,12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+      <TextBlock Text="{local:T En='Frame width (cm)', Ro='Latimea ramei (cm)'}" VerticalAlignment="Center" Margin="0,0,8,0" />
+      <TextBox Style="{StaticResource Field}" Width="80" Text="{Binding FrameWidth, UpdateSourceTrigger=PropertyChanged}"
+               ToolTip="{local:T En='The width of the frame, in cm, written with a point: 70 or 54.62', Ro='Latimea ramei, in cm, scrisa cu punct: 70 sau 54.62'}" />
+      <TextBlock Text="{local:T En='Frame height (cm)', Ro='Inaltimea ramei (cm)'}" VerticalAlignment="Center" Margin="20,0,8,0" />
+      <TextBox Style="{StaticResource Field}" Width="80" Text="{Binding FrameHeight, UpdateSourceTrigger=PropertyChanged}"
+               ToolTip="{local:T En='The height of the frame, in cm, written with a point: 70 or 54.62', Ro='Inaltimea ramei, in cm, scrisa cu punct: 70 sau 54.62'}" />
+      <Button Content="{local:T En='Largest', Ro='Cel mai mare'}" Command="{Binding Largest}" Padding="12,3" Margin="20,0,0,0"
+              ToolTip="{local:T En='Puts the rectangle back at the largest one that fits the image, in the middle', Ro='Readuce dreptunghiul la cel mai mare care incape in poza, pe mijloc'}" />
+      <TextBlock Text="{Binding Message}" VerticalAlignment="Center" Margin="20,0,0,0" TextWrapping="Wrap" MaxWidth="800">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsProblem}" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource BadBr}" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
+    </StackPanel>
+
+    <!-- The image fitted to the whole area, no zoom (R-183); the viewer draws the rectangle the
+         view-model holds and tells the drags to the code-behind, which hands them on. -->
+    <Border Grid.Row="1" Background="{StaticResource PanelBg2}" CornerRadius="4" SizeChanged="AreaSizeChanged">
+      <local:CropViewer x:Name="Viewer" Source="{Binding Image}" ImageWidth="{Binding ImageWidth}" ImageHeight="{Binding ImageHeight}"
+                        HasCrop="{Binding HasCrop}" CropX="{Binding CropX}" CropY="{Binding CropY}"
+                        CropWidth="{Binding CropWidth}" CropHeight="{Binding CropHeight}" />
+    </Border>
+
+    <Grid Grid.Row="2" Margin="0,8,0,0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <StackPanel Grid.Column="0">
+        <!-- Two lines whose place is kept without a rectangle (Hidden, not Collapsed), so the
+             image does not change size when the sizes are typed. -->
+        <StackPanel>
+          <StackPanel.Style>
+            <Style TargetType="StackPanel">
+              <Setter Property="Visibility" Value="Hidden" />
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding HasCrop}" Value="True">
+                  <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </StackPanel.Style>
+          <TextBlock Text="{Binding KeptText}" TextWrapping="Wrap" FontSize="12" Margin="0,1" />
+          <TextBlock Text="{Binding FrameText}" TextWrapping="Wrap" FontSize="12" Margin="0,1" />
+        </StackPanel>
+        <TextBlock Text="{Binding OutputText}" TextWrapping="Wrap" FontSize="12" Margin="0,1">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding OutputIsProblem}" Value="True">
+                  <Setter Property="Foreground" Value="{StaticResource BadBr}" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+        <TextBlock Style="{StaticResource Faint}" Text="{Binding Help}" TextWrapping="Wrap" Margin="0,6,0,0" />
+        <!-- A fixed place, two lines high, for the save message: its appearance does not move
+             the image. -->
+        <Grid Height="34" Margin="0,4,0,0">
+          <TextBlock Text="{Binding SaveMessage}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SaveMessage}" />
+          <TextBlock Text="{Binding SaveError}" Foreground="{StaticResource BadBr}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
+                     ToolTip="{Binding SaveError}" />
+        </Grid>
+      </StackPanel>
+      <Button Grid.Column="1" Content="{local:T En='Save as...', Ro='Salveaza ca...'}" Command="{Binding SaveAs}" Padding="12,3" Margin="20,0,0,0" VerticalAlignment="Top"
+              ToolTip="{local:T En='A new file with the part inside the rectangle, of the same kind as the input; the input image is not changed', Ro='Un fisier nou cu partea din dreptunghi, de acelasi fel ca intrarea; poza de intrare nu se modifica'}" />
+    </Grid>
+  </Grid>
+</UserControl>

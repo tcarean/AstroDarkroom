@@ -10,19 +10,22 @@
 > `AstroPhotoAnalyzer.Core/AstroPhotoAnalyzer.Core.csproj`,
 > `AstroPhotoAnalyzer.Core/ThirdParty.cs`,
 > `AstroPhotoAnalyzer.Core/Input/ImageSharpReader.cs`,
-> `AstroPhotoAnalyzer.Core/Analysis/JpegAnalyzer.cs` and
+> `AstroPhotoAnalyzer.Core/Analysis/JpegAnalyzer.cs` (`Input/PngWriter.cs`, the third place the
+> core touches the package, is described in `crop.md`) and
 > `AstroPhotoAnalyzer.Tests/ThirdPartyTests.cs`. A change to the code this describes means
 > this note is updated in the same task, or deleted with the decision it explains.
 
 ## Dependencies
 
 `SixLabors.ImageSharp` **3.1.11**, pinned: decodes TIFF/PNG/JPEG, encodes JPEG and TIFF
-for the size and error measurements. Licence reasoning in `THIRD-PARTY-NOTICES.md`;
+for the size and error measurements, and encodes the PNG of a crop (R-181, ADR 0093). Licence reasoning in `THIRD-PARTY-NOTICES.md`;
 displayed in "Despre" through `ThirdParty.Components`; bound to the csproj by
 `ThirdPartyTests`. Measured behaviours the code depends on: the TIFF encoder writes 8
 bits per sample for `Rgb48` even when asked for 48; `Image.Identify` does not read a
 PNG's `iCCP` (`Image.Load` does); the TIFF decoder puts the ICC profile on
-`Frames[0].Metadata`; the PNG encoder does not write `iCCP`; LZW needs the horizontal
+`Frames[0].Metadata`; the PNG encoder writes 16 bits per sample exactly and the `iCCP` chunk
+from the image's profile (measured 2026-11-14, ADR 0093; the note of phase 1 said it did not
+write `iCCP`); LZW needs the horizontal
 predictor to be competitive. `Wacton.Unicolour` **8.0.0** (MIT, pure
 managed, no dependencies): evaluates the tables of an ICC printer profile for
 `IccPaperBlack` (ADR 0030). Measured behaviours the code depends on: a file that is not a
@@ -73,7 +76,8 @@ behaviour we want. See the notices file for the licence reasoning.
 Four things about 3.1.11 were measured rather than assumed, and the code depends on
 them: its TIFF encoder cannot write 16-bit RGB, `Image.Identify` does not see a PNG's
 ICC profile but `Image.Load` does, the TIFF decoder leaves the profile on the first
-frame, and the PNG encoder does not write `iCCP`. Details and consequences in
+frame, and, as it was recorded then, that the PNG encoder does not write `iCCP` (it does:
+measured again on 2026-11-14, ADR 0093). Details and consequences in
 `input.md`, "Things measured about ImageSharp 3.1.11 while building phase 1". The 16-bit
 TIFF and PNG fixtures in the tests are hand-built for exactly these reasons - don't replace
 them with ImageSharp-encoded ones.

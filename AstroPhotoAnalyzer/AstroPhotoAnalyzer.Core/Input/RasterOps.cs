@@ -64,6 +64,25 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
+        /// The rectangle of a raster as a new raster, its samples copied as they are (R-181).
+        /// </summary>
+        /// <param name="r">The raster.</param>
+        /// <param name="rect">The rectangle, inside the raster; otherwise it throws.</param>
+        /// <returns>
+        /// A raster of the rectangle's size with the same planes and no
+        /// <see cref="Raster.Source"/>: it is no longer the file's image.
+        /// </returns>
+        internal static Raster Crop(Raster r, CropRect rect)
+        {
+            if (!rect.FitsIn(r.W, r.H)) throw new ArgumentException("the crop rectangle " + rect + " is not inside the image " + r.W + " x " + r.H, nameof(rect));
+            var o = new Raster(rect.H, rect.W, r.Planes.Length);
+            for (int p = 0; p < r.Planes.Length; p++)
+                for (int y = 0; y < rect.H; y++)
+                    Array.Copy(r.Planes[p], (rect.Y + y) * r.W + rect.X, o.Planes[p], y * rect.W, rect.W);
+            return o;
+        }
+
+        /// <summary>
         /// v^gamma on every channel, the same on all - so a neutral grey stays neutral. It is the
         /// print simulation's curve: gamma = ln(target)/ln(background) takes the measured
         /// background exactly to the target and lifts the rest in proportion. Not a real

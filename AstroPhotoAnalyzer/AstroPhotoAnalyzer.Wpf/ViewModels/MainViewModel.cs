@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainViewModel.cs - the file, the parameters, the run, and the seven tabs.
+// MainViewModel.cs - the file, the parameters, the run, and the nine tabs.
 //
 // One run at a time: the button is disabled while it computes. The analysis takes a few
 // seconds on 23 MP (the JPEG is half of them) and sits on a pool thread; the progress comes by
@@ -87,6 +87,7 @@ namespace AstroPhotoAnalyzer.Wpf
             Curves = new CurvesTabViewModel();
             SoftProof = new SoftProofTabViewModel();
             GamutFit = new GamutFitTabViewModel();
+            Crop = new CropTabViewModel();
 
             if (_settings.IccProfilePath != null)
             {
@@ -113,6 +114,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public CurvesTabViewModel Curves { get; }
         public SoftProofTabViewModel SoftProof { get; }
         public GamutFitTabViewModel GamutFit { get; }
+        public CropTabViewModel Crop { get; }
 
         public string Banner => VersionInfo.Banner;
         public string Copyright => VersionInfo.Copyright;
@@ -362,7 +364,7 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
-        /// <summary>Pours one result into the seven tabs.</summary>
+        /// <summary>Pours one result into the nine tabs.</summary>
         /// <param name="r">The analysis; not null.</param>
         void Populate(AnalysisResult r)
         {
@@ -374,12 +376,13 @@ namespace AstroPhotoAnalyzer.Wpf
             Curves.Populate(r);
             SoftProof.Populate(r);
             GamutFit.Populate(r);
+            Crop.Populate(r);
         }
 
-        /// <summary>Empties the seven tabs.</summary>
+        /// <summary>Empties the nine tabs.</summary>
         void ClearTabs()
         {
-            Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Curves.Clear(); SoftProof.Clear(); GamutFit.Clear();
+            Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Curves.Clear(); SoftProof.Clear(); GamutFit.Clear(); Crop.Clear();
         }
 
         /// <summary>

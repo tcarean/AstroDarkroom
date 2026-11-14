@@ -80,3 +80,4 @@ All empirical, most from the reference image. Change one, change its comment.
 | `GamutFitKneeExact` / `GamutFitKneeSoft` / `GamutFitKneeSofter` | 1.0 / 0.9 / 0.8 | the share of the edge the three variants compress the chroma from (R-176): the hard fit touches only the pixels outside, the knees 2 to 3 times as many for smaller losses each (ADR 0083) |
 | `GamutFitMinChroma` | 0.05 | under this chroma a pixel is grey for the fit: never touched, never outside (R-175) |
 | `GamutFitBandShare` / `GamutFitRecipeShare` / `GamutFitRecipeStep` | 0.90 / 0.99 / 0.05 | the recipe for a hand-made mask (R-176): the tone band holds 90 % of the pixels outside, the saturation factor brings 99 % of them in, in steps of 5 % |
+| `CropMinSide` | 64 | the smallest short side of the crop rectangle, in image pixels (R-180): a resize stops there; no measurement behind it: 16 screen pixels on the reduced copy of a 23 MP image, about the least a hand grabs by its corners |

@@ -100,6 +100,13 @@ gamut once (the rule of R-144); Render proofs the reduction through the intent's
 its first use and kept on the profile. The chain itself is in `soft-proof.md`. Prepare is timed
 by a `RunClock` (`profile`, `gamut`, `mask`), Render writes one Debug line per render.
 
+### The crop (`Runs/CropRun.cs`, ADR 0093)
+
+No run in the sense of the three below: nothing is computed after the analysis. The Crop with
+aspect ratio tab asks `CropRun.Preview` for the reduced copy it shows, `FrameCrop` for every
+rectangle, and `CropExport.Save` for the file, under `CurveExport.Guarded` like the two other
+exports; the console never calls them. Described in `crop.md`.
+
 ### The fourth run (`Runs/GamutFitRun.cs`, ADR 0083)
 
 `GamutFitRun.Execute(AnalysisResult, maxWidth, maxHeight)` is the paper fit's run, started by the

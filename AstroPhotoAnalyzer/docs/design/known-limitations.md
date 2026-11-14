@@ -165,3 +165,14 @@
   cursor, as the curves' save does, and takes 11 to 27 s for a 22.6 MP image (measured
   2026-11-06 on the three pairs of `paper-fit.md`): every pixel that lands on the paper's edge
   is searched exactly through the profile.
+- The crop for a frame carries the pixels and, for a TIFF or a PNG, the ICC profile, nothing
+  else of those two kinds: an alpha channel, a second page, the resolution and every other tag
+  are not written, a compressed TIFF comes out uncompressed, and a PNG gains a `pHYs` chunk of
+  96 dpi (ADR 0093). A FITS keeps every card; of those that depend on where the image starts
+  only `CRPIX` is moved, so a keyword of another convention (`LTV1`, a subframe origin) keeps
+  the input's value. A TIFF of a depth other than 8 or 16 bits is refused, since the reader
+  only gets it converted (R-012).
+- The crop's rectangle is placed on a reduced copy without zoom (the owner's choice, ADR
+  0093): on a 23 MP image on a Full HD screen one screen pixel is about four image pixels, and
+  the rectangle cannot be placed finer than that. Its proportions are the frame's within half
+  a pixel, the size being in whole pixels.

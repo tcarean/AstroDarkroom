@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- MainWindow - the bar with the file, the parameter panel on the left, the seven tabs on
+<!-- MainWindow - the bar with the file, the parameter panel on the left, the nine tabs on
      the right. Without an image, an invitation stands in place of the tabs; with an error,
      a card. -->
 
@@ -245,6 +245,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </TabItem>
           <TabItem Header="Soft proof">
             <local:SoftProofView DataContext="{Binding SoftProof}" />
+          </TabItem>
+          <TabItem Header="{local:T En='Crop with aspect ratio', Ro='Decupare cu raport de aspect'}">
+            <local:CropView DataContext="{Binding Crop}" />
           </TabItem>
         </local:AccessibleTabControl>
 

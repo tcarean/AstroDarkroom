@@ -159,6 +159,16 @@ public class WindowEnglishTests
             vm.Curves.CurveRequested += c => curve = c;
             vm.Curves.OpenCurve.Execute(null);
             AssertEnglish("the curve window", await TextsOfAsync(new CurveWindow { DataContext = curve }, "fereastra-curba", 1280, 760));
+            // R-183: the Crop with aspect ratio tab asking for the sizes, naming a bad field,
+            // and with its rectangle and sentences.
+            AssertEnglish("Crop without sizes", TextsOf(new CropView { DataContext = vm.Crop }, "tab-decupare-fara-marimi"));
+            vm.Crop.FrameWidth = "abc";
+            AssertEnglish("Crop with a bad size", vm.Crop.Message);
+            vm.Crop.FrameWidth = "70";
+            vm.Crop.FrameHeight = "54.62";
+            Assert.True(vm.Crop.HasCrop);
+            AssertEnglish("Crop", TextsOf(new CropView { DataContext = vm.Crop }, "tab-decupare"));
+            AssertEnglish("the crop sentences", string.Join("\n", vm.Crop.KeptText, vm.Crop.FrameText, vm.Crop.OutputText, vm.Crop.Help, CropTexts.Saving));
             // R-163: the Soft proof tab without a profile, then with the fixture's, and its window.
             await vm.ProofComputation;
             AssertEnglish("Soft proof without a profile", TextsOf(new SoftProofView { DataContext = vm.SoftProof }, "tab-soft-proof-fara-profil"));

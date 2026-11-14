@@ -38,6 +38,11 @@
 // It is written whole or not at all, through AtomicFile (a temporary file in the target folder,
 // moved over the name at the end): a failed write does not leave a half-written FITS under the
 // target's name.
+//
+// A CROP (R-181, ADR 0093) is the second thing written, and the only one that goes around the
+// raster: SaveCrop copies the rectangle's bytes from the source file as they are, so that every
+// BITPIX keeps every bit (the raster is 32-bit float clipped to 0..1 and could not), under the
+// source's header with the new size and the reference pixel of a plate solution moved.
 
 using System;
 using System.Buffers.Binary;
@@ -49,8 +54,8 @@ using System.Text;
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// Writes the one image the tool writes: a new FITS of an analysed raster with a curve
-    /// applied (R-145, ADR 0032).
+    /// Writes the tool's FITS files: a new FITS of an analysed raster with a curve applied
+    /// (R-145, ADR 0032), and the crop of a FITS, copied from its bytes (R-181, ADR 0093).
     /// </summary>
     internal static class FitsWriter
     {
@@ -80,6 +85,169 @@ namespace AstroPhotoAnalyzer
                 if (sourceFits != null) FromFits(r, curve, sourceFits, history, o);
                 else Fresh(r, curve, history, o);
             });
+
+        /// <summary>
+        /// Writes to <paramref name="target"/> the crop of a FITS file, whole or not at all
+        /// (<see cref="AtomicFile"/>): the rectangle's bytes copied from
+        /// <paramref name="sourceFits"/> as they are, in the file's own row order, so every
+        /// sample keeps its encoding and every bit; the image's header with NAXIS1 and NAXIS2
+        /// set to the rectangle's size, CRPIX1 and CRPIX2 (and their lettered alternates), when
+        /// present, moved by the columns and the file's rows cut before the first kept, every
+        /// other card as it is, then the HISTORY cards; the HDUs before and after copied.
+        /// Throws when the source has no image, no longer has the given geometry or is cut short
+        /// before the image's data ends, or when the rectangle is not inside the image.
+        /// </summary>
+        /// <param name="sourceFits">The FITS the image was read from, opened for reading only.</param>
+        /// <param name="rect">
+        /// The rectangle to keep, in the raster's pixels: its row 0 is the top, which is the
+        /// file's last row (the reader flips every FITS, ADR 0049).
+        /// </param>
+        /// <param name="imageW">The analysed image's width, in pixels.</param>
+        /// <param name="imageH">The analysed image's height, in pixels.</param>
+        /// <param name="planes">The analysed image's planes, 1 or 3.</param>
+        /// <param name="history">The texts of the HISTORY cards, one card each, cut to 72 characters.</param>
+        /// <param name="target">The file to write; replaced when it exists.</param>
+        internal static void SaveCrop(string sourceFits, CropRect rect, int imageW, int imageH, int planes, IReadOnlyList<string> history, string target)
+        {
+            if (!rect.FitsIn(imageW, imageH)) throw new ArgumentException("the crop rectangle " + rect + " is not inside the image " + imageW + " x " + imageH, nameof(rect));
+            AtomicFile.Write(target, o => CropFromFits(sourceFits, rect, imageW, imageH, planes, history, o));
+        }
+
+        /// <summary>The body of <see cref="SaveCrop"/>, to an open stream at its start.</summary>
+        /// <param name="sourceFits">The source FITS, opened for reading only.</param>
+        /// <param name="rect">The rectangle, in the raster's pixels, inside the image.</param>
+        /// <param name="imageW">The analysed image's width, in pixels.</param>
+        /// <param name="imageH">The analysed image's height, in pixels.</param>
+        /// <param name="planes">The analysed image's planes.</param>
+        /// <param name="history">The texts of the HISTORY cards.</param>
+        /// <param name="o">The output, at its start.</param>
+        static void CropFromFits(string sourceFits, CropRect rect, int imageW, int imageH, int planes, IReadOnlyList<string> history, Stream o)
+        {
+            using var s = new FileStream(sourceFits, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16);
+            var block = new byte[Block];
+            while (true)
+            {
+                long start = s.Position;
+                Dictionary<string, string> hdr = FitsReader.ReadHeader(s, block);
+                if (hdr == null) throw new Exception(Tr.Pick("FITS: no HDU with an image found.", "FITS: niciun HDU cu imagine gasit."));
+                long headerEnd = s.Position;
+
+                int bitpix = FitsReader.HInt(hdr, "BITPIX", 0);
+                int naxis = FitsReader.HInt(hdr, "NAXIS", 0);
+                long npix = naxis == 0 ? 0 : 1;
+                for (int ax = 1; ax <= naxis; ax++) npix *= FitsReader.HInt(hdr, "NAXIS" + ax, 1);
+                int bytesPer = Math.Abs(bitpix) / 8;
+                long dataBlocks = (npix * bytesPer + Block - 1) / Block * Block;
+                int n1 = FitsReader.HInt(hdr, "NAXIS1", 0), n2 = FitsReader.HInt(hdr, "NAXIS2", 0);
+                int n3 = naxis >= 3 ? FitsReader.HInt(hdr, "NAXIS3", 1) : 1;
+
+                if (!(naxis >= 2 && n1 > 0 && n2 > 0))
+                {
+                    // An HDU before the image: it passes as it is.
+                    Copy(s, o, start, headerEnd + dataBlocks);
+                    continue;
+                }
+                if (n1 != imageW || n2 != imageH || n3 != planes)
+                    throw new Exception(Tr.Pick("the source FITS no longer has the geometry of the image analysed: ", "FITS-ul sursa nu mai are geometria imaginii analizate: ") + sourceFits);
+                if (bytesPer == 0 || headerEnd + npix * bytesPer > s.Length) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
+
+                // The raster's row y is the file's row imageH - 1 - y, so the rectangle's rows
+                // are the file's rows from firstRow on, and firstRow file rows are cut before
+                // them: what CRPIX2, which counts the file's rows, moves by.
+                int firstRow = imageH - rect.Bottom;
+
+                // The header: every card up to END, four of them with a new value, then
+                // HISTORY, then END.
+                var raw = new byte[headerEnd - start];
+                s.Position = start;
+                ReadExact(s, raw);
+                var cards = new List<byte[]>();
+                for (int c = 0; c * Card < raw.Length; c++)
+                {
+                    var card = new byte[Card];
+                    Array.Copy(raw, c * Card, card, 0, Card);
+                    string key = Encoding.ASCII.GetString(card, 0, 8).TrimEnd();
+                    if (key == "END") break;
+                    if (key == "NAXIS1") card = WithValue(card, rect.W.ToString(CultureInfo.InvariantCulture));
+                    else if (key == "NAXIS2") card = WithValue(card, rect.H.ToString(CultureInfo.InvariantCulture));
+                    else if (IsReferencePixel(key, '1')) card = Moved(card, rect.X);
+                    else if (IsReferencePixel(key, '2')) card = Moved(card, firstRow);
+                    cards.Add(card);
+                }
+                foreach (string h in history) cards.Add(HistoryCard(h));
+                cards.Add(Encoding.ASCII.GetBytes("END".PadRight(Card)));
+                WriteCards(o, cards);
+
+                // The data: plane after plane, the rectangle's stretch of each kept file row.
+                var row = new byte[rect.W * bytesPer];
+                long planeBytes = (long)imageW * imageH * bytesPer, written = 0;
+                for (int p = 0; p < planes; p++)
+                    for (int fr = firstRow; fr < firstRow + rect.H; fr++)
+                    {
+                        s.Position = headerEnd + p * planeBytes + ((long)fr * imageW + rect.X) * bytesPer;
+                        ReadExact(s, row);
+                        o.Write(row, 0, row.Length);
+                        written += row.Length;
+                    }
+                var zero = new byte[1];
+                for (; written % Block != 0; written++) o.Write(zero, 0, 1);
+
+                // What follows the image (extensions) passes as it is.
+                Copy(s, o, headerEnd + dataBlocks, s.Length);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// Whether a keyword is the reference pixel of an axis: CRPIX1 or CRPIX2, or the same
+        /// with the letter of an alternate plate solution (CRPIX1A).
+        /// </summary>
+        /// <param name="key">The card's keyword, trimmed.</param>
+        /// <param name="axis">'1' or '2'.</param>
+        /// <returns>True when it is.</returns>
+        static bool IsReferencePixel(string key, char axis)
+            => key.StartsWith("CRPIX", StringComparison.Ordinal) && key.Length >= 6 && key[5] == axis
+               && (key.Length == 6 || (key.Length == 7 && key[6] >= 'A' && key[6] <= 'Z'));
+
+        /// <summary>
+        /// A value card with another value: the keyword and the comment kept, the value
+        /// right-aligned to column 30 as FITS writes it. A card that is not "KEY = value" comes
+        /// back as it is.
+        /// </summary>
+        /// <param name="card">The card's 80 bytes.</param>
+        /// <param name="value">The new value, as FITS writes it.</param>
+        /// <returns>The new card's 80 bytes.</returns>
+        static byte[] WithValue(byte[] card, string value)
+        {
+            string text = Encoding.ASCII.GetString(card);
+            if (text[8] != '=') return card;
+            // A number holds no slash, so the first one after the value starts the comment.
+            int slash = text.IndexOf('/', 10);
+            string comment = slash < 0 ? "" : " " + text.Substring(slash).TrimEnd();
+            string made = text.Substring(0, 8) + "= " + value.PadLeft(20) + comment;
+            return Encoding.ASCII.GetBytes(made.PadRight(Card).Substring(0, Card));
+        }
+
+        /// <summary>
+        /// A reference-pixel card moved by the pixels cut before it; a card whose value is not
+        /// a number comes back as it is.
+        /// </summary>
+        /// <param name="card">The card's 80 bytes.</param>
+        /// <param name="cut">The pixels cut before the first kept one, along the card's axis.</param>
+        /// <returns>The new card's 80 bytes.</returns>
+        static byte[] Moved(byte[] card, int cut)
+        {
+            string text = Encoding.ASCII.GetString(card);
+            if (text[8] != '=') return card;
+            int slash = text.IndexOf('/', 10);
+            string value = (slash < 0 ? text.Substring(10) : text.Substring(10, slash - 10)).Trim();
+            // A FITS real may write its exponent with a D.
+            if (!double.TryParse(value.Replace('D', 'E'), NumberStyles.Float, CultureInfo.InvariantCulture, out double was)) return card;
+            string now = (was - cut).ToString("R", CultureInfo.InvariantCulture);
+            // A real keeps its point, as the writers of plate solutions put it ("1811.").
+            if (now.IndexOfAny(new[] { '.', 'E' }) < 0) now += ".";
+            return WithValue(card, now);
+        }
 
         /// <summary>
         /// A HISTORY card: the text after "HISTORY ", cut to the card's 80 characters.

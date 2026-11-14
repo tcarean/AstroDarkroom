@@ -59,6 +59,8 @@ namespace AstroPhotoAnalyzer.Wpf
             _vm.Curves.SaveRequested += SaveCurve;
             // The Culori pentru hartie tab (R-178): the save dialog; the arrow keys are shared.
             _vm.GamutFit.SaveRequested += SaveGamutFit;
+            // The Crop with aspect ratio tab (R-183): the save dialog.
+            _vm.Crop.SaveRequested += SaveCrop;
             // The Soft proof tab (R-163): its full-screen window (R-164), over the tab's own view-model.
             _vm.SoftProof.ProofRequested += p => Open("the soft proof full screen", new SoftProofWindow { Owner = this, DataContext = p });
             PreviewKeyDown += GalleryKeys;
@@ -248,6 +250,31 @@ namespace AstroPhotoAnalyzer.Wpf
             System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
             try { _vm.GamutFit.Save(dlg.FileName); }
             finally { System.Windows.Input.Mouse.OverrideCursor = null; }
+        }
+
+        /// <summary>
+        /// Asks where the crop is saved (R-181, R-182), as the one kind of file the core writes
+        /// for this input; the core does the writing, on a pool thread, the tab saying so
+        /// meanwhile.
+        /// </summary>
+        /// <param name="proposedName">The file name the core proposes, shown in the dialog.</param>
+        void SaveCrop(string proposedName)
+        {
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = Tr.Pick("Save the part of the image inside the rectangle", "Salveaza partea din poza aflata in dreptunghi"),
+                FileName = proposedName,
+                InitialDirectory = _vm.Crop.InputFolder,
+                Filter = _vm.Crop.SaveFilter,
+                DefaultExt = _vm.Crop.SaveExtension,
+            };
+            if (dlg.ShowDialog(this) != true)
+            {
+                Log.Info("crop save dialog: cancelled");
+                return;
+            }
+            Log.Info("crop save dialog: chose " + dlg.FileName);
+            _ = _vm.Crop.SaveAsync(dlg.FileName);
         }
 
         /// <summary>

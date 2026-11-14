@@ -140,6 +140,39 @@ namespace AstroPhotoAnalyzer.Wpf
     }
 
     /// <summary>
+    /// The Crop with aspect ratio tab's view (R-183): the XAML, plus the two things the viewer
+    /// tells that the view-model must hear: the drags of the rectangle and the area's size.
+    /// </summary>
+    public partial class CropView : UserControl
+    {
+        /// <summary>Loads the XAML and hands the viewer's drags to the view-model.</summary>
+        public CropView()
+        {
+            InitializeComponent();
+            Viewer.DragStarted += () => Tab?.BeginDrag();
+            Viewer.MoveDragged += (dx, dy) => Tab?.MoveBy(dx, dy);
+            Viewer.CornerDragged += (corner, x, y) => Tab?.ResizeTo(corner, x, y);
+            Viewer.DragEnded += () => Tab?.EndDrag();
+        }
+
+        /// <summary>The tab's view-model, when the data context is one.</summary>
+        CropTabViewModel Tab => DataContext as CropTabViewModel;
+
+        /// <summary>
+        /// The reduced copy is asked for at the size of the image area, in pixels of the screen
+        /// (R-146's rule): this handler puts it in the view-model at every layout pass.
+        /// </summary>
+        /// <param name="sender">The image area; not read.</param>
+        /// <param name="e">The new size, in device-independent units, scaled here by the DPI.</param>
+        void AreaSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (Tab is not CropTabViewModel vm) return;
+            DpiScale dpi = VisualTreeHelper.GetDpi(this);
+            vm.SetArea((int)(e.NewSize.Width * dpi.DpiScaleX), (int)(e.NewSize.Height * dpi.DpiScaleY));
+        }
+    }
+
+    /// <summary>
     /// The Editare Curbe tab's view (R-146): the XAML, plus the gallery's size for the view-model.
     /// </summary>
     public partial class CurvesView : UserControl
