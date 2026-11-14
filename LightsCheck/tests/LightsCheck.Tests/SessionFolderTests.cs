@@ -180,6 +180,49 @@ public class SessionFolderTests
         Assert.Equal([null], c.PauseSeconds);
     }
 
+    /// <summary>
+    /// The review's case (CR-010 of 2026-11-13): the camera's counter passed from 9999 to 0001
+    /// during the night, so by name the frame taken first is listed last. The cadence names the
+    /// first pair of neighbours in the list whose times go back (R-089); the order and the
+    /// figures stay as the names give them.
+    /// </summary>
+    [Fact]
+    public void R089_AFrameTakenBeforeTheOneListedBeforeItIsFound()
+    {
+        DateTime t = SessionFixture.FirstStart;
+        FrameInfo[] frames =
+        [
+            Frame(1, t.AddSeconds(150), 120),
+            Frame(2, t.AddSeconds(300), 120),
+            Frame(9999, t, 120),
+        ];
+
+        Cadence c = CadenceAnalyzer.Analyze(frames);
+
+        Assert.Equal((1, 2), c.Backwards);
+        Assert.Equal([null, 30, -420], c.PauseSeconds);
+    }
+
+    /// <summary>
+    /// Frames in the order of their times have no such pair, equal times included (a raw's time
+    /// is in whole seconds); a frame without a time between two does not hide the pair, and one
+    /// without an exposure still has its place in time (R-089).
+    /// </summary>
+    [Fact]
+    public void R089_TheTimesAreComparedBetweenNeighboursWithATime()
+    {
+        DateTime t = SessionFixture.FirstStart;
+        FrameInfo untimed = new(2, "x", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, "stricat");
+
+        Assert.Null(CadenceAnalyzer.Analyze([Frame(1, t, 120), Frame(2, t.AddSeconds(150), 120), Frame(3, t.AddSeconds(300), 120)]).Backwards);
+        Assert.Null(CadenceAnalyzer.Analyze([Frame(1, t, 0.25), Frame(2, t, 0.25)]).Backwards);
+        Assert.Null(CadenceAnalyzer.Analyze([untimed]).Backwards);
+        Assert.Equal((0, 2), CadenceAnalyzer.Analyze([Frame(1, t.AddSeconds(150), 120), untimed, Frame(3, t, 120)]).Backwards);
+        Assert.Equal((0, 1), CadenceAnalyzer.Analyze([Frame(1, t.AddSeconds(150), 120), Frame(2, t, 120) with { ExposureSeconds = null }]).Backwards);
+        // The first pair is named, not every one.
+        Assert.Equal((0, 1), CadenceAnalyzer.Analyze([Frame(1, t.AddSeconds(300), 120), Frame(2, t.AddSeconds(150), 120), Frame(3, t, 120)]).Backwards);
+    }
+
     private static FrameInfo Frame(int index, DateTime t, double exposure) =>
         new(index, $"DSC_{index:0000}.NEF", "NIKON D3300", 135, 2.8, exposure, 1600, t, null, 202, 6016, 4016, 74, "Nikon F", null, null, null, null, null);
 }

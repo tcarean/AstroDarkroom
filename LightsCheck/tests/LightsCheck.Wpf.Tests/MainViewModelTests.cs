@@ -535,6 +535,21 @@ public class MainViewModelTests
         Assert.Equal("verdict", vm.DitherRows[^1].Label);
     }
 
+    /// <summary>The session card is made of the core's session lines, so the warning of file names that are not in the order of the times reaches the window as a row of its own (R-089).</summary>
+    [Fact]
+    public async Task R089_TheSessionCardWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken()
+    {
+        // The third light's pause of -1000 s puts its time before the second's.
+        SeriesFrame[] frames = [new(0, 0, 1.0, 0), new(0.5, 0.2, 1.0, 1), new(12, 0, 1.0, -1000)];
+        using SessionFixture f = new SessionFixture().WithStarSeries(frames);
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(f.Root);
+
+        RowVm warning = Assert.Single(vm.SessionRows, r => r.Label == "ATENTIE");
+        Assert.StartsWith("numele fisierelor nu sunt in ordinea in care au fost facute cadrele: DSC_0003.fit e trecut dupa DSC_0002.fit, dar a fost facut inaintea lui. ", warning.Value, StringComparison.Ordinal);
+    }
+
     /// <summary>The Dithering card carries the core's explanation, one paragraph bold, and the new rows of R-043, R-044 and R-046 reach the window untouched (R-047).</summary>
     [Fact]
     public async Task R047_TheDitherExplanationAndTheNewRowsReachTheWindow()

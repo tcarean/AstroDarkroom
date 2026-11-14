@@ -258,6 +258,34 @@ public class AcceptanceTests
         Assert.Contains("interval           : de la 2026-10-06 20:35:03 pana la 2026-10-06 20:42:03 (7 min); expunere totala 6 min, din 3 cadre (aparatul a expus 86 % din timp)", stdout, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Three lights whose names put the one taken first last, as when the camera's counter passes
+    /// 9999 during the night: the console says so after the interval, lists the frames in the
+    /// order of their names as before, wrong pause included, and exits 0 (R-089).
+    /// </summary>
+    [Fact]
+    public void R089_TheConsoleWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken()
+    {
+        using SessionFixture s = new();
+        Directory.CreateDirectory(s.LightsDir);
+        DateTime t = SessionFixture.FirstStart;
+        File.WriteAllBytes(Path.Combine(s.LightsDir, "DSC_0001.fit"), SessionFixture.Light(t.AddSeconds(150), 120));
+        File.WriteAllBytes(Path.Combine(s.LightsDir, "DSC_0002.fit"), SessionFixture.Light(t.AddSeconds(300), 120));
+        File.WriteAllBytes(Path.Combine(s.LightsDir, "DSC_9999.fit"), SessionFixture.Light(t, 120));
+
+        (int code, string ro, _) = Cli.Run(s.Root, "--inventory");
+        (_, string en, _) = Cli.Run(s.Root, "--inventory", "--lang", "en");
+
+        Assert.Equal(0, code);
+        Assert.Contains("    ATENTIE            : numele fisierelor nu sunt in ordinea in care au fost facute cadrele: DSC_9999.fit e trecut dupa DSC_0002.fit, dar a fost facut inaintea lui. Pauzele si tot ce",
+            ro, StringComparison.Ordinal);
+        Assert.Contains("    WARNING            : the file names are not in the order the frames were taken: DSC_9999.fit is listed after DSC_0002.fit and was taken before it. The pauses and everything",
+            en, StringComparison.Ordinal);
+        int first = en.IndexOf("DSC_0001.fit", StringComparison.Ordinal), last = en.LastIndexOf("DSC_9999.fit", StringComparison.Ordinal);
+        Assert.True(first > 0 && last > first, "the frames stay in the order of their names");
+        Assert.Contains("  -420", en, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R086_TheSessionLinesOpenWithTheTotalExposureToTheSecond()
     {

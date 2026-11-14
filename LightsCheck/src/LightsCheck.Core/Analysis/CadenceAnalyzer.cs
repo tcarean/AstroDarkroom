@@ -49,10 +49,19 @@ internal sealed record Cadence(
 {
     /// <summary>Integration over span, in percent; 0 when nothing is timed.</summary>
     internal double DutyPct => SpanSeconds > 0 ? 100.0 * IntegrationSeconds / SpanSeconds : 0;
+
+    /// <summary>
+    /// The first place where the list's order is not the order of the times (R-089): the
+    /// positions in the list, from 0, of two frames with a time of capture, the second listed
+    /// after the first with no other frame with a time between them, and taken before it. Null
+    /// when every frame with a time was taken no earlier than the one listed before it.
+    /// </summary>
+    internal (int ListedBefore, int ListedAfter)? Backwards { get; init; }
 }
 
 /// <summary>
-/// Reads a session's rhythm from the frames' times of capture and exposures (R-006).
+/// Reads a session's rhythm from the frames' times of capture and exposures (R-006), and
+/// whether the list's order is the order of the times (R-089).
 /// </summary>
 internal static class CadenceAnalyzer
 {
@@ -101,6 +110,39 @@ internal static class CadenceAnalyzer
         }
 
         double span = start is DateTime s && end is DateTime e ? (e - s).TotalSeconds : 0;
-        return new Cadence(start, end, span, integration, timed, pauses);
+        return new Cadence(start, end, span, integration, timed, pauses) { Backwards = FirstBackwards(frames) };
+    }
+
+    /// <summary>
+    /// The first frame with a time of capture that was taken before the frame with a time listed
+    /// before it (R-089). The list is in the order of the file names, which the camera's counter
+    /// passing 9999, or numbers without leading zeros, set apart from the order of the night. A
+    /// frame without an exposure still has its time; equal times are no disagreement, since a
+    /// raw's time is in whole seconds.
+    /// </summary>
+    /// <param name="frames">The frames, in the list's order. Not null.</param>
+    /// <returns>
+    /// The positions in the list, from 0, of the frame listed before and of the one taken before
+    /// it; null when the times never go back.
+    /// </returns>
+    private static (int ListedBefore, int ListedAfter)? FirstBackwards(IReadOnlyList<FrameInfo> frames)
+    {
+        int previous = -1;
+        for (int i = 0; i < frames.Count; i++)
+        {
+            if (frames[i].Timestamp is not DateTime t)
+            {
+                continue;
+            }
+
+            if (previous >= 0 && t < frames[previous].Timestamp)
+            {
+                return (previous, i);
+            }
+
+            previous = i;
+        }
+
+        return null;
     }
 }

@@ -235,6 +235,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   black, the sky and the saturation margin included, carried the black as a pedestal. The
   pattern is now read (R-007; CR-009 of the review of 2026-11-13). A camera's own raw is read as
   before.
+- When the file names are not in the order the frames were taken (a camera whose counter passes
+  from `DSC_9999` to `DSC_0001` during the night, names without leading zeros), the pauses, the
+  trends, the drift and the dithering were read in the names' order with nothing said. The
+  order stays the names', and the session lines now say it: `WARNING : the file names are not
+  in the order the frames were taken: DSC_9999.NEF is listed after DSC_0002.NEF and was taken
+  before it. ...` (R-089, ADR 0054; CR-010 of the review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

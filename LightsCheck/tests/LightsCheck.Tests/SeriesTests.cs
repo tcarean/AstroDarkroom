@@ -148,6 +148,28 @@ public class SeriesTests
         Assert.DoesNotContain(SeriesReport.FocusRows(r), row => row.Label == "wide stars");
     }
 
+    /// <summary>
+    /// A series whose third light was taken before its second (a pause of -1000 s between the
+    /// two): the report's session lines carry the warning, and the frames are measured in the
+    /// order of their names as before (R-089).
+    /// </summary>
+    [Fact]
+    public void R089_ASeriesWhoseNamesAreNotInTheOrderOfItsTimesSaysSoInTheSessionLines()
+    {
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        SeriesFrame[] frames = [new(0, 0, 1.0, 0), new(0.5, 0.2, 1.0, 1), new(12, 0, 1.0, -1000)];
+        using SessionFixture f = new SessionFixture().WithStarSeries(frames);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+
+        Assert.Equal((1, 2), r.Cadence.Backwards);
+        Assert.Equal(["DSC_0001.fit", "DSC_0002.fit", "DSC_0003.fit"], r.Frames.Select(x => x.Info.FileName));
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        Assert.Contains(
+            "    WARNING            : the file names are not in the order the frames were taken: DSC_0003.fit is listed after DSC_0002.fit and was taken before it. ",
+            sw.ToString(), StringComparison.Ordinal);
+    }
+
     /// <summary>A session without a flip has no such row, and one frame or scattered frames are written as the other rows write frames (R-087).</summary>
     [Fact]
     public void R087_TheFlipRowIsThereOnlyAfterAFlipAndWritesRangesAndOneFrame()

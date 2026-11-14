@@ -55,7 +55,14 @@ timestamp and an exposure is timed: the first timed start is `Start`, the latest
 before a timed frame is its start minus the previous timed frame's end. A frame without a
 time or an exposure gets no pause, breaks the chain (the next timed frame gets none either)
 and stays out of the span and the integration. `DutyPct` is integration over span; 0 when
-nothing is timed.
+nothing is timed. `Backwards` (`FirstBackwards`) is the first pair of frames with a time, the
+second listed after the first with no frame with a time between them, where the second was
+taken before the first: the list is in the order of the names, and nothing here or in the
+series puts it in the order of the times (R-089, ADR 0054). It compares the times alone, so a
+frame without an exposure still counts, and equal times, which a raw's whole seconds give in a
+burst, are no disagreement. With the names against the times the start is the first frame of
+the list and not the earliest, a pause can be negative and the duty above 100 %; the figures
+are left as they come out and the header says why.
 
 ## The inventory (`InventoryRun`, `InventoryReport`)
 
@@ -74,7 +81,10 @@ one parenthesis (`"EF50mm f/1.4 USM" (ID 198, Canon EF mount)`), or the ID with 
 raw gives no name (`ID 74 (Nikon F mount)`), nothing for a mount alone (R-065); the frame read is the
 first readable one with a focal length, an ID or a name; the exposure line lists each distinct exposure and ISO
 pair and says `(different exposures)` when there is more than one; the interval line is start,
-end, span, integration, timed frame count and duty. The table prints one row per light with
+end, span, integration, timed frame count and duty; after it, when the cadence has a
+`Backwards` pair, a `WARNING` line names the two files, the one taken first and the one listed
+before it, and says what follows the names (R-089), with no change of the exit code, unlike
+the `WARNING` of the frames that could not be read, which comes after it. The table prints one row per light with
 `-` for a missing field and `error: <message>` in place of the fields for a frame that
 could not be read. File names are cut at 20 characters.
 

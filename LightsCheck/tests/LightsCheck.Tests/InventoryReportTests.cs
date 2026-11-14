@@ -102,6 +102,45 @@ public class InventoryReportTests
         return frames;
     }
 
+    /// <summary>
+    /// The session lines of three frames whose names put the frame taken first last, as when
+    /// the camera's counter passes 9999 during the night: a warning names the pair, in both
+    /// languages, right after the interval (R-089). In the order of their times, none.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R089_TheSessionLinesSayWhenTheNamesAreNotInTheOrderTheFramesWereTaken(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        DateTime t = SessionFixture.FirstStart;
+        static FrameInfo Named(int index, string name, DateTime at) =>
+            Frame("Nikon D3300", 135, 2.8, 74, "Nikon F", null) with { Index = index, Path = "lights/" + name, ExposureSeconds = 120, Timestamp = at };
+        List<FrameInfo> wrapped = [Named(1, "DSC_0001.NEF", t.AddSeconds(150)), Named(2, "DSC_0002.NEF", t.AddSeconds(300)), Named(3, "DSC_9999.NEF", t)];
+        List<FrameInfo> inOrder = [Named(1, "DSC_0001.NEF", t), Named(2, "DSC_0002.NEF", t.AddSeconds(150)), Named(3, "DSC_0003.NEF", t.AddSeconds(300))];
+
+        string[] lines = HeaderLines(wrapped);
+        int interval = Array.FindIndex(lines, l => l.StartsWith("    interval ", StringComparison.Ordinal));
+        Assert.Equal(
+            english
+                ? "    WARNING            : the file names are not in the order the frames were taken: DSC_9999.NEF is listed after DSC_0002.NEF and was taken before it. "
+                    + "The pauses and everything read from one frame to the next (the trends, the drift, the dithering) follow the names, so they may be wrong"
+                : "    ATENTIE            : numele fisierelor nu sunt in ordinea in care au fost facute cadrele: DSC_9999.NEF e trecut dupa DSC_0002.NEF, dar a fost facut inaintea lui. "
+                    + "Pauzele si tot ce se citeste de la un cadru la urmatorul (tendintele, driftul, ditheringul) urmeaza numele, asa ca pot fi gresite",
+            lines[interval + 1]);
+        Assert.DoesNotContain(HeaderLines(inOrder), l => l.Contains("WARNING", StringComparison.Ordinal) || l.Contains("ATENTIE", StringComparison.Ordinal));
+    }
+
+    /// <summary>The session lines written for the frames, one a line.</summary>
+    private static string[] HeaderLines(List<FrameInfo> frames)
+    {
+        using SessionFixture s = new SessionFixture().WithLights(1);
+        var inv = new Inventory(SessionFolder.Open(s.Root), frames, CadenceAnalyzer.Analyze(frames));
+        using var w = new StringWriter();
+        InventoryReport.WriteHeader(inv, w);
+        return w.ToString().ReplaceLineEndings("\n").Split('\n');
+    }
+
     /// <summary>The line right under the session's title line, in the header written for the frames.</summary>
     private static string FirstSessionLine(List<FrameInfo> frames)
     {

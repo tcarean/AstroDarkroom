@@ -45,7 +45,8 @@ internal static class InventoryReport
 
     /// <summary>
     /// Writes the session lines: the total exposure, folders, camera, lens, exposure, interval,
-    /// and a warning line when some lights could not be read; the series report reuses them.
+    /// a warning line when the file names are not in the order the frames were taken (R-089),
+    /// and one when some lights could not be read; the series report reuses them.
     /// </summary>
     /// <param name="inv">The inventory of the session; not null.</param>
     /// <param name="w">Where the lines go; not null.</param>
@@ -65,6 +66,17 @@ internal static class InventoryReport
         w.WriteLine(T($"    lens               : {Lens(inv.Lights)}", $"    obiectiv           : {Lens(inv.Lights)}"));
         w.WriteLine(T($"    exposure           : {Exposure(inv.Lights)}", $"    expunere           : {Exposure(inv.Lights)}"));
         w.WriteLine($"    interval           : {Interval(inv)}");
+        if (inv.Cadence.Backwards is (int before, int after) && before < inv.Lights.Count && after < inv.Lights.Count)
+        {
+            // The names are the order everything below is read in; said, not put right (R-089, ADR 0054).
+            string listedBefore = inv.Lights[before].FileName, takenBefore = inv.Lights[after].FileName;
+            w.WriteLine(T(
+                $"    WARNING            : the file names are not in the order the frames were taken: {takenBefore} is listed after {listedBefore} and was taken before it. "
+                + "The pauses and everything read from one frame to the next (the trends, the drift, the dithering) follow the names, so they may be wrong",
+                $"    ATENTIE            : numele fisierelor nu sunt in ordinea in care au fost facute cadrele: {takenBefore} e trecut dupa {listedBefore}, dar a fost facut inaintea lui. "
+                + "Pauzele si tot ce se citeste de la un cadru la urmatorul (tendintele, driftul, ditheringul) urmeaza numele, asa ca pot fi gresite"));
+        }
+
         if (inv.HasErrors)
         {
             int n = inv.Lights.Count(f => f.Error is not null);

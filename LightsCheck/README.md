@@ -52,7 +52,11 @@ MySessionFolder\
   session, where `result.fit` and the other results of the stacking sit.
 - The frames are the camera raws (`.nef`, `.cr2`, `.cr3`, `.arw`, `.dng`, `.raf`, `.pef`) when the folder
   has any, otherwise its FITS files (`.fit`, `.fits`, `.fts`); the two kinds are never mixed. They
-  are taken in the order of their file names. A raw is read when its sensor has a Bayer mosaic
+  are taken in the order of their file names. When that is not the order they were taken in (a
+  camera whose counter passed from `DSC_9999` to `DSC_0001` during the night, or names without
+  leading zeros), the session lines carry a `WARNING` that names the first two files out of
+  order: the pauses, the trends, the drift and the dithering are read from one frame to the
+  next, so on such a folder they may be wrong. A raw is read when its sensor has a Bayer mosaic
   or none (a monochrome sensor); one with another colour mosaic, such as Fujifilm's X-Trans, is
   not read, and its frames are listed as unreadable.
 - `biases\`, two frames or more, gives the read noise, and with it the verdict on the exposure.
