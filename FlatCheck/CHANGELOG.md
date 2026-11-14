@@ -253,7 +253,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the list matches --lens "tokna"; --lenses shows the list`); it said `no raw beside the master
   ... Give --lens <text>`, or that the raw's own lens matched nothing. A lens that is found but
   has no vignetting profile for raw files is named with that reason, where the report said no
-  lens matched the text (R-017, the review's CR-017).
+  lens matched the text (R-017, the review's CR-017). With `--source adobe` or `--source
+  lensfun` the sentence names that source and says only it was searched, since the text may
+  match a lens of the other source.
 - A folder the chosen Siril script enters (`flats/`, `lights/`, `biases/`) that cannot be listed
   (its permissions, a broken junction) now blocks the script with a text that names the folder
   and the system's error, and leaves one Warn line in the log (R-080, ADR 0113, the review's

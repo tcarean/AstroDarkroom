@@ -239,7 +239,7 @@ namespace FlatCheck
             // --lens text is a search that may match lenses of several makers (R-128).
             var cmp = VignettingComparer.Analyze(r, shot, query.Sources?.Catalog, lenses,
                                                  lensesNamedByRaw: string.IsNullOrWhiteSpace(query.LensText) && shot.RawNamesLens && !shot.CandidatesByRangeOnly,
-                                                 lensText: query.LensText);
+                                                 lensText: query.LensText, lensSource: query.Source);
             if (Log.IsDebugEnabled)
                 Log.Debug("lenses compared " + LogText.List(lenses?.Select(l => l.Key)) + ": " + LogText.Comparison(cmp));
             return new StructureOutcome(r, cmp, shot, rawError);

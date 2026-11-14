@@ -645,6 +645,7 @@ is run on it, so the two sides share the half-pixel artefact and the 5 % box.
 | `Gap` | `ComparisonGap` | why nothing was compared; `None` when it was |
 | `SkippedForCrop` | list of `LensChoice` | lensfun lenses left out because the camera's crop is unknown; usually empty |
 | `LensText` | string or null | the `--lens` text the lenses were searched with, as given; null when none was |
+| `LensSource` | `ProfileSource` or null | the one source that search was narrowed to (`--source`); null when both were searched; only the `LensTextNoMatch` words read it |
 | `Unprofiled` | list of `LensChoice` | the lenses found whose files hold no vignetting profile for raw data; usually empty |
 | `Compared` | bool | `Verdict != null` |
 
@@ -654,7 +655,7 @@ is run on it, so the two sides share the half-pixel artefact and the 5 % box.
 | `NoProfiles` | no profile on the machine: neither Adobe nor `lensfun/`; or the catalog was never given |
 | `NoRaw` | no raw beside the master (and no `--lens`), so no lens ID |
 | `NoLensMatch` | the raw names its lens (an ID or a name), no `--lens` text was given, and no catalog lens matches it |
-| `LensTextNoMatch` | a `--lens` text was given and matches no catalog lens, whatever the raw says; `LensText` holds it |
+| `LensTextNoMatch` | a `--lens` text was given and matches no catalog lens, whatever the raw says; `LensText` holds it, and `LensSource` the source when `--source` narrowed the search, which the report then names |
 | `NoVignettingProfile` | lenses were found, by the text or by the raw, and none has a vignetting profile for raw files (R-134); `Unprofiled` names them |
 | `NoFocal` | the focal length is unknown: no `FOCALLEN`, no `--focal`, and no raw gives it (none, one that could not be read, or one that carries none) |
 | `NoFStop` | the aperture is unknown: Siril does not write it, there was no `--fstop`, and no raw gives it (none, one that could not be read, or one that carries none) |
