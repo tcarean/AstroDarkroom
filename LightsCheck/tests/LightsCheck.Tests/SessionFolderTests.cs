@@ -201,6 +201,9 @@ public class SessionFolderTests
 
         Assert.Equal((1, 2), c.Backwards);
         Assert.Equal([null, 30, -420], c.PauseSeconds);
+        // The log names the two by their frame numbers, and says when there is no such pair.
+        Assert.EndsWith(" backwards=2>3", LogText.Timing(c), StringComparison.Ordinal);
+        Assert.EndsWith(" backwards=none", LogText.Timing(CadenceAnalyzer.Analyze([frames[2], frames[0], frames[1]])), StringComparison.Ordinal);
     }
 
     /// <summary>

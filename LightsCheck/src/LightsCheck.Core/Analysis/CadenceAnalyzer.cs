@@ -69,9 +69,14 @@ internal static class CadenceAnalyzer
     /// Measures the span, the integration and the pause before each frame of
     /// <paramref name="frames"/>, taken in the order given.
     /// </summary>
-    /// <param name="frames">The frames, in capture order; may be a filtered list. Not null.</param>
+    /// <param name="frames">
+    /// The frames, in the list's order, which is taken for the order of capture; may be a
+    /// filtered list. Not null.
+    /// </param>
     /// <returns>
-    /// The cadence, with one pause entry per position of <paramref name="frames"/>.
+    /// The cadence, with one pause entry per position of <paramref name="frames"/>, and in
+    /// <see cref="Cadence.Backwards"/> the first place where the times say the list is not in
+    /// the order of capture.
     /// </returns>
     internal static Cadence Analyze(IReadOnlyList<FrameInfo> frames)
     {

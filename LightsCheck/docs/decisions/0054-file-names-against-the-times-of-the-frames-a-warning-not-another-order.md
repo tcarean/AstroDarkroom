@@ -2,6 +2,7 @@
 
 Date: 2026-11-14
 Status: accepted 2026-11-14
+Supersedes: 0035 in part (the order the Quality tab's line above its charts names)
 
 ## Context
 
@@ -24,7 +25,11 @@ The order stays the names'. When a light with a time of capture was taken before
 a time listed before it, the session lines carry a `WARNING` after the interval, in the console
 and in the window's session card, naming the first such pair and saying that the pauses and
 everything read from one frame to the next follow the names and may be wrong (R-089). No
-figure, no frame number and no exit code changes.
+figure, no frame number and no exit code changes. The line above the charts of the window's
+Quality tab, which said that each point is a frame `in the order they were shot` (ADR 0035),
+says `in the order of the file names` (`in ordinea numelor de fisier`), which is what the
+charts show: the owner's word of 2026-11-14, after the review of the branch found the sentence
+false on a folder with the warning (R-080).
 
 ## Alternatives rejected
 

@@ -1,7 +1,7 @@
 # 0035. The Quality tab is in plain words
 
 Date: 2026-11-02
-Status: accepted 2026-11-02
+Status: accepted 2026-11-02; the order the Quality tab's line above its charts names superseded by 0054
 
 ## Context
 

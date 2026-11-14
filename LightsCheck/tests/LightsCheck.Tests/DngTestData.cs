@@ -23,9 +23,9 @@ namespace LightsCheck.Tests;
 /// <summary>
 /// Builds a minimal camera raw in memory: an uncompressed 16-bit DNG of one image, little-endian,
 /// which libraw decodes as it decodes a camera's file. No real raw is committed to the repo
-/// (the smallest NEF is 18 MB), and this is the one raw the gate decodes: every pixel comes
-/// from a formula, and the black level, its repeat pattern and the colour mosaic are the test's
-/// to choose.
+/// (the smallest NEF is 18 MB), and these files are the only raws the gate decodes: every
+/// pixel comes from a formula, and the black level, its repeat pattern and the colour mosaic
+/// are the test's to choose.
 /// </summary>
 internal static class DngTestData
 {

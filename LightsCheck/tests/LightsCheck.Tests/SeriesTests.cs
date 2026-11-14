@@ -106,9 +106,9 @@ public class SeriesTests
     }
 
     /// <summary>
-    /// Three frames whose stars are drawn 7 px wide read about 5.9 px, above the 5 px up to
-    /// which the width can be trusted: FOCUS says, before its verdict, in the console and in the
-    /// window's rows, that such stars are read narrower than they are (R-088).
+    /// Three frames whose stars are drawn 7 px wide read about 5.9 px, above the 4.5 px from
+    /// which the report says so: FOCUS says, before its verdict, in the console and in the
+    /// window's rows, that such stars are read narrower than they are, in plain words (R-088).
     /// </summary>
     [Theory]
     [InlineData(true)]
@@ -127,15 +127,33 @@ public class SeriesTests
         Assert.Equal(english ? "wide stars" : "stele late", rows[^2].Label);
         Assert.Equal(
             english
-                ? "the stars are wider than 5 px; LightsCheck reads such stars narrower than they are, so a frame slightly out of focus can pass as good"
-                : "stelele sunt mai late de 5 px; LightsCheck citeste astfel de stele mai inguste decat sunt, asa ca un cadru usor defocalizat poate trece drept bun",
+                ? "the stars are wider than 4.5 px; LightsCheck reads such stars narrower than they are, so a frame slightly out of focus can pass as good"
+                : "stelele sunt mai late de 4.5 px; LightsCheck citeste astfel de stele mai inguste decat sunt, asa ca un cadru usor defocalizat poate trece drept bun",
             rows[^2].Value);
+        PlainWords.AssertPlain(rows[^2].Label + " " + rows[^2].Value, "the wide stars row of FOCUS");
         using StringWriter sw = new();
         SeriesReport.Write(r, sw);
         Assert.Contains(rows[^2].Value, sw.ToString(), StringComparison.Ordinal);
     }
 
-    /// <summary>A session whose stars are 5 px wide or under has no such row (R-088).</summary>
+    /// <summary>
+    /// The row stands from a reading of 4.5 px, not from the 5 px it was first written for: a
+    /// session that reads between the two, where a frame is flagged as soft only from about
+    /// 1.6 times the session's width, has it (R-088, ADR 0052).
+    /// </summary>
+    [Fact]
+    public void R088_ASessionThatReadsBetweenFourAndAHalfAndFivePixelsHasTheRow()
+    {
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        SeriesFrame[] frames = [new(0, 0, 1.0, 0, Fwhm: 4.9), new(0.5, 0.2, 1.0, 1, Fwhm: 4.9), new(12, 0, 1.0, 30, Fwhm: 4.9)];
+        using SessionFixture f = new SessionFixture().WithStarSeries(frames);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+
+        Assert.InRange(r.Series.SessionFwhm!.Value, 4.55, 4.95);
+        Assert.Contains(SeriesReport.FocusRows(r), row => row.Label == "wide stars");
+    }
+
+    /// <summary>A session whose stars read 4.5 px wide or under has no such row (R-088).</summary>
     [Fact]
     public void R088_ASessionOfOrdinaryStarsHasNoWideStarsRow()
     {

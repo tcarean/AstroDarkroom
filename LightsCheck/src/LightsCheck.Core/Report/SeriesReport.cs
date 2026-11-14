@@ -401,7 +401,7 @@ internal static class SeriesReport
         // a soft frame to the session.
         if (s.SessionFwhm is double width && width > Th.WideStarFwhm)
         {
-            string limit = RunReport.F(Th.WideStarFwhm, 0);
+            string limit = Th.WideStarFwhm.ToString("0.#", Inv);
             rows.Add(new(T("wide stars", "stele late"), T(
                 $"the stars are wider than {limit} px; LightsCheck reads such stars narrower than they are, so a frame slightly out of focus can pass as good",
                 $"stelele sunt mai late de {limit} px; LightsCheck citeste astfel de stele mai inguste decat sunt, asa ca un cadru usor defocalizat poate trece drept bun")));
@@ -980,8 +980,8 @@ internal static class SeriesReport
 
     /// <summary>
     /// The sensor's pattern read from the lights, and whether the session's darks will take it
-    /// out of the stack (R-046, R-042): `strength 1.4 ADU on R (12 % of one frame's noise), 2.1
-    /// on G1 (10 %), 2.1 on G2 (10 %), 2.3 on B (10 %); 4 hot pixels per million pixels, that is,
+    /// out of the stack (R-046, R-042): `strength 1.3 ADU on R (12 % of one frame's noise), 2.1
+    /// on G1 (10 %), 2.1 on G2 (10 %), 2.2 on B (9 %); 4 hot pixels per million pixels, that is,
     /// those above 10 times one frame's noise (from 87 frames, on 512 x 512 px from the centre);
     /// no darks in the session, the pattern stays in the frames`.
     /// </summary>

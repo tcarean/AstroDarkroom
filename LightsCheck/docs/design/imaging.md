@@ -35,8 +35,9 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   libraw holds the black in three parts, which it would subtract one after the other were it
   asked to develop the image: `color.black`, common to every pixel; `color.cblack[0..3]`, one
   per colour index; and a repeat pattern, `cblack[4]` rows by `cblack[5]` columns, its values
-  from `cblack[6]` on, laid from the first visible pixel. A camera's own raw fills the first two
-  (a D3300 NEF: 150 and zeros). A DNG that writes `BlackLevelRepeatDim 2 2` fills the third
+  from `cblack[6]` on, laid from the first visible pixel. A D3300 NEF fills the first alone
+  (150, the rest zeros); which parts the raws of other cameras fill was not looked at (ADR
+  0055). A DNG that writes `BlackLevelRepeatDim 2 2` fills the third
   alone, and `unpack()` does not fold it into the others (shown on a generated DNG: `black 0 per
   channel [0, 0, 0, 0]` in the log for a file whose black is 64). `BlackLevels` sums the three
   for each position of the mosaic's first 2 x 2 block, the colour index of a position being

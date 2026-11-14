@@ -393,9 +393,9 @@ namespace LightsCheck.Core
         /// The black level of each of the four positions of the visible mosaic's first 2 x 2
         /// block, as libraw holds it in three parts that it subtracts one after the other (R-007):
         /// the common black, the black of the position's colour, and the value of the file's
-        /// repeat pattern at that position. A camera's own raw fills the first two (a D3300 the
-        /// common black alone); a DNG that states its black as a pattern, <c>BlackLevelRepeatDim
-        /// 2 2</c>, fills the third alone, which libraw's unpack leaves where it is.
+        /// repeat pattern at that position. A D3300 raw fills the common black alone; a DNG that
+        /// states its black as a pattern, <c>BlackLevelRepeatDim 2 2</c>, fills the third alone,
+        /// which libraw's unpack leaves where it is (ADR 0055).
         /// </summary>
         /// <param name="black">libraw's <c>color.black</c>, in ADU.</param>
         /// <param name="cblack">libraw's <c>color.cblack</c>: entries 0 to 3 the black of each

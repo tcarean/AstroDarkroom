@@ -94,8 +94,8 @@ public partial class RawReaderTests
     }
 
     /// <summary>
-    /// The one raw the gate decodes, a small DNG written by <see cref="DngTestData"/>: a Bayer
-    /// mosaic with one black level comes back undeveloped, pixel for pixel, on the scale the file
+    /// A raw the gate decodes, a small DNG written by <see cref="DngTestData"/>: a Bayer mosaic
+    /// with one black level comes back undeveloped, pixel for pixel, on the scale the file
     /// states, with its colour order (R-007).
     /// </summary>
     [Fact]
@@ -113,9 +113,9 @@ public partial class RawReaderTests
     }
 
     /// <summary>
-    /// A DNG that states its black as a 2 x 2 pattern (<c>BlackLevelRepeatDim 2 2</c>, as Pentax,
-    /// Leica, Ricoh, phones and Adobe's converter write it) is read with that black, as the same
-    /// pixels with one black value are; libraw keeps the pattern apart from its common black
+    /// A DNG that states its black as a 2 x 2 pattern (<c>BlackLevelRepeatDim 2 2</c>; a file
+    /// the test writes, no camera's was at hand) is read with that black, as the same pixels
+    /// with one black value are; libraw keeps the pattern apart from its common black
     /// and its per-colour blacks, and until 2026-11-14 the file came out on a scale from 0,
     /// every level 64 ADU too high (R-007; CR-009 of the review of 2026-11-13). A pattern of
     /// four different values gives their median.

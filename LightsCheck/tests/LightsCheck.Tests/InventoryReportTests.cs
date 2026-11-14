@@ -128,6 +128,7 @@ public class InventoryReportTests
                 : "    ATENTIE            : numele fisierelor nu sunt in ordinea in care au fost facute cadrele: DSC_9999.NEF e trecut dupa DSC_0002.NEF, dar a fost facut inaintea lui. "
                     + "Pauzele si tot ce se citeste de la un cadru la urmatorul (tendintele, driftul, ditheringul) urmeaza numele, asa ca pot fi gresite",
             lines[interval + 1]);
+        PlainWords.AssertPlain(lines[interval + 1], "the warning of names against times");
         Assert.DoesNotContain(HeaderLines(inOrder), l => l.Contains("WARNING", StringComparison.Ordinal) || l.Contains("ATENTIE", StringComparison.Ordinal));
     }
 

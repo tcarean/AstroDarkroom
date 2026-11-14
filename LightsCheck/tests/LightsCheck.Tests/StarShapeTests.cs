@@ -64,7 +64,7 @@ public class StarShapeTests
     [InlineData(5.0, 4.72, 4.92)]
     [InlineData(7.06, 5.7, 6.1)]
     [InlineData(10.0, 6.3, 6.7)]
-    public void R014_AStarWiderThanFivePixelsIsReadNarrowerThanItIs(double fwhm, double low, double high)
+    public void R014_TheWidthIsRightUpToFourPixelsAndTooNarrowAbove(double fwhm, double low, double high)
     {
         double sigma = fwhm / 2.3548;
         Raster r = Gaussian(161, 80.3, 79.6, sigma, sigma, 0, 1000);

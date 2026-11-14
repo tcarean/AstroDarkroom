@@ -319,10 +319,12 @@ internal static class PatternAnalyzer
         double weights = 0, squares = 0;
         if (n % 2 == 1)
         {
-            // The middle value is at x when m values fall below it and m above.
+            // The middle value is at x when m values fall below it and m above. The chances
+            // are doubled, so the weight is 1 at the middle whatever the count: left as they
+            // are, 0.25 to the power m is too small for a double from about 1070 values on.
             for (int i = 1; i < count - 1; i++)
             {
-                double w = Math.Exp(m * (Math.Log(below[i]) + Math.Log(above[i]))) * density[i];
+                double w = Math.Exp(m * (Math.Log(2 * below[i]) + Math.Log(2 * above[i]))) * density[i];
                 weights += w;
                 squares += w * x[i] * x[i];
             }
@@ -342,7 +344,7 @@ internal static class PatternAnalyzer
 
         for (int i = 1; i < count - 1; i++)
         {
-            double w = Math.Exp((m - 1) * Math.Log(below[i]) + m * Math.Log(above[i])) * density[i];
+            double w = Math.Exp((m - 1) * Math.Log(2 * below[i]) + m * Math.Log(2 * above[i])) * density[i];
             weights += w;
             squares += w * (x[i] * x[i] + 0.5 * x[i] * gap[i]);
         }

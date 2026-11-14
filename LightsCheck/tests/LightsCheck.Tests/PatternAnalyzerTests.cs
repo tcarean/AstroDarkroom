@@ -245,10 +245,19 @@ public class PatternAnalyzerTests
     public void R046_TheVarianceOfAMedianOfAFewValuesIsTheKnownOne(int n, double expected) =>
         Assert.Equal(expected, PatternAnalyzer.MedianVariance(n), 4);
 
-    /// <summary>On many values the variance nears pi / 2 over the count, from below, odd or even.</summary>
+    /// <summary>
+    /// On many values the variance nears pi / 2 over the count, from below, odd or even; and it
+    /// is still a number on a session of thousands of frames, where the chance of half the
+    /// values falling on each side of the middle, 0.25 to the power of half the count, is too
+    /// small for a double from about 1070 frames on.
+    /// </summary>
     [Theory]
     [InlineData(999)]
     [InlineData(1000)]
+    [InlineData(1100)]
+    [InlineData(1101)]
+    [InlineData(5000)]
+    [InlineData(5001)]
     public void R046_TheVarianceOfAMedianOfManyValuesNearsHalfPiOverTheCount(int n) =>
         Assert.InRange(PatternAnalyzer.MedianVariance(n) * n, 1.565, Math.PI / 2);
 

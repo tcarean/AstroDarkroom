@@ -56,6 +56,7 @@ The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
 `PatternCrop`, `PatternHotSigma`, `PatternMinFrames`, `PatternClusterFraction`,
 `PatternClusterWidths`, `PatternSharePx`; the drift pairs and the polar alignment, `DriftMinPairs`,
 `PolarDriftFwhmFraction`, `PolarRotationMinHours`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
+`WideStarFwhm` (the session's width from which FOCUS says the width is read too narrow),
 `CloudStarFraction`, `BackgroundJumpPct`, `BackgroundNeighbours`; trends, `TrendFrames`,
 `DewFwhmRise`, `DewHaloRise`, `FocusHeldFraction`, `SwampingRatioOk`; the RA axis from the
 trails, `TrailAxisMinFrames`, `TrailAxisCoherence`, `TrailAxisTolerance`.

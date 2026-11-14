@@ -286,7 +286,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: `R014_ARoundGaussianGivesItsFwhmAndElongationOne` measures one width, 3.06 px. A star
   of sigma 3 (7.06 px) expecting 7 within 0.3.
 - Evidence: owner (the arithmetic is certain; the window is a requirement).
-- Status: fixed 49db7b96 (the 6 px window stays, since on real frames a wider one reads the sky and not the star, and FOCUS says the limit in a `wide stars` row when the session's stars are wider than 5 px, the owner's answer of 2026-11-14: ADR 0052, R-088; a width that is right above 5 px needs another estimator, a feature of its own)
+- Status: fixed 49db7b96 (the 6 px window stays, since on real frames a wider one reads the sky and not the star, and FOCUS says the limit in a `wide stars` row when the session's stars read wider than 4.5 px, the owner's answer of 2026-11-14: ADR 0052, R-088; the 4.5 px, in place of the 5 px of that commit, came with the fixes after the review of the branch; a width that is right above 4 px needs another estimator, a feature of its own, which the owner asked for after the merge)
 
 ### CR-008 A Fujifilm X-Trans raw is measured as a monochrome frame
 
@@ -320,7 +320,7 @@ there first, and the cleanup list, which holds what is not a defect.
   `(black, cblack[])`, asserted on `cblack[4] = cblack[5] = 2, cblack[6..9] = 64`.
 - Evidence: to measure: `--frame 1` on such a DNG with the Debug log on prints the black libraw
   gave; exiftool shows the file's. FlatCheck's reader most likely has the same lines.
-- Status: fixed 78033d84 (the repeat pattern of blacks is summed with libraw's common and per-colour blacks, per position; shown and tested on generated DNG files, the first raws the gate decodes; FlatCheck's reader was not looked at)
+- Status: fixed 78033d84 (the repeat pattern of blacks is summed with libraw's common and per-colour blacks, per position; ADR 0055; shown and tested on generated DNG files, the first raws the gate decodes; FlatCheck's reader was not looked at)
 
 ### CR-010 Frames are read in file-name order as if it were time order
 
@@ -1183,7 +1183,7 @@ In `tests/LightsCheck.Wpf.Tests/`:
   the dash "inside the longest run" and "the 11 px of Veil"; since ADR 0039 it is judged per
   stretch.
 - `src/LightsCheck.Core/Analysis/CadenceAnalyzer.cs:63`: "in capture order"; every caller
-  passes the order of the names (CR-010).
+  passes the order of the names (CR-010). Corrected on 2026-11-14 by the task that fixed CR-010.
 - `src/LightsCheck.Core/Report/SeriesReport.cs:1518`: "a share just under the limit never
   prints as the limit"; 24.95 to 24.99 % prints `25.0 %`.
 - `src/LightsCheck.Core/Imaging/RawReader.cs:336-337` (CR-009), `:431-432` (the example
