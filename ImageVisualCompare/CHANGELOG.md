@@ -109,6 +109,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   is held by its full paths. `Open…`, `Change A…` and `Change B…` then open in the files' folder,
   where they opened wherever Windows chose, and a switch of display mode reads the same two
   files again whatever folder an open dialog was last in (R-002).
+- A float TIFF whose transparency is stored already multiplied into its colours (associated
+  alpha) is shown as stored. Its colours were divided by the alpha first: a pixel stored as 0.2
+  at an alpha of 0.5 showed at level 102, where the same values in a FITS show at 51, and a
+  fully transparent pixel showed black whatever it held (R-091).
 
 ### Internal
 

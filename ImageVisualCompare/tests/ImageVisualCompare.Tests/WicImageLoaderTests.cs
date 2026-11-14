@@ -62,6 +62,41 @@ public class WicImageLoaderTests : IDisposable
         Assert.Equal("32-bit float RGB", loaded.Info.FormatDescription);
     }
 
+    /// <summary>
+    /// CR-004 of the review of 2026-11-13. WIC names a float RGBA TIFF with associated alpha
+    /// <c>Prgba128Float</c>, and its conversion to the straight format divides the colours by
+    /// alpha: measured on 2026-11-14, the first pixel loaded as 102, the second as black and the
+    /// fourth with its red white.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task R091_AFloatTiffWithAlpha_IsShownAsStored_NotDividedByAlpha(bool associatedAlpha)
+    {
+        // Four RGBA pixels: half transparent, fully transparent with colours left in it, opaque,
+        // and one whose red is above its alpha.
+        float[] samples =
+        [
+            0.2f, 0.2f, 0.2f, 0.5f,
+            0.3f, 0.1f, 0.05f, 0.0f,
+            0.6f, 0.6f, 0.6f, 1.0f,
+            0.3f, 0.2f, 0.1f, 0.25f,
+        ];
+        string path = _images.WriteFloatTiff("alpha.tif", 4, 1, 4, samples, associatedAlpha);
+
+        ImageInfo probed = _loader.Probe(path);
+        LoadedImage loaded = await _loader.LoadAsync(path);
+        byte[] bgra = new byte[16];
+        loaded.Bitmap.CopyPixels(bgra, 16, 0);
+
+        // 0.2 is 13107 of 65535, level 51; 0.3 is 76, 0.1 is 25, 0.05 is 12; 0.6 is 153.
+        Assert.Equal(
+            new byte[] { 51, 51, 51, 255, 12, 25, 76, 255, 153, 153, 153, 255, 25, 51, 76, 255 },
+            bgra);
+        Assert.Equal("32-bit float RGBA", probed.FormatDescription);
+        Assert.Equal("32-bit float RGBA", loaded.Info.FormatDescription);
+    }
+
     [Fact]
     public async Task R091_AFloatTiffInZeroTo65535_IsReadSo()
     {

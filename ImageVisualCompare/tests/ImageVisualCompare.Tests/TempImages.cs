@@ -136,9 +136,11 @@ public sealed class TempImages : IDisposable
     /// A float32 TIFF as libtiff writes one, and the 32-bit exports of Siril and GraXpert are:
     /// uncompressed, one strip, the channels interleaved, SampleFormat 3. With one channel WIC
     /// decodes it as Gray32Float, with three as a 96 bpp RGB WPF has no name for, with four as
-    /// Rgba128Float. The samples go row by row, a pixel's channels together.
+    /// Rgba128Float, or as Prgba128Float when the fourth channel is written as associated alpha.
+    /// The samples go row by row, a pixel's channels together.
     /// </summary>
-    public string WriteFloatTiff(string name, int width, int height, int channels, float[] samples)
+    public string WriteFloatTiff(
+        string name, int width, int height, int channels, float[] samples, bool associatedAlpha = false)
     {
         // Two channels (gray and alpha) would need their two SHORTs packed into the value field,
         // which the code below does not do; nothing writes such a file yet.
@@ -169,7 +171,9 @@ public sealed class TempImages : IDisposable
         };
         if (channels == 4)
         {
-            directory.Add((338, 3, 1, 2)); // ExtraSamples: unassociated alpha
+            // ExtraSamples: 1 is associated alpha, the colours stored already multiplied by it; 2
+            // is unassociated alpha.
+            directory.Add((338, 3, 1, associatedAlpha ? 1 : 2));
         }
 
         directory.Add((339, 3, channels, arrays ? formatsAt : 3)); // SampleFormat: IEEE float

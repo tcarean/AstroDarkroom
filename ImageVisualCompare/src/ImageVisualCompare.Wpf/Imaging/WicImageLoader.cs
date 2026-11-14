@@ -152,7 +152,9 @@ public sealed class WicImageLoader : IImageLoader
     /// Decodes floating-point samples as a FITS of the same samples is shown: as stored, through
     /// <see cref="FloatSamples"/>, read as 0 to 1, and once more as 0 to 65535 when
     /// <see cref="FitsScale.IsRescaled"/> finds the image counts so (ADR 0035), and rendered in
-    /// the mode asked for (ADR 0040).
+    /// the mode asked for (ADR 0040). The colours are the file's own whatever its alpha: a
+    /// fourth sample is not read, and colours stored multiplied by an associated alpha are not
+    /// divided by it (R-091).
     /// </summary>
     /// <param name="frame">The decoded frame, in its own float format.</param>
     /// <param name="info">
@@ -171,9 +173,13 @@ public sealed class WicImageLoader : IImageLoader
     {
         bool gray = info.Channels == ColorChannels.Gray;
 
-        // Between float formats WIC copies the values; only its conversion to levels takes them
-        // for light. Colour comes four floats a pixel, the fourth not read.
+        // Between float formats of the same kind of alpha WIC copies the values; its conversion to
+        // levels takes them for light, and the one from associated (premultiplied) alpha to
+        // straight divides the colours by alpha (measured on 2026-11-14: a stored 0.2 at alpha
+        // 0.5 came back 0.4). So a premultiplied frame is asked for as it is, and its colours
+        // arrive as stored (R-091). Colour comes four floats a pixel, the fourth not read.
         PixelFormat target = gray ? PixelFormats.Gray32Float
+            : frame.Format == PixelFormats.Prgba128Float ? PixelFormats.Prgba128Float
             : info.Channels == ColorChannels.Rgba ? PixelFormats.Rgba128Float
             : PixelFormats.Rgb128Float;
         var floats = new FormatConvertedBitmap(frame, target, null, 0);

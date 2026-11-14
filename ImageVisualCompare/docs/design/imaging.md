@@ -164,8 +164,14 @@ it, and shows its format as "Default" with 96 bits.
 
 `LoadFloat` has WIC convert the frame to `Gray32Float`, `Rgb128Float` or `Rgba128Float`, which
 copies the values: on two GraXpert exports, 6016 × 4016, its `Rgb128Float` floats equal the ones
-read straight from the file bit for bit, all 72 480 768 samples of each (2026-10-22). `Decode`
-then copies a band of rows at a time, at most 8 MB of floats (`Pass`), into
+read straight from the file bit for bit, all 72 480 768 samples of each (2026-10-22). One frame
+is asked for in its own format instead: a TIFF whose fourth sample is associated alpha
+(`ExtraSamples` 1), which WIC names `Prgba128Float`. From that format to `Rgba128Float` or
+`Rgb128Float` WIC does not copy, it divides the colours by alpha: measured on 2026-11-14 on a
+generated file, a pixel stored as 0.2, 0.2, 0.2 with alpha 0.5 came back 0.4, one with alpha 0
+came back 0, and a sample of 0.3 at an alpha of 0.25 came back 1.2; asked for as
+`Prgba128Float`, the four floats came back as stored. The fourth float is not read either way.
+`LoadFloat` then copies a band of rows at a time, at most 8 MB of floats (`Pass`), into
 `FloatSamples.ToSixteenBit` in Core, which puts each sample through `FitsScale.SixteenBit` as
 `FitsRowDecoder` does and counts the samples `FitsScale.IsAboveThreshold` takes, and the
 `DisplayRenderer` of the mode asked for turns the row into Bgra32. Then, as for a FITS,
