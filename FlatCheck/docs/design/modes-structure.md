@@ -86,7 +86,8 @@ do not spell out:
   no raw and no `--lens`, a raw that was read but says nothing about the lens (`RawWithoutLens`,
   `ShotIdentity.RawSaysNoLens`: no lens ID and no focal range, a camera on a telescope; ADR
   0065, named with the file and the remedy, `StructureReport.RawWithoutLensRemedy` asking only
-  for what is still unknown), an ID nothing matches, no focal, no f-stop (Siril writes none), or
+  for what is still unknown), an ID nothing matches, a `--lens` text nothing matches, lenses
+  found without a vignetting profile for raw files, no focal, no f-stop (Siril writes none), or
   lensfun-only profiles without a crop. Unknown is not a refusal, the `--light` rule.
 - What the search left out is said on the window's card only (R-113, ADR 0073):
   `StructureReport.AdobeMissing` and `AdobeSearched` take the sources the run searched and give

@@ -478,11 +478,23 @@ namespace FlatCheck
                 case ComparisonGap.RawWithoutLens:
                     return SyntheticReport.RawWithoutLensNote(shot?.RawName) + ". " + RawWithoutLensRemedy(shot);
                 case ComparisonGap.NoLensMatch:
+                    // The comparer gives this gap only for a raw that names its lens; the second
+                    // sentence is for a comparison built by hand without one.
                     return shot != null && shot.RawNamesLens
                         ? T($"{shot.RawLensLabel}: no lens in the catalog matches it (by ID, name and range). Give --lens <text>",
                             $"{shot.RawLensLabel}: niciun obiectiv din catalog nu i se potriveste (dupa ID, nume si gama). Da --lens <text>")
                         : T("no lens matches the text given; see --lenses",
                             "niciun obiectiv nu se potriveste cu textul dat; vezi --lenses");
+                case ComparisonGap.LensTextNoMatch:
+                    return T($"no lens in the list matches --lens \"{c.LensText?.Trim()}\"; --lenses shows the list",
+                             $"niciun obiectiv din lista nu se potriveste cu --lens \"{c.LensText?.Trim()}\"; --lenses arata lista");
+                case ComparisonGap.NoVignettingProfile:
+                    // The reason in the parentheses is SyntheticReport.NoProfile's, word for word.
+                    return c.Unprofiled.Count == 1
+                        ? T($"\"{c.Unprofiled[0].Title}\" was found, but it has no vignetting profile for raw files (its file describes distortion or colour only, or was made for JPEGs). Give another lens with --lens <text>",
+                            $"\"{c.Unprofiled[0].Title}\" a fost gasit, dar nu are profil de vignetare pentru fisiere raw (fisierul lui descrie doar distorsiunea sau culoarea, ori e facut pentru JPEG). Da alt obiectiv cu --lens <text>")
+                        : T($"{c.Unprofiled.Count} lenses were found, but none has a vignetting profile for raw files (their files describe distortion or colour only, or were made for JPEGs). Give another lens with --lens <text>",
+                            $"s-au gasit {c.Unprofiled.Count} obiective, dar niciunul nu are profil de vignetare pentru fisiere raw (fisierele lor descriu doar distorsiunea sau culoarea, ori sunt facute pentru JPEG). Da alt obiectiv cu --lens <text>");
                 case ComparisonGap.NoFocal:
                     return T("the focal length is not known - no FOCALLEN in the master, and no raw; give --focal <mm>",
                              "focala nu se stie - nici FOCALLEN in master, nici raw; da --focal <mm>");

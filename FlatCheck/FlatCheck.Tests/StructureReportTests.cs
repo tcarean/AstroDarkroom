@@ -585,6 +585,103 @@ public class StructureReportTests
         Assert.StartsWith("raw-ul nu spune nimic despre obiectiv", self);
     }
 
+    /// <summary>
+    /// CR-017: a --lens text that matches nothing is the text's doing. The report said "no raw
+    /// beside the master ... Give --lens &lt;text&gt;" to someone who had just given one, or,
+    /// with a raw that names its lens, that the raw's lens matched nothing.
+    /// </summary>
+    [Fact]
+    public void R017_ALensTextThatMatchesNothingIsSaidSo_NotAsAMissingRaw()
+    {
+        using var ws = new TempWorkspace();
+        const string ro = "niciun obiectiv din lista nu se potriveste cu --lens \"tokna\"; --lenses arata lista";
+
+        StructureOutcome o = Compared(ws, withRaw: false, lensText: " tokna ");
+        var w = new StringWriter();
+        StructureReport.Write(o, "x.fit", w);
+
+        Assert.False(o.Compared);
+        Assert.Equal(ComparisonGap.LensTextNoMatch, o.Profiles.Gap);
+        Assert.Equal(ro, StructureReport.GapText(o));
+        Assert.Contains("nu se poate compara: " + ro, w.ToString());
+        Assert.DoesNotContain("niciun raw langa master", w.ToString());
+        Assert.Equal("PERFECT", o.Verdict);                          // the five tests' verdict stands
+
+        // a raw that names its lens changes nothing: the text was asked for, and it matched nothing
+        o = Compared(ws, withRaw: true, lensText: "tokna");
+        Assert.True(o.Shot.RawNamesLens);
+        Assert.Equal(ComparisonGap.LensTextNoMatch, o.Profiles.Gap);
+        Assert.Equal(ro, StructureReport.GapText(o));
+        using (Ui.Use(UiLanguage.English))
+            Assert.Equal("no lens in the list matches --lens \"tokna\"; --lenses shows the list", StructureReport.GapText(o));
+    }
+
+    /// <summary>The one-profile LCP of a Canon EF 50 f/1.4 whose only entry was made for
+    /// rendered files, so the lens is listed and has no profile to compare with (R-134).</summary>
+    static string JpegOnlyLcp(string prettyName, string lensTag)
+        => LensProfileTestData.LcpOneProfile("Canon", prettyName, lensTag, "198", "1", "50")
+            .Replace("stCamera:CameraRawProfile=\"True\"", "stCamera:CameraRawProfile=\"False\"");
+
+    /// <summary>
+    /// CR-017: a lens that was found but has no vignetting profile for raw files is not "no
+    /// lens matches the text given": the text matched. The gap names the lens and the reason,
+    /// one lens or several.
+    /// </summary>
+    [Fact]
+    public void R017_ALensFoundWithoutAVignettingProfileIsSaidSo_NotAsNoMatch()
+    {
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        File.WriteAllText(Path.Combine(dir, "Tokina", "Canon (Canon EF 50mm f1.4 USM).lcp"), JpegOnlyLcp("Canon EF 50mm f/1.4 USM", "EF50mm f/1.4 USM"));
+        File.WriteAllText(Path.Combine(dir, "Tokina", "Canon (Canon EF 50mm f1.8 STM).lcp"), JpegOnlyLcp("Canon EF 50mm f/1.8 STM", "EF50mm f/1.8 STM"));
+        var sources = ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
+        var r = Result(FitsTestData.Radial(512, 512));
+
+        StructureOutcome one = StructureRun.Compare(r, MasterFrame(), new StructureQuery { Sources = sources, LensText = "50mm f1.4", FStop = 4 });
+        string gap = StructureReport.GapText(one);
+        LensChoice lens = Assert.Single(sources.Catalog.Lenses, l => l.Name.Contains("f1.4"));
+
+        Assert.False(one.Compared);
+        Assert.Equal(ComparisonGap.NoVignettingProfile, one.Profiles.Gap);
+        Assert.Equal(new[] { lens }, one.Profiles.Unprofiled);
+        Assert.Equal($"\"{lens.Title}\" a fost gasit, dar nu are profil de vignetare pentru fisiere raw "
+                     + "(fisierul lui descrie doar distorsiunea sau culoarea, ori e facut pentru JPEG). Da alt obiectiv cu --lens <text>", gap);
+        Assert.DoesNotContain("nu se potriveste", gap);
+        using (Ui.Use(UiLanguage.English))
+            Assert.Equal($"\"{lens.Title}\" was found, but it has no vignetting profile for raw files "
+                         + "(its file describes distortion or colour only, or was made for JPEGs). Give another lens with --lens <text>",
+                         StructureReport.GapText(one));
+
+        StructureOutcome two = StructureRun.Compare(r, MasterFrame(), new StructureQuery { Sources = sources, LensText = "Canon EF 50mm", FStop = 4 });
+        Assert.False(two.Compared);
+        Assert.Equal(ComparisonGap.NoVignettingProfile, two.Profiles.Gap);
+        Assert.Equal("s-au gasit 2 obiective, dar niciunul nu are profil de vignetare pentru fisiere raw "
+                     + "(fisierele lor descriu doar distorsiunea sau culoarea, ori sunt facute pentru JPEG). Da alt obiectiv cu --lens <text>",
+                     StructureReport.GapText(two));
+        using (Ui.Use(UiLanguage.English))
+            Assert.Equal("2 lenses were found, but none has a vignetting profile for raw files "
+                         + "(their files describe distortion or colour only, or were made for JPEGs). Give another lens with --lens <text>",
+                         StructureReport.GapText(two));
+
+        // found by the raw's own lens name, with no text given: the same gap, not "the raw's
+        // lens matches nothing"
+        var canon = new LoadedFrame
+        {
+            Header = new Dictionary<string, string>(),
+            Camera = "Canon EOS 7D Mark II",
+            FocalMm = 50,
+            FNumber = 4,
+            LensName = "EF50mm f/1.4 USM",
+            LensMount = "Canon EF",
+            LensMinFocalMm = 50,
+            LensMaxFocalMm = 50,
+            LensMaxAperture = 1.4,
+        };
+        StructureOutcome byName = StructureRun.Compare(r, MasterFrame(), new StructureQuery { Sources = sources, RawPath = "IMG_0001.CR2", LoadInfo = _ => canon });
+        Assert.Equal(ComparisonGap.NoVignettingProfile, byName.Profiles.Gap);
+        Assert.Equal(gap, StructureReport.GapText(byName));
+    }
+
     [Fact]
     public void EveryGapHasWordsAndNoneOfThemUsesDiacritics()
     {
