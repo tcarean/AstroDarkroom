@@ -287,6 +287,23 @@ internal static class InventoryReport
                 string darkIso = Opt(m.Darks.Iso, 0);
                 string lights = $"{Exposure(m.Lights!.ExposureSeconds)} s";
                 string lightIso = Opt(m.Lights.Iso, 0);
+                // a mismatch known on one setting while the other is not given on both sides (ADR
+                // 0058): the row names what differs and says what the frames do not state
+                string darks = partner ? T("the partner's darks", "dark-urile partenerului") : T("the darks", "dark-urile");
+                if (m.Darks.Iso is null || m.Lights.Iso is null)
+                {
+                    return T(
+                        $"WARNING: {darks} ({settings}) do not have the lights' exposure ({lights}); the frames do not state the ISO",
+                        $"ATENTIE: {darks} ({settings}) nu au expunerea lights-urilor ({lights}); cadrele nu spun ISO-ul");
+                }
+
+                if (m.Darks.ExposureSeconds is null || m.Lights.ExposureSeconds is null)
+                {
+                    return T(
+                        $"WARNING: {darks} (ISO {darkIso}) do not have the lights' ISO ({lightIso}); the frames do not state the exposure",
+                        $"ATENTIE: {darks} (ISO {darkIso}) nu au ISO-ul lights-urilor ({lightIso}); cadrele nu spun expunerea");
+                }
+
                 return partner
                     ? T($"WARNING: the partner's darks ({settings}, ISO {darkIso}) do not have the lights' settings ({lights}, ISO {lightIso})", $"ATENTIE: dark-urile partenerului ({settings}, ISO {darkIso}) nu au setarile lights-urilor ({lights}, ISO {lightIso})")
                     : T($"WARNING: the darks ({settings}, ISO {darkIso}) do not have the lights' settings ({lights}, ISO {lightIso})", $"ATENTIE: dark-urile ({settings}, ISO {darkIso}) nu au setarile lights-urilor ({lights}, ISO {lightIso})");

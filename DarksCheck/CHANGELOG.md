@@ -401,6 +401,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   skipped frame says so (R-027, ADR 0057; CR-008 of the code review). Up to the cap nothing
   changes.
 
+- Check 1's `match` no longer reads `UNMEASURED` when the darks and the lights are known to
+  differ: frames that give the exposure and no ISO (a capture program that writes the gain),
+  darks of 300 s against lights of 120 s, now read `WARNING`, naming the two exposures and
+  saying that the frames do not state the ISO; the same for ISOs that differ without an
+  exposure. `UNMEASURED` stays for a setting not given with nothing known to differ (R-007,
+  ADR 0058; CR-009 of the code review).
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

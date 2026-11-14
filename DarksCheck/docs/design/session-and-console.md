@@ -77,8 +77,13 @@ largest cluster as the group's settings, named by its most frequent exact exposu
 odd 118.5 s frame never names a 119.2 s group, whatever its position), with whether it holds
 every readable frame. The two
 verdicts compare clusters: darks against lights on exposure (same tolerance) and ISO, and the
-bias against `Th.BiasMaxExposureSeconds`. `Verdict.Unmeasured` stands for a missing group or
-missing exposures; the report, not the analyzer, turns it into words.
+bias against `Th.BiasMaxExposureSeconds`. For the darks against the lights each setting is
+compared on its own when both clusters give it: one that differs makes the verdict
+`Warning` whatever the other says, both given and equal make it `Ok`, and `Unmeasured` is
+what is left, a setting not given on a side with nothing known to differ (ADR 0058).
+`Verdict.Unmeasured` also stands for a missing group; the report, not the analyzer, turns
+it into words, and `InventoryReport.DarksVsLights` names only the setting that differs when
+the other is not given on both sides.
 
 ## The report and the console
 

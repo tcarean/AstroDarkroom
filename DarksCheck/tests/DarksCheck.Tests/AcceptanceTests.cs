@@ -487,6 +487,47 @@ public class AcceptanceTests
         Assert.Contains("potrivire          : ATENTIE: dark-urile (120.2 s, ISO 1600) nu au setarile lights-urilor (119.2 s, ISO 400)", stdout, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// CR-009: with frames that say the exposure and no ISO (a capture program that writes GAIN), darks of 300 s
+    /// against lights of 120 s read UNMEASURED though the two exposures stood two rows above. A setting known on
+    /// both sides that differs is a WARNING, whatever the other setting says.
+    /// </summary>
+    [Fact]
+    public void R007_ASettingKnownToDifferIsAWarningEvenWhenTheOtherIsNotGiven()
+    {
+        static void Write(string dir, string name, double? exposure, double? iso) =>
+            File.WriteAllBytes(Path.Combine(dir, name), SessionFixture.Frame(SessionFixture.FirstStart, exposure, iso));
+
+        // the exposures differ, no frame gives an ISO
+        using SessionFixture noIso = new SessionFixture().WithDarks(1, lights: 1);
+        Write(noIso.DarksDir, "DSC_0001.fit", 300, null);
+        Write(noIso.LightsDir, "light_0001.fit", 120, null);
+        (int code, string stdout, _) = Cli.Run(noIso.Root, "--inventory");
+        Assert.Equal(0, code);
+        Assert.Contains("potrivire          : ATENTIE: dark-urile (300.0 s) nu au expunerea lights-urilor (120.0 s); cadrele nu spun ISO-ul", stdout, StringComparison.Ordinal);
+        (_, string english, _) = Cli.Run(noIso.Root, "--inventory", "--lang", "en");
+        Assert.Contains("match              : WARNING: the darks (300.0 s) do not have the lights' exposure (120.0 s); the frames do not state the ISO", english, StringComparison.Ordinal);
+
+        // the same when only the lights lack the ISO
+        Write(noIso.DarksDir, "DSC_0001.fit", 300, 400);
+        (_, stdout, _) = Cli.Run(noIso.Root, "--inventory");
+        Assert.Contains("potrivire          : ATENTIE: dark-urile (300.0 s) nu au expunerea lights-urilor (120.0 s); cadrele nu spun ISO-ul", stdout, StringComparison.Ordinal);
+
+        // the ISOs differ, no frame gives an exposure
+        using SessionFixture noExposure = new SessionFixture().WithDarks(1, lights: 1);
+        Write(noExposure.DarksDir, "DSC_0001.fit", null, 1600);
+        Write(noExposure.LightsDir, "light_0001.fit", null, 400);
+        (_, stdout, _) = Cli.Run(noExposure.Root, "--inventory");
+        Assert.Contains("potrivire          : ATENTIE: dark-urile (ISO 1600) nu au ISO-ul lights-urilor (400); cadrele nu spun expunerea", stdout, StringComparison.Ordinal);
+        (_, english, _) = Cli.Run(noExposure.Root, "--inventory", "--lang", "en");
+        Assert.Contains("match              : WARNING: the darks (ISO 1600) do not have the lights' ISO (400); the frames do not state the exposure", english, StringComparison.Ordinal);
+
+        // what is known matches and the rest is not given: still unmeasured
+        Write(noExposure.LightsDir, "light_0001.fit", null, 1600);
+        (_, stdout, _) = Cli.Run(noExposure.Root, "--inventory");
+        Assert.Contains("potrivire          : NEMASURAT: cadrele nu spun expunerea sau ISO-ul", stdout, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R007_WithoutLightsTheMatchIsUnmeasuredAndTheBiasAbsent()
     {
