@@ -455,40 +455,46 @@ internal static class DarkSeriesRun
         FrameInfo first = stack.Decoded[0].Info;
         IndexFigures index = IndexAnalyzer.RankIndex(median, stack.Black, stack.White, stack.Norm, stack.Width, stack.Height);
 
-        // A set that does not say its ISO or exposure has the factor 1 of "unknown": against a set
-        // that says its own, the two are compared as made at the same settings, the partner's
-        // master read at the session's factor (ADR 0053). Its index above stays at its own.
+        // The two sets are compared on the settings both give; a setting one does not give is taken
+        // from the other, one neither gives is taken as the same (ADR 0053, ADR 0060). When both
+        // give both settings the partner's master is read at its own factor, as ever; otherwise at
+        // the session's factor times the partner's over the session's from what both give. Its
+        // index above stays at its own factor.
+        FrameInfo? ownFirst = own.FirstStacked;
         bool ownSays = own.SaysSettings, partnerSays = Normalisation.Says(first);
-        SilentSide silent = ownSays == partnerSays ? SilentSide.None : ownSays ? SilentSide.Partner : SilentSide.Own;
-        double partnerNorm = silent == SilentSide.None ? stack.Norm : own.Norm;
+        bool partnerLacks = ownFirst is not null && Normalisation.Lacks(first, ownFirst), ownLacks = ownFirst is not null && Normalisation.Lacks(ownFirst, first);
+        SilentSide silent = partnerLacks && ownLacks ? SilentSide.Both : partnerLacks ? SilentSide.Partner : ownLacks ? SilentSide.Own : SilentSide.None;
+        UnsaidSettings unsaid = ownFirst is null ? UnsaidSettings.None : Normalisation.UnsaidBy(ownFirst, first);
+        double partnerNorm = (ownSays && partnerSays) || ownFirst is null ? stack.Norm : own.Norm * own.Normalisation.Relative(first, ownFirst);
         MatchFigures match = IndexAnalyzer.Match(IndexAnalyzer.SharedRatios(own.MedianMaster, own.Black, own.White, own.Norm, median, stack.Black, stack.White, partnerNorm), own.Normalisation);
         MatchFigures lightsOverPartner = lights is null ? MatchFigures.None : IndexAnalyzer.Chain(lights.LightsOverDark, match, own.Normalisation);
 
         // A partner made at other settings than the set it is measured against is never subtracted
         // as it is (ADR 0055): in the files the hot pixels are the ratio times one factor over the
-        // other. The two sets of darks are at other settings only when both say both of theirs: a
-        // set that does not was compared as made at the other's settings (ADR 0053).
+        // other. Each setting is compared when both sets give it (ADR 0060).
         SettingsMismatch? other = null, lightsOther = null;
-        FrameInfo? ownFirst = own.FirstStacked;
-        if (ownSays && partnerSays && ownFirst is not null && !FrameStack.SameSettings(ownFirst, first))
+        if (ownFirst is not null && !FrameStack.SameSettings(ownFirst, first))
         {
             other = new SettingsMismatch(first, ownFirst, match.Ratio * own.Norm / partnerNorm);
             match = match with { Verdict = LightsAnalysis.NeverDirect(match.Verdict, true) };
         }
 
-        // The lights against the partner, by the rule they are held to the darks' with. A set that
-        // does not say both its settings stands where the set it was compared with stands (ADR
-        // 0053): the partner at the session's darks' settings, the session's darks at the
-        // partner's, and a light that was read at the darks' factor (it does not say its own, or
-        // the darks do not say theirs) where the darks stand. Null when neither set of darks says
-        // its settings: nothing is then at other settings.
-        FrameInfo? ownAt = ownSays ? ownFirst : partnerSays ? first : null;
-        FrameInfo? partnerAt = partnerSays ? first : ownSays ? ownFirst : null;
-        if (lights is not null && ownAt is not null && partnerAt is not null)
+        // The lights against the partner, by the rule they are held to the darks' with, setting by
+        // setting: one a set does not give stands where the set it was taken from stands (ADR
+        // 0053, ADR 0060). The partner's missing settings are the session's darks', the session's
+        // darks' missing ones the partner's; a light's setting counts as its own only when the
+        // light and the darks both give it, since only then was it used between those two, and
+        // otherwise stands where the darks stand.
+        if (lights is not null && ownFirst is not null)
         {
+            FrameInfo ownAt = Normalisation.TakenFrom(ownFirst, first), partnerAt = Normalisation.TakenFrom(first, ownFirst);
             (LightFigures Light, FrameInfo At)[] measured = lights.Frames
                 .Where(f => f.Error is null)
-                .Select(f => (f, f.AssumedSettings || !ownSays ? ownAt : f.Info))
+                .Select(f => (f, f.Info with
+                {
+                    Iso = Normalisation.GivesIso(f.Info) && Normalisation.GivesIso(ownFirst) ? f.Info.Iso : ownAt.Iso,
+                    ExposureSeconds = Normalisation.GivesExposure(f.Info) && Normalisation.GivesExposure(ownFirst) ? f.Info.ExposureSeconds : ownAt.ExposureSeconds,
+                }))
                 .ToArray();
             (LightFigures Light, FrameInfo At)[] others = measured.Where(x => !FrameStack.SameSettings(x.At, partnerAt)).ToArray();
             if (2 * others.Length > measured.Length)
@@ -532,6 +538,7 @@ internal static class DarkSeriesRun
         return new PartnerAnalysis(session.Root, stack.Frames.Count, stack.Decoded.Count, stack.Norm, first.Iso, first.ExposureSeconds, index, IndexAnalyzer.Label(session, index), match, lightsOverPartner, failed.Length, firstError, ownHot50, ownIn, partnerHot50, partnerIn)
         {
             Silent = silent,
+            UnsaidByBoth = unsaid,
             Other = other,
             LightsOther = lightsOther,
         };

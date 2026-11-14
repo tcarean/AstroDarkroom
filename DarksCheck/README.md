@@ -229,8 +229,12 @@ in every frame, without it they stay on the same pixels of the stack.
 
 The degrees come from the doubling rule at 6 degrees. A ratio around zero (the lights do not
 show the master's hot pixels at all: in-camera noise reduction, another camera, a FITS turned
-another way) is `they do not match`, with its own sentence. A light that does not say its ISO
-or its exposure is taken at the darks' settings, with a `WARNING` line that counts such lights.
+another way) is `they do not match`, with its own sentence. Frames that do not state a setting
+are compared on the settings both the darks and the lights state: a setting one of the two
+does not state is taken from the other, and one neither states is taken as the same, each
+with a `WARNING` line that says so. Darks of 300 s with lights of 120 s, in files that state
+no ISO, are thus brought to one exposure and judged as lights at another exposure than the
+darks.
 
 #### 3. Light leaks and differences across the frame
 

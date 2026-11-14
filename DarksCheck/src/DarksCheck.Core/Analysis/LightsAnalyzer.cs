@@ -28,8 +28,9 @@ namespace DarksCheck.Core;
 /// </summary>
 /// <param name="Info">The light's metadata.</param>
 /// <param name="Error">Why it has no figures, in the run's language; null when it decoded.</param>
-/// <param name="AssumedSettings">True when the light does not say its ISO or its exposure and
-/// was read at the darks' settings.</param>
+/// <param name="AssumedSettings">True when the light lacks an ISO or an exposure the darks give
+/// and took the darks' (ADR 0060); false for a setting the darks lack too, which
+/// <see cref="LightsAnalysis.UnsaidByBoth"/> holds.</param>
 /// <param name="SkyMedian">Per CFA position, the median of the plane (every 4th row and
 /// column) minus the light's black, in raw ADU; empty without figures.</param>
 /// <param name="SkySigma">Per CFA position, the clipped sigma of that subsample, in raw ADU;
@@ -50,21 +51,22 @@ internal sealed record LightFigures(FrameInfo Info, string? Error, bool AssumedS
     /// <summary>
     /// What the light's ADU are multiplied by to stand beside the darks' ADU: the darks' factor
     /// over the light's (<see cref="LightsAnalyzer.FactorOf"/>), above 0. 1 for a light at the
-    /// darks' settings, for one read at them (ADR 0053) and for one without figures; 0.5 for a
-    /// light at twice the darks' ISO.
+    /// darks' settings, for one whose settings the darks do not give or that gives none (ADR 0053,
+    /// ADR 0060) and for one without figures; 0.5 for a light at twice the darks' ISO, 2.5 for a
+    /// light of 120 s against darks of 300 s.
     /// </summary>
     internal double ToDarks { get; init; } = 1;
 
     /// <summary>
     /// True when the light's ISO or exposure is not the darks', by the rule that decides whether
     /// a frame belongs to a stack and that check 1 applies (<see cref="FrameStack.SameSettings"/>:
-    /// another ISO, or an exposure further than <see cref="Th.ExposureTolerance"/>), both the
-    /// light and the darks saying their ISO and their exposure (<see cref="Normalisation.Says"/>).
-    /// False when either does not say both, the two then being compared as made at the same
-    /// settings with nothing brought from one to the other (ADR 0053), even if the one setting
-    /// both give differs, which check 1 says; false for a light without figures. It is read from
-    /// the settings, not from <see cref="ToDarks"/>: twice the ISO at half the exposure has a
-    /// factor of 1 and is still another setting.
+    /// another ISO, or an exposure further than <see cref="Th.ExposureTolerance"/>), each setting
+    /// compared when both the light and the darks give it; a setting either does not give is
+    /// taken from the other and is the same (ADR 0060). The light's factor follows the same
+    /// settings (<see cref="LightsAnalyzer.FactorOf"/>), so a light at other settings is one whose
+    /// figures were brought. False for a light without figures. It is read from the settings,
+    /// not from <see cref="ToDarks"/>: twice the ISO at half the exposure has a factor of 1 and
+    /// is still another setting.
     /// </summary>
     internal bool OtherSettings { get; init; }
 }
@@ -149,8 +151,8 @@ internal sealed record SettingsMismatch(FrameInfo Master, FrameInfo Set, double 
 /// subtraction leaves, and the verdict (R-050 to R-052, R-067).
 /// </summary>
 /// <param name="Used">How many lights decoded, at least 1.</param>
-/// <param name="AssumedSettings">How many do not say their ISO or exposure and were read at the
-/// darks' settings; the lights that say theirs while the darks do not are <see cref="DarksSilent"/>.</param>
+/// <param name="AssumedSettings">How many lack an ISO or an exposure the darks give and took the
+/// darks'; the lights that give a setting the darks lack are <see cref="DarksSilent"/>.</param>
 /// <param name="Frames">Every light, in file order.</param>
 /// <param name="PersistentThreshold">The lights a pixel must be isolated-hot in to be
 /// persistent: ceil(<see cref="Th.PersistentFraction"/> x used).</param>
@@ -199,8 +201,9 @@ internal sealed record LightsAnalysis(
     /// <summary>
     /// The lights' settings against the darks', when the lights are at other settings (R-052, ADR
     /// 0055): more than half of the measured lights have another ISO or exposure than the darks
-    /// (<see cref="LightFigures.OtherSettings"/>). Null for lights at the darks' settings, and when
-    /// either set does not say its own (ADR 0053). With it no ratio is <see cref="MatchVerdict.Direct"/>.
+    /// (<see cref="LightFigures.OtherSettings"/>), each setting compared when both give it (ADR
+    /// 0060). Null for lights at the darks' settings. With it no ratio is
+    /// <see cref="MatchVerdict.Direct"/>.
     /// </summary>
     internal SettingsMismatch? Other { get; init; }
 
@@ -217,11 +220,17 @@ internal sealed record LightsAnalysis(
         otherSettings && verdict == MatchVerdict.Direct ? MatchVerdict.WithOpt : verdict;
 
     /// <summary>
-    /// How many decoded lights say their ISO and exposure while the darks do not (R-052, ADR
-    /// 0053): they were read at the darks' factor, the two sets compared as made at the same
-    /// settings; 0 when the darks say theirs.
+    /// How many decoded lights give an ISO or an exposure the darks lack (R-052, ADR 0053, ADR
+    /// 0060): the darks took that setting from them, so it is the same on both and changes no
+    /// factor; 0 when the darks give both settings.
     /// </summary>
     internal int DarksSilent { get; init; }
+
+    /// <summary>
+    /// The settings the darks do not give and no measured light gives either (R-052, ADR 0060):
+    /// they were taken as the same, and a row of check 2 says so.
+    /// </summary>
+    internal UnsaidSettings UnsaidByBoth { get; init; }
 }
 
 /// <summary>
@@ -295,13 +304,12 @@ internal static class LightsAnalyzer
                 else
                 {
                     double lightBlack = double.IsNaN(black) ? darks.Black : black;
-                    // a light that does not say its ISO or exposure is taken at the darks'
-                    // settings, the usual case and the one check 1 verifies, and the light is
-                    // marked
-                    bool assumed = !Normalisation.Says(frame.Info);
+                    // a light that lacks an ISO or an exposure the darks give takes the darks',
+                    // the usual case and the one check 1 verifies, and the light is marked
+                    bool assumed = darkSettings is not null && Normalisation.Lacks(frame.Info, darkSettings);
                     double normL = FactorOf(frame.Info, darks);
                     (LightFigures f, List<int> isolated) = Measure(frame, w, h, lightBlack, white, normL, assumed, excess, darks.Norm, ampIdx);
-                    frames[i] = f with { ToDarks = darks.Norm / normL, OtherSettings = !assumed && darks.SaysSettings && darkSettings is not null && !FrameStack.SameSettings(frame.Info, darkSettings) };
+                    frames[i] = f with { ToDarks = darks.Norm / normL, OtherSettings = darkSettings is not null && !FrameStack.SameSettings(frame.Info, darkSettings) };
                     lock (gate)
                     {
                         used++;
@@ -394,13 +402,25 @@ internal static class LightsAnalyzer
 
         match = match with { Verdict = LightsAnalysis.NeverDirect(match.Verdict, other is not null) };
 
-        // the lights that say their settings while the darks do not: read at the darks' factor, and the report says so
-        int darksSilent = darks.SaysSettings ? 0 : frames.Count(f => f.Error is null && !f.AssumedSettings);
+        // the lights that give a setting the darks lack: the darks took it from them, and the report says so
+        int darksSilent = darkSettings is null ? 0 : frames.Count(f => f.Error is null && Normalisation.Lacks(darkSettings, f.Info));
+        // the settings the darks lack and no measured light gives: taken as the same, and the report says so
+        UnsaidSettings unsaid = UnsaidSettings.None;
+        if (darkSettings is not null)
+        {
+            unsaid = UnsaidSettings.Iso | UnsaidSettings.Exposure;
+            foreach (LightFigures f in frames.Where(f => f.Error is null))
+            {
+                unsaid &= Normalisation.UnsaidBy(darkSettings, f.Info);
+            }
+        }
+
         return new LightsAnalysis(used, frames.Count(f => f.AssumedSettings), frames, threshold, persistent, hist, overlap, missedExcess.Count,
             missedExcess.Count == 0 ? double.NaN : Planes.Median([.. missedExcess]), ampIdx.Count, match,
             ok.Length == 0 ? double.NaN : ok[0].AmpRatioMedian, ok.Length == 0 ? double.NaN : ok[^1].AmpRatioMedian, traces)
         {
             DarksSilent = darksSilent,
+            UnsaidByBoth = unsaid,
             Other = other,
         };
     }
@@ -431,9 +451,11 @@ internal static class LightsAnalyzer
 
     /// <summary>
     /// The factor a light's ADU are divided by when it is compared with these darks (R-052, ADR
-    /// 0053): the light's own, from its ISO and exposure, when both the light and the darks say
-    /// their settings; the darks' factor when either does not, the two then being compared as
-    /// made at the same settings.
+    /// 0053, ADR 0060): the light's own, from its ISO and exposure, when both the light and the
+    /// darks give both settings; otherwise the darks' factor times the light's over the darks'
+    /// from the settings both give (<see cref="Normalisation.Relative"/>), a setting either does
+    /// not give being taken as the same. So a light without an ISO against darks of another
+    /// exposure is still brought to the darks' exposure.
     /// </summary>
     /// <param name="light">The light's metadata; not null.</param>
     /// <param name="darks">The darks' figures, with their factor and settings; not null.</param>
@@ -442,13 +464,16 @@ internal static class LightsAnalyzer
     {
         ArgumentNullException.ThrowIfNull(light);
         ArgumentNullException.ThrowIfNull(darks);
-        return Normalisation.Says(light) && darks.SaysSettings ? darks.Normalisation.NormOf(light) : darks.Norm;
+        // the first branch is the arithmetic of before, so a session that gives every setting keeps its figures to the bit
+        return Normalisation.Says(light) && darks.SaysSettings
+            ? darks.Normalisation.NormOf(light)
+            : darks.Norm * darks.Normalisation.Relative(light, darks.FirstStacked);
     }
 
     /// <summary>
     /// The noise of a light on one CFA position (R-067, R-024): the median over the lights of the
     /// local sigma (how much a pixel differs from its neighbours), each light at its own settings
-    /// (at the darks' when either set does not say its own, <see cref="FactorOf"/>).
+    /// (a setting the light or the darks do not give taken from the other, <see cref="FactorOf"/>).
     /// </summary>
     /// <param name="frames">Every light's figures; those that decoded with a positive local sigma
     /// on the position give the noise.</param>

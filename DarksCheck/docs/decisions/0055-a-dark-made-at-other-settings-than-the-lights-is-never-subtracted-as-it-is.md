@@ -1,7 +1,7 @@
 # 0055. A dark made at other settings than the lights is never subtracted as it is, and the window says so in red
 
 Date: 2026-11-14
-Status: accepted 2026-11-14
+Status: accepted 2026-11-14; other settings needing both settings on both sides superseded by 0060
 
 ## Context
 

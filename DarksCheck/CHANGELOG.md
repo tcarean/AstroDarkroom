@@ -414,6 +414,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   figure, with a `WARNING` line that names the two ISOs, and the run exits 1, as for biases of
   another size (R-041, ADR 0059; CR-010 of the code review).
 
+- Frames that state the exposure and no ISO (a capture program that writes the gain) are no
+  longer compared as if made at the same settings: darks of 300 s against lights of 120 s were
+  judged on the files' ratio as it stood, which could read `OK: the dark can be subtracted as
+  it is` or a temperature difference that was the exposure's. Two sets are now compared on the
+  settings both state; a setting one does not state is taken from the other, and one neither
+  states is taken as the same, each with a `WARNING` line. Such a pair is judged as any pair at
+  other settings, lights against darks and darks against a partner, and the partner's row
+  shows the settings the partner states (R-052, R-063, ADR 0060; CR-076 of the code review).
+  Files that state both settings read as before.
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

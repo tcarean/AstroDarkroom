@@ -401,46 +401,56 @@ internal sealed record PartnerAnalysis(
     int PartnerHot50InOwn20)
 {
     /// <summary>
-    /// Which of the two sets does not say its ISO or its exposure while the other does (R-063,
-    /// ADR 0053): the partner's master was then read at the session's darks' factor for
-    /// <see cref="OwnOverPartner"/> and the overlap, the two compared as made at the same
-    /// settings; <see cref="Norm"/> and <see cref="Index"/> stay at the partner's own factor.
+    /// Which of the two sets lacks an ISO or an exposure the other gives (R-063, ADR 0053, ADR
+    /// 0060): that setting was taken from the other set, and unless both sets give both settings
+    /// the partner's master was read at the session's darks' factor times its own over theirs
+    /// from the settings both give, for <see cref="OwnOverPartner"/> and the overlap;
+    /// <see cref="Norm"/> and <see cref="Index"/> stay at the partner's own factor.
     /// </summary>
     internal SilentSide Silent { get; init; }
 
     /// <summary>
+    /// The settings neither the session's darks nor the partner's give (R-063, ADR 0060): they
+    /// were taken as the same, and a row of INDEX says so.
+    /// </summary>
+    internal UnsaidSettings UnsaidByBoth { get; init; }
+
+    /// <summary>
     /// The session's darks' settings against the partner's, when the partner is made at other
     /// settings (R-063, ADR 0055): <see cref="OwnOverPartner"/> is then never
-    /// <see cref="MatchVerdict.Direct"/>. Null at the same settings, and when either set does not
-    /// say its own (<see cref="Silent"/>).
+    /// <see cref="MatchVerdict.Direct"/>. Each setting is compared when both sets give it; one
+    /// either does not give is taken from the other and is the same (ADR 0060). Null at the same
+    /// settings.
     /// </summary>
     internal SettingsMismatch? Other { get; init; }
 
     /// <summary>
     /// The session's lights' settings against the partner's, when more than half of the measured
     /// lights are at other settings than the partner (R-064, ADR 0055):
-    /// <see cref="LightsOverPartner"/> is then never <see cref="MatchVerdict.Direct"/>. A set that
-    /// does not say both its settings stands where the set it was compared with stands (ADR
-    /// 0053), and the mismatch then names those settings: a light taken at the darks' settings
-    /// the darks', a partner that does not say its own the session's darks'. Null without
-    /// lights, at the same settings, and when neither the session's darks nor the partner say
-    /// theirs.
+    /// <see cref="LightsOverPartner"/> is then never <see cref="MatchVerdict.Direct"/>. A setting
+    /// that was not used between two sets, one of them not giving it, stands where the set it
+    /// was taken from stands (ADR 0053, ADR 0060), and the mismatch names the settings so found:
+    /// a light's ISO taken from the darks is the darks', a partner's taken from the session's
+    /// darks is theirs. Null without lights and at the same settings.
     /// </summary>
     internal SettingsMismatch? LightsOther { get; init; }
 }
 
 /// <summary>
-/// Which of two compared sets of darks does not say its ISO or its exposure while the other does
-/// (ADR 0053).
+/// Which of two compared sets of darks lacks an ISO or an exposure the other gives (ADR 0053,
+/// ADR 0060).
 /// </summary>
 internal enum SilentSide
 {
-    /// <summary>Both say their settings, or neither does: each is read at its own factor.</summary>
+    /// <summary>Neither lacks a setting the other gives.</summary>
     None,
 
-    /// <summary>The open folder's darks do not say theirs; the partner's do.</summary>
+    /// <summary>The open folder's darks lack a setting the partner's give.</summary>
     Own,
 
-    /// <summary>The partner's darks do not say theirs; the open folder's do.</summary>
+    /// <summary>The partner's darks lack a setting the open folder's give.</summary>
     Partner,
+
+    /// <summary>Each lacks a setting the other gives: one gives the ISO alone, the other the exposure alone.</summary>
+    Both,
 }
