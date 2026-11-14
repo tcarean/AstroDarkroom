@@ -53,6 +53,26 @@ public class StarShapeTests
         Assert.Equal(1.0, s.Elongation, 0.02);
     }
 
+    /// <summary>
+    /// The limit of the window of radius 6, which the report's <c>wide stars</c> row speaks of
+    /// (R-088; CR-007 of the review of 2026-11-13): up to about 4 px a Gaussian is read as wide
+    /// as it is, and a wider one too narrow, since the window cuts its wings.
+    /// </summary>
+    [Theory]
+    [InlineData(3.0, 2.97, 3.03)]
+    [InlineData(4.0, 3.93, 4.03)]
+    [InlineData(5.0, 4.72, 4.92)]
+    [InlineData(7.06, 5.7, 6.1)]
+    [InlineData(10.0, 6.3, 6.7)]
+    public void R014_AStarWiderThanFivePixelsIsReadNarrowerThanItIs(double fwhm, double low, double high)
+    {
+        double sigma = fwhm / 2.3548;
+        Raster r = Gaussian(161, 80.3, 79.6, sigma, sigma, 0, 1000);
+        StarShape s = StarShapes.Measure(r, 80, 80, Th.MomentRadius, Th.MomentIterations, 1000, 30)!;
+
+        Assert.InRange(s.Fwhm, low, high);
+    }
+
     [Fact]
     public void R014_AnElongatedGaussianGivesTheRatioAndTheAngleOfItsMajorAxis()
     {

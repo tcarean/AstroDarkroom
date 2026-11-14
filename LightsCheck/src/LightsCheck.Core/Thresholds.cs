@@ -334,6 +334,13 @@ internal static class Th
     internal const double SoftFwhmFactor = 1.3;
 
     /// <summary>
+    /// A session whose median FWHM of the good frames is above this many pixels has stars too wide
+    /// for the moment window of <see cref="MomentRadius"/>, which reads them narrower than they
+    /// are (a true 5 px reads 4.8, 7 reads 5.9, 10 reads 6.5), so the report says it (R-088).
+    /// </summary>
+    internal const double WideStarFwhm = 5.0;
+
+    /// <summary>
     /// A frame with fewer detected stars than this fraction of the session's median has clouds or
     /// haze.
     /// </summary>

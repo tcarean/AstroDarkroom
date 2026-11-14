@@ -110,7 +110,10 @@ minutes. The report's sections:
   against the read noise of the biases, dew, the trailed frames, the dithering, the polar
   alignment, and how many frames to leave out of the stack and how much exposure stays.
 - **FOCUS**: the stars' width (FWHM) on the good frames, at the start and at the end of the night
-  and in three zones (centre, middle, edge), and the verdict.
+  and in three zones (centre, middle, edge), and the verdict. The width is read as it is up to
+  about 4 px and too narrow above (stars 7 px wide read about 6). When the session's stars are
+  wider than 5 px a `wide stars` row says so: the frames then read closer to one another than
+  they are, and a frame slightly out of focus can pass as good.
 - **EXPOSURE AND NOISE**: the sky background, the read noise of each channel (the noise the sensor
   adds to every frame), and on the first, the middle and the last frame (one too short to stack
   is skipped) the shot/read ratio of each

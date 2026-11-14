@@ -221,6 +221,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   The noise left in the frames' median is now worked out for the count of frames it was taken
   over, and noise alone reads about nothing whatever the count (R-046, ADR 0051; CR-006 of the
   review of 2026-11-13).
+- Stars wider than about 5 px are read narrower than they are (7 px read about 6), so on such a
+  session a frame slightly out of focus could pass as good with nothing said. The measurement
+  stays as it is, since on real frames a wider window reads the sky and not the star, and FOCUS
+  now has a `wide stars` row that says so when the session's stars are wider than 5 px (R-014,
+  R-088, ADR 0052; CR-007 of the review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

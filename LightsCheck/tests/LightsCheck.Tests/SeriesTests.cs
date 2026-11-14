@@ -105,6 +105,49 @@ public class SeriesTests
         Assert.Contains(english ? "frames aligned: 3 of 6" : "cadre aliniate: 3 din 6", sw.ToString(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Three frames whose stars are drawn 7 px wide read about 5.9 px, above the 5 px up to
+    /// which the width can be trusted: FOCUS says, before its verdict, in the console and in the
+    /// window's rows, that such stars are read narrower than they are (R-088).
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R088_ASessionOfWideStarsSaysTheyAreReadNarrowerThanTheyAre(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        SeriesFrame[] frames = [new(0, 0, 1.0, 0, Fwhm: 7.0), new(0.5, 0.2, 1.0, 1, Fwhm: 7.0), new(12, 0, 1.0, 30, Fwhm: 7.0)];
+        using SessionFixture f = new SessionFixture().WithStarSeries(frames);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+
+        Assert.InRange(r.Series.SessionFwhm!.Value, 5.5, 6.3);
+        IReadOnlyList<ReportRow> rows = SeriesReport.FocusRows(r);
+        Assert.Equal(5, rows.Count);
+        Assert.Equal("verdict", rows[^1].Label);
+        Assert.Equal(english ? "wide stars" : "stele late", rows[^2].Label);
+        Assert.Equal(
+            english
+                ? "the stars are wider than 5 px; LightsCheck reads such stars narrower than they are, so a frame slightly out of focus can pass as good"
+                : "stelele sunt mai late de 5 px; LightsCheck citeste astfel de stele mai inguste decat sunt, asa ca un cadru usor defocalizat poate trece drept bun",
+            rows[^2].Value);
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        Assert.Contains(rows[^2].Value, sw.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>A session whose stars are 5 px wide or under has no such row (R-088).</summary>
+    [Fact]
+    public void R088_ASessionOfOrdinaryStarsHasNoWideStarsRow()
+    {
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(3).ToList());
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+
+        Assert.True(r.Series.SessionFwhm <= Th.WideStarFwhm);
+        Assert.Equal(4, SeriesReport.FocusRows(r).Count);
+        Assert.DoesNotContain(SeriesReport.FocusRows(r), row => row.Label == "wide stars");
+    }
+
     /// <summary>A session without a flip has no such row, and one frame or scattered frames are written as the other rows write frames (R-087).</summary>
     [Fact]
     public void R087_TheFlipRowIsThereOnlyAfterAFlipAndWritesRangesAndOneFrame()

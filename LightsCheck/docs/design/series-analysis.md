@@ -347,7 +347,9 @@ alignment is not measured (no registered pair, under three drift pairs, no axis,
 when unknown.
 `DitherExplanation` is the list of paragraphs the window's Dithering card shows under its
 tables (R-045), built from `Th` like `RejectedExplanation`, the third one emphasised. FOCUS closes with a
-`verdict` row from the same `Focus` pair the summary uses. The console prints `DitherRows`
+`verdict` row from the same `Focus` pair the summary uses; before it, when the session's width
+is above `Th.WideStarFwhm`, `FocusRows` adds the `wide stars` row (R-088), which says that the
+moment window reads such stars too narrow (`frame-analysis.md`, step 7) and changes no figure. The console prints `DitherRows`
 and never the tables.
 
 The report prints the session header shared with the inventory, then the sections the

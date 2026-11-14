@@ -76,7 +76,8 @@ internal sealed record ZoneShape(double? Fwhm, double? Elongation, int Stars);
 
 /// <summary>
 /// Everything measured on one light frame (R-012 to R-016). Every figure is in pixels of the
-/// frame or ADU above black; nothing here depends on the camera, the lens or the session.
+/// frame or ADU above black, and none is scaled by the camera, the lens or the session; the
+/// stars' width is right up to about 4 px and too narrow above (R-014, R-088).
 /// </summary>
 /// <param name="Height">The frame's height, in pixels.</param>
 /// <param name="Width">The frame's width, in pixels.</param>
