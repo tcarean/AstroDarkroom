@@ -49,7 +49,14 @@ stages on the clock `FrameRun.Run` hands it (`logging.md`).
    three centroid refinements in a circle of radius 6 px on `d` clipped at zero, then the second
    moments; FWHM from the mean of the two eigenvalues, elongation from their ratio, angle from
    `0.5 atan2(2 mxy, mxx - myy)` in the image frame (x right, y down). Kept when the FWHM is in
-   1..15 px. The halo of the 40 brightest: annulus (5, 10] over core 3 on the unclipped `d`.
+   1..15 px. The circle does not follow the star, so it cuts a wide star's wings: a clean
+   Gaussian of 3 px reads 3.00, 4 reads 3.98, 5 reads 4.82, 7 reads 5.89, 10 reads 6.52 and 15
+   reads 6.75, and the upper bound of 15 is never met. It stays at 6 px all the same (ADR 0052):
+   on a real frame a wider circle takes in the sky's noise, which the clipping at zero turns
+   into flux, and the neighbouring stars, and the reading grows with the circle and not with
+   the star (a Veil frame: 4.07 px at radius 6, 4.53 at 8, 5.3 at 10, 6.4 at 12, and 10.5 when
+   the radius is set to twice the width read). The series report says the limit on a session
+   whose stars are wider than `Th.WideStarFwhm` (R-088). The halo of the 40 brightest: annulus (5, 10] over core 3 on the unclipped `d`.
 8. **Summary**: percentiles with numpy's linear interpolation; the angle as the vector mean of
    the doubled angles of the stars over 1.2 (coherence = the vector's length, 1 = every star
    agrees), reported with 6 voters or more; three radial zones by fractions of the

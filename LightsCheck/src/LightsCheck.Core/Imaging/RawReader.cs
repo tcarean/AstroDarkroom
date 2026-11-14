@@ -24,8 +24,10 @@
 // What is asked of libraw is the raw data, never a developed image:
 //   - raw_image, cropped to the visible area   -> the CFA mosaic, as rawpy's raw_image_visible
 //   - color.maximum                            -> white
-//   - color.black + color.cblack[0..3]         -> black, per channel
-//   - iparams.filters + iparams.cdesc          -> the colour of each Bayer position
+//   - color.black + color.cblack[0..3] + the   -> black, per position of the mosaic
+//     repeat pattern from color.cblack[6] on
+//   - iparams.filters + iparams.cdesc          -> the colour of each Bayer position; a colour
+//                                                 mosaic that is not Bayer is refused
 //   - other (shutter, iso_speed, timestamp, focal_len, aperture) and lens info -> metadata
 // No interpolation, no white balance, no gamma.
 //
@@ -89,7 +91,8 @@ namespace LightsCheck.Core
         /// Decodes the raw: the visible mosaic in ADU (no development), the exact scale from
         /// libraw, the CFA order and the shot metadata. Throws FileNotFoundException for a
         /// missing file; InvalidOperationException when libraw cannot be loaded, or gives no
-        /// 16-bit Bayer mosaic, invalid dimensions or an impossible scale; and
+        /// 16-bit mosaic, a colour mosaic that is not a Bayer one (<see cref="NotBayer"/>),
+        /// invalid dimensions or an impossible scale; and
         /// InvalidDataException naming the file when libraw cannot open or unpack it (a file
         /// that is not a raw at all), libraw's own exception kept as the inner one (R-007).
         /// </summary>
@@ -271,6 +274,23 @@ namespace LightsCheck.Core
             => new InvalidDataException(T($"{path}: libraw cannot read the file", $"{path}: libraw nu poate citi fisierul"), inner);
 
         /// <summary>
+        /// The error for a raw whose colour mosaic is not a Bayer one (R-007, ADR 0053), in the
+        /// run's language: it names the file and, for libraw's <c>filters</c> value of X-Trans,
+        /// the sensor.
+        /// </summary>
+        /// <param name="path">The raw file.</param>
+        /// <param name="filters">libraw's <c>filters</c> mask: 9 for X-Trans, 6 x 6; any other
+        /// value of a mosaic <see cref="CfaPattern.FromLibRaw"/> gives no order for.</param>
+        /// <returns>The message, a full sentence after the file's name.</returns>
+        internal static string NotBayer(string path, uint filters)
+        {
+            string sensor = filters == 9 ? " (Fujifilm X-Trans)" : "";
+            return T(
+                $"{path}: the sensor's colour mosaic is not a Bayer one{sensor}; LightsCheck measures only Bayer and monochrome raws.",
+                $"{path}: mozaicul de culori al senzorului nu este Bayer{sensor}; LightsCheck masoara doar raw-uri Bayer si monocrome.");
+        }
+
+        /// <summary>
         /// Opens the file in libraw. Here and not in Load or LoadInfo, so that those two keep no
         /// Sdcb.LibRaw type in their bodies and the lazy-loading guards around them still see a
         /// missing assembly as a load failure (see the note at the top).
@@ -333,17 +353,22 @@ namespace LightsCheck.Core
             LibRawColorData c = d.RawData.Color;
             double white = c.Maximum;
 
-            // The black level is global (color.black) or per channel (color.cblack), as libraw
-            // splits it; the sum is what rawpy reads, and the median of the four is taken.
-            var blacks = new List<double>(4);
-            for (int i = 0; i < 4; i++)
-                blacks.Add(c.Black + (c.CBlack != null && i < c.CBlack.Length ? c.CBlack[i] : 0));
+            // The black level is global (color.black), per colour (color.cblack[0..3]) or a
+            // repeat pattern (cblack[6..]), as libraw splits it; the median of the four
+            // positions' sums is taken.
+            List<double> blacks = BlackLevels(c.Black, c.CBlack, ip.Filters, s.TopMargin, s.LeftMargin);
             double black = Stats.Percentile(blacks, 50);
 
-            // Before the scale is judged, so a refused scale leaves its figures.
+            // Before the mosaic and the scale are judged, so a refused file leaves its figures.
             if (Log.IsDebugEnabled)
                 Log.Debug(FiguresLine(path, w, h, s.RawWidth, s.RawHeight, s.TopMargin, s.LeftMargin, s.RawPitch,
                                       ip.Filters, ip.Cdesc, cfa, white, c.Black, blacks, black));
+
+            // A colour mosaic without a Bayer order (X-Trans, Leaf, four colours) is not a
+            // monochrome frame: read as one, its pixels of three colours would be measured as a
+            // single image. Only a raw without any mosaic (filters 0) goes on without an order.
+            if (cfa == null && ip.Filters != 0)
+                throw new InvalidOperationException(NotBayer(path, ip.Filters));
 
             if (!(white > black))
                 throw new InvalidOperationException(T(
@@ -362,6 +387,49 @@ namespace LightsCheck.Core
             };
             FillShootingInfo(f, ctx, ip);
             return f;
+        }
+
+        /// <summary>
+        /// The black level of each of the four positions of the visible mosaic's first 2 x 2
+        /// block, as libraw holds it in three parts that it subtracts one after the other (R-007):
+        /// the common black, the black of the position's colour, and the value of the file's
+        /// repeat pattern at that position. A D3300 raw fills the common black alone; a DNG that
+        /// states its black as a pattern, <c>BlackLevelRepeatDim 2 2</c>, fills the third alone,
+        /// which libraw's unpack leaves where it is (ADR 0055).
+        /// </summary>
+        /// <param name="black">libraw's <c>color.black</c>, in ADU.</param>
+        /// <param name="cblack">libraw's <c>color.cblack</c>: entries 0 to 3 the black of each
+        /// colour index, 4 and 5 the rows and columns of the repeat pattern (0 without one), the
+        /// pattern's values from entry 6 on, row by row. Null or shorter is allowed: what is
+        /// missing counts as 0.</param>
+        /// <param name="filters">libraw's <c>filters</c> mask, which gives each position's colour
+        /// index; for a value without a 2 x 2 order (0, 1, 9) the position's own number is its
+        /// index.</param>
+        /// <param name="topMargin">The first visible row on the sensor.</param>
+        /// <param name="leftMargin">The first visible column on the sensor.</param>
+        /// <returns>Four blacks in ADU, for the positions [0,0], [0,1], [1,0] and [1,1].</returns>
+        internal static List<double> BlackLevels(double black, IReadOnlyList<uint> cblack, uint filters, int topMargin, int leftMargin)
+        {
+            int entries = cblack != null ? cblack.Count : 0;
+            int rows = entries > 5 ? (int)Math.Min(cblack[4], int.MaxValue) : 0;
+            int columns = entries > 5 ? (int)Math.Min(cblack[5], int.MaxValue) : 0;
+            // A pattern counts only when every one of its values is there to read.
+            bool pattern = rows > 0 && columns > 0 && (long)rows * columns <= entries - 6;
+            bool bayer = filters > 1000;
+
+            var blacks = new List<double>(4);
+            for (int k = 0; k < 4; k++)
+            {
+                int y = k / 2, x = k % 2;
+                // dcraw's FC, evaluated where CfaPattern.FromLibRaw evaluates it.
+                int row = topMargin + y, col = leftMargin + x;
+                int colour = bayer ? (int)((filters >> ((((row << 1) & 14) + (col & 1)) << 1)) & 3) : k;
+                double sum = black + (colour < entries ? cblack[colour] : 0);
+                // The pattern starts at the visible area's first pixel, as libraw subtracts it.
+                if (pattern) sum += cblack[6 + (y % rows) * columns + (x % columns)];
+                blacks.Add(sum);
+            }
+            return blacks;
         }
 
         /// <summary>
@@ -384,7 +452,7 @@ namespace LightsCheck.Core
         /// <param name="cfa">The CFA order; null for a raw without a Bayer mosaic (mono, Leaf, X-Trans).</param>
         /// <param name="maximum">libraw's <c>color.maximum</c>, the white, in ADU.</param>
         /// <param name="black0">libraw's global <c>color.black</c>, in ADU.</param>
-        /// <param name="blacks">The four channels' blacks, global plus per channel, in ADU.</param>
+        /// <param name="blacks">The four positions' blacks (<see cref="BlackLevels"/>), in ADU.</param>
         /// <param name="black">Their median, the black the frame is read with, in ADU.</param>
         /// <returns>The line's text.</returns>
         internal static string FiguresLine(string path, int w, int h, int rawWidth, int rawHeight, int topMargin, int leftMargin,

@@ -334,6 +334,15 @@ internal static class Th
     internal const double SoftFwhmFactor = 1.3;
 
     /// <summary>
+    /// A session whose median FWHM of the good frames, as read, is above this many pixels has
+    /// stars too wide for the moment window of <see cref="MomentRadius"/>, which reads them
+    /// narrower than they are (a true 5 px reads 4.8, 7 reads 5.9, 10 reads 6.5), so the report
+    /// says it (R-088). At this reading a frame is flagged as soft only from 1.5 times the
+    /// session's true width, where <see cref="SoftFwhmFactor"/> means 1.3 (ADR 0052).
+    /// </summary>
+    internal const double WideStarFwhm = 4.5;
+
+    /// <summary>
     /// A frame with fewer detected stars than this fraction of the session's median has clouds or
     /// haze.
     /// </summary>

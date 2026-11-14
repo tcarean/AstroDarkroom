@@ -52,7 +52,13 @@ MySessionFolder\
   session, where `result.fit` and the other results of the stacking sit.
 - The frames are the camera raws (`.nef`, `.cr2`, `.cr3`, `.arw`, `.dng`, `.raf`, `.pef`) when the folder
   has any, otherwise its FITS files (`.fit`, `.fits`, `.fts`); the two kinds are never mixed. They
-  are taken in the order of their file names.
+  are taken in the order of their file names. When that is not the order they were shot in (a
+  camera whose counter passed from `DSC_9999` to `DSC_0001` during the night, or names without
+  leading zeros), the session lines carry a `WARNING` that names the first two files out of
+  order: the pauses, the trends, the drift and the dithering are read from one frame to the
+  next, so on such a folder they may be wrong. A raw is read when its sensor has a Bayer mosaic
+  or none (a monochrome sensor); one with another colour mosaic, such as Fujifilm's X-Trans, is
+  not read, and its frames are listed as unreadable.
 - `biases\`, two frames or more, gives the read noise, and with it the verdict on the exposure.
 - `darks\` is only counted, to say whether the session has darks to take the sensor's pattern
   out (DITHERING, `fixed pattern`).
@@ -110,7 +116,10 @@ minutes. The report's sections:
   against the read noise of the biases, dew, the trailed frames, the dithering, the polar
   alignment, and how many frames to leave out of the stack and how much exposure stays.
 - **FOCUS**: the stars' width (FWHM) on the good frames, at the start and at the end of the night
-  and in three zones (centre, middle, edge), and the verdict.
+  and in three zones (centre, middle, edge), and the verdict. The width is read as it is up to
+  about 4 px and too narrow above (stars 7 px wide read about 6). When the session's stars are
+  wider than 4.5 px a `wide stars` row says so: the frames then read closer to one another than
+  they are, and a frame slightly out of focus can pass as good.
 - **EXPOSURE AND NOISE**: the sky background, the read noise of each channel (the noise the sensor
   adds to every frame), and on the first, the middle and the last frame (one too short to stack
   is skipped) the shot/read ratio of each

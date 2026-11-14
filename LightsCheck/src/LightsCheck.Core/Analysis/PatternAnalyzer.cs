@@ -232,8 +232,7 @@ internal static class PatternAnalyzer
             diff.D[i] -= evenMedian.D[i];
         }
 
-        // Var(odd - even) = c / na + c / nb and Var(median of n) = c / n, for the same c.
-        double noiseShare = 1.0 / used.Count / (1.0 / odd.Count + 1.0 / even.Count);
+        double noiseShare = NoiseShare(used.Count, odd.Count, even.Count);
 
         List<IReadOnlyList<ChannelLevel>> with = used.Select(i => channels[i]).Where(c => c is not null).Select(c => c!).ToList();
         List<string> names = [];
@@ -268,6 +267,89 @@ internal static class PatternAnalyzer
             LargestCluster = largest,
             ClusterByStarWidth = byWidth > Th.CoverageTight,
         };
+    }
+
+    /// <summary>
+    /// The share of the variance of (the odd frames' median minus the even frames' median) that is
+    /// the variance of the median of all the frames: the three medians are of different counts,
+    /// and a median's variance follows its count and its parity
+    /// (<see cref="MedianVariance"/>).
+    /// </summary>
+    /// <param name="n">The frames the pattern's median is taken over, 2 or more.</param>
+    /// <param name="odd">The frames of the first half-median, 1 or more.</param>
+    /// <param name="even">The frames of the second half-median, 1 or more.</param>
+    /// <returns>The share, about a quarter: 0.241 for 10 frames in halves of 5, 0.282 for 8 in halves of 4.</returns>
+    internal static double NoiseShare(int n, int odd, int even) => MedianVariance(n) / (MedianVariance(odd) + MedianVariance(even));
+
+    /// <summary>
+    /// The variance of the median of <paramref name="n"/> independent Gaussian values of variance
+    /// 1, the median taken as <see cref="Raster.Median"/> takes it: the middle value of an odd
+    /// count, the mean of the two middle values of an even one. Worked out by numeric integration
+    /// over the middle values' distribution, not read from a table.
+    /// </summary>
+    /// <param name="n">How many values, 1 or more.</param>
+    /// <returns>The variance: 1 for one value, 0.5 for two, near pi / (2 n) for many.</returns>
+    internal static double MedianVariance(int n)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(n, 1);
+        // The grid: 8 sigmas each way, fine enough for the middle values of many frames, which
+        // crowd within about 1.25 / sqrt(n) of zero.
+        double h = Math.Min(1.0 / 128, 0.05 / Math.Sqrt(n));
+        int count = (int)(16 / h) + 1;
+        double[] x = new double[count], density = new double[count], below = new double[count], above = new double[count];
+        for (int i = 0; i < count; i++)
+        {
+            x[i] = -8 + i * h;
+            density[i] = Math.Exp(-0.5 * x[i] * x[i]) / Math.Sqrt(2 * Math.PI);
+        }
+
+        // The chance of a value below and above each point, each summed from its own tail so
+        // that neither loses its small end.
+        for (int i = 1; i < count; i++)
+        {
+            below[i] = below[i - 1] + 0.5 * h * (density[i - 1] + density[i]);
+        }
+
+        for (int i = count - 2; i >= 0; i--)
+        {
+            above[i] = above[i + 1] + 0.5 * h * (density[i + 1] + density[i]);
+        }
+
+        int m = n / 2;
+        double weights = 0, squares = 0;
+        if (n % 2 == 1)
+        {
+            // The middle value is at x when m values fall below it and m above. The chances
+            // are doubled, so the weight is 1 at the middle whatever the count: left as they
+            // are, 0.25 to the power m is too small for a double from about 1070 values on.
+            for (int i = 1; i < count - 1; i++)
+            {
+                double w = Math.Exp(m * (Math.Log(2 * below[i]) + Math.Log(2 * above[i]))) * density[i];
+                weights += w;
+                squares += w * x[i] * x[i];
+            }
+
+            return squares / weights;
+        }
+
+        // An even count: the mean of the lower middle value a and the upper one b. By symmetry
+        // its variance is (E[a a] + E[a b]) / 2, and E[a b] = E[a (a + gap)], the gap being the
+        // mean distance from a to the smallest of the m values above it.
+        double[] gap = new double[count];
+        for (int i = count - 3; i >= 1; i--)
+        {
+            double ratio = Math.Pow(above[i + 1] / above[i], m);
+            gap[i] = 0.5 * h * (1 + ratio) + ratio * gap[i + 1];
+        }
+
+        for (int i = 1; i < count - 1; i++)
+        {
+            double w = Math.Exp((m - 1) * Math.Log(2 * below[i]) + m * Math.Log(2 * above[i])) * density[i];
+            weights += w;
+            squares += w * (x[i] * x[i] + 0.5 * x[i] * gap[i]);
+        }
+
+        return squares / weights;
     }
 
     /// <summary>

@@ -56,6 +56,7 @@ The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
 `PatternCrop`, `PatternHotSigma`, `PatternMinFrames`, `PatternClusterFraction`,
 `PatternClusterWidths`, `PatternSharePx`; the drift pairs and the polar alignment, `DriftMinPairs`,
 `PolarDriftFwhmFraction`, `PolarRotationMinHours`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
+`WideStarFwhm` (the session's width from which FOCUS says the width is read too narrow),
 `CloudStarFraction`, `BackgroundJumpPct`, `BackgroundNeighbours`; trends, `TrendFrames`,
 `DewFwhmRise`, `DewHaloRise`, `FocusHeldFraction`, `SwampingRatioOk`; the RA axis from the
 trails, `TrailAxisMinFrames`, `TrailAxisCoherence`, `TrailAxisTolerance`.
@@ -194,11 +195,24 @@ sigma stands clear of it from 7 frames on. Per CFA position the median goes thro
 its own position, in the central window of that position, which on a 512 px crop is the whole
 position plane minus a 2 px border); the position's one-frame sigma is the median over the
 frames of `ChannelLevel.HighPassSigma`. The pattern's sigma is the clipped standard deviation
-of those residuals with the median's own noise taken out in quadrature. That noise is
-measured, not assumed: the medians of the odd and the even frames differ by the noise of two
-half-medians and by no pattern, and `Var(median of n) = Var(odd - even) / (n (1 / n_odd +
-1 / n_even))`; the analytic `sqrt(pi / 2) / sqrt(n)` of a Gaussian median was tried first and
-over-subtracted on eight frames, where the small-n median is tighter than the formula. On 87
+of those residuals with the median's own noise taken out in quadrature.
+That noise is measured, not assumed: the medians of the odd and the even frames differ by the
+noise of two half-medians and by no pattern, so `Var(median of n) = Var(odd - even) x
+NoiseShare(n, n_odd, n_even)`, the share being `v(n) / (v(n_odd) + v(n_even))` and `v(k)`
+`MedianVariance(k)`, the variance of the median of k Gaussian values of variance 1 as
+`Raster.Median` takes it. The three medians are of different counts and parities, and an even
+count's median, the mean of its two middle values, is tighter than an odd one's: `v` is 1,
+0.5, 0.4487, 0.2982, 0.2868 for 1 to 5 values and nears `pi / (2 k)` from below. `MedianVariance`
+integrates on a grid of 8 sigmas each way (step 1/128, finer from 41 values on). For an odd
+count it is the mean square of the middle value, whose density is that of m values below and m
+above. For an even count the lower middle value a and the upper one b give, by symmetry,
+`(E[a a] + E[a b]) / 2`, and `E[a b] = E[a (a + gap(a))]`, `gap(a)` being the mean distance from
+a to the smallest of the m values above it, summed backwards along the grid. Only the ratio
+assumes Gaussian noise; the scale is the crops' own. Until 2026-11-14 the share was `1 / (n (1 /
+n_odd + 1 / n_even))`, one constant for every count, and noise alone read as a pattern of 17 %
+of one frame's noise on 7 frames, 14 % on 8, 10 % on 12 and nothing on 10, where it took too
+much (ADR 0051). The analytic `sqrt(pi / 2) / sqrt(n)` for the median's noise itself was tried
+first and over-subtracted on eight frames. On 87
 Veil frames about 3 of the 21 ADU of green noise survive in the median and the measured
 3.7 ADU become 2.1 of pattern. A residual above `Th.PatternHotSigma` sigmas of the frame's noise is hot.
 `SensorPattern` holds the position names, the sigmas, the frame sigmas, the hot count and
@@ -334,7 +348,9 @@ alignment is not measured (no registered pair, under three drift pairs, no axis,
 when unknown.
 `DitherExplanation` is the list of paragraphs the window's Dithering card shows under its
 tables (R-045), built from `Th` like `RejectedExplanation`, the third one emphasised. FOCUS closes with a
-`verdict` row from the same `Focus` pair the summary uses. The console prints `DitherRows`
+`verdict` row from the same `Focus` pair the summary uses; before it, when the session's width
+is above `Th.WideStarFwhm`, `FocusRows` adds the `wide stars` row (R-088), which says that the
+moment window reads such stars too narrow (`frame-analysis.md`, step 7) and changes no figure. The console prints `DitherRows`
 and never the tables.
 
 The report prints the session header shared with the inventory, then the sections the
