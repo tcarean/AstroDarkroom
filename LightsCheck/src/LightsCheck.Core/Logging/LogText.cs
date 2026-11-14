@@ -199,14 +199,18 @@ internal static class LogText
             + " rotation=" + Num(r.RotationDeg) + " scale=" + Num(r.Scale) + " rms=" + Num(r.Rms);
     }
 
-    /// <summary>The timing of the series: its start and end, the span, the integration, the duty.</summary>
+    /// <summary>
+    /// The timing of the series: its start and end, the span, the integration, the duty, and the
+    /// first two frames, by their numbers, whose times go back against the list's order (R-089).
+    /// </summary>
     /// <param name="c">The cadence.</param>
     /// <returns>The text.</returns>
     internal static string Timing(Cadence c)
     {
         ArgumentNullException.ThrowIfNull(c);
         return "start=" + Time(c.Start) + " end=" + Time(c.End) + " span=" + Num(c.SpanSeconds) + " s integration="
-            + Num(c.IntegrationSeconds) + " s timedFrames=" + Int(c.TimedFrames) + " dutyPct=" + Num(c.DutyPct);
+            + Num(c.IntegrationSeconds) + " s timedFrames=" + Int(c.TimedFrames) + " dutyPct=" + Num(c.DutyPct)
+            + " backwards=" + (c.Backwards is (int before, int after) ? Int(before + 1) + ">" + Int(after + 1) : "none");
     }
 
     /// <summary>Every figure of the dithering the verdicts and the tables rest on; the per-frame lists are in the report.</summary>

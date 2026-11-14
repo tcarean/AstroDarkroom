@@ -102,7 +102,12 @@ is left out: the software rasteriser that renders the bitmap gives an edge to th
 it, the display adapter to the pixel before, which is what `PixelAt` follows and `ViewportTests`
 pins on the figures measured on screen (ADR 0052). Two of its cases are at whole scales with a
 pan the image is not drawn at, so the read-out is held to where the image is drawn (ADR 0053).
-Its other test shows a checkerboard of one
+Another test of `CompareViewTests` gives the surface one pointer position and then a zoom, a
+pair in place of the one shown, a position off the surface and a `MouseLeave`, and counts what
+is reported (R-051); in `MainWindowTests` a loader whose every image is one level, a different
+one for each file and mode, shows that the status bar's values follow a switch of mode and a
+changed image under that one position.
+The third test of `CompareViewTests` shows a checkerboard of one
 pixel a square at `100%` on a surface of odd width and height and compares every screen pixel of
 an area with the pixel stored (R-022, ADR 0053); `MainWindowTests` lays the window's content out
 at a whole size, never shown, and asks that the surface start and end on a whole physical pixel,

@@ -76,11 +76,11 @@ entry gives. Paths are relative to the project folder.
 
 | ID | Sev | Reach | Evidence | Title | Status |
 |----|----:|-------|----------|-------|--------|
-| CR-001 | 1 | common | to measure | The paper fit never asks the Soft proof judge about a pixel it does not move | open |
-| CR-002 | 1 | some setups | confirmed | A grey pixel whose tone the paper cannot reach is counted nowhere by the paper fit | open |
-| CR-003 | 1 | some setups | to measure | On an 8-bit source three thresholds on a whole level are decided by float rounding | open |
-| CR-004 | 1 | some setups | owner | A float FITS that is not on a 0..1 scale is analysed as a white frame | open |
-| CR-005 | 1 | slip | confirmed | Opening another image while a field is wrong leaves the old result under the new name | open |
+| CR-001 | 1 | common | to measure | The paper fit never asks the Soft proof judge about a pixel it does not move | fixed 98bfe6d2 |
+| CR-002 | 1 | some setups | confirmed | A grey pixel whose tone the paper cannot reach is counted nowhere by the paper fit | fixed da46a627 |
+| CR-003 | 1 | some setups | to measure | On an 8-bit source three thresholds on a whole level are decided by float rounding | fixed ae70ca1d |
+| CR-004 | 1 | some setups | owner | A float FITS that is not on a 0..1 scale is analysed as a white frame | fixed 4e0f4da4 |
+| CR-005 | 1 | slip | confirmed | Opening another image while a field is wrong leaves the old result under the new name | fixed 5c0cf426 |
 | CR-006 | 1 | rare | confirmed | Soft corners are reported on a frame whose stars are declared too few | open |
 | CR-007 | 1 | rare | confirmed | A FITS number that does not parse is read as its default: BZERO, BSCALE, the WCS | open |
 | CR-008 | 1 | rare | confirmed | An 8-bit image saved as 16 bits by a shift passes as real 16 bits | open |
@@ -143,10 +143,13 @@ entry gives. Paths are relative to the project folder.
 | CR-065 | 4 | rare | to measure | The log's rolling takes any `<executable>_<digits>.log` for its own | open |
 | CR-066 | 4 | rare | to measure | Under the two soft variants the chroma mapping jumps where the exact edge takes over | open |
 | CR-067 | 4 | crafted | confirmed | Arguments and paths go into the log as typed | open |
+| CR-068 | 4 | rare | to measure | The noise tile's range of exactly 6000 steps is decided by float rounding | open |
+| CR-069 | 4 | rare | confirmed | Two more level figures of an 8-bit source fall by float rounding: an edge folded into its corner, a JPEG percentile | open |
 
 9 entries of severity 1, 4 of severity 2, 39 of severity 3, 15 of severity 4; 45 confirmed, 14
-to measure, 8 for the owner. After the entries: what the owner may want to look at though no
-rule is broken, then the cleanup list (dead code, duplicates, work done twice).
+to measure, 8 for the owner. (As counted on 2026-11-13; CR-068 and CR-069 were added on 2026-11-14, and the
+Status column says what has been closed since.) After the entries: what the owner may want to
+look at though no rule is broken, then the cleanup list (dead code, duplicates, work done twice).
 
 ## Severity 1: a wrong figure, a wrong verdict, or a wrongly written output image
 
@@ -176,7 +179,7 @@ rule is broken, then the cleanup list (dead code, duplicates, work done twice).
   monotone rule as its own judge, where the two cannot disagree.
 - Evidence: to measure. The mechanism is read; its size needs `GamutAnalyzer.Measure` on the
   fitted subsample beside `PctOutsideAfter`, on the three pairs of `paper-fit.md`.
-- Status: open
+- Status: fixed 98bfe6d2 (ADR 0093)
 
 ### CR-002 A grey pixel whose tone the paper cannot reach is counted nowhere by the paper fit
 
@@ -201,7 +204,7 @@ rule is broken, then the cleanup list (dead code, duplicates, work done twice).
   has one out-of-reach pixel, with a chroma of 10.
 - Evidence: confirmed (the code path; how many pixels on a real pair needs a run with the canvas
   profile on an 8-bit copy of the reference image).
-- Status: open
+- Status: fixed da46a627 (ADR 0094; the mono image stays at 0, the owner's answer of 2026-11-14)
 
 ### CR-003 On an 8-bit source three thresholds on a whole level are decided by float rounding
 
@@ -235,7 +238,7 @@ bit. The 16-bit reference image is not touched.
 - Evidence: to measure. The lines were read; the figures are the replicas'. The task starts with
   a C# test: a raster built as the reader builds an 8-bit level (`(ushort)(n * 257) *
   (1f / 65535f)`) through each analyzer.
-- Status: open
+- Status: fixed ae70ca1d (ADR 0095; the second half of `Coloured` in ac1fd396, found by the review of the branch)
 
 ### CR-004 A float FITS that is not on a 0..1 scale is analysed as a white frame
 
@@ -250,7 +253,7 @@ bit. The 16-bit reference image is not touched.
   most samples are clipped is a requirement change.
 - Test: none for a file wholly out of range.
 - Evidence: owner.
-- Status: open
+- Status: fixed 4e0f4da4 (ADR 0096; refused, the owner's answer of 2026-11-14)
 
 ### CR-005 Opening another image while a field is wrong leaves the old result under the new name
 
@@ -267,7 +270,7 @@ bit. The 16-bit reference image is not touched.
   changes.
 - Test: none; `ViewModelTests.ABadParameterStopsTheRunWithAMessage` has no earlier result.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed 5c0cf426 (ADR 0097; the result is dropped, the owner's answer of 2026-11-14)
 
 ### CR-006 Soft corners are reported on a frame whose stars are declared too few
 
@@ -1217,6 +1220,41 @@ today; each goes wrong the day its constant or its rule moves, and no test would
   log line into one that reads as the log's own.
 - Should: the control characters as `?`, as for a FITS card or a profile's name.
 - Evidence: confirmed.
+- Status: open
+
+### CR-068 The noise tile's range of exactly 6000 steps is decided by float rounding
+
+- Where: `Analysis/NoiseAnalyzer.cs` (`Analyze`, `IsSmooth`): `hi - lo <= maxRange` with
+  `maxRange = (float)(NoiseTileMaxRangeLevels / 255.0)`, in single precision.
+- What happens: the family of CR-003 on a 16-bit source. The threshold is 6000 of 65535, a whole
+  16-bit step, so a tile whose range is exactly 6000 steps is smooth or not by the float's last
+  bit. On an 8-bit source there is no tie: the threshold is 23.35 levels.
+- Case: not built. One tile of the noise sample changes sides; the medians it feeds move by less
+  than their printed precision unless the sample is small.
+- Should: the compare of ADR 0095 (`RasterOps.LevelsOver`, on the range in levels).
+- Test: none.
+- Evidence: to measure. Met on 2026-11-14 while CR-003 was fixed; its three places were the
+  review's, and this one was left for its own task.
+- Status: open
+
+### CR-069 Two more level figures of an 8-bit source fall by float rounding: an edge folded into its corner, a JPEG percentile
+
+- Where: `Report/Recommendations.cs` (`Colour`, the fold of ADR 0058):
+  `edge.MaxAbsDelta < corner.MaxAbsDelta`; `Analysis/JpegAnalyzer.cs` (`ErrorAccumulator.Add`):
+  `_hist[(int)Math.Min(Bins - 1, e * Scale)]++`.
+- What happens: the family of CR-003, in two places that compare no threshold. On an 8-bit
+  source an edge and the corner beside it that depart from the sky by the same whole level read
+  a hair apart, so the edge is folded into the corner's line or keeps its own by the float's
+  last bit. An error of exactly 2 levels reads 1.9999962 or 2.0000038, so it lands in the
+  histogram's bin 199 or 200 and the 99th and 99.9th percentiles can print 1.99 for 2.00.
+- Case: not built. The first changes how many lines section 3 prints for one glow; the second is
+  a hundredth of a level on a printed percentile.
+- Should: the fold compared with the tie of ADR 0095; the bin taken from the error rounded to
+  the tie.
+- Test: none.
+- Evidence: confirmed by reading. Found by the review of the branch that fixed CR-001 to CR-005
+  (2026-11-14), which also found the same tie in the second half of `EdgeRegion.Coloured`; that
+  one was fixed on the branch, with CR-003.
 - Status: open
 
 ## For the owner's look

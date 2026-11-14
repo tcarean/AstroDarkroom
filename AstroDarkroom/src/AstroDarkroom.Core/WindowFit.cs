@@ -18,8 +18,9 @@
 namespace AstroDarkroom.Core;
 
 /// <summary>
-/// Where a window goes so that it stays on its screen (R-016): "Despre" is no taller than the
-/// work area of its screen, and moves inside it when the place it opens at would run past it.
+/// Where a window goes so that it stays on its screen (R-016, R-020): "Despre" and the main
+/// window are no taller than the work area of their screen, and move inside it when the place
+/// they open at would run past it.
 /// Plain numbers, in the device-independent pixels the window measures in; the window asks
 /// Windows for the area and executes the answer, the core decides it (ADR 0001).
 /// </summary>

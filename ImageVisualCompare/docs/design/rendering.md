@@ -74,12 +74,13 @@ zoom. A `Canvas` measures with infinite space and the transform alone decides wh
 image coordinates and travels with the pan; on the layer it stays put on screen, which is
 what a before/after slider needs. See ADR 0013.
 
-**Both layers need the same opaque backdrop.** A is drawn over B, so a file with an alpha
-channel would blend into B on the left while B blends into whatever is behind it on the right
-— two halves composited over different backgrounds, which is exactly the artefact this tool
-exists to rule out. `BeforeBackdrop` and `AfterBackdrop` are the same brush, the same size and
-the same transform for that reason. Verified with a 50%-alpha red over opaque blue: the left
-half reads 128,0,0 (A over the backdrop), not 128,0,127 (A over B). See ADR 0013.
+**Both layers need the same opaque backdrop.** A is drawn over B, so wherever A does not cover
+its layer, B would show through on the left of the line while the control's background shows on
+the right: two halves over different grounds, which is exactly the artefact this tool exists to
+rule out. `BeforeBackdrop` and `AfterBackdrop` are the same brush, the same size and the same
+transform for that reason. Since ADR 0054 every image is loaded opaque, so the one place an
+image does not cover its layer is the padding of a mismatched pair, past the smaller image's
+edge (ADR 0014). See ADR 0013.
 
 **Images are sized explicitly in pixels.** `image.Width = pair.Before.Info.PixelWidth` — its
 own size, not the shared canvas, and not the natural size. WPF derives natural size from the file's DPI metadata, so a 72 dpi export would lay out
@@ -99,11 +100,17 @@ measured again from `MainWindow.OnDpiChanged` when the display's scale changes);
 and its images stay unrounded, since rounding a 5938 pixel wide `Image` to device pixels is
 what the explicit pixel sizes are there to avoid. See ADR 0053.
 
-**The read-out names the pixel that is drawn.** `CompareView.OnMouseMove` hands the pointer's
-position to `ReportPointer`, which converts it to physical pixels and asks `Viewport.PixelAt`;
-that returns an `ImagePixel`, whole coordinates, or null off the image. `CursorPixelChanged` is
-raised only when the pixel changes, and `MainWindow.UpdatePixelReadout` reads both bitmaps at
-it. The pointer's position is the corner of the physical pixel it is on, and WPF paints that
+**The read-out names the pixel that is drawn.** `CompareView.OnPreviewMouseMove` keeps the
+pointer's position (`_pointer`, forgotten in `OnMouseLeave`): the preview event, because a
+scrollbar's thumb marks the moves of its own drag handled, and they never reach `OnMouseMove`.
+From that position `PixelUnderPointer` converts to physical pixels and asks `Viewport.PixelAt`;
+that returns an `ImagePixel`, whole coordinates, or null off the image. `CursorPixelChanged` is raised when the pixel changes, and
+`MainWindow.UpdatePixelReadout` reads both bitmaps at it. The pointer need not move for that:
+`Sync`, which every zoom, pan and divider move ends in, asks `PixelUnderPointer` again, so the
+pixel a zoom brings under a pointer at rest is reported; and `SetPair` and `ReplacePair` have it
+report even an unchanged pixel, since the bitmaps read at it are others (R-051). `MainWindow.ShowPair`
+sets its own pair and mode before it hands the pair to the surface for that reason. A position
+off the surface, which a drag that holds the mouse gives, is on no pixel. The pointer's position is the corner of the physical pixel it is on, and WPF paints that
 screen pixel from the image point at its centre, so `PixelAt` converts the centre, through the
 drawn offsets; the step from
 a point to a pixel is taken there and nowhere after it. A centre exactly on the edge between two

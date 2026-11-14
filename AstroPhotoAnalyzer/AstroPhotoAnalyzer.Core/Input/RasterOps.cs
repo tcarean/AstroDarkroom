@@ -171,6 +171,28 @@ namespace AstroPhotoAnalyzer
         internal static int Level16(float v) => (int)Math.Round(Math.Clamp(v, 0f, 1f) * 65535.0);
 
         /// <summary>
+        /// Whether a figure in 8-bit levels is over a threshold on a whole level, by more than
+        /// <see cref="Thresholds.LevelTie"/> (ADR 0095). A sample read from an 8-bit file is not
+        /// exactly n / 255 in single precision, so a figure that sits on the threshold reads a
+        /// hair over or under it by the level (3.0000017 or 2.9999998); with the tie it is on
+        /// the threshold at every level. A figure of a 16-bit source moves by steps far larger
+        /// than the tie, so nothing else changes.
+        /// </summary>
+        /// <param name="levels">The figure, in levels of 0..255.</param>
+        /// <param name="threshold">The threshold, in the same levels.</param>
+        /// <returns><c>true</c> when the figure passes the threshold by more than the tie.</returns>
+        internal static bool LevelsOver(double levels, double threshold) => levels > threshold + Thresholds.LevelTie;
+
+        /// <summary>
+        /// Whether a figure in 8-bit levels is under a threshold on a whole level, by more than
+        /// <see cref="Thresholds.LevelTie"/>, as <see cref="LevelsOver"/> compares.
+        /// </summary>
+        /// <param name="levels">The figure, in levels of 0..255.</param>
+        /// <param name="threshold">The threshold, in the same levels.</param>
+        /// <returns><c>true</c> when the figure is under the threshold by more than the tie.</returns>
+        internal static bool LevelsUnder(double levels, double threshold) => levels < threshold - Thresholds.LevelTie;
+
+        /// <summary>
         /// L* for every pixel, on the raster subsampled with <paramref name="stride"/>. On colour
         /// it goes through the Rec. 709 luminance of the linearised components; on mono it is the
         /// L* of the value. The vector is in pixel order, ready to sort.

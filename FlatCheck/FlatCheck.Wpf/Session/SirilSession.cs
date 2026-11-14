@@ -72,6 +72,21 @@ namespace FlatCheck.Wpf
     }
 
     /// <summary>
+    /// What <see cref="SirilSession.CheckInputFolders"/> found in the folders a script enters.
+    /// </summary>
+    /// <param name="Missing">The folder names missing or without a file, in the script's
+    /// order; never null.</param>
+    /// <param name="Unlistable">The name of the first folder that is there but could not be
+    /// listed; null when every folder could.</param>
+    /// <param name="Error">What listing <paramref name="Unlistable"/> threw; null with
+    /// it.</param>
+    internal readonly record struct InputFolderCheck(IReadOnlyList<string> Missing, string Unlistable, Exception Error)
+    {
+        /// <summary>True when every folder was listed and holds a file.</summary>
+        internal bool CanStart => Unlistable == null && Missing.Count == 0;
+    }
+
+    /// <summary>
     /// One Siril session folder and the rules of what is in it: where the master is, which
     /// files each tab lists, where the window writes; asks the disk only when asked.
     /// </summary>
@@ -212,22 +227,34 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Of the subfolders a script enters (SirilScript.RequiredFolders), those that are
-        /// missing or empty - that is exactly those at which Siril would stop with a failed
-        /// "cd" or with a conversion without files. Empty means it can start.
+        /// Looks into the subfolders a script enters (SirilScript.RequiredFolders): those that
+        /// are missing or empty - exactly those at which Siril would stop with a failed "cd" or
+        /// with a conversion without files - and the first that is there but cannot be listed
+        /// (a deny rule, a broken junction), which is neither: nobody saw inside. It never
+        /// throws for a folder it cannot list (R-080).
         /// </summary>
         /// <param name="required">The folder names the script enters.</param>
-        /// <returns>The names missing or without a file, in the given order.</returns>
-        internal IReadOnlyList<string> MissingInputFolders(IEnumerable<string> required)
+        /// <returns>What was found; <see cref="InputFolderCheck.CanStart"/> when every folder
+        /// holds a file.</returns>
+        internal InputFolderCheck CheckInputFolders(IEnumerable<string> required)
         {
             var missing = new List<string>();
+            string unlistable = null;
+            Exception error = null;
             foreach (string name in required)
             {
                 string dir = Path.Combine(Root, name);
-                bool present = Directory.Exists(dir) && Directory.EnumerateFiles(dir).Any();
-                if (!present) missing.Add(name);
+                try
+                {
+                    bool present = Directory.Exists(dir) && Directory.EnumerateFiles(dir).Any();
+                    if (!present) missing.Add(name);
+                }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+                {
+                    if (unlistable == null) { unlistable = name; error = e; }
+                }
             }
-            return missing;
+            return new InputFolderCheck(missing, unlistable, error);
         }
 
         /// <summary>

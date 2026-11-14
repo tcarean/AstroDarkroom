@@ -58,10 +58,13 @@ internal sealed record LightFigures(FrameInfo Info, string? Error, bool AssumedS
     /// <summary>
     /// True when the light's ISO or exposure is not the darks', by the rule that decides whether
     /// a frame belongs to a stack and that check 1 applies (<see cref="FrameStack.SameSettings"/>:
-    /// another ISO, or an exposure further than <see cref="Th.ExposureTolerance"/>); false when
-    /// either side does not say a setting, and for a light without figures. It is read from the
-    /// settings, not from <see cref="ToDarks"/>: twice the ISO at half the exposure has a factor
-    /// of 1 and is still another setting.
+    /// another ISO, or an exposure further than <see cref="Th.ExposureTolerance"/>), both the
+    /// light and the darks saying their ISO and their exposure (<see cref="Normalisation.Says"/>).
+    /// False when either does not say both, the two then being compared as made at the same
+    /// settings with nothing brought from one to the other (ADR 0053), even if the one setting
+    /// both give differs, which check 1 says; false for a light without figures. It is read from
+    /// the settings, not from <see cref="ToDarks"/>: twice the ISO at half the exposure has a
+    /// factor of 1 and is still another setting.
     /// </summary>
     internal bool OtherSettings { get; init; }
 }
@@ -83,13 +86,14 @@ internal sealed record OverlapAtLevel(double LevelAdu, int DarkCount, int Both);
 /// the light's noise on the pixel's colour, both in ADU equivalent, so it grows in step with
 /// `|ratio - 1|`: <paramref name="PerUnit"/> is the level over the noise at a typical pixel, and
 /// the band inside which the typical trace stays under <see cref="Th.TraceNoiseLimit"/> x the
-/// noise follows from it.
+/// noise follows from it. For lights at other settings than the darks the 1 is
+/// <see cref="Centre"/>, the ratio at which the files' subtraction leaves nothing (ADR 0055).
 /// </summary>
 /// <param name="Pixels">How many amplitude pixels were read: those of a colour whose noise in
 /// the lights is positive.</param>
 /// <param name="PerUnit">The median over those pixels of the master's level over the light's
 /// noise; NaN when no pixel was read.</param>
-/// <param name="Median">The night's median trace, in times the noise: `|ratio - 1|` x
+/// <param name="Median">The night's median trace, in times the noise: `|ratio - Centre|` x
 /// <paramref name="PerUnit"/>; NaN when no pixel was read or the ratio is unmeasured.</param>
 /// <param name="AboveNoise">The pixels whose trace is above 1 x the noise.</param>
 /// <param name="AboveStrong">The pixels whose trace is above
@@ -111,7 +115,32 @@ internal sealed record TraceFigures(int Pixels, double PerUnit, double Median, i
     /// <see cref="Th.MatchDirectHigh"/> on either side.
     /// </summary>
     internal bool Widened => DirectLow < Th.MatchDirectLow || DirectHigh > Th.MatchDirectHigh;
+
+    /// <summary>
+    /// The ratio at which a plain subtraction leaves nothing, the trace being
+    /// `|ratio - Centre|` x <see cref="PerUnit"/>: 1 for lights at the darks' settings; for lights
+    /// at other settings (<see cref="LightsAnalysis.Other"/>, ADR 0055) the lights' factor to the
+    /// darks' ADU (<see cref="LightFigures.ToDarks"/>), 0.5 at twice the darks' ISO, since the
+    /// subtraction works on the files and the ratio is brought to one setting.
+    /// </summary>
+    internal double Centre { get; init; } = 1;
 }
+
+/// <summary>
+/// A set measured against a master made at other settings (R-052, R-063, ADR 0055): another ISO, or
+/// an exposure further than <see cref="Th.ExposureTolerance"/>, by the rule of a stack
+/// (<see cref="FrameStack.SameSettings"/>). The ratio of the two is read with both brought to one
+/// setting, which says how their temperatures compare; a subtraction works on the files, where the
+/// set's hot pixels are <paramref name="RatioInFiles"/> times the master's.
+/// </summary>
+/// <param name="Master">The settings of the master's frames: the first one stacked; for a
+/// partner that does not say its own, the session's darks' it was taken at (ADR 0053).</param>
+/// <param name="Set">The settings of the set measured against it: for lights, the first measured
+/// light at other settings than the master, or the darks' settings when that light was taken at
+/// them.</param>
+/// <param name="RatioInFiles">The set's hot pixels over the master's as the files have them, the
+/// ratio without the two factors; NaN when the ratio is unmeasured.</param>
+internal sealed record SettingsMismatch(FrameInfo Master, FrameInfo Set, double RatioInFiles);
 
 /// <summary>
 /// The lights against the dark (check 2): every light's figures, the pixels persistent over
@@ -137,7 +166,7 @@ internal sealed record TraceFigures(int Pixels, double PerUnit, double Median, i
 /// on.</param>
 /// <param name="LightsOverDark">The lights' ratios over the master, one per light, as a
 /// match; its verdict is the ratio's with <paramref name="Traces"/>' wider Direct band
-/// (R-067).</param>
+/// (R-067), and never Direct for lights at other settings than the darks (ADR 0055).</param>
 /// <param name="RatioFirst">The first measured light's ratio; NaN when none.</param>
 /// <param name="RatioLast">The last measured light's ratio; NaN when none.</param>
 /// <param name="Traces">What a plain subtraction leaves at the master's hot pixels.</param>
@@ -159,11 +188,33 @@ internal sealed record LightsAnalysis(
 {
     /// <summary>
     /// The verdict of a ratio of these lights over their dark, the night's or one light's: R-062's
-    /// bounds with the Direct band of <see cref="Traces"/> (R-067).
+    /// bounds with the Direct band of <see cref="Traces"/> (R-067), and never
+    /// <see cref="MatchVerdict.Direct"/> for lights at other settings than the darks
+    /// (<see cref="Other"/>, ADR 0055).
     /// </summary>
     /// <param name="ratio">The amplitude ratio; NaN for unmeasured.</param>
     /// <returns>The verdict.</returns>
-    internal MatchVerdict Judge(double ratio) => IndexAnalyzer.Judge(ratio, Traces.DirectLow, Traces.DirectHigh);
+    internal MatchVerdict Judge(double ratio) => NeverDirect(IndexAnalyzer.Judge(ratio, Traces.DirectLow, Traces.DirectHigh), Other is not null);
+
+    /// <summary>
+    /// The lights' settings against the darks', when the lights are at other settings (R-052, ADR
+    /// 0055): more than half of the measured lights have another ISO or exposure than the darks
+    /// (<see cref="LightFigures.OtherSettings"/>). Null for lights at the darks' settings, and when
+    /// either set does not say its own (ADR 0053). With it no ratio is <see cref="MatchVerdict.Direct"/>.
+    /// </summary>
+    internal SettingsMismatch? Other { get; init; }
+
+    /// <summary>
+    /// A verdict as it stands for a set at other settings than its master (ADR 0055):
+    /// <see cref="MatchVerdict.Direct"/> becomes <see cref="MatchVerdict.WithOpt"/>, since the
+    /// master as it is does not have the set's hot pixels at their height in the files; every
+    /// other verdict stays.
+    /// </summary>
+    /// <param name="verdict">The verdict of the ratio brought to one setting.</param>
+    /// <param name="otherSettings">True when the set is at other settings than the master.</param>
+    /// <returns>The verdict to show.</returns>
+    internal static MatchVerdict NeverDirect(MatchVerdict verdict, bool otherSettings) =>
+        otherSettings && verdict == MatchVerdict.Direct ? MatchVerdict.WithOpt : verdict;
 
     /// <summary>
     /// How many decoded lights say their ISO and exposure while the darks do not (R-052, ADR
@@ -250,7 +301,7 @@ internal static class LightsAnalyzer
                     bool assumed = !Normalisation.Says(frame.Info);
                     double normL = FactorOf(frame.Info, darks);
                     (LightFigures f, List<int> isolated) = Measure(frame, w, h, lightBlack, white, normL, assumed, excess, darks.Norm, ampIdx);
-                    frames[i] = f with { ToDarks = darks.Norm / normL, OtherSettings = darkSettings is not null && !FrameStack.SameSettings(frame.Info, darkSettings) };
+                    frames[i] = f with { ToDarks = darks.Norm / normL, OtherSettings = !assumed && darks.SaysSettings && darkSettings is not null && !FrameStack.SameSettings(frame.Info, darkSettings) };
                     lock (gate)
                     {
                         used++;
@@ -328,13 +379,20 @@ internal static class LightsAnalyzer
 
         LightFigures[] ok = frames.Where(f => f.Error is null && !double.IsNaN(f.AmpRatioMedian)).ToArray();
         MatchFigures match = IndexAnalyzer.Match(ok.Select(f => (float)f.AmpRatioMedian).ToArray(), darks.Normalisation);
+        // lights at other settings than the darks (ADR 0055): the ratio still compares the
+        // temperatures, but the dark is never subtracted as it is, and what a subtraction leaves is
+        // read from the files
+        SettingsMismatch? other = OtherOf(frames, ok, darkSettings, used);
+        double centre = other is null || ok.Length == 0 ? 1 : Planes.Median(ok.Select(f => (float)f.ToDarks).ToArray());
         // what the mismatch leaves, and the verdict it relaxes (R-067): inside the widened band a
         // ratio the plain bounds call WithOpt is Direct
-        TraceFigures traces = TracesOf(frames, darks, excess, ampIdx, w, match.Ratio);
+        TraceFigures traces = TracesOf(frames, darks, excess, ampIdx, w, match.Ratio, centre, other is not null);
         if (traces.Relaxed)
         {
             match = match with { Verdict = MatchVerdict.Direct };
         }
+
+        match = match with { Verdict = LightsAnalysis.NeverDirect(match.Verdict, other is not null) };
 
         // the lights that say their settings while the darks do not: read at the darks' factor, and the report says so
         int darksSilent = darks.SaysSettings ? 0 : frames.Count(f => f.Error is null && !f.AssumedSettings);
@@ -343,7 +401,32 @@ internal static class LightsAnalyzer
             ok.Length == 0 ? double.NaN : ok[0].AmpRatioMedian, ok.Length == 0 ? double.NaN : ok[^1].AmpRatioMedian, traces)
         {
             DarksSilent = darksSilent,
+            Other = other,
         };
+    }
+
+    /// <summary>
+    /// Whether the lights are at other settings than the darks (R-052, ADR 0055): more than half
+    /// of the measured lights are (<see cref="LightFigures.OtherSettings"/>), the rule the scale
+    /// section's note follows (<see cref="StackNoise.Scaled"/>).
+    /// </summary>
+    /// <param name="frames">Every light's figures.</param>
+    /// <param name="withRatio">The measured lights that have a ratio over the master.</param>
+    /// <param name="darkSettings">The first stacked dark's metadata; null when none was stacked.</param>
+    /// <param name="used">How many lights were measured.</param>
+    /// <returns>The two settings and the ratio in the files (the median over the lights of each
+    /// light's ratio over its factor to the darks' ADU; NaN without a ratio), or null when the
+    /// lights are at the darks' settings.</returns>
+    private static SettingsMismatch? OtherOf(LightFigures[] frames, LightFigures[] withRatio, FrameInfo? darkSettings, int used)
+    {
+        LightFigures[] others = frames.Where(f => f.Error is null && f.OtherSettings).ToArray();
+        if (darkSettings is null || 2 * others.Length <= used)
+        {
+            return null;
+        }
+
+        double inFiles = withRatio.Length == 0 ? double.NaN : Planes.Median(withRatio.Select(f => (float)(f.AmpRatioMedian / f.ToDarks)).ToArray());
+        return new SettingsMismatch(darkSettings, others[0].Info, inFiles);
     }
 
     /// <summary>
@@ -394,9 +477,13 @@ internal static class LightsAnalyzer
     /// <param name="w">The mosaic's width, which gives a pixel's CFA position.</param>
     /// <param name="ratio">The night's ratio of the lights over the master; NaN when
     /// unmeasured.</param>
+    /// <param name="centre">The ratio at which a plain subtraction leaves nothing
+    /// (<see cref="TraceFigures.Centre"/>): 1 for lights at the darks' settings.</param>
+    /// <param name="otherSettings">True when the lights are at other settings than the darks: the
+    /// traces then relax no verdict (ADR 0055).</param>
     /// <returns>The figures; <see cref="TraceFigures.None"/> when no colour has a positive
     /// noise or the master has no amplitude pixel.</returns>
-    private static TraceFigures TracesOf(LightFigures[] frames, DarkSeriesAnalysis darks, float[] excess, List<int> ampIdx, int w, double ratio)
+    private static TraceFigures TracesOf(LightFigures[] frames, DarkSeriesAnalysis darks, float[] excess, List<int> ampIdx, int w, double ratio, double centre, bool otherSettings)
     {
         double[] noise = new double[4];
         for (int p = 0; p < 4; p++)
@@ -426,12 +513,15 @@ internal static class LightsAnalyzer
         double high = Math.Min(Th.MatchOptHigh, Math.Max(Th.MatchDirectHigh, 1 + reach));
         if (double.IsNaN(ratio))
         {
-            return new TraceFigures(perUnit.Count, k, double.NaN, 0, 0, low, high, false);
+            return new TraceFigures(perUnit.Count, k, double.NaN, 0, 0, low, high, false) { Centre = centre };
         }
 
-        double off = Math.Abs(ratio - 1);
-        bool relaxed = IndexAnalyzer.Judge(ratio) == MatchVerdict.WithOpt && IndexAnalyzer.Judge(ratio, low, high) == MatchVerdict.Direct;
-        return new TraceFigures(perUnit.Count, k, off * k, perUnit.Count(x => off * x > 1), perUnit.Count(x => off * x > Th.TraceStrongFactor), low, high, relaxed);
+        // the level and the noise are both brought to one setting, so the trace of the files'
+        // subtraction is the distance to the centre: |ratio - centre| x k is |the files' ratio - 1|
+        // x the master's level over the light's noise, both as the files have them
+        double off = Math.Abs(ratio - centre);
+        bool relaxed = !otherSettings && IndexAnalyzer.Judge(ratio) == MatchVerdict.WithOpt && IndexAnalyzer.Judge(ratio, low, high) == MatchVerdict.Direct;
+        return new TraceFigures(perUnit.Count, k, off * k, perUnit.Count(x => off * x > 1), perUnit.Count(x => off * x > Th.TraceStrongFactor), low, high, relaxed) { Centre = centre };
     }
 
     /// <summary>

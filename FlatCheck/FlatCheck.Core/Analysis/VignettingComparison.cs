@@ -80,12 +80,21 @@ namespace FlatCheck
         RawWithoutLens,
         /// <summary>The raw has an ID, but no lens in the catalog matches it.</summary>
         NoLensMatch,
+        /// <summary>A lens text was given (--lens) and no lens in the catalog matches it,
+        /// whatever the raw says.</summary>
+        LensTextNoMatch,
+        /// <summary>Lenses were found, by the text or by the raw, but none of them has a
+        /// vignetting profile for raw files (R-134), so there is nothing to compare
+        /// with.</summary>
+        NoVignettingProfile,
         /// <summary>
-        /// The focal length is not known (neither FOCALLEN, nor a raw, nor --focal).
+        /// The focal length is not known: no FOCALLEN, no --focal, and no raw gives it (there
+        /// was none, it could not be read, or it was read and carries none).
         /// </summary>
         NoFocal,
         /// <summary>
-        /// The aperture is not known: Siril does not write it, and there was no raw or --fstop.
+        /// The aperture is not known: Siril does not write it, there was no --fstop, and no raw
+        /// gives it (there was none, it could not be read, or it was read and carries none).
         /// </summary>
         NoFStop,
         /// <summary>Only lensfun profiles, and the camera's crop is not known.</summary>
@@ -192,6 +201,22 @@ namespace FlatCheck
         /// The lensfun lenses skipped because the crop is not known; usually empty.
         /// </summary>
         internal readonly IReadOnlyList<LensChoice> SkippedForCrop;
+        /// <summary>
+        /// The --lens text the lenses were searched with, as given; null when none was. The
+        /// <see cref="ComparisonGap.LensTextNoMatch"/> gap quotes it.
+        /// </summary>
+        internal readonly string LensText;
+        /// <summary>
+        /// The one source the --lens text was searched in (--source); null when both were. The
+        /// <see cref="ComparisonGap.LensTextNoMatch"/> gap names it: a text that matches a
+        /// lens of the other source matched nothing here.
+        /// </summary>
+        internal readonly ProfileSource? LensSource;
+        /// <summary>
+        /// The lenses found that have no vignetting profile for raw files; usually empty. The
+        /// <see cref="ComparisonGap.NoVignettingProfile"/> gap names them.
+        /// </summary>
+        internal readonly IReadOnlyList<LensChoice> Unprofiled;
 
         internal bool Compared => Verdict != null;
 
@@ -209,14 +234,25 @@ namespace FlatCheck
         /// lens ID or name found; false when they came by its range alone or from a --lens text,
         /// a search; null takes it from <paramref name="shot"/>: a raw that names its lens and
         /// candidates not found by range alone.</param>
+        /// <param name="lensText">The --lens text the lenses were searched with; null when none
+        /// was given.</param>
+        /// <param name="unprofiled">The lenses found without a vignetting profile for raw
+        /// files; null for none.</param>
+        /// <param name="lensSource">The one source <paramref name="lensText"/> was searched in;
+        /// null for both.</param>
         internal VignettingComparison(double masterStops, ShotIdentity shot, IReadOnlyList<ProfileDepth> profiles,
-                                      ComparisonGap gap, IReadOnlyList<LensChoice> skippedForCrop, bool? lensesNamedByRaw = null)
+                                      ComparisonGap gap, IReadOnlyList<LensChoice> skippedForCrop, bool? lensesNamedByRaw = null,
+                                      string lensText = null, IReadOnlyList<LensChoice> unprofiled = null,
+                                      ProfileSource? lensSource = null)
         {
             MasterStops = masterStops;
             Shot = shot;
             Profiles = profiles ?? Array.Empty<ProfileDepth>();
             Gap = gap;
             SkippedForCrop = skippedForCrop ?? Array.Empty<LensChoice>();
+            LensText = lensText;
+            LensSource = lensSource;
+            Unprofiled = unprofiled ?? Array.Empty<LensChoice>();
             if (Profiles.Count > 0)
             {
                 // By range alone, or among a --lens text's matches, the Adobe row may be another
@@ -261,9 +297,12 @@ namespace FlatCheck
         /// default the identity's candidates: what the raw indicated), each through the profile
         /// nearest to the focal length and the aperture. The gap is the first that applies, in
         /// this order: an empty <paramref name="catalog"/> gives NoProfiles; no lens to compare
-        /// gives NoLensMatch when the raw had a lens ID, RawWithoutLens when a raw was read but
-        /// says nothing about the lens, NoRaw otherwise; a null catalog then gives NoProfiles;
-        /// then NoFocal, NoFStop, and NoCrop or NoLensMatch when no row was made.
+        /// gives LensTextNoMatch when <paramref name="lensText"/> was given (the search was
+        /// asked for, and it found nothing, whatever the raw says), otherwise NoLensMatch when
+        /// the raw had a lens ID, RawWithoutLens when a raw was read but says nothing about the
+        /// lens, NoRaw otherwise; a null catalog then gives NoProfiles; then NoFocal, NoFStop,
+        /// and, when no row was made, NoCrop if a lensfun lens was skipped for want of a crop,
+        /// NoVignettingProfile otherwise (every lens found has no profile for raw files).
         /// </summary>
         /// <param name="master">The master's structure result; its VignetteStops is
         /// compared.</param>
@@ -275,10 +314,15 @@ namespace FlatCheck
         /// <param name="lensesNamedByRaw">True when <paramref name="lenses"/> are the candidates
         /// the raw's lens ID or name found, false when they came by its range alone or from a
         /// --lens text; null takes it from the identity (R-128).</param>
+        /// <param name="lensText">The --lens text <paramref name="lenses"/> were searched with;
+        /// null or blank when they were not searched by a text.</param>
+        /// <param name="lensSource">The one source that search was narrowed to (--source); null
+        /// when both were searched. Kept for the gap's words only.</param>
         /// <returns>The comparison, or one carrying the <see cref="ComparisonGap"/> that kept it
         /// from being made; never null.</returns>
         internal static VignettingComparison Analyze(StructureResult master, ShotIdentity shot, LensCatalog catalog,
-                                                     IReadOnlyList<LensChoice> lenses = null, bool? lensesNamedByRaw = null)
+                                                     IReadOnlyList<LensChoice> lenses = null, bool? lensesNamedByRaw = null,
+                                                     string lensText = null, ProfileSource? lensSource = null)
         {
             lenses ??= shot?.Candidates ?? Array.Empty<LensChoice>();
             double masterStops = master.VignetteStops;
@@ -288,11 +332,15 @@ namespace FlatCheck
             // there (the Canon EOS 40D session of 2026-10-26, 17 raws in flats/).
             if (catalog != null && catalog.Lenses.Count == 0)
                 return new VignettingComparison(masterStops, shot, null, ComparisonGap.NoProfiles, null);
+            // A text that found nothing is said as that: "no raw, give --lens" to someone who
+            // just gave one, or "the raw's lens matches nothing" for a search the raw had no
+            // part in, sends the person the wrong way (the review of 2026-11-13, CR-017).
             if (lenses.Count == 0)
                 return new VignettingComparison(masterStops, shot, null,
-                    shot != null && shot.RawNamesLens ? ComparisonGap.NoLensMatch
+                    !string.IsNullOrWhiteSpace(lensText) ? ComparisonGap.LensTextNoMatch
+                    : shot != null && shot.RawNamesLens ? ComparisonGap.NoLensMatch
                     : shot != null && shot.RawSaysNoLens ? ComparisonGap.RawWithoutLens
-                    : ComparisonGap.NoRaw, null);
+                    : ComparisonGap.NoRaw, null, lensText: lensText, lensSource: lensSource);
             if (catalog == null)
                 return new VignettingComparison(masterStops, shot, null, ComparisonGap.NoProfiles, null);
             if (shot?.FocalMm == null)
@@ -303,6 +351,7 @@ namespace FlatCheck
             double crop = shot.Crop ?? 0;
             var rows = new List<ProfileDepth>();
             var skipped = new List<LensChoice>();
+            var unprofiled = new List<LensChoice>();
             foreach (LensChoice lens in lenses)
             {
                 // lensfun normalises the radius to the calibration sensor's half-diagonal, so
@@ -311,11 +360,14 @@ namespace FlatCheck
                 if (lens.Source == ProfileSource.Lensfun && !(crop > 0)) { skipped.Add(lens); continue; }
                 IReadOnlyList<LensProfile> all = catalog.ProfilesOf(lens);
                 LensProfile p = LensCatalog.Nearest(all, shot.FocalMm.Value, shot.FStop.Value);
-                if (p == null) continue;
+                // A lens the lists name but whose files hold no vignetting profile for raw data
+                // (distortion or colour only, or made for JPEGs, R-134): found, with nothing to
+                // compare with.
+                if (p == null) { unprofiled.Add(lens); continue; }
                 rows.Add(Measure(p, master, crop, all));
             }
-            ComparisonGap gap = rows.Count > 0 ? ComparisonGap.None : skipped.Count > 0 ? ComparisonGap.NoCrop : ComparisonGap.NoLensMatch;
-            return new VignettingComparison(masterStops, shot, rows, gap, skipped, lensesNamedByRaw);
+            ComparisonGap gap = rows.Count > 0 ? ComparisonGap.None : skipped.Count > 0 ? ComparisonGap.NoCrop : ComparisonGap.NoVignettingProfile;
+            return new VignettingComparison(masterStops, shot, rows, gap, skipped, lensesNamedByRaw, lensText, unprofiled, lensSource);
         }
 
         /// <summary>

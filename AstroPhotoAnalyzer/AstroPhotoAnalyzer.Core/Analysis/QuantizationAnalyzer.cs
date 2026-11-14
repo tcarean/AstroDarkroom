@@ -186,16 +186,13 @@ namespace AstroPhotoAnalyzer
             if (r.H <= size || r.W <= size) return (0, 0, double.NaN, double.NaN, Array.Empty<double>());
             float[] g = r.Reference;
             var rng = new SeededRandom(Thresholds.PlateauSeed);
-            float maxRange = (float)(Thresholds.PlateauTileMaxRangeLevels / 255.0);
-            float maxMean = (float)(Thresholds.PlateauTileMaxMeanLevels / 255.0);
-
             double sum = 0; int tiles = 0;
             var sigmas = new List<float>();
             var perTile = new List<double>();
             for (int position = 0; position < Thresholds.PlateauPositions; position++)
             {
                 int y0 = rng.Next(r.H - size), x0 = rng.Next(r.W - size);
-                if (!Accept(g, r.W, x0, y0, size, maxRange, maxMean)) continue;
+                if (!Accept(g, r.W, x0, y0, size)) continue;
                 sigmas.Add((float)NoiseAnalyzer.SigmaLsb(g, r.W, x0, y0, size));
 
                 // Changes of value along each row, on the quantised sky; averaged over the rows.
@@ -221,19 +218,18 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Whether a tile is clean sky for the plateau: its range under
-        /// <paramref name="maxRange"/> and its mean under <paramref name="maxMean"/>.
+        /// <see cref="Thresholds.PlateauTileMaxRangeLevels"/> and its mean under
+        /// <see cref="Thresholds.PlateauTileMaxMeanLevels"/>, both by more than the tie of
+        /// <see cref="RasterOps.LevelsUnder"/> (ADR 0095): compared in single precision, a tile
+        /// spanning exactly 6 levels of an 8-bit file passed or not by its darkest level.
         /// </summary>
         /// <param name="g">The reference plane, 0..1, row-major.</param>
         /// <param name="w">The plane's width, in pixels.</param>
         /// <param name="x0">The tile's left column.</param>
         /// <param name="y0">The tile's top row, 0 at the top.</param>
         /// <param name="size">The tile's side, in pixels; the tile lies inside the plane.</param>
-        /// <param name="maxRange">
-        /// The range, max - min, to stay strictly under, on the scale 0..1.
-        /// </param>
-        /// <param name="maxMean">The mean to stay strictly under, on the scale 0..1.</param>
         /// <returns><c>true</c> when both hold.</returns>
-        static bool Accept(float[] g, int w, int x0, int y0, int size, float maxRange, float maxMean)
+        static bool Accept(float[] g, int w, int x0, int y0, int size)
         {
             float lo = float.PositiveInfinity, hi = float.NegativeInfinity; double s = 0;
             for (int y = y0; y < y0 + size; y++)
@@ -247,7 +243,8 @@ namespace AstroPhotoAnalyzer
                     s += v;
                 }
             }
-            return hi - lo < maxRange && s / (size * size) < maxMean;
+            return RasterOps.LevelsUnder(((double)hi - lo) * 255, Thresholds.PlateauTileMaxRangeLevels)
+                && RasterOps.LevelsUnder(s / (size * size) * 255, Thresholds.PlateauTileMaxMeanLevels);
         }
 
         /// <summary>

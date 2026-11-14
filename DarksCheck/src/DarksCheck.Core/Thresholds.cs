@@ -62,7 +62,7 @@ internal static class Th
 
     /// <summary>
     /// Frames held in memory for the median master, 48 MB each at 24 MP: 60 is 2.9 GB, a
-    /// tenth of the owner's 32 GB. Above it every k-th frame is decoded.
+    /// tenth of the owner's 32 GB. Above it exactly so many frames are decoded, evenly spread (ADR 0057).
     /// </summary>
     internal const int MaxFramesInMemory = 60;
 
@@ -266,13 +266,6 @@ internal static class Th
     /// on the columns.
     /// </summary>
     internal const double BandingAdu = 2.0;
-
-    /// <summary>
-    /// The noise of the median master is low enough when it is under this fraction of the
-    /// quantisation step; it adds in quadrature to every calibrated light, so under the step is as
-    /// low as the file format resolves.
-    /// </summary>
-    internal const double MasterNoiseVsStep = 1.0;
 
     /// <summary>
     /// Fewer darks than this make a poor median whatever the noise figure says: with 10 the median

@@ -30,7 +30,10 @@ shown.
 **`MainViewModel`**: `Path`, `HasPath`, `IsBusy`/`IsIdle`, `CanRun`, `BusyMessage`
 (the progress stage), `Error`/`HasError`, `HasResult`, `CanSave`, `DefaultReportPath`
 (`Report.txt`, `Raport.txt` in Romanian, beside the image), `Banner`, `Copyright`; `OpenAsync(path)` sets the path
-and runs; `RunAsync()` validates the fields (`ParameterFields.TryBuild`), clears the
+and runs, and for another image than the one whose result is on screen it first drops that
+result (`DropResult`: no result, empty tabs, the soft proof's comparison ended), since the run
+checks the fields before it clears anything and a bad field would leave one image's tabs under
+another's path (ADR 0097); `RunAsync()` validates the fields (`ParameterFields.TryBuild`), clears the
 tabs, runs `AnalysisRun.Execute` via `Task.Run`, populates the tabs, or sets `Error`
 (`Describe` joins inner messages, no stack: the stack goes to the diagnostic log, where each run
 is numbered with its outcome, `logging.md`); `SaveReport(file)` writes `WriteFull` through

@@ -293,9 +293,23 @@ and an exception there is logged at Error and shown as a card
 causes), the tabs reset and the session dropped, unless another folder was opened meanwhile
 (then a Debug line only). The Debug line that describes the folder runs after the card or the
 tabs are up and writes a folder it cannot list as `unreadable`, so it never takes the card
-down with it (R-080, R-110; why a card and not a crash is ADR 0072). The Synthetic prefill reads the reference raw inside its own
+down with it (R-080, R-110; why a card and not a crash is ADR 0072). What throws before that
+`try` (the check, the problem card's script choice) or in a reopening has no card: `MainWindow`
+passes each task it does not await to `Detached.Watch` (`Mvvm/Detached.cs`), which writes the
+fault at Error and nothing on screen. The Synthetic prefill reads the reference raw inside its own
 `try` for the same reason: it is awaited only at the end of `OpenAsync`, through a watcher that
 assumes it never faults (R-120).
+
+**A script's input folder that cannot be listed blocks the script, not the session.**
+`SirilSession.CheckInputFolders` looks into the folders the chosen script enters and catches
+the listing's error per folder: it returns the missing or empty ones and the first that could
+not be listed, with the exception (`InputFolderCheck`). `ScriptChoiceViewModel.FindBlocker`
+turns that folder into a blocker of its own (`SessionMessages.ScriptInputUnlistable`, never the
+"missing or empty" text: nobody saw inside) and writes the exception at Warn. Both holders of a
+script choice get it: the problem card of a folder without a master, and the Split tab of a
+session that opened, whose other tabs do not need that folder (R-080, ADR 0113). The check
+runs at the attach, at a change of script and at the press, so a folder that turns unlistable
+after the opening blocks the press instead of throwing out of it.
 
 **The Histogram tab lists the flat master first, then `flats/`, and lets a click interrupt a
 click.** The list and its order, the master not preselected and not run at open, are ADR 0033

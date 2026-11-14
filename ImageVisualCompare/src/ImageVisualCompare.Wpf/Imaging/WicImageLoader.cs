@@ -32,8 +32,8 @@ namespace ImageVisualCompare.Wpf.Imaging;
 ///
 /// Nothing downstream branches on bit depth or channel layout: WIC is asked for the file
 /// exactly as it was written, the format is recorded for the status bar, and then everything
-/// is converted to Bgra32. A 16-bit PNG from Siril, an 8-bit screenshot and a palettised
-/// image all arrive at the same place. The one exception is floating-point samples, as in the
+/// is converted to Bgra32, opaque: a file's transparency is not shown (ADR 0054). A 16-bit PNG
+/// from Siril, an 8-bit screenshot and a palettised image all arrive at the same place. The one exception is floating-point samples, as in the
 /// 32-bit TIFF exports of Siril and GraXpert: WIC's conversion to levels takes them for linear
 /// light and brightens them, so they are shown as stored, as a FITS of the same samples is
 /// (ADR 0035).
@@ -77,8 +77,8 @@ public sealed class WicImageLoader : IImageLoader
 
     /// <summary>
     /// Decodes the full image on the calling thread: the file's own format first, reported as
-    /// it is, then converted to Bgra32 and frozen, float samples as stored (see the class
-    /// summary). The file is closed again before this returns. A file that cannot be read or
+    /// it is, then converted to Bgra32 with alpha 255 and frozen, float samples as stored (see
+    /// the class summary). The file is closed again before this returns. A file that cannot be read or
     /// decoded throws an exception of a type <see cref="ImagePairLoader"/> turns into a message,
     /// WIC's own failures included.
     /// </summary>
@@ -110,7 +110,7 @@ public sealed class WicImageLoader : IImageLoader
                 return LoadFloat(frame, info, mode, cancellationToken);
             }
 
-            var converted = new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
+            BitmapSource converted = Opaque(frame);
 
             // The conversion above is lazy. Realise makes the pixels now, while the file stream
             // is still open, and Freeze makes the result usable from the UI thread even though
@@ -125,6 +125,20 @@ public sealed class WicImageLoader : IImageLoader
             throw Rejected(ex);
         }
     }
+
+    /// <summary>
+    /// Converts a frame of integer samples to Bgra32 with every alpha 255, lazily: through Bgr32,
+    /// which has no alpha, so the colours come as WIC decodes them, not multiplied by the file's
+    /// alpha, and the conversion on to Bgra32 writes 255 (R-010, ADR 0054). A file without alpha
+    /// comes out byte for byte as the direct conversion gave it (the R-010 tests, on whole small
+    /// images of five formats), in the same time and memory (measured on the three real files,
+    /// 2026-11-14).
+    /// </summary>
+    /// <param name="frame">The decoded frame, in the file's own pixel format.</param>
+    /// <returns>The frame as Bgra32, opaque; nothing is decoded until it is realised.</returns>
+    private static BitmapSource Opaque(BitmapSource frame) =>
+        new FormatConvertedBitmap(
+            new FormatConvertedBitmap(frame, PixelFormats.Bgr32, null, 0), PixelFormats.Bgra32, null, 0);
 
     /// <summary>
     /// Decodes and converts the pixels into memory, with <see cref="BitmapCacheOption.OnLoad"/>.
@@ -152,7 +166,9 @@ public sealed class WicImageLoader : IImageLoader
     /// Decodes floating-point samples as a FITS of the same samples is shown: as stored, through
     /// <see cref="FloatSamples"/>, read as 0 to 1, and once more as 0 to 65535 when
     /// <see cref="FitsScale.IsRescaled"/> finds the image counts so (ADR 0035), and rendered in
-    /// the mode asked for (ADR 0040).
+    /// the mode asked for (ADR 0040). The colours are the file's own whatever its alpha: a
+    /// fourth sample is not read, and colours stored multiplied by an associated alpha are not
+    /// divided by it (R-091).
     /// </summary>
     /// <param name="frame">The decoded frame, in its own float format.</param>
     /// <param name="info">
@@ -171,9 +187,13 @@ public sealed class WicImageLoader : IImageLoader
     {
         bool gray = info.Channels == ColorChannels.Gray;
 
-        // Between float formats WIC copies the values; only its conversion to levels takes them
-        // for light. Colour comes four floats a pixel, the fourth not read.
+        // Between float formats of the same kind of alpha WIC copies the values; its conversion to
+        // levels takes them for light, and the one from associated (premultiplied) alpha to
+        // straight divides the colours by alpha (measured on 2026-11-14: a stored 0.2 at alpha
+        // 0.5 came back 0.4). So a premultiplied frame is asked for as it is, and its colours
+        // arrive as stored (R-091). Colour comes four floats a pixel, the fourth not read.
         PixelFormat target = gray ? PixelFormats.Gray32Float
+            : frame.Format == PixelFormats.Prgba128Float ? PixelFormats.Prgba128Float
             : info.Channels == ColorChannels.Rgba ? PixelFormats.Rgba128Float
             : PixelFormats.Rgb128Float;
         var floats = new FormatConvertedBitmap(frame, target, null, 0);

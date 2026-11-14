@@ -79,7 +79,7 @@ stops on a drift instead of editing them.
 | V-013 | the Veil FITS; none | measured 2026-10-11 (ADR 0037): the sky path on a frame inside the band but narrower than it: method `Sky` for the reason `NarrowField`, the patch centres spanning 10.9 degrees of latitude; sky 95.8 %, nebula 2.8 % (over the model by 2.5 L\*), bright nebula 0.5 %, peaks 0.1 % (since ADR 0085; 96.4 / 2.9 / 0.5 / 0.1 under ADR 0033); 20 125 patches, 6 clouds named (LDN 873 first, 68 patches, L\* 7.6), the dust class 167 patches (0.8 %, under the 5 % floor; 1 patch under ADR 0033), so the dust is the darkest sky, L\* 6.4 (6.3 before), and the sky 9.3; the recommended row 0.16 (the sky reaches L\* 15 at 0.155), the exact target 0.074 (0.072 when re-measured on 2026-11-06, inside the tolerance), passes as is from Dmax 2.15; no smooth tile for the noise; 1 star since ADR 0054 (22 485 at FWHM 2.18 px before: the grain of a starless frame) and the size table on the dpi rule, the reference row 70 cm; and every other figure of the run |
 | V-014 | the Veil FITS; kind `curves` | measured 2026-10-11: the curves anchored on the nebula's own classes: anchors 0.078, 0.102, 0.166, 0.359, 0.498; four suggestions, `Puternica` taking the five L\* from 6.4, 9.3, 17.9, 38.9, 53.2 to 6.6, 10.0, 23.9, 49.6, 63.7 with a noise gain of 1.18 (since ADR 0085; from 6.3, 9.3, 17.2, 38.8, 53.2 to 6.3, 10.0, 23.1, 49.4, 63.6 at 1.20 before), `Maxima` the peaks to 0.83 with a gain of 1.35; one paper check (the sky under L\* 15); the save keeps all 93 cards and the WCS; the preview 1401 px wide (stride 4 on the 5601 px frame since ADR 0084; 1121 at stride 5 before) |
 | V-015 | the plate-solved FITS; kind `proof`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-10-30: the soft proof through the lab's baryta profile (R-160 to R-162, ADR 0066): the paper white of the `wtpt` tag L\* 97.19, a\* -0.01, b\* +1.11, shown as sRGB 248, 247, 245 under the simulation; the paper black L\* 3.49 at Dmax 2.41 (V-006); the proof 1946 px wide (stride 3); 1.90 % of its pixels outside the paper's gamut (ADR 0081, re-measured 2026-11-05; V-008 reads 1.94 % on the tonal subsample); the mean L\* of the proof 17.0 on `Perceptual`, 19.7 on `Relative`, 18.2 on `RelativeNoBpc` (18.0, 20.4 and 19.1 simulated): the three intents differ, and the compensated one keeps the most of the shadows |
-| V-016 | the plate-solved FITS; kind `gamutfit`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-11-06: the paper fit through the lab's baryta profile (R-175 to R-177, ADR 0083): 1.91 % of the pixels outside as is; `Exacta` touches 1.91 % and leaves 0.001 %, the chroma given up 0.63 at the median and 4.3 at the 99 % mark, 99.5 % of the pixels outside under L\* 15, none out of reach; `Lina` touches 3.81 % (0.41 at the median), `Foarte lina` 6.22 % (0.58); the recipe: a mask under L\* 12 (10.0 % of the pixels) at 70 % saturation leaves 4.9 % of them; the saved FITS 270869760 bytes, the saved TIFF 135437610 bytes, 16-bit, profile `sRGB`, the two within 0.5 16-bit levels of each other |
+| V-016 | the plate-solved FITS; kind `gamutfit`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-11-14 (first 2026-11-06; re-recorded with ADR 0093): the paper fit through the lab's baryta profile (R-175 to R-177, ADR 0083): 1.94 % of the pixels outside as is, the Soft proof judge's own share (V-008's `curves.before.gamut.all`); `Exacta` touches 1.94 % and leaves 0.001 %, the chroma given up 0.63 at the median and 4.2 at the 99 % mark, 99.6 % of the pixels outside under L\* 15, none out of reach; `Lina` touches 3.81 % (0.43 at the median), `Foarte lina` 6.22 % (0.58); the recipe: a mask under L\* 12 (10.0 % of the pixels) at 70 % saturation leaves 5.0 % of them; the saved FITS 270869760 bytes, the saved TIFF 135437610 bytes, 16-bit, profile `sRGB`, the two within 0.5 16-bit levels of each other |
 
 The figures recorded for each case are in `validation.json`; the table below, from the reference
 run of 2026-09-21, gives the same measurements made by hand in the originating conversation.
@@ -621,3 +621,23 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   profile `sRGB`, the two within 0.5 of a 16-bit level. The other fifteen cases did not move:
   `ColorMath` gained the D50 conversions and the display step took its matrix from there,
   without a figure changing (V-015's means to four decimals).
+- 2026-11-14 (ADR 0093 to ADR 0097, CR-001 to CR-005 of the code review of 2026-11-13;
+  `docs/plans/2026-11-14-fix-cr-001-to-cr-005.md`): the sixteen cases run on `main` (9677ecf7) and
+  on the branch (5c0cf426), the twelve files of the manifest checked, and the two runs compared
+  figure by figure. V-016 re-recorded at the owner's word of 2026-11-14, every figure as the
+  branch measures it. The paper fit asks the Soft proof judge about every pixel (ADR 0093), so:
+  `before` of the three variants 1.9073 -> 1.9427, which is V-008's `curves.before.gamut.all`
+  on the same subsample; `Exacta.touched` 1.9073 -> 1.9427, `Exacta.after` 0.0008 -> 0.0006
+  (0.0005 on `main` that day: the edge of a float colour is cached by its 16-bit level, so this
+  figure differs by a few pixels from run to run), `Exacta.lostMedian` 0.6276 -> 0.6267,
+  `Exacta.lostP99` 4.2628 -> 4.2288 (4.2619 on `main`); `Lina.after` 0.0227 -> 0.0055,
+  `Lina.lostMedian` 0.4121 -> 0.4334, `Lina.lostP99` 3.6887 -> 3.6885 (the same on `main`);
+  `Foarte-lina.after` 0.0006 -> 0.0003, `Foarte-lina.lostMedian` 0.5769 -> 0.5817; the three
+  `dark` 99.5469 -> 99.5552; `recipe.left` 4.8723 -> 4.9548. Its other seventeen figures are
+  identical. Not re-recorded, inside the 0.01 tolerance: the tie of ADR 0095 lowers
+  `jpeg.q*.pctOverThreshold` by 0.0003 to 0.0024 points and moves `meanLevelOverThreshold` by
+  up to 0.0033 on the analysis cases (V-001: 1.2291 -> 1.2288, 3.3898 -> 3.3892, 5.0288 ->
+  5.0280; V-004: 1.6723 -> 1.6720, 43.7759 -> 43.7737, 51.9465 -> 51.9445; V-010: 1.7807 ->
+  1.7804, 33.1261 -> 33.1237, 44.0498 -> 44.0477; V-013: 1.7135 -> 1.7132, 47.2881 -> 47.2860,
+  57.2798 -> 57.2780), the samples whose error is exactly 2 levels. No other figure of any case
+  moved between the two runs: V-006 to V-009, V-011, V-012, V-014 and V-015 are identical.

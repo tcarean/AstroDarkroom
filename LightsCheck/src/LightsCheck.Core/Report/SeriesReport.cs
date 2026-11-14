@@ -377,11 +377,12 @@ internal static class SeriesReport
 
     /// <summary>
     /// The FOCUS section, in plain words (R-078): the stars' width on the good frames, the first
-    /// against the last good frames and whether the focus held, the width in three zones, and the
-    /// verdict.
+    /// against the last good frames and whether the focus held, the width in three zones, on a
+    /// session of stars wider than <see cref="Th.WideStarFwhm"/> that such stars are read narrower
+    /// than they are (R-088), and the verdict.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
-    /// <returns>The four rows, in the console's order.</returns>
+    /// <returns>The four rows, five on a session of wide stars, in the console's order.</returns>
     internal static IReadOnlyList<ReportRow> FocusRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -389,13 +390,25 @@ internal static class SeriesReport
         (string fv, string ft) = Focus(s, r);
         string held = s.FocusHeld is bool fh ? (fh ? T("the focus held", "focusul a tinut") : T("the focus changed", "focusul s-a schimbat")) : T("too few good frames", "prea putine cadre bune");
         string average = T("(on average, on the good frames)", "(in medie, pe cadrele bune)");
-        return
+        List<ReportRow> rows =
         [
             new(T("the stars' width (FWHM)", "latimea stelelor (FWHM)"), $"{Px(s.SessionFwhm, r)} {average}"),
             new(T($"first / last {s.Fwhm.Count.ToString(Inv)} good frames", $"primele / ultimele {RoCount(s.Fwhm.Count)}cadre bune"), $"{Opt(s.Fwhm.First, 2)} px / {Opt(s.Fwhm.Last, 2)} px{ChangeWord(s.Fwhm)}: {held}"),
             new(T("in the centre / in the middle / at the edge", "in centru / la mijloc / la margine"), T($"the stars' width {ZoneMedians(r)} {average}", $"latimea stelelor {ZoneMedians(r)} {average}")),
-            new("verdict", ft, fv),
         ];
+        // Stars this wide are read narrower than they are, by the window the width is taken in
+        // (R-088, ADR 0052): the frames' widths sit closer together than the stars', and so does
+        // a soft frame to the session.
+        if (s.SessionFwhm is double width && width > Th.WideStarFwhm)
+        {
+            string limit = Th.WideStarFwhm.ToString("0.#", Inv);
+            rows.Add(new(T("wide stars", "stele late"), T(
+                $"the stars are wider than {limit} px; LightsCheck reads such stars narrower than they are, so a frame slightly out of focus can pass as good",
+                $"stelele sunt mai late de {limit} px; LightsCheck citeste astfel de stele mai inguste decat sunt, asa ca un cadru usor defocalizat poate trece drept bun")));
+        }
+
+        rows.Add(new("verdict", ft, fv));
+        return rows;
     }
 
     /// <summary>The relative change of a trend as a suffix: ` (+14 %)`.</summary>
@@ -967,8 +980,8 @@ internal static class SeriesReport
 
     /// <summary>
     /// The sensor's pattern read from the lights, and whether the session's darks will take it
-    /// out of the stack (R-046, R-042): `strength 1.4 ADU on R (12 % of one frame's noise), 2.1
-    /// on G1 (10 %), 2.1 on G2 (10 %), 2.3 on B (10 %); 4 hot pixels per million pixels, that is,
+    /// out of the stack (R-046, R-042): `strength 1.3 ADU on R (12 % of one frame's noise), 2.1
+    /// on G1 (10 %), 2.1 on G2 (10 %), 2.2 on B (9 %); 4 hot pixels per million pixels, that is,
     /// those above 10 times one frame's noise (from 87 frames, on 512 x 512 px from the centre);
     /// no darks in the session, the pattern stays in the frames`.
     /// </summary>

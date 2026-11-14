@@ -37,7 +37,9 @@ namespace AstroDarkroom.Wpf;
 /// core plans (R-002, R-003); it decides nothing itself. Every label worded in two languages is
 /// assigned in <see cref="Relabel"/>, in the current language, which is what lets a change of
 /// language apply at once (R-006); the banner and the copyright, the same in both, once in the
-/// constructor. What it does goes to the diagnostic log (R-012).
+/// constructor. It fits the work area of the screen it opens on: no taller than it, its rows
+/// scrolling between the two bars when they need more, kept inside it once laid out (R-020).
+/// What it does goes to the diagnostic log (R-012).
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -48,6 +50,13 @@ public partial class MainWindow : Window
     private readonly string _settingsPath;
     private readonly ReleaseInfo? _release;
     private IReadOnlyList<string> _missingRuntime;
+
+    /// <summary>
+    /// The work area of the screen the window opened on, in device-independent pixels (R-020),
+    /// kept for the log's line; the primary screen's until the window has a handle to ask
+    /// Windows with.
+    /// </summary>
+    private Rect _workArea = SystemParameters.WorkArea;
 
     /// <summary>
     /// The window on one suite folder, labelled in the language <see cref="Ui.Default"/> holds
@@ -63,8 +72,16 @@ public partial class MainWindow : Window
     public MainWindow(SuiteFolder folder, string settingsPath, IReadOnlyList<string> missingRuntime)
     {
         InitializeComponent();
-        SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
-        Loaded += (_, _) => LogShown();
+        // The fit waits for the handle, not for Loaded: WPF raises Loaded first, during the
+        // layout that sizes the window to its content, and then puts back its own place over a
+        // Top set there. The log line waits for the first rendering, when the rows' scroll
+        // range is known.
+        SourceInitialized += (_, _) =>
+        {
+            DarkTitleBar.Apply(this);
+            FitInto(ScreenArea.WorkAreaOf(this));
+        };
+        ContentRendered += (_, _) => LogShown();
         Activated += (_, _) => RecheckRuntime();
         Closing += (_, _) => Log.Info("window closing");
         _folder = folder;
@@ -106,12 +123,30 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Writes, once the window is shown, its size and place, the primary screen's work area, the
-    /// whole desktop's and the window's DPI, all in device-independent pixels but the DPI: what a
-    /// report of a window cut off or off the screen needs (R-012). The work area is the primary
-    /// screen's, whichever screen the window is on, and with screens of different DPIs its pixels
-    /// and the window's are not the same size; the line says "primary" so no reader takes it for
-    /// the window's own screen.
+    /// Fits the window into the work area of the screen it opens on (R-020), once it has its
+    /// handle: WPF has sized it to its content and placed it by then. The height is capped at the
+    /// area's, so a window whose content is taller is as tall as the area and its rows scroll
+    /// between the two bars; then its top goes through <see cref="WindowFit.Top"/>, since WPF
+    /// placed it by the height its content asked for (that height or the capped one gives the
+    /// same top: a window as tall as the area or taller goes to the area's top). A window that
+    /// fits where it opened is not changed.
+    /// </summary>
+    /// <param name="workArea">The work area of the window's screen, in device-independent pixels.</param>
+    private void FitInto(Rect workArea)
+    {
+        _workArea = workArea;
+        MaxHeight = workArea.Height;
+        Top = WindowFit.Top(Top, ActualHeight, workArea.Top, workArea.Height);
+    }
+
+    /// <summary>
+    /// Writes, once the window is rendered, its size and place, the work area of its screen and
+    /// whether its rows scroll (R-020), the primary screen's work area, the whole desktop's and
+    /// the window's DPI, all in device-independent pixels but the DPI: what a report of a window
+    /// cut off or off the screen needs (R-012). The second work area is the primary screen's,
+    /// whichever screen the window is on, and with screens of different DPIs its pixels and the
+    /// window's are not the same size; the line says "primary" so no reader takes it for the
+    /// window's own screen.
     /// </summary>
     private void LogShown()
     {
@@ -123,7 +158,10 @@ public partial class MainWindow : Window
         Rect area = SystemParameters.WorkArea;
         DpiScale dpi = VisualTreeHelper.GetDpi(this);
         Log.Debug(FormattableString.Invariant(
-            $"window shown {ActualWidth:0}x{ActualHeight:0} at ({Left:0},{Top:0}); primary work area {area.Width:0}x{area.Height:0} at ({area.Left:0},{area.Top:0}); ")
+            $"window shown {ActualWidth:0}x{ActualHeight:0} at ({Left:0},{Top:0}); work area {_workArea.Width:0}x{_workArea.Height:0} at ({_workArea.Left:0},{_workArea.Top:0}); ")
+            + "rows scroll: " + (RowsScroll.ScrollableHeight > 0 ? "yes" : "no")
+            + FormattableString.Invariant(
+            $"; primary work area {area.Width:0}x{area.Height:0} at ({area.Left:0},{area.Top:0}); ")
             + FormattableString.Invariant(
             $"desktop {SystemParameters.VirtualScreenWidth:0}x{SystemParameters.VirtualScreenHeight:0} at ({SystemParameters.VirtualScreenLeft:0},{SystemParameters.VirtualScreenTop:0}); dpi {dpi.PixelsPerInchX:0}x{dpi.PixelsPerInchY:0}"));
     }
@@ -150,7 +188,7 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Starts the app of the clicked row, from the suite folder, in the launcher's language,
-    /// through the shell (R-003, R-008). A start that fails (the file went away since the
+    /// directly, not through the shell (R-003, R-008, ADR 0027). A start that fails (the file went away since the
     /// window opened, or Windows refused it) is told in a message box; the launcher stays open.
     /// The diagnostic log has the start asked for and its outcome: the process's id, or the
     /// exception (R-012).
@@ -169,12 +207,7 @@ public partial class MainWindow : Window
             LaunchPlan plan = Launcher.Plan(row.App, _folder);
             Log.Info(LogText.Open(row.App, plan));
             // The Process object is only a handle to the started app; disposing it does not touch the app.
-            using Process? started = Process.Start(new ProcessStartInfo(plan.FileName)
-            {
-                UseShellExecute = true,
-                WorkingDirectory = plan.WorkingDirectory,
-                Arguments = plan.Arguments,
-            });
+            using Process? started = Process.Start(Launcher.StartInfo(plan));
             Log.Info("started " + row.App.WindowExe + (started is null ? "; Windows gave no process back" : ", process " + IdOf(started)));
         }
         catch (InvalidOperationException ex)

@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ImageVisualCompare.Core;
@@ -60,6 +61,41 @@ public class WicImageLoaderTests : IDisposable
 
         Assert.Equal(new byte[] { 255, 64, 128, 255, 255, 0, 0, 255 }, bgra);
         Assert.Equal("32-bit float RGB", loaded.Info.FormatDescription);
+    }
+
+    /// <summary>
+    /// CR-004 of the review of 2026-11-13. WIC names a float RGBA TIFF with associated alpha
+    /// <c>Prgba128Float</c>, and its conversion to the straight format divides the colours by
+    /// alpha: measured on 2026-11-14, the first pixel loaded as 102, the second as black and the
+    /// fourth with its red white.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task R091_AFloatTiffWithAlpha_IsShownAsStored_NotDividedByAlpha(bool associatedAlpha)
+    {
+        // Four RGBA pixels: half transparent, fully transparent with colours left in it, opaque,
+        // and one whose red is above its alpha.
+        float[] samples =
+        [
+            0.2f, 0.2f, 0.2f, 0.5f,
+            0.3f, 0.1f, 0.05f, 0.0f,
+            0.6f, 0.6f, 0.6f, 1.0f,
+            0.3f, 0.2f, 0.1f, 0.25f,
+        ];
+        string path = _images.WriteFloatTiff("alpha.tif", 4, 1, 4, samples, associatedAlpha);
+
+        ImageInfo probed = _loader.Probe(path);
+        LoadedImage loaded = await _loader.LoadAsync(path);
+        byte[] bgra = new byte[16];
+        loaded.Bitmap.CopyPixels(bgra, 16, 0);
+
+        // 0.2 is 13107 of 65535, level 51; 0.3 is 76, 0.1 is 25, 0.05 is 12; 0.6 is 153.
+        Assert.Equal(
+            new byte[] { 51, 51, 51, 255, 12, 25, 76, 255, 153, 153, 153, 255, 25, 51, 76, 255 },
+            bgra);
+        Assert.Equal("32-bit float RGBA", probed.FormatDescription);
+        Assert.Equal("32-bit float RGBA", loaded.Info.FormatDescription);
     }
 
     [Fact]
@@ -128,6 +164,115 @@ public class WicImageLoaderTests : IDisposable
             Assert.Equal(PixelFormats.Bgra32, bitmap.Format);
             Assert.True(bitmap.IsFrozen, "the UI thread has to be able to use a bitmap decoded on a worker");
         }
+    }
+
+    /// <summary>
+    /// CR-005 of the review of 2026-11-13. The file's alpha was kept, so a half-transparent pixel
+    /// holding 200 was drawn at 100 over the black backdrop while the read-out said 200; a float
+    /// TIFF of the same picture was drawn opaque. Now every image is opaque (ADR 0054).
+    /// </summary>
+    [Fact]
+    public void R010_ATransparentPixel_IsLoadedOpaque_WithItsStoredColours()
+    {
+        // Blue, green, red, alpha: half transparent, fully transparent with colours left in it,
+        // opaque, a quarter opaque.
+        byte[] eight = [200, 200, 200, 128, 30, 20, 10, 0, 0, 0, 255, 255, 150, 100, 50, 64];
+
+        // The same four pixels at 16 bits, red first, each value 257 times its 8-bit one, which
+        // has that 8-bit value as its high byte.
+        ushort[] sixteen = [.. new[] { 200, 200, 200, 128, 10, 20, 30, 0, 255, 0, 0, 255, 50, 100, 150, 64 }.Select(v => (ushort)(v * 257))];
+
+        // And as four palette entries with their own alphas.
+        var palette = new BitmapPalette(
+        [
+            Color.FromArgb(128, 200, 200, 200), Color.FromArgb(0, 10, 20, 30),
+            Color.FromArgb(255, 255, 0, 0), Color.FromArgb(64, 50, 100, 150),
+        ]);
+
+        (string Path, string Format)[] files =
+        [
+            (_images.WritePng("rgba8.png", PixelFormats.Bgra32, 4, 1, eight), "8-bit RGBA"),
+            (_images.WritePng("rgba16.png", PixelFormats.Rgba64, 4, 1, sixteen), "16-bit RGBA"),
+            (_images.WritePng("indexed.png", PixelFormats.Indexed8, 4, 1, new byte[] { 0, 1, 2, 3 }, palette), "4-bit indexed"),
+        ];
+
+        foreach ((string path, string format) in files)
+        {
+            LoadedImage loaded = _loader.Load(path);
+            byte[] bgra = new byte[16];
+            loaded.Bitmap.CopyPixels(bgra, 16, 0);
+
+            Assert.Equal(
+                new byte[] { 200, 200, 200, 255, 30, 20, 10, 255, 0, 0, 255, 255, 150, 100, 50, 255 },
+                bgra);
+            Assert.Equal(PixelFormats.Bgra32, loaded.Bitmap.Format);
+
+            // What the file was is still said as it was (R-011).
+            Assert.Equal(format, loaded.Info.FormatDescription);
+        }
+    }
+
+    /// <summary>
+    /// The 16-bit samples of an RGBA file are reduced as those of an RGB one are, to their high
+    /// byte (R-015), on the way that drops the alpha too: a sample of 511 is 1, as in a FITS,
+    /// not 2. The review of the CR-005 fix asked for it: the values of the test above are all
+    /// 257 times a byte, which any rule reduces alike.
+    /// </summary>
+    [Fact]
+    public void R010_ASixteenBitRgbaFile_KeepsTheHighByteOfEachColour_WhateverItsAlpha()
+    {
+        const int Width = 64;
+        const int Height = 48;
+        var random = new Random(20261114);
+        ushort[] rgba = new ushort[Width * Height * 4];
+        for (int i = 0; i < rgba.Length; i++)
+        {
+            // Every alpha from none to full, the edge values among them.
+            rgba[i] = i % 4 == 3 && i % 3 == 0 ? (ushort)65535 : (ushort)random.Next(65536);
+        }
+
+        rgba[0] = 511;
+        rgba[1] = 255;
+        rgba[2] = 256;
+        string path = _images.WritePng("rgba16-random.png", PixelFormats.Rgba64, Width, Height, rgba);
+
+        byte[] bgra = new byte[Width * Height * 4];
+        _loader.Load(path).Bitmap.CopyPixels(bgra, Width * 4, 0);
+
+        byte[] expected = new byte[bgra.Length];
+        for (int pixel = 0; pixel < Width * Height; pixel++)
+        {
+            expected[(pixel * 4) + 0] = (byte)(rgba[(pixel * 4) + 2] >> 8);
+            expected[(pixel * 4) + 1] = (byte)(rgba[(pixel * 4) + 1] >> 8);
+            expected[(pixel * 4) + 2] = (byte)(rgba[(pixel * 4) + 0] >> 8);
+            expected[(pixel * 4) + 3] = 255;
+        }
+
+        Assert.Equal(expected, bgra);
+    }
+
+    [Theory]
+    [InlineData("Rgb48")]
+    [InlineData("Bgr24")]
+    [InlineData("Gray16")]
+    [InlineData("Gray8")]
+    [InlineData("Indexed8")]
+    public void R010_AFileWithoutAlpha_LoadsToTheBytesWicConvertsItTo(string formatName)
+    {
+        PixelFormat format = (PixelFormat)typeof(PixelFormats).GetProperty(formatName)!.GetValue(null)!;
+        string path = _images.WritePng(formatName + ".png", format, 16, 8);
+
+        byte[] expected = new byte[16 * 8 * 4];
+        using (FileStream stream = File.OpenRead(path))
+        {
+            BitmapFrame frame = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.None).Frames[0];
+            new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0).CopyPixels(expected, 16 * 4, 0);
+        }
+
+        byte[] loaded = new byte[expected.Length];
+        _loader.Load(path).Bitmap.CopyPixels(loaded, 16 * 4, 0);
+
+        Assert.Equal(expected, loaded);
     }
 
     [Fact]

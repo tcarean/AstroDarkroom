@@ -67,6 +67,22 @@ public class FloatSamplesTests
         Assert.Equal(4, above);
     }
 
+    // CR-007 of the review of 2026-11-13: a float TIFF's sample goes the way a float FITS's
+    // does, in single precision (R-015).
+    [Fact]
+    public void R091_ASample_IsBroughtToSixteenBitsInSinglePrecision_AsInAFits()
+    {
+        float[] row = [BitConverter.UInt32BitsToSingle(0x3F560056), 0f, BitConverter.UInt32BitsToSingle(0x3F720072), 1f];
+        ushort[] gray = new ushort[4];
+        ushort[] planes = new ushort[3];
+
+        FloatSamples.ToSixteenBit(row, gray: true, gray, fullScale: 1);
+        FloatSamples.ToSixteenBit(row, gray: false, planes, fullScale: 1);
+
+        Assert.Equal(new ushort[] { 54784, 0, 61952, 65535 }, gray);
+        Assert.Equal(new ushort[] { 54784, 0, 61952 }, planes);
+    }
+
     [Fact]
     public void R091_AFullScaleOf65535_ReadsTheSampleAsSixteenBits()
     {

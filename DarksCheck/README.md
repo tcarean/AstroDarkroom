@@ -117,7 +117,8 @@ English, `OK`, `ATENTIE`, `REFA` and `NEMASURAT` in Romanian.
 `darkscheck <folder>` reads the biases, if there are any, then the darks, `--threads N` at a
 time (the progress goes to stderr: `Reading the darks: 3 / 20`), and holds them in memory as 16-bit
 mosaics, 48 MB a frame at 24 MP. Above 60 frames, or the cap `--max-frames N` sets, it decodes
-one file in k and lists the others as `skipped`, which is not an error. Then it reads every
+exactly that many, from the first file to the last at even distances, and lists the others as
+`skipped`, which is not an error. Then it reads every
 light, one by one, without keeping them, so the cap does not apply to them. It prints the session's lines (check 1: the frames, their
 settings and whether the darks match the lights), one section per check, from check 2, how well
 the dark fits the lights, to check 9, each with its figures and a `verdict` row that starts with `OK`, `WARNING`, `REDO`
@@ -197,6 +198,18 @@ The verdict, on the lights / dark ratio:
 | 0.7 to 1.4 | `WARNING: subtract the dark with -opt` | Siril's `-opt` multiplies the dark until it matches the lights |
 | 0.4 to 0.7 | `WARNING: use the dark for the cosmetic correction only (-cc=dark: ...)` | the dark is much warmer: it finds every hot pixel, but subtracted it would take out too much and leave black dots |
 | other | `WARNING: they do not match` | too cold or too warm |
+
+When the lights are at another ISO or another exposure than the darks (most of them, both sets
+saying their settings), the ratio still compares the two with both brought to one setting, so
+it still tells the temperatures apart, but the dark is never said to be subtracted as it is: in
+the files the hot pixels of the lights do not have the height they have in the dark. For a
+ratio between 0.7 and 1.4 the verdict then reads `WARNING: do not subtract the dark as it is`,
+names both settings and how many times the dark's the hot pixels of the lights are in the
+files, and advises, in this order, darks made at the lights' settings, then `-opt` (which needs
+the biases too) or the cosmetic correction only; outside 0.7 to 1.4 the verdicts of the table
+keep their words and say that the ratio is worked out for the same settings. The row `lights
+against dark` gives the ratio in the files beside the one worked out, and the row `what is
+left` is worked out on the files. A partner made at other settings gets the same verdict.
 
 The same ratio does not mean the same thing on a cold dark and on a warm one: a cold master
 has few hot pixels, and weak ones, so a dark that is 15 % off leaves little behind. The row
@@ -328,8 +341,10 @@ its row.
   row is rated `too few` (under 10 frames: the median needs them, so that one odd frame cannot
   pull it), `few` or `enough`, and the row `enough from` gives the
   frames needed: with lights, the fewest that keep the stack within 10 % of what an ideal dark
-  master would leave, and beside them the fewest for 5 %; without lights, the fewest that bring
-  the master's noise under the file's quantisation step. Under the frames needed the verdict is
+  master would leave, and beside them the fewest for 5 %; without lights, only the minimum of
+  10, since how many are enough shows only against the lights: the rows from 10 frames up are
+  then not rated, and the verdict says to open the darks together with the lights (`--lights`).
+  Under the frames needed the verdict is
   `WARNING`; otherwise `OK`, and with lights it says how many frames could be left out, which
   tells whether the frames check 4 lists as `to discard` can go. With more darks than
   `--max-frames` reads, the table speaks of the frames read, not of the folder's, and the
@@ -521,9 +536,13 @@ Reads the metadata without decoding the pixels: under three seconds for a sessio
   after frame have none; a gap means Live View, a menu or the camera left alone, so the sensor
   cooled.
 - `match`: `OK` when the darks have the lights' exposure (within 2 %) and ISO, `WARNING` with
-  both settings when they do not, `UNMEASURED` without lights.
+  both settings when they do not, `UNMEASURED` without lights. A setting both groups give and
+  that differs is a `WARNING` even when the files do not state the other one; `UNMEASURED` is
+  then left for files that do not state a setting, with nothing known to differ.
 - `bias`: `OK` with the exposure when the biases are at most 1 s, `WARNING` above, `(none)`
-  without biases.
+  without biases. Biases at another ISO than the darks are not used: a `WARNING` line names the
+  two ISOs, every figure is worked out without them, and the exit code is 1, as for biases of
+  another size.
 - `gap`, in the tables, is the time from the end of the previous exposure to the start of this
   one. The time comes from the EXIF of a raw (the camera's clock) and from the `DATE-OBS` of a
   FITS (UTC, as Siril writes it).
@@ -540,7 +559,9 @@ tabs:
   how well the dark fits the lights, right under them (with the darks' and the lights' indexes on
   rows of their own and the overlap at each threshold as a table); every check is a card of rows,
   its verdict a coloured chip (green `OK`, amber `WARNING`, red `REDO`, grey `UNMEASURED`) with the
-  rest of the text beside it. The verdicts of checks 3 and 4 put each statement on a line of its
+  rest of the text beside it. Darks that do not have the lights' settings stand out: the
+  `match` row is then drawn large and in red, and so are the verdict of check 2 and the
+  partner's verdict when they say not to subtract the dark, or the partner, as it is. The verdicts of checks 3 and 4 put each statement on a line of its
   own. The hot-pixel card keeps only the stability, one statement per line, and the verdict; the
   rest is on the Hot pixels tab. Check 9 shows what the master would be with fewer or more
   frames as a table; with lights, a dropdown above it sets how much noisier the stack may be than with an ideal dark master,

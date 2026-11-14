@@ -73,6 +73,80 @@ public class FitsScaleTests
         }
     }
 
+    /// <summary>
+    /// CR-007 of the review of 2026-11-13. Siril turns a float into 16 bits in single precision,
+    /// <c>(WORD)(f * 65535f + 0.5f)</c> (its <c>float_to_ushort_range</c>, read in the source of
+    /// 1.4 on 2026-11-14), for its display and its 16-bit exports. A product just under a half
+    /// becomes the half in a <c>float</c> and rounds up; in double precision it rounds down.
+    /// </summary>
+    [Theory]
+    [InlineData(0x3F560056u, 54784)] // 0.8359426259994507: level 214; in double 54783, level 213
+    [InlineData(0x3F720072u, 61952)] // 0.9453192949295044: level 242; in double 61951, level 241
+    [InlineData(0x3F000000u, 32768)] // 0.5
+    [InlineData(0x3F800000u, 65535)] // 1
+    [InlineData(0x3F801062u, 65535)] // 1.0005, above the scale
+    [InlineData(0x00000000u, 0)]
+    [InlineData(0xBF800000u, 0)] // -1
+    [InlineData(0x7FC00000u, 0)] // NaN
+    [InlineData(0x7F800000u, 65535)] // +infinity
+    [InlineData(0xFF800000u, 0)] // -infinity
+    public void R015_AFloatSample_IsBroughtToSixteenBitsInSinglePrecision_AsSirilDoes(uint bits, int expected)
+    {
+        float sample = BitConverter.UInt32BitsToSingle(bits);
+
+        Assert.Equal(expected, FitsScale.SixteenBitOfFloat(sample, FitsScale.ToUnitSingle(1)));
+    }
+
+    [Fact]
+    public void R015_SinglePrecision_DiffersFromDouble_OnlyByOneUp_AndByALevelFor127Floats()
+    {
+        // Every float from 0.5 up to 1, the binade where the product is rounded to 1/256: the
+        // figures measured on 2026-11-14 (ADR 0055).
+        uint first = BitConverter.SingleToUInt32Bits(0.5f);
+        uint last = BitConverter.SingleToUInt32Bits(1f);
+        float toUnit = FitsScale.ToUnitSingle(1);
+        int sixteenBitDiffers = 0;
+        int levelDiffers = 0;
+        int notOneUp = 0;
+        for (uint bits = first; bits < last; bits++)
+        {
+            float sample = BitConverter.UInt32BitsToSingle(bits);
+            int inSingle = FitsScale.SixteenBitOfFloat(sample, toUnit);
+            int inDouble = FitsScale.SixteenBit(sample * 65535.0);
+            if (inSingle != inDouble)
+            {
+                sixteenBitDiffers++;
+                notOneUp += inSingle == inDouble + 1 ? 0 : 1;
+                levelDiffers += (inSingle >> 8) == (inDouble >> 8) ? 0 : 1;
+            }
+        }
+
+        Assert.Equal((16384, 127, 0), (sixteenBitDiffers, levelDiffers, notOneUp));
+    }
+
+    [Fact]
+    public void R015_AFloatSample_KeepsEverySixteenBitValue_OnBothScales()
+    {
+        // The float a program writes when it divides a 16-bit value by 65535, and the same
+        // value written as it is into a file that counts to 65535: both are that value again.
+        float unit = FitsScale.ToUnitSingle(FitsScale.FullScale(-32));
+        float rescaled = FitsScale.ToUnitSingle(FitsScale.FullScale(-32, rescaled: true));
+        for (int value = 0; value <= 65535; value++)
+        {
+            Assert.Equal(value, FitsScale.SixteenBitOfFloat(value / 65535f, unit));
+            Assert.Equal(value, FitsScale.SixteenBitOfFloat(value, rescaled));
+        }
+    }
+
+    [Fact]
+    public void R015_ToUnitSingle_IsOne_OrSirilsFactorForAFileThatCountsTo65535()
+    {
+        Assert.Equal(1f, FitsScale.ToUnitSingle(1));
+
+        // Siril's INV_USHRT_MAX_SINGLE, as its source writes it.
+        Assert.Equal(.000015259022f, FitsScale.ToUnitSingle(65535));
+    }
+
     [Theory]
     [InlineData(8, 255.0)]
     [InlineData(16, 65535.0)]

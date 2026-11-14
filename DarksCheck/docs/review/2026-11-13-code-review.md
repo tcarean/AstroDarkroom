@@ -93,11 +93,11 @@ each pair has the same defect unless the entry says otherwise.
 | CR-003 | 1 | some setups | confirmed | The noise of the lights' stack adds the lights' ADU to the darks' ADU when their settings differ | fixed 7ae97219 |
 | CR-004 | 1 | some setups | confirmed | Lights that do not show the dark's hot pixels get an index of `idx-0` or `idx0`, and a lights-only session is labelled with it | fixed 215e8591 |
 | CR-005 | 1 | some setups | confirmed | A set whose central pixels all sit above the hot threshold reads a master noise of 0.00 ADU, and check 9 says OK | fixed c9a1efbe |
-| CR-006 | 1 | some setups | owner | `OK: the dark can be subtracted as it is` is said from the normalised ratio, also when the lights are at another ISO or exposure | open |
-| CR-007 | 1 | some setups | owner | Without lights, check 9 asks for a master noise under one value step, which on a camera with steps of 1 means a hundred darks | open |
-| CR-008 | 1 | some setups | owner | With 61 to 119 darks only 31 to 60 are read | open |
-| CR-009 | 1 | some setups | owner | FITS without an ISO: a known exposure mismatch reads UNMEASURED | open |
-| CR-010 | 1 | slip | confirmed | Biases at another ISO than the darks are subtracted as they are | open |
+| CR-006 | 1 | some setups | owner | `OK: the dark can be subtracted as it is` is said from the normalised ratio, also when the lights are at another ISO or exposure | fixed b7e970b0 |
+| CR-007 | 1 | some setups | owner | Without lights, check 9 asks for a master noise under one value step, which on a camera with steps of 1 means a hundred darks | fixed 2def04f8 |
+| CR-008 | 1 | some setups | owner | With 61 to 119 darks only 31 to 60 are read | fixed 7e8d7a2f |
+| CR-009 | 1 | some setups | owner | FITS without an ISO: a known exposure mismatch reads UNMEASURED | fixed bfe04ca6 |
+| CR-010 | 1 | slip | confirmed | Biases at another ISO than the darks are subtracted as they are | fixed a047f9ea |
 | CR-011 | 1 | slip | confirmed | FITS darks take their black from biases that are then refused for their size | open |
 | CR-012 | 1 | slip | owner | Check 1 judges the dominant setting, the analysis keeps the first file's | open |
 | CR-013 | 1 | rare | owner | Frames are taken in file-name order as if it were shooting order | open |
@@ -163,6 +163,7 @@ each pair has the same defect unless the entry says otherwise.
 | CR-073 | 4 | - | confirmed | Core tests that cannot fail or do not check what their name says | open |
 | CR-074 | 4 | - | confirmed | Window tests that cannot fail or do not check what their name says | open |
 | CR-075 | 4 | - | confirmed | Design notes, requirements and comments that describe other code | open |
+| CR-076 | 1 | some setups | owner | Sets that give the exposure and no ISO are compared as made at the same settings, though their exposures are known to differ | open |
 
 The files copied from LightsCheck have their own entries, CP-1 to CP-12, in their own section;
 five of them are of severity 1.
@@ -294,7 +295,7 @@ five of them are of severity 1.
 - Should: with unequal settings the verdict cannot be "as it is" (the owner's call; R-052 and
   ADR 0004 set the normalised ratio, nothing sets the words for unequal settings).
 - Evidence: owner.
-- Status: open
+- Status: fixed b7e970b0 (the owner's word of 2026-11-14: never "as it is" at other settings, the advice given, the mismatch large and red in the window; the partner too; ADR 0055)
 
 ### CR-007 Without lights, check 9 asks for a master noise under one value step, which on a camera with steps of 1 means a hundred darks
 
@@ -311,7 +312,7 @@ five of them are of severity 1.
   before stands"; the outcome turns on the camera's step, not on the darks.
 - Test: `R024_TheNoiseOfTheMeanFollowsSqrtNAndTenCleanFramesAreEnough` pins the rule.
 - Evidence: owner.
-- Status: open
+- Status: fixed 2def04f8 (the owner chose the minimum of ten alone without lights; ADR 0056)
 
 ### CR-008 With 61 to 119 darks only 31 to 60 are read
 
@@ -323,7 +324,7 @@ five of them are of severity 1.
 - Deliberate: R-027 and ADR 0007 ("every k-th file"); the header says how many were read.
 - Test: `R027_AboveTheCapOnlyEveryKthFrameIsDecoded` pins it.
 - Evidence: owner.
-- Status: open
+- Status: fixed 7e8d7a2f (the owner chose exactly the cap, evenly spread from the first file to the last; ADR 0057)
 
 ### CR-009 FITS without an ISO: a known exposure mismatch reads UNMEASURED
 
@@ -336,7 +337,7 @@ five of them are of severity 1.
   "when either side lacks the exposure or the ISO").
 - Test: `R007_WithoutExposuresOrIsoTheMatchIsUnmeasured` pins equal exposures only.
 - Evidence: owner.
-- Status: open
+- Status: fixed bfe04ca6 (the owner chose a WARNING on a setting known to differ; ADR 0058)
 
 ### CR-010 Biases at another ISO than the darks are subtracted as they are
 
@@ -359,7 +360,7 @@ five of them are of severity 1.
 - Test: none. A session fixture with biases at another ISO than the darks.
 - Evidence: confirmed that nothing compares the settings; whether a verdict flips on real
   files is to measure.
-- Status: open
+- Status: fixed a047f9ea (the biases are left out before they are read, as those of another size; ADR 0059; no real biases of another ISO were measured)
 
 ### CR-011 FITS darks take their black from biases that are then refused for their size
 
@@ -1565,6 +1566,41 @@ context, and no handle leaks (area 7). Overlapping runs cannot be reached from t
 inputs are disabled while a run goes; a new result leaves no stale row; the view-model computes
 no figure (area 8). Every binding path of the seven views, all 92 language pairs of the XAML
 and every theme resource (area 9).
+
+## Found later
+
+Entries added after the review, by the task that met them (ADR 0052, point 7).
+
+### CR-076 Sets that give the exposure and no ISO are compared as made at the same settings, though their exposures are known to differ
+
+- Found: 2026-11-14, by the two reviews of the fixes of CR-006 to CR-010.
+- Where: `Analysis/Normalisation.cs` (`Says`: a factor needs the ISO and the exposure, both;
+  `NormOf` returns 1 otherwise); `Analysis/LightsAnalyzer.cs` (`FactorOf`, and
+  `LightFigures.OtherSettings`, which asks both sides to say both settings);
+  `Runs/DarkSeriesRun.cs` (`MatchPartner`: `ownSays`, `partnerSays`).
+- What happens: a set whose frames give the exposure and no ISO (a capture program that writes
+  `GAIN` and no `ISOSPEED`) has no factor, so it is compared with another set as made at the
+  same settings (ADR 0053), and the known exposure is not used. Since ADR 0055 such a pair is
+  not "at other settings", because nothing was brought from one to the other.
+- Case: (a) darks of 300 s and lights of 120 s, no ISO anywhere, the hot pixels as high in both
+  files: check 1 reads a red `WARNING: the darks (300.0 s) do not have the lights' exposure
+  (120.0 s)`, and check 2 reads `OK: the dark can be subtracted as it is ... the dark is at the
+  same temperature`, with a WARNING row that the lights were taken at the darks' settings. The
+  heights in the files do match, so the subtraction is right as far as the hot pixels go; the
+  temperature is not known, the index and the degrees are in the file's ADU. (b) the session's
+  darks of 120 s against a partner of 300 s, no ISO on either side: no row says that the
+  exposures differ (check 1 does not look at a partner), the partner's row prints `unknown
+  settings`, and the verdict can read `OK: the partner can be subtracted as it is`.
+- Should: the owner's call. One direction: when neither set gives the ISO and both give the
+  exposure, take the ISOs as equal and bring the sets to one exposure, with a row that says so;
+  the pair is then judged as any pair at other settings (ADR 0055). Another: keep the
+  comparison and say the known difference in the verdict.
+- Deliberate: ADR 0053 ("a set that does not say its settings is compared as made at the other
+  set's"); ADR 0055, decision 1; ADR 0058 names case (a) in its consequences.
+- Test: `R052_SetsThatDoNotSayBothSettingsAreNotAtOtherSettings` pins that such sets are not at
+  other settings and that nothing is said to be worked out; no test pins the verdicts above.
+- Evidence: owner.
+- Status: open
 
 ## How the list is used
 

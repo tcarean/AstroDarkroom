@@ -89,11 +89,21 @@ namespace AstroPhotoAnalyzer
             : Tr.Pick($"  (only {Fmt.F0(SkyFraction * 100)} % sky: measured on every pixel)", $"  (doar {Fmt.F0(SkyFraction * 100)} % cer: masurat pe toti pixelii)");
 
         internal double MaxAbsDelta => Deltas.Max(d => Math.Abs(d));
-        internal bool Flagged => MaxAbsDelta > Thresholds.CornerGradientLevels;
+        /// <summary>
+        /// Does the region depart from the sky by more than
+        /// <see cref="Thresholds.CornerGradientLevels"/>? Compared with the tie of
+        /// <see cref="RasterOps.LevelsOver"/> (ADR 0095), so a region exactly on the threshold is
+        /// not flagged, whatever the sky's level.
+        /// </summary>
+        internal bool Flagged => RasterOps.LevelsOver(MaxAbsDelta, Thresholds.CornerGradientLevels);
 
         /// <summary>
         /// Does the departure have COLOUR (the channels move differently), not just brightness? On
-        /// mono the notion does not exist. See Thresholds.CornerColourSpreadRatio.
+        /// mono the notion does not exist. See Thresholds.CornerColourSpreadRatio. The spread is
+        /// compared with CornerGradientLevels and with its share of the mean departure as
+        /// <see cref="Flagged"/> compares, by more than the tie of ADR 0095: on an 8-bit file a
+        /// region at +10 / +8 / +6 has a spread of exactly half its mean, which a bare compare
+        /// calls a colour at some sky levels and not at others.
         /// </summary>
         internal bool Coloured
         {
@@ -102,7 +112,7 @@ namespace AstroPhotoAnalyzer
                 if (Deltas.Count < 3) return false;
                 double spread = Deltas.Max() - Deltas.Min();
                 double mean = Deltas.Average(d => Math.Abs(d));
-                return spread > Thresholds.CornerGradientLevels && spread > Thresholds.CornerColourSpreadRatio * mean;
+                return RasterOps.LevelsOver(spread, Thresholds.CornerGradientLevels) && RasterOps.LevelsOver(spread, Thresholds.CornerColourSpreadRatio * mean);
             }
         }
     }

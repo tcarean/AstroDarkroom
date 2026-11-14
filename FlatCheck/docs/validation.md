@@ -179,6 +179,11 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 
 ## History
 
+- 2026-11-14: re-measured at the wrap-up of the review's CR-016 to CR-020, on
+  `claude/Fix-FlatCheck-CR-016-to-CR-020` from main 9677ecf7, which changed texts of the
+  structure comparison's reasons and when `--expo` prints its correction, without touching a
+  formula: the 36 large files present with their hashes, 44 passed (the 36 cases and the 8 raw
+  samples). The measured lines were not compared with `validation.json` case by case.
 - 2026-11-09, later the same day: V-001, V-002, V-003, V-004, V-006, V-007, V-008, V-009, V-010, V-011, V-012, V-013, V-014, V-015, V-027, V-036, V-039 and V-040 re-recorded after
   R-131 / ADR 0095 (the geometry symmetric about the frame's centre: the geometric centre, every
   pixel in the tilt fit, tile grids laid about the centre, order-independent sums in the ring

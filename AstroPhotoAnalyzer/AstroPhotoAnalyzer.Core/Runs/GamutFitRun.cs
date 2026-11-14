@@ -144,13 +144,15 @@ namespace AstroPhotoAnalyzer
             string description = IccPaperBlack.Read(path).Description;
             progress?.Report(Tr.Pick("table", "tabela"));
             GamutFitTable table = GamutFitTable.Build(gamut.ExactLab);
-            // The Soft proof tab's own judge decides the edge and what is left (R-175): a pixel the
-            // fit lands on the edge is inside for that tab too.
+            // The Soft proof tab's own judge decides which pixels are outside, the edge and what is
+            // left (R-175): a pixel is judged on its own samples, as that tab judges it, and a
+            // pixel the fit lands on the edge is inside for that tab too.
             table.Judge = (l, a, b) =>
             {
                 var (r, g, bl) = ColorMath.SrgbOfLabD50(l, a, b);
                 return GamutAnalyzer.Outside(gamut, (float)r, (float)g, (float)bl);
             };
+            table.JudgeOfPixel = (r, g, bl) => GamutAnalyzer.Outside(gamut, r, g, bl);
             clock.Lap("table");
             if (table.Problem != null)
             {

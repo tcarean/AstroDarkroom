@@ -174,7 +174,8 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>The first thing that stops the run, in order: no siril-cli, no script in the
-        /// menu, none chosen, the chosen one unreadable, an input folder missing or empty. Sets
+        /// menu, none chosen, the chosen one unreadable, an input folder that cannot be listed
+        /// (with a Warn line carrying the exception), an input folder missing or empty. Sets
         /// <see cref="RequiredFolders"/> when the script was read.</summary>
         /// <returns>The explanation to show, or null when nothing blocks.</returns>
         string FindBlocker()
@@ -193,8 +194,14 @@ namespace FlatCheck.Wpf
 
             var required = SirilScript.RequiredFolders(text);
             RequiredFolders = required;
-            var missing = _session.MissingInputFolders(required);
-            return missing.Count == 0 ? null : SessionMessages.MissingScriptInputs(_selected.Name, required, missing);
+            InputFolderCheck inputs = _session.CheckInputFolders(required);
+            if (inputs.Unlistable != null)
+            {
+                Log.Warn(inputs.Error, "the input folder " + Path.Combine(_session.Root, inputs.Unlistable) + " of the script "
+                                       + _selected.Path + " could not be listed; the run is blocked");
+                return SessionMessages.ScriptInputUnlistable(_selected.Name, inputs.Unlistable, TabViewModel.Describe(inputs.Error));
+            }
+            return inputs.CanStart ? null : SessionMessages.MissingScriptInputs(_selected.Name, required, inputs.Missing);
         }
     }
 

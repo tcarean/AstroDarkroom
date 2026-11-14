@@ -491,6 +491,77 @@ public class MainWindowTests
         }
     }
 
+    /// <summary>
+    /// CR-006 of the review of 2026-11-13. The read-out was written only when the pointer moved
+    /// onto another image pixel, so under a pointer at rest a switch of display mode, or a
+    /// changed image, left the values of the bitmaps that were no longer on screen.
+    /// </summary>
+    [Theory]
+    [InlineData("a switch to Histogram", "A  90  90  90", "B  91  91  91")]
+    [InlineData("image B changed", "A  35  35  35", "B  40  40  40")]
+    public async Task R051_TheReadOut_FollowsWhatIsUnderARestingPointer(string change, string expectedA, string expectedB)
+    {
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new LevelLoader()));
+
+            // A size for the surface, so that a position on it is a pixel of the image.
+            var root = (Grid)window.Content;
+            root.Measure(new Size(768, 528));
+            root.Arrange(new Rect(0, 0, 768, 528));
+            root.UpdateLayout();
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        (string Cursor, string A, string B) before = default;
+        Task changed = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            // The pointer comes to rest on the image, once; nothing reports it again.
+            window.Compare.ReportPointer(new Point(window.Compare.ActualWidth / 2, window.Compare.ActualHeight / 2));
+            before = (window.StatusCursor.Text, window.StatusBefore.Text, window.StatusAfter.Text);
+            changed = change == "image B changed"
+                ? window.ChangeImageAsync(ImageSide.B, "the test")
+                : window.ToggleModeAsync(DisplayMode.Histogram);
+        });
+        await changed;
+
+        (string Cursor, string A, string B) after = default;
+        await WpfThread.RunAsync(() => after = (window.StatusCursor.Text, window.StatusBefore.Text, window.StatusAfter.Text));
+
+        Assert.Equal(("A  35  35  35", "B  36  36  36"), (before.A, before.B));
+        Assert.NotEqual(string.Empty, before.Cursor);
+        Assert.Equal((before.Cursor, expectedA, expectedB), after);
+    }
+
+    /// <summary>
+    /// Decodes every file as an 8 x 8 image of one level, which says what was decoded: 35 for
+    /// <c>a.png</c>, 36 for <c>b.png</c>, 40 for <c>c.png</c>, and 55 more in any mode but linear.
+    /// </summary>
+    private sealed class LevelLoader : IImageLoader
+    {
+        public ImageInfo Probe(string path) =>
+            new(path, 8, 8, 32, ColorChannels.Rgb, IsFloat: true, ShownAsStored: true);
+
+        public Task<LoadedImage> LoadAsync(
+            string path, DisplayMode mode = DisplayMode.Linear, CancellationToken cancellationToken = default)
+        {
+            int level = (System.IO.Path.GetFileName(path) switch { "a.png" => 35, "b.png" => 36, _ => 40 })
+                + (mode == DisplayMode.Linear ? 0 : 55);
+            byte[] pixels = new byte[8 * 8 * 4];
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                pixels[i] = i % 4 == 3 ? (byte)255 : (byte)level;
+            }
+
+            var bitmap = BitmapSource.Create(8, 8, 96, 96, PixelFormats.Bgra32, null, pixels, 32);
+            bitmap.Freeze();
+            return Task.FromResult(new LoadedImage(Probe(path), bitmap, mode));
+        }
+    }
+
     [Fact]
     public async Task R114_AToggleFlippedByItsOwnClick_IsPutBackWhenTheSwitchIsRefused()
     {

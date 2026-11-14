@@ -141,16 +141,17 @@ internal sealed class FrameStack
     /// converted to 16-bit as soon as it lands (a 24 MP raster of doubles is 194 MB,
     /// <paramref name="threads"/> of them in flight at most). The first file in order sets the
     /// geometry and the scale, the others must match it. Above <paramref name="maxFrames"/> frames
-    /// only every k-th file is decoded, so the memory stays bounded; the others are listed as
-    /// skipped. <paramref name="fitsBlack"/> is the black level to use for a FITS, when a group
+    /// exactly that many files are decoded, from the first to the last at even distances
+    /// (<see cref="Chosen"/>), so the memory stays bounded; the others are listed as skipped.
+    /// <paramref name="fitsBlack"/> is the black level to use for a FITS, when a group
     /// read before (the biases) already established it; null estimates it from the first frame.
     /// <paramref name="normalisation"/> is the settings the ADU-eq factor is read with
     /// (<see cref="Normalisation.Default"/> when null).
     /// </summary>
     /// <param name="paths">The group's files, in order; not null.</param>
     /// <param name="threads">How many files are decoded at once; below 1 counts as 1.</param>
-    /// <param name="maxFrames">The frame cap, at least 1: above it every k-th file is decoded,
-    /// k = ceil(n / maxFrames).</param>
+    /// <param name="maxFrames">The frame cap, at least 1: above it exactly that many files are
+    /// decoded (R-027, ADR 0057).</param>
     /// <param name="progress">Told (done, total) after each file; null for none.</param>
     /// <param name="fitsBlack">The black level for a FITS, in ADU; null to estimate it.</param>
     /// <param name="normalisation">The normalisation settings; null for the defaults.</param>
@@ -164,7 +165,7 @@ internal sealed class FrameStack
         Stopwatch total = Stopwatch.StartNew();
         Normalisation nz = normalisation ?? Normalisation.Default;
         int n = paths.Count;
-        int step = n > maxFrames ? (int)Math.Ceiling(n / (double)maxFrames) : 1;
+        bool[] chosen = Chosen(n, maxFrames);
         StackFrame[] frames = new StackFrame[n];
         (int W, int H, double Black, double White, CfaPattern? Cfa, string Source, double Norm)? geometry = null;
         FrameInfo? firstInfo = null;
@@ -177,9 +178,9 @@ internal sealed class FrameStack
         void Decode(int i)
         {
             string path = paths[i];
-            if (i % step != 0)
+            if (!chosen[i])
             {
-                frames[i] = new StackFrame(FrameInfo.Read(i + 1, path), null, SkippedReason(maxFrames, step), Skipped: true);
+                frames[i] = new StackFrame(FrameInfo.Read(i + 1, path), null, SkippedReason(maxFrames), Skipped: true);
                 progress?.Report((Interlocked.Increment(ref done), n));
                 return;
             }
@@ -395,16 +396,47 @@ internal sealed class FrameStack
     }
 
     /// <summary>
-    /// The reason a frame the cap skipped gives, the same for the darks, the biases and the lights:
-    /// one file in <paramref name="step"/> is read when there are more than
-    /// <paramref name="maxFrames"/>.
+    /// Which files of a group are decoded under the frame cap (R-027, ADR 0057): all of them up to
+    /// the cap; above it exactly <paramref name="maxFrames"/>, the first, the last and those at
+    /// even distances between them, file `round(j x (count - 1) / (maxFrames - 1))` for j = 0 ..
+    /// maxFrames - 1 (distinct, the distance being over 1), or the first alone for a cap of 1.
+    /// </summary>
+    /// <param name="count">How many files the group has, 0 or more.</param>
+    /// <param name="maxFrames">The cap; below 1 counts as 1.</param>
+    /// <returns>One flag per file, in order: true for a file to decode.</returns>
+    internal static bool[] Chosen(int count, int maxFrames)
+    {
+        bool[] chosen = new bool[count];
+        int cap = Math.Max(1, maxFrames);
+        if (count <= cap)
+        {
+            Array.Fill(chosen, true);
+            return chosen;
+        }
+
+        if (cap == 1)
+        {
+            chosen[0] = true;
+            return chosen;
+        }
+
+        for (int j = 0; j < cap; j++)
+        {
+            chosen[(int)Math.Round(j * (double)(count - 1) / (cap - 1), MidpointRounding.AwayFromZero)] = true;
+        }
+
+        return chosen;
+    }
+
+    /// <summary>
+    /// The reason a frame the cap skipped gives, the same for the darks and the biases: only
+    /// <paramref name="maxFrames"/> files are read when there are more.
     /// </summary>
     /// <param name="maxFrames">The cap, at least 1.</param>
-    /// <param name="step">How many files there are for each one read, at least 2.</param>
     /// <returns>The reason, in the run's language.</returns>
-    internal static string SkippedReason(int maxFrames, int step) => maxFrames == 1
-        ? T($"skipped (over 1 frame only one in {step} is read)", $"sarit (peste 1 cadru se citeste doar unul din {step})")
-        : T($"skipped (over {maxFrames} frames only one in {step} is read)", $"sarit (peste {RoCount(maxFrames)}cadre se citeste doar unul din {step})");
+    internal static string SkippedReason(int maxFrames) => maxFrames == 1
+        ? T("skipped (over 1 frame only the first is read)", "sarit (peste 1 cadru se citeste doar primul)")
+        : T($"skipped (over {maxFrames} frames only {maxFrames} are read, evenly spread)", $"sarit (peste {RoCount(maxFrames)}cadre se citesc doar {maxFrames}, raspandite egal)");
 
     /// <summary>
     /// ": file: error; file: error" for the first three frames that failed (not the skipped ones),

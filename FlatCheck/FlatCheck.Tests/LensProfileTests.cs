@@ -1535,6 +1535,33 @@ public class SyntheticRunTests
         Assert.Contains(SyntheticRun.History(run, reference), h => h.Contains("calibrat pe full frame 1"));
     }
 
+    /// <summary>
+    /// CR-019: the --synthetic report's crop row, when the crop is not known and the Adobe
+    /// profile's own sensor stands in, said "unknown  (unknown - the profile's calibration
+    /// sensor is taken; SFF 1.5)". The word comes once.
+    /// </summary>
+    [Fact]
+    public void R072_TheCropRowSaysUnknownOnce_WhenTheProfilesSensorStandsIn()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        string other = ws.WriteFile("other.fit", FitsTestData.BuildFits(240, 160, FitsTestData.Radial(240, 160),
+            extraCards: new[] { FitsTestData.Card("FOCALLEN", "20.0"), FitsTestData.Card("INSTRUME", "'Canon EOS 7D'") }));
+        string Row(UiLanguage language)
+        {
+            using var _ = Ui.Use(language);
+            var req = new SyntheticRequest { LensText = "Tokina AT-X 11-20mm F2.8 PRO DX", Source = ProfileSource.Adobe };
+            var sw = new StringWriter();
+            var run = SyntheticRun.Execute(other, req, sources, null, 2.8, null, sw);
+            Assert.False(run.Refused, run.Refusal);
+            Assert.Equal(0, req.CameraCrop);
+            return Assert.Single(sw.ToString().Split('\n'), l => l.Contains("crop aparat") || l.Contains("camera crop")).TrimEnd();
+        }
+
+        Assert.Equal("    crop aparat        : necunoscut  (se ia senzorul de calibrare al profilului; SFF 1.5)", Row(UiLanguage.Romanian));
+        Assert.Equal("    camera crop        : unknown  (the profile's calibration sensor is taken; SFF 1.5)", Row(UiLanguage.English));
+    }
+
     [Fact]
     public void LensfunNeedsTheCameraCrop_AndTakesItFromTheDatabaseByTheHeaderCamera()
     {

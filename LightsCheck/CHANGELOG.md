@@ -216,6 +216,34 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   and such a session reads `cannot be measured (the frames stayed in place too much ...; the
   largest group within 13 px, three times the stars' width, has 20 frames of 32)` (R-046, ADR
   0050; CR-005 of the review of 2026-11-13).
+- The fixed pattern's strength was too high on a short session: with no pattern at all, 7 frames
+  read 17 % of one frame's noise, 8 read 14 % and 12 read 10 %, and 10 frames read too little.
+  The noise left in the frames' median is now worked out for the count of frames it was taken
+  over, and noise alone reads about nothing whatever the count (R-046, ADR 0051; CR-006 of the
+  review of 2026-11-13).
+- Stars wider than about 4 px are read narrower than they are (5 px read 4.8, 7 px about 6), so
+  on such a session a frame slightly out of focus could pass as good with nothing said. The
+  measurement stays as it is, since on real frames a wider window reads the sky and not the
+  star, and FOCUS now has a `wide stars` row that says so when the session's stars read wider
+  than 4.5 px (R-014, R-088, ADR 0052; CR-007 of the review of 2026-11-13).
+- A raw whose colour mosaic is not a Bayer one, such as Fujifilm's X-Trans, was measured as a
+  monochrome frame, on pixels of three colours, with nothing said. It is now refused: `<file>:
+  the sensor's colour mosaic is not a Bayer one (Fujifilm X-Trans); LightsCheck measures only
+  Bayer and monochrome raws.` (R-007, ADR 0053; CR-008 of the review of 2026-11-13).
+- A DNG that states its black level as a 2 x 2 pattern (`BlackLevelRepeatDim 2 2`) was read with
+  black 0: `scale 0 .. 16383 ADU`, and every level above black, the sky and the saturation
+  margin included, carried the black as a pedestal. The pattern is now read (R-007, ADR 0055;
+  CR-009 of the review of 2026-11-13), shown on DNG files the tests write. A Nikon D3300 raw
+  reads its black as before; a raw of another camera whose black is held as such a pattern
+  would now read it too, which was not measured.
+- In the window, the Quality tab says its points are frames `in the order of the file names`,
+  not `in the order they were shot`: the first is what the charts show (R-080, R-089).
+- When the file names are not in the order the frames were taken (a camera whose counter passes
+  from `DSC_9999` to `DSC_0001` during the night, names without leading zeros), the pauses, the
+  trends, the drift and the dithering were read in the names' order with nothing said. The
+  order stays the names', and the session lines now say it: `WARNING : the file names are not
+  in the order the frames were taken: DSC_9999.NEF is listed after DSC_0002.NEF and was taken
+  before it. ...` (R-089, ADR 0054; CR-010 of the review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

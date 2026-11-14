@@ -40,7 +40,7 @@ decodes); the others decode in parallel and must match its size, its ISO and its
 level, so the black of a FITS stack is the median of
 the first decoded frame's reference plane, or the black the biases' stack established when
 `DarkSeriesRun` read the biases first (a dark's median would overstate the pedestal by the
-dark current). Above `Th.MaxFramesInMemory` only every k-th file is decoded. `Norm` is the
+dark current). Above `Th.MaxFramesInMemory` (or the cap given) exactly that many files are decoded: `FrameStack.Chosen` flags the first, the last and those at even distances between them, file `round(j x (count - 1) / (cap - 1))`, and `Load` lists the others as skipped without opening their pixels (ADR 0057). `Norm` is the
 normalisation factor of ADR 0004, read from the first frame's ISO and exposure through the
 `Normalisation` the caller hands in (`Normalisation.Default` when none): the record of the
 two settings of ADR 0009, the gain per ISO stop (`NormOf`: `gain ^ log2(ISO / 400)`, the
@@ -105,6 +105,14 @@ pairs), the mean master and its maps, and the clipping check on the first frame'
 plane. `DarkMinusBias` subtracts the two binned mean maps: the dark current per block, read
 in regions; its median on the Smida session is 0.14 ADU, below one quantisation step, which
 is why a dark's value lies in its hot pixels (the report of 2026-10-11).
+
+Biases are used only when they can stand under the darks. `DarkSeriesRun.Run` leaves them out,
+with the reason in `DarkSeriesResult.BiasError` and a null `Biases`, in three cases: none
+decodes (`BiasAnalyzer.Analyze` throws), their size is not the darks' (`DarkMinusBias` throws,
+after both groups are measured), or their ISO is not the darks' (ADR 0059). The last is decided
+before a bias is read, on the inventory's dominant settings (`inv.Match.Biases` and
+`inv.Match.Darks`, the partner's darks in a lights-only run), both ISOs given: the biases'
+stack is then never loaded, so it gives the darks no black either.
 
 ## The warming and the end of the series
 
@@ -215,8 +223,8 @@ frames: the master's noise may reach share x sqrt((1 + limit)^2 - 1), so the fra
 ceil((perFrame / that)^2), at least `Th.MinDarks`. `StackLimit.Needed` holds them for every
 limit of `Th.StackNoiseLimits`, `StackLimit.Limit` the one in force, whose frames are
 `EnoughVerdict.FramesNeeded`. Without lights (or when no light gives a noise) there is no
-`StackLimit` and the frames needed are those that bring the master's noise under
-`Th.MasterNoiseVsStep` x the quantisation step, at least `Th.MinDarks`. The verdict is
+`StackLimit` and the frames needed are `Th.MinDarks` alone: nothing is left to hold the
+master's noise against (ADR 0056). The verdict is
 `Warning` under `Th.MinDarks` or under the frames needed, `Unmeasured` under two frames or
 without a noise, when it has no points.
 
@@ -255,8 +263,10 @@ from `FactorOf` when it measures the light, so `StackNoise.Of` needs no settings
 `StackNoise.Scaled` says that more than half of those lights are at other settings than the
 darks, so the medians are those of brought figures. A light is at other settings when
 `FrameStack.SameSettings` says so of its metadata and the darks' (`LightFigures.OtherSettings`,
-set beside `ToDarks`; `DarkSeriesAnalysis.FirstStacked` is the darks' side): the rule that keeps
-a frame in a stack, with check 1's tolerance on the exposure. It is not read back from the
+set beside `ToDarks`; `DarkSeriesAnalysis.FirstStacked` is the darks' side), both the light and
+the darks saying their ISO and their exposure (`Normalisation.Says`): the rule that keeps
+a frame in a stack, with check 1's tolerance on the exposure, and only where the light's own
+factor was used, so the note never speaks of figures that were not brought. It is not read back from the
 factor, which is exactly 1 for twice the ISO at half the exposure and falls on either side of
 the tolerance by rounding. When `Scaled` is true the `cer` row says the
 figures were worked out for the darks' ISO and exposure, and the third paragraph, which gives
@@ -383,13 +393,15 @@ note is the value's bracket hint without its brackets, empty when the value has 
 bracket leaves out since the console prints no column); `Choice`, a
 `ReportChoice(Label, Options, Selected)` the window offers above the table and the console
 ignores (`FramesRow` with lights alone: the limits of `Th.StackNoiseLimits` as percents, the one
-in force selected, ADR 0051); and `Summary`, false on check 6's three
-count rows, which the Rezumat's card leaves to the Pixeli fierbinti tab. Check 9's other rows are
+in force selected, ADR 0051); `Summary`, false on check 6's three
+count rows, which the Rezumat's card leaves to the Pixeli fierbinti tab; and `Alert`, true on the
+rows the window draws large and red and the console prints as they are (check 1's match when it
+is a WARNING, a verdict against a master made at other settings, ADR 0055). Check 9's other rows are
 plain lines: `CurveRow` prints the last point of `NoiseVsN.Curve` beside what the frame's sigma
 gave to expect, `EnoughFrom` the frames needed, the limit in force first and the other limits'
 after it, and `EnoughVerdictText` the verdict, with the frames that could be left out
 (`Frames - FramesNeeded`) when there are any and no dark was skipped by the frame cap: `Frames`
-is `DarkSeriesAnalysis.Used`, the frames read, which above the cap are every k-th of the
+is `DarkSeriesAnalysis.Used`, the frames read, which above the cap are only some of the
 folder's, so the table's `(acum)` row and the frames needed speak of the frames read.
 `StackPercent` prints the stack's figure with one decimal, or with more, up to four, while the
 text would be that of one of `Th.StackNoiseLimits` for a figure that is not that limit, since the

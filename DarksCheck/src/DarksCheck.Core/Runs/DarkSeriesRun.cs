@@ -198,16 +198,31 @@ internal static class DarkSeriesRun
         double? biasBlack = null;
         if (inv.Session.Biases.Count > 0)
         {
-            try
+            // Biases at another ISO than the darks have another read noise and another readout
+            // pattern: they are left out before a pixel of theirs is read, as biases of another
+            // size are (R-041, ADR 0059), so a FITS dark does not take its black from them either.
+            // The two ISOs are the inventory's, the dominant one of each group; biases or darks
+            // that do not give theirs cannot be told apart and are used.
+            if (inv.Match.Biases?.Iso is double biasIso && inv.Match.Darks?.Iso is double darkIso && biasIso != darkIso)
             {
-                FrameStack bstack = FrameStack.Load(inv.Session.Biases, threads, options.MaxFrames, Phase(T("Reading the biases", "Se citesc bias-urile"), progress), normalisation: nz, cancel: cancel);
-                biases = BiasAnalyzer.Analyze(bstack, threads);
-                biasBlack = bstack.BlackEstimated ? bstack.Black : null;
+                biasError = T(
+                    $"the biases are at ISO {RunReport.F(biasIso, 0)}, the darks at ISO {RunReport.F(darkIso, 0)}",
+                    $"bias-urile sunt la ISO {RunReport.F(biasIso, 0)}, dark-urile la ISO {RunReport.F(darkIso, 0)}");
+                Log.Warn("the biases are left out of the run: ISO " + LogText.Num(biasIso) + ", the darks ISO " + LogText.Num(darkIso) + "; the report says so");
             }
-            catch (InvalidOperationException e)
+            else
             {
-                Log.Warn(e, "the biases could not be used; the report says why");
-                biasError = e.Message;
+                try
+                {
+                    FrameStack bstack = FrameStack.Load(inv.Session.Biases, threads, options.MaxFrames, Phase(T("Reading the biases", "Se citesc bias-urile"), progress), normalisation: nz, cancel: cancel);
+                    biases = BiasAnalyzer.Analyze(bstack, threads);
+                    biasBlack = bstack.BlackEstimated ? bstack.Black : null;
+                }
+                catch (InvalidOperationException e)
+                {
+                    Log.Warn(e, "the biases could not be used; the report says why");
+                    biasError = e.Message;
+                }
             }
 
             // The biases' stack (16-bit mosaics, 48 MB each at 24 MP) is garbage now; collected
@@ -449,6 +464,42 @@ internal static class DarkSeriesRun
         MatchFigures match = IndexAnalyzer.Match(IndexAnalyzer.SharedRatios(own.MedianMaster, own.Black, own.White, own.Norm, median, stack.Black, stack.White, partnerNorm), own.Normalisation);
         MatchFigures lightsOverPartner = lights is null ? MatchFigures.None : IndexAnalyzer.Chain(lights.LightsOverDark, match, own.Normalisation);
 
+        // A partner made at other settings than the set it is measured against is never subtracted
+        // as it is (ADR 0055): in the files the hot pixels are the ratio times one factor over the
+        // other. The two sets of darks are at other settings only when both say both of theirs: a
+        // set that does not was compared as made at the other's settings (ADR 0053).
+        SettingsMismatch? other = null, lightsOther = null;
+        FrameInfo? ownFirst = own.FirstStacked;
+        if (ownSays && partnerSays && ownFirst is not null && !FrameStack.SameSettings(ownFirst, first))
+        {
+            other = new SettingsMismatch(first, ownFirst, match.Ratio * own.Norm / partnerNorm);
+            match = match with { Verdict = LightsAnalysis.NeverDirect(match.Verdict, true) };
+        }
+
+        // The lights against the partner, by the rule they are held to the darks' with. A set that
+        // does not say both its settings stands where the set it was compared with stands (ADR
+        // 0053): the partner at the session's darks' settings, the session's darks at the
+        // partner's, and a light that was read at the darks' factor (it does not say its own, or
+        // the darks do not say theirs) where the darks stand. Null when neither set of darks says
+        // its settings: nothing is then at other settings.
+        FrameInfo? ownAt = ownSays ? ownFirst : partnerSays ? first : null;
+        FrameInfo? partnerAt = partnerSays ? first : ownSays ? ownFirst : null;
+        if (lights is not null && ownAt is not null && partnerAt is not null)
+        {
+            (LightFigures Light, FrameInfo At)[] measured = lights.Frames
+                .Where(f => f.Error is null)
+                .Select(f => (f, f.AssumedSettings || !ownSays ? ownAt : f.Info))
+                .ToArray();
+            (LightFigures Light, FrameInfo At)[] others = measured.Where(x => !FrameStack.SameSettings(x.At, partnerAt)).ToArray();
+            if (2 * others.Length > measured.Length)
+            {
+                // the lights over the darks in the files, then the darks over the partner in the files
+                double lightsInFiles = lights.Other?.RatioInFiles ?? lights.LightsOverDark.Ratio;
+                lightsOther = new SettingsMismatch(partnerAt, others[0].At, lightsInFiles * match.Ratio * own.Norm / partnerNorm);
+                lightsOverPartner = lightsOverPartner with { Verdict = LightsAnalysis.NeverDirect(lightsOverPartner.Verdict, true) };
+            }
+        }
+
         // the overlap of the two sets at 50 ADU-eq (the partner's) and 20 (ours), as the hand
         // analysis read it
         double own50 = DarkSeriesAnalyzer.HotLevel(Th.PartnerOverlapAdu, own.Norm), own20 = DarkSeriesAnalyzer.HotLevel(Th.HotAdu, own.Norm);
@@ -481,6 +532,8 @@ internal static class DarkSeriesRun
         return new PartnerAnalysis(session.Root, stack.Frames.Count, stack.Decoded.Count, stack.Norm, first.Iso, first.ExposureSeconds, index, IndexAnalyzer.Label(session, index), match, lightsOverPartner, failed.Length, firstError, ownHot50, ownIn, partnerHot50, partnerIn)
         {
             Silent = silent,
+            Other = other,
+            LightsOther = lightsOther,
         };
     }
 

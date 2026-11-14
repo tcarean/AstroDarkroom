@@ -40,6 +40,30 @@ namespace AstroPhotoAnalyzer
         internal const double LinearMedianMax = 0.02;
 
         /// <summary>
+        /// Over this share of a FITS's samples above 1, the file is on another scale than the
+        /// 0..1 the tool reads, and is refused instead of clipped (R-013, ADR 0096). Half:
+        /// measured 2026-11-14 on the nine float FITS of the reference folder, eight have no
+        /// sample over 1 and the ninth 0.0006 % (156 of 28 million, the largest 1.137), while a
+        /// file on 0..65535 or 0..255 has nearly all of them over 1, even with a black border.
+        /// </summary>
+        internal const double OffScaleShare = 0.5;
+
+        /// <summary>
+        /// How far past a threshold on a whole 8-bit level a figure in levels must be to pass it:
+        /// a ten-thousandth of a level (RasterOps.LevelsOver, LevelsUnder; ADR 0095). A sample
+        /// read from an 8-bit file is not exactly n / 255 in single precision, so a figure that
+        /// sits on the threshold reads up to 3e-5 levels off it (255 x 2^-23). Measured
+        /// 2026-11-14: 3.0000017 and 2.9999998 for a corner exactly 3 levels over the sky,
+        /// 2.0000038 for a JPEG error of exactly 2 at level 64. The finest real step, one 16-bit
+        /// level, is 0.0039 levels, 39 times the tie. One use compares two computed figures, a
+        /// region's spread with half the mean of its three departures (EdgeRegion.Coloured):
+        /// there the float's error adds up over six medians, and the finest real step is a
+        /// sixth of a 16-bit level, 0.00065 levels, still 6 times the tie; the test of that tie
+        /// holds on departures up to 20 levels at every sky level from 10 to 60.
+        /// </summary>
+        internal const double LevelTie = 1e-4;
+
+        /// <summary>
         /// Over this fraction of samples with value == high_byte * 257, a 16-bit file is a scaled
         /// 8-bit one. On real 16 bits the fraction is ~0.4 % (coincidences); on an upscale it is
         /// 100 %.
@@ -832,7 +856,7 @@ namespace AstroPhotoAnalyzer
         /// of the edge, so that a gradient of growing saturation keeps its steps instead of
         /// flattening on the edge. Measured 2026-11-06 with the probe of ADR 0083: touches 4.06 %
         /// of the FITS's pixels (2.26 % of the TIFF's), the chroma given up 0.47 (0.74) at the
-        /// median; V-016 reads 3.81 % and 0.41 on the tonal subsample.
+        /// median; V-016 reads 3.81 % and 0.43 on the tonal subsample.
         /// </summary>
         internal const double GamutFitKneeSoft = 0.9;
 
@@ -847,7 +871,10 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// A pixel whose chroma is under this is grey for the paper fit: never touched, never
-        /// outside by the chroma (R-175). A quarter of an 8-bit step's chroma near black.
+        /// outside by the chroma (R-175). A quarter of an 8-bit step's chroma near black. Its tone
+        /// can still be one the paper cannot make: then the pixel is counted as out of reach,
+        /// like any other (ADR 0094; 334 such pixels of 1 443 420 on de_printat.png through the
+        /// canvas profile, measured 2026-11-14).
         /// </summary>
         internal const double GamutFitMinChroma = 0.05;
 

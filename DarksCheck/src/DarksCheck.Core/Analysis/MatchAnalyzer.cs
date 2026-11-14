@@ -62,8 +62,9 @@ internal sealed record GroupSettings(double? ExposureSeconds, double? Iso, int F
 /// <param name="Darks">The darks' settings; null for an empty group.</param>
 /// <param name="Biases">The biases' settings; null for an empty group.</param>
 /// <param name="Lights">The lights' settings; null for an empty group.</param>
-/// <param name="DarksVsLights">Ok when the exposures match within the tolerance and the ISOs are
-/// equal; Unmeasured when either is unknown on either side.</param>
+/// <param name="DarksVsLights">Warning when a setting both sides give differs, the exposures
+/// beyond the tolerance or the ISOs, whatever the other setting says (ADR 0058); Ok when both
+/// settings are given on both sides and match; Unmeasured otherwise.</param>
 /// <param name="Bias">Ok when the biases' exposure is at most
 /// <see cref="Th.BiasMaxExposureSeconds"/>; Unmeasured without one.</param>
 internal sealed record MatchAnalysis(GroupSettings? Darks, GroupSettings? Biases, GroupSettings? Lights, Verdict DarksVsLights, Verdict Bias);
@@ -82,13 +83,14 @@ internal static class MatchAnalyzer
         GroupSettings? b = Settings(biases);
         GroupSettings? l = Settings(lights);
 
-        // Both settings must be known on both sides: an unknown ISO is not a match, it is
-        // a comparison that could not be made.
-        Verdict darksVsLights = Verdict.Unmeasured;
-        if (d?.ExposureSeconds is double de && l?.ExposureSeconds is double le && d.Iso is double di && l.Iso is double li)
-        {
-            darksVsLights = SameExposure(de, le) && di == li ? Verdict.Ok : Verdict.Warning;
-        }
+        // A setting both sides give and that differs is a mismatch whatever the other says (ADR
+        // 0058). For a match both settings must be known on both sides: an unknown ISO is not a
+        // match, it is a comparison that could not be made.
+        bool? sameExposure = d?.ExposureSeconds is double de && l?.ExposureSeconds is double le ? SameExposure(de, le) : null;
+        bool? sameIso = d?.Iso is double di && l?.Iso is double li ? di == li : null;
+        Verdict darksVsLights = sameExposure == false || sameIso == false ? Verdict.Warning
+            : sameExposure == true && sameIso == true ? Verdict.Ok
+            : Verdict.Unmeasured;
 
         Verdict bias = Verdict.Unmeasured;
         if (b?.ExposureSeconds is double be)

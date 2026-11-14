@@ -62,6 +62,13 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
     internal bool Summary { get; init; } = true;
 
     /// <summary>
+    /// Whether the window draws the row large and in red (R-124, ADR 0055): true for check 1's
+    /// match when the darks do not have the lights' settings, and for a verdict against a master
+    /// made at other settings. The console, which has no colour, prints the value as it is.
+    /// </summary>
+    internal bool Alert { get; init; }
+
+    /// <summary>
     /// The value's substrings the window renders bold (ADR 0016): the masters' noise and the light
     /// found; empty for most rows. The console prints the value as it is.
     /// </summary>

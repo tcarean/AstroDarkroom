@@ -173,6 +173,26 @@ public class FitsImageLoaderTests : IDisposable
         Assert.Equal(fromPng, fromFits);
     }
 
+    /// <summary>
+    /// CR-007 of the review of 2026-11-13. The PNG holds what Siril's 16-bit export writes for
+    /// these floats, <c>(WORD)(f * 65535f + 0.5f)</c> in single precision: 54784 and 61952, where
+    /// the product in double precision gives 54783 and 61951, one level lower each.
+    /// </summary>
+    [Fact]
+    public void R015_AFloatFits_ShowsTheLevelsOfSirilsSixteenBitExportOfIt()
+    {
+        float first = BitConverter.UInt32BitsToSingle(0x3F560056);
+        float second = BitConverter.UInt32BitsToSingle(0x3F720072);
+        string fits = _images.WriteBytes("float.fit", FitsFixture.Image(-32, 2, 1, 1, [first, second]));
+        string png = _images.WritePng("export.png", [54784, 54784, 54784, 61952, 61952, 61952], 2, 1);
+
+        byte[] fromFits = Pixels(_loader.Load(fits).Bitmap);
+        byte[] fromPng = Pixels(new WicImageLoader().Load(png).Bitmap);
+
+        Assert.Equal([214, 214, 214, 255, 242, 242, 242, 255], fromFits);
+        Assert.Equal(fromPng, fromFits);
+    }
+
     [Fact]
     public void R016_AFloatFitsCountingToSixtyFiveThousand_IsReadOnThatScaleAndSaysSo()
     {

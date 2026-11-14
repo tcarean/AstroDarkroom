@@ -15,10 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Diagnostics;
+
 namespace AstroDarkroom.Core;
 
 /// <summary>
-/// What the window passes to Process.Start (R-003). The core never starts a process itself
+/// The start of an app as the core plans it (R-003); <see cref="Launcher.StartInfo"/> turns it
+/// into what the window passes to Process.Start. The core never starts a process itself
 /// (the rule "Core has no UI").
 /// </summary>
 /// <param name="FileName">The full path of the executable to start.</param>
@@ -47,5 +50,26 @@ public static class Launcher
         }
 
         return new LaunchPlan(location.Path, folder.BaseDirectory, "--lang=" + Ui.Code(Ui.Current));
+    }
+
+    /// <summary>
+    /// What the window hands to Process.Start for a plan (R-003): the plan's file, working
+    /// folder and arguments, started directly, not through the shell. The shell asks Windows'
+    /// question about a downloaded program again for every executable that carries the mark of
+    /// the web, which every file taken out of a downloaded zip does; the user has answered it
+    /// for the launcher, and a direct start does not ask it for each tool (ADR 0027). The core
+    /// still starts nothing.
+    /// </summary>
+    /// <param name="plan">The start, as <see cref="Plan"/> gave it; not null.</param>
+    /// <returns>The start information, a new object at each call.</returns>
+    public static ProcessStartInfo StartInfo(LaunchPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        return new ProcessStartInfo(plan.FileName)
+        {
+            UseShellExecute = false,
+            WorkingDirectory = plan.WorkingDirectory,
+            Arguments = plan.Arguments,
+        };
     }
 }

@@ -67,8 +67,8 @@ Appendix C. Export
   8-bit TIFF, LZW: 0.0 MB
   JPEG 4:4:4     size      mean err   max err   p99    p99.9   > 2 lev    mean level
   q100           0.0 MB       0.084       1.0   1.00    1.00     0.0 %             0
-  q95            0.0 MB       0.680       4.0   2.00    3.00     0.8 %            65
-  q90            0.0 MB       0.765       7.0   3.00    4.00     1.5 %            66
+  q95            0.0 MB       0.680       4.0   2.00    3.00     0.6 %            65
+  q90            0.0 MB       0.765       7.0   3.00    4.00     1.4 %            66
   flat areas: no smooth sky found (0 of 5000 places tried)
 
 Appendix D. Resolution and size

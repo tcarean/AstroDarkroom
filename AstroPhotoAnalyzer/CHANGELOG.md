@@ -238,6 +238,41 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The Colours for paper tab asks the Soft proof tab's own judge about every pixel, not only
+  about the ones it moved (R-175, ADR 0093; CR-001 of the code review of 2026-11-13). A few
+  hundred pixels of a 1.4 million sample were rejected by that judge and never moved, so the
+  saved file still showed them in red while the tab said next to none were left: 0.042 % left
+  against 0.0005 % reported on the plate-solved FITS through the baryta profile, 0.056 % against
+  0.0001 % through the canvas. The share outside as is now equals the Soft proof tab's, and a
+  pixel that judge keeps is no longer cut. The validation case V-016 is re-recorded with the
+  judge's figures (1.94 % of the reference FITS outside as is, for 1.91 %).
+
+- The Colours for paper tab counts a grey pixel whose tone the paper cannot make (R-175, ADR
+  0094; CR-002): it stays as it is, as before, and is now in the share outside, in the share
+  left and in "tone the paper cannot make", as the Soft proof tab shows it. On `de_printat.png`
+  through the canvas profile these are 334 pixels of 1.4 million. A mono image still has
+  nothing outside, which `docs/design/known-limitations.md` now says.
+
+- On an 8-bit image three verdicts no longer depend on how dark the sky is (R-080, R-061,
+  R-083, ADR 0095; CR-003): a flat area that spans exactly 6 levels is not counted as smooth
+  sky, an edge exactly 3 levels from the sky is not flagged, and a JPEG error of exactly 2
+  levels is not counted as over 2 (one of exactly 10 no longer rejects a quality). Before, each
+  fell one way at some sky levels and the other way at others. In the report of an 8-bit image
+  the share of values JPEG changes by more than 2 levels can read a little lower.
+
+- A FITS whose values are not between 0 and 1, such as a 32-bit file on a 0 to 65535 scale, is
+  refused with a message that says what was found and how to save the file (R-013, ADR 0096;
+  CR-004): `ERROR: the file's values are not between 0 and 1: ...`, exit code 1, and the same
+  sentence in the window. Before, every value was cut to white and the report described a
+  white image. A file with up to half of its values over 1 is read as before, the values cut
+  and counted in a note.
+
+- Opening another image while a field holds a mistyped value no longer leaves the previous
+  image's tabs under the new image's name (R-111, ADR 0097; CR-005): the previous result is
+  dropped at once, the field's message shows, and `Analyse` runs the new image once the field
+  is mended. Before, the old figures stayed on screen and the old report would have been saved
+  beside the new image.
+
 - Clearing the window's tabs before a run emptied only the Report and Tones tabs' rows; the
   Export, Resolution and Colour tabs kept theirs behind a hidden view until the next result
   replaced them. All three now empty their rows (R-111).

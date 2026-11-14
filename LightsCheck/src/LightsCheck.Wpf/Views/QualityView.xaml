@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
              xmlns:local="clr-namespace:LightsCheck.Wpf">
   <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,18">
     <StackPanel>
-      <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,12" TextWrapping="Wrap" Text="{local:T En='Each point is a frame, in the order they were shot (the numbers along the bottom). On the first two charts the colour gives the frame\'s class: green good, yellow marginal, red bad.', Ro='Fiecare punct e un cadru, in ordinea fotografierii (numerele de jos). Pe primele doua grafice culoarea spune clasa cadrului: verde bun, galben la limita, rosu slab.'}" />
+      <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,12" TextWrapping="Wrap" Text="{local:T En='Each point is a frame, in the order of the file names (the numbers along the bottom). On the first two charts the colour gives the frame\'s class: green good, yellow marginal, red bad.', Ro='Fiecare punct e un cadru, in ordinea numelor de fisier (numerele de jos). Pe primele doua grafice culoarea spune clasa cadrului: verde bun, galben la limita, rosu slab.'}" />
       <Border Style="{StaticResource Card}">
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="{local:T En='THE STARS\' WIDTH (FWHM, px)', Ro='LATIMEA STELELOR (FWHM, px)'}" />

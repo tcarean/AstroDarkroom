@@ -132,6 +132,27 @@ public class LanguageTests
         Assert.Null(LanguageSetting.TryRead(ws.Write("unknown.json", """{ "language": "fr" }""")));
     }
 
+    /// <summary>
+    /// CR-002: a <c>language</c> whose string cannot be decoded (half of a surrogate pair) gives
+    /// no language, with a Warn line, and nothing is thrown: the launcher starts in English
+    /// instead of stopping at every start.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"language":"\ud800"}""")]
+    [InlineData("""{"language":"ro","\ud800 broken":1}""")]   // in a key, which the lookup of "language" meets
+    public void R007_AStringThatCannotBeDecoded_GivesNoLanguage(string json)
+    {
+        using TempWorkspace ws = new();
+        string path = ws.Write("settings.json", json);
+        using LogCapture capture = LogCapture.Start();
+
+        Assert.Null(LanguageSetting.TryRead(path));
+
+        LogCapture.Captured line = Assert.Single(capture.Events);
+        Assert.Equal((NLog.LogLevel.Warn, path + " could not be read; no language is taken from it"), (line.Level, line.Message));
+        Assert.IsAssignableFrom<System.Text.Json.JsonException>(line.Exception);
+    }
+
     [Fact]
     public void R007_AWriteThatCannotHappen_IsIgnored()
     {

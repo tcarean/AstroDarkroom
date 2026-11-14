@@ -237,6 +237,34 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- `--expo` and the Exposure tab no longer print `Lower the exposure by ~-0.1 stops` (or `~0.0
+  stops`) for a flat whose centre is burnt while its level is at the target or below it: the
+  sentence is `Lower the exposure.`, and a figure appears only from 0.1 stops up (R-043, ADR
+  0114, the review's CR-020).
+- The reason `the camera's crop is not known` no longer adds `(unknown - the profile's calibration
+  sensor is taken)`, which is false there (the lensfun profiles are left out): it says the camera
+  is not in the lensfun database, or that no file names the camera. The `--synthetic` report's
+  crop row says `unknown` once, not twice (R-017, R-072, the review's CR-019).
+- The reasons `the focal length is not known` and `the aperture is not known` no longer say there
+  was no raw when one was read: they name the file that does not give the value and stop
+  offering `--raw`; when the raw could not be read they say so, with the error (R-106, R-017,
+  the review's CR-018).
+- `flatcheck master.fit --lens <text>` with a text that matches no lens now says so (`no lens in
+  the list matches --lens "tokna"; --lenses shows the list`); it said `no raw beside the master
+  ... Give --lens <text>`, or that the raw's own lens matched nothing. A lens that is found but
+  has no vignetting profile for raw files is named with that reason, where the report said no
+  lens matched the text (R-017, the review's CR-017). With `--source adobe` or `--source
+  lensfun` the sentence names that source and says only it was searched, since the text may
+  match a lens of the other source.
+- A folder the chosen Siril script enters (`flats/`, `lights/`, `biases/`) that cannot be listed
+  (its permissions, a broken junction) now blocks the script with a text that names the folder
+  and the system's error, and leaves one Warn line in the log (R-080, ADR 0113, the review's
+  CR-016). Before, a folder without a master showed a grey `Run in Siril` button with no reason
+  and nothing in the log; a session with a master was refused whole with the card `The folder
+  could not be read` for `lights/` or `biases/`, which only the Split tab needs, and now opens
+  (`flats/` beside a master still gives that card: the window lists it for its own tabs); and
+  `Start Split` seemed to do nothing when the folder turned unlistable after the opening. An
+  opening that fails in a way no card covers is written to the log at Error.
 - Stopping a Siril run no longer closes the window when a program Siril started cannot be
   stopped, and the run no longer stays "running" until that program ends by itself (R-140, ADR
   0111, the review's CR-015). Measured with a child that refuses to be ended: the stop threw

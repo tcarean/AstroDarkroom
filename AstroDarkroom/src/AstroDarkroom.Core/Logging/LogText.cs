@@ -89,7 +89,7 @@ public static class LogText
 
     /// <summary>
     /// The window's line before it starts an app (R-012): the app's title, then the file, the
-    /// arguments and the working folder of the plan, as the window hands them to the shell.
+    /// arguments and the working folder of the plan, as the window hands them to Process.Start.
     /// </summary>
     /// <param name="app">The app the user asked for; not null.</param>
     /// <param name="plan">Its start, as <see cref="Launcher.Plan"/> gave it; not null.</param>

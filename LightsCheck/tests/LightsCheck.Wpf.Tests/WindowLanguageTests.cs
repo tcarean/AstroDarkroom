@@ -296,7 +296,11 @@ public class WindowLanguageTests
                         PlainWords.AssertPlain(text, $"the Quality tab ({language})");
                     }
 
-                    string opening = language == UiLanguage.Romanian ? "Fiecare punct e un cadru" : "Each point is a frame";
+                    // The whole first sentence: the points are in the order of the file names, which is the
+                    // order the frames are read in and not always the order they were shot in (R-089).
+                    string opening = language == UiLanguage.Romanian
+                        ? "Fiecare punct e un cadru, in ordinea numelor de fisier (numerele de jos)."
+                        : "Each point is a frame, in the order of the file names (the numbers along the bottom).";
                     Assert.Contains(texts, t => t.StartsWith(opening, StringComparison.Ordinal));
                 });
             }

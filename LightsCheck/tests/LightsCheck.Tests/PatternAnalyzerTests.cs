@@ -231,6 +231,86 @@ public class PatternAnalyzerTests
         Assert.Equal(largest, p.LargestCluster);
     }
 
+    /// <summary>
+    /// The variance of the median of a few Gaussian values of variance 1, against the known ones:
+    /// one value is itself, two are their mean, three give 1 - sqrt(3) / pi, and an even count's
+    /// median, the mean of the two middle values, is tighter than the odd count's before it.
+    /// </summary>
+    [Theory]
+    [InlineData(1, 1.0)]
+    [InlineData(2, 0.5)]
+    [InlineData(3, 0.4487)]
+    [InlineData(4, 0.2982)]
+    [InlineData(5, 0.2868)]
+    public void R046_TheVarianceOfAMedianOfAFewValuesIsTheKnownOne(int n, double expected) =>
+        Assert.Equal(expected, PatternAnalyzer.MedianVariance(n), 4);
+
+    /// <summary>
+    /// On many values the variance nears pi / 2 over the count, from below, odd or even; and it
+    /// is still a number on a session of thousands of frames, where the chance of half the
+    /// values falling on each side of the middle, 0.25 to the power of half the count, is too
+    /// small for a double from about 1070 frames on.
+    /// </summary>
+    [Theory]
+    [InlineData(999)]
+    [InlineData(1000)]
+    [InlineData(1100)]
+    [InlineData(1101)]
+    [InlineData(5000)]
+    [InlineData(5001)]
+    public void R046_TheVarianceOfAMedianOfManyValuesNearsHalfPiOverTheCount(int n) =>
+        Assert.InRange(PatternAnalyzer.MedianVariance(n) * n, 1.565, Math.PI / 2);
+
+    /// <summary>
+    /// The share of the odd-minus-even variance that is the median's own noise: on ten frames
+    /// both halves hold five, an odd count, and the whole an even one, whose median is tighter,
+    /// so the share is under the quarter that <c>1 / n</c> in place of the variances gave
+    /// (CR-006 of the review of 2026-11-13).
+    /// </summary>
+    [Fact]
+    public void R046_TheMediansNoiseShareFollowsTheParityOfTheCounts()
+    {
+        Assert.Equal(0.2411, PatternAnalyzer.NoiseShare(10, 5, 5), 3);
+        Assert.Equal(0.2820, PatternAnalyzer.NoiseShare(8, 4, 4), 3);
+        Assert.Equal(0.2818, PatternAnalyzer.NoiseShare(7, 4, 3), 3);
+    }
+
+    /// <summary>
+    /// Crops of noise alone, with no pattern at all, on a short session: the pattern's strength
+    /// is about nothing, whatever the count. With <c>1 / n</c> in place of the variance of a
+    /// median, 8 frames read 13.6 % of one frame's noise, 9 read 14.5 % and 12 read 10 %, the
+    /// figure of a real pattern (CR-006). The crops are drawn from one random stream: one seed a
+    /// crop, the seeds neighbours, gives streams that are not independent.
+    /// </summary>
+    [Theory]
+    [InlineData(8)]
+    [InlineData(9)]
+    [InlineData(12)]
+    public void R046_NoiseAloneOnAShortSessionReadsAsNoPattern(int n)
+    {
+        const int size = 512;
+        Random rng = new(4100 + n);
+        PatternCrop?[] crops = new PatternCrop?[n];
+        for (int k = 0; k < n; k++)
+        {
+            float[] d = new float[size * size];
+            for (int i = 0; i < d.Length; i += 2)
+            {
+                double u1 = 1.0 - rng.NextDouble(), u2 = rng.NextDouble();
+                double m = Math.Sqrt(-2.0 * Math.Log(u1));
+                d[i] = (float)(1000 + m * Math.Cos(2 * Math.PI * u2) * FrameSigma);
+                d[i + 1] = (float)(1000 + m * Math.Sin(2 * Math.PI * u2) * FrameSigma);
+            }
+
+            crops[k] = new PatternCrop(size, d);
+        }
+
+        SensorPattern p = Analyze(crops, Enumerable.Repeat(Channels(), n).ToArray(), 20);
+
+        Assert.Equal(PatternStatus.Measured, p.Status);
+        Assert.All(Enumerable.Range(0, 4), i => Assert.InRange(p.FractionOfFrame(i), 0.0, 0.07));
+    }
+
     /// <summary>The crop is cut at an even row and column, so a pixel's CFA position in the crop is its position in the frame.</summary>
     [Fact]
     public void R046_TheCropKeepsTheCfaPhaseAndShrinksToASmallFrame()

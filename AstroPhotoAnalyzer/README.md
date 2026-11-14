@@ -24,7 +24,10 @@ the figures do not.
 - **A finished, stretched image**: a TIFF, PNG or FITS (`.fit`, `.fits`, `.fts`), or a JPEG; the
   extension decides how the file is read. A linear image, a stack before its stretch, is refused
   with a message instead of being measured wrong: the median of a stretched image sits around
-  0.08 to 0.25, that of a linear stack around 0.001 to 0.01, and under 0.02 the tool stops. The
+  0.08 to 0.25, that of a linear stack around 0.001 to 0.01, and under 0.02 the tool stops. A
+  FITS whose values are not between 0 and 1 (a 32-bit file on a 0 to 65535 scale, as some
+  stacking programs write) is refused the same way when more than half of its values are over
+  1: save it from Siril as 32-bit on a 0 to 1 scale, or as 16-bit, and analyse that file. The
   pixels are measured as sRGB; an embedded ICC profile is named in the report, not applied.
 - **The paper's Dmax**, the depth of its black, which decides how dark a tone can be and still
   print apart from black. It comes from the print medium, baryta (Dmax 2.4), canvas (1.5) or a
@@ -323,7 +326,8 @@ after the image; `--help` lists them with their defaults, which are the window's
 The exit code follows the overall verdict, the most severe one in the report: `0` OK, `2`
 caution, `3` problem, so any code but `0` means "look". `1` is an error: a bad argument or a
 bad combination (a passepartout under twice the frame), a missing or unreadable file, an ICC
-profile or a WCS file it cannot use, a linear image, a report `-o` cannot write. An error prints
+profile or a WCS file it cannot use, a linear image, a FITS whose values are not between 0 and
+1, a report `-o` cannot write. An error prints
 `ERROR: ` and its reason; the codes are the same in both languages.
 
 The report starts with the file and its facts (format, bit depth, pixels, compression, file
