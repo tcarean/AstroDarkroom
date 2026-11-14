@@ -255,6 +255,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   white image. A file with up to half of its values over 1 is read as before, the values cut
   and counted in a note.
 
+- Opening another image while a field holds a mistyped value no longer leaves the previous
+  image's tabs under the new image's name (R-111, ADR 0097; CR-005): the previous result is
+  dropped at once, the field's message shows, and `Analyse` runs the new image once the field
+  is mended. Before, the old figures stayed on screen and the old report would have been saved
+  beside the new image.
+
 - Clearing the window's tabs before a run emptied only the Report and Tones tabs' rows; the
   Export, Resolution and Colour tabs kept theirs behind a hidden view until the next result
   replaced them. All three now empty their rows (R-111).

@@ -197,14 +197,39 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Chooses the image and starts the analysis: without it the window has nothing to show.
+        /// Another image than the one whose result is on screen drops that result first (R-111,
+        /// ADR 0097): the run that follows checks the fields before it clears anything, so a bad
+        /// field would otherwise leave the old image's tabs under the new image's path, and its
+        /// report to be saved beside the new image. The same image opened again keeps its result
+        /// until the run replaces it. While a run lasts nothing is dropped (there is no result
+        /// then; a second image chosen during a run is CR-009 of the code review of 2026-11-13).
         /// </summary>
         /// <param name="path">
         /// The image's path; null or empty clears the path and runs nothing.
         /// </param>
+        /// <returns>The run, or a completed task when nothing runs.</returns>
         internal Task OpenAsync(string path)
         {
-            Path = path ?? "";
+            string chosen = path ?? "";
+            if (!IsBusy && _result != null && !string.Equals(chosen, _path, StringComparison.OrdinalIgnoreCase))
+                DropResult(chosen);
+            Path = chosen;
             return HasPath ? RunAsync() : Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Forgets the result on screen because another image was chosen: no result, empty tabs,
+        /// nothing to save, and the soft proof's comparison ended, as R-166 ends it when another
+        /// image is opened.
+        /// </summary>
+        /// <param name="chosen">The path of the image chosen instead; empty when the path is cleared.</param>
+        void DropResult(string chosen)
+        {
+            Log.Info("result dropped: another image was chosen, path=" + chosen);
+            _result = null;
+            HasResult = false;
+            ClearTabs();
+            SoftProof.EndComparison(chosen, analysed: false);
         }
 
         /// <summary>

@@ -648,17 +648,22 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Forgets the file of a comparison, shown or kept for the next run, when the analysis
-        /// of another image failed: the main view-model calls it then, since the tab is only
-        /// emptied by such a run and never populated, so that an image that could not be
+        /// of another image failed, or when another image was chosen and a bad field stopped its
+        /// run before it began: the main view-model calls it then, since the tab is only
+        /// emptied in those cases and never populated, so that an image that could not be
         /// analysed ends the comparison as one that could does (R-166), and the first image
         /// opened again comes back alone. A failed run of the image the file was chosen for
         /// forgets nothing: the next run of that image that succeeds brings the comparison back.
         /// </summary>
-        /// <param name="failedPath">The path of the image whose analysis failed.</param>
-        internal void EndComparison(string failedPath)
+        /// <param name="otherImagePath">The path of the image opened instead of the one compared.</param>
+        /// <param name="analysed">
+        /// Whether that image's analysis ran and failed; false when the image was only chosen. For
+        /// the log line alone.
+        /// </param>
+        internal void EndComparison(string otherImagePath, bool analysed = true)
         {
-            if (_otherPath == null || string.Equals(failedPath, _otherFor, StringComparison.OrdinalIgnoreCase)) return;
-            Log.Info("comparison ended: another image was opened, and its analysis failed");
+            if (_otherPath == null || string.Equals(otherImagePath, _otherFor, StringComparison.OrdinalIgnoreCase)) return;
+            Log.Info("comparison ended: another image was opened, and " + (analysed ? "its analysis failed" : "it is not analysed yet"));
             _other = null;
             _otherPath = _otherFor = null;
             RaiseProof();
