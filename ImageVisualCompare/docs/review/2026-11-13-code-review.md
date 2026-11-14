@@ -78,9 +78,9 @@ numbers are those of 2026-11-13; a task finds its lines again by the names the e
 | CR-002 | 1 | common | to measure | At 100 % the image sits between screen pixels and is drawn interpolated | fixed 4c770ae7, 4f419791, 0c1d11e5, 02e63f4d |
 | CR-003 | 1 | some setups | to measure | A pair named by relative paths on the command line is read again by those relative paths | fixed 8ba6986e |
 | CR-004 | 1 | some files | to measure | A float TIFF with associated alpha is un-premultiplied, not shown as stored | fixed 34e7e45e |
-| CR-005 | 1 | some files | owner | A transparent pixel is drawn over black and read unblended; a float RGBA loses its alpha | fixed 115684cf |
-| CR-006 | 1 | rare | to measure | The read-out is not refreshed when the pair or the view changes under a resting pointer | fixed f5cf5c51 |
-| CR-007 | 1 | rare | to measure | A float sample is quantised in double precision, Siril does it in single: 127 values differ by a level | fixed 5c65300a |
+| CR-005 | 1 | some files | owner | A transparent pixel is drawn over black and read unblended; a float RGBA loses its alpha | fixed 115684cf, 1f6223dc |
+| CR-006 | 1 | rare | to measure | The read-out is not refreshed when the pair or the view changes under a resting pointer | fixed f5cf5c51, 1f6223dc |
+| CR-007 | 1 | rare | to measure | A float sample is quantised in double precision, Siril does it in single: 127 values differ by a level | fixed 5c65300a, 1f6223dc |
 | CR-008 | 1 | crafted | confirmed | A FITS card with no space after `=` loses the first character of its value | open |
 | CR-009 | 1 | crafted | confirmed | A `BZERO` or `BSCALE` that does not parse is read as 0 or 1 | open |
 | CR-010 | 2 | some setups | to measure | A three-plane FITS not in the file cache is read with a seek per plane per row | open |
@@ -192,7 +192,11 @@ a defect: dead code, duplicates, small inaccuracies.
   and no dialog was shown, and the fix does not depend on the answer. Run instead, with the real
   window off the desktop on the real FITS pair named by its two bare file names: the current
   folder moved elsewhere after the start, then `H`, `F` and `F` again; each switch read the
-  same two files.
+  same two files. Left to the owner, from the branch's review, read and not run: `Path.GetFullPath`
+  spells out a folder written in its 8.3 short form, so on an account whose temporary folder is
+  written so (`C:\Users\LONGNA~1\...`) the unchanged test
+  `R121_TheStartLogsTheLanguageARefusedLangAndThePair`, which expects the paths as
+  `Path.GetTempPath` writes them, would fail; it passes on this machine.
 - **Where:** `src/ImageVisualCompare.Wpf/App.xaml.cs:112-116` (`ApplyCommandLine` keeps the
   paths as typed; nothing in `src/` calls `Path.GetFullPath`);
   `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs:226-228` (a mode switch decodes
@@ -248,7 +252,11 @@ a defect: dead code, duplicates, small inaccuracies.
   no transparency, every image is loaded opaque with the colours WIC decodes for it, as the
   float path already was (`WicImageLoader.Opaque`, R-010, ADR 0054). Measured as described: a
   PNG pixel holding 200 at alpha 128 was drawn at 100 and read as 200. On the three real files
-  the new conversion costs the same time and memory and gives the same bytes.
+  the new conversion costs the same time and memory, and the three rows sampled of each are the
+  same bytes. After the branch's review, 1f6223dc: a test of a 16-bit RGBA PNG of random samples
+  (each colour is its high byte whatever the alpha), and the README says the colour Windows
+  decodes, since an 8 or 16-bit TIFF with associated alpha reaches the program already divided
+  by it (ADR 0054).
 - **Where:** `src/ImageVisualCompare.Wpf/Imaging/WicImageLoader.cs:113` (the conversion to
   Bgra32 keeps the file's alpha); `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs:623-633`
   (`Describe` prints red, green and blue and never looks at alpha);
@@ -277,6 +285,13 @@ a defect: dead code, duplicates, small inaccuracies.
   on the real FITS pair, one position reported: the three items followed `H`, four zoom steps,
   `F`, `F` again, `100%` and `Fit`. Not measured: the two cases with a real mouse on screen
   (the owner was at the PC), so whether WPF's own mouse move hid the first of them is not known.
+  After the branch's review, 1f6223dc: the position is kept in `OnPreviewMouseMove`, since a
+  scrollbar's thumb marks the moves of its own drag handled and `OnMouseMove` never saw them
+  (by reading WPF's behaviour, not run). Also by reading, not measured: during a load the
+  overlay covers the surface, WPF takes the pointer off it and `OnMouseLeave` forgets the
+  position, so in the window a pointer at rest gets its read-out from the move WPF sends when
+  the overlay goes, as before the fix, and is empty until then, never stale; the report of
+  `SetPair` and `ReplacePair` serves a pointer the surface still holds, as with a button held.
 - **Where:** `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs:95`, `:504-572` (`ShowPair` writes
   the title, the names and the pair line, never the three read-out items), `:586-602`;
   `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs:143-207` (`SetPair` and
@@ -304,7 +319,10 @@ a defect: dead code, duplicates, small inaccuracies.
   expression as its display. Measured: over every float below 1 the 16-bit value differs for
   32,768 (16,384 of them in [0.5, 1), as below) and the level for 127; on five real float FITS
   of 69,260,832 samples each, 18 to 2,564 16-bit values differ and no level. Not measured: a
-  stretched FITS against a 16-bit PNG saved from Siril.
+  stretched FITS against a 16-bit PNG saved from Siril. After the branch's review, 1f6223dc:
+  R-015 no longer gives `FitsScale.ToByte`, the double-precision path, as the rule of a float
+  sample, and the summaries of `ToByte`, `Level`, `FitsRowDecoder.ReadPlaneRow` and
+  `FloatSamples.ToBgra32` say which path is whose.
 - **Where:** `src/ImageVisualCompare.Core/FitsScale.cs:133-146` (`SixteenBit`);
   `src/ImageVisualCompare.Core/FitsRowDecoder.cs:155-157`, `:165-167`;
   `src/ImageVisualCompare.Core/FloatSamples.cs` (`ToSixteenBit`).
@@ -656,7 +674,7 @@ a defect: dead code, duplicates, small inaccuracies.
   edited (the kit's ADR 0024), so where an ADR is stale the note that covers the code says what
   is true now.
 - `docs/design/imaging.md:167` names a method `Decode` of `WicImageLoader`; the work is in
-  `LoadFloat` and `Pass`.
+  `LoadFloat` and `Pass`. (Done with CR-004, 34e7e45e.)
 - `docs/design/logging.md:84` gives the outcome `declined`; the code writes
   `declined: the padding was answered no` (`ImagePairLoader.cs:341`).
 - `docs/design/language.md:63-66` says the window never chooses a side by hand, through
@@ -671,7 +689,7 @@ a defect: dead code, duplicates, small inaccuracies.
   `Viewport.SetContentSize` documents "0 when nothing is shown", which nothing does any more.
 - `MainWindow.xaml.cs:495-496`: the summary of `ShowPair` says the old pair's memory "is given
   back first"; the body releases it after the new pair is on screen and a render pass has run
-  (ADR 0040). `:274`: the `from` parameter lists `the start` and `Ctrl+O`, not `the Open
+  (ADR 0040). (This half done with CR-006's review, 1f6223dc; the `from` parameter below is not.) `:274`: the `from` parameter lists `the start` and `Ctrl+O`, not `the Open
   button`.
 - `DisplayRenderer.cs:50-51`: the linear mode "looks every plane up the same way"; it shifts and
   never reads `_lookups`.
