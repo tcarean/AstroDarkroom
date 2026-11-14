@@ -101,6 +101,16 @@ drift instead of editing the figures.
 
 ## History
 
+- 2026-11-14, after the fixes of CR-006 to CR-010 of the review (ADRs 0051 to 0054): all 14
+  cases re-run (19.8 min) and passing, no recorded figure changed. One formula changed, the
+  share of the noise taken out of the fixed pattern's strength (ADR 0051), and the strength
+  moved inside its tolerance of 0.1 ADU: V-008 (`Veil/2026-10-06-3h`, 87 frames, recorded 1.4 /
+  2.1 / 2.1 / 2.3 ADU on R / G1 / G2 / B) measures 1.336 / 2.082 / 2.079 / 2.235, so the report
+  now prints `1.3 ADU on R (12 %)` and `2.2 on B (9 %)`; V-014 (`Veil/2026-11-06`, 82 frames,
+  recorded 1.1 / 2.4 / 2.3 / 1.5) measures 1.072 / 2.408 / 2.305 / 1.547 and prints as recorded.
+  Hot pixels 3.9 and 0 per megapixel, as recorded. A D3300 raw reads `black 150 per channel
+  [150, 150, 150, 150]` with the black now summed per position (CR-009). The recorded figures
+  of V-008 are left as they are until the owner says otherwise.
 - 2026-11-14: the owner plate-solved the stack at the root of the Veil session of 2026-11-06
   as well (`result_9873s.fit`, 82 frames, solved on 2026-11-13 at 23:15, `CRVAL2`
   +31.55) and said so ("Am facut plate solving si pe V-014"), the session having said it would

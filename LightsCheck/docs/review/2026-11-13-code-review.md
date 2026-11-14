@@ -82,11 +82,11 @@ rule "Golden files").
 | CR-003 | 1 | some setups | confirmed | With FITS lights in the folder itself, `result.fit` is counted as a light | fixed 6267276e |
 | CR-004 | 1 | some setups | to measure | After a meridian flip no frame is aligned, and a weak fit is accepted as good | fixed c8d9a7df |
 | CR-005 | 1 | some setups | to measure | The sensor pattern reads stars as hot pixels when the frames barely moved | fixed 47f3e89f |
-| CR-006 | 1 | some setups | to measure | The pattern's strength is too high on a short session | open |
-| CR-007 | 1 | some setups | owner | A star wider than about 5 px is read too narrow, so a soft frame can pass | open |
-| CR-008 | 1 | some setups | confirmed | A Fujifilm X-Trans raw is measured as a monochrome frame | open |
-| CR-009 | 1 | some setups | to measure | A DNG whose black level is a 2 x 2 pattern is read with black 0 | open |
-| CR-010 | 1 | rare | confirmed | Frames are read in file-name order as if it were time order | open |
+| CR-006 | 1 | some setups | to measure | The pattern's strength is too high on a short session | fixed 65dadaae |
+| CR-007 | 1 | some setups | owner | A star wider than about 5 px is read too narrow, so a soft frame can pass | fixed 49db7b96 |
+| CR-008 | 1 | some setups | confirmed | A Fujifilm X-Trans raw is measured as a monochrome frame | fixed 191549ab |
+| CR-009 | 1 | some setups | to measure | A DNG whose black level is a 2 x 2 pattern is read with black 0 | fixed 78033d84 |
+| CR-010 | 1 | rare | confirmed | Frames are read in file-name order as if it were time order | fixed 804e4a14 |
 | CR-011 | 1 | rare | confirmed | The corner shift uses the first aligned frame's exposure | open |
 | CR-012 | 1 | rare | owner | A trailed frame with a short exposure votes for the RA axis | open |
 | CR-013 | 1 | rare | confirmed | A thin mark of 251 to 400 px is counted as a trail and as a star | open |
@@ -267,7 +267,7 @@ there first, and the cleanup list, which holds what is not a defect.
   "the pattern's few pixels". Pure-noise crops, 8 and 10 frames, asserting about 0.
 - Evidence: to measure (the formula was read; the figures are the replica's). No verdict reads
   this figure; the validated sessions (87, 82 and 32 frames) barely move.
-- Status: open
+- Status: fixed 65dadaae (the noise left in the frames' median is scaled by the variance of a Gaussian median for each count of frames, even counts included: ADR 0051; noise alone reads 0 to 7 % on 7 frames and 0 to 2 % on 87)
 
 ### CR-007 A star wider than about 5 px is read too narrow, so a soft frame can pass
 
@@ -286,7 +286,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: `R014_ARoundGaussianGivesItsFwhmAndElongationOne` measures one width, 3.06 px. A star
   of sigma 3 (7.06 px) expecting 7 within 0.3.
 - Evidence: owner (the arithmetic is certain; the window is a requirement).
-- Status: open
+- Status: fixed 49db7b96 (the 6 px window stays, since on real frames a wider one reads the sky and not the star, and FOCUS says the limit in a `wide stars` row when the session's stars are wider than 5 px, the owner's answer of 2026-11-14: ADR 0052, R-088; a width that is right above 5 px needs another estimator, a feature of its own)
 
 ### CR-008 A Fujifilm X-Trans raw is measured as a monochrome frame
 
@@ -302,7 +302,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: none for the consequence; `CfaPatternTests.RefusesTheNonBayerMasks` pins the null order.
 - Evidence: confirmed for the path; the figures need a run on such a raw. FlatCheck's CR-033 is
   the same gap in its reader, with another symptom.
-- Status: open
+- Status: fixed 191549ab (a raw with a colour mosaic that has no Bayer order is refused, naming X-Trans: ADR 0053; shown and tested on a generated DNG with a 6 x 6 mosaic, no camera's X-Trans raw was at hand)
 
 ### CR-009 A DNG whose black level is a 2 x 2 pattern is read with black 0
 
@@ -320,7 +320,7 @@ there first, and the cleanup list, which holds what is not a defect.
   `(black, cblack[])`, asserted on `cblack[4] = cblack[5] = 2, cblack[6..9] = 64`.
 - Evidence: to measure: `--frame 1` on such a DNG with the Debug log on prints the black libraw
   gave; exiftool shows the file's. FlatCheck's reader most likely has the same lines.
-- Status: open
+- Status: fixed 78033d84 (the repeat pattern of blacks is summed with libraw's common and per-colour blacks, per position; shown and tested on generated DNG files, the first raws the gate decodes; FlatCheck's reader was not looked at)
 
 ### CR-010 Frames are read in file-name order as if it were time order
 
@@ -341,7 +341,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: none; every fixture is in time order. `CadenceAnalyzer.Analyze` on the three frames
   above; `R023_DewIsSuspectedWhenFwhmAndHaloRiseTogether` with the late frames first by name.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed 804e4a14 (the order stays the names' and the session lines carry a `WARNING` naming the first two files out of order, the owner's answer of 2026-11-14: ADR 0054, R-089; taking the frames in the order of their times is a feature of its own)
 
 ### CR-011 The corner shift uses the first aligned frame's exposure
 
@@ -1088,6 +1088,10 @@ there first, and the cleanup list, which holds what is not a defect.
   test is gated; the run shows green, not skipped.
 - Should: a fixture with a black level; the raw's conversions testable without a raw.
 - Evidence: confirmed.
+- Note of 2026-11-14 (the task that fixed CR-006 to CR-010): `tests/LightsCheck.Tests/DngTestData.cs`
+  writes a small uncompressed DNG, and `RawReaderTests` now decodes three of them in the gate (a
+  black of 64, a 2 x 2 pattern of blacks, a 6 x 6 mosaic), so `Decode` runs there; the black's
+  subtraction in the analysis and `FillShootingInfo`'s conversions are still untested.
 - Status: open
 
 ### CR-059 Core tests that cannot fail or do not check what their name says
@@ -1129,6 +1133,11 @@ Each is its own small fix; a task may take several of one file.
 
 - Evidence: confirmed (spot-checked: the first three, `SeriesAnalyzerTests.cs:487` and
   `RawReaderTests` were opened; the rest are the reviewers').
+- Note of 2026-11-14 (the same task): the crops of `PatternAnalyzerTests.Crop` are drawn from one
+  `Random` a crop, seeded 0, 1, 2 and so on; .NET's seeded generator gives streams that are not
+  independent for neighbouring seeds, and on such crops noise alone read 5 % of one frame's noise on
+  7 frames where independent noise read 17 % (CR-006). The new noise test draws every crop from one
+  stream; the older tests were left as they are.
 - Status: open
 
 ### CR-060 Window tests that cannot fail or do not check what their name says
