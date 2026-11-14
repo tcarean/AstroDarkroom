@@ -146,6 +146,24 @@ the band: the window colours each light's point with it. `Chain` and `Equivalent
 only the ratio, so the partner's verdicts and the lights' index do not move. No pixel read
 (`TraceFigures.None`) leaves the plain band.
 
+Lights at other settings than the darks (ADR 0055) are found by `LightsAnalyzer.OtherOf`, before
+the traces: more than half of the measured lights carry `LightFigures.OtherSettings`. It gives a
+`SettingsMismatch`, kept as `LightsAnalysis.Other`: the first stacked dark's metadata, the first
+such light's, and the ratio in the files, the median over the lights of `AmpRatioMedian /
+ToDarks` (the light's ratio times its factor over the darks'). `TracesOf` then takes a centre
+other than 1, the median of the lights' `ToDarks`: the level and the noise in `k` are both at
+one setting, so `|ratio - centre| x k` is the files' `|ratio - 1|` times the master's level over
+the light's noise as the files have them; `TraceFigures.Centre` carries it, and the report's
+`TraceRow` says "too much" under it. With a mismatch `Relaxed` is never set, and
+`LightsAnalysis.NeverDirect` turns a `Direct` into `WithOpt`, in `Analyze` for the night and in
+`LightsAnalysis.Judge` for each light. `MatchPartner` does the same for the partner
+(`PartnerAnalysis.Other`, the session's first stacked dark against the partner's first decoded
+one, the ratio in the files being the ratio times the session's factor over the partner's) and
+for the chained row (`PartnerAnalysis.LightsOther`, more than half of the measured lights
+against the partner's settings, the lights' ratio in the files times the darks'). The report
+turns a mismatch into words with `DarkReport.OtherWords` and marks the verdict row
+(`ReportRow.Alert`).
+
 For a partner (`--against`) the run calls `SharedRatios` with the session's master as `own`
 and the partner's median master as `reference`, then `Match`; how the partner is opened,
 decoded and reduced to its master, and how the overlap of the two hot-pixel sets is counted,

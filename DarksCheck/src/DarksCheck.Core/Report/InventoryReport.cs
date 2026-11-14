@@ -103,7 +103,8 @@ internal static class InventoryReport
             rows.Add(new(T("lights interval", "interval lights"), Interval(inv.LightsCadence)));
         }
 
-        rows.Add(new(T("match", "potrivire"), DarksVsLights(m, partner is not null)));
+        // darks that do not have the lights' settings stand out in the window (R-124, ADR 0055)
+        rows.Add(new(T("match", "potrivire"), DarksVsLights(m, partner is not null)) { Alert = m.DarksVsLights == Verdict.Warning });
         rows.Add(new("bias", Bias(m)));
         if (inv.HasErrors)
         {

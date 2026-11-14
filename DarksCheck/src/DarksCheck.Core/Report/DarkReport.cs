@@ -318,11 +318,15 @@ internal static class DarkReport
         }));
         MatchFigures m = l.LightsOverDark;
         string over = m.Pixels == 1 ? T("over the one frame", "pe singurul cadru") : T($"over the {RunReport.Frames(m.Pixels)}", $"pe cele {RunReport.Frames(m.Pixels)}");
+        // lights at other settings than the darks (ADR 0055): the ratio is the one brought to the darks' settings, and the row says what the files have
+        string inFiles = l.Other is SettingsMismatch o && !double.IsNaN(o.RatioInFiles)
+            ? T($"; worked out for the darks' ISO and exposure, in the files {F(o.RatioInFiles, 2)} times", $"; socotit pentru ISO-ul si expunerea dark-urilor, in fisiere de {F(o.RatioInFiles, 2)} ori")
+            : "";
         rows.Add(new(T("lights against dark", "lights fata de dark"), m.Verdict == MatchVerdict.Unmeasured
             ? T("UNMEASURED: the master has no hot pixel that is not saturated", "NEMASURAT: masterul nu are niciun pixel fierbinte care sa nu fie saturat")
             : T(
-                $"in the lights, the hot pixels are on average {F(m.Ratio, 2)} times what they are in the dark ({over}; in the first {F(l.RatioFirst, 2)}, in the last {F(l.RatioLast, 2)}; on {Pixels(l.AmpPixels)})",
-                $"in lights, pixelii fierbinti sunt in medie de {F(m.Ratio, 2)} ori cat in dark ({over}; in primul {F(l.RatioFirst, 2)}, in ultimul {F(l.RatioLast, 2)}; pe {Pixels(l.AmpPixels)})")));
+                $"in the lights, the hot pixels are on average {F(m.Ratio, 2)} times what they are in the dark ({over}; in the first {F(l.RatioFirst, 2)}, in the last {F(l.RatioLast, 2)}; on {Pixels(l.AmpPixels)}{inFiles})",
+                $"in lights, pixelii fierbinti sunt in medie de {F(m.Ratio, 2)} ori cat in dark ({over}; in primul {F(l.RatioFirst, 2)}, in ultimul {F(l.RatioLast, 2)}; pe {Pixels(l.AmpPixels)}{inFiles})")));
         if (TraceRow(m, l.Traces) is string left)
         {
             rows.Add(new(T("what is left", "ce ramane"), left));
@@ -336,7 +340,8 @@ internal static class DarkReport
             rows.Add(new("index lights", tag + about));
         }
 
-        rows.Add(new("verdict", MatchText(m, partner: false, T("in the lights", "in lights"), l.Traces)));
+        // lights at other settings than the darks: the verdict stands out in the window (R-124)
+        rows.Add(new("verdict", MatchText(m, partner: false, T("in the lights", "in lights"), l.Traces, OtherWords.Of(l.Other, lights: true))) { Alert = l.Other is not null });
         return rows;
     }
 
@@ -366,7 +371,8 @@ internal static class DarkReport
                 $"dupa scadere nu ramane nimic de vazut la pixelii fierbinti: in medie {median} din zgomotul unui light");
         }
 
-        bool tooMuch = m.Ratio < 1;
+        // under the ratio at which nothing is left (1 at the darks' settings; the lights' factor at others, ADR 0055)
+        bool tooMuch = m.Ratio < t.Centre;
         string strong = F(Th.TraceStrongFactor, 0);
         // a trace under the noise is a part of it; from the noise up it is so many times the noise,
         // as the -opt verdict under the row says it
@@ -529,11 +535,11 @@ internal static class DarkReport
                 rows.Add(new(T("lights / partner", "lights / partener"), T(
                     $"in the lights the hot pixels are {F(chained.Ratio, 2)} times what they are at the partner (worked out through the session's darks){lightsWarmth}",
                     $"pixelii fierbinti sunt in lights de {F(chained.Ratio, 2)} ori cat la partener (socotit prin dark-urile sesiunii){lightsWarmth}")));
-                rows.Add(new(T("partner verdict", "verdict partener"), MatchText(chained, partner: true, T("in the lights", "in lights"))));
+                rows.Add(new(T("partner verdict", "verdict partener"), MatchText(chained, partner: true, T("in the lights", "in lights"), other: OtherWords.Of(p.LightsOther, lights: true))) { Alert = p.LightsOther is not null });
             }
             else
             {
-                rows.Add(new(T("partner verdict", "verdict partener"), MatchText(m, partner: true, T("in the session's darks", "in dark-urile sesiunii"))));
+                rows.Add(new(T("partner verdict", "verdict partener"), MatchText(m, partner: true, T("in the session's darks", "in dark-urile sesiunii"), other: OtherWords.Of(p.Other, lights: false))) { Alert = p.Other is not null });
             }
         }
 
@@ -832,9 +838,12 @@ internal static class DarkReport
     /// <param name="traces">What a plain subtraction leaves, for a set of lights against its
     /// darks (R-067): a verdict the traces relaxed says so, and an -opt verdict says how much is
     /// left; null for a partner, whose verdict is the ratio's alone.</param>
+    /// <param name="other">The two settings in words, when the set is at other settings than the
+    /// master (ADR 0055): the master is then never said to be subtracted as it is, and a ratio is
+    /// said to be worked out for the same settings; null at the same settings.</param>
     /// <returns>The verdict's words, opening with OK, WARNING or UNMEASURED (OK, ATENTIE or
     /// NEMASURAT in Romanian).</returns>
-    internal static string MatchText(MatchFigures m, bool partner, string where, TraceFigures? traces = null)
+    internal static string MatchText(MatchFigures m, bool partner, string where, TraceFigures? traces = null, OtherWords? other = null)
     {
         ArgumentNullException.ThrowIfNull(m);
         string atMaster = partner ? T("at the partner", "la partener") : T("in the dark", "in dark");
@@ -852,9 +861,11 @@ internal static class DarkReport
             : T(
                 $"{master} is {(m.DeltaCelsius < 0 ? "warmer" : "colder")} by {F(Math.Abs(m.DeltaCelsius), 1)} degrees",
                 $"{master} e {(m.DeltaCelsius < 0 ? "mai cald" : "mai rece")} cu {F(Math.Abs(m.DeltaCelsius), 1)} grade");
+        // at other settings the ratio is not what the files have, and the words say so
+        string same = other is null ? "" : T(", worked out for the same settings", ", socotiti pentru aceleasi setari");
         string ratio = T(
-            $"{where} the hot pixels are {F(m.Ratio, 2)} times what they are {atMaster}",
-            $"{where} pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat {atMaster}");
+            $"{where} the hot pixels are {F(m.Ratio, 2)} times what they are {atMaster}{same}",
+            $"{where} pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat {atMaster}{same}");
         // what is left after a plain subtraction, when it was measured: said after the -opt band
         string left = traces is { Pixels: > 0 } t && !double.IsNaN(t.Median)
             ? T(
@@ -864,6 +875,14 @@ internal static class DarkReport
         return m.Verdict switch
         {
             MatchVerdict.Unmeasured => T("UNMEASURED", "NEMASURAT"),
+            // a master made at other settings is never subtracted as it is, however well the temperatures fit (ADR 0055)
+            MatchVerdict.Direct or MatchVerdict.WithOpt when other is not null => partner
+                ? T(
+                    $"WARNING: do not subtract the partner as it is: it is made at other settings than {other.Than} ({other.MasterSettings} against {other.SetSettings}), so in the files the hot pixels {other.OfSet} are {F(other.RatioInFiles, 2)} times what they are at the partner. Best use darks made at the lights' settings. With this partner, subtract with -opt (-opt: Siril multiplies the partner so that it matches the lights; it needs the biases too) or use it for the cosmetic correction only (-cc=dark); worked out for the same settings, the hot pixels are {F(m.Ratio, 2)} times what they are at the partner: {temperature}",
+                    $"ATENTIE: nu scadea partenerul asa cum e: e facut la alte setari decat {other.Than} ({other.MasterSettings} fata de {other.SetSettings}), asa ca in fisiere pixelii fierbinti {other.OfSet} sunt de {F(other.RatioInFiles, 2)} ori cat la partener. Cel mai bine foloseste dark-uri facute la setarile lights-urilor. Cu acest partener, scade cu -opt (-opt: Siril inmulteste partenerul cat sa se potriveasca cu lights-urile; are nevoie si de bias-uri) sau foloseste-l doar pentru corectia cosmetica (-cc=dark); socotiti pentru aceleasi setari, pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat la partener: {temperature}")
+                : T(
+                    $"WARNING: do not subtract the dark as it is: the darks are made at other settings than the lights ({other.MasterSettings} against {other.SetSettings}), so in the files the hot pixels of the lights are {F(other.RatioInFiles, 2)} times what they are in the dark. Best make darks at the lights' settings. With these darks, subtract with -opt (-opt: Siril multiplies the dark so that it matches the lights; it needs the biases too) or use the dark for the cosmetic correction only (-cc=dark); worked out for the same settings, the hot pixels are {F(m.Ratio, 2)} times what they are in the dark: {temperature}",
+                    $"ATENTIE: nu scadea dark-ul asa cum e: dark-urile sunt facute la alte setari decat lights-urile ({other.MasterSettings} fata de {other.SetSettings}), asa ca in fisiere pixelii fierbinti din lights sunt de {F(other.RatioInFiles, 2)} ori cat in dark. Cel mai bine fa dark-uri la setarile lights-urilor. Cu aceste dark-uri, scade cu -opt (-opt: Siril inmulteste dark-ul cat sa se potriveasca cu lights-urile; are nevoie si de bias-uri) sau foloseste dark-ul doar pentru corectia cosmetica (-cc=dark); socotiti pentru aceleasi setari, pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat in dark: {temperature}"),
             // inside the band the traces widened (R-067): outside 0.9 .. 1.1, and the words say why it is still as it is
             MatchVerdict.Direct when traces is { Relaxed: true } r => T(
                 $"OK: {master} can be subtracted as it is; {ratio}, outside {F(Th.MatchDirectLow, 1)} .. {F(Th.MatchDirectHigh, 1)}, but what the subtraction leaves is on average under the noise of a light ({F(r.Median, 2)} of it; on these lights that holds between {F(r.DirectLow, 2)} and {F(r.DirectHigh, 2)}): {temperature}",
@@ -880,6 +899,44 @@ internal static class DarkReport
             _ => T(
                 $"WARNING: they do not match; {ratio}: {temperature}; {(m.Ratio > 1 ? "it is too cold and misses the faint ones" : "it is too warm")}",
                 $"ATENTIE: nu se potrivesc; {ratio}: {temperature}; {(m.Ratio > 1 ? "e prea rece si ii pierde pe cei slabi" : "e prea cald")}"),
+        };
+    }
+
+    /// <summary>
+    /// The words of a settings mismatch for <see cref="MatchText"/> (ADR 0055): the two settings as
+    /// check 1 writes them, the ratio in the files, and how the set is named.
+    /// </summary>
+    /// <param name="MasterSettings">The master's settings, "120.0 s, ISO 400".</param>
+    /// <param name="SetSettings">The settings of the set measured against it.</param>
+    /// <param name="RatioInFiles">The set's hot pixels over the master's as the files have
+    /// them.</param>
+    /// <param name="Than">The set as the sentence "made at other settings than ..." names it, in
+    /// the run's language.</param>
+    /// <param name="OfSet">The set as the sentence "the hot pixels ..." names it ("of the lights",
+    /// "din lights"), in the run's language.</param>
+    internal sealed record OtherWords(string MasterSettings, string SetSettings, double RatioInFiles, string Than, string OfSet)
+    {
+        /// <summary>The words of a mismatch, for lights or for the session's darks as the set.</summary>
+        /// <param name="m">The mismatch; null at the same settings.</param>
+        /// <param name="lights">True when the set is the lights, false when it is the session's
+        /// darks (against a partner).</param>
+        /// <returns>The words, or null without a mismatch.</returns>
+        internal static OtherWords? Of(SettingsMismatch? m, bool lights) => m is null ? null : new(
+            SettingsOf(m.Master),
+            SettingsOf(m.Set),
+            m.RatioInFiles,
+            lights ? T("the lights", "lights-urile") : T("the session's darks", "dark-urile sesiunii"),
+            lights ? T("of the lights", "din lights") : T("of the session's darks", "din dark-urile sesiunii"));
+
+        /// <summary>A frame's settings as check 1 writes them, the ones the frame says.</summary>
+        /// <param name="f">The frame's metadata; not null.</param>
+        /// <returns>"120.0 s, ISO 400", "120.0 s", "ISO 400", or "?" when it says neither.</returns>
+        private static string SettingsOf(FrameInfo f) => (f.ExposureSeconds, f.Iso) switch
+        {
+            (double e, double i) => $"{InventoryReport.Exposure(e)} s, ISO {F(i, 0)}",
+            (double e, null) => $"{InventoryReport.Exposure(e)} s",
+            (null, double i) => $"ISO {F(i, 0)}",
+            _ => "?",
         };
     }
 

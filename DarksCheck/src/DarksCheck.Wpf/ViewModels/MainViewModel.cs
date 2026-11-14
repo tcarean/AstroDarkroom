@@ -52,6 +52,12 @@ public sealed record RowVm(string Label, string Value, string Rest, string? Verd
     public ChoiceVm? Choice { get; init; }
 
     public bool HasChoice => Choice is not null;
+
+    /// <summary>
+    /// True for a row the core marks to stand out (R-124): the window draws its chip and its text
+    /// large and in red.
+    /// </summary>
+    public bool Alert { get; init; }
 }
 
 /// <summary>
@@ -896,9 +902,9 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>A report row of the core as the window binds it.</summary>
     /// <param name="r">The core's row.</param>
-    /// <returns>The row with its label, value, rest, verdict, bold parts, lines and table; a row
+    /// <returns>The row with its label, value, rest, verdict, bold parts, lines, table and alert mark; a row
     /// with a table has no lines, the table standing in for the text.</returns>
-    private static RowVm Row(ReportRow r) => new(r.Label, r.Value, r.Rest, r.Verdict, r.BoldParts, r.Table is not null ? [] : r.Lines ?? [r.Rest], r.Table is null ? null : new TableVm(r.Table.Header, r.Table.Rows, r.Table.Note));
+    private static RowVm Row(ReportRow r) => new(r.Label, r.Value, r.Rest, r.Verdict, r.BoldParts, r.Table is not null ? [] : r.Lines ?? [r.Rest], r.Table is null ? null : new TableVm(r.Table.Header, r.Table.Rows, r.Table.Note)) { Alert = r.Alert };
 
     /// <summary>
     /// A report row as a card of the Rezumat binds it: the row, and, when the core gave it a

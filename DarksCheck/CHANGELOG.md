@@ -377,6 +377,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the noise is measured on such a set too, and is no longer skewed when only part of the pixels
   pass the threshold (R-024, ADR 0054; CR-005 of the code review).
 
+- Lights at another ISO or exposure than the darks no longer read `OK: the dark can be
+  subtracted as it is`: the ratio compares the two with both brought to one setting, so it said
+  1.00 at the same temperature while in the files each hot pixel was, say, twice as high in the
+  light. The verdict now says not to subtract the dark as it is, names both settings and the
+  ratio in the files, and advises new darks at the lights' settings first, then `-opt` or the
+  cosmetic correction; the row `what is left` is worked out on the files; a partner made at
+  other settings gets the same verdict. In the window check 1's `match` and these verdicts are
+  drawn large and in red (R-052, R-063, R-067, R-124, ADR 0055; CR-006 of the code review). With
+  lights at the darks' settings nothing changes.
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

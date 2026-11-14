@@ -449,6 +449,30 @@ internal static class DarkSeriesRun
         MatchFigures match = IndexAnalyzer.Match(IndexAnalyzer.SharedRatios(own.MedianMaster, own.Black, own.White, own.Norm, median, stack.Black, stack.White, partnerNorm), own.Normalisation);
         MatchFigures lightsOverPartner = lights is null ? MatchFigures.None : IndexAnalyzer.Chain(lights.LightsOverDark, match, own.Normalisation);
 
+        // A partner made at other settings than the set it is measured against is never subtracted
+        // as it is (ADR 0055): in the files the hot pixels are the ratio times one factor over the
+        // other. A silent set was compared as made at the same settings and is no other.
+        SettingsMismatch? other = null, lightsOther = null;
+        if (silent == SilentSide.None && own.FirstStacked is FrameInfo ownFirst && !FrameStack.SameSettings(ownFirst, first))
+        {
+            other = new SettingsMismatch(first, ownFirst, match.Ratio * own.Norm / partnerNorm);
+            match = match with { Verdict = LightsAnalysis.NeverDirect(match.Verdict, true) };
+        }
+
+        if (lights is not null && partnerSays)
+        {
+            // the lights against the partner's settings, by the rule they are held to the darks' with
+            LightFigures[] measured = lights.Frames.Where(f => f.Error is null).ToArray();
+            LightFigures[] others = measured.Where(f => Normalisation.Says(f.Info) && !FrameStack.SameSettings(f.Info, first)).ToArray();
+            if (2 * others.Length > measured.Length)
+            {
+                // the lights over the darks in the files, then the darks over the partner in the files
+                double lightsInFiles = lights.Other?.RatioInFiles ?? lights.LightsOverDark.Ratio;
+                lightsOther = new SettingsMismatch(first, others[0].Info, lightsInFiles * match.Ratio * own.Norm / partnerNorm);
+                lightsOverPartner = lightsOverPartner with { Verdict = LightsAnalysis.NeverDirect(lightsOverPartner.Verdict, true) };
+            }
+        }
+
         // the overlap of the two sets at 50 ADU-eq (the partner's) and 20 (ours), as the hand
         // analysis read it
         double own50 = DarkSeriesAnalyzer.HotLevel(Th.PartnerOverlapAdu, own.Norm), own20 = DarkSeriesAnalyzer.HotLevel(Th.HotAdu, own.Norm);
@@ -481,6 +505,8 @@ internal static class DarkSeriesRun
         return new PartnerAnalysis(session.Root, stack.Frames.Count, stack.Decoded.Count, stack.Norm, first.Iso, first.ExposureSeconds, index, IndexAnalyzer.Label(session, index), match, lightsOverPartner, failed.Length, firstError, ownHot50, ownIn, partnerHot50, partnerIn)
         {
             Silent = silent,
+            Other = other,
+            LightsOther = lightsOther,
         };
     }
 

@@ -122,6 +122,13 @@ they only set it. The `Partner` and `LightsFrom` setters alone run nothing.
   calls `Populate` again, so every tab, the report's text included, is shaped from the new
   result and the dropdown is drawn anew with the core's selected option; no frame is read, and a
   new analysis starts at the core's default again (R-123, ADR 0051);
+- a row the core marks (`ReportRow.Alert`, copied to `RowVm.Alert` by `Row`) stands out
+  (R-124, ADR 0055): in the `ReportRow` template a `DataTrigger` on `Alert` swaps the chip's
+  template for `AlertChip` (the word on `BadBr`, 14 px bold), and the style of each line's
+  `TextBlock` has a `DataTrigger` on the row's `Alert`, read through the lines' `ItemsControl`,
+  that sets `BadBr`, 16 px and semi-bold. The style is based on the theme's implicit
+  `TextBlock` style, so an unmarked row is drawn as before. Which rows are marked is the
+  core's decision alone;
 - the tab `Explicatii scara ADU` (`ScaleView`) binds `ScaleRows` (`ScaleReport.Rows` as
   `RowVm`, the `ReportRow` template) and `ScaleParagraphs` (`ScaleReport.Paragraphs`, one
   wrapped `TextBlock` each) under `ScaleTitle`, the core's title;

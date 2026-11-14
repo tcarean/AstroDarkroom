@@ -155,6 +155,47 @@ public class LightsAndIndexTests
     }
 
     /// <summary>
+    /// CR-006: lights at ISO 800 against darks at ISO 400, at the same temperature, read a ratio of 1.00 and
+    /// "the dark can be subtracted as it is", while in the files each hot pixel is twice as high in the light.
+    /// </summary>
+    [Fact]
+    public void R052_LightsAtOtherSettingsThanTheDarksAreNeverSubtractedAsTheyAre()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i, 2.0), iso: 800);
+        DarkSeriesResult r = Run(s);
+        LightsAnalysis l = r.Lights!;
+        // the temperature is the same, and the ratio still says so
+        Assert.InRange(l.LightsOverDark.Ratio, 0.95, 1.05);
+        Assert.Equal(MatchVerdict.WithOpt, l.LightsOverDark.Verdict);
+        string report = Report(r);
+        Assert.DoesNotContain("se poate scadea asa cum e", report, StringComparison.Ordinal);
+        Assert.Contains("    verdict            : ATENTIE: nu scadea dark-ul asa cum e: dark-urile sunt facute la alte setari decat lights-urile (120.0 s, ISO 400 fata de 120.0 s, ISO 800), asa ca in fisiere pixelii fierbinti din lights sunt de 2.0", report, StringComparison.Ordinal);
+        Assert.Contains(" ori cat in dark. Cel mai bine fa dark-uri la setarile lights-urilor. Cu aceste dark-uri, scade cu -opt (-opt: Siril inmulteste dark-ul cat sa se potriveasca cu lights-urile; are nevoie si de bias-uri) sau foloseste dark-ul doar pentru corectia cosmetica (-cc=dark); socotiti pentru aceleasi setari, pixelii fierbinti sunt de ", report, StringComparison.Ordinal);
+        Assert.Contains(" ori cat in dark: dark-ul e la aceeasi temperatura", report, StringComparison.Ordinal);
+        Assert.Contains("; pe 20 de pixeli; socotit pentru ISO-ul si expunerea dark-urilor, in fisiere de 2.0", report, StringComparison.Ordinal);
+
+        // the same lights at the darks' ISO, with the hot pixels as high as the dark's, are subtracted as they are
+        using SessionFixture same = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i));
+        Assert.Contains("    verdict            : OK: dark-ul se poate scadea asa cum e", Report(Run(same)), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// CR-006: at other settings a plain subtraction of the dark leaves half of each hot pixel of the light,
+    /// while the row said nothing was left: the trace was read on the ratio brought to one setting.
+    /// </summary>
+    [Fact]
+    public void R067_AtOtherSettingsWhatASubtractionLeavesIsWorkedOutOnTheFiles()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i, 2.0), iso: 800);
+        DarkSeriesResult r = Run(s);
+        // 240 ADU in the light, 120 taken by the dark: a rest of 120 ADU over a light's noise of about 6.6
+        Assert.InRange(r.Lights!.Traces.Median, 14, 23);
+        string report = Report(r);
+        Assert.Contains("    ce ramane          : scaderea ia prea putin: la un pixel fierbinte ramane in medie un rest de 1", report, StringComparison.Ordinal);
+        Assert.Contains(" ori cat zgomotul unui light; la 20 din 20 restul trece de zgomot, la 20 de 3 ori zgomotul", report, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// CR-002: darks that do not say their ISO were read at factor 1 against lights at their own, so
     /// lights at ISO 1600 and the darks' temperature read a quarter of the dark.
     /// </summary>
@@ -938,6 +979,34 @@ public class LightsAndIndexTests
                 _seen.Add(value.Phase);
             }
         }
+    }
+
+    /// <summary>
+    /// CR-006: a partner at ISO 800 at the session's temperature read "the partner can be subtracted as it is",
+    /// while in the files its hot pixels are twice the session's.
+    /// </summary>
+    [Fact]
+    public void R063_APartnerAtOtherSettingsThanTheSessionIsNeverSubtractedAsItIs()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark);
+        using SessionFixture p = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 2 }, iso: 800, inSubfolder: false);
+        DarkSeriesResult r = Run(s, p.Root);
+        PartnerAnalysis partner = Assert.IsType<PartnerAnalysis>(r.Partner);
+        Assert.InRange(partner.OwnOverPartner.Ratio, 0.95, 1.05);
+        Assert.Equal(MatchVerdict.WithOpt, partner.OwnOverPartner.Verdict);
+        string report = Report(r);
+        Assert.DoesNotContain("se poate scadea asa cum e", report, StringComparison.Ordinal);
+        Assert.Contains("    verdict partener   : ATENTIE: nu scadea partenerul asa cum e: e facut la alte setari decat dark-urile sesiunii (120.0 s, ISO 800 fata de 120.0 s, ISO 400), asa ca in fisiere pixelii fierbinti din dark-urile sesiunii sunt de 0.5", report, StringComparison.Ordinal);
+        Assert.Contains(" ori cat la partener. Cel mai bine foloseste dark-uri facute la setarile lights-urilor. Cu acest partener, scade cu -opt (-opt: Siril inmulteste partenerul cat sa se potriveasca cu lights-urile; are nevoie si de bias-uri) sau foloseste-l doar pentru corectia cosmetica (-cc=dark); socotiti pentru aceleasi setari, pixelii fierbinti sunt de ", report, StringComparison.Ordinal);
+        Assert.Contains(" ori cat la partener: partenerul e la aceeasi temperatura", report, StringComparison.Ordinal);
+
+        // with lights at the session's settings the chained row carries the verdict, against the lights' settings
+        using SessionFixture withLights = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i));
+        DarkSeriesResult rl = Run(withLights, p.Root);
+        Assert.Equal(MatchVerdict.WithOpt, rl.Partner!.LightsOverPartner.Verdict);
+        Assert.Contains("    verdict partener   : ATENTIE: nu scadea partenerul asa cum e: e facut la alte setari decat lights-urile (120.0 s, ISO 800 fata de 120.0 s, ISO 400), asa ca in fisiere pixelii fierbinti din lights sunt de 0.5", Report(rl), StringComparison.Ordinal);
+        // the session's own darks are at the lights' settings and are subtracted as they are
+        Assert.Contains("    verdict            : OK: dark-ul se poate scadea asa cum e", Report(rl), StringComparison.Ordinal);
     }
 
     [Fact]

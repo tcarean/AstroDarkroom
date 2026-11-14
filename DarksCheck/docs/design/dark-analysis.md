@@ -383,8 +383,10 @@ note is the value's bracket hint without its brackets, empty when the value has 
 bracket leaves out since the console prints no column); `Choice`, a
 `ReportChoice(Label, Options, Selected)` the window offers above the table and the console
 ignores (`FramesRow` with lights alone: the limits of `Th.StackNoiseLimits` as percents, the one
-in force selected, ADR 0051); and `Summary`, false on check 6's three
-count rows, which the Rezumat's card leaves to the Pixeli fierbinti tab. Check 9's other rows are
+in force selected, ADR 0051); `Summary`, false on check 6's three
+count rows, which the Rezumat's card leaves to the Pixeli fierbinti tab; and `Alert`, true on the
+rows the window draws large and red and the console prints as they are (check 1's match when it
+is a WARNING, a verdict against a master made at other settings, ADR 0055). Check 9's other rows are
 plain lines: `CurveRow` prints the last point of `NoiseVsN.Curve` beside what the frame's sigma
 gave to expect, `EnoughFrom` the frames needed, the limit in force first and the other limits'
 after it, and `EnoughVerdictText` the verdict, with the frames that could be left out
