@@ -163,7 +163,7 @@ each pair has the same defect unless the entry says otherwise.
 | CR-073 | 4 | - | confirmed | Core tests that cannot fail or do not check what their name says | open |
 | CR-074 | 4 | - | confirmed | Window tests that cannot fail or do not check what their name says | open |
 | CR-075 | 4 | - | confirmed | Design notes, requirements and comments that describe other code | open |
-| CR-076 | 1 | some setups | owner | Sets that give the exposure and no ISO are compared as made at the same settings, though their exposures are known to differ | open |
+| CR-076 | 1 | some setups | owner | Sets that give the exposure and no ISO are compared as made at the same settings, though their exposures are known to differ | fixed 91508347 |
 
 The files copied from LightsCheck have their own entries, CP-1 to CP-12, in their own section;
 five of them are of severity 1.
@@ -1600,7 +1600,7 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
 - Test: `R052_SetsThatDoNotSayBothSettingsAreNotAtOtherSettings` pins that such sets are not at
   other settings and that nothing is said to be worked out; no test pins the verdicts above.
 - Evidence: owner.
-- Status: open
+- Status: fixed 91508347 (the owner chose: a setting both sets give is used, one a set does not give is taken from the other, one neither gives is taken as the same and said in a WARNING row; ADR 0060)
 
 ## How the list is used
 
