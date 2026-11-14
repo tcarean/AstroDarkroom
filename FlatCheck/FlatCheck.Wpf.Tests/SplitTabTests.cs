@@ -215,6 +215,62 @@ public class SplitTabTests
         Assert.Equal(SessionMessages.SirilGuiRunning(), guiOpen.Script.Warning);
     }
 
+    /// <summary>
+    /// CR-016, ADR 0113: a session WITH a master whose script input folder cannot be listed
+    /// opens all the same; only the Split tab, which runs the script, says why it cannot start.
+    /// Until then the whole folder was refused with the "could not be read" card.
+    /// </summary>
+    [Fact]
+    public async Task R080_AMasterWithAnUnlistableInputFolderOpens_AndOnlyTheSplitTabIsBlocked()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var f = Session(flats: 4);
+        using var ws = new TempWorkspace();
+        using var deny = UnlistableFolder.Deny(Path.Combine(f.Root, "lights"));
+        var seen = new List<Seen>();
+        var vm = new MainViewModel(() => FakeInstall(ws), () => false, runScript: FakeSiril(seen));
+        using var capture = LogCapture.Start();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.False(vm.HasProblem, vm.ProblemText);
+        Assert.True(vm.Structure.HasResult);
+        Assert.Equal(4, vm.Split.FrameCount);
+        Assert.False(vm.Split.CanStart);
+        Assert.Contains("subfolderul lights/", vm.Split.Blocker);
+        Assert.Equal("", vm.Split.EstimateLine);
+        Assert.DoesNotContain(capture.Events, e => e.Level == NLog.LogLevel.Error);
+        Assert.Contains(capture.Events, e => e.Level == NLog.LogLevel.Warn && e.Exception is UnauthorizedAccessException);
+
+        await vm.Split.StartAsync();
+        Assert.Empty(seen);
+    }
+
+    /// <summary>
+    /// CR-016: the folder became unlistable after the opening. The press on Start Split checks
+    /// again; it threw there, in a task nobody reads, and the button seemed to do nothing. Now
+    /// the blocker appears and nothing runs.
+    /// </summary>
+    [Fact]
+    public async Task R080_AnInputFolderThatBecomesUnlistableBlocksThePressOnStartSplit()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var f = Session(flats: 4);
+        using var ws = new TempWorkspace();
+        var seen = new List<Seen>();
+        var vm = Vm(f, ws, FakeSiril(seen));
+        Assert.True(vm.CanStart, vm.Blocker);
+        using var deny = UnlistableFolder.Deny(Path.Combine(f.Root, "biases"));
+
+        await vm.StartAsync();
+
+        Assert.Empty(seen);
+        Assert.False(vm.IsRunning);
+        Assert.False(vm.CanStart);
+        Assert.Contains("subfolderul biases/", vm.Blocker);
+        Assert.Contains("OSC_Preprocessing_WithoutDark.ssf", vm.Blocker);
+    }
+
     [Fact]
     public async Task R091_TheMainViewModelAttachesTheTabOnOpenAndResetsItOnAnotherFolder()
     {

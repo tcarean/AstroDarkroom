@@ -64,10 +64,18 @@ namespace FlatCheck.Wpf
         /// <param name="folder">The folder to open, or null or empty to ask.</param>
         internal void Start(string folder)
         {
-            if (!string.IsNullOrEmpty(folder)) { _ = _vm.OpenAsync(folder); return; }
+            if (!string.IsNullOrEmpty(folder)) { Open(folder); return; }
 
             Dispatcher.BeginInvoke(new System.Action(() => Choose()));
         }
+
+        /// <summary>
+        /// Starts the opening of a folder and does not wait for it: the tabs fill as the chain
+        /// runs. A fault of that task, which nothing else would see, goes to the log
+        /// (<see cref="Detached.Watch"/>).
+        /// </summary>
+        /// <param name="folder">The session folder.</param>
+        void Open(string folder) => _ = Detached.Watch(_vm.OpenAsync(folder), Log, "opening " + folder);
 
         /// <summary>The "choose folder" button's handler.</summary>
         /// <param name="sender">The button.</param>
@@ -173,7 +181,7 @@ namespace FlatCheck.Wpf
             window.ShowDialog();
 
             Log.Info("Siril run window closed: succeeded=" + (run.Succeeded?.ToString() ?? "not run"));
-            if (run.Succeeded == true) _ = _vm.ReopenAsync();
+            if (run.Succeeded == true) _ = Detached.Watch(_vm.ReopenAsync(), Log, "reopening " + folder);
         }
 
         /// <summary>Asks for a session folder and opens it; does nothing on Cancel.</summary>
@@ -187,7 +195,7 @@ namespace FlatCheck.Wpf
 
             bool chosen = dlg.ShowDialog(this) == true;
             Log.Info("folder dialog: " + (chosen ? "chose " + dlg.FolderName : "cancelled"));
-            if (chosen) _ = _vm.OpenAsync(dlg.FolderName);
+            if (chosen) Open(dlg.FolderName);
         }
     }
 }

@@ -974,9 +974,9 @@ run overwrites everything.
 The button stays disabled, and the screen says why, when `siril-cli.exe` is not found (looked for
 through the installation's entry in the registry, then in `Program Files\Siril\bin`), when Siril's
 configuration has no `.ssf` script, or when a folder the chosen script enters (`biases/`, `flats/`
-and `lights/` for WithoutDark) is missing or empty. If Siril itself is open, a warning shows, not
-a block: two processes writing into the same `process/` spoil its files, but the window cannot
-know which folder the other one is working on.
+and `lights/` for WithoutDark) is missing, empty, or cannot be listed (its permissions). If Siril
+itself is open, a warning shows, not a block: two processes writing into the same `process/` spoil
+its files, but the window cannot know which folder the other one is working on.
 
 ### The files it writes
 

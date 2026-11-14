@@ -385,6 +385,79 @@ public class MainViewModelTests
         Assert.Contains("OSC_Preprocessing_WithoutDark.ssf", p.Blocker);
     }
 
+    /// <summary>
+    /// CR-016: an input folder the user may not list, on a folder without a master. The
+    /// opening faulted in a task nobody awaits, so the card showed the script list, a grey
+    /// button and no reason. Now the folder is the blocker, named with the system's message,
+    /// and the exception is one Warn line.
+    /// </summary>
+    [Fact]
+    public async Task R080_AnUnlistableInputFolderBlocksTheCardsButtonAndIsNamed()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var f = new SessionFixture().WithProcess();
+        using var ws = new TempWorkspace();
+        WithInputs(f, "biases", "flats", "lights");
+        using var deny = UnlistableFolder.Deny(f.FlatsDir);
+        var vm = new MainViewModel(() => FakeInstall(ws, true, "OSC_Preprocessing_WithoutDark.ssf"), () => false);
+        using var capture = LogCapture.Start();
+
+        await vm.OpenAsync(f.Root);
+
+        var p = vm.Preprocess;
+        Assert.True(vm.HasProblem);                                  // the "flat master is missing" card stays
+        Assert.Contains("pp_flat_stacked.fit", vm.ProblemText);
+        Assert.False(vm.IsRunning);
+        Assert.True(p.IsOffered);
+        Assert.False(p.CanRun);
+        var warned = Assert.Single(capture.Events, e => e.Level == NLog.LogLevel.Warn && e.Exception is UnauthorizedAccessException);
+        Assert.Contains(f.FlatsDir, warned.Message);
+        Assert.Contains("   at ", warned.Line);
+        Assert.Equal(SessionMessages.ScriptInputUnlistable("OSC_Preprocessing_WithoutDark.ssf", "flats", warned.Exception!.Message), p.Blocker);
+        Assert.Contains("subfolderul flats/", p.Blocker);
+        Assert.Contains(warned.Exception.Message, p.Blocker);
+        Assert.DoesNotContain("goale", p.Blocker);                   // not the "missing or empty" text: nobody saw inside
+
+        // the press checks again, and must not throw either
+        p.Refresh();
+        Assert.False(p.CanRun);
+    }
+
+    /// <summary>CR-016: the unlistable folder's text in English names the script, the folder
+    /// and the system's message, and says what to do.</summary>
+    [Fact]
+    public void R080_TheUnlistableInputFolderTextNamesTheScriptTheFolderAndTheError()
+    {
+        using var en = Ui.Use(UiLanguage.English);
+
+        string text = SessionMessages.ScriptInputUnlistable("A.ssf", "lights", "Access to the path is denied.");
+
+        Assert.Equal("The script A.ssf enters the subfolder lights/, but FlatCheck cannot see what is in it:\n\n"
+                   + "Access to the path is denied.\n\n"
+                   + "Check the permissions on that folder, then open the session folder again.", text);
+    }
+
+    /// <summary>
+    /// CR-016, R-110: a task the window starts without awaiting it (an opening) leaves one
+    /// Error line with the exception and its stack when it faults; a cancelled one leaves none.
+    /// </summary>
+    [Fact]
+    public async Task R110_ATaskTheWindowDoesNotAwaitLeavesAnErrorLineWhenItFaults()
+    {
+        using var capture = LogCapture.Start();
+        var log = NLog.LogManager.GetLogger(Loggers.Window);
+
+        await Detached.Watch(Task.Run(() => throw new InvalidOperationException("stricat")), log, "opening X");
+        await Detached.Watch(Task.FromCanceled(new CancellationToken(true)), log, "opening Y");
+        await Detached.Watch(Task.CompletedTask, log, "opening Z");
+
+        var failed = Assert.Single(capture.Events);
+        Assert.Equal(NLog.LogLevel.Error, failed.Level);
+        Assert.IsType<InvalidOperationException>(failed.Exception);
+        Assert.Contains("opening X", failed.Message);
+        Assert.Contains("   at ", failed.Line);
+    }
+
     [Fact]
     public async Task WithoutSirilCliTheButtonIsBlockedAndSaysSo()
     {

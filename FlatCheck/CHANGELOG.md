@@ -237,6 +237,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A folder the chosen Siril script enters (`flats/`, `lights/`, `biases/`) that cannot be listed
+  (its permissions, a broken junction) now blocks the script with a text that names the folder
+  and the system's error, and leaves one Warn line in the log (R-080, ADR 0113, the review's
+  CR-016). Before, a folder without a master showed a grey `Run in Siril` button with no reason
+  and nothing in the log; a session with a master was refused whole with the card `The folder
+  could not be read`, though only the Split tab needs that folder, and now opens; and `Start
+  Split` seemed to do nothing when the folder turned unlistable after the opening. An opening
+  that fails in a way no card covers is written to the log at Error.
 - Stopping a Siril run no longer closes the window when a program Siril started cannot be
   stopped, and the run no longer stays "running" until that program ends by itself (R-140, ADR
   0111, the review's CR-015). Measured with a child that refuses to be ended: the stop threw
