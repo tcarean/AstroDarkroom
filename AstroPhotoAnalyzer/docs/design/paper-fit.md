@@ -52,7 +52,9 @@ over a copy of the core, the quarter reduction of each image):
 
 Per pixel, the rows in parallel: the D50 Lab of the sRGB colour (`ColorMath.LabD50OfSrgb`, the
 Bradford-adapted matrix the soft proof's display step shares, so the fit and the proof speak
-one Lab); a chroma under `GamutFitMinChroma` is grey and copied; `cmax` from the table, unless
+one Lab); a chroma under `GamutFitMinChroma` is grey and copied, and with the facts asked for a
+grey pixel the judge rejects is counted outside before and after and as a tone out of reach
+(`Rejects`, ADR 0094; a mono raster is copied whole, nothing counted); `cmax` from the table, unless
 the pixel's chroma reaches within `GamutFitEdgeMargin` of it or passes it, so that the fit would
 land it on the edge, and the table has a judge: then `ExactEdge` searches the judge along the
 pixel's own hue at its own L\* within that band (from zero when the band's bottom is already
@@ -93,7 +95,9 @@ of 2026-11-13, CR-001) the edge alone decided, and measured 2026-11-14 on the to
 After it the judge and the fit agree on every pixel of the four pairs, before and after the
 fit, under the three knees. The whole plate-solved FITS (22.6 MP) fits in 3.9 s on baryta and
 3.7 s on canvas with cold caches, against 3.2 s and 3.3 s before: the judge's word on every
-pixel costs about half a second.
+pixel costs about half a second. On `de_printat.png` through the canvas profile the two agree
+once the grey pixels are counted too (ADR 0094): 2.7695 % outside as is by both, 0.0261 % left,
+all of it tones out of reach (377 pixels, 334 of them grey).
 
 A pixel the judge rejects is outside; if `cmax` is negative (the judge rejects even the grey
 of that tone: the edge search's answer for it, apart from a tiny edge over a grey it keeps,
@@ -121,8 +125,8 @@ smallest whole L\* under which `GamutFitBandShare` of the pixels outside lie, an
 saturation factor in steps of `GamutFitRecipeStep` whose uniform scaling of the chroma of every
 pixel under that L\* brings `GamutFitRecipeShare` of the pixels outside in (decided with the
 pixel's own `cmax`, so no further trips), the factor decided on the band's own pixels outside
-whose tone is in reach (those above the band, and those whose tone is out of reach, are beyond
-the mask and are counted in what is left; before this,
+whose tone is in reach (those above the band, and those whose tone is out of reach, the grey
+ones the judge rejects among them, are beyond the mask and are counted in what is left; before this,
 on the Smida TIFF, where 10 % of the pixels outside sit above the band, the factor ran down to
 5 %), with the share of all the pixels outside it leaves. Measured on the tonal subsample, where
 the evidence is measured too.

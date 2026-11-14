@@ -235,6 +235,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   0.0001 % through the canvas. The share outside as is now equals the Soft proof tab's, and a
   pixel that judge keeps is no longer cut.
 
+- The Colours for paper tab counts a grey pixel whose tone the paper cannot make (R-175, ADR
+  0094; CR-002): it stays as it is, as before, and is now in the share outside, in the share
+  left and in "tone the paper cannot make", as the Soft proof tab shows it. On `de_printat.png`
+  through the canvas profile these are 334 pixels of 1.4 million. A mono image still has
+  nothing outside, which `docs/design/known-limitations.md` now says.
+
 - Clearing the window's tabs before a run emptied only the Report and Tones tabs' rows; the
   Export, Resolution and Colour tabs kept theirs behind a hidden view until the next result
   replaced them. All three now empty their rows (R-111).

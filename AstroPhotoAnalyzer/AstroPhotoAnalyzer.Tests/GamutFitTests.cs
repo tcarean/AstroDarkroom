@@ -186,6 +186,41 @@ public class GamutFitTests
         Assert.Equal(75, recipe.PctInBand, 3);
     }
 
+    /// <summary>
+    /// CR-002: a grey pixel has no chroma to reduce, so the fit copies it; it was copied before
+    /// anything was asked about its tone, and so counted nowhere, while the Soft proof tab
+    /// paints it red and a neighbour with some chroma at the same tone was counted three times.
+    /// </summary>
+    [Fact]
+    public void R175_AGreyPixelWhoseToneIsOutOfReachIsCountedAndLeftAsItIs()
+    {
+        // The fake paper reaches no tone under L* 8. A grey and a coloured pixel under it, a grey
+        // and a coloured pixel well inside.
+        GamutFitTable t = GamutFitTable.Build(FakeRule);
+        Raster r = RasterOf((5, 0, 0), (5, 10, 0), (50, 0, 0), (50, 4, 3));
+        Assert.True(ChromaOf(LabAt(r, 0)) < Thresholds.GamutFitMinChroma, "the first pixel is grey for the fit");
+
+        GamutFitOutcome o = GamutFit.Apply(r, t, knee: 1, keepFacts: true);
+
+        Assert.Equal(new[] { true, true, false, false }, o.OutsideBefore);
+        Assert.Equal(new[] { true, true, false, false }, o.OutsideAfter);
+        Assert.Equal(50, o.PctOutsideBefore, 3);
+        Assert.Equal(50, o.PctOutsideAfter, 3);
+        Assert.Equal(50, o.PctUnreachable, 3);
+        Assert.Equal(0, o.PctTouched);
+        Assert.Equal(100, o.PctOutsideUnderLowSeparation, 3);
+        for (int p = 0; p < 3; p++) Assert.Equal(r.Planes[p], o.Image.Planes[p]);
+
+        // The recipe: both are beyond a mask, so the factor stays at 1 and all of them are left.
+        GamutFitRecipe recipe = GamutFit.Recipe(r, t);
+        Assert.Equal(1, recipe.Factor);
+        Assert.Equal(100, recipe.PctLeft, 3);
+
+        // Without the facts (the save of a whole image) the pixel is copied all the same.
+        Raster saved = GamutFit.Apply(r, t, knee: 1, keepFacts: false).Image;
+        for (int p = 0; p < 3; p++) Assert.Equal(r.Planes[p], saved.Planes[p]);
+    }
+
     [Fact]
     public void R176_TheThreeVariantsTouchMoreAsTheKneeComesDownAndTheEvidenceSaysHowMuch()
     {

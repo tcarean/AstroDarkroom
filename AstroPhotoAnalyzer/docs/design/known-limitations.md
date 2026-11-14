@@ -142,6 +142,12 @@
   0.14 points of the exact per-pixel figure, not equal to it (measured 2026-11-05: the FITS's
   dust on baryta 11.10 % against 10.96 %). `Maxima`
   clips more pixels than the other suggestions (0.18 % against 0.10 % on the reference PNG).
+- A mono image has nothing outside the paper's gamut, in the Editare Curbe figure, in the Soft
+  proof tab's red layer and in the Culori pentru hartie tab, though the rule counts the tone too
+  (ADR 0081): the same image stored as RGB can show its darkest greys as tones the paper cannot
+  make. The owner left it so (ADR 0094). Measured 2026-11-14: the grey copy of `de_printat.png`
+  has 0.03 % of its pixels outside on the canvas profile, all under L\* 0.13, and none on the
+  baryta; the grey copy of the plate-solved FITS has none on either.
 - A saved FITS copies every card of the source, so a `CHECKSUM` / `DATASUM` pair, or `DATAMIN` /
   `DATAMAX`, would describe the old data. Siril writes none of them by default; a source that
   carries them yields a file that fails checksum verification.

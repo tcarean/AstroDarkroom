@@ -256,7 +256,15 @@ namespace AstroPhotoAnalyzer
                     var (l, a, b) = ColorMath.LabD50OfSrgb(R[i], G[i], B[i]);
                     double c = Math.Sqrt(a * a + b * b);
                     if (keepFacts) lstar[i] = (float)l;
-                    if (c < Thresholds.GamutFitMinChroma) { oR[i] = R[i]; oG[i] = G[i]; oB[i] = B[i]; continue; }
+                    if (c < Thresholds.GamutFitMinChroma)
+                    {
+                        // Grey for the fit: no chroma to reduce, so it is copied. Its tone can
+                        // still be one the paper cannot make; then it is counted as every pixel
+                        // out of reach is, by the judge's word on the pixel as it is (ADR 0094).
+                        oR[i] = R[i]; oG[i] = G[i]; oB[i] = B[i];
+                        if (keepFacts && Rejects(t, l, a, b, R[i], G[i], B[i])) before[i] = after[i] = unreachable[i] = true;
+                        continue;
+                    }
                     var (outside, cmax) = Decide(t, l, a, b, c, R[i], G[i], B[i]);
                     if (keepFacts) before[i] = outside;
                     if (outside && cmax < 0)
@@ -344,7 +352,7 @@ namespace AstroPhotoAnalyzer
         {
             double cmax = Edge(t, l, a, b, c, r, g, bl);
             if (t.Judge == null) return (c > cmax, cmax);
-            bool outside = t.JudgeOfPixel != null ? t.JudgeOfPixel(r, g, bl) : t.Judge(l, a, b);
+            bool outside = Rejects(t, l, a, b, r, g, bl);
             if (outside && c <= cmax)
                 // The band searched ends at the pixel's own chroma, which the judge rejects.
                 cmax = ExactEdge(t.Judge, l, a / c, b / c, c - Thresholds.GamutFitEdgeMargin);
@@ -352,6 +360,23 @@ namespace AstroPhotoAnalyzer
                 cmax = c;
             return (outside, cmax);
         }
+
+        /// <summary>
+        /// The judge's word on one pixel as it is: <see cref="GamutFitTable.JudgeOfPixel"/> on
+        /// its own samples when the table has it, else <see cref="GamutFitTable.Judge"/> on its
+        /// Lab. A table without a judge rejects nothing here: its edge alone says what is
+        /// outside, and a grey pixel has no chroma to pass it.
+        /// </summary>
+        /// <param name="t">The table.</param>
+        /// <param name="l">The pixel's L*.</param>
+        /// <param name="a">The pixel's a*.</param>
+        /// <param name="b">The pixel's b*.</param>
+        /// <param name="r">The pixel's encoded red, 0..1.</param>
+        /// <param name="g">The pixel's encoded green.</param>
+        /// <param name="bl">The pixel's encoded blue.</param>
+        /// <returns><c>true</c> when the judge says the paper cannot hold the pixel's colour.</returns>
+        static bool Rejects(GamutFitTable t, double l, double a, double b, float r, float g, float bl)
+            => t.JudgeOfPixel != null ? t.JudgeOfPixel(r, g, bl) : t.Judge != null && t.Judge(l, a, b);
 
         /// <summary>
         /// The largest chroma for one pixel: the table's, unless the pixel's chroma reaches
@@ -465,7 +490,12 @@ namespace AstroPhotoAnalyzer
                     var (l, a, b) = ColorMath.LabD50OfSrgb(R[i], G[i], B[i]);
                     lAll[i] = (float)l;
                     double c = Math.Sqrt(a * a + b * b);
-                    if (c < Thresholds.GamutFitMinChroma) continue;
+                    if (c < Thresholds.GamutFitMinChroma)
+                    {
+                        // A grey pixel the judge rejects: a tone out of reach, beyond any mask.
+                        if (Rejects(t, l, a, b, R[i], G[i], B[i])) { isOut[i] = true; lOut[i] = (float)l; cOut[i] = (float)c; cmaxOut[i] = -1; }
+                        continue;
+                    }
                     var (outside, cmax) = Decide(t, l, a, b, c, R[i], G[i], B[i]);
                     if (!outside) continue;
                     isOut[i] = true; lOut[i] = (float)l; cOut[i] = (float)c; cmaxOut[i] = (float)cmax;

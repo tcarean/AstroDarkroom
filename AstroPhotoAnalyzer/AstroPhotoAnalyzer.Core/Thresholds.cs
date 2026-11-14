@@ -847,7 +847,10 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// A pixel whose chroma is under this is grey for the paper fit: never touched, never
-        /// outside by the chroma (R-175). A quarter of an 8-bit step's chroma near black.
+        /// outside by the chroma (R-175). A quarter of an 8-bit step's chroma near black. Its tone
+        /// can still be one the paper cannot make: then the pixel is counted as out of reach,
+        /// like any other (ADR 0094; 334 such pixels of 1 443 420 on de_printat.png through the
+        /// canvas profile, measured 2026-11-14).
         /// </summary>
         internal const double GamutFitMinChroma = 0.05;
 
