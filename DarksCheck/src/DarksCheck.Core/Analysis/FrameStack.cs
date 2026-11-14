@@ -142,7 +142,8 @@ internal sealed class FrameStack
     /// <paramref name="threads"/> of them in flight at most). The first file in order sets the
     /// geometry and the scale, the others must match it. Above <paramref name="maxFrames"/> frames
     /// exactly that many files are decoded, from the first to the last at even distances
-    /// (<see cref="Chosen"/>), so the memory stays bounded; the others are listed as skipped. <paramref name="fitsBlack"/> is the black level to use for a FITS, when a group
+    /// (<see cref="Chosen"/>), so the memory stays bounded; the others are listed as skipped.
+    /// <paramref name="fitsBlack"/> is the black level to use for a FITS, when a group
     /// read before (the biases) already established it; null estimates it from the first frame.
     /// <paramref name="normalisation"/> is the settings the ADU-eq factor is read with
     /// (<see cref="Normalisation.Default"/> when null).
