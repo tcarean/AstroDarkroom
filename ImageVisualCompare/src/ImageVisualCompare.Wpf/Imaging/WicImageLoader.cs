@@ -32,8 +32,8 @@ namespace ImageVisualCompare.Wpf.Imaging;
 ///
 /// Nothing downstream branches on bit depth or channel layout: WIC is asked for the file
 /// exactly as it was written, the format is recorded for the status bar, and then everything
-/// is converted to Bgra32. A 16-bit PNG from Siril, an 8-bit screenshot and a palettised
-/// image all arrive at the same place. The one exception is floating-point samples, as in the
+/// is converted to Bgra32, opaque: a file's transparency is not shown (ADR 0054). A 16-bit PNG
+/// from Siril, an 8-bit screenshot and a palettised image all arrive at the same place. The one exception is floating-point samples, as in the
 /// 32-bit TIFF exports of Siril and GraXpert: WIC's conversion to levels takes them for linear
 /// light and brightens them, so they are shown as stored, as a FITS of the same samples is
 /// (ADR 0035).
@@ -77,8 +77,8 @@ public sealed class WicImageLoader : IImageLoader
 
     /// <summary>
     /// Decodes the full image on the calling thread: the file's own format first, reported as
-    /// it is, then converted to Bgra32 and frozen, float samples as stored (see the class
-    /// summary). The file is closed again before this returns. A file that cannot be read or
+    /// it is, then converted to Bgra32 with alpha 255 and frozen, float samples as stored (see
+    /// the class summary). The file is closed again before this returns. A file that cannot be read or
     /// decoded throws an exception of a type <see cref="ImagePairLoader"/> turns into a message,
     /// WIC's own failures included.
     /// </summary>
@@ -110,7 +110,7 @@ public sealed class WicImageLoader : IImageLoader
                 return LoadFloat(frame, info, mode, cancellationToken);
             }
 
-            var converted = new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
+            BitmapSource converted = Opaque(frame);
 
             // The conversion above is lazy. Realise makes the pixels now, while the file stream
             // is still open, and Freeze makes the result usable from the UI thread even though
@@ -125,6 +125,19 @@ public sealed class WicImageLoader : IImageLoader
             throw Rejected(ex);
         }
     }
+
+    /// <summary>
+    /// Converts a frame of integer samples to Bgra32 with every alpha 255, lazily: through Bgr32,
+    /// which has no alpha, so the colours come as WIC decodes them, not multiplied by the file's
+    /// alpha, and the conversion on to Bgra32 writes 255 (R-010, ADR 0054). A file without alpha
+    /// comes out byte for byte as the direct conversion gave it, in the same time and memory
+    /// (measured on the real pair, 2026-11-14).
+    /// </summary>
+    /// <param name="frame">The decoded frame, in the file's own pixel format.</param>
+    /// <returns>The frame as Bgra32, opaque; nothing is decoded until it is realised.</returns>
+    private static BitmapSource Opaque(BitmapSource frame) =>
+        new FormatConvertedBitmap(
+            new FormatConvertedBitmap(frame, PixelFormats.Bgr32, null, 0), PixelFormats.Bgra32, null, 0);
 
     /// <summary>
     /// Decodes and converts the pixels into memory, with <see cref="BitmapCacheOption.OnLoad"/>.

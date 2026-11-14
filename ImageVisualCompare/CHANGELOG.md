@@ -113,6 +113,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   alpha) is shown as stored. Its colours were divided by the alpha first: a pixel stored as 0.2
   at an alpha of 0.5 showed at level 102, where the same values in a FITS show at 51, and a
   fully transparent pixel showed black whatever it held (R-091).
+- Transparency is no longer shown: every image is drawn solid, with the colours stored in it,
+  as a FITS and a float TIFF already were. A half-transparent pixel holding 200 was drawn at 100
+  over the black background while the status bar read 200, so a PNG with transparency could
+  look different from an export without it while the two readouts were equal (R-010, ADR 0054).
 
 ### Internal
 

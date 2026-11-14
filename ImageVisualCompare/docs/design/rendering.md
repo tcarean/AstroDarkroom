@@ -74,12 +74,13 @@ zoom. A `Canvas` measures with infinite space and the transform alone decides wh
 image coordinates and travels with the pan; on the layer it stays put on screen, which is
 what a before/after slider needs. See ADR 0013.
 
-**Both layers need the same opaque backdrop.** A is drawn over B, so a file with an alpha
-channel would blend into B on the left while B blends into whatever is behind it on the right
-— two halves composited over different backgrounds, which is exactly the artefact this tool
-exists to rule out. `BeforeBackdrop` and `AfterBackdrop` are the same brush, the same size and
-the same transform for that reason. Verified with a 50%-alpha red over opaque blue: the left
-half reads 128,0,0 (A over the backdrop), not 128,0,127 (A over B). See ADR 0013.
+**Both layers need the same opaque backdrop.** A is drawn over B, so wherever A does not cover
+its layer, B would show through on the left of the line while the control's background shows on
+the right: two halves over different grounds, which is exactly the artefact this tool exists to
+rule out. `BeforeBackdrop` and `AfterBackdrop` are the same brush, the same size and the same
+transform for that reason. Since ADR 0054 every image is loaded opaque, so the one place an
+image does not cover its layer is the padding of a mismatched pair, past the smaller image's
+edge (ADR 0014). See ADR 0013.
 
 **Images are sized explicitly in pixels.** `image.Width = pair.Before.Info.PixelWidth` — its
 own size, not the shared canvas, and not the natural size. WPF derives natural size from the file's DPI metadata, so a 72 dpi export would lay out

@@ -49,6 +49,16 @@ public sealed class TempImages : IDisposable
         return Save(name, source, new PngBitmapEncoder());
     }
 
+    /// <summary>
+    /// A PNG of exactly these pixels in this format, a palette with it for an indexed one: for
+    /// the files whose alpha a test names pixel by pixel.
+    /// </summary>
+    public string WritePng(string name, PixelFormat format, int width, int height, Array pixels, BitmapPalette? palette = null)
+    {
+        int stride = ((width * format.BitsPerPixel) + 7) / 8;
+        return Save(name, BitmapSource.Create(width, height, 96, 96, format, palette, pixels, stride), new PngBitmapEncoder());
+    }
+
     /// <summary>A file of exactly these bytes: a FITS built by <see cref="FitsFixture"/>, whole or cut short.</summary>
     public string WriteBytes(string name, byte[] bytes)
     {

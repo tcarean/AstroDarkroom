@@ -40,7 +40,11 @@ The seam carries one more promise: a loader that cannot read a file throws a typ
 are turned into those by its loader, never added to that list (ADR 0031). `WicImageLoader`
 catches a `COMException` around everything WIC does in `Probe` and in `Load`, which a codec
 throws for a damaged file (0xC00D36BE from Windows' WebP, HEIC and AVIF codecs), and rethrows a
-`FileFormatException` with the codec's message. `Realise`, the `CachedBitmap` that sets the
+`FileFormatException` with the codec's message. `Opaque` is the conversion of every frame of
+integer samples: to `Bgr32`, which has no alpha, and on to `Bgra32`, whose alpha is then 255,
+both lazy and realised once. A file's transparency is not shown (ADR 0054): a pixel is drawn and
+read with the colours WIC decodes for it, and a file without alpha comes out byte for byte as
+the direct conversion to `Bgra32` gave it. `Realise`, the `CachedBitmap` that sets the
 converted pixels aside, turns WIC's `OverflowException` for an image too large for it into the
 too-large message the FITS reader gives too. The bitmap the two loaders write rows into, and the
 too-large refusal, are `Bitmaps.Create` and `Bitmaps.TooLarge`, shared: the FITS reader asks for its own
