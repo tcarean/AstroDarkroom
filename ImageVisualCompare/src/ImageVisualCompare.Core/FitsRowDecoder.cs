@@ -90,7 +90,8 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
 
     /// <summary>
     /// Reads one row of one plane into sixteen-bit samples: each value after BZERO and BSCALE,
-    /// brought to 0 to 65535 by the full scale and rounded (<see cref="FitsScale.SixteenBit"/>).
+    /// brought to 0 to 65535 by the full scale and rounded (<see cref="FitsScale.SixteenBit"/>
+    /// for an integer sample, <see cref="FitsScale.SixteenBitOfFloat"/> for a float one).
     /// </summary>
     /// <param name="fileRow">
     /// The row's place in the file, from 0 to the layout's height less one.

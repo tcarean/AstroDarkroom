@@ -130,8 +130,9 @@ public sealed class WicImageLoader : IImageLoader
     /// Converts a frame of integer samples to Bgra32 with every alpha 255, lazily: through Bgr32,
     /// which has no alpha, so the colours come as WIC decodes them, not multiplied by the file's
     /// alpha, and the conversion on to Bgra32 writes 255 (R-010, ADR 0054). A file without alpha
-    /// comes out byte for byte as the direct conversion gave it, in the same time and memory
-    /// (measured on the real pair, 2026-11-14).
+    /// comes out byte for byte as the direct conversion gave it (the R-010 tests, on whole small
+    /// images of five formats), in the same time and memory (measured on the three real files,
+    /// 2026-11-14).
     /// </summary>
     /// <param name="frame">The decoded frame, in the file's own pixel format.</param>
     /// <returns>The frame as Bgra32, opaque; nothing is decoded until it is realised.</returns>

@@ -31,7 +31,7 @@ the suite's wiki.
 indexed, and TIFF of 32-bit float samples (see "Float TIFF" below). **FITS**, as "FITS files"
 below says. Every image is converted to 8 bits per channel when it loads, the levels the screen
 shows; the status bar says what each file really was, so you always know what you opened.
-Transparency is not shown: every pixel is drawn solid, with the colour the file stores for it,
+Transparency is not shown: every pixel is drawn solid, in the colour Windows decodes for it,
 so what you see is what the status bar reads. Once loaded, a file is not kept locked: you can
 export over it while it is on screen, then open it again.
 

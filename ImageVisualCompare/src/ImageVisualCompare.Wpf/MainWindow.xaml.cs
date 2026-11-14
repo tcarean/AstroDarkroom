@@ -507,9 +507,10 @@ public partial class MainWindow : Window
     }).Task;
 
     /// <summary>
-    /// Puts a loaded pair on screen in place of the one shown, whose memory is given back first,
-    /// and fills the title, the toolbar and the status bar; the pixel readout is written again
-    /// for the pixel under the pointer, through the surface's report.
+    /// Puts a loaded pair on screen in place of the one shown, whose memory is given back once
+    /// the new pair has been drawn (ADR 0040), and fills the title, the toolbar and the status
+    /// bar; the pixel readout is written again for the pixel under the pointer, through the
+    /// surface's report.
     /// </summary>
     /// <param name="pair">The pair just loaded.</param>
     /// <param name="keepView">

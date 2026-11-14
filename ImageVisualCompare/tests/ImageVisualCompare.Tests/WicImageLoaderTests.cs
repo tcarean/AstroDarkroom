@@ -212,6 +212,45 @@ public class WicImageLoaderTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// The 16-bit samples of an RGBA file are reduced as those of an RGB one are, to their high
+    /// byte (R-015), on the way that drops the alpha too: a sample of 511 is 1, as in a FITS,
+    /// not 2. The review of the CR-005 fix asked for it: the values of the test above are all
+    /// 257 times a byte, which any rule reduces alike.
+    /// </summary>
+    [Fact]
+    public void R010_ASixteenBitRgbaFile_KeepsTheHighByteOfEachColour_WhateverItsAlpha()
+    {
+        const int Width = 64;
+        const int Height = 48;
+        var random = new Random(20261114);
+        ushort[] rgba = new ushort[Width * Height * 4];
+        for (int i = 0; i < rgba.Length; i++)
+        {
+            // Every alpha from none to full, the edge values among them.
+            rgba[i] = i % 4 == 3 && i % 3 == 0 ? (ushort)65535 : (ushort)random.Next(65536);
+        }
+
+        rgba[0] = 511;
+        rgba[1] = 255;
+        rgba[2] = 256;
+        string path = _images.WritePng("rgba16-random.png", PixelFormats.Rgba64, Width, Height, rgba);
+
+        byte[] bgra = new byte[Width * Height * 4];
+        _loader.Load(path).Bitmap.CopyPixels(bgra, Width * 4, 0);
+
+        byte[] expected = new byte[bgra.Length];
+        for (int pixel = 0; pixel < Width * Height; pixel++)
+        {
+            expected[(pixel * 4) + 0] = (byte)(rgba[(pixel * 4) + 2] >> 8);
+            expected[(pixel * 4) + 1] = (byte)(rgba[(pixel * 4) + 1] >> 8);
+            expected[(pixel * 4) + 2] = (byte)(rgba[(pixel * 4) + 0] >> 8);
+            expected[(pixel * 4) + 3] = 255;
+        }
+
+        Assert.Equal(expected, bgra);
+    }
+
     [Theory]
     [InlineData("Rgb48")]
     [InlineData("Bgr24")]

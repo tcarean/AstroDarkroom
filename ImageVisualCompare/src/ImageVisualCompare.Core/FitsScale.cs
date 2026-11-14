@@ -106,9 +106,13 @@ public static class FitsScale
     public static double ToSixteenBits(double fullScale) => SixteenBitMax / fullScale;
 
     /// <summary>
-    /// Converts a value to the level it is shown at, by the rule of <see cref="Level"/>.
+    /// Converts a value to the level it is shown at, by the rule of <see cref="Level"/>, in
+    /// double precision: the level of an integer sample. A float sample's level is the high
+    /// byte of <see cref="SixteenBitOfFloat"/>, which differs from this for 127 floats (ADR 0055).
     /// </summary>
-    /// <param name="value">A sample after BZERO and BSCALE, on the file's own scale.</param>
+    /// <param name="value">
+    /// An integer sample after BZERO and BSCALE, on the file's own scale.
+    /// </param>
     /// <param name="fullScale">The value that is white (<see cref="FullScale"/>); above 0.</param>
     /// <returns>
     /// The level of a value on a scale whose white is <paramref name="fullScale"/>, 0 to 255.
@@ -119,7 +123,8 @@ public static class FitsScale
     /// Converts a value already brought to 0 to 65535 into a level: rounded to a 16-bit sample
     /// (<see cref="SixteenBit"/>), then the high byte, which is what WIC keeps of one (measured
     /// on all 65536 values). NaN, which Siril leaves behind after some float operations, is
-    /// black.
+    /// black. In double precision, as <see cref="SixteenBit"/> is: for a float sample the 16-bit
+    /// sample is <see cref="SixteenBitOfFloat"/>'s.
     /// </summary>
     /// <param name="sixteenBit">
     /// The value on the 0 to 65535 scale; anything below 0, and NaN, is black, anything from

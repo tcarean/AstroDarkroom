@@ -348,19 +348,31 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
+    /// Keeps the pointer's position at every move over the surface or while one of its parts
+    /// holds the mouse (R-051). On the way down to the part under the pointer, not in
+    /// <see cref="OnMouseMove"/>: a scrollbar's thumb marks the moves of its own drag handled,
+    /// so they never reach that method, while each of them scrolls and ends in
+    /// <see cref="Sync"/>, which reports the pixel under the position kept here.
+    /// </summary>
+    /// <param name="e">The move; its position is read.</param>
+    protected override void OnPreviewMouseMove(MouseEventArgs e)
+    {
+        base.OnPreviewMouseMove(e);
+        _pointer = e.GetPosition(this);
+    }
+
+    /// <summary>
     /// Moves the divider or pans while a drag is on; otherwise shows the resize cursor over the
-    /// divider. Either way the image pixel now under the pointer is reported.
+    /// divider. Either way the image pixel now under the pointer is reported: by the drag's
+    /// <see cref="Sync"/>, or here.
     /// </summary>
     /// <param name="e">The move; its position is read.</param>
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
 
+        // The same position OnPreviewMouseMove has just kept for this move.
         Point position = e.GetPosition(this);
-
-        // Before the drags return: each of them ends in Sync, which reports the pixel under this
-        // position, so the read-out follows the pointer through a divider drag too (R-051).
-        _pointer = position;
 
         if (_draggingDivider)
         {

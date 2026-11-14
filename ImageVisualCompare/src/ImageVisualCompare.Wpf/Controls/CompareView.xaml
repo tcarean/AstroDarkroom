@@ -34,12 +34,12 @@
         </Canvas>
 
         <Canvas x:Name="BeforeLayer">
-            <!-- Image A sits on top of image B, so without an opaque backdrop a file with an
-                 alpha channel would blend into B on the left while B blends into the backdrop
-                 on the right. The two halves would then be composited over different
-                 backgrounds and the comparison would be showing an artefact of the display.
-                 This rectangle gives A the same backdrop B has — same brush, same size, same
-                 transform. -->
+            <!-- Image A sits on top of image B, so wherever A does not cover its layer, past
+                 the edge of the smaller image of a padded pair, B would show through on the left
+                 of the line while the backdrop shows on the right. The two halves would then be
+                 drawn over different grounds and the comparison would be showing an artefact of
+                 the display. This rectangle gives A the same backdrop B has — same brush, same
+                 size, same transform. (Every image is opaque since ADR 0054.) -->
             <Rectangle x:Name="BeforeBackdrop"
                        Canvas.Left="0"
                        Canvas.Top="0"

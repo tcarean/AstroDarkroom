@@ -24,10 +24,10 @@ Measured on 2026-11-14 on generated files, with the loader as it was:
 - Converted to `Bgr32` and from there to `Bgra32`, the same frames give the same colour bytes
   with alpha 255.
 - On the three real files of `docs/validation.md`, which have no alpha, that double conversion
-  gave rows byte for byte equal to the direct one, in the same time and memory within the noise
-  of two runs each: `de_printat.png` 5.6 and 6.3 s against 6.9 and 5.6 s, +88 and +89 MiB
-  against +87 and +88; the 16-bit TIFF 3.7 and 5.5 s against 3.9 and 5.0 s; the 8-bit TIFF 1.1 s
-  against 1.0 s.
+  gave the three rows sampled of each byte for byte equal to the direct one's, in the same time
+  and memory within the noise of two runs each: `de_printat.png` 5.6 and 6.3 s against 6.9 and
+  5.6 s, +88 and +89 MiB against +87 and +88; the 16-bit TIFF 3.7 and 5.5 s against 3.9 and
+  5.0 s; the 8-bit TIFF 1.1 s against 1.0 s.
 
 The owner chose on 2026-11-14, of three options (no transparency; the alpha added to the
 read-out, with the float path then blended too; leave it): no transparency.
