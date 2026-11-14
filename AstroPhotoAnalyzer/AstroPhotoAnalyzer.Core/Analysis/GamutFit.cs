@@ -20,9 +20,10 @@
 // largest chroma the paper holds there; tone and hue never move. The largest chroma comes from
 // a table over L* and hue (GamutFitTable), built once per profile by the exact rule at every
 // node, with the exact rule deciding again for a pixel near the table's edge (the hybrid of
-// ADR 0042). Three variants differ by their knee: a hard fit onto the edge, or a smooth
-// compression from a share of the edge, so that a gradient of growing saturation keeps its
-// steps. The recipe (GamutFit.Recipe) is what a person would do by hand instead: one tone band
+// ADR 0042). Which pixels are outside is the Soft proof judge's word on each pixel as it is,
+// never the table's (ADR 0093). Three variants differ by their knee: a hard fit onto the edge,
+// or a smooth compression from a share of the edge, so that a gradient of growing saturation
+// keeps its steps. The recipe (GamutFit.Recipe) is what a person would do by hand instead: one tone band
 // and one saturation factor.
 //
 // Why a table over L* and hue and not over sRGB: the largest chroma is a smooth surface over
@@ -72,11 +73,20 @@ namespace AstroPhotoAnalyzer
         /// Whether a Lab colour is outside, the way the tool's figures count it: by default the
         /// rule against Thresholds.CurveGamutDeltaE; the run sets the Soft proof tab's own judge
         /// (GamutAnalyzer.Outside on the colour's sRGB, the hybrid of ADR 0042 on its 8-bit
-        /// colour), so that a pixel the fit lands on the edge is inside for that tab too. The
-        /// pixels near the edge are searched with it, and the share left after the fit is
+        /// colour), so that a pixel the fit lands on the edge is inside for that tab too. Every
+        /// pixel is asked of it as it is (through <see cref="JudgeOfPixel"/> when that is set),
+        /// the pixels near the edge are searched with it, and the share left after the fit is
         /// counted with it. Null on a table without a rule.
         /// </summary>
         internal Func<double, double, double, bool> Judge;
+
+        /// <summary>
+        /// The same judge asked about a pixel as it is: its encoded sRGB (red, green, blue, 0..1)
+        /// in, whether the colour is outside out. The run sets it to GamutAnalyzer.Outside, so a
+        /// pixel is judged on the very samples the Soft proof tab judges (R-175); null lets
+        /// <see cref="Judge"/> answer from the pixel's Lab, which the tests' tables do.
+        /// </summary>
+        internal Func<float, float, float, bool> JudgeOfPixel;
 
         /// <summary>
         /// The exact largest chroma of the pixels that land near the edge, once per 16-bit
@@ -247,8 +257,7 @@ namespace AstroPhotoAnalyzer
                     double c = Math.Sqrt(a * a + b * b);
                     if (keepFacts) lstar[i] = (float)l;
                     if (c < Thresholds.GamutFitMinChroma) { oR[i] = R[i]; oG[i] = G[i]; oB[i] = B[i]; continue; }
-                    double cmax = Edge(t, l, a, b, c, R[i], G[i], B[i]);
-                    bool outside = c > cmax;
+                    var (outside, cmax) = Decide(t, l, a, b, c, R[i], G[i], B[i]);
                     if (keepFacts) before[i] = outside;
                     if (outside && cmax < 0)
                     {
@@ -262,7 +271,13 @@ namespace AstroPhotoAnalyzer
                         continue;
                     }
                     double fitted = Knee(c, cmax, knee);
-                    if (fitted >= c - 1e-9) { oR[i] = R[i]; oG[i] = G[i]; oB[i] = B[i]; continue; }
+                    if (fitted >= c - 1e-9)
+                    {
+                        // Not moved, so what the judge said of the pixel as it is still holds.
+                        oR[i] = R[i]; oG[i] = G[i]; oB[i] = B[i];
+                        if (keepFacts) after[i] = outside;
+                        continue;
+                    }
                     double f = fitted / c;
                     var (red, green, blue) = ColorMath.SrgbOfLabD50(l, a * f, b * f);
                     oR[i] = (float)red; oG[i] = (float)green; oB[i] = (float)blue;
@@ -298,6 +313,44 @@ namespace AstroPhotoAnalyzer
                 ChromaLostP99 = losses.Count == 0 ? 0 : losses[Math.Min(losses.Count - 1, (int)(losses.Count * 0.99))],
                 PctOutsideUnderLowSeparation = outsideBefore == 0 ? 0 : 100.0 * dark / outsideBefore,
             };
+        }
+
+        /// <summary>
+        /// Whether one pixel is outside, and the largest chroma the paper holds at its L* and
+        /// hue (R-175). On a table with a judge the first is the judge's word on the pixel's own
+        /// colour (<see cref="GamutFitTable.JudgeOfPixel"/>, or <see cref="GamutFitTable.Judge"/>
+        /// on its Lab), never the table's: the judge is a step function of the 8-bit colour, and
+        /// measured 2026-11-14 it rejected 60 to 1039 pixels of a tonal subsample that the edge
+        /// kept, and kept 33 to 350 that the edge cut (ADR 0093). The second is
+        /// <see cref="Edge"/>'s, made to agree with the judge: searched again under the pixel's
+        /// own chroma when the judge rejects a pixel that edge keeps, and the pixel's own chroma
+        /// when the judge keeps a pixel past it. On a table without a judge the table decides
+        /// both.
+        /// </summary>
+        /// <param name="t">The table.</param>
+        /// <param name="l">The pixel's L*.</param>
+        /// <param name="a">The pixel's a*.</param>
+        /// <param name="b">The pixel's b*.</param>
+        /// <param name="c">The pixel's chroma, over Thresholds.GamutFitMinChroma.</param>
+        /// <param name="r">The pixel's encoded red, 0..1.</param>
+        /// <param name="g">The pixel's encoded green.</param>
+        /// <param name="bl">The pixel's encoded blue.</param>
+        /// <returns>
+        /// Whether the pixel is outside, and the largest chroma: under the pixel's own when it is
+        /// outside and a chroma can bring it in, -1 when it is outside and its tone is out of
+        /// reach, at least the pixel's own when it is not outside.
+        /// </returns>
+        static (bool Outside, double Cmax) Decide(GamutFitTable t, double l, double a, double b, double c, float r, float g, float bl)
+        {
+            double cmax = Edge(t, l, a, b, c, r, g, bl);
+            if (t.Judge == null) return (c > cmax, cmax);
+            bool outside = t.JudgeOfPixel != null ? t.JudgeOfPixel(r, g, bl) : t.Judge(l, a, b);
+            if (outside && c <= cmax)
+                // The band searched ends at the pixel's own chroma, which the judge rejects.
+                cmax = ExactEdge(t.Judge, l, a / c, b / c, c - Thresholds.GamutFitEdgeMargin);
+            else if (!outside && c > cmax)
+                cmax = c;
+            return (outside, cmax);
         }
 
         /// <summary>
@@ -342,7 +395,11 @@ namespace AstroPhotoAnalyzer
         /// <param name="l">The L*.</param>
         /// <param name="ca">The cosine of the hue (a* per unit of chroma).</param>
         /// <param name="sb">The sine of the hue (b* per unit of chroma).</param>
-        /// <param name="guess">The table's largest chroma there.</param>
+        /// <param name="guess">
+        /// The middle of the band to search: the table's largest chroma there, or, for a pixel
+        /// the judge rejects under that, the pixel's own chroma less Thresholds.GamutFitEdgeMargin,
+        /// so the band ends at the pixel.
+        /// </param>
         /// <returns>The largest chroma, 0 or more; -1 when the grey itself is outside.</returns>
         internal static double ExactEdge(Func<double, double, double, bool> outside, double l, double ca, double sb, double guess)
         {
@@ -409,8 +466,8 @@ namespace AstroPhotoAnalyzer
                     lAll[i] = (float)l;
                     double c = Math.Sqrt(a * a + b * b);
                     if (c < Thresholds.GamutFitMinChroma) continue;
-                    double cmax = Edge(t, l, a, b, c, R[i], G[i], B[i]);
-                    if (c <= cmax) continue;
+                    var (outside, cmax) = Decide(t, l, a, b, c, R[i], G[i], B[i]);
+                    if (!outside) continue;
                     isOut[i] = true; lOut[i] = (float)l; cOut[i] = (float)c; cmaxOut[i] = (float)cmax;
                 }
             });

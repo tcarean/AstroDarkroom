@@ -70,8 +70,32 @@ since the pixels outside are dark, where one 8-bit step is a unit of L\* and ten
 hue and the edge moves by more than the tolerance within a cell. The judge is a step function
 of the 8-bit colour, not monotone in chroma, so a pixel the knees move inward can land on a
 colour the judge calls outside: V-016 reads 0.02 % left after `Lina` against 0.001 % after
-`Exacta`, under the figure's precision. A pixel
-whose chroma passes `cmax` is outside; if `cmax` is negative (the judge rejects even the grey
+`Exacta`, under the figure's precision.
+
+Whether a pixel is outside is not read off that edge (`Decide`, ADR 0093): the judge is asked
+about the pixel as it is, on its own samples (`GamutFitTable.JudgeOfPixel`, which the run sets
+to `GamutAnalyzer.Outside`; a table of the tests, without it, asks `Judge` on the pixel's Lab),
+for every pixel, so "outside as is" is the Soft proof tab's own count. The edge is then made to
+agree: a pixel the judge rejects although the edge holds its chroma (the table's edge, far
+inside it, or the searched one, since the judge is not monotone) has the edge searched again by
+`ExactEdge` in a band that ends at the pixel's own chroma, and a pixel the judge keeps past the
+edge takes its own chroma as the edge, so the hard fit leaves it. Before this (the code review
+of 2026-11-13, CR-001) the edge alone decided, and measured 2026-11-14 on the tonal subsamples,
+`Exacta`:
+
+| pair | outside as is, judge / fit | left, judge / reported | rejected by the judge, never moved | after ADR 0093: outside as is, left |
+| --- | --- | --- | --- | --- |
+| plate-solved FITS, lab baryta | 1.9427 % / 1.9073 % | 0.0416 % / 0.0005 % | 581 of 1 411 820 | 1.9427 %, 0.0004 % |
+| plate-solved FITS, canvas | 2.4296 % / 2.3984 % | 0.0561 % / 0.0001 % | 791 | 2.4296 %, 0.0003 % |
+| `de_printat.png`, lab baryta | 0.2916 % / 0.2547 % | 0.0402 % / 0.0000 % | 580 of 1 443 420 | 0.2916 %, 0.0000 % |
+| Smida TIFF, WhiteWall baryta | 1.3609 % / 1.3633 % | 0.0042 % / 0.0000 % | 60 | 1.3609 %, 0.0000 % |
+
+After it the judge and the fit agree on every pixel of the four pairs, before and after the
+fit, under the three knees. The whole plate-solved FITS (22.6 MP) fits in 3.9 s on baryta and
+3.7 s on canvas with cold caches, against 3.2 s and 3.3 s before: the judge's word on every
+pixel costs about half a second.
+
+A pixel the judge rejects is outside; if `cmax` is negative (the judge rejects even the grey
 of that tone: the edge search's answer for it, apart from a tiny edge over a grey it keeps,
 which fits the pixel to that grey) it is copied and counted
 (`PctUnreachable`): no chroma brings it in, and the Tonuri tab's lift is the remedy. The table's
@@ -80,7 +104,8 @@ judge's, since within one L\* of such a node the two can disagree. Otherwise the
 `knee x cmax`, then `start + room x (1 - exp(-(c - start) / room))` with `room = cmax - start`,
 asymptotic to the edge; a knee of 1 is a hard clip at the edge. The colour goes back through
 `ColorMath.SrgbOfLabD50`, clamped. With `keepFacts` the outcome also holds the masks before and
-after (after: the judge on the fitted colour), the shares, the
+after (before: the judge on the pixel as it is; after: the judge on the fitted colour, or its
+first answer for a pixel left as it is), the shares, the
 chroma given up at the median and at the 99 % mark of the touched pixels, and the share of the
 pixels outside under L\* `LowSeparationLstar`; the save of a whole image runs without facts.
 

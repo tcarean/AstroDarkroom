@@ -227,6 +227,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The Colours for paper tab asks the Soft proof tab's own judge about every pixel, not only
+  about the ones it moved (R-175, ADR 0093; CR-001 of the code review of 2026-11-13). A few
+  hundred pixels of a 1.4 million sample were rejected by that judge and never moved, so the
+  saved file still showed them in red while the tab said next to none were left: 0.042 % left
+  against 0.0005 % reported on the plate-solved FITS through the baryta profile, 0.056 % against
+  0.0001 % through the canvas. The share outside as is now equals the Soft proof tab's, and a
+  pixel that judge keeps is no longer cut.
+
 - Clearing the window's tabs before a run emptied only the Report and Tones tabs' rows; the
   Export, Resolution and Colour tabs kept theirs behind a hidden view until the next result
   replaced them. All three now empty their rows (R-111).
