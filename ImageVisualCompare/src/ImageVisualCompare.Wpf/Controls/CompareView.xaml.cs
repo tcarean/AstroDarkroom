@@ -74,6 +74,14 @@ public partial class CompareView : UserControl
     private ImagePixel? _cursorPixel;
 
     /// <summary>
+    /// Where the pointer was last seen on the surface, in device-independent pixels from its
+    /// top-left corner; null before the first move and once the pointer has left. Kept so that
+    /// the pixel under a pointer at rest is reported again when the view or the pair changes
+    /// under it (R-051).
+    /// </summary>
+    private Point? _pointer;
+
+    /// <summary>
     /// True while a repeat of a held key is handled: the zoom it steps is not logged, since a held
     /// <c>+</c> repeats some thirty times a second.
     /// </summary>
@@ -131,13 +139,17 @@ public partial class CompareView : UserControl
     /// <summary>
     /// The image pixel under the pointer, or null when the pointer is off the image. Drives
     /// the pixel readout, which is often the only way to see a difference too small to notice
-    /// by eye.
+    /// by eye. Raised when the pointer reaches another pixel, when the zoom or the pan brings
+    /// another pixel under a pointer at rest, and when a pair is shown, whatever the pixel
+    /// (R-051).
     /// </summary>
     public event EventHandler<ImagePixel?>? CursorPixelChanged;
 
     /// <summary>
     /// Shows a loaded pair: each image at its own pixel size on the shared canvas, zoomed to
-    /// fit, the divider back in the middle, and the minimap's thumbnail drawn.
+    /// fit, the divider back in the middle, and the minimap's thumbnail drawn. The pixel under a
+    /// pointer at rest is reported again (<see cref="CursorPixelChanged"/>), since it is a pixel
+    /// of other images now.
     /// </summary>
     /// <param name="pair">The pair, both images frozen Bgra32.</param>
     public void SetPair(ImagePair pair)
@@ -175,7 +187,7 @@ public partial class CompareView : UserControl
             pair.PixelHeight,
             Viewport);
 
-        Sync();
+        Sync(pairChanged: true);
         LogView("pair set");
     }
 
@@ -184,7 +196,9 @@ public partial class CompareView : UserControl
     /// another display mode (R-113), or one file changed with the canvas size unchanged (R-065).
     /// The two bitmaps and the minimap's thumbnail change, the zoom, the pan and the divider stay
     /// where they are. The caller guarantees the canvas size: neither the backdrops nor the
-    /// viewport's content size are touched here.
+    /// viewport's content size are touched here. The pixel under a pointer at rest is reported
+    /// again (<see cref="CursorPixelChanged"/>), though it is the same pixel: its values are
+    /// those of other bitmaps now.
     /// </summary>
     /// <param name="pair">The pair decoded again, both images frozen Bgra32.</param>
     public void ReplacePair(ImagePair pair)
@@ -202,7 +216,7 @@ public partial class CompareView : UserControl
             pair.PixelHeight,
             Viewport);
 
-        Sync();
+        Sync(pairChanged: true);
         LogView("pair replaced, the view kept");
     }
 
@@ -335,7 +349,7 @@ public partial class CompareView : UserControl
 
     /// <summary>
     /// Moves the divider or pans while a drag is on; otherwise shows the resize cursor over the
-    /// divider and reports the image pixel under the pointer.
+    /// divider. Either way the image pixel now under the pointer is reported.
     /// </summary>
     /// <param name="e">The move; its position is read.</param>
     protected override void OnMouseMove(MouseEventArgs e)
@@ -343,6 +357,10 @@ public partial class CompareView : UserControl
         base.OnMouseMove(e);
 
         Point position = e.GetPosition(this);
+
+        // Before the drags return: each of them ends in Sync, which reports the pixel under this
+        // position, so the read-out follows the pointer through a divider drag too (R-051).
+        _pointer = position;
 
         if (_draggingDivider)
         {
@@ -363,16 +381,18 @@ public partial class CompareView : UserControl
             ? Cursors.SizeWE
             : Cursors.Arrow;
 
-        ReportPointer(position);
+        SetCursorPixel(PixelUnderPointer());
     }
 
     /// <summary>
-    /// Reports that the pointer is off the image, which clears the pixel readout.
+    /// Forgets the pointer's position and reports that it is off the image, which clears the
+    /// pixel readout.
     /// </summary>
     /// <param name="e">The event; not read.</param>
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
+        _pointer = null;
         SetCursorPixel(null);
     }
 
@@ -547,28 +567,57 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
-    /// Works out the image pixel drawn under a pointer position (<see cref="Core.Viewport.PixelAt"/>),
-    /// and reports it. Separate from the mouse handler so a test can give it a position.
+    /// Takes a pointer position, which is kept as the pointer's last, and reports the image pixel
+    /// drawn under it (<see cref="PixelUnderPointer"/>). Separate from the mouse handler so a
+    /// test can give it a position.
     /// </summary>
     /// <param name="position">
     /// The pointer, in device-independent pixels from the surface's top-left corner, as the mouse
-    /// handlers read it: the top-left corner of the physical pixel the pointer is on.
+    /// handlers read it: the top-left corner of the physical pixel the pointer is on. It may lie
+    /// off the surface, as during a drag that holds the mouse; it is then on no pixel.
     /// </param>
-    internal void ReportPointer(Point position) =>
-        SetCursorPixel(Viewport.PixelAt(position.X * _deviceScale, position.Y * _deviceScale));
+    internal void ReportPointer(Point position)
+    {
+        _pointer = position;
+        SetCursorPixel(PixelUnderPointer());
+    }
+
+    /// <summary>
+    /// Works out the image pixel drawn under the pointer's last position
+    /// (<see cref="Core.Viewport.PixelAt"/>).
+    /// </summary>
+    /// <returns>
+    /// The pixel; null when the pointer has left or was never seen, when its position is off the
+    /// surface, and when it is on no pixel of the image.
+    /// </returns>
+    private ImagePixel? PixelUnderPointer()
+    {
+        // A drag holds the mouse, so its positions go on past the surface's edges, where the
+        // image is not drawn though the viewport's arithmetic would still name a pixel.
+        if (_pointer is not { } pointer
+            || pointer.X < 0 || pointer.Y < 0 || pointer.X >= ActualWidth || pointer.Y >= ActualHeight)
+        {
+            return null;
+        }
+
+        return Viewport.PixelAt(pointer.X * _deviceScale, pointer.Y * _deviceScale);
+    }
 
     /// <summary>
     /// Raises <see cref="CursorPixelChanged"/> when the pointer has moved onto another image
-    /// pixel, onto the image or off it.
+    /// pixel, onto the image or off it, or whatever the pixel when the caller says so.
     /// </summary>
     /// <param name="pixel">
     /// The image pixel under the pointer; null when the pointer is off the image.
     /// </param>
-    private void SetCursorPixel(ImagePixel? pixel)
+    /// <param name="evenIfTheSame">
+    /// True to raise the event for an unchanged pixel too: the images under it have changed.
+    /// </param>
+    private void SetCursorPixel(ImagePixel? pixel, bool evenIfTheSame = false)
     {
         // Only a change of pixel is reported: the readout shows nothing finer, and a mouse move
         // inside one pixel should not make it flicker.
-        if (_cursorPixel == pixel)
+        if (_cursorPixel == pixel && !evenIfTheSame)
         {
             return;
         }
@@ -657,9 +706,15 @@ public partial class CompareView : UserControl
 
     /// <summary>
     /// Puts the viewport's state on screen: the shared transform and the resampling mode, the
-    /// overlay, the scrollbars and the minimap; then raises <see cref="ViewChanged"/>.
+    /// overlay, the scrollbars and the minimap; then raises <see cref="ViewChanged"/>, and
+    /// reports the image pixel that is now under the pointer's last position, since a zoom or a
+    /// pan moves the image under a pointer that does not move (R-051).
     /// </summary>
-    private void Sync()
+    /// <param name="pairChanged">
+    /// True when other images were just put on the surface: the pixel under the pointer is then
+    /// reported even when it is the same one, for its values to be read again.
+    /// </param>
+    private void Sync(bool pairChanged = false)
     {
         RenderPlan plan = RenderPlanner.For(Viewport, _deviceScale);
 
@@ -678,6 +733,7 @@ public partial class CompareView : UserControl
         UpdateScrollBars();
         Minimap.Refresh();
         ViewChanged?.Invoke(this, EventArgs.Empty);
+        SetCursorPixel(PixelUnderPointer(), evenIfTheSame: pairChanged);
     }
 
     /// <summary>

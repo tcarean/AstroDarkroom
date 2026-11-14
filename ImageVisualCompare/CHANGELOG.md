@@ -117,6 +117,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   as a FITS and a float TIFF already were. A half-transparent pixel holding 200 was drawn at 100
   over the black background while the status bar read 200, so a PNG with transparency could
   look different from an export without it while the two readouts were equal (R-010, ADR 0054).
+- The pixel readout follows what is under a pointer that does not move: after `H` or `F`, after
+  `Change A…` or `Change B…`, after a zoom or a pan, and while the line is dragged. It was
+  written only when the pointer reached another pixel, so it could go on showing the values of
+  the images that were on screen before (R-051).
 
 ### Internal
 

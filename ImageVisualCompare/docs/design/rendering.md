@@ -100,11 +100,16 @@ measured again from `MainWindow.OnDpiChanged` when the display's scale changes);
 and its images stay unrounded, since rounding a 5938 pixel wide `Image` to device pixels is
 what the explicit pixel sizes are there to avoid. See ADR 0053.
 
-**The read-out names the pixel that is drawn.** `CompareView.OnMouseMove` hands the pointer's
-position to `ReportPointer`, which converts it to physical pixels and asks `Viewport.PixelAt`;
-that returns an `ImagePixel`, whole coordinates, or null off the image. `CursorPixelChanged` is
-raised only when the pixel changes, and `MainWindow.UpdatePixelReadout` reads both bitmaps at
-it. The pointer's position is the corner of the physical pixel it is on, and WPF paints that
+**The read-out names the pixel that is drawn.** `CompareView.OnMouseMove` keeps the pointer's
+position (`_pointer`, forgotten in `OnMouseLeave`), and `PixelUnderPointer` converts it to
+physical pixels and asks `Viewport.PixelAt`; that returns an `ImagePixel`, whole coordinates, or
+null off the image. `CursorPixelChanged` is raised when the pixel changes, and
+`MainWindow.UpdatePixelReadout` reads both bitmaps at it. The pointer need not move for that:
+`Sync`, which every zoom, pan and divider move ends in, asks `PixelUnderPointer` again, so the
+pixel a zoom brings under a pointer at rest is reported; and `SetPair` and `ReplacePair` have it
+report even an unchanged pixel, since the bitmaps read at it are others (R-051). `MainWindow.ShowPair`
+sets its own pair and mode before it hands the pair to the surface for that reason. A position
+off the surface, which a drag that holds the mouse gives, is on no pixel. The pointer's position is the corner of the physical pixel it is on, and WPF paints that
 screen pixel from the image point at its centre, so `PixelAt` converts the centre, through the
 drawn offsets; the step from
 a point to a pixel is taken there and nowhere after it. A centre exactly on the edge between two
