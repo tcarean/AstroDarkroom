@@ -41,8 +41,15 @@ the verdict; leaving the entry, since the owner has no such frames).
    and for the darks against a partner: a set that lacks a setting the other gives took the
    other's; the reverse; and a setting neither gives was taken as the same, named (the ISO,
    the exposure, or both). The partner's row shows the settings the partner gives.
-5. **The chained row** keeps the second review's rule, setting by setting: a setting that was
-   not used between two sets stands, for the third, where the set it was taken from stands.
+5. **The chained row.** The lights are compared with the partner on the settings those two
+   give; a setting one of them does not give is taken from the session's darks, through which
+   they are compared, and one then still missing is taken as the same. When the three sets
+   give both settings the ratio is the product of the two pairs' ratios, as ever. Otherwise
+   each light's ratio is read from the files, the light over the darks times the darks over
+   the partner, and brought by the light's factor over the partner's; the two pairs' ratios
+   cannot be multiplied there, because a setting the darks do not give is the lights' in one
+   pair and the partner's in the other and drops out of both (CR-077: darks without an ISO
+   between lights at ISO 800 and a partner at ISO 400 read 1.00 and "as it is").
 6. **Each set's own index** stays as ADR 0053 left it: in the file's ADU, said so, unless the
    set gives both settings.
 
@@ -69,5 +76,10 @@ either side get a WARNING row where the report said nothing. The lights' own lin
 do not give their ISO or exposure; the darks' were taken", no longer appears for a setting the
 darks lack too. `R052_SetsThatDoNotSayBothSettingsAreNotAtOtherSettings`, which pinned ADR
 0055's carve-out, was replaced. Guarded by
-`R052_ASettingBothSetsGiveIsUsedAndOneASetDoesNotGiveIsTakenFromTheOther` and
-`R063_APartnerIsComparedOnTheSettingBothGiveAndTheReportSaysWhatWasTaken`.
+`R052_ASettingBothSetsGiveIsUsedAndOneASetDoesNotGiveIsTakenFromTheOther`,
+`R063_APartnerIsComparedOnTheSettingBothGiveAndTheReportSaysWhatWasTaken`,
+`R064_TheLightsAreComparedWithThePartnerOnTheSettingsThoseTwoGive` and
+`R052_TheFactorBetweenTwoFramesIsReadFromTheSettingsBothGive`. With darks that give no ISO
+between lights and a partner that do, check 2 still says the darks' ISO was taken as the
+lights' and INDEX that it was taken as the partner's: each is true of its own pair, and the
+chained row no longer rests on either.

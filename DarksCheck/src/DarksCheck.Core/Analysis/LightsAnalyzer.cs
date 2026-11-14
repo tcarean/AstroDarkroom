@@ -139,8 +139,8 @@ internal sealed record TraceFigures(int Pixels, double PerUnit, double Median, i
 /// partner in the chained row, with the settings it does not give taken from the session's
 /// darks (ADR 0060).</param>
 /// <param name="Set">The settings of the set measured against it: for lights, the first measured
-/// light at other settings than the master; in the chained row, with each setting the light or
-/// the darks do not give taken from where the darks stand (ADR 0060).</param>
+/// light at other settings than the master; in the chained row, with the settings the light does
+/// not give taken from the session's darks (ADR 0060).</param>
 /// <param name="RatioInFiles">The set's hot pixels over the master's as the files have them, the
 /// ratio without the two factors; NaN when the ratio is unmeasured.</param>
 internal sealed record SettingsMismatch(FrameInfo Master, FrameInfo Set, double RatioInFiles);

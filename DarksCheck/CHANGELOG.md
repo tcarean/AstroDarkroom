@@ -424,6 +424,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   shows the settings the partner states (R-052, R-063, ADR 0060; CR-076 of the code review).
   Files that state both settings read as before.
 
+- With darks that state no ISO, lights at one ISO and a partner at another were read as at the
+  same settings, so lights as high in the files as the partner read 1.00 and `OK: the partner
+  can be subtracted as it is`. The lights are now compared with the partner on the settings
+  those two state, a missing one taken from the darks: at twice the partner's ISO the lights
+  read 0.50 of it (R-064, ADR 0060; CR-077 of the code review). Files that state both settings
+  read as before.
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

@@ -479,29 +479,45 @@ internal static class DarkSeriesRun
             match = match with { Verdict = LightsAnalysis.NeverDirect(match.Verdict, true) };
         }
 
-        // The lights against the partner, by the rule they are held to the darks' with, setting by
-        // setting: one a set does not give stands where the set it was taken from stands (ADR
-        // 0053, ADR 0060). The partner's missing settings are the session's darks', the session's
-        // darks' missing ones the partner's; a light's setting counts as its own only when the
-        // light and the darks both give it, since only then was it used between those two, and
-        // otherwise stands where the darks stand.
+        // The lights against the partner (R-064, ADR 0060): on the settings those two give, a setting
+        // one of them does not give taken from the session's darks, through which they are compared,
+        // and one that is then still missing taken as the same. So a light's ISO and the partner's
+        // are compared even when the darks give none (CR-077).
         if (lights is not null && ownFirst is not null)
         {
-            FrameInfo ownAt = Normalisation.TakenFrom(ownFirst, first), partnerAt = Normalisation.TakenFrom(first, ownFirst);
+            FrameInfo partnerAt = Normalisation.TakenFrom(first, ownFirst);
             (LightFigures Light, FrameInfo At)[] measured = lights.Frames
                 .Where(f => f.Error is null)
-                .Select(f => (f, f.Info with
-                {
-                    Iso = Normalisation.GivesIso(f.Info) && Normalisation.GivesIso(ownFirst) ? f.Info.Iso : ownAt.Iso,
-                    ExposureSeconds = Normalisation.GivesExposure(f.Info) && Normalisation.GivesExposure(ownFirst) ? f.Info.ExposureSeconds : ownAt.ExposureSeconds,
-                }))
+                .Select(f => (f, Normalisation.TakenFrom(f.Info, ownFirst)))
                 .ToArray();
+            // the darks over the partner as the files have them
+            double darksInFiles = match.Ratio * own.Norm / partnerNorm;
+
+            // When the three sets give both settings the chain of the two ratios above is the lights
+            // over the partner, by the arithmetic of ever. Otherwise the two ratios were brought by
+            // different settings (a setting the darks do not give is the lights' in one and the
+            // partner's in the other), so each light's ratio is read from the files, the light over
+            // the darks times the darks over the partner, and brought by the light's factor over
+            // the partner's.
+            bool allGive = ownSays && partnerSays && measured.All(x => Normalisation.Says(x.Light.Info));
+            if (!allGive && lightsOverPartner.Verdict != MatchVerdict.Unmeasured)
+            {
+                float[] brought = measured
+                    .Where(x => !double.IsNaN(x.Light.AmpRatioMedian))
+                    .Select(x => (float)(x.Light.AmpRatioMedian / x.Light.ToDarks * darksInFiles / own.Normalisation.Relative(x.At, partnerAt)))
+                    .ToArray();
+                if (brought.Length > 0)
+                {
+                    lightsOverPartner = IndexAnalyzer.Match([(float)Planes.Median(brought)], own.Normalisation);
+                }
+            }
+
             (LightFigures Light, FrameInfo At)[] others = measured.Where(x => !FrameStack.SameSettings(x.At, partnerAt)).ToArray();
             if (2 * others.Length > measured.Length)
             {
                 // the lights over the darks in the files, then the darks over the partner in the files
                 double lightsInFiles = lights.Other?.RatioInFiles ?? lights.LightsOverDark.Ratio;
-                lightsOther = new SettingsMismatch(partnerAt, others[0].At, lightsInFiles * match.Ratio * own.Norm / partnerNorm);
+                lightsOther = new SettingsMismatch(partnerAt, others[0].At, lightsInFiles * darksInFiles);
                 lightsOverPartner = lightsOverPartner with { Verdict = LightsAnalysis.NeverDirect(lightsOverPartner.Verdict, true) };
             }
         }

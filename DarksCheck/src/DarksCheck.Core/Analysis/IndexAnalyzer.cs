@@ -372,7 +372,9 @@ internal static partial class IndexAnalyzer
 /// <param name="Label">Its label.</param>
 /// <param name="OwnOverPartner">The session's darks over the partner's master.</param>
 /// <param name="LightsOverPartner">The session's lights over the partner's master, through the
-/// darks.</param>
+/// darks: the chain of the two ratios when the three sets give both settings, else the median
+/// over the lights of each light's ratio in the files brought by its factor over the partner's
+/// (ADR 0060).</param>
 /// <param name="Failed">How many of its darks failed (not the skipped ones).</param>
 /// <param name="FirstError">"file: error" of the first that failed; null when none
 /// did.</param>
@@ -427,11 +429,10 @@ internal sealed record PartnerAnalysis(
     /// <summary>
     /// The session's lights' settings against the partner's, when more than half of the measured
     /// lights are at other settings than the partner (R-064, ADR 0055):
-    /// <see cref="LightsOverPartner"/> is then never <see cref="MatchVerdict.Direct"/>. A setting
-    /// that was not used between two sets, one of them not giving it, stands where the set it
-    /// was taken from stands (ADR 0053, ADR 0060), and the mismatch names the settings so found:
-    /// a light's ISO taken from the darks is the darks', a partner's taken from the session's
-    /// darks is theirs. Null without lights and at the same settings.
+    /// <see cref="LightsOverPartner"/> is then never <see cref="MatchVerdict.Direct"/>. The two
+    /// are compared on the settings they give, a setting one of them does not give taken from the
+    /// session's darks (ADR 0060), and the mismatch names the settings so found. Null without
+    /// lights and at the same settings.
     /// </summary>
     internal SettingsMismatch? LightsOther { get; init; }
 }

@@ -173,11 +173,11 @@ the light's noise as the files have them; `TraceFigures.Centre` carries it, and 
 one, the ratio in the files being the ratio times the session's factor over the partner's) and
 for the chained row (`PartnerAnalysis.LightsOther`, more than half of the measured lights
 against the partner's settings, the lights' ratio in the files times the darks'). `Other`
-is `SameSettings` of the two first frames. For `LightsOther` each setting stands where it was
-used: `ownAt` and `partnerAt` are the two sets' settings with the missing ones taken from the
-other (`Normalisation.TakenFrom`), and a light's setting is its own only when the light and
-the session's darks both give it, since only then did `FactorOf` use it; otherwise it is
-`ownAt`'s. Those settings are the ones the mismatch names. The report
+is `SameSettings` of the two first frames. For `LightsOther` the lights and the partner are
+held against each other with the settings each does not give taken from the session's darks
+(`Normalisation.TakenFrom(light, ownFirst)` and `partnerAt`, the partner's likewise), so a
+light's ISO and the partner's are compared even when the darks give none. Those settings are
+the ones the mismatch names. The report
 turns a mismatch into words with `DarkReport.OtherWords` and marks the verdict row
 (`ReportRow.Alert`).
 
@@ -191,7 +191,12 @@ and sets `PartnerAnalysis.Silent` (which side lacks a setting the other gives, `
 ISO alone against an exposure alone) and `PartnerAnalysis.UnsaidByBoth` for the report's
 lines (ADR 0053, ADR 0060); the partner's index is ranked before that, at its own factor. `Chain` gives the lights against the partner: the
 product of the two medians, lights over darks times darks over partner, judged by `Judge` as
-one ratio; `EquivalentIndex` gives the lights' equivalent index, the darks' index times the
+one ratio. `MatchPartner` keeps it when the session's darks, the partner and every measured
+light give both settings. Otherwise the two medians were brought by different settings and
+their product loses what the lights and the partner both give, so each light's ratio is taken
+as the files have it (`AmpRatioMedian / ToDarks` times the darks over the partner in the
+files) and divided by `Normalisation.Relative(light, partner)`, both with their missing
+settings from the darks, and the median over the lights is judged as one ratio (ADR 0060); `EquivalentIndex` gives the lights' equivalent index, the darks' index times the
 lights-over-dark ratio, and NaN when that ratio is unmeasured or `MatchFigures.Absent`: lights
 that show none of the dark's hot pixels have a ratio around zero, and its product with the
 index would be tagged `idx-0` or `idx0`. `Absent` is the one spelling of that case (an

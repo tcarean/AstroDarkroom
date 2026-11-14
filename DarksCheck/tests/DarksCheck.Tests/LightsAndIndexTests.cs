@@ -1114,12 +1114,10 @@ public class LightsAndIndexTests
     /// <summary>
     /// The second review: the same with the silent set swapped. A partner that does not say its settings is
     /// taken at the darks' (ADR 0053), so lights at other settings than the darks are at other settings than
-    /// it too, and the chained verdict read "the partner can be subtracted as it is". And when it is the
-    /// session's darks that do not say theirs, the lights were read at one factor with them and the partner:
-    /// nothing is at other settings, and nothing is "worked out for the same settings".
+    /// it too, and the chained verdict read "the partner can be subtracted as it is".
     /// </summary>
     [Fact]
-    public void R064_ASetThatDoesNotSayItsSettingsStandsWhereTheOneItWasComparedWithStands()
+    public void R064_APartnerThatDoesNotSayItsSettingsStandsWhereTheDarksStandForTheLights()
     {
         // darks ISO 400; lights ISO 800 with twice the amplitude; a partner as hot as the darks, without an ISO
         using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i, 2.0), iso: 800);
@@ -1136,17 +1134,52 @@ public class LightsAndIndexTests
         Assert.DoesNotContain("partenerul se poate scadea asa cum e", report, StringComparison.Ordinal);
         // the partner's settings are the darks', which it was taken at
         Assert.Contains("    verdict partener   : ATENTIE: nu scadea partenerul asa cum e: e facut la alte setari decat lights-urile (120.0 s, ISO 400 fata de 120.0 s, ISO 800), asa ca in fisiere pixelii fierbinti din lights sunt de 2.0", report, StringComparison.Ordinal);
+    }
 
-        // darks without an ISO; lights at ISO 800 and a partner at ISO 400, all as hot in the files
+    /// <summary>
+    /// CR-077: with darks that give no ISO between lights at ISO 800 and a partner at ISO 400, the darks' ISO was
+    /// taken as the lights' in one pair and as the partner's in the other, so it dropped out of the chain and the
+    /// two ISOs the files do give were never compared: lights as hot in the files as the partner read 1.00 and
+    /// "the partner can be subtracted as it is". The lights are compared with the partner on the settings those
+    /// two give; a missing one is taken through the darks.
+    /// </summary>
+    [Fact]
+    public void R064_TheLightsAreComparedWithThePartnerOnTheSettingsThoseTwoGive()
+    {
+        static SyntheticDark Partner(int i) => new() { Seed = 700 + i, Hot = SyntheticLight.Lattice };
+        using SessionFixture p400 = new SessionFixture().WithDarkSeries(5, Partner, inSubfolder: false);
+
+        // darks without an ISO; lights at ISO 800 and a partner at ISO 400, all as hot in the files: at twice the
+        // ISO the lights' hot pixels are half the partner's
         using SessionFixture silentDarks = new SessionFixture().WithDarkSeries(6, Dark, iso: null).WithLights(3, i => Light(i), iso: 800);
-        using SessionFixture p400 = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);
         DarkSeriesResult rd = Run(silentDarks, p400.Root);
         Assert.Equal(SilentSide.Own, rd.Partner!.Silent);
         Assert.Equal(3, rd.Lights!.DarksSilent);
         Assert.Null(rd.Lights.Other);
         Assert.Null(rd.Partner.Other);
-        Assert.Null(rd.Partner.LightsOther);
-        Assert.DoesNotContain("socotiti pentru aceleasi setari", Report(rd), StringComparison.Ordinal);
+        Assert.InRange(rd.Partner.LightsOverPartner.Ratio, 0.47, 0.53);
+        Assert.Equal(MatchVerdict.CosmeticOnly, rd.Partner.LightsOverPartner.Verdict);
+        Assert.InRange(rd.Partner.LightsOther!.RatioInFiles, 0.95, 1.05);
+        string cold = Report(rd);
+        Assert.DoesNotContain("partenerul se poate scadea asa cum e", cold, StringComparison.Ordinal);
+        Assert.Contains("    lights / partener  : pixelii fierbinti sunt in lights de 0.5", cold, StringComparison.Ordinal);
+        Assert.Contains("    verdict partener   : ATENTIE: foloseste partenerul doar pentru corectia cosmetica", cold, StringComparison.Ordinal);
+        Assert.Contains(" ori cat la partener, socotiti pentru aceleasi setari: partenerul e mai cald cu 6.", cold, StringComparison.Ordinal);
+
+        // the same with lights twice as high: the same temperature as the partner, at other settings
+        using SessionFixture sameTemperature = new SessionFixture().WithDarkSeries(6, Dark, iso: null).WithLights(3, i => Light(i, 2.0), iso: 800);
+        DarkSeriesResult rt = Run(sameTemperature, p400.Root);
+        Assert.InRange(rt.Partner!.LightsOverPartner.Ratio, 0.95, 1.05);
+        Assert.Equal(MatchVerdict.WithOpt, rt.Partner.LightsOverPartner.Verdict);
+        Assert.InRange(rt.Partner.LightsOther!.RatioInFiles, 1.9, 2.1);
+        Assert.Contains("    verdict partener   : ATENTIE: nu scadea partenerul asa cum e: e facut la alte setari decat lights-urile (120.0 s, ISO 400 fata de 120.0 s, ISO 800), asa ca in fisiere pixelii fierbinti din lights sunt de 2.0", Report(rt), StringComparison.Ordinal);
+
+        // lights that give no ISO either: nothing to compare the partner's ISO with, the three as made at the same
+        using SessionFixture noIso = new SessionFixture().WithDarkSeries(6, Dark, iso: null).WithLights(3, i => Light(i), iso: null);
+        DarkSeriesResult rn = Run(noIso, p400.Root);
+        Assert.Null(rn.Partner!.LightsOther);
+        Assert.InRange(rn.Partner.LightsOverPartner.Ratio, 0.95, 1.05);
+        Assert.Equal(MatchVerdict.Direct, rn.Partner.LightsOverPartner.Verdict);
     }
 
     /// <summary>
