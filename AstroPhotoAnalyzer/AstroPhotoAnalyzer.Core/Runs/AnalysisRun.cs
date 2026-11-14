@@ -36,7 +36,8 @@ namespace AstroPhotoAnalyzer
 {
     /// <summary>
     /// An image the tool refuses to measure - not a reading error, but one of CONTENT: it is
-    /// linear, not stretched. The console reports it as EROARE and exits with 1.
+    /// linear, not stretched (R-015), or a FITS whose values are not on a 0 to 1 scale, which
+    /// the reader itself refuses (R-013). The console reports it as EROARE and exits with 1.
     /// </summary>
     internal sealed class RefusedImageException : Exception
     {

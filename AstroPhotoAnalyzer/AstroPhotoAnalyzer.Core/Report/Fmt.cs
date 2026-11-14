@@ -87,6 +87,15 @@ namespace AstroPhotoAnalyzer
         /// <returns>The Dmax with one or two decimals, or "n/a" for NaN.</returns>
         internal static string Dmax(double v) => double.IsNaN(v) ? "n/a" : v.ToString("0.0#", I);
 
+        /// <summary>
+        /// A value of any size with at most two decimals and no trailing zeros: "65535", "1.5",
+        /// "1.14". For a figure whose size is not known beforehand, such as the largest sample
+        /// of a file on another scale (R-013).
+        /// </summary>
+        /// <param name="v">The value; NaN allowed.</param>
+        /// <returns>The value, or "n/a" for NaN.</returns>
+        internal static string Short(double v) => double.IsNaN(v) ? "n/a" : v.ToString("0.##", I);
+
         /// <summary>A percentage with one decimal: "12.3 %".</summary>
         /// <param name="v">The percentage, 0..100 (not a fraction); NaN allowed.</param>
         /// <returns>The percentage followed by " %", or "n/a %" for NaN.</returns>

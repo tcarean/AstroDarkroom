@@ -13,6 +13,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | name | value | meaning |
 |---|---|---|
 | `LinearMedianMax` | 0.02 | below: image is probably linear, refused |
+| `OffScaleShare` | 0.5 | over this share of a FITS's samples above 1 the file is on another scale and is refused, not clipped (R-013, ADR 0096): the reference FITS have at most 0.0006 %, a file on 0..65535 nearly all |
 | `LevelTie` | 0.0001 | how far past a threshold on a whole level a figure in levels must be to pass it (`RasterOps.LevelsOver`, `LevelsUnder`; ADR 0095): a sample of an 8-bit file is not exactly n / 255 as a float, so a figure on the threshold reads up to 3e-5 off it; one 16-bit level is 0.0039 |
 | `UpscaledFraction` | 0.5 | above: 16-bit file is an 8-bit upscale |
 | `DarkLevelA` / `DarkLevelB` | 32 / 64 | "dark pixel" levels for context |

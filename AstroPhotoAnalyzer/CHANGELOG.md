@@ -248,6 +248,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   fell one way at some sky levels and the other way at others. In the report of an 8-bit image
   the share of values JPEG changes by more than 2 levels can read a little lower.
 
+- A FITS whose values are not between 0 and 1, such as a 32-bit file on a 0 to 65535 scale, is
+  refused with a message that says what was found and how to save the file (R-013, ADR 0096;
+  CR-004): `ERROR: the file's values are not between 0 and 1: ...`, exit code 1, and the same
+  sentence in the window. Before, every value was cut to white and the report described a
+  white image. A file with up to half of its values over 1 is read as before, the values cut
+  and counted in a note.
+
 - Clearing the window's tabs before a run emptied only the Report and Tones tabs' rows; the
   Export, Resolution and Colour tabs kept theirs behind a hidden view until the next result
   replaced them. All three now empty their rows (R-111).

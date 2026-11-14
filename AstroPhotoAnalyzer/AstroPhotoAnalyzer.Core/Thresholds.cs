@@ -40,6 +40,15 @@ namespace AstroPhotoAnalyzer
         internal const double LinearMedianMax = 0.02;
 
         /// <summary>
+        /// Over this share of a FITS's samples above 1, the file is on another scale than the
+        /// 0..1 the tool reads, and is refused instead of clipped (R-013, ADR 0096). Half:
+        /// measured 2026-11-14 on the nine float FITS of the reference folder, eight have no
+        /// sample over 1 and the ninth 0.0006 % (156 of 28 million, the largest 1.137), while a
+        /// file on 0..65535 or 0..255 has nearly all of them over 1, even with a black border.
+        /// </summary>
+        internal const double OffScaleShare = 0.5;
+
+        /// <summary>
         /// How far past a threshold on a whole 8-bit level a figure in levels must be to pass it:
         /// a ten-thousandth of a level (RasterOps.LevelsOver, LevelsUnder; ADR 0095). A sample
         /// read from an 8-bit file is not exactly n / 255 in single precision, so a figure that

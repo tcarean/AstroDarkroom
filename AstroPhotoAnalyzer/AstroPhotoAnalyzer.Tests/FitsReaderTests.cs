@@ -33,6 +33,41 @@ public class FitsReaderTests
         Assert.Contains("1 valori in afara [0, 1] au fost taiate", note);
     }
 
+    /// <summary>
+    /// CR-004: a float FITS on a 0 to 65535 scale was clipped to 1 everywhere and analysed as a
+    /// white frame, the count an Ok-level note. More than half of the samples over 1 is a file
+    /// on another scale: refused, with the share and the largest value.
+    /// </summary>
+    [Fact]
+    public void R013_AFitsWithMostValuesOverOneIsRefusedNotReadAsWhite()
+    {
+        byte[] fits = FitsTestData.Build(64, 64, 3, (x, y, p) => 1000 + 60000.0 * x / 64, bitpix: -32);
+
+        var e = Assert.Throws<RefusedImageException>(() => FitsReader.LoadFrom(new MemoryStream(fits)));
+
+        Assert.Equal("valorile din fisier nu sunt intre 0 si 1: 100.0 % din ele trec de 1 (cea mai mare e 60062.5). "
+            + "Unealta citeste un FITS pe o scara de la 0 la 1. Salveaza-l din Siril pe 32 de biti pe scara 0..1, sau pe 16 biti, si analizeaza fisierul acela.", e.Message);
+    }
+
+    /// <summary>
+    /// R-013: the refusal starts over half of the samples; up to half, the values over 1 are
+    /// clipped and noted as before (a highlight a process pushed past 1 is no other scale).
+    /// </summary>
+    [Fact]
+    public void R013_UpToHalfOfTheValuesOverOneAreStillClippedAndNoted()
+    {
+        // 32 samples: 16 over 1 is half, kept; 17 is over half, refused.
+        byte[] half = FitsTestData.Build(8, 4, 1, (x, y, p) => y * 8 + x < 16 ? 1.5 : 0.25, bitpix: -32);
+        byte[] over = FitsTestData.Build(8, 4, 1, (x, y, p) => y * 8 + x < 17 ? 1.5 : 0.25, bitpix: -32);
+
+        var (raster, _, _, _, note) = FitsReader.LoadFrom(new MemoryStream(half));
+
+        Assert.Equal(16, raster.Planes[0].Count(v => v == 1f));
+        Assert.Contains("16 valori in afara [0, 1] au fost taiate", note);
+        var e = Assert.Throws<RefusedImageException>(() => FitsReader.LoadFrom(new MemoryStream(over)));
+        Assert.Contains("53.1 % din ele trec de 1 (cea mai mare e 1.5)", e.Message);
+    }
+
     static Raster Load(byte[] fits, string name = "t.fit")
     {
         using var ws = new TempWorkspace();
@@ -78,7 +113,10 @@ public class FitsReaderTests
     public void R011_BottomUpRowOrderIsFlippedSoThatRowZeroIsTheTop()
     {
         // Siril writes the rows bottom to top: the file's first row is the image's BOTTOM one.
-        byte[] fits = FitsTestData.Build2D(2, 3, (x, y) => y * 1000, bitpix: -32, bzero: 0,
+        // The rows hold 0, 0.5 and 2000: one row over 1, a third of the samples, which is clipped
+        // and noted; with two rows over 1 the file would be on another scale and refused (R-013;
+        // the middle row was 1000 until 2026-11-14, changed at the owner's word, ADR 0096).
+        byte[] fits = FitsTestData.Build2D(2, 3, (x, y) => y == 2 ? 2000 : y * 0.5, bitpix: -32, bzero: 0,
             extraCards: new[] { FitsTestData.StringCard("ROWORDER", "BOTTOM-UP") });
         Raster r = Load(fits);
 

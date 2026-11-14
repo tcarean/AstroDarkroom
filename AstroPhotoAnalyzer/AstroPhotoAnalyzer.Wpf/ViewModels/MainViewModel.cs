@@ -314,7 +314,8 @@ namespace AstroPhotoAnalyzer.Wpf
             }
             catch (RefusedImageException e)
             {
-                // A linear image is a refusal, not a failure: the run's done line has its figures.
+                // A linear image, or a FITS off the 0..1 scale, is a refusal, not a failure: the
+                // run's log lines have its figures.
                 Log.Warn("run " + LogText.Int(run) + " refused after " + LogText.Ms(clock.ElapsedMilliseconds) + ": " + e.Message);
                 _result = null;
                 SoftProof.EndComparison(path);
