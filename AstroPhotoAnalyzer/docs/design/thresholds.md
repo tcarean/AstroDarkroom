@@ -13,6 +13,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | name | value | meaning |
 |---|---|---|
 | `LinearMedianMax` | 0.02 | below: image is probably linear, refused |
+| `LevelTie` | 0.0001 | how far past a threshold on a whole level a figure in levels must be to pass it (`RasterOps.LevelsOver`, `LevelsUnder`; ADR 0095): a sample of an 8-bit file is not exactly n / 255 as a float, so a figure on the threshold reads up to 3e-5 off it; one 16-bit level is 0.0039 |
 | `UpscaledFraction` | 0.5 | above: 16-bit file is an 8-bit upscale |
 | `DarkLevelA` / `DarkLevelB` | 32 / 64 | "dark pixel" levels for context |
 | `LowSeparationLstar` | 15 | the visibility threshold: below, the paper separates, the eye in room light barely; a sky under it is an Attention and the recommended row has the sky at or above it (ADR 0029); a grey of L\* 15 is the level 0.148, the same rule as `PrintBackgroundLo` |

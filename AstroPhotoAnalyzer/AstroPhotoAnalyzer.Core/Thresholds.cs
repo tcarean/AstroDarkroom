@@ -40,6 +40,17 @@ namespace AstroPhotoAnalyzer
         internal const double LinearMedianMax = 0.02;
 
         /// <summary>
+        /// How far past a threshold on a whole 8-bit level a figure in levels must be to pass it:
+        /// a ten-thousandth of a level (RasterOps.LevelsOver, LevelsUnder; ADR 0095). A sample
+        /// read from an 8-bit file is not exactly n / 255 in single precision, so a figure that
+        /// sits on the threshold reads up to 3e-5 levels off it (255 x 2^-23). Measured
+        /// 2026-11-14: 3.0000017 and 2.9999998 for a corner exactly 3 levels over the sky,
+        /// 2.0000038 for a JPEG error of exactly 2 at level 64. The finest real step, one 16-bit
+        /// level, is 0.0039 levels, 39 times the tie.
+        /// </summary>
+        internal const double LevelTie = 1e-4;
+
+        /// <summary>
         /// Over this fraction of samples with value == high_byte * 257, a 16-bit file is a scaled
         /// 8-bit one. On real 16 bits the fraction is ~0.4 % (coincidences); on an upscale it is
         /// 100 %.

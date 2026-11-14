@@ -63,7 +63,12 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal double MeanLevelOverThreshold { get; init; }
 
-        internal bool Acceptable => MaxError <= Thresholds.JpegMaxErrorReject;
+        /// <summary>
+        /// Is the maximum error at most <see cref="Thresholds.JpegMaxErrorReject"/>? Compared
+        /// with the tie of <see cref="RasterOps.LevelsOver"/> (ADR 0095), so an error of exactly
+        /// that many levels is acceptable at every level.
+        /// </summary>
+        internal bool Acceptable => !RasterOps.LevelsOver(MaxError, Thresholds.JpegMaxErrorReject);
     }
 
     /// <summary>
@@ -243,15 +248,21 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The error per sample, accumulated in a histogram with a step of 0.01 level: on 69
         /// million samples a sort for the percentiles would cost seconds and hundreds of MB.
+        /// Internal for the test of its ties (R-083).
         /// </summary>
-        sealed class ErrorAccumulator
+        internal sealed class ErrorAccumulator
         {
             const int Scale = 100, Bins = 256 * Scale + 1;
             readonly long[] _hist = new long[Bins];
             long _n, _over;
             double _sum, _max, _levelOver;
 
-            /// <summary>Adds the error of one sample.</summary>
+            /// <summary>
+            /// Adds the error of one sample; it counts as over
+            /// <see cref="Thresholds.JpegErrorCountLevels"/> with the tie of
+            /// <see cref="RasterOps.LevelsOver"/> (ADR 0095), so an error of exactly that many
+            /// levels does not, at any level.
+            /// </summary>
             /// <param name="decoded">The decoded 8-bit value, 0..255.</param>
             /// <param name="reference">
             /// The raster's sample, 0..1; clamped to that range and taken x 255, unrounded.
@@ -263,7 +274,7 @@ namespace AstroPhotoAnalyzer
                 _sum += e; _n++;
                 if (e > _max) _max = e;
                 _hist[(int)Math.Min(Bins - 1, e * Scale)]++;
-                if (e > Thresholds.JpegErrorCountLevels) { _over++; _levelOver += refLevel; }
+                if (RasterOps.LevelsOver(e, Thresholds.JpegErrorCountLevels)) { _over++; _levelOver += refLevel; }
             }
 
             /// <summary>The row of the errors accumulated so far.</summary>

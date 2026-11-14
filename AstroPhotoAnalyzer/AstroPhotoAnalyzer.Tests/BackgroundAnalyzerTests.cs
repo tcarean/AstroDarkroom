@@ -265,4 +265,45 @@ public class BackgroundAnalyzerTests
         Assert.True(flagged.Coloured);
         Assert.All(b.Regions.Where(x => x.Name != "colt dreapta-jos"), x => Assert.True(x.MaxAbsDelta < 1, x.Name + " " + x.MaxAbsDelta));
     }
+
+    /// <summary>
+    /// CR-003: the medians were taken x 255 in double from single-precision samples, so on an
+    /// 8-bit source a corner exactly 3 levels from the sky read 3.0000017 or 2.9999998 by the
+    /// sky's level and was flagged or not (measured 2026-11-14: flagged at the sky levels 14, 15,
+    /// 16, 30, 31 and 32 of 10 to 60).
+    /// </summary>
+    [Fact]
+    public void R061_ACornerExactlyThreeLevelsFromTheSkyIsNeverFlaggedWhateverTheSkysLevel()
+    {
+        foreach (Func<int, float> level in SyntheticRasters.EightBitLevels)
+            foreach (int d in new[] { 3, -3 })
+                for (int sky = 10; sky <= 60; sky++)
+                {
+                    Raster r = SyntheticRasters.From(200, 200, 3, (x, y, p) => y < 30 && x < 40 ? level(sky + d) : level(sky));
+                    Assert.True(!BackgroundAnalyzer.Analyze(r).FlaggedRegions.Any(), $"a corner {d} levels from a sky at {sky} was flagged");
+                }
+        // One level further it is flagged, at every level.
+        foreach (Func<int, float> level in SyntheticRasters.EightBitLevels)
+            for (int sky = 10; sky <= 60; sky += 10)
+            {
+                Raster r = SyntheticRasters.From(200, 200, 3, (x, y, p) => y < 30 && x < 40 ? level(sky + 4) : level(sky));
+                Assert.Single(BackgroundAnalyzer.Analyze(r).FlaggedRegions);
+            }
+    }
+
+    /// <summary>
+    /// The same tie where the colour is decided: a corner whose red is exactly 3 levels over its
+    /// blue, flagged by a green 5 levels up, has a spread of exactly 3, which is not "over 3".
+    /// </summary>
+    [Fact]
+    public void R061_ASpreadOfExactlyThreeLevelsIsNotAColourWhateverTheSkysLevel()
+    {
+        foreach (Func<int, float> level in SyntheticRasters.EightBitLevels)
+            for (int sky = 10; sky <= 60; sky++)
+            {
+                Raster r = SyntheticRasters.From(200, 200, 3, (x, y, p) => y < 30 && x < 40 ? level(sky + (p == 0 ? 7 : p == 1 ? 5 : 4)) : level(sky));
+                EdgeRegion corner = Assert.Single(BackgroundAnalyzer.Analyze(r).FlaggedRegions);
+                Assert.True(!corner.Coloured, $"a spread of exactly 3 levels over a sky at {sky} was called a colour");
+            }
+    }
 }

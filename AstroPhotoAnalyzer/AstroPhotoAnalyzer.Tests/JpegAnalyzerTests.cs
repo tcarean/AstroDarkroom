@@ -117,4 +117,28 @@ public class JpegAnalyzerTests
         Assert.Equal(90, Of((100, 4.5), (95, 8.0), (90, 12.0)).HighestFailingBelow100.Quality);
         Assert.Null(Of((100, 12.0), (95, 8.0), (90, 9.0)).HighestFailingBelow100);
     }
+
+    /// <summary>
+    /// CR-003: the reference level was a single-precision product, so on an 8-bit source an
+    /// error of exactly 2 levels counted as "over 2", and one of exactly 10 made the quality
+    /// not acceptable, at the levels 1, 2, 4, 8, 16, 32, 64 and 128 (measured 2026-11-14).
+    /// </summary>
+    [Fact]
+    public void R083_AnErrorExactlyOnAThresholdNeverPassesItWhateverTheLevel()
+    {
+        static JpegRow RowOf(byte decoded, float reference)
+        {
+            var acc = new JpegAnalyzer.ErrorAccumulator();
+            acc.Add(decoded, reference);
+            return acc.Row(100, 1);
+        }
+        foreach (Func<int, float> level in SyntheticRasters.EightBitLevels)
+            for (int n = 0; n <= 244; n++)
+            {
+                Assert.True(RowOf((byte)(n + 2), level(n)).PctOverThreshold == 0, $"an error of exactly 2 at level {n} counted as over 2");
+                Assert.True(RowOf((byte)(n + 3), level(n)).PctOverThreshold == 100, $"an error of 3 at level {n} did not count");
+                Assert.True(RowOf((byte)(n + 10), level(n)).Acceptable, $"an error of exactly 10 at level {n} was not acceptable");
+                Assert.False(RowOf((byte)(n + 11), level(n)).Acceptable);
+            }
+    }
 }

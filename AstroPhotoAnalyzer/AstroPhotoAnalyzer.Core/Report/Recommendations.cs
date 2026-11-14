@@ -326,14 +326,18 @@ namespace AstroPhotoAnalyzer
             Other,
         }
 
-        /// <summary>The colour of a region's departure, used to name it and to match an edge with a corner.</summary>
+        /// <summary>
+        /// The colour of a region's departure, used to name it and to match an edge with a
+        /// corner. Red against blue is compared with the tie the region's flag has
+        /// (<see cref="RasterOps.LevelsOver"/>, ADR 0095).
+        /// </summary>
         /// <param name="e">The region, on colour (three deltas).</param>
         /// <returns>Warm, Cool, Greenish or Other.</returns>
         static RegionColour ColourOf(EdgeRegion e)
         {
             double grad = Thresholds.CornerGradientLevels;
-            return e.Deltas[0] > e.Deltas[2] + grad ? RegionColour.Warm
-                : e.Deltas[2] > e.Deltas[0] + grad ? RegionColour.Cool
+            return RasterOps.LevelsOver(e.Deltas[0] - e.Deltas[2], grad) ? RegionColour.Warm
+                : RasterOps.LevelsOver(e.Deltas[2] - e.Deltas[0], grad) ? RegionColour.Cool
                 : e.Deltas[1] > (e.Deltas[0] + e.Deltas[2]) / 2 ? RegionColour.Greenish : RegionColour.Other;
         }
 

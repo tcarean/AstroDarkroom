@@ -67,8 +67,8 @@ Anexa C. Export
   TIFF pe 8 biti, LZW: 0.0 MB
   JPEG 4:4:4   marime     err medie   err max   p99    p99.9   > 2 niv   nivel mediu
   q100           0.0 MB       0.084       1.0   1.00    1.00     0.0 %             0
-  q95            0.0 MB       0.680       4.0   2.00    3.00     0.8 %            65
-  q90            0.0 MB       0.765       7.0   3.00    4.00     1.5 %            66
+  q95            0.0 MB       0.680       4.0   2.00    3.00     0.6 %            65
+  q90            0.0 MB       0.765       7.0   3.00    4.00     1.4 %            66
   zone plate: nu s-a gasit cer neted (0 din 5000 de locuri incercate)
 
 Anexa D. Rezolutie si marime

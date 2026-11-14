@@ -184,4 +184,35 @@ public class QuantizationAnalyzerTests
         Assert.Equal(2, QuantizationAnalyzer.PercentileFromHistogram(hist, 100, 50));
         Assert.Equal(7, QuantizationAnalyzer.PercentileFromHistogram(hist, 100, 99));
     }
+
+    /// <summary>
+    /// CR-003: the range was compared in single precision with 6 / 255, so on an 8-bit source a
+    /// tile spanning exactly 6 levels was clean sky or not by its darkest level (measured
+    /// 2026-11-14: accepted at 39 of the levels 0 to 60).
+    /// </summary>
+    [Fact]
+    public void R080_ATileSpanningExactlySixLevelsIsNeverCleanSkyWhateverItsLevel()
+    {
+        foreach (Func<int, float> level in SyntheticRasters.EightBitLevels)
+            for (int b = 0; b <= 60; b++)
+            {
+                // A checker of two levels: every tile spans exactly their distance.
+                Raster six = SyntheticRasters.From(160, 160, 1, (x, y, p) => ((x + y) & 1) == 0 ? level(b) : level(b + 6));
+                Assert.True(QuantizationAnalyzer.Analyze(six).PlateauTiles == 0, $"a range of exactly 6 levels from level {b} was accepted");
+                if (b % 10 != 0) continue;
+                Raster five = SyntheticRasters.From(160, 160, 1, (x, y, p) => ((x + y) & 1) == 0 ? level(b) : level(b + 5));
+                Assert.True(QuantizationAnalyzer.Analyze(five).PlateauTiles == Thresholds.PlateauPositions, $"a range of 5 levels from level {b} was refused");
+            }
+    }
+
+    /// <summary>The same tie on the tile's mean: a flat tile at exactly 70 levels is not under 70.</summary>
+    [Fact]
+    public void R080_AFlatTileAtExactlySeventyLevelsIsNotCleanSky()
+    {
+        foreach (Func<int, float> level in SyntheticRasters.EightBitLevels)
+        {
+            Assert.Equal(0, QuantizationAnalyzer.Analyze(SyntheticRasters.Flat(160, 160, level(70), planes: 1)).PlateauTiles);
+            Assert.Equal(Thresholds.PlateauPositions, QuantizationAnalyzer.Analyze(SyntheticRasters.Flat(160, 160, level(69), planes: 1)).PlateauTiles);
+        }
+    }
 }

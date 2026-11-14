@@ -113,4 +113,16 @@ internal static class SyntheticRasters
                 r.Planes[p][i] = RasterOps.Level8(src.Planes[p][i]) * 257 / 65535f;
         return r;
     }
+
+    /// <summary>
+    /// The two floats an 8-bit level becomes on reading (R-013): the ImageSharp reader's, the
+    /// level as 16 bits (x 257) times 1/65535 in single precision, which a PNG, a TIFF or a JPEG
+    /// gets, and the FITS reader's, the level over 255 rounded to single. They can differ in
+    /// the last bit, and neither is exactly n / 255.
+    /// </summary>
+    internal static readonly Func<int, float>[] EightBitLevels =
+    {
+        n => (ushort)(n * 257) * (1f / 65535f),
+        n => (float)(n / 255.0),
+    };
 }

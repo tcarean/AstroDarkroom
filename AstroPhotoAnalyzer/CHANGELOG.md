@@ -241,6 +241,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   through the canvas profile these are 334 pixels of 1.4 million. A mono image still has
   nothing outside, which `docs/design/known-limitations.md` now says.
 
+- On an 8-bit image three verdicts no longer depend on how dark the sky is (R-080, R-061,
+  R-083, ADR 0095; CR-003): a flat area that spans exactly 6 levels is not counted as smooth
+  sky, an edge exactly 3 levels from the sky is not flagged, and a JPEG error of exactly 2
+  levels is not counted as over 2 (one of exactly 10 no longer rejects a quality). Before, each
+  fell one way at some sky levels and the other way at others. In the report of an 8-bit image
+  the share of values JPEG changes by more than 2 levels can read a little lower.
+
 - Clearing the window's tabs before a run emptied only the Report and Tones tabs' rows; the
   Export, Resolution and Colour tabs kept theirs behind a hidden view until the next result
   replaced them. All three now empty their rows (R-111).
