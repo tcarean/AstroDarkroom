@@ -216,6 +216,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   and such a session reads `cannot be measured (the frames stayed in place too much ...; the
   largest group within 13 px, three times the stars' width, has 20 frames of 32)` (R-046, ADR
   0050; CR-005 of the review of 2026-11-13).
+- The fixed pattern's strength was too high on a short session: with no pattern at all, 7 frames
+  read 17 % of one frame's noise, 8 read 14 % and 12 read 10 %, and 10 frames read too little.
+  The noise left in the frames' median is now worked out for the count of frames it was taken
+  over, and noise alone reads about nothing whatever the count (R-046, ADR 0051; CR-006 of the
+  review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

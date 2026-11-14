@@ -63,7 +63,7 @@ Copyright (C) 2026 Tudor Carean
     grupuri sub 10 px  : niciunul
     scara              : 1 px = 5.99" pe cer; ca sa muti cadrul 5 px (cea mai mica miscare numarata) trebuie 30" pe cer, iar pentru 10 px, 60"
     pattern in stiva   : in stiva ramane 25.0 % din pattern-ul unui cadru (ideal 12.5 %, cu 8 cadre; 4 perechi de cadre au stat la sub 1.5 px una de alta, iar pattern-ul lor se aduna)
-    pattern fix        : tarie 0.0 ADU pe R (0 % din zgomotul unui cadru), 0.0 pe G1 (0 %), 0.0 pe G2 (0 %), 0.8 pe B (2 %); 0 pixeli calzi la un milion de pixeli, adica cei de peste 10 ori zgomotul unui cadru (din 8 cadre, pe 480 x 480 px din centru); fara dark-uri in sesiune, pattern-ul ramane in cadre
+    pattern fix        : tarie 0.0 ADU pe R (0 % din zgomotul unui cadru), 0.0 pe G1 (0 %), 0.0 pe G2 (0 %), 0.0 pe B (0 %); 0 pixeli calzi la un milion de pixeli, adica cei de peste 10 ori zgomotul unui cadru (din 8 cadre, pe 480 x 480 px din centru); fara dark-uri in sesiune, pattern-ul ramane in cadre
     verdict            : FARA walking noise, OK pentru pixeli calzi - dare de walking noise de cel mult 0.5 px (sub 3 px nu se vad): driftul e de 0.50 px intr-o expunere; cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px; pattern-ul se aduna pe loc: in stiva ramane 25.0 % din pattern-ul unui cadru (ideal 12.5 %, bine pana la 18.8 %); 3 miscari la 8 cadre, 4 locuri diferite (la 10 px), 0 cadre singure, 0 miscari pe ambele axe
 
   RESPINSE (2 cadre slabe; cele la limita raman in stiva, la alegerea ta)
