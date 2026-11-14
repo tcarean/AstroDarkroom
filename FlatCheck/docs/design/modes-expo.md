@@ -19,7 +19,10 @@ central 20 % window against the global median, the `white` ladder guessed on a F
 file's own levels on a raw (libraw's `color.maximum`, `black + median(cblack)`, and why both
 black fields are read), the `--sat` / `--black` precedence, the sanity gate that refuses a
 calibrated or debayered file, the bands with and without `--sky` and the `log2(57 / cenMed)`
-correction. Three mechanics it does not spell out: the position index is `ch[(y&1)*2 + (x&1)]`,
+correction (when its figure is printed for a flat that is too high is ADR 0114:
+`ExposureReport.VerdictLines` leaves it out when it would show as less than a tenth of a
+stop, which a burnt centre at, below or just above the target gives). Three mechanics it does
+not spell out: the position index is `ch[(y&1)*2 + (x&1)]`,
 a raw's levels reach the analyzer as an `ExposureScale`, and `ExposureAnalyzer.Analyze` refuses
 a white at or below the black once the precedence is settled (R-041, the review's CR-007):
 `Options` checks `--sat` against `--black` at the parse, and `RawReader` checks the file's own

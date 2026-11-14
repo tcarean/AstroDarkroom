@@ -213,6 +213,9 @@ namespace FlatCheck
                     id.CropFromTable = true;
                     notes.Add(T($"crop from the lensfun database ({known.Model})", $"crop din baza lensfun ({known.Model})"));
                 }
+                // Kept as the field's value, printed nowhere as it stands: the --synthetic crop
+                // row words the stand-in itself, and the comparison's crop gap says why the crop
+                // is not known (the review of 2026-11-13, CR-019).
                 else id.CropSource = T("unknown - the profile's calibration sensor is taken",
                                        "necunoscut - se ia senzorul de calibrare al profilului");
             }

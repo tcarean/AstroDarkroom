@@ -49,6 +49,60 @@ public class ExposureReportTests
         return ExposureAnalyzer.Analyze(img, Sat, null, sky);
     }
 
+    /// <summary>A panel flat at <paramref name="pct"/> % with five burnt pixels in the window
+    /// the analyzer reads: TOO HIGH by clipping alone, whatever the level.</summary>
+    static ExposureResult Burnt(double pct)
+    {
+        var img = TestImages.FlatCfa(N, N, Sat * pct / 100.0);
+        int half = N / 2, lo = (int)(half * 0.4), hi = (int)(half * 0.6);
+        int done = 0;
+        for (int y = lo; y < hi && done < 5; y++)
+            for (int x = lo; x < hi && done < 5; x++, done++)
+                img.Set(y * 2, x * 2 + 1, Sat);
+        return ExposureAnalyzer.Analyze(img, Sat, null, false);
+    }
+
+    /// <summary>
+    /// CR-020, ADR 0114: the correction is toward the target (57 %), and a burnt centre is TOO
+    /// HIGH at any level, so below the target the figure came out negative ("Lower the exposure
+    /// by ~-0.1 stops") and just above it as "~0.0 stops". A figure is printed only when it
+    /// shows as 0.1 stops or more; otherwise the sentence stands without one. In both
+    /// applications: the window's advice is the console's block.
+    /// </summary>
+    [Theory]
+    [InlineData(55, true, null)]       // below the target: was ~-0.1
+    [InlineData(40, true, null)]       // far below: was ~-0.5
+    [InlineData(58, true, null)]       // just above: was ~0.0
+    [InlineData(62, true, "0.1")]      // the first figure that says something
+    [InlineData(81, false, "0.5")]     // too high by its level, no clipping: as before
+    public void R043_TheCorrectionFigureIsPrintedOnlyWhenItShowsAsATenthOfAStopOrMore(double level, bool burnt, string? figure)
+    {
+        ExposureResult r = burnt ? Burnt(level) : AtLevel(level);
+        Assert.Equal(ExposureVerdict.TooHigh, r.Verdict);
+        var w = new StringWriter();
+        ExposureReport.Write(r, "flat.NEF", w);
+        string ro = ExposureReport.Advice(r), console = w.ToString();
+        string en;
+        using (Ui.Use(UiLanguage.English)) en = ExposureReport.Advice(r);
+
+        if (figure == null)
+        {
+            Assert.Contains("Scade expunerea. ", ro + " ");
+            Assert.Contains("Lower the exposure. ", en + " ");
+            Assert.DoesNotContain("stopuri", ro);
+            Assert.DoesNotContain("stops", en);
+            Assert.Contains("    Scade expunerea." + Environment.NewLine, console);
+        }
+        else
+        {
+            Assert.Contains($"Scade expunerea cu ~{figure} stopuri.", ro);
+            Assert.Contains($"Lower the exposure by ~{figure} stops.", en);
+            Assert.Contains($"    Scade expunerea cu ~{figure} stopuri.", console);
+        }
+        Assert.DoesNotContain("~-", ro + en + console);
+        Assert.Equal(burnt, ro.Contains("Centrul e ars"));
+    }
+
     static ExposureResult Vignetted()
         => ExposureAnalyzer.Analyze(
             TestImages.From(256, 256, FitsTestData.WithBayerMosaic(

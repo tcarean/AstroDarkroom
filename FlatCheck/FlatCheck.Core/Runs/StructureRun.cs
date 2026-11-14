@@ -238,7 +238,8 @@ namespace FlatCheck
             // Only the candidates the raw's lens ID or name found are the camera's own naming; a
             // --lens text is a search that may match lenses of several makers (R-128).
             var cmp = VignettingComparer.Analyze(r, shot, query.Sources?.Catalog, lenses,
-                                                 lensesNamedByRaw: string.IsNullOrWhiteSpace(query.LensText) && shot.RawNamesLens && !shot.CandidatesByRangeOnly);
+                                                 lensesNamedByRaw: string.IsNullOrWhiteSpace(query.LensText) && shot.RawNamesLens && !shot.CandidatesByRangeOnly,
+                                                 lensText: query.LensText);
             if (Log.IsDebugEnabled)
                 Log.Debug("lenses compared " + LogText.List(lenses?.Select(l => l.Key)) + ": " + LogText.Comparison(cmp));
             return new StructureOutcome(r, cmp, shot, rawError);

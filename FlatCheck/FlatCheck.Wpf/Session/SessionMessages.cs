@@ -816,6 +816,20 @@ namespace FlatCheck.Wpf
             + $"In folderul ales lipsesc sau sunt goale: {string.Join(", ", missing.Select(f => f + "/"))}. "
             + "Pune acolo cadrele de la aparat, apoi apasa din nou.");
 
+        /// <summary>
+        /// When a folder the chosen script enters is there but cannot be listed (a deny rule, a
+        /// broken junction): nobody saw inside, so it is not called missing or empty (R-080).
+        /// </summary>
+        /// <param name="script">The script's file name.</param>
+        /// <param name="folder">The folder's name, without a slash.</param>
+        /// <param name="why">The system's message, with its causes.</param>
+        /// <returns>The explanation, with what to do.</returns>
+        internal static string ScriptInputUnlistable(string script, string folder, string why) =>
+            T($"The script {script} enters the subfolder {folder}/, but FlatCheck cannot see what is in it:\n\n{why}\n\n"
+            + "Check the permissions on that folder, then open the session folder again.",
+              $"Scriptul {script} intra in subfolderul {folder}/, dar FlatCheck nu poate vedea ce e in el:\n\n{why}\n\n"
+            + "Verifica drepturile pe acel folder, apoi deschide din nou folderul sesiunii.");
+
         /// <summary>The warning when Siril's window is open
         /// (<see cref="SirilInstall.IsGuiRunning"/>).</summary>
         /// <returns>The warning.</returns>

@@ -343,7 +343,9 @@ lens's profiles.
 `INSTRUME` / libraw model; required by lensfun, used by Adobe when known and replaced by
 the profile's SFF when not - `CameraCrop` 0, source "necunoscut"), each with its source
 string for the report. The report prints the crop line for both sources
-(`SyntheticReport.CropLine`: value and source only) and, under it, the "format" line
+(`SyntheticReport.CropLine`: value and source only; without a crop, "unknown", that the
+profile's calibration sensor is taken, and its SFF, in words of its own, since the
+identity's source string starts with "unknown" too) and, under it, the "format" line
 (`FormatMatch`, section 4). The lensfun camera table (1053 bodies in the shipped
 database) is the one list of cameras; `SensorFormats` (six nominal crops: full frame 1.0,
 APS-C 1.5, APS-C Canon 1.6, APS-H 1.3, Micro 4/3 2.0, 1" 2.7, with the sensor sizes as

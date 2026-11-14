@@ -644,6 +644,8 @@ is run on it, so the two sides share the half-pixel artefact and the 5 % box.
 | `SpreadStops` | stops, `max - min` of `CornerStops` across the rows | how far the candidates disagree in the corner; 0 with one row, `NaN` with none |
 | `Gap` | `ComparisonGap` | why nothing was compared; `None` when it was |
 | `SkippedForCrop` | list of `LensChoice` | lensfun lenses left out because the camera's crop is unknown; usually empty |
+| `LensText` | string or null | the `--lens` text the lenses were searched with, as given; null when none was |
+| `Unprofiled` | list of `LensChoice` | the lenses found whose files hold no vignetting profile for raw data; usually empty |
 | `Compared` | bool | `Verdict != null` |
 
 | `ComparisonGap` | Meaning |
@@ -651,14 +653,19 @@ is run on it, so the two sides share the half-pixel artefact and the 5 % box.
 | `None` | compared |
 | `NoProfiles` | no profile on the machine: neither Adobe nor `lensfun/`; or the catalog was never given |
 | `NoRaw` | no raw beside the master (and no `--lens`), so no lens ID |
-| `NoLensMatch` | the raw carries a lens ID, but no catalog lens matches it (or none of the matches had a usable profile) |
-| `NoFocal` | the focal length is unknown: no `FOCALLEN`, no raw, no `--focal` |
-| `NoFStop` | the aperture is unknown: Siril does not write it, and there was no raw and no `--fstop` |
-| `NoCrop` | only lensfun profiles, and the camera's crop factor is unknown |
+| `NoLensMatch` | the raw names its lens (an ID or a name), no `--lens` text was given, and no catalog lens matches it |
+| `LensTextNoMatch` | a `--lens` text was given and matches no catalog lens, whatever the raw says; `LensText` holds it |
+| `NoVignettingProfile` | lenses were found, by the text or by the raw, and none has a vignetting profile for raw files (R-134); `Unprofiled` names them |
+| `NoFocal` | the focal length is unknown: no `FOCALLEN`, no `--focal`, and no raw gives it (none, one that could not be read, or one that carries none) |
+| `NoFStop` | the aperture is unknown: Siril does not write it, there was no `--fstop`, and no raw gives it (none, one that could not be read, or one that carries none) |
+| `NoCrop` | only lensfun profiles, and the camera's crop factor is unknown; the report says why with `SyntheticReport.WhyNoCrop` (the camera is not in lensfun's table, or nothing names it), never with `ShotIdentity.CropSource`, whose "the calibration sensor is taken" holds for an Adobe profile only |
 
 The gap order is the order of `VignettingComparer.Analyze`: an empty catalog is reported before
 a missing raw, because it is the deeper cause; an unknown catalog (`null`) is not a cause, so
-without a raw the answer is "no raw", which is what a person can fix.
+without a raw the answer is "no raw", which is what a person can fix. A `--lens` text that
+found nothing comes before every reason read off the raw: the search was asked for, and
+"no raw, give --lens" or "the raw's lens matches nothing" would send the person the wrong
+way.
 
 ### The other analyzers' results, briefly
 
