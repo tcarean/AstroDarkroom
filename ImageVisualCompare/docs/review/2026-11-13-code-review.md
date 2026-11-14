@@ -76,11 +76,11 @@ numbers are those of 2026-11-13; a task finds its lines again by the names the e
 |----|----:|-------|----------|-------|--------|
 | CR-001 | 1 | common | confirmed | The read-out names the neighbouring pixel when the offset is an ulp under a whole number | fixed e4cb8e5d, 42796c8b |
 | CR-002 | 1 | common | to measure | At 100 % the image sits between screen pixels and is drawn interpolated | fixed 4c770ae7, 4f419791, 0c1d11e5, 02e63f4d |
-| CR-003 | 1 | some setups | to measure | A pair named by relative paths on the command line is read again by those relative paths | open |
-| CR-004 | 1 | some files | to measure | A float TIFF with associated alpha is un-premultiplied, not shown as stored | open |
-| CR-005 | 1 | some files | owner | A transparent pixel is drawn over black and read unblended; a float RGBA loses its alpha | open |
-| CR-006 | 1 | rare | to measure | The read-out is not refreshed when the pair or the view changes under a resting pointer | open |
-| CR-007 | 1 | rare | to measure | A float sample is quantised in double precision, Siril does it in single: 127 values differ by a level | open |
+| CR-003 | 1 | some setups | to measure | A pair named by relative paths on the command line is read again by those relative paths | fixed 8ba6986e |
+| CR-004 | 1 | some files | to measure | A float TIFF with associated alpha is un-premultiplied, not shown as stored | fixed 34e7e45e |
+| CR-005 | 1 | some files | owner | A transparent pixel is drawn over black and read unblended; a float RGBA loses its alpha | fixed 115684cf |
+| CR-006 | 1 | rare | to measure | The read-out is not refreshed when the pair or the view changes under a resting pointer | fixed f5cf5c51 |
+| CR-007 | 1 | rare | to measure | A float sample is quantised in double precision, Siril does it in single: 127 values differ by a level | fixed 5c65300a |
 | CR-008 | 1 | crafted | confirmed | A FITS card with no space after `=` loses the first character of its value | open |
 | CR-009 | 1 | crafted | confirmed | A `BZERO` or `BSCALE` that does not parse is read as 0 or 1 | open |
 | CR-010 | 2 | some setups | to measure | A three-plane FITS not in the file cache is read with a seek per plane per row | open |
@@ -186,7 +186,13 @@ a defect: dead code, duplicates, small inaccuracies.
 ### CR-003. A pair named by relative paths on the command line is read again by those relative paths
 
 - **Severity 1, some setups, to measure** (the wrong folder of the dialogs is confirmed).
-  Status: open.
+  Status: fixed 8ba6986e. `App.ApplyCommandLine` makes the two paths full once the files are
+  known to exist, and the pair is held by them from then on (R-002). Not measured: whether the
+  Windows open dialog moves the process's current folder; the owner was at the PC on 2026-11-14
+  and no dialog was shown, and the fix does not depend on the answer. Run instead, with the real
+  window off the desktop on the real FITS pair named by its two bare file names: the current
+  folder moved elsewhere after the start, then `H`, `F` and `F` again; each switch read the
+  same two files.
 - **Where:** `src/ImageVisualCompare.Wpf/App.xaml.cs:112-116` (`ApplyCommandLine` keeps the
   paths as typed; nothing in `src/` calls `Path.GetFullPath`);
   `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs:226-228` (a mode switch decodes
@@ -214,7 +220,12 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-004. A float TIFF with associated alpha is un-premultiplied, not shown as stored
 
-- **Severity 1, some files, to measure.** Status: open.
+- **Severity 1, some files, to measure.** Status: fixed 34e7e45e; measured on 2026-11-14 on a
+  generated file and as described: WIC names it `Prgba128Float`, and its conversion to
+  `Rgba128Float` gave 0.4 for a stored 0.2 at alpha 0.5 (level 102, not 51), 0 at alpha 0, and
+  1.2 for a stored 0.3 at alpha 0.25. `LoadFloat` asks for such a frame in its own format, and
+  the four floats arrive as stored (R-091). The name `Decode` in `docs/design/imaging.md`, the
+  first line of CR-028, went with it.
 - **Where:** `src/ImageVisualCompare.Wpf/Imaging/WicImageLoader.cs:454` (`FloatSamplesOf`
   accepts `Prgba128Float`), `:174-179` (`LoadFloat` asks WIC for `Rgba128Float`).
 - **What happens.** The comment says that between float formats WIC copies the values. From the
@@ -233,7 +244,11 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-005. A transparent pixel is drawn over black and read unblended; a float RGBA loses its alpha
 
-- **Severity 1, some files, owner.** Status: open.
+- **Severity 1, some files, owner.** Status: fixed 115684cf, by the owner's choice of 2026-11-14:
+  no transparency, every image is loaded opaque with the colours WIC decodes for it, as the
+  float path already was (`WicImageLoader.Opaque`, R-010, ADR 0054). Measured as described: a
+  PNG pixel holding 200 at alpha 128 was drawn at 100 and read as 200. On the three real files
+  the new conversion costs the same time and memory and gives the same bytes.
 - **Where:** `src/ImageVisualCompare.Wpf/Imaging/WicImageLoader.cs:113` (the conversion to
   Bgra32 keeps the file's alpha); `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs:623-633`
   (`Describe` prints red, green and blue and never looks at alpha);
@@ -254,7 +269,14 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-006. The read-out is not refreshed when the pair or the view changes under a resting pointer
 
-- **Severity 1, rare, to measure.** Status: open.
+- **Severity 1, rare, to measure.** Status: fixed f5cf5c51. `CompareView` keeps the pointer's
+  last position (`_pointer`); `Sync` reports the pixel now under it (`PixelUnderPointer`), and
+  `SetPair` and `ReplacePair` report it even when it is the same pixel (R-051). Shown by tests
+  that report one position and nothing after it: after a switch to `Histogram` the status bar
+  still read `A  35  35  35`, the linear image's value. Run with the real window off the desktop
+  on the real FITS pair, one position reported: the three items followed `H`, four zoom steps,
+  `F`, `F` again, `100%` and `Fit`. Not measured: the two cases with a real mouse on screen
+  (the owner was at the PC), so whether WPF's own mouse move hid the first of them is not known.
 - **Where:** `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs:95`, `:504-572` (`ShowPair` writes
   the title, the names and the pair line, never the three read-out items), `:586-602`;
   `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs:143-207` (`SetPair` and
@@ -276,7 +298,13 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-007. A float sample is quantised in double precision, Siril does it in single: 127 values differ by a level
 
-- **Severity 1, rare, to measure**, then the owner's call. Status: open.
+- **Severity 1, rare, to measure**, then the owner's call. Status: fixed 5c65300a, by the
+  owner's choice of 2026-11-14: as Siril (`FitsScale.SixteenBitOfFloat`, R-015, ADR 0055). Read
+  in the source of Siril 1.4: its 16-bit PNG and TIFF exports use the same single-precision
+  expression as its display. Measured: over every float below 1 the 16-bit value differs for
+  32,768 (16,384 of them in [0.5, 1), as below) and the level for 127; on five real float FITS
+  of 69,260,832 samples each, 18 to 2,564 16-bit values differ and no level. Not measured: a
+  stretched FITS against a 16-bit PNG saved from Siril.
 - **Where:** `src/ImageVisualCompare.Core/FitsScale.cs:133-146` (`SixteenBit`);
   `src/ImageVisualCompare.Core/FitsRowDecoder.cs:155-157`, `:165-167`;
   `src/ImageVisualCompare.Core/FloatSamples.cs` (`ToSixteenBit`).
