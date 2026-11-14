@@ -39,7 +39,7 @@
 // moved over the name at the end): a failed write does not leave a half-written FITS under the
 // target's name.
 //
-// A CROP (R-181, ADR 0093) is the second thing written, and the only one that goes around the
+// A CROP (R-181, ADR 0098) is the second thing written, and the only one that goes around the
 // raster: SaveCrop copies the rectangle's bytes from the source file as they are, so that every
 // BITPIX keeps every bit (the raster is 32-bit float clipped to 0..1 and could not), under the
 // source's header with the new size and the reference pixel of a plate solution moved.
@@ -55,7 +55,7 @@ namespace AstroPhotoAnalyzer
 {
     /// <summary>
     /// Writes the tool's FITS files: a new FITS of an analysed raster with a curve applied
-    /// (R-145, ADR 0032), and the crop of a FITS, copied from its bytes (R-181, ADR 0093).
+    /// (R-145, ADR 0032), and the crop of a FITS, copied from its bytes (R-181, ADR 0098).
     /// </summary>
     internal static class FitsWriter
     {
@@ -247,7 +247,9 @@ namespace AstroPhotoAnalyzer
             // write its exponent with a D.
             string value = (slash < 0 ? text.Substring(10) : text.Substring(10, slash - 10)).Trim().Trim('\'').Trim().Replace('D', 'E');
             string now;
-            if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal exact))
+            // Within the cut of the decimal's own end the difference does not fit one: such a
+            // value goes the way of those a decimal cannot hold at all, through a double.
+            if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal exact) && exact > decimal.MinValue + cut)
                 now = (exact - cut).ToString(CultureInfo.InvariantCulture);
             else if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double was) && !double.IsNaN(was) && !double.IsInfinity(was))
                 now = (was - cut).ToString("R", CultureInfo.InvariantCulture);

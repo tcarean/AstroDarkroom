@@ -17,7 +17,7 @@
 
 // CropRun.cs - what the Crop with aspect ratio tab asks of the core beside the rectangle itself
 // (FrameCrop): the reduced copy it shows, the kind of file a crop of this input is written as,
-// and the save (R-181 to R-183, ADR 0093).
+// and the save (R-181 to R-183, ADR 0098).
 //
 // The crop is the tool's third export and the only one that changes no sample: the file
 // written is of the input's own kind and depth. A FITS is cropped on its bytes (FitsWriter.

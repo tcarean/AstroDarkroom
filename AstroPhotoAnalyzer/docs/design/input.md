@@ -87,7 +87,7 @@ written without its header. On the plate-solved FITS the saved file keeps every 
 source, has the same 270 869 760 bytes, and reads back equal to the curve applied to the
 raster, with its WCS (V-008).
 
-**The crop of a FITS** (`SaveCrop`, R-181, ADR 0093) is the one thing written that never passes
+**The crop of a FITS** (`SaveCrop`, R-181, ADR 0098) is the one thing written that never passes
 through the raster, which is 32-bit float clipped to 0..1 and could not carry every BITPIX whole.
 It walks the source as the curve's writer does (the HDUs before the image copied, the image's
 geometry checked against the analysed one, what follows the image copied) and differs in the
@@ -95,7 +95,8 @@ two places of the image HDU. The header: every card as it is, except `NAXIS1` an
 which take the rectangle's size, and `CRPIX1` and `CRPIX2` (and the lettered ones of an
 alternate solution, `CRPIX1A`), which are moved by what was cut before the first kept pixel of
 their axis; a rewritten card keeps its keyword and its comment (`WithValue`), the new value
-is computed in decimal, so that it is as short as the old one and the comment still fits, a
+is computed in decimal, so that an ordinary value stays as short as it was and the comment
+still fits (2919.1 less 833 is 2086.1, not the 2086.0999999999999 of a double), a
 quoted value is read as the number the reader takes it for, and a real keeps its point
 (`Moved`); then the `HISTORY` cards. The data: for each plane, the rectangle's stretch of
 each kept row, read from the source at its offset and written as it is. The rectangle is in
@@ -236,7 +237,7 @@ Written down because each one cost a probe to find, and each one shapes code or 
 - **The TIFF decoder puts the ICC profile on the first frame's metadata**
   (`Frames[0].Metadata.IccProfile`), not on `Image.Metadata`. The reader checks both.
 - The PNG encoder was recorded here, in phase 1, as not writing `iCCP` from
-  `Metadata.IccProfile`. Measured again on 2026-11-14 (ADR 0093), it does: a 16-bit crop of
+  `Metadata.IccProfile`. Measured again on 2026-11-14 (ADR 0098), it does: a 16-bit crop of
   `de_printat.png` and a fresh image given a profile both came out with an `iCCP` chunk whose
   profile read back to the same bytes (and a `pHYs` chunk of 96 dpi). `PngWriter` relies on
   it, and `R181_APngIsWritten...` guards it. The PNG-with-profile fixture of the reader's

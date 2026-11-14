@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// CropTabTests - the Crop with aspect ratio tab (R-183, ADR 0093): the two sizes, the rectangle
+// CropTabTests - the Crop with aspect ratio tab (R-183, ADR 0098): the two sizes, the rectangle
 // the core makes of them, its drags through the viewer, the sentences and the save.
 
 using System.Windows;
@@ -351,24 +351,45 @@ public class CropTabTests
         tab.Writer = Held(started, release);
 
         Task saving = tab.SaveAsync("x.fit");
-        Assert.True(started.Wait(TimeSpan.FromSeconds(30)));
-        Assert.True(tab.IsBusy);
-        Assert.False(tab.SaveAs.CanExecute(null));
-        Assert.Equal("se scrie fisierul...", tab.SaveMessage);
-        Assert.Null(tab.SaveError);
+        try
+        {
+            Assert.True(started.Wait(TimeSpan.FromSeconds(30)));
+            Assert.True(tab.IsBusy);
+            Assert.False(tab.SaveAs.CanExecute(null));
+            Assert.Equal("se scrie fisierul...", tab.SaveMessage);
+            Assert.Null(tab.SaveError);
 
-        // A second save while one is written starts nothing and replaces nothing.
-        Assert.Same(saving, tab.SaveAsync("y.fit"));
-        Assert.Same(saving, tab.Saving);
-        // Another image opened meanwhile: the button is still off, and the tab still says why.
-        tab.Populate(Result(ws));
-        Assert.Equal("se scrie fisierul...", tab.SaveMessage);
-        Assert.False(tab.SaveAs.CanExecute(null));
-
-        release.Set();
-        await saving;
+            // A second save while one is written starts nothing and replaces nothing.
+            Assert.Same(saving, tab.SaveAsync("y.fit"));
+            Assert.Same(saving, tab.Saving);
+            // Another image opened meanwhile: the button is still off, and the tab still says why.
+            tab.Populate(Result(ws));
+            Assert.Equal("se scrie fisierul...", tab.SaveMessage);
+            Assert.False(tab.SaveAs.CanExecute(null));
+        }
+        finally
+        {
+            // Whatever an assertion said, the held writer is let go before the events are disposed.
+            release.Set();
+            await saving;
+        }
         Assert.False(tab.IsBusy);
         Assert.Equal("salvat: x.fit", tab.SaveMessage);
+        Assert.True(tab.SaveAs.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task R183_AWriterThatThrowsLeavesTheTabReadyWithItsMessage()
+    {
+        using var ws = new TempWorkspace();
+        var tab = new CropTabViewModel { FrameWidth = "2", FrameHeight = "1" };
+        tab.Populate(Result(ws));
+        tab.Writer = (_, _, _, _, _) => throw new InvalidOperationException("discul a disparut");
+
+        await tab.SaveAsync("x.fit");
+        Assert.False(tab.IsBusy);
+        Assert.Null(tab.SaveMessage);
+        Assert.Contains("discul a disparut", tab.SaveError);
         Assert.True(tab.SaveAs.CanExecute(null));
     }
 
@@ -385,20 +406,28 @@ public class CropTabTests
             vm.Crop.FrameHeight = "1";
             vm.Crop.Populate(Result(ws));
             vm.Crop.Writer = Held(started, release);
-            bool closed = false;
-            window.Closed += (_, _) => closed = true;
+            int closed = 0;
+            window.Closed += (_, _) => closed++;
 
             Task saving = vm.Crop.SaveAsync("x.fit");
-            Assert.True(started.Wait(TimeSpan.FromSeconds(30)));
-            window.Close();
-            window.Close();   // a second press adds nothing
-            Assert.False(closed);
-
-            // Once the file is whole the window closes by itself.
-            release.Set();
-            await saving;
-            for (int i = 0; i < 200 && !closed; i++) await Task.Delay(25);
-            Assert.True(closed);
+            try
+            {
+                Assert.True(started.Wait(TimeSpan.FromSeconds(30)));
+                window.Close();
+                window.Close();   // a second press adds nothing
+                Assert.Equal(0, closed);
+            }
+            finally
+            {
+                // Whatever an assertion said, the held writer is let go and the cursor given back.
+                release.Set();
+                await saving;
+                for (int i = 0; i < 200 && closed == 0; i++) await Task.Delay(25);
+                System.Windows.Input.Mouse.OverrideCursor = null;
+            }
+            // Once the file is whole the window closes by itself, once.
+            await Task.Delay(100);
+            Assert.Equal(1, closed);
         });
 
     [Fact]

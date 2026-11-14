@@ -1,4 +1,4 @@
-# 0093. The crop for a frame writes the input's own kind of file, a FITS as its own bytes
+# 0098. The crop for a frame writes the input's own kind of file, a FITS as its own bytes
 
 Date: 2026-11-14
 Status: accepted 2026-11-14
@@ -41,6 +41,12 @@ the input's ICC profile; a JPEG becomes an 8-bit TIFF. The owner's answers of 20
 JPEG as an 8-bit TIFF; a tab named `Crop with aspect ratio`, the image filling it, without
 zoom; the two sizes read as typed, width then height.
 
+Two more, settled by the review of the first version on 2026-11-14. The crop is the first
+export written on a pool thread (a 19 MP PNG takes 10 s), so a window closed meanwhile waits
+for the file and closes then: ending the process in the middle leaves the temporary file and
+no crop. And the rectangle stays where it was put when the same image is analysed again with
+the same frame, which a changed parameter or profile does by itself.
+
 ## Alternatives rejected
 
 - **A FITS crop through the raster and `FitsWriter`, as the two other exports.** It rounds a
@@ -57,6 +63,11 @@ zoom; the two sizes read as typed, width then height.
 - **A TIFF of 32 bits cropped through ImageSharp's conversion.** The reader already converts
   it to 16 bits (R-012), so the crop would not be the input's samples; it is refused with a
   sentence.
+- **A close that stops the write, or asks first.** Stopping leaves the file the user asked
+  for unwritten without a word; a question is a dialog for a wait of seconds. A save that
+  never returns keeps the window open, which `known-limitations.md` records.
+- **The save on the UI thread, under a wait cursor, as the two other exports.** Ten seconds
+  of a window that does not repaint, for the one export that needs no computation shown.
 - **Zoom and pan on the crop's image.** The owner asked for the image on the whole area
   without zoom; the rectangle is placed to the pixel of the reduced copy, a few image pixels.
 - **The frame's long side laid along the image's long side, with a rotate button.** The owner

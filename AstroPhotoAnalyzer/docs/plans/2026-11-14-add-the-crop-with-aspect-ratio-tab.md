@@ -12,7 +12,7 @@ kind and depth, with no loss (32-bit FITS to 32-bit FITS, 16-bit TIFF to 16-bit 
 proposed name `<input>_cropped_XXxYY`.
 
 Already settled with the owner on 2026-11-14 (requirement rows R-180 to R-183, accepted as a
-draft; ADR 0093, proposed, which this plan's approval accepts):
+draft; ADR 0098, proposed, which this plan's approval accepts):
 
 - A JPEG input is saved as an 8-bit TIFF (no second compression).
 - A tab named `Crop with aspect ratio` (`Decupare cu raport de aspect`), the last one; the image
@@ -21,7 +21,7 @@ draft; ADR 0093, proposed, which this plan's approval accepts):
 - Mine, shown with the draft and not objected to: a line with the pixels per inch at the frame's
   size; the two fields stay as typed when another image is opened; nothing in the console.
 
-Measured on 2026-11-14 (ADR 0093 holds the table): ImageSharp 3.1.11's PNG encoder writes the
+Measured on 2026-11-14 (ADR 0098 holds the table): ImageSharp 3.1.11's PNG encoder writes the
 16-bit crop of `de_printat.png` sample for sample, 85.1 MiB in 16.8 s, **with** the `iCCP`
 profile, the same bytes as the source's. So the PNG is written by the encoder, not by hand. This
 contradicts the sentence "the PNG encoder does not write `iCCP`" in `dependencies.md`, `input.md`
@@ -116,7 +116,7 @@ and the fixtures' comments; the two notes are corrected, the hand-built fixture 
 
 - `docs/requirements.md`: R-180 to R-183 to `implemented`; R-110 (nine tabs, the list) and R-163
   ("the last tab") follow.
-- `docs/decisions/0093-...`: `accepted 2026-11-14`.
+- `docs/decisions/0098-...`: `accepted 2026-11-14`.
 - New design note `docs/design/crop.md` (with its `Covers:` and its row in `design/README.md`);
   `input.md` (the writers, the corrected `iCCP` sentence), `dependencies.md` (the second place
   ImageSharp encodes, the corrected sentence), `extending.md` ("three kinds of image"),

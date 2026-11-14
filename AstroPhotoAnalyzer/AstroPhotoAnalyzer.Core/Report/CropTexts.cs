@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// CropTexts.cs - the sentences of the Crop with aspect ratio tab (R-180 to R-183, ADR 0093):
+// CropTexts.cs - the sentences of the Crop with aspect ratio tab (R-180 to R-183, ADR 0098):
 // what the rectangle keeps and cuts, what the save writes, the refusals, the proposed file
 // name, the HISTORY cards and the description tag of the saved file.
 //
@@ -172,11 +172,15 @@ namespace AstroPhotoAnalyzer
         /// <param name="imageH">The input's height, in pixels.</param>
         /// <param name="frameW">The frame's width, in cm.</param>
         /// <param name="frameH">The frame's height, in cm.</param>
-        /// <returns>The texts, one card each, each under 72 characters.</returns>
+        /// <returns>
+        /// The texts, one card each, each under 72 characters; the frame has a card of its
+        /// own, so that two sizes typed with many decimals still fit.
+        /// </returns>
         internal static IReadOnlyList<string> History(CropRect r, int imageW, int imageH, double frameW, double frameH)
             => new[]
             {
-                Tr.Pick($"{VersionInfo.Banner}: crop for a frame, {Size(frameW)} x {Size(frameH)} cm", $"{VersionInfo.Banner}: decupare pentru rama, {Size(frameW)} x {Size(frameH)} cm"),
+                Tr.Pick($"{VersionInfo.Banner}: crop for a frame", $"{VersionInfo.Banner}: decupare pentru rama"),
+                Tr.Pick($"the frame: {Size(frameW)} x {Size(frameH)} cm", $"rama: {Size(frameW)} x {Size(frameH)} cm"),
                 Tr.Pick($"kept {Fmt.Dim(r.W, r.H)} px of {Fmt.Dim(imageW, imageH)}", $"pastrat {Fmt.Dim(r.W, r.H)} px din {Fmt.Dim(imageW, imageH)}"),
                 Tr.Pick($"from column {Fmt.Int(r.X)}, row {Fmt.Int(r.Y)}, counted from the top left", $"de la coloana {Fmt.Int(r.X)}, randul {Fmt.Int(r.Y)}, numarate din stanga sus"),
                 Tr.Pick("the pixels are the input's own, none changed", "pixelii sunt ai intrarii, niciunul schimbat"),

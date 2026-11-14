@@ -7,7 +7,7 @@ largest size the real detail supports, how much denoise the print version needs.
 recommendations only, each with the number and the threshold behind it, and **writes an image
 only on request**, the input never touched: a FITS with a suggested curve (Editare Curbe, ADR
 0032), a FITS or 16-bit TIFF with the colours fitted to the paper (Culori pentru hartie, ADR
-0083) or the crop for a frame, in the input's own kind of file (ADR 0093); every other export is made cleanly from
+0083) or the crop for a frame, in the input's own kind of file (ADR 0098); every other export is made cleanly from
 Siril. Two applications, a console (`AstroPhotoAnalyzer.exe`) and a WPF window, over one core library that hand-parses
 FITS and takes ImageSharp for TIFF/PNG/JPEG; neither application computes a number or writes a sentence of diagnosis.
 .NET 8. A sibling of FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this file says so.
@@ -53,7 +53,7 @@ FITS and takes ImageSharp for TIFF/PNG/JPEG; neither application computes a numb
   decides words (English and Romanian, `Language.cs`) and the recommendations, `Runs/` chains
   them; both applications call `Runs/AnalysisRun.Execute`, and the window alone, after it,
   `Runs/CurveRun.cs` (the curves' FITS, ADR 0032, ADR 0051), `Runs/ProofRun.cs` (the soft proof, ADR 0066),
-  `Runs/GamutFitRun.cs` (the paper fit's FITS or TIFF, ADR 0083) and `Runs/CropRun.cs` (the crop, ADR 0093), nothing else.
+  `Runs/GamutFitRun.cs` (the paper fit's FITS or TIFF, ADR 0083) and `Runs/CropRun.cs` (the crop, ADR 0098), nothing else.
   `Thresholds.cs`, `Parameters.cs`. `Logging/` configures the diagnostic log, which the entry points start and close (ADR 0069).
 - `AstroPhotoAnalyzer/` - the console: `Program.cs`, `Options.cs`, `AnalyzerCli.cs`. Nothing else.
 - `AstroPhotoAnalyzer.Wpf/` - the window, `net8.0-windows`, dark theme: `ParameterFields` in, nine
@@ -182,7 +182,7 @@ edit:
 - `GamutFit`, `GamutFitRun`, `TiffWriter`, `IccProfiles`: `docs/design/paper-fit.md` and ADR 0083
   (chroma only, never a tone; the Soft proof judge decides the edge; the TIFF is 16-bit on purpose).
 - Any text in a view-model: `docs/design/window.md` and ADR 0020.
-- `FrameCrop`, `CropExport`, `PngWriter`, `CropViewer`: `docs/design/crop.md` and ADR 0093 (a FITS is cropped on its bytes).
+- `FrameCrop`, `CropExport`, `PngWriter`, `CropViewer`: `docs/design/crop.md` and ADR 0098 (a FITS is cropped on its bytes).
 - The ImageSharp version or a 16-bit fixture: `docs/design/dependencies.md` (measured behaviours the code depends on).
 - A change of any kind: `docs/design/extending.md` lists the places it touches.
 - A "bug" in `docs/design/known-limitations.md` is probably a known limit; read it first.

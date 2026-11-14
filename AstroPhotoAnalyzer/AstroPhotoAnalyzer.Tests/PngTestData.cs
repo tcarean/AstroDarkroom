@@ -25,7 +25,7 @@ namespace AstroPhotoAnalyzer.Tests;
 /// A 16-bit RGB PNG written BY HAND, with an iCCP chunk - exactly the form the acceptance
 /// image had (de_printat.png, with the sRGB-elle profile in iCCP). When this was written the
 /// ImageSharp encoder was recorded as not writing iCCP in 3.1; measured again on 2026-11-14 it
-/// does (ADR 0093). The fixture stays by hand all the same: a file built from a formula tests
+/// does (ADR 0098). The fixture stays by hand all the same: a file built from a formula tests
 /// the reading of a profile, not the package's encoder against its own decoder.
 /// </summary>
 internal static class PngTestData

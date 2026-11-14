@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// FrameCrop.cs - the rectangle of the Crop with aspect ratio tab (R-180, ADR 0093): the part of
+// FrameCrop.cs - the rectangle of the Crop with aspect ratio tab (R-180, ADR 0098): the part of
 // the image that goes on a frame of a given width and height.
 //
 // A computation, like CropAnalyzer, whose centred rectangle is where this one starts. The

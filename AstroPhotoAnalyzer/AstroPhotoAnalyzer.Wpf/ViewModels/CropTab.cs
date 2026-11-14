@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// CropTab.cs - the Crop with aspect ratio tab (R-183, ADR 0093): the frame's two sizes, the
+// CropTab.cs - the Crop with aspect ratio tab (R-183, ADR 0098): the frame's two sizes, the
 // image with the rectangle of those proportions over it, moved and resized with the mouse, and
 // the save of what the rectangle keeps as a new file of the input's kind.
 //
@@ -371,13 +371,27 @@ namespace AstroPhotoAnalyzer.Wpf
             SaveError = null;
             SaveMessage = CropTexts.Saving;
             Func<AnalysisResult, CropRect, double, double, string, (string Saved, string Error)> writer = Writer;
-            (string saved, string error) = await Task.Run(() => writer(result, rect, w, h, path));
-            // The outcome is told even when another image was opened meanwhile: the file is
-            // written, or it is not, whatever the tab shows now.
-            SaveMessage = saved;
-            SaveError = error;
-            IsBusy = false;
-            Requery();
+            try
+            {
+                (string saved, string error) = await Task.Run(() => writer(result, rect, w, h, path));
+                // The outcome is told even when another image was opened meanwhile: the file is
+                // written, or it is not, whatever the tab shows now.
+                SaveMessage = saved;
+                SaveError = error;
+            }
+            catch (Exception e)
+            {
+                // The writer words its own failures; one that escapes it all the same must not
+                // leave the tab writing for ever, nor a task nobody watches faulted.
+                Log.Error(e, "the save of the crop to " + path + " failed outside the writer; the tab shows the message");
+                SaveMessage = null;
+                SaveError = MainViewModel.Describe(e);
+            }
+            finally
+            {
+                IsBusy = false;
+                Requery();
+            }
         }
 
         /// <summary>Writes the crop through the core and words the outcome.</summary>

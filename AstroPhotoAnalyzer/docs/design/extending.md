@@ -94,7 +94,7 @@ A tab whose content is a second run after the analysis, like Editare Curbe, also
 
 **A new output**: the tool writes three kinds of image, the FITS of `Core/Input/FitsWriter.cs`
 (ADR 0032), the TIFF of `Core/Input/TiffWriter.cs` (ADR 0083) and, for the crop of a PNG, the
-PNG of `Core/Input/PngWriter.cs` (ADR 0093). Another format, or
+PNG of `Core/Input/PngWriter.cs` (ADR 0098). Another format, or
 another thing written, is a decision first; then a writer in `Core/Input/`, called from
 `Core/Runs/` under `CurveExport.Guarded`, so that it never opens the input for writing;
 **`input.md`**, **`paper-fit.md`** or **`crop.md`**.

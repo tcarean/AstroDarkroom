@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// PngWriter.cs - the PNG of a crop (R-181, ADR 0093), through ImageSharp's encoder: 16 bits per
+// PngWriter.cs - the PNG of a crop (R-181, ADR 0098), through ImageSharp's encoder: 16 bits per
 // sample or 8, RGB or grey, with the input's ICC profile.
 //
 // Why the encoder and not a writer by hand, as the TIFF's: measured on 2026-11-14 on the crop
-// of de_printat.png (ADR 0093), ImageSharp 3.1.11 writes a 16-bit RGB PNG sample for sample,
+// of de_printat.png (ADR 0098), ImageSharp 3.1.11 writes a 16-bit RGB PNG sample for sample,
 // with the iCCP chunk when the image's metadata hold a profile, as small as a hand-written one
 // and as fast. The TIFF writer exists only because the TIFF encoder cannot write 16 bits.
 // The encoder also writes a pHYs chunk (96 dpi) the input may not have had; it changes no pixel.

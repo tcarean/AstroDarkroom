@@ -100,7 +100,7 @@ gamut once (the rule of R-144); Render proofs the reduction through the intent's
 its first use and kept on the profile. The chain itself is in `soft-proof.md`. Prepare is timed
 by a `RunClock` (`profile`, `gamut`, `mask`), Render writes one Debug line per render.
 
-### The crop (`Runs/CropRun.cs`, ADR 0093)
+### The crop (`Runs/CropRun.cs`, ADR 0098)
 
 No run in the sense of the three below: nothing is computed after the analysis. The Crop with
 aspect ratio tab asks `CropRun.Preview` for the reduced copy it shows, `FrameCrop` for every

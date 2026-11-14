@@ -12,7 +12,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   already have: type its width and height and a rectangle of those proportions appears over
   the image, moved by dragging inside it and resized from its corners; **Save as...** writes
   what it keeps as a new file of the input's own kind and depth, proposed as
-  `<name>_cropped_<width>x<height>` (R-180 to R-183, ADR 0093). A FITS crop holds the input's
+  `<name>_cropped_<width>x<height>` (R-180 to R-183, ADR 0098). A FITS crop holds the input's
   own bytes at its own BITPIX and keeps the header, with the plate solution's reference pixel
   moved; a 16-bit TIFF or PNG stays 16-bit with its ICC profile; a JPEG becomes an 8-bit TIFF,
   since a JPEG saved again is compressed again.

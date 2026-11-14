@@ -58,7 +58,7 @@ AstroPhotoAnalyzer.Core/
   Runs/CurveRun.cs                     the second run, after the analysis: CurveSet, CurveExport
   Runs/ProofRun.cs                     the third run, after the analysis: ProofSet (ADR 0066)
   Runs/GamutFitRun.cs                  the fourth run, after the analysis: GamutFitSet, GamutFitExport (ADR 0083)
-  Runs/CropRun.cs                      the crop: the reduced copy, CropOutput (the kind of file), CropExport (ADR 0093)
+  Runs/CropRun.cs                      the crop: the reduced copy, CropOutput (the kind of file), CropExport (ADR 0098)
   Logging/LogSetup.cs                  the diagnostic log's configuration, its first and last lines (ADR 0069)
   Logging/LogText.cs                   how a value is written in the log; a result record's figures
   Logging/RunClock.cs                  a run's start and done lines, with the time of each stage

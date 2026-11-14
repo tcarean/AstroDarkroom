@@ -18,13 +18,13 @@
 ## Dependencies
 
 `SixLabors.ImageSharp` **3.1.11**, pinned: decodes TIFF/PNG/JPEG, encodes JPEG and TIFF
-for the size and error measurements, and encodes the PNG of a crop (R-181, ADR 0093). Licence reasoning in `THIRD-PARTY-NOTICES.md`;
+for the size and error measurements, and encodes the PNG of a crop (R-181, ADR 0098). Licence reasoning in `THIRD-PARTY-NOTICES.md`;
 displayed in "Despre" through `ThirdParty.Components`; bound to the csproj by
 `ThirdPartyTests`. Measured behaviours the code depends on: the TIFF encoder writes 8
 bits per sample for `Rgb48` even when asked for 48; `Image.Identify` does not read a
 PNG's `iCCP` (`Image.Load` does); the TIFF decoder puts the ICC profile on
 `Frames[0].Metadata`; the PNG encoder writes 16 bits per sample exactly and the `iCCP` chunk
-from the image's profile (measured 2026-11-14, ADR 0093; the note of phase 1 said it did not
+from the image's profile (measured 2026-11-14, ADR 0098; the note of phase 1 said it did not
 write `iCCP`); LZW needs the horizontal
 predictor to be competitive. `Wacton.Unicolour` **8.0.0** (MIT, pure
 managed, no dependencies): evaluates the tables of an ICC printer profile for
@@ -77,7 +77,7 @@ Four things about 3.1.11 were measured rather than assumed, and the code depends
 them: its TIFF encoder cannot write 16-bit RGB, `Image.Identify` does not see a PNG's
 ICC profile but `Image.Load` does, the TIFF decoder leaves the profile on the first
 frame, and, as it was recorded then, that the PNG encoder does not write `iCCP` (it does:
-measured again on 2026-11-14, ADR 0093). Details and consequences in
+measured again on 2026-11-14, ADR 0098). Details and consequences in
 `input.md`, "Things measured about ImageSharp 3.1.11 while building phase 1". The 16-bit
 TIFF and PNG fixtures in the tests are hand-built for exactly these reasons - don't replace
 them with ImageSharp-encoded ones.

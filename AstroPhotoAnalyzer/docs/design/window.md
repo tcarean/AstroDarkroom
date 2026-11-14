@@ -190,7 +190,7 @@ image, the comparison with the original across a line (`Presentation/BeforeAfter
 keys of `MainWindow.GalleryKeys` serve whichever of the two gallery tabs is selected.
 
 **The Crop with aspect ratio tab** (`ViewModels/CropTab.cs`, `Views/CropView.xaml`,
-`Presentation/CropViewer.cs`; R-183, ADR 0093): the last tab, filled by `Populate` itself, with
+`Presentation/CropViewer.cs`; R-183, ADR 0098): the last tab, filled by `Populate` itself, with
 no run after the analysis: the frame's two sizes, the image on the whole area with the crop
 rectangle the core makes of them, dragged with the mouse, and the save of what it keeps as a
 file of the input's kind; described in `crop.md`. Its two fields are kept from one image to

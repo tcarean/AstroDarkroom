@@ -20,7 +20,7 @@ using System.Text;
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// R-180 to R-182: the crop for a frame (ADR 0093). The rectangle of the frame's proportions,
+/// R-180 to R-182: the crop for a frame (ADR 0098). The rectangle of the frame's proportions,
 /// its moves and its figures; the save, which writes the input's own kind of file and, for a
 /// FITS, the input's own bytes; the proposed name.
 /// </summary>
@@ -658,6 +658,19 @@ public class FrameCropTests
         Assert.Null(CropExport.OutputOf(new SourceInfo { Format = "TIFF", BitDepth = 8, Path = "poza.TIFF" }).Extension);
         Assert.Null(CropExport.OutputOf(new SourceInfo { Format = "FITS", BitDepth = 16, Path = "stack.fts" }).Extension);
         Assert.Equal("poza_cropped_70x54.62.png", CropTexts.ProposedFileName(@"C:\x\poza.tif", ".png", 70, 54.62));
+    }
+
+    [Fact]
+    public void R181_EveryHistoryCardFitsWhateverTheFramesDecimals()
+    {
+        var rect = new CropRect(1234, 5678, 12345, 23456);
+        foreach (UiLanguage language in Enum.GetValues<UiLanguage>())
+        {
+            using IDisposable scope = Tr.Use(language);
+            IReadOnlyList<string> cards = CropTexts.History(rect, 30000, 40000, 154.623456789012, 170.123456789012);
+            Assert.All(cards, c => Assert.True(c.Length <= 72, c));
+            Assert.Contains(cards, c => c.Contains("154.623456789012 x 170.123456789012"));
+        }
     }
 
     // ------------------------------------------------------------------ R-182: the name

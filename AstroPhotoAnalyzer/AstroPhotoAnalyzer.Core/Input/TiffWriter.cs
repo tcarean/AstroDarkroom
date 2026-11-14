@@ -23,7 +23,7 @@
 // 20 % on the measured image at 6 s and a compressor to maintain, and Siril writes the inputs
 // uncompressed too. The file is written whole or not at all (AtomicFile).
 //
-// The crop of an 8-bit input (R-181, ADR 0093) is written at 8 bits per sample, the same file
+// The crop of an 8-bit input (R-181, ADR 0098) is written at 8 bits per sample, the same file
 // otherwise: the crop keeps the input's depth.
 
 using System;
