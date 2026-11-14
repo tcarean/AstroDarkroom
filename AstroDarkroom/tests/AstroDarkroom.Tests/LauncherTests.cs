@@ -30,7 +30,7 @@ public class LauncherTests
         SuiteApp[] expected =
         [
             new("DarksCheck", "DarksCheck", "Verifica dark-urile unei sesiuni sau biblioteci: scurgeri de lumina, deriva termica, zgomot, pixeli fierbinti si morti, si daca au temperatura light-urilor.", "DarksCheck.Wpf.exe", "darkscheck.ico"),
-            new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv: expunerea, simetria, vinietarea fata de profilul obiectivului si daca corecteaza un light real; face un flat din profil.", "FlatCheck.Wpf.exe", "flatcheck.ico"),
+            new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv: expunerea, simetria, vignetarea fata de profilul obiectivului si daca corecteaza un light real; face un flat din profil.", "FlatCheck.Wpf.exe", "flatcheck.ico"),
             new("LightsCheck", "LightsCheck", "Verifica light-urile unei nopti: ce cadre sa lasi afara din stack si de ce, deriva monturii, dithering-ul, alinierea polara, ce sa schimbi data viitoare.", "LightsCheck.Wpf.exe", "lightscheck.ico"),
             new("ImageVisualCompare", "ImageVisualCompare", "Compara doua variante ale unei imagini cu un slider inainte/dupa (doua stretch-uri, cu si fara stele), pixel cu pixel; arata gradientii slabi.", "ImageVisualCompare.Wpf.exe", "ImageVisualCompare.ico"),
             new("WCS_Copy", "CopyWcs", "Copiaza plate solve-ul unui FITS inapoi in varianta lui procesata, care l-a pierdut pe drum, ca adnotarile si cataloagele sa regaseasca cerul.", "CopyWcs.Wpf.exe", "copywcs.ico"),

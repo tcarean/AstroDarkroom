@@ -111,6 +111,8 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
   surrogate pair (a hand edit, a cut emoji escape) no longer stops the launcher at start: the
   file gives nothing, as any other file that cannot be read, and the log says so at `WARN`
   (R-004, R-007; CR-002 of the code review).
+- In Romanian the row of FlatCheck says `vignetarea`, as "Despre" and FlatCheck's own window
+  do; it said `vinietarea` (R-001, ADR 0026; CR-004).
 - "Despre" fits the screen it opens on (R-016, ADR 0013): it is no taller than that screen's
   work area, its cards scroll, with a dark scroll bar, the mouse wheel or the arrow, page, Home
   and End keys, when they need more room, and the Close button stays in view under them. It used
