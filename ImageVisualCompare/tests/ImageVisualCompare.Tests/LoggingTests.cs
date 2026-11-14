@@ -25,6 +25,7 @@ using ImageVisualCompare.Core;
 using ImageVisualCompare.Wpf;
 using ImageVisualCompare.Wpf.Imaging;
 using ImageVisualCompare.Wpf.Logging;
+using ImageVisualCompare.Wpf.Services;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
@@ -882,6 +883,50 @@ public sealed class LanguageLoggingTests : IDisposable
         Assert.Contains(english, m => m.Contains(" MiB", StringComparison.Ordinal));
         Assert.Contains(english, m => m.EndsWith("float samples counted in 0..65535: 12 of 12 above 2", StringComparison.Ordinal));
         Assert.Equal(english, romanian);
+    }
+
+    /// <summary>
+    /// CR-003 of the review of 2026-11-13. A pair named by relative paths was kept as typed: the
+    /// dialogs then had no folder to open in (the folder of <c>a.png</c> is empty), and a switch of
+    /// display mode read the two names again against whatever the current folder had become.
+    /// </summary>
+    [Fact]
+    public void R002_APairNamedByRelativePaths_IsHeldByItsFullPaths()
+    {
+        // Under the current folder, so that a relative path exists whatever drive the temporary
+        // folder is on; the current folder itself is not changed, other tests share it.
+        string name = "ivc-cr003-" + Guid.NewGuid().ToString("N");
+        string folder = Path.Combine(Environment.CurrentDirectory, name);
+        Directory.CreateDirectory(folder);
+        UiText previous = UiText.Current;
+        try
+        {
+            File.WriteAllBytes(Path.Combine(folder, "a.png"), [1]);
+            File.WriteAllBytes(Path.Combine(folder, "b.png"), [2]);
+            using LogCapture capture = LogCapture.Start();
+
+            App.ApplyCommandLine([Path.Combine(name, "a.png"), Path.Combine(".", name, "b.png")]);
+            ImagePairSelection? selection = App.TakeStartupSelection();
+
+            Assert.NotNull(selection);
+            Assert.Equal(Path.Combine(folder, "a.png"), selection.BeforePath);
+            Assert.Equal(Path.Combine(folder, "b.png"), selection.AfterPath);
+            Assert.True(Path.IsPathFullyQualified(selection.BeforePath));
+
+            // The folder the dialogs open in is the file's (R-001, R-065), and the log names the
+            // files the pair is read from.
+            Assert.Equal(folder, Path.GetDirectoryName(selection.BeforePath));
+            Assert.Contains(
+                $"the command line names the pair A={Path.Combine(folder, "a.png")} B={Path.Combine(folder, "b.png")}",
+                capture.MessagesOf(Loggers.App));
+        }
+        finally
+        {
+            UiText.Current = previous;
+            App.TakeStartupSelection();
+            App.TakeUnknownLanguage();
+            Directory.Delete(folder, recursive: true);
+        }
     }
 
     [Fact]

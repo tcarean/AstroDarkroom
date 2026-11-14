@@ -105,6 +105,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the main window, whose image area ended on a fraction of a pixel, and on any window of odd
   width or height. At every whole zoom the image is now drawn on whole screen pixels (R-022,
   ADR 0053).
+- A pair named on the command line by relative paths (`ImageVisualCompare.Wpf.exe a.fit b.fit`)
+  is held by its full paths. `Open…`, `Change A…` and `Change B…` then open in the files' folder,
+  where they opened wherever Windows chose, and a switch of display mode reads the same two
+  files again whatever folder an open dialog was last in (R-002).
 
 ### Internal
 

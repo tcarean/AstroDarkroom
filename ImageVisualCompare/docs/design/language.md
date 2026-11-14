@@ -12,7 +12,11 @@
 run without an application. `StartupArguments.Parse` takes `--lang` and its value out (`--lang=ro`, or `--lang ro` with the next argument as the value, the last one
 counting) and leaves the other arguments, in their order, as the candidates for the pair. It
 sets `UiText.Current` to the table of the language before `StartupUri` builds the main window,
-keeps the pair as before (R-002), and keeps a value it did not understand for the main window.
+keeps the pair (R-002), and keeps a value it did not understand for the main window. The pair
+is kept by the two files' full paths, made with `Path.GetFullPath` once the two are known to
+exist: the window reads those paths again at every switch of display mode and takes the folder
+of its dialogs from them, and a name relative to the current folder would mean another file, or
+no folder at all, once an open dialog has moved that folder.
 `MainWindow`'s `Loaded` handler takes that value (`App.TakeUnknownLanguage`) and shows the
 message of R-102 before it opens the pair or asks for one; the message and its title are static
 members of `UiText`, English only, because the interface they announce is English.
