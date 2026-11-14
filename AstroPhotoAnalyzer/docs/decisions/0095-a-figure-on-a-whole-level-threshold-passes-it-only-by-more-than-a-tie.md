@@ -32,7 +32,7 @@ on such a figure is at most 3e-5 levels (255 x 2^-23; the largest measured was 3
 finest real step, one 16-bit level, is 0.0039 levels: the tie sits between the two, so it
 decides the 8-bit ties and nothing else. The rule is used where the review found the ties: the
 plateau's tile (range and mean, `QuantizationAnalyzer.Accept`), the edge regions
-(`EdgeRegion.Flagged`, `Coloured`, `Recommendations.ColourOf`) and the JPEG error
+(`EdgeRegion.Flagged`, both halves of `Coloured`, `Recommendations.ColourOf`) and the JPEG error
 (`ErrorAccumulator.Add`, `JpegRow.Acceptable`). The figures themselves are not rounded.
 
 ## Alternatives rejected
@@ -61,6 +61,7 @@ plateau's tile (range and mean, `QuantizationAnalyzer.Accept`), the edge regions
   `R080_AFlatTileAtExactlySeventyLevelsIsNotCleanSky`,
   `R061_ACornerExactlyThreeLevelsFromTheSkyIsNeverFlaggedWhateverTheSkysLevel`,
   `R061_ASpreadOfExactlyThreeLevelsIsNotAColourWhateverTheSkysLevel`,
+  `R061_ASpreadOfExactlyHalfTheMeanIsNotAColourWhateverTheSkysLevel`,
   `R083_AnErrorExactlyOnAThresholdNeverPassesItWhateverTheLevel`, each on both floats an 8-bit
   level becomes (`SyntheticRasters.EightBitLevels`).
 - A new comparison of a level figure with a whole-level threshold uses the same two helpers.

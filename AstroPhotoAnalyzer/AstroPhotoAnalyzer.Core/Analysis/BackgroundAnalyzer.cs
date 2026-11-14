@@ -100,7 +100,10 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Does the departure have COLOUR (the channels move differently), not just brightness? On
         /// mono the notion does not exist. See Thresholds.CornerColourSpreadRatio. The spread is
-        /// compared with CornerGradientLevels as <see cref="Flagged"/> compares.
+        /// compared with CornerGradientLevels and with its share of the mean departure as
+        /// <see cref="Flagged"/> compares, by more than the tie of ADR 0095: on an 8-bit file a
+        /// region at +10 / +8 / +6 has a spread of exactly half its mean, a colour or not by the
+        /// sky's level until 2026-11-14.
         /// </summary>
         internal bool Coloured
         {
@@ -109,7 +112,7 @@ namespace AstroPhotoAnalyzer
                 if (Deltas.Count < 3) return false;
                 double spread = Deltas.Max() - Deltas.Min();
                 double mean = Deltas.Average(d => Math.Abs(d));
-                return RasterOps.LevelsOver(spread, Thresholds.CornerGradientLevels) && spread > Thresholds.CornerColourSpreadRatio * mean;
+                return RasterOps.LevelsOver(spread, Thresholds.CornerGradientLevels) && RasterOps.LevelsOver(spread, Thresholds.CornerColourSpreadRatio * mean);
             }
         }
     }

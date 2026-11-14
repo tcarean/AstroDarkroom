@@ -82,7 +82,12 @@ for every pixel, so "outside as is" is the Soft proof tab's own count. The edge 
 agree: a pixel the judge rejects although the edge holds its chroma (the table's edge, far
 inside it, or the searched one, since the judge is not monotone) has the edge searched again by
 `ExactEdge` in a band that ends at the pixel's own chroma, and a pixel the judge keeps past the
-edge takes its own chroma as the edge, so the hard fit leaves it. Before this (the code review
+edge takes its own chroma as the edge, so the hard fit leaves it and the soft knees compress it
+from a share of its own chroma. Where the search found no edge at all under such a pixel (the
+judge rejects the grey of its tone), it has no edge and no knee moves it: nothing nearer the
+grey is known to be inside. One case is left as it falls: `JudgeOfPixel` judges the samples
+and `ExactEdge` asks `Judge` on their Lab round trip, so on a rare pixel the two can differ
+about the pixel's own colour; it then stays as it is and is counted in what is left. Before this (the code review
 of 2026-11-13, CR-001) the edge alone decided, and measured 2026-11-14 on the tonal subsamples,
 `Exacta`:
 
@@ -96,7 +101,10 @@ of 2026-11-13, CR-001) the edge alone decided, and measured 2026-11-14 on the to
 After it the judge and the fit agree on every pixel of the four pairs, before and after the
 fit, under the three knees. The whole plate-solved FITS (22.6 MP) fits in 3.9 s on baryta and
 3.7 s on canvas with cold caches, against 3.2 s and 3.3 s before: the judge's word on every
-pixel costs about half a second. On `de_printat.png` through the canvas profile the two agree
+pixel costs about half a second. The share left after `Exacta` on a float source differs by a
+few pixels from run to run (0.0004 to 0.0006 % on the plate-solved FITS that day, 0.0005 to
+0.0008 % before): the edge is cached per 16-bit colour, several float colours share a key, and
+the rows run in parallel, so which of them gives the key its edge is not fixed. On `de_printat.png` through the canvas profile the two agree
 once the grey pixels are counted too (ADR 0094): 2.7695 % outside as is by both, 0.0261 % left,
 all of it tones out of reach (377 pixels, 334 of them grey).
 

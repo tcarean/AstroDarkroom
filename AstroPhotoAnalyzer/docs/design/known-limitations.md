@@ -142,6 +142,11 @@
   0.14 points of the exact per-pixel figure, not equal to it (measured 2026-11-05: the FITS's
   dust on baryta 11.10 % against 10.96 %). `Maxima`
   clips more pixels than the other suggestions (0.18 % against 0.10 % on the reference PNG).
+- A FITS on another scale than 0..1 is refused only when more than half of its samples are
+  over 1 (ADR 0096). One with half or more at or under 1, such as a background-subtracted
+  linear stack on 0..65535 whose sky sits under 1, passes that check, and passes the linear
+  refusal too when its clipped median is over 0.02: it is analysed clipped, with the count in
+  the note. Not met on a real file.
 - A mono image has nothing outside the paper's gamut, in the Editare Curbe figure, in the Soft
   proof tab's red layer and in the Culori pentru hartie tab, though the rule counts the tone too
   (ADR 0081): the same image stored as RGB can show its darkest greys as tones the paper cannot

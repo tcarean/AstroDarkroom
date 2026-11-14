@@ -144,9 +144,10 @@ entry gives. Paths are relative to the project folder.
 | CR-066 | 4 | rare | to measure | Under the two soft variants the chroma mapping jumps where the exact edge takes over | open |
 | CR-067 | 4 | crafted | confirmed | Arguments and paths go into the log as typed | open |
 | CR-068 | 4 | rare | to measure | The noise tile's range of exactly 6000 steps is decided by float rounding | open |
+| CR-069 | 4 | rare | confirmed | Two more level figures of an 8-bit source fall by float rounding: an edge folded into its corner, a JPEG percentile | open |
 
 9 entries of severity 1, 4 of severity 2, 39 of severity 3, 15 of severity 4; 45 confirmed, 14
-to measure, 8 for the owner. (As counted on 2026-11-13; CR-068 was added on 2026-11-14, and the
+to measure, 8 for the owner. (As counted on 2026-11-13; CR-068 and CR-069 were added on 2026-11-14, and the
 Status column says what has been closed since.) After the entries: what the owner may want to
 look at though no rule is broken, then the cleanup list (dead code, duplicates, work done twice).
 
@@ -1234,6 +1235,26 @@ today; each goes wrong the day its constant or its rule moves, and no test would
 - Test: none.
 - Evidence: to measure. Met on 2026-11-14 while CR-003 was fixed; its three places were the
   review's, and this one was left for its own task.
+- Status: open
+
+### CR-069 Two more level figures of an 8-bit source fall by float rounding: an edge folded into its corner, a JPEG percentile
+
+- Where: `Report/Recommendations.cs` (`Colour`, the fold of ADR 0058):
+  `edge.MaxAbsDelta < corner.MaxAbsDelta`; `Analysis/JpegAnalyzer.cs` (`ErrorAccumulator.Add`):
+  `_hist[(int)Math.Min(Bins - 1, e * Scale)]++`.
+- What happens: the family of CR-003, in two places that compare no threshold. On an 8-bit
+  source an edge and the corner beside it that depart from the sky by the same whole level read
+  a hair apart, so the edge is folded into the corner's line or keeps its own by the float's
+  last bit. An error of exactly 2 levels reads 1.9999962 or 2.0000038, so it lands in the
+  histogram's bin 199 or 200 and the 99th and 99.9th percentiles can print 1.99 for 2.00.
+- Case: not built. The first changes how many lines section 3 prints for one glow; the second is
+  a hundredth of a level on a printed percentile.
+- Should: the fold compared with the tie of ADR 0095; the bin taken from the error rounded to
+  the tie.
+- Test: none.
+- Evidence: confirmed by reading. Found by the review of the branch that fixed CR-001 to CR-005
+  (2026-11-14), which also found the same tie in the second half of `EdgeRegion.Coloured`; that
+  one was fixed on the branch, with CR-003.
 - Status: open
 
 ## For the owner's look

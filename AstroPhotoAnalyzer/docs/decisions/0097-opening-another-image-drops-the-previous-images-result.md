@@ -15,7 +15,7 @@ takes, and chose the first.
 
 ## Decision
 
-Opening a path other than the one on screen, while no run lasts, drops the previous image's
+Opening a path other than the one the result on screen was measured on, while no run lasts, drops the previous image's
 result before the fields are checked: the result is forgotten, the tabs are emptied, the soft
 proof's comparison ends as it does after another image's failed run (R-166), and nothing can be
 saved. The new path stays chosen; a bad field then shows its message on the error card, and
@@ -40,4 +40,5 @@ result until the run replaces it, as before.
 - `SoftProofTabViewModel.EndComparison` is called for an image that was only chosen too, and
   its log line says which case it was.
 - Guards: `R111_OpeningAnotherImageWhileAFieldIsWrongDropsThePreviousResult`,
+  `R111_AResultIsDroppedForAnotherImageThanItsOwnWhateverTheBarReads`,
   `R111_OpeningTheSameImageAgainWhileAFieldIsWrongKeepsItsResult`.

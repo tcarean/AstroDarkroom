@@ -328,12 +328,13 @@ namespace AstroPhotoAnalyzer
         /// hue (R-175). On a table with a judge the first is the judge's word on the pixel's own
         /// colour (<see cref="GamutFitTable.JudgeOfPixel"/>, or <see cref="GamutFitTable.Judge"/>
         /// on its Lab), never the table's: the judge is a step function of the 8-bit colour, and
-        /// measured 2026-11-14 it rejected 60 to 1039 pixels of a tonal subsample that the edge
+        /// measured 2026-11-14 it rejected 60 to 791 pixels of a tonal subsample that the edge
         /// kept, and kept 33 to 350 that the edge cut (ADR 0093). The second is
         /// <see cref="Edge"/>'s, made to agree with the judge: searched again under the pixel's
         /// own chroma when the judge rejects a pixel that edge keeps, and the pixel's own chroma
-        /// when the judge keeps a pixel past it. On a table without a judge the table decides
-        /// both.
+        /// when the judge keeps a pixel past it, or no edge at all (positive infinity) when it
+        /// keeps a pixel at a tone whose grey it rejects, so that no knee moves that pixel
+        /// toward the grey. On a table without a judge the table decides both.
         /// </summary>
         /// <param name="t">The table.</param>
         /// <param name="l">The pixel's L*.</param>
@@ -346,7 +347,8 @@ namespace AstroPhotoAnalyzer
         /// <returns>
         /// Whether the pixel is outside, and the largest chroma: under the pixel's own when it is
         /// outside and a chroma can bring it in, -1 when it is outside and its tone is out of
-        /// reach, at least the pixel's own when it is not outside.
+        /// reach, at least the pixel's own when it is not outside (positive infinity where the
+        /// search found no edge under a pixel the judge keeps).
         /// </returns>
         static (bool Outside, double Cmax) Decide(GamutFitTable t, double l, double a, double b, double c, float r, float g, float bl)
         {
@@ -357,7 +359,10 @@ namespace AstroPhotoAnalyzer
                 // The band searched ends at the pixel's own chroma, which the judge rejects.
                 cmax = ExactEdge(t.Judge, l, a / c, b / c, c - Thresholds.GamutFitEdgeMargin);
             else if (!outside && c > cmax)
-                cmax = c;
+                // Its own chroma is held, so the edge is there at least. Where the search found
+                // no edge at all (the judge rejects the grey of this tone), no chroma nearer the
+                // grey is known to be inside either: no edge, so that no knee moves the pixel.
+                cmax = cmax < 0 ? double.PositiveInfinity : c;
             return (outside, cmax);
         }
 

@@ -197,8 +197,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Chooses the image and starts the analysis: without it the window has nothing to show.
-        /// Another image than the one whose result is on screen drops that result first (R-111,
-        /// ADR 0097): the run that follows checks the fields before it clears anything, so a bad
+        /// Another image than the one the result on screen was measured on drops that result
+        /// first (R-111, ADR 0097): the run that follows checks the fields before it clears anything, so a bad
         /// field would otherwise leave the old image's tabs under the new image's path, and its
         /// report to be saved beside the new image. The same image opened again keeps its result
         /// until the run replaces it. While a run lasts nothing is dropped (there is no result
@@ -211,7 +211,9 @@ namespace AstroPhotoAnalyzer.Wpf
         internal Task OpenAsync(string path)
         {
             string chosen = path ?? "";
-            if (!IsBusy && _result != null && !string.Equals(chosen, _path, StringComparison.OrdinalIgnoreCase))
+            // Against the result's own image, not the bar: after a second image was chosen during
+            // a run (CR-009, open) the bar reads another path than the result's.
+            if (!IsBusy && _result != null && !string.Equals(chosen, _result.Path, StringComparison.OrdinalIgnoreCase))
                 DropResult(chosen);
             Path = chosen;
             return HasPath ? RunAsync() : Task.CompletedTask;

@@ -221,6 +221,36 @@ public class GamutFitTests
         for (int p = 0; p < 3; p++) Assert.Equal(r.Planes[p], saved.Planes[p]);
     }
 
+    /// <summary>
+    /// The review of the branch (2026-11-14): a pixel the judge keeps at a tone whose grey it
+    /// rejects has no edge under it (the search answers -1), so no chroma nearer the grey is
+    /// known to be inside. The soft knees took its own chroma as the edge and pulled it toward
+    /// that grey: inside before, moved for nothing.
+    /// </summary>
+    [Fact]
+    public void R175_APixelTheJudgeKeepsOverAGreyItRejectsIsLeftByEveryVariant()
+    {
+        // Under L* 8 this judge rejects the grey and every chroma under 3, and keeps the rest.
+        static bool Judge(double l, double a, double b)
+        {
+            double c = Math.Sqrt(a * a + b * b);
+            return l < 8 ? c < 3 : c > Cmax(l);
+        }
+        GamutFitTable t = GamutFitTable.Build(FakeRule);
+        t.Judge = Judge;
+        Raster r = RasterOf((5, 10, 0), (50, 4, 3));
+
+        foreach (double knee in GamutFitRun.Knees)
+        {
+            GamutFitOutcome o = GamutFit.Apply(r, t, knee, keepFacts: true);
+
+            Assert.Equal(new[] { false, false }, o.OutsideBefore);
+            Assert.Equal(new[] { false, false }, o.OutsideAfter);
+            Assert.Equal(0, o.PctTouched);
+            for (int p = 0; p < 3; p++) Assert.Equal(r.Planes[p], o.Image.Planes[p]);
+        }
+    }
+
     [Fact]
     public void R176_TheThreeVariantsTouchMoreAsTheKneeComesDownAndTheEvidenceSaysHowMuch()
     {

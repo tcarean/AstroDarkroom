@@ -306,4 +306,29 @@ public class BackgroundAnalyzerTests
                 Assert.True(!corner.Coloured, $"a spread of exactly 3 levels over a sky at {sky} was called a colour");
             }
     }
+
+    /// <summary>
+    /// The review of the branch (2026-11-14): the second half of the colour rule, the spread
+    /// against half the mean departure, had the tie of CR-003 too. A corner at +10 / +8 / +6 has
+    /// a spread of 4 and a mean of 8, so the spread is exactly half the mean: not over it, at
+    /// every sky level.
+    /// </summary>
+    [Fact]
+    public void R061_ASpreadOfExactlyHalfTheMeanIsNotAColourWhateverTheSkysLevel()
+    {
+        foreach (Func<int, float> level in SyntheticRasters.EightBitLevels)
+            for (int sky = 10; sky <= 60; sky++)
+            {
+                Raster r = SyntheticRasters.From(200, 200, 3, (x, y, p) => y < 30 && x < 40 ? level(sky + (p == 0 ? 10 : p == 1 ? 8 : 6)) : level(sky));
+                EdgeRegion corner = Assert.Single(BackgroundAnalyzer.Analyze(r).FlaggedRegions);
+                Assert.True(!corner.Coloured, $"a spread of exactly half the mean over a sky at {sky} was called a colour");
+            }
+        // A level more of spread is a colour at every level.
+        foreach (Func<int, float> level in SyntheticRasters.EightBitLevels)
+            for (int sky = 10; sky <= 60; sky += 10)
+            {
+                Raster r = SyntheticRasters.From(200, 200, 3, (x, y, p) => y < 30 && x < 40 ? level(sky + (p == 0 ? 11 : p == 1 ? 8 : 6)) : level(sky));
+                Assert.True(Assert.Single(BackgroundAnalyzer.Analyze(r).FlaggedRegions).Coloured);
+            }
+    }
 }

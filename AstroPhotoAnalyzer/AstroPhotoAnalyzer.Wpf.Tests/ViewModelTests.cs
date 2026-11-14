@@ -376,6 +376,35 @@ public class ViewModelTests
     }
 
     /// <summary>
+    /// The review of the branch (2026-11-14): the result is dropped for another image than the
+    /// one it was measured on, whatever the bar reads. A second image chosen while a run lasts
+    /// leaves the first image's result under the second's path (CR-009 of the code review of
+    /// 2026-11-13, still open); opening that second image again with a bad field must drop it.
+    /// </summary>
+    [Fact]
+    public async Task R111_AResultIsDroppedForAnotherImageThanItsOwnWhateverTheBarReads()
+    {
+        using var ws = new TempWorkspace();
+        Raster r = Scenes.CleanSky();
+        byte[] bytes = TiffTestData.Build16Rgb(r.W, r.H, (x, y, c) => RasterOps.Level16(r.At(c, y, x)), IccTestData.V4("sRGB IEC61966-2.1"));
+        string a = ws.WriteFile("a.tif", bytes), b = ws.WriteFile("b.tif", bytes);
+        var vm = new MainViewModel();
+        Task first = vm.OpenAsync(a);
+        Assert.True(vm.IsBusy);
+        await vm.OpenAsync(b);          // during A's run: the path changes, nothing runs
+        await first;
+        Assert.True(vm.HasResult, vm.Error);
+        Assert.Equal(b, vm.Path);       // A's result under B's path
+
+        vm.Parameters.Distance = "1,5";
+        await vm.OpenAsync(b);
+
+        Assert.True(vm.HasError);
+        Assert.False(vm.HasResult);
+        Assert.Empty(vm.Report.Sections);
+    }
+
+    /// <summary>
     /// R-111: the same image opened again with a bad field keeps its result, which is still that
     /// image's; only another image drops it.
     /// </summary>

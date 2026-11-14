@@ -99,8 +99,9 @@ namespace AstroPhotoAnalyzer
         /// Reads the image, takes the WCS of <see cref="Parameters.WcsPath"/> when one is given,
         /// and runs the chain on it
         /// (<see cref="Execute(Raster, string, Parameters, IProgress{string})"/>). A file that
-        /// cannot be read, a borrowed WCS that does not fit (<see cref="BorrowWcs"/>) and a linear
-        /// image (<see cref="RefusedImageException"/>) throw. The run's start line is written
+        /// cannot be read, a borrowed WCS that does not fit (<see cref="BorrowWcs"/>), a linear
+        /// image and a FITS whose values are not on a 0 to 1 scale, which its reader refuses
+        /// (both <see cref="RefusedImageException"/>), throw. The run's start line is written
         /// before the read, so a file that does not load still leaves it, with the stages reached
         /// (R-171).
         /// </summary>
