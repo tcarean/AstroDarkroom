@@ -440,7 +440,6 @@ namespace FlatCheck
                  + "aici e singurul loc unde se vede o sursa mai slaba vazuta din unghi (plus) sau una care umple colturile (minus).\n"
                  + "Profilul descrie modelul obiectivului, nu exemplarul tau, si nu tine cont de culoare; masterul e luat ca medie a celor patru culori ale senzorului.");
 
-        /// <summary>Why it could not compare, in words.</summary>
         /// <summary>
         /// "Give --lens &lt;text&gt; with --focal &lt;mm&gt; and --fstop &lt;f&gt;" - what the console
         /// needs once the raw has said nothing: the lens by name, and whichever of the focal
@@ -458,6 +457,9 @@ namespace FlatCheck
             return T("Give --lens <text>", "Da --lens <text>") + with;
         }
 
+        /// <summary>Why it could not compare, in words: one sentence per
+        /// <see cref="ComparisonGap"/>, saying what happened (a raw that was read is never
+        /// called missing, R-106) and what to give.</summary>
         /// <param name="o">The run, with a comparison that was not made.</param>
         /// <returns>The reason, with the option that fixes it; "" for None.</returns>
         internal static string GapText(StructureOutcome o)

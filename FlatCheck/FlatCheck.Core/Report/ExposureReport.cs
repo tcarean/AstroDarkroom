@@ -177,7 +177,8 @@ namespace FlatCheck
         /// indented; the window (<see cref="Advice"/>) puts the head on a line and the rest in one
         /// paragraph. The correction is in stops toward the bands' target, so it comes from the
         /// scale the verdict was given on; a panel flat that is too high by a burnt centre
-        /// alone, at or near the target, gets the sentence without a figure (R-043).
+        /// alone, at, below or just above the target, gets the sentence without a figure
+        /// (R-043).
         /// </summary>
         /// <param name="r">The result of a raw flat.</param>
         /// <returns>The verdict's head and the lines that follow it (none on a panel

@@ -440,6 +440,8 @@ public class MainViewModelTests
     /// <summary>
     /// CR-016, R-110: a task the window starts without awaiting it (an opening) leaves one
     /// Error line with the exception and its stack when it faults; a cancelled one leaves none.
+    /// This reads the helper, <see cref="Detached.Watch"/>; that MainWindow passes its three
+    /// tasks to it is not pinned by a test.
     /// </summary>
     [Fact]
     public async Task R110_ATaskTheWindowDoesNotAwaitLeavesAnErrorLineWhenItFaults()

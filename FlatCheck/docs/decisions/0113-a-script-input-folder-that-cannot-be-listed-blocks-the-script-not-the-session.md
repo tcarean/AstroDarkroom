@@ -59,7 +59,9 @@ The owner's choice of 2026-11-14, between opening the session and keeping the ca
 - R-080 holds the behaviour; `R080_AnUnlistableInputFolderBlocksTheCardsButtonAndIsNamed` in
   `MainViewModelTests.cs` and two `R080_...` tests in `SplitTabTests.cs` deny a folder to the
   user and read the blocker and the log;
-  `R110_ATaskTheWindowDoesNotAwaitLeavesAnErrorLineWhenItFaults` holds the last point.
+  `R110_ATaskTheWindowDoesNotAwaitLeavesAnErrorLineWhenItFaults` holds the last point for the
+  helper, `Detached.Watch`; that `MainWindow` passes its three tasks to it is read in the code,
+  not pinned by a test.
 - The text says "open the session folder again" because nothing re-checks a blocked choice by
   itself: the button is disabled while the blocker stands. The older "missing or empty" text
   still says "press again"; the review's CR-037 lists such texts.

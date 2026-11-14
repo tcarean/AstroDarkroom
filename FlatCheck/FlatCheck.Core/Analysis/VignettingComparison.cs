@@ -88,11 +88,13 @@ namespace FlatCheck
         /// with.</summary>
         NoVignettingProfile,
         /// <summary>
-        /// The focal length is not known (neither FOCALLEN, nor a raw, nor --focal).
+        /// The focal length is not known: no FOCALLEN, no --focal, and no raw gives it (there
+        /// was none, it could not be read, or it was read and carries none).
         /// </summary>
         NoFocal,
         /// <summary>
-        /// The aperture is not known: Siril does not write it, and there was no raw or --fstop.
+        /// The aperture is not known: Siril does not write it, there was no --fstop, and no raw
+        /// gives it (there was none, it could not be read, or it was read and carries none).
         /// </summary>
         NoFStop,
         /// <summary>Only lensfun profiles, and the camera's crop is not known.</summary>

@@ -41,6 +41,31 @@ run: the cases follow from the lines.
 Goldens: no golden holds any text that changes (searched `FlatCheck.Tests/Golden/`). The one
 gap text a golden prints, the aperture gap without a raw, stays letter for letter.
 
+Corrected after the approval, on the same day (the plan below is the one the owner saw):
+
+- CR-017: the case left "to measure" was shown by a test with an Adobe file made for JPEGs;
+  the same lens found by the raw's own lens name gave the old "the raw's lens matches nothing",
+  and gets the new reason too.
+- CR-019: the example camera of the crop reason, "Canon EOS 40D", is in the lensfun database,
+  so that sentence cannot be printed for it; the requirement names "Canon EOS Kiss X10".
+- `/validate` on the real masters: 36 of 36 files present, 44 of 44 passed (the 36 cases
+  within their tolerances and the 8 raw samples).
+
+The review of the branch (a subagent, read-only, 2026-11-14) found no defect of behaviour and
+seven notes; five applied in one commit: R-080 and the CHANGELOG said a session opens for any
+unlistable script folder, where `flats/` beside a master still gives the card; the example
+camera above; the R-110 test reads the helper, not the window's use of it, and now says so;
+`GapText` had no summary and the two gaps' descriptions still said "no raw"; "at or near the
+target" left out "below". Left open, and written under CR-017 in the list: `--source` narrows
+the search the "no lens in the list matches" sentence speaks of, and an Adobe file that could
+not be read gets the "no vignetting profile" reason.
+
+A second review, of that commit alone, found that it had also taken `flatcheck.png`, the map
+the by-hand console run below had written into the project folder: the commit was made again
+without it, before the branch went anywhere. It also found a reason in a test comment that
+held for one of the three tasks only, a line of 153 characters and the count above worded as
+"44 cases"; all corrected in the same commit.
+
 ## The owner's two choices
 
 1. **CR-016, a session with a master and an unlistable script input folder:** the session

@@ -511,7 +511,12 @@ twice.
   JPEGs (R-134): the report said "no lens matches the text given", and the same lens found by
   the raw's own name said the raw's lens matched nothing. `R017_ALensTextThatMatchesNothing...`
   and `R017_ALensFoundWithoutAVignettingProfile...` in `StructureReportTests`. The new sentence
-  points at `--lenses`, not at `--lenses <text>`, the form CR-023 lists.
+  points at `--lenses`, not at `--lenses <text>`, the form CR-023 lists. Left open, from the
+  branch's review: with `--source adobe|lensfun` the search is narrowed to that source, and a
+  text that matches only a lens of the other source still reads "no lens in the list matches",
+  though `--lenses` alone shows that lens (the wording is the owner's to choose); and a lens
+  whose Adobe file could not be read at all gets the "distortion or colour only, or made for
+  JPEGs" reason, as `SyntheticReport.NoProfile` already gave it.
 
 ### CR-018 The "focal length / aperture not known" texts say "no raw" when a raw was read
 
