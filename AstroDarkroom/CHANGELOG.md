@@ -107,6 +107,12 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 ### Fixed
 
+- The main window fits the screen it opens on (R-020, ADR 0028; CR-005): it is no taller than
+  that screen's work area, its rows scroll between the top bar and the bottom bar when they need
+  more room, with the mouse wheel or by moving through the buttons with Tab, and the cards keep
+  their width beside the scroll bar. At 848 units it was taller than the screen of a 1080p
+  laptop at 125 % or 150 % scaling, where the language selector, the About button and, at
+  150 %, the last tool were off the screen.
 - In a suite taken out of a downloaded zip, Windows no longer asks again at the first start of
   each tool: after its question for `AstroDarkroom.exe`, the launcher starts the tools directly,
   not through the shell (R-003, ADR 0027; CR-003).

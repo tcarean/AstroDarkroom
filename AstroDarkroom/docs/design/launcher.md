@@ -106,8 +106,9 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
 - `WindowFit.Top(top, height, areaTop, areaHeight)` keeps a window inside a work area (R-016,
   ADR 0013): its own top when it fits, the area's top or the top that puts its bottom on the
   area's when it runs past one edge, the area's top when it is as tall as the area or taller.
-  Plain numbers in device-independent pixels; the window brings the area. It is a guard: WPF
-  places "Despre" there already (below).
+  Plain numbers in device-independent pixels; the window brings the area. For "Despre" it is a
+  guard: WPF places that window there already (below). The main window needs it: capped to its
+  screen after WPF centred it at its full height, it starts above the area (R-020).
 
 ## The window
 
@@ -158,6 +159,28 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   (`ToolTipService.ShowOnDisabled`), since the reason is the one thing a disabled row must
   tell. The window does not watch the folder: a file that appears or goes away is seen at the
   next relabel, or at the click, where a missing file becomes a message box instead of a crash.
+- `MainWindow` fits its screen (R-020, ADR 0028). Its content is a grid of three rows: the top
+  bar and the bottom bar in rows of their own height, and between them, in the star row, a
+  `ScrollViewer` named `RowsScroll` around the rows' `ItemsControl`; with the window sized to
+  its content the star row is as tall as the rows, so on a screen where everything fits nothing
+  changes. On `SourceInitialized`, when the window has its handle and WPF has sized and placed
+  it, `FitInto` takes the work area of its screen from `ScreenArea.WorkAreaOf`, sets `MaxHeight`
+  to the area's height, which resizes the window at once when its content is taller, and passes
+  `Top` through `WindowFit.Top`: WPF centred the window by the height its content asked for, so
+  a capped one starts above the area. Not on `Loaded`: for a window sized to its content WPF
+  raises `Loaded` before `SourceInitialized`, during the first layout, and then puts its own
+  place back over a `Top` set there (measured on 2026-11-14 on .NET 8). The fit is made once: a
+  window dragged to a lower screen keeps its height. `RowsScroll` has a transparent background,
+  so the wheel scrolls it over the margins and the gaps between the cards, and takes no focus:
+  Tab goes from button to button, and WPF brings the focused button's row into view. Its
+  template is its own, written in `MainWindow.xaml`: the content fills the viewer and the scroll
+  bar is drawn over it at the right, inside the rows' 20 px margin (the bar is 17 px wide, the
+  cards end 3 px before it), where the default template puts the bar beside the content and
+  takes its width from the cards; so the description column stays 416 px and every description
+  keeps its two lines when the bar shows (at 399 px the Romanian description of DarksCheck took
+  three at 125 %). The line of the log about the window (`LogShown`) is written on
+  `ContentRendered`, when the scroll range is known, with the capped size, the area and whether
+  the rows scroll.
 - The selector is two `RadioButton`s in the `LanguageChoice` style of `App.xaml` (the buttons'
   look, the checked one on the accent border), `English` and `Romana`, each with its language
   in its `Tag`. Each button's content is a horizontal panel: its flag, an `Image` in the `Flag`
