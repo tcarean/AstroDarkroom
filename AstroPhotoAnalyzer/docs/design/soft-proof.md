@@ -160,8 +160,10 @@ so it drops the side but keeps the file; `Populate` forgets the file when the re
 another path; `Prepare` proofs the kept file again from the new set, and `Show` ends the
 comparison with the core's reason, forgetting the file, when it is then refused. `StopCompare`
 forgets it at the user's word, only while nothing is computed, so that a render in flight
-cannot bring the other side back. `EndComparison(failedPath)` forgets it for `MainViewModel`,
-which calls it when an analysis fails: the tab is only cleared then, never populated, and
+cannot bring the other side back. `EndComparison(otherImagePath, analysed)` forgets it for `MainViewModel`,
+which calls it when an analysis fails, and when another image is chosen over a result, whose
+run a bad field may stop before it begins (`DropResult`, ADR 0097; the second argument is for
+the log line): the tab is only cleared then, never populated, and
 without the call the first image opened again would bring the comparison back. It forgets
 nothing when the image that failed is the one the file was chosen for, so that a run of the
 same image that fails (its file held by another program for a moment) costs no comparison.

@@ -33,7 +33,9 @@ Invariants that the structure enforces:
 ### The chain (`Runs/AnalysisRun.cs`)
 
 ```
-ImageLoader.Load(path)            -> Raster (+ SourceInfo, with the FITS's WCS)
+ImageLoader.Load(path)            -> Raster (+ SourceInfo, with the FITS's WCS);
+                                     RefusedImageException from FitsReader for a FITS with
+                                     over OffScaleShare of its samples above 1 (ADR 0096)
 AnalysisRun.BorrowWcs             -> SourceInfo.Wcs replaced by another FITS's (Parameters.WcsPath, R-027)
 RasterOps.LooksLinear             -> RefusedImageException if median < LinearMedianMax
 FileFacts.Of                      -> FileFactsResult

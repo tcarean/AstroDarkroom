@@ -109,7 +109,8 @@ an `Error` printed as `ERROR: ...` (`EROARE: ...` with `--lang ro`). Every run p
 1-2, including `--help` and failures; `--help` ends with the GPLv3 warranty lines.
 
 Exit codes: **0** no recommendation above Ok, **1** error (bad argument, invalid
-parameter combination, missing file, a folder, unreadable format, refused linear image,
+parameter combination, missing file, a folder, unreadable format, refused linear image, a
+FITS whose values are not on a 0 to 1 scale (R-013),
 cannot write `-o`), **2** at least one Attention, **3** at least one Problem. `-o` writes `WriteFull` through
 `ReportWriter.SaveFull` (whole or not at all, `recommendations-and-report.md`) and prints
 `    -> report saved: <file>` (`    -> raport salvat: <file>` with `--lang ro`). `--lang` and its
@@ -119,7 +120,7 @@ value are read first and stripped before the options are parsed (`language.md`).
 log call guarded; `AnalyzerCli.Run` configures nothing, so the tests and the golden tests call
 it in-process with the capture of the test assembly. Its lines go to the log only, never to
 stdout or stderr: the mode, each refusal as stderr shows it (through `Refuse`, the linear image
-included), a failure with its exception, the report written (`logging.md`).
+and the FITS off the 0 to 1 scale included), a failure with its exception, the report written (`logging.md`).
 
 ## Golden scenes
 
