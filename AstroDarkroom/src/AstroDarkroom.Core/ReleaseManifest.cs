@@ -115,8 +115,9 @@ public static class ReleaseManifest
     /// <param name="name">The property name.</param>
     /// <returns>Its text, or "" when it is missing or not a string.</returns>
     /// <exception cref="JsonException">
-    /// The string cannot be decoded: the parser accepts a <c>\u</c> escape that is half of a
-    /// surrogate pair, and the read of the string then refuses it. Thrown as the exception of a
+    /// The string, or a key met while looking the property up, cannot be decoded: the parser
+    /// accepts a <c>\u</c> escape that is half of a surrogate pair, and the read of the string,
+    /// or the lookup that has to decode the key, then refuses it. Thrown as the exception of a
     /// file that is not JSON, so both readers give nothing for such a file (R-004, R-007).
     /// </exception>
     internal static string Text(JsonElement element, string name)
@@ -138,8 +139,9 @@ public static class ReleaseManifest
 
     /// <summary>
     /// Looks a property up, the one lookup of this file. The lookup compares the name with the
-    /// object's keys, and decodes a key that holds an escape to do so: a key with a <c>\u</c>
-    /// escape that is half of a surrogate pair makes it throw, whichever name is looked for.
+    /// object's keys, and decodes a key that holds an escape when it has to, to do so: a key with
+    /// a <c>\u</c> escape that is half of a surrogate pair can then make it throw, for another
+    /// name than its own too.
     /// </summary>
     /// <param name="element">The object to look in; a JSON object.</param>
     /// <param name="name">The property name.</param>

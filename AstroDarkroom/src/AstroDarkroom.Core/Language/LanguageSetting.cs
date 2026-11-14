@@ -43,8 +43,8 @@ public static class LanguageSetting
     /// <param name="path">The file's full path; it need not exist.</param>
     /// <returns>
     /// The language of the file's <c>language</c> code; null when the file is missing, not
-    /// readable, not a JSON object, without the key, or with a value that is not a known code or
-    /// cannot be decoded.
+    /// readable, not a JSON object, without the key, with a value that is not a known code, or
+    /// with a value or a key the read has to decode and cannot.
     /// </returns>
     public static UiLanguage? TryRead(string path)
     {

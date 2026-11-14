@@ -70,8 +70,11 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   read leaves one line in the diagnostic log, the versions or why there are none. A file it
   cannot read includes one whose string cannot be decoded: `JsonDocument.Parse` accepts a `\u`
   escape that is half of a surrogate pair, and then `GetString()` throws
-  `InvalidOperationException` for such a value, and so does `TryGetProperty` for such a key,
-  whichever name it looks for, since it decodes the keys it compares. Every lookup goes through
+  `InvalidOperationException` for such a value, and so does `TryGetProperty` for such a key
+  when it has to decode it to compare it, which it does for another name than the key's own too
+  (measured on .NET 8: only when the name looked for is shorter than the key as written and
+  begins as the key does before its escape; a key the lookup never decodes, or one in an object
+  nobody looks into, is not seen, and the file is read as if it were sound). Every lookup goes through
   `ReleaseManifest.Find`, which with `ReleaseManifest.Text` turns it into the `JsonException` both
   readers catch, so the language setting gives no language for such a file either.
   `ReleaseInfo.Find(name)` is the lookup the rows use, by `SuiteApp.Folder`.

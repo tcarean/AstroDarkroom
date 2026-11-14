@@ -64,7 +64,8 @@ stand-in executable marked as downloaded, which ran with `--lang=ro` and `--lang
 suite folder. A tool that one day needs elevation could not be started this way (Windows refuses
 a direct start of such a file with error 740); none does. A direct start also lets the tool
 inherit the launcher's inheritable handles, which a shell start did not (.NET 8 asks Windows for
-it at every direct start): a launcher started by a double click has none, but one started with
+it at every direct start): a launcher started by a double click has none as far as a reading
+shows (.NET opens its files and pipes as not inheritable; not measured), but one started with
 its output redirected to a file or a pipe keeps that file or pipe open in every tool it starts,
 until the tool closes. The suite's wiki still says Windows
 may ask "the first time you start them"; it is the owner's to reword.

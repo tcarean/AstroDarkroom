@@ -175,11 +175,14 @@ public class LauncherTests
     [InlineData("""{"components":[{"name":"FlatCheck","version":"\ud83d"}]}""")]
     [InlineData("""{"name":"\ud83d","components":[]}""")]
     // In a key, where the lookup of another key meets it: of "components", of the suite's
-    // "name", of a component's "name" and of a component's flag.
+    // "name", of a component's "name" and of each of a component's two flags. A lookup decodes
+    // a key only when the name looked for is shorter than the key as written and begins as the
+    // key does before its escape, so each row's key is one its lookup has to decode.
     [InlineData("""{"components":[],"\ud83d-note":1}""")]
     [InlineData("""{"components":[],"\ud83d":1}""")]
     [InlineData("""{"components":[{"name":"FlatCheck","\ud83dxyz":"1"}]}""")]
-    [InlineData("""{"components":[{"name":"FlatCheck","version":"1.0.0","commit":"c","\ud83d-unreleased":true}]}""")]
+    [InlineData("""{"components":[{"name":"FlatCheck","version":"1.0.0","commit":"c","unrel\ud83d":true}]}""")]
+    [InlineData("""{"components":[{"name":"FlatCheck","version":"1.0.0","commit":"c","cl\ud83d":true}]}""")]
     public void R004_AStringThatCannotBeDecoded_LeavesTheVersionsUnknown(string json)
     {
         using TempWorkspace ws = new();
