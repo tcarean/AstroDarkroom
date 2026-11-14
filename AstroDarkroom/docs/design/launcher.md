@@ -57,7 +57,10 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   shared desktop runtime, `lensfun/`, `LICENSE`) where it expects them, and the arguments as one
   string, `--lang=` plus the code of `Ui.Current`, the one-token form every component's window
   accepts (a string rather than a list keeps the record's value equality). An unavailable app
-  throws `InvalidOperationException` with the reason; the core never calls `Process.Start`.
+  throws `InvalidOperationException` with the reason. `Launcher.StartInfo(plan)` turns the plan
+  into the `ProcessStartInfo` the window starts: the same file, folder and arguments, with
+  `UseShellExecute` false, a direct start (R-003, ADR 0027); the core never calls
+  `Process.Start`.
 - `ReleaseManifest.TryRead(path)` parses the file `scripts/release.ps1` writes
   (`name`, `version`, `date`, `commit`, `components[]` with `name`, `version`, `commit`,
   `unreleased`, `clean`) with `System.Text.Json` and no model binding: every key is read with
@@ -165,8 +168,11 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   (ADR 0007). The constructor checks the current one, which fires `LanguageChecked` for a
   language equal to `Ui.Default` and so changes nothing; a click sets `Ui.Default`, writes the
   setting and calls `Relabel()`, so every text and every row changes at once.
-- `OpenApp` asks `Launcher.Plan` and calls `Process.Start` with `UseShellExecute`, the plan's
-  working directory and its arguments string, disposing the returned handle at
+- `OpenApp` asks `Launcher.Plan` and calls `Process.Start` with `Launcher.StartInfo(plan)`, a
+  direct start and not one through the shell: the shell applies Windows' check of downloaded
+  files to each executable that carries the mark of the web, so every tool of a downloaded zip
+  would ask again at its first start, after the user had accepted the launcher (ADR 0027). It
+  disposes the returned handle at
   once (the started app is not affected). `Win32Exception` (Windows refused the start) and
   `InvalidOperationException` (the file went away) end in a message box with the row's title.
   The start asked for and its outcome go to the diagnostic log; the started process's id is
@@ -177,7 +183,8 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   `Relabel()` fills from `VcRuntime.Warning`, then a `Hyperlink` in `AccentBr` whose `Run` shows
   `VcRuntime.DownloadUrl` and whose `NavigateUri` the constructor sets to it (the inlines touch
   in the XAML, so no space slips in before the link). `OpenRuntimeLink` starts the URI's
-  `OriginalString` through the shell, as `OpenApp` starts an app, and logs it; a
+  `OriginalString` through the shell, which a web address needs (the tools are started
+  directly), and logs it; a
   `Win32Exception` or `InvalidOperationException` ends in a message box with the address and an
   Error line. `RecheckRuntime`, on each `Activated` while the list holds a file, asks
   `NativeProbe.MissingRuntime()` again: an answer that differs from the list replaces it, goes

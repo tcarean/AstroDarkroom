@@ -107,6 +107,9 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 ### Fixed
 
+- In a suite taken out of a downloaded zip, Windows no longer asks again at the first start of
+  each tool: after its question for `AstroDarkroom.exe`, the launcher starts the tools directly,
+  not through the shell (R-003, ADR 0027; CR-003).
 - A `release.json` or a `settings.json` whose text holds a `\u` escape that is half of a
   surrogate pair (a hand edit, a cut emoji escape) no longer stops the launcher at start: the
   file gives nothing, as any other file that cannot be read, and the log says so at `WARN`

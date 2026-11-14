@@ -102,6 +102,26 @@ public class LauncherTests
         Assert.Equal("Lipseste AstroPhotoAnalyzer.Wpf.exe", ex.Message);
     }
 
+    /// <summary>
+    /// CR-003: a start through the shell makes Windows ask again, for each tool, the question it
+    /// asks of a downloaded program; the launcher's own start has answered it, so the tools are
+    /// started directly, with the plan's file, folder and arguments.
+    /// </summary>
+    [Fact]
+    public void R003_TheStartIsDirect_NotThroughTheShell()
+    {
+        using TempWorkspace ws = new();
+        string exe = ws.Touch("FlatCheck.Wpf.exe");
+        LaunchPlan plan = Launcher.Plan(App("FlatCheck"), new SuiteFolder(ws.Root));
+
+        System.Diagnostics.ProcessStartInfo info = Launcher.StartInfo(plan);
+        Assert.False(info.UseShellExecute);
+        Assert.Equal(exe, info.FileName);
+        Assert.Equal(ws.Root, info.WorkingDirectory);
+        Assert.Equal("--lang=ro", info.Arguments);
+        Assert.Empty(info.Verb);
+    }
+
     [Fact]
     public void R004_ReleaseJson_GivesTheSuiteVersionAndEachComponent()
     {

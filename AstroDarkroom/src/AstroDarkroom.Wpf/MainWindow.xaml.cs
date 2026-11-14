@@ -150,7 +150,7 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Starts the app of the clicked row, from the suite folder, in the launcher's language,
-    /// through the shell (R-003, R-008). A start that fails (the file went away since the
+    /// directly, not through the shell (R-003, R-008, ADR 0027). A start that fails (the file went away since the
     /// window opened, or Windows refused it) is told in a message box; the launcher stays open.
     /// The diagnostic log has the start asked for and its outcome: the process's id, or the
     /// exception (R-012).
@@ -169,12 +169,7 @@ public partial class MainWindow : Window
             LaunchPlan plan = Launcher.Plan(row.App, _folder);
             Log.Info(LogText.Open(row.App, plan));
             // The Process object is only a handle to the started app; disposing it does not touch the app.
-            using Process? started = Process.Start(new ProcessStartInfo(plan.FileName)
-            {
-                UseShellExecute = true,
-                WorkingDirectory = plan.WorkingDirectory,
-                Arguments = plan.Arguments,
-            });
+            using Process? started = Process.Start(Launcher.StartInfo(plan));
             Log.Info("started " + row.App.WindowExe + (started is null ? "; Windows gave no process back" : ", process " + IdOf(started)));
         }
         catch (InvalidOperationException ex)
