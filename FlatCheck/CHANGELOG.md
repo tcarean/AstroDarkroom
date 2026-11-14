@@ -237,6 +237,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- `--expo` and the Exposure tab no longer print `Lower the exposure by ~-0.1 stops` (or `~0.0
+  stops`) for a flat whose centre is burnt while its level is at the target or below it: the
+  sentence is `Lower the exposure.`, and a figure appears only from 0.1 stops up (R-043, ADR
+  0114, the review's CR-020).
 - The reason `the camera's crop is not known` no longer adds `(unknown - the profile's calibration
   sensor is taken)`, which is false there (the lensfun profiles are left out): it says the camera
   is not in the lensfun database, or that no file names the camera. The `--synthetic` report's

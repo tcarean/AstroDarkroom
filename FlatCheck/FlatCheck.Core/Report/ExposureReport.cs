@@ -176,7 +176,8 @@ namespace FlatCheck
         /// applications print. The console writes the head after "VERDICT:" and each line
         /// indented; the window (<see cref="Advice"/>) puts the head on a line and the rest in one
         /// paragraph. The correction is in stops toward the bands' target, so it comes from the
-        /// scale the verdict was given on.
+        /// scale the verdict was given on; a panel flat that is too high by a burnt centre
+        /// alone, at or near the target, gets the sentence without a figure (R-043).
         /// </summary>
         /// <param name="r">The result of a raw flat.</param>
         /// <returns>The verdict's head and the lines that follow it (none on a panel
@@ -216,8 +217,18 @@ namespace FlatCheck
             {
                 case ExposureVerdict.TooHigh:
                     {
+                        // The correction leads to the target, and a burnt centre gives this
+                        // verdict at any level: at or below the target the figure would come out
+                        // negative, just above it as 0.0. It is printed only when it shows as a
+                        // tenth of a stop or more, decided on the figure as printed (R-043, ADR
+                        // 0114).
                         double stops = cen > 0 ? Math.Log2(b.Target / cen) : -1;
-                        var lines = new List<string> { T($"Lower the exposure by ~{-stops:F1} stops.", $"Scade expunerea cu ~{-stops:F1} stopuri.") };
+                        bool figure = -stops > 0 && !Numbers.RoundsToZero(stops, 1);
+                        var lines = new List<string>
+                        {
+                            figure ? T($"Lower the exposure by ~{-stops:F1} stops.", $"Scade expunerea cu ~{-stops:F1} stopuri.")
+                                   : T("Lower the exposure.", "Scade expunerea."),
+                        };
                         if (clipping)
                             lines.Add(T("The centre is burnt: you lose the vignetting information exactly where the signal is largest.",
                                         "Centrul e ars: pierzi informatia de vignetare exact unde semnalul e cel mai mare."));
