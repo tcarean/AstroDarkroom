@@ -268,13 +268,6 @@ internal static class Th
     internal const double BandingAdu = 2.0;
 
     /// <summary>
-    /// The noise of the median master is low enough when it is under this fraction of the
-    /// quantisation step; it adds in quadrature to every calibrated light, so under the step is as
-    /// low as the file format resolves.
-    /// </summary>
-    internal const double MasterNoiseVsStep = 1.0;
-
-    /// <summary>
     /// Fewer darks than this make a poor median whatever the noise figure says: with 10 the median
     /// is within 25 % of a mean's efficiency and one odd frame cannot tilt it.
     /// </summary>

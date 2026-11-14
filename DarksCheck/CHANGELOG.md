@@ -387,6 +387,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   drawn large and in red (R-052, R-063, R-067, R-124, ADR 0055; CR-006 of the code review). With
   lights at the darks' settings nothing changes.
 
+- Without lights, check 9 no longer asks for a master noise under one step of the file's
+  values: that made the answer turn on the camera, ten darks on one whose values go 2 by 2 and
+  over a hundred on one whose values go 1 by 1, for the same noise. A folder opened without
+  lights is now judged on the minimum of ten darks alone; from ten on the verdict is `OK` and
+  says that whether they are enough shows only against the lights (`--lights`), and the table's
+  rows from ten frames up carry no rating (R-024, ADR 0056; CR-007 of the code review). With
+  lights nothing changes.
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

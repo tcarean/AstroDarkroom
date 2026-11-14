@@ -328,8 +328,10 @@ its row.
   row is rated `too few` (under 10 frames: the median needs them, so that one odd frame cannot
   pull it), `few` or `enough`, and the row `enough from` gives the
   frames needed: with lights, the fewest that keep the stack within 10 % of what an ideal dark
-  master would leave, and beside them the fewest for 5 %; without lights, the fewest that bring
-  the master's noise under the file's quantisation step. Under the frames needed the verdict is
+  master would leave, and beside them the fewest for 5 %; without lights, only the minimum of
+  10, since how many are enough shows only against the lights: the rows from 10 frames up are
+  then not rated, and the verdict says to open the darks together with the lights (`--lights`).
+  Under the frames needed the verdict is
   `WARNING`; otherwise `OK`, and with lights it says how many frames could be left out, which
   tells whether the frames check 4 lists as `to discard` can go. With more darks than
   `--max-frames` reads, the table speaks of the frames read, not of the folder's, and the

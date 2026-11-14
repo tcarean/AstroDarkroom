@@ -58,8 +58,8 @@ Copyright (C) 2026 Tudor Carean
   9. CATE DARK-URI AJUNG
     zgomot dupa medie  : media a 2 cadre are 2.16 ADU de zgomot; din zgomotul unui singur cadru (3.01 ADU) se asteptau 2.13  [pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul]
     master             : 4 cadre dau un master cu 1.87 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 2.99); un master din 2 cadre facut cu mediana si unul din celelalte 2 facut cu media difera cu 3.06 ADU
-    cu n cadre         : 4 cadre (acum): 1.87 ADU (prea putine); 5 cadre: 1.67 ADU (-11 % fata de masterul de acum; prea putine); 10 cadre: 1.18 ADU (-37 % fata de masterul de acum; putine); 15 cadre: 0.97 ADU (-48 % fata de masterul de acum; ajung)
-    ajung de la        : 15 cadre: de acolo zgomotul masterului e sub pasul valorilor din fisier (1 ADU)
+    cu n cadre         : 4 cadre (acum): 1.87 ADU (prea putine); 5 cadre: 1.67 ADU (-11 % fata de masterul de acum; prea putine); 10 cadre: 1.18 ADU (-37 % fata de masterul de acum)
+    ajung de la        : cel putin 10 cadre, ca un cadru ciudat sa nu strice masterul; cate ajung se vede doar fata de lights-uri
     verdict            : ATENTIE: doar 4 cadre; trebuie cel putin 10, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi 1.87 ADU)
 
   INDEX

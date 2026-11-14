@@ -1,7 +1,7 @@
 # 0051. Check 9 says what fewer or more darks would give, and judges against the lights' stack
 
 Date: 2026-11-13
-Status: accepted 2026-11-13
+Status: accepted 2026-11-13; the rule without lights superseded by 0056
 Supersedes: 0041 in part (the table of the row `zgomot dupa medie`)
 
 ## Context

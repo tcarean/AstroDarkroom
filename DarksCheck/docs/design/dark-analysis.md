@@ -215,8 +215,8 @@ frames: the master's noise may reach share x sqrt((1 + limit)^2 - 1), so the fra
 ceil((perFrame / that)^2), at least `Th.MinDarks`. `StackLimit.Needed` holds them for every
 limit of `Th.StackNoiseLimits`, `StackLimit.Limit` the one in force, whose frames are
 `EnoughVerdict.FramesNeeded`. Without lights (or when no light gives a noise) there is no
-`StackLimit` and the frames needed are those that bring the master's noise under
-`Th.MasterNoiseVsStep` x the quantisation step, at least `Th.MinDarks`. The verdict is
+`StackLimit` and the frames needed are `Th.MinDarks` alone: nothing is left to hold the
+master's noise against (ADR 0056). The verdict is
 `Warning` under `Th.MinDarks` or under the frames needed, `Unmeasured` under two frames or
 without a noise, when it has no points.
 

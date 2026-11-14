@@ -167,6 +167,12 @@ internal enum FramesRating
 
     /// <summary>The frames needed, or more.</summary>
     Enough,
+
+    /// <summary>
+    /// At least <see cref="Th.MinDarks"/>, without lights: whether so many are enough shows only
+    /// against the lights' stack, so the row is not rated (ADR 0056).
+    /// </summary>
+    Unjudged,
 }
 
 /// <summary>One row of check 9's table: the master a number of darks would give (R-024).</summary>
@@ -324,9 +330,8 @@ internal static class DarkVerdictAnalyzer
     /// Check 9 (R-024, ADR 0051): whether the darks are enough, the frames needed and the table of
     /// what fewer or more darks would give. With measured lights the frames needed keep the lights'
     /// stack within <paramref name="limit"/> of what an ideal master, one with no noise of its
-    /// own, would leave; without them
-    /// the median master's noise must be under <see cref="Th.MasterNoiseVsStep"/> x the
-    /// quantisation step. Either way at least <see cref="Th.MinDarks"/>.
+    /// own, would leave; without them only the minimum is judged, since how many are enough
+    /// depends on the lights (ADR 0056). Either way at least <see cref="Th.MinDarks"/>.
     /// </summary>
     /// <param name="d">The darks' figures; not null.</param>
     /// <param name="lights">The lights measured against the dark; null without lights.</param>
@@ -338,7 +343,6 @@ internal static class DarkVerdictAnalyzer
     {
         ArgumentNullException.ThrowIfNull(d);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
-        double step = d.QuantStep > 0 ? d.QuantStep : 1;
         double masterNoise = d.Noise.MasterNoise;
         bool tooFew = d.Used < Th.MinDarks;
         if (d.Used < 2 || double.IsNaN(masterNoise))
@@ -362,7 +366,8 @@ internal static class DarkVerdictAnalyzer
         }
         else
         {
-            needed = Math.Max(Th.MinDarks, (int)Math.Ceiling(Math.Pow(perFrame / (Th.MasterNoiseVsStep * step), 2)));
+            // without lights there is nothing to hold the master's noise against: the minimum alone (ADR 0056)
+            needed = Th.MinDarks;
         }
 
         // the rows: every step under the frames stacked, their own row, the steps past them, then
@@ -389,7 +394,7 @@ internal static class DarkVerdictAnalyzer
         foreach (int n in counts)
         {
             double noiseAtN = perFrame / Math.Sqrt(n);
-            FramesRating rating = n < Th.MinDarks ? FramesRating.TooFew : n >= needed ? FramesRating.Enough : FramesRating.Few;
+            FramesRating rating = n < Th.MinDarks ? FramesRating.TooFew : stack is null ? FramesRating.Unjudged : n >= needed ? FramesRating.Enough : FramesRating.Few;
             points.Add(new FramesPoint(n, noiseAtN, n == d.Used ? 0 : Math.Sqrt((double)d.Used / n) - 1, stack is null ? double.NaN : StackPenalty(noiseAtN, stack.ShareAdu), rating, n == d.Used));
         }
 

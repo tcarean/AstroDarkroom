@@ -1917,11 +1917,13 @@ internal static class DarkReport
 
     /// <summary>How a number of darks rates, in the run's language.</summary>
     /// <param name="rating">The rating of the table's row.</param>
-    /// <returns>"too few", "few" or "enough" ("prea putine", "putine" or "ajung").</returns>
+    /// <returns>"too few", "few" or "enough" ("prea putine", "putine" or "ajung"); empty for a
+    /// row that is not rated, ten darks or more without lights.</returns>
     private static string Rating(FramesRating rating) => rating switch
     {
         FramesRating.TooFew => T("too few", "prea putine"),
         FramesRating.Few => T("few", "putine"),
+        FramesRating.Unjudged => "",
         _ => T("enough", "ajung"),
     };
 
@@ -1975,10 +1977,16 @@ internal static class DarkReport
                 parts.Add(T($"the stack {stack} noisier", $"stack cu {stack} mai zgomotos"));
             }
 
-            cells.Add(Rating(p.Rating));
-            parts.Add(Rating(p.Rating));
+            string rating = Rating(p.Rating);
+            cells.Add(rating);
+            if (rating.Length > 0)
+            {
+                parts.Add(rating);
+            }
+
             rows.Add(cells);
-            texts.Add(RunReport.Frames(p.N) + (p.Now ? T(" (now)", " (acum)") : "") + ": " + noise + " (" + string.Join("; ", parts) + ")");
+            // a row with nothing to say beside its noise (the frames of now, unrated) has no bracket
+            texts.Add(RunReport.Frames(p.N) + (p.Now ? T(" (now)", " (acum)") : "") + ": " + noise + (parts.Count == 0 ? "" : " (" + string.Join("; ", parts) + ")"));
         }
 
         return new(label, string.Join("; ", texts) + (compared.Length == 0 ? "" : "  [" + compared + "]"))
@@ -2006,9 +2014,10 @@ internal static class DarkReport
 
         if (e.Stack is not StackLimit st)
         {
+            // without lights only the minimum is known (ADR 0056)
             return T(
-                $"{RunReport.Frames(e.FramesNeeded)}: from there the master's noise is under the file's value step ({e.QuantStep} ADU)",
-                $"{RunReport.Frames(e.FramesNeeded)}: de acolo zgomotul masterului e sub pasul valorilor din fisier ({e.QuantStep} ADU)");
+                $"at least {RunReport.Frames(e.FramesNeeded)}, so that one odd frame does not spoil the master; how many are enough shows only against the lights",
+                $"cel putin {RunReport.Frames(e.FramesNeeded)}, ca un cadru ciudat sa nu strice masterul; cate ajung se vede doar fata de lights-uri");
         }
 
         string first = T(
@@ -2051,8 +2060,8 @@ internal static class DarkReport
 
     /// <summary>
     /// The verdict row of check 9 (R-024, ADR 0051): with lights, what the master does to their
-    /// stack against the limit, and how many frames could be left out; without lights, the
-    /// master's noise against the file's value step.
+    /// stack against the limit, and how many frames could be left out; without lights, that the
+    /// minimum is met and that the answer needs the lights (ADR 0056).
     /// </summary>
     /// <param name="e">Check 9's verdict.</param>
     /// <param name="allRead">True when the frame cap left no dark out; false when it did, and the
@@ -2089,13 +2098,13 @@ internal static class DarkReport
                     $"ATENTIE: {RunReport.Frames(e.Frames)} sunt putine: stack-ul celor {RoCount(st.Lights)}lights iese cu {noisier} mai zgomotos decat cu un master dark ideal, peste limita de {limit}; trebuie {e.FramesNeeded}");
         }
 
-        return e.Verdict == Verdict.Ok
-            ? T(
-                $"OK: {RunReport.Frames(e.Frames)} are enough; the master's noise ({F(e.MasterNoise, 2)} ADU) is under the file's value step ({e.QuantStep} ADU), and it adds to every calibrated light{(spare > 0 ? $"; {e.FramesNeeded} would do" : "")}",
-                $"OK: {RunReport.Frames(e.Frames)} ajung; zgomotul masterului ({F(e.MasterNoise, 2)} ADU) e sub pasul valorilor din fisier ({e.QuantStep} ADU), iar el se adauga la fiecare light calibrat{(spare > 0 ? $"; ar ajunge {e.FramesNeeded}" : "")}")
-            : T(
-                $"WARNING: the master's noise ({F(e.MasterNoise, 2)} ADU) is above the file's value step ({e.QuantStep} ADU); it would drop under it from {e.FramesNeeded} frames",
-                $"ATENTIE: zgomotul masterului ({F(e.MasterNoise, 2)} ADU) e peste pasul valorilor din fisier ({e.QuantStep} ADU); ar cobori sub el de la {RoCount(e.FramesNeeded)}cadre");
+        // without lights: the minimum is met (fewer were answered above), and nothing more can be told
+        string minimum = spare > 0
+            ? T($"over the minimum of {Th.MinDarks}", $"peste minimul de {Th.MinDarks}")
+            : T($"exactly the minimum of {Th.MinDarks}", $"exact minimul de {Th.MinDarks}");
+        return T(
+            $"OK: {RunReport.Frames(e.Frames)}, {minimum}; the master's noise ({F(e.MasterNoise, 2)} ADU) adds to every calibrated light, and whether {e.Frames} are enough shows only against the lights: open the darks together with the lights (--lights)",
+            $"OK: {RunReport.Frames(e.Frames)}, {minimum}; zgomotul masterului ({F(e.MasterNoise, 2)} ADU) se adauga la fiecare light calibrat, iar daca {e.Frames} ajung se vede doar fata de lights-uri: deschide dark-urile impreuna cu lights-urile (--lights)");
     }
 
     /// <summary>A ratio with three decimals, or "-" when NaN.</summary>

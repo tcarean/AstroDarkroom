@@ -1215,9 +1215,8 @@ public partial class DarkSeriesTests
             Assert.Contains(english ? "the part that grows as the sensor warms" : "partea care creste cand senzorul se incalzeste", all, StringComparison.Ordinal);
             Assert.Contains(english ? "WARNING: fixed banding of " : "ATENTIE: benzi fixe de ", all, StringComparison.Ordinal);
             Assert.Contains(english ? "as it is the only one" : "fiind unul singur", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "are enough; the master's noise" : "ajung; zgomotul masterului", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "enough shows only against the lights: open the darks together with the lights" : "ajung se vede doar fata de lights-uri: deschide dark-urile impreuna cu lights-urile", all, StringComparison.Ordinal);
             Assert.Contains(english ? "so that one odd frame does not spoil the master" : "ca un cadru ciudat sa nu strice masterul", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "; it would drop under it from " : "; ar cobori sub el de la ", all, StringComparison.Ordinal);
             List<string> left = texts.Where(t => method.IsMatch(t)).Select(t => $"'{method.Match(t).Value}' in: {t}").ToList();
             Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
         }
@@ -1395,12 +1394,12 @@ public partial class DarkSeriesTests
         Assert.Equal(1, r.Verdicts.Enough.QuantStep);
         Assert.False(r.Verdicts.Enough.TooFew);
 
-        // three noisy frames: too few for a median, and the master would stay noisier than one quantisation step
+        // three noisy frames: too few for a median; without lights the frames needed are the minimum (ADR 0056)
         using SessionFixture few = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i, Noise = 6 });
         EnoughVerdict e = Run(few).Verdicts.Enough;
         Assert.Equal(Verdict.Warning, e.Verdict);
         Assert.True(e.TooFew);
-        Assert.InRange(e.FramesNeeded, 50, 65);
+        Assert.Equal(Th.MinDarks, e.FramesNeeded);
 
         // a single frame is no series: unmeasured, never OK; the residual against its own median is zero by construction, so check 5 is unmeasured too
         using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 1, Hot = SyntheticDark.OnePerLevel });
@@ -1415,12 +1414,50 @@ public partial class DarkSeriesTests
         Assert.Contains("stabilitate        : NEMASURAT: stabilitatea cere cel putin 2 cadre", sw.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain("0.00 .. 0.00", sw.ToString(), StringComparison.Ordinal);
 
-        // ten quiet frames whose master would still sit over the step: warning with the frames that would do
+        // ten frames whose master sits over the file's value step: without lights the step decides nothing (ADR 0056)
         using SessionFixture noisy = new SessionFixture().WithDarkSeries(10, i => new SyntheticDark { Seed = 100 + i, Noise = 4 });
         EnoughVerdict en = Run(noisy).Verdicts.Enough;
-        Assert.Equal(Verdict.Warning, en.Verdict);
+        Assert.Equal(Verdict.Ok, en.Verdict);
         Assert.False(en.TooFew);
-        Assert.InRange(en.FramesNeeded, 22, 30);
+        Assert.Equal(Th.MinDarks, en.FramesNeeded);
+    }
+
+    /// <summary>
+    /// CR-007: without lights check 9 asked for a master noise under one value step, so on a camera whose values
+    /// go 1 by 1 twelve darks of noise 9 read WARNING with 128 needed; the same darks with their lights are judged
+    /// on the stack. Without lights only the minimum of ten is judged, and the words say where the answer is.
+    /// </summary>
+    [Fact]
+    public void R024_WithoutLightsOnlyTheMinimumOfTenDarksIsJudged()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Noise = 9 });
+        DarkSeriesResult r = Run(s);
+        EnoughVerdict e = r.Verdicts.Enough;
+        Assert.Equal(1, e.QuantStep);
+        Assert.InRange(e.MasterNoise, 2.6, 3.9);
+        Assert.Equal(Verdict.Ok, e.Verdict);
+        Assert.Equal(Th.MinDarks, e.FramesNeeded);
+        IReadOnlyList<ReportRow> rows = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows;
+        Assert.Equal("cel putin 10 cadre, ca un cadru ciudat sa nu strice masterul; cate ajung se vede doar fata de lights-uri", rows[3].Value);
+        Assert.Equal($"OK: 12 cadre, peste minimul de 10; zgomotul masterului ({RunReport.F(e.MasterNoise, 2)} ADU) se adauga la fiecare light calibrat, iar daca 12 ajung se vede doar fata de lights-uri: deschide dark-urile impreuna cu lights-urile (--lights)", rows[4].Value);
+        // the table says too few under ten and nothing from ten on: without lights it cannot be told
+        ReportTable t = Assert.IsType<ReportTable>(rows[2].Table);
+        Assert.Equal(["5", "10", "12 (acum)", "15", "20"], t.Rows.Select(row => row[0]));
+        Assert.Equal(["prea putine", "", "", "", ""], t.Rows.Select(row => row[^1]));
+        Assert.Contains($"; 12 cadre (acum): {RunReport.F(e.MasterNoise, 2)} ADU; 15 cadre: ", rows[2].Value, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            IReadOnlyList<ReportRow> en = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Enough).Rows;
+            Assert.Equal("at least 10 frames, so that one odd frame does not spoil the master; how many are enough shows only against the lights", en[3].Value);
+            Assert.Equal($"OK: 12 frames, over the minimum of 10; the master's noise ({RunReport.F(e.MasterNoise, 2)} ADU) adds to every calibrated light, and whether 12 are enough shows only against the lights: open the darks together with the lights (--lights)", en[4].Value);
+        }
+
+        // under ten the warning stays, with the minimum as the frames needed
+        using SessionFixture few = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Noise = 9 });
+        EnoughVerdict ef = Run(few).Verdicts.Enough;
+        Assert.Equal(Verdict.Warning, ef.Verdict);
+        Assert.True(ef.TooFew);
+        Assert.Equal(Th.MinDarks, ef.FramesNeeded);
     }
 
     /// <summary>The hot levels are in ADU equivalent but never under 5 raw ADU; the dead limit is raw; the biases keep raw levels.</summary>
@@ -1640,23 +1677,23 @@ public partial class DarkSeriesTests
         Assert.Equal(["cadre", "zgomotul masterului", "fata de masterul de acum", "cum e"], t.Header);
         Assert.Equal(4, t.Rows.Count);
         Assert.Equal(["5", RunReport.F(e.Points[0].MasterNoise, 2) + " ADU", "+41 %", "prea putine"], t.Rows[0]);
-        Assert.Equal(["10 (acum)", RunReport.F(e.MasterNoise, 2) + " ADU", "", "ajung"], t.Rows[1]);
-        Assert.Equal(["20", RunReport.F(e.Points[3].MasterNoise, 2) + " ADU", "-29 %", "ajung"], t.Rows[3]);
+        Assert.Equal(["10 (acum)", RunReport.F(e.MasterNoise, 2) + " ADU", "", ""], t.Rows[1]);
+        Assert.Equal(["20", RunReport.F(e.Points[3].MasterNoise, 2) + " ADU", "-29 %", ""], t.Rows[3]);
         Assert.Equal("", t.Note);
         Assert.Null(frames.Choice);
         // the console's line holds the same figures, point by point
         Assert.Equal(
-            $"5 cadre: {RunReport.F(e.Points[0].MasterNoise, 2)} ADU (+41 % fata de masterul de acum; prea putine); 10 cadre (acum): {RunReport.F(e.MasterNoise, 2)} ADU (ajung); "
-            + $"15 cadre: {RunReport.F(e.Points[2].MasterNoise, 2)} ADU (-18 % fata de masterul de acum; ajung); 20 de cadre: {RunReport.F(e.Points[3].MasterNoise, 2)} ADU (-29 % fata de masterul de acum; ajung)",
+            $"5 cadre: {RunReport.F(e.Points[0].MasterNoise, 2)} ADU (+41 % fata de masterul de acum; prea putine); 10 cadre (acum): {RunReport.F(e.MasterNoise, 2)} ADU; "
+            + $"15 cadre: {RunReport.F(e.Points[2].MasterNoise, 2)} ADU (-18 % fata de masterul de acum); 20 de cadre: {RunReport.F(e.Points[3].MasterNoise, 2)} ADU (-29 % fata de masterul de acum)",
             frames.Value);
 
-        Assert.Equal("10 cadre: de acolo zgomotul masterului e sub pasul valorilor din fisier (1 ADU)", rows[3].Value);
-        Assert.Equal($"OK: 10 cadre ajung; zgomotul masterului ({RunReport.F(e.MasterNoise, 2)} ADU) e sub pasul valorilor din fisier (1 ADU), iar el se adauga la fiecare light calibrat", rows[4].Value);
+        Assert.Equal("cel putin 10 cadre, ca un cadru ciudat sa nu strice masterul; cate ajung se vede doar fata de lights-uri", rows[3].Value);
+        Assert.Equal($"OK: 10 cadre, exact minimul de 10; zgomotul masterului ({RunReport.F(e.MasterNoise, 2)} ADU) se adauga la fiecare light calibrat, iar daca 10 ajung se vede doar fata de lights-uri: deschide dark-urile impreuna cu lights-urile (--lights)", rows[4].Value);
 
-        // twelve frames: two more than needed, and the verdict says how many would do
+        // twelve frames: over the minimum, and the verdict says so
         using SessionFixture twelve = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
         DarkSeriesResult r12 = Run(twelve);
-        Assert.EndsWith(", iar el se adauga la fiecare light calibrat; ar ajunge 10", DarkReport.Sections(r12).Single(x => x.Check == ReportCheck.Enough).Rows[^1].Value, StringComparison.Ordinal);
+        Assert.StartsWith("OK: 12 cadre, peste minimul de 10; ", DarkReport.Sections(r12).Single(x => x.Check == ReportCheck.Enough).Rows[^1].Value, StringComparison.Ordinal);
         using (Ui.Use(UiLanguage.English))
         {
             IReadOnlyList<ReportRow> en = DarkReport.Sections(r12).Single(x => x.Check == ReportCheck.Enough).Rows;
@@ -1664,8 +1701,8 @@ public partial class DarkSeriesTests
             Assert.StartsWith("the average of 5 frames has ", en[0].Value, StringComparison.Ordinal);
             Assert.Equal(["frames", "master's noise", "against the master of now", "how it is"], en[2].Table!.Header);
             Assert.Contains("; 12 frames (now): ", en[2].Value, StringComparison.Ordinal);
-            Assert.Equal("10 frames: from there the master's noise is under the file's value step (1 ADU)", en[3].Value);
-            Assert.EndsWith(" is under the file's value step (1 ADU), and it adds to every calibrated light; 10 would do", en[4].Value, StringComparison.Ordinal);
+            Assert.Equal("at least 10 frames, so that one odd frame does not spoil the master; how many are enough shows only against the lights", en[3].Value);
+            Assert.EndsWith(" adds to every calibrated light, and whether 12 are enough shows only against the lights: open the darks together with the lights (--lights)", en[4].Value, StringComparison.Ordinal);
         }
 
         // three frames: the one measured point is the frame against the next, and the row says so of 1 frame
@@ -1689,14 +1726,15 @@ public partial class DarkSeriesTests
     [Fact]
     public void R024_TheFramesTableReadsTheMasterEveryFiveFramesAndRatesEachRow()
     {
-        // ten frames of noise 2, no lights: a row every five frames to two rows past the ten, rated on the value step
+        // ten frames of noise 2, no lights: a row every five frames to two rows past the ten; under ten too few,
+        // from ten on unrated, since without lights it cannot be told (ADR 0056)
         using SessionFixture s = new SessionFixture().WithDarkSeries(10, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
         EnoughVerdict e = Run(s).Verdicts.Enough;
         Assert.Null(e.Stack);
         Assert.Equal(10, e.FramesNeeded);
         Assert.Equal([5, 10, 15, 20], e.Points.Select(p => p.N));
         Assert.Equal([false, true, false, false], e.Points.Select(p => p.Now));
-        Assert.Equal([FramesRating.TooFew, FramesRating.Enough, FramesRating.Enough, FramesRating.Enough], e.Points.Select(p => p.Rating));
+        Assert.Equal([FramesRating.TooFew, FramesRating.Unjudged, FramesRating.Unjudged, FramesRating.Unjudged], e.Points.Select(p => p.Rating));
         foreach (FramesPoint p in e.Points)
         {
             // the master of n frames against the master of the ten: sqrt(10 / n) times its noise
@@ -1712,21 +1750,21 @@ public partial class DarkSeriesTests
         Assert.Equal(12, Assert.Single(e12.Points, p => p.Now).N);
         Assert.Equal(0, e12.Points[2].AgainstNow, 9);
 
-        // ten frames of noise 4: the master stays over the step, and the frames needed get the last row
+        // ten frames of noise 4: the master stays over the value step, which decides nothing without lights:
+        // the frames needed are the minimum and no row is added for them (ADR 0056; with lights the rows rated
+        // few and the row of the frames needed are R024_WithLights...'s in LightsAndIndexTests)
         using SessionFixture noisy = new SessionFixture().WithDarkSeries(10, i => new SyntheticDark { Seed = 100 + i, Noise = 4 });
         EnoughVerdict en = Run(noisy).Verdicts.Enough;
-        Assert.InRange(en.FramesNeeded, 22, 30);
-        Assert.Equal([5, 10, 15, 20, en.FramesNeeded], en.Points.Select(p => p.N).Distinct());
+        Assert.Equal(Th.MinDarks, en.FramesNeeded);
+        Assert.Equal([5, 10, 15, 20], en.Points.Select(p => p.N));
         Assert.Equal(FramesRating.TooFew, en.Points[0].Rating);
-        Assert.All(en.Points.Skip(1).Where(p => p.N < en.FramesNeeded), p => Assert.Equal(FramesRating.Few, p.Rating));
-        Assert.Equal(FramesRating.Enough, en.Points[^1].Rating);
-        Assert.Equal(en.FramesNeeded, en.Points[^1].N);
+        Assert.All(en.Points.Skip(1), p => Assert.Equal(FramesRating.Unjudged, p.Rating));
 
-        // three frames of noise 6: their own row first, the fives and tens too few or few, then the frames needed
+        // three frames of noise 6: their own row first, then the five and the ten, too few under ten
         using SessionFixture few = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i, Noise = 6 });
         EnoughVerdict ef = Run(few).Verdicts.Enough;
-        Assert.Equal([3, 5, 10, ef.FramesNeeded], ef.Points.Select(p => p.N));
-        Assert.Equal([FramesRating.TooFew, FramesRating.TooFew, FramesRating.Few, FramesRating.Enough], ef.Points.Select(p => p.Rating));
+        Assert.Equal([3, 5, 10], ef.Points.Select(p => p.N));
+        Assert.Equal([FramesRating.TooFew, FramesRating.TooFew, FramesRating.Unjudged], ef.Points.Select(p => p.Rating));
         Assert.True(ef.Points[0].Now);
 
         // a single frame is no series: no table
