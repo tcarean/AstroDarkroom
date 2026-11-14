@@ -20,7 +20,8 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   (`series-analysis.md`, R-066), and the lens as the raw gives it: `LensId`, `LensMount`,
   `LensName` and the range.
 - `RawReader` reads the visible CFA mosaic at the original ADU scale through libraw, with the
-  black level as the median of the four channel blacks, the white as `color.maximum`, the
+  black level as the median of the four positions' blacks (`BlackLevels`), the white as
+  `color.maximum`, the
   colour order from `filters` and `cdesc` evaluated at the visible origin, and the shot
   fields from `imgother` (`Shutter`, `IsoSpeed`, `Timestamp`, `FocalLength`, `Aperture`) and
   `LensInfo`. `LoadInfo` opens the file without `Unpack`: tens of milliseconds per NEF (the
@@ -31,6 +32,18 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   after libraw's line is logged: with no order `Raster.InterpolateGreen` takes a frame for
   monochrome, and such a mosaic would be measured as one image over pixels of three colours.
   `LoadInfo` does not judge the mosaic, so the inventory still lists the file.
+  libraw holds the black in three parts, which it would subtract one after the other were it
+  asked to develop the image: `color.black`, common to every pixel; `color.cblack[0..3]`, one
+  per colour index; and a repeat pattern, `cblack[4]` rows by `cblack[5]` columns, its values
+  from `cblack[6]` on, laid from the first visible pixel. A camera's own raw fills the first two
+  (a D3300 NEF: 150 and zeros). A DNG that writes `BlackLevelRepeatDim 2 2` fills the third
+  alone, and `unpack()` does not fold it into the others (shown on a generated DNG: `black 0 per
+  channel [0, 0, 0, 0]` in the log for a file whose black is 64). `BlackLevels` sums the three
+  for each position of the mosaic's first 2 x 2 block, the colour index of a position being
+  dcraw's `FC` of `filters` at the visible origin, the position's own number when the mask has
+  no 2 x 2 order; a pattern larger than 2 x 2 is read at that block only, and one whose values
+  are not all in the array counts as none. `DngTestData`, in the tests, writes the DNG files
+  the gate decodes.
 - `FitsReader` parses the header and the first 2D HDU; `LoadInfo` reads the header only.
   Its `FillShootingInfo` also reads `EXPTIME`, `ISOSPEED`, `DATE-OBS` and `XPIXSZ`.
 - `CfaPattern` names the four Bayer positions from `filters`+`cdesc` or `BAYERPAT`, shifted

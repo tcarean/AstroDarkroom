@@ -230,6 +230,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   monochrome frame, on pixels of three colours, with nothing said. It is now refused: `<file>:
   the sensor's colour mosaic is not a Bayer one (Fujifilm X-Trans); LightsCheck measures only
   Bayer and monochrome raws.` (R-007, ADR 0053; CR-008 of the review of 2026-11-13).
+- A DNG that states its black level as a 2 x 2 pattern (Pentax, Leica, Ricoh, phones, files from
+  Adobe DNG Converter) was read with black 0: `scale 0 .. 16383 ADU`, and every level above
+  black, the sky and the saturation margin included, carried the black as a pedestal. The
+  pattern is now read (R-007; CR-009 of the review of 2026-11-13). A camera's own raw is read as
+  before.
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

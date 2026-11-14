@@ -113,6 +113,61 @@ public partial class RawReaderTests
     }
 
     /// <summary>
+    /// A DNG that states its black as a 2 x 2 pattern (<c>BlackLevelRepeatDim 2 2</c>, as Pentax,
+    /// Leica, Ricoh, phones and Adobe's converter write it) is read with that black, as the same
+    /// pixels with one black value are; libraw keeps the pattern apart from its common black
+    /// and its per-colour blacks, and until 2026-11-14 the file came out on a scale from 0,
+    /// every level 64 ADU too high (R-007; CR-009 of the review of 2026-11-13). A pattern of
+    /// four different values gives their median.
+    /// </summary>
+    [Theory]
+    [InlineData(new[] { 64, 64, 64, 64 }, 64.0)]
+    [InlineData(new[] { 60, 62, 64, 66 }, 63.0)]
+    public void R007_ADngWhoseBlackIsATwoByTwoPatternIsReadWithThatBlack(int[] pattern, double black)
+    {
+        using TempWorkspace ws = new();
+        string path = ws.WriteFile("pattern.dng", DngTestData.Build(64, 48, (x, y) => 264, pattern, blackRows: 2, blackColumns: 2));
+
+        LoadedFrame f = Reader.Load(path);
+
+        Assert.Equal((16383.0, black), (f.Scale!.White, f.Scale.Black));
+        Assert.Equal(264.0, f.Image!.D[0]);
+    }
+
+    /// <summary>
+    /// The black of each position from libraw's three parts (R-007): the common black alone, as
+    /// a D3300 gives it; a 2 x 2 or a 1 x 1 repeat pattern alone, as a DNG gives it; the blacks
+    /// of the colours, taken by each position's colour index (0, 1, 3, 2 for the mask of an RGGB
+    /// sensor, and one row down when the visible area starts on an odd row); and a pattern that
+    /// is not all there, or no array at all, which count as none.
+    /// </summary>
+    [Fact]
+    public void R007_TheBlackOfEachPositionSumsTheCommonTheColoursAndThePatterns()
+    {
+        const uint rggb = 0xB4B4B4B4;
+        static uint[] Cblack(params uint[] head)
+        {
+            uint[] all = new uint[4104];
+            head.CopyTo(all, 0);
+            return all;
+        }
+
+        Assert.Equal([150.0, 150.0, 150.0, 150.0], RawReader.BlackLevels(150, Cblack(), rggb, 0, 0));
+        Assert.Equal([64.0, 64.0, 64.0, 64.0], RawReader.BlackLevels(0, Cblack(0, 0, 0, 0, 2, 2, 64, 64, 64, 64), rggb, 0, 0));
+        Assert.Equal([60.0, 62.0, 64.0, 66.0], RawReader.BlackLevels(0, Cblack(0, 0, 0, 0, 2, 2, 60, 62, 64, 66), rggb, 0, 0));
+        Assert.Equal([64.0, 64.0, 64.0, 64.0], RawReader.BlackLevels(0, Cblack(0, 0, 0, 0, 1, 1, 64), rggb, 0, 0));
+        Assert.Equal([64.0, 64.0, 64.0, 64.0], RawReader.BlackLevels(0, Cblack(0, 0, 0, 0, 1, 1, 64), 0, 0, 0));
+        Assert.Equal([11.0, 12.0, 14.0, 13.0], RawReader.BlackLevels(10, Cblack(1, 2, 3, 4), rggb, 0, 0));
+        Assert.Equal([14.0, 13.0, 11.0, 12.0], RawReader.BlackLevels(10, Cblack(1, 2, 3, 4), rggb, 1, 0));
+        Assert.Equal([11.0, 12.0, 13.0, 14.0], RawReader.BlackLevels(10, Cblack(1, 2, 3, 4), 9, 0, 0));
+        Assert.Equal([111.0, 122.0, 134.0, 143.0], RawReader.BlackLevels(100, Cblack(1, 2, 3, 4, 2, 2, 10, 20, 30, 40), rggb, 0, 0));
+        // Two rows of three, read at the first block: its values 10, 20 and 40, 50.
+        Assert.Equal([10.0, 20.0, 40.0, 50.0], RawReader.BlackLevels(0, Cblack(0, 0, 0, 0, 2, 3, 10, 20, 30, 40, 50, 60), rggb, 0, 0));
+        Assert.Equal([150.0, 150.0, 150.0, 150.0], RawReader.BlackLevels(150, [0, 0, 0, 0, 2, 2, 64, 64], rggb, 0, 0));
+        Assert.Equal([150.0, 150.0, 150.0, 150.0], RawReader.BlackLevels(150, null!, rggb, 0, 0));
+    }
+
+    /// <summary>
     /// A raw whose colour mosaic is not a Bayer one, here the 6 x 6 of Fujifilm's X-Trans, is
     /// refused naming the sensor, in the run's language, as a raw without a mosaic is (R-007).
     /// Until 2026-11-14 it was measured as a monochrome frame, on pixels of three colours (CR-008

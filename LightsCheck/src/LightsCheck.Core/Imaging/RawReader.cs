@@ -24,7 +24,8 @@
 // What is asked of libraw is the raw data, never a developed image:
 //   - raw_image, cropped to the visible area   -> the CFA mosaic, as rawpy's raw_image_visible
 //   - color.maximum                            -> white
-//   - color.black + color.cblack[0..3]         -> black, per channel
+//   - color.black + color.cblack[0..3] + the   -> black, per position of the mosaic
+//     repeat pattern from color.cblack[6] on
 //   - iparams.filters + iparams.cdesc          -> the colour of each Bayer position; a colour
 //                                                 mosaic that is not Bayer is refused
 //   - other (shutter, iso_speed, timestamp, focal_len, aperture) and lens info -> metadata
@@ -352,11 +353,10 @@ namespace LightsCheck.Core
             LibRawColorData c = d.RawData.Color;
             double white = c.Maximum;
 
-            // The black level is global (color.black) or per channel (color.cblack), as libraw
-            // splits it; the sum is what rawpy reads, and the median of the four is taken.
-            var blacks = new List<double>(4);
-            for (int i = 0; i < 4; i++)
-                blacks.Add(c.Black + (c.CBlack != null && i < c.CBlack.Length ? c.CBlack[i] : 0));
+            // The black level is global (color.black), per colour (color.cblack[0..3]) or a
+            // repeat pattern (cblack[6..]), as libraw splits it; the median of the four
+            // positions' sums is taken.
+            List<double> blacks = BlackLevels(c.Black, c.CBlack, ip.Filters, s.TopMargin, s.LeftMargin);
             double black = Stats.Percentile(blacks, 50);
 
             // Before the mosaic and the scale are judged, so a refused file leaves its figures.
@@ -390,6 +390,49 @@ namespace LightsCheck.Core
         }
 
         /// <summary>
+        /// The black level of each of the four positions of the visible mosaic's first 2 x 2
+        /// block, as libraw holds it in three parts that it subtracts one after the other (R-007):
+        /// the common black, the black of the position's colour, and the value of the file's
+        /// repeat pattern at that position. A camera's own raw fills the first two (a D3300 the
+        /// common black alone); a DNG that states its black as a pattern, <c>BlackLevelRepeatDim
+        /// 2 2</c>, fills the third alone, which libraw's unpack leaves where it is.
+        /// </summary>
+        /// <param name="black">libraw's <c>color.black</c>, in ADU.</param>
+        /// <param name="cblack">libraw's <c>color.cblack</c>: entries 0 to 3 the black of each
+        /// colour index, 4 and 5 the rows and columns of the repeat pattern (0 without one), the
+        /// pattern's values from entry 6 on, row by row. Null or shorter is allowed: what is
+        /// missing counts as 0.</param>
+        /// <param name="filters">libraw's <c>filters</c> mask, which gives each position's colour
+        /// index; for a value without a 2 x 2 order (0, 1, 9) the position's own number is its
+        /// index.</param>
+        /// <param name="topMargin">The first visible row on the sensor.</param>
+        /// <param name="leftMargin">The first visible column on the sensor.</param>
+        /// <returns>Four blacks in ADU, for the positions [0,0], [0,1], [1,0] and [1,1].</returns>
+        internal static List<double> BlackLevels(double black, IReadOnlyList<uint> cblack, uint filters, int topMargin, int leftMargin)
+        {
+            int entries = cblack != null ? cblack.Count : 0;
+            int rows = entries > 5 ? (int)Math.Min(cblack[4], int.MaxValue) : 0;
+            int columns = entries > 5 ? (int)Math.Min(cblack[5], int.MaxValue) : 0;
+            // A pattern counts only when every one of its values is there to read.
+            bool pattern = rows > 0 && columns > 0 && (long)rows * columns <= entries - 6;
+            bool bayer = filters > 1000;
+
+            var blacks = new List<double>(4);
+            for (int k = 0; k < 4; k++)
+            {
+                int y = k / 2, x = k % 2;
+                // dcraw's FC, evaluated where CfaPattern.FromLibRaw evaluates it.
+                int row = topMargin + y, col = leftMargin + x;
+                int colour = bayer ? (int)((filters >> ((((row << 1) & 14) + (col & 1)) << 1)) & 3) : k;
+                double sum = black + (colour < entries ? cblack[colour] : 0);
+                // The pattern starts at the visible area's first pixel, as libraw subtracts it.
+                if (pattern) sum += cblack[6 + (y % rows) * columns + (x % columns)];
+                blacks.Add(sum);
+            }
+            return blacks;
+        }
+
+        /// <summary>
         /// libraw's figures of one decode, as the diagnostic log writes them at Debug: the visible
         /// and raw sizes, the margins, the pitch, the filters mask and <c>cdesc</c>, the CFA order
         /// evaluated at the visible origin, the maximum and the blacks. It takes plain values only,
@@ -409,7 +452,7 @@ namespace LightsCheck.Core
         /// <param name="cfa">The CFA order; null for a raw without a Bayer mosaic (mono, Leaf, X-Trans).</param>
         /// <param name="maximum">libraw's <c>color.maximum</c>, the white, in ADU.</param>
         /// <param name="black0">libraw's global <c>color.black</c>, in ADU.</param>
-        /// <param name="blacks">The four channels' blacks, global plus per channel, in ADU.</param>
+        /// <param name="blacks">The four positions' blacks (<see cref="BlackLevels"/>), in ADU.</param>
         /// <param name="black">Their median, the black the frame is read with, in ADU.</param>
         /// <returns>The line's text.</returns>
         internal static string FiguresLine(string path, int w, int h, int rawWidth, int rawHeight, int topMargin, int leftMargin,
