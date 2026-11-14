@@ -123,6 +123,20 @@ public class CliTests
         Assert.Contains("LINIARA", err);
     }
 
+    /// <summary>CR-004: a FITS off the 0 to 1 scale is an error with its reason, not a report about a white frame.</summary>
+    [Fact]
+    public void R013_AFitsOffTheScaleExitsOneWithTheReason()
+    {
+        using var ws = new TempWorkspace();
+        string fits = ws.WriteFile("scara.fit", FitsTestData.Build(128, 128, 3, (x, y, p) => 5000 + 100.0 * (x % 7), bitpix: -32));
+
+        var (code, output, err) = Run(fits);
+
+        Assert.Equal(1, code);
+        Assert.StartsWith("EROARE: valorile din fisier nu sunt intre 0 si 1: 100.0 % din ele trec de 1 (cea mai mare e 5600).", err);
+        Assert.DoesNotContain("VERDICT", output);
+    }
+
     [Fact]
     public void R025_APassepartoutNarrowerThanTwiceTheFrameIsRefusedBeforeAnyWork()
     {

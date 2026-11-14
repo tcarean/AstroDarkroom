@@ -124,7 +124,11 @@ spaces). `DarkNebulaCatalogue.All` parses it once, precessing the centres to J20
 
 `Raster`: `W`, `H`, `Planes` = 1 or 3 `float[]` in **0..1**, row 0 at the **top**.
 Normalisation: 8-bit `/255`, 16-bit `/65535`, 32-bit int `/4294967295`, float as is,
-clipped to [0, 1] with the count noted. `Reference` is the green plane on colour, the
+clipped to [0, 1] with the count noted. `FitsReader.ReadData` also counts the samples over 1
+and keeps the largest (`OutOfRange`); when they are more than `OffScaleShare` (half) of the
+file, `LoadFrom` throws a `RefusedImageException` with `OffScaleRefusal`'s sentence instead of
+returning a white frame (ADR 0096), which both applications show as they show a linear image
+and `ProofRun.PrepareOther` as the reason an image cannot be compared. `Reference` is the green plane on colour, the
 only plane on mono: the channel every single-channel measurement uses.
 
 `SourceInfo` (attached by the reader): `Path`, `Format`, `BitDepth`, `IsFloat`,

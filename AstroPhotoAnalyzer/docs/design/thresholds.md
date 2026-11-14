@@ -13,6 +13,8 @@ All empirical, most from the reference image. Change one, change its comment.
 | name | value | meaning |
 |---|---|---|
 | `LinearMedianMax` | 0.02 | below: image is probably linear, refused |
+| `OffScaleShare` | 0.5 | over this share of a FITS's samples above 1 the file is on another scale and is refused, not clipped (R-013, ADR 0096): the reference FITS have at most 0.0006 %, a file on 0..65535 nearly all |
+| `LevelTie` | 0.0001 | how far past a threshold on a whole level a figure in levels must be to pass it (`RasterOps.LevelsOver`, `LevelsUnder`; ADR 0095): a sample of an 8-bit file is not exactly n / 255 as a float, so a figure on the threshold reads up to 3e-5 off it; one 16-bit level is 0.0039. In `EdgeRegion.Coloured` it also compares a spread with half the mean of three departures, two computed figures, where the finest real step is 0.00065 |
 | `UpscaledFraction` | 0.5 | above: 16-bit file is an 8-bit upscale |
 | `DarkLevelA` / `DarkLevelB` | 32 / 64 | "dark pixel" levels for context |
 | `LowSeparationLstar` | 15 | the visibility threshold: below, the paper separates, the eye in room light barely; a sky under it is an Attention and the recommended row has the sky at or above it (ADR 0029); a grey of L\* 15 is the level 0.148, the same rule as `PrintBackgroundLo` |
@@ -76,7 +78,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `ProofGrid` | 65 | the nodes per channel of the soft proof's table (R-160): within Delta E76 1.0 of the exact per-pixel proof at the 99th percentile on both lab profiles, where 33 reach 5.2 on the canvas; 1.6 to 2.2 s to build in parallel (ADR 0066) |
 | `ProofMaxSide` | 2400 | the long side of the reduced copy the proof is made on (R-160): the preview's 1600 fits a Full HD render, the proof is shown full screen on a 4K screen too; a presumption about the screen |
 | `GamutFitLstarNodes` / `GamutFitHueNodes` | 101 / 121 | the nodes of the paper fit's table of the largest chroma over L\* and hue (R-175): builds in 1.3 s, within 0.025 of the exact search in the chroma factor on the baryta profiles (ADR 0083) |
-| `GamutFitEdgeMargin` | 0.6 | the band of chroma around the table's edge where the judge itself decides a pixel's largest chroma, for every pixel the fit would land near the edge, once per 16-bit colour (R-175): the table alone leaves 0.19 to 0.59 % of the measured pairs outside |
+| `GamutFitEdgeMargin` | 0.6 | the band of chroma around the table's edge where the judge itself decides a pixel's largest chroma, for every pixel the fit would land near the edge, once per 16-bit colour (R-175): the table alone leaves 0.19 to 0.59 % of the measured pairs outside; also the half-width of the band searched under a pixel the judge rejects inside that edge (ADR 0093) |
 | `GamutFitKneeExact` / `GamutFitKneeSoft` / `GamutFitKneeSofter` | 1.0 / 0.9 / 0.8 | the share of the edge the three variants compress the chroma from (R-176): the hard fit touches only the pixels outside, the knees 2 to 3 times as many for smaller losses each (ADR 0083) |
-| `GamutFitMinChroma` | 0.05 | under this chroma a pixel is grey for the fit: never touched, never outside (R-175) |
+| `GamutFitMinChroma` | 0.05 | under this chroma a pixel is grey for the fit: never touched, never outside by its chroma; counted as a tone out of reach when the judge rejects it (R-175, ADR 0094) |
 | `GamutFitBandShare` / `GamutFitRecipeShare` / `GamutFitRecipeStep` | 0.90 / 0.99 / 0.05 | the recipe for a hand-made mask (R-176): the tone band holds 90 % of the pixels outside, the saturation factor brings 99 % of them in, in steps of 5 % |

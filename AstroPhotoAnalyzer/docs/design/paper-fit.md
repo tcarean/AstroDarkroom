@@ -52,7 +52,9 @@ over a copy of the core, the quarter reduction of each image):
 
 Per pixel, the rows in parallel: the D50 Lab of the sRGB colour (`ColorMath.LabD50OfSrgb`, the
 Bradford-adapted matrix the soft proof's display step shares, so the fit and the proof speak
-one Lab); a chroma under `GamutFitMinChroma` is grey and copied; `cmax` from the table, unless
+one Lab); a chroma under `GamutFitMinChroma` is grey and copied, and with the facts asked for a
+grey pixel the judge rejects is counted outside before and after and as a tone out of reach
+(`Rejects`, ADR 0094; a mono raster is copied whole, nothing counted); `cmax` from the table, unless
 the pixel's chroma reaches within `GamutFitEdgeMargin` of it or passes it, so that the fit would
 land it on the edge, and the table has a judge: then `ExactEdge` searches the judge along the
 pixel's own hue at its own L\* within that band (from zero when the band's bottom is already
@@ -69,9 +71,44 @@ fitted pixels of the plate-solved FITS were still outside by the exact rule with
 since the pixels outside are dark, where one 8-bit step is a unit of L\* and tens of degrees of
 hue and the edge moves by more than the tolerance within a cell. The judge is a step function
 of the 8-bit colour, not monotone in chroma, so a pixel the knees move inward can land on a
-colour the judge calls outside: V-016 reads 0.02 % left after `Lina` against 0.001 % after
-`Exacta`, under the figure's precision. A pixel
-whose chroma passes `cmax` is outside; if `cmax` is negative (the judge rejects even the grey
+colour the judge calls outside: V-016 reads 0.006 % left after `Lina` against 0.001 % after
+`Exacta`, under the figure's precision (0.02 % before ADR 0093, when the pixels the judge
+rejected inside the edge were never moved).
+
+Whether a pixel is outside is not read off that edge (`Decide`, ADR 0093): the judge is asked
+about the pixel as it is, on its own samples (`GamutFitTable.JudgeOfPixel`, which the run sets
+to `GamutAnalyzer.Outside`; a table of the tests, without it, asks `Judge` on the pixel's Lab),
+for every pixel, so "outside as is" is the Soft proof tab's own count. The edge is then made to
+agree: a pixel the judge rejects although the edge holds its chroma (the table's edge, far
+inside it, or the searched one, since the judge is not monotone) has the edge searched again by
+`ExactEdge` in a band that ends at the pixel's own chroma, and a pixel the judge keeps past the
+edge takes its own chroma as the edge, so the hard fit leaves it and the soft knees compress it
+from a share of its own chroma. Where the search found no edge at all under such a pixel (the
+judge rejects the grey of its tone), it has no edge and no knee moves it: nothing nearer the
+grey is known to be inside. One case is left as it falls: `JudgeOfPixel` judges the samples
+and `ExactEdge` asks `Judge` on their Lab round trip, so on a rare pixel the two can differ
+about the pixel's own colour; it then stays as it is and is counted in what is left. Before this (the code review
+of 2026-11-13, CR-001) the edge alone decided, and measured 2026-11-14 on the tonal subsamples,
+`Exacta`:
+
+| pair | outside as is, judge / fit | left, judge / reported | rejected by the judge, never moved | after ADR 0093: outside as is, left |
+| --- | --- | --- | --- | --- |
+| plate-solved FITS, lab baryta | 1.9427 % / 1.9073 % | 0.0416 % / 0.0005 % | 581 of 1 411 820 | 1.9427 %, 0.0004 % |
+| plate-solved FITS, canvas | 2.4296 % / 2.3984 % | 0.0561 % / 0.0001 % | 791 | 2.4296 %, 0.0003 % |
+| `de_printat.png`, lab baryta | 0.2916 % / 0.2547 % | 0.0402 % / 0.0000 % | 580 of 1 443 420 | 0.2916 %, 0.0000 % |
+| Smida TIFF, WhiteWall baryta | 1.3609 % / 1.3633 % | 0.0042 % / 0.0000 % | 60 | 1.3609 %, 0.0000 % |
+
+After it the judge and the fit agree on every pixel of the four pairs, before and after the
+fit, under the three knees. The whole plate-solved FITS (22.6 MP) fits in 3.9 s on baryta and
+3.7 s on canvas with cold caches, against 3.2 s and 3.3 s before: the judge's word on every
+pixel costs about half a second. The share left after `Exacta` on a float source differs by a
+few pixels from run to run (0.0004 to 0.0006 % on the plate-solved FITS that day, 0.0005 to
+0.0008 % before): the edge is cached per 16-bit colour, several float colours share a key, and
+the rows run in parallel, so which of them gives the key its edge is not fixed. On `de_printat.png` through the canvas profile the two agree
+once the grey pixels are counted too (ADR 0094): 2.7695 % outside as is by both, 0.0261 % left,
+all of it tones out of reach (377 pixels, 334 of them grey).
+
+A pixel the judge rejects is outside; if `cmax` is negative (the judge rejects even the grey
 of that tone: the edge search's answer for it, apart from a tiny edge over a grey it keeps,
 which fits the pixel to that grey) it is copied and counted
 (`PctUnreachable`): no chroma brings it in, and the Tonuri tab's lift is the remedy. The table's
@@ -80,7 +117,8 @@ judge's, since within one L\* of such a node the two can disagree. Otherwise the
 `knee x cmax`, then `start + room x (1 - exp(-(c - start) / room))` with `room = cmax - start`,
 asymptotic to the edge; a knee of 1 is a hard clip at the edge. The colour goes back through
 `ColorMath.SrgbOfLabD50`, clamped. With `keepFacts` the outcome also holds the masks before and
-after (after: the judge on the fitted colour), the shares, the
+after (before: the judge on the pixel as it is; after: the judge on the fitted colour, or its
+first answer for a pixel left as it is), the shares, the
 chroma given up at the median and at the 99 % mark of the touched pixels, and the share of the
 pixels outside under L\* `LowSeparationLstar`; the save of a whole image runs without facts.
 
@@ -96,8 +134,8 @@ smallest whole L\* under which `GamutFitBandShare` of the pixels outside lie, an
 saturation factor in steps of `GamutFitRecipeStep` whose uniform scaling of the chroma of every
 pixel under that L\* brings `GamutFitRecipeShare` of the pixels outside in (decided with the
 pixel's own `cmax`, so no further trips), the factor decided on the band's own pixels outside
-whose tone is in reach (those above the band, and those whose tone is out of reach, are beyond
-the mask and are counted in what is left; before this,
+whose tone is in reach (those above the band, and those whose tone is out of reach, the grey
+ones the judge rejects among them, are beyond the mask and are counted in what is left; before this,
 on the Smida TIFF, where 10 % of the pixels outside sit above the band, the factor ran down to
 5 %), with the share of all the pixels outside it leaves. Measured on the tonal subsample, where
 the evidence is measured too.

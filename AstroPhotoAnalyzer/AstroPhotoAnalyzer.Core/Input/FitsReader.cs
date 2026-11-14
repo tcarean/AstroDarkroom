@@ -178,8 +178,17 @@ namespace AstroPhotoAnalyzer
                     double bscale = HDbl(hdr, "BSCALE", 1.0);
 
                     var raster = new Raster(n2, n1, n3);
-                    long clipped = ReadData(s, raster, bitpix, bzero, bscale);
+                    OutOfRange outside = ReadData(s, raster, bitpix, bzero, bscale);
 
+                    // Most samples over 1: the file is on another scale (a 32-bit float FITS on
+                    // 0..65535, as other stackers write). Clipped, it would be a white frame with
+                    // a median of 1, which the linear refusal does not catch, and the whole report
+                    // would describe it (ADR 0096).
+                    long samples = (long)n1 * n2 * n3;
+                    if (outside.OverOne > samples * Thresholds.OffScaleShare)
+                        throw new RefusedImageException(OffScaleRefusal(100.0 * outside.OverOne / samples, outside.Largest));
+
+                    long clipped = outside.Clipped;
                     string note = null;
                     if (clipped > 0)
                         note = Tr.Pick($"{clipped} values outside [0, 1] were clipped on reading", $"{clipped} valori in afara [0, 1] au fost taiate la citire");
@@ -196,6 +205,26 @@ namespace AstroPhotoAnalyzer
                 if (!SkipExact(s, dataBlocks)) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
             }
         }
+
+        /// <summary>
+        /// The sentence that refuses a FITS whose values are not on a 0 to 1 scale (R-013, ADR
+        /// 0096): what was found and what to do, in the interface language.
+        /// </summary>
+        /// <param name="pctOverOne">The share of the samples over 1, in percent.</param>
+        /// <param name="largest">The largest sample, on the scale the reader reads (1 = white).</param>
+        /// <returns>The reason and the way out, without the console's error prefix.</returns>
+        internal static string OffScaleRefusal(double pctOverOne, double largest)
+            => Tr.Pick(
+                $"the file's values are not between 0 and 1: {Fmt.F1(pctOverOne)} % of them are over 1 (the largest is {Fmt.Short(largest)}). "
+                + "The tool reads a FITS on a scale from 0 to 1. Save it from Siril as 32-bit on a 0 to 1 scale, or as 16-bit, and analyse that file.",
+                $"valorile din fisier nu sunt intre 0 si 1: {Fmt.F1(pctOverOne)} % din ele trec de 1 (cea mai mare e {Fmt.Short(largest)}). "
+                + "Unealta citeste un FITS pe o scara de la 0 la 1. Salveaza-l din Siril pe 32 de biti pe scara 0..1, sau pe 16 biti, si analizeaza fisierul acela.");
+
+        /// <summary>What <see cref="ReadData"/> met outside [0, 1].</summary>
+        /// <param name="Clipped">The samples clipped to 0 or to 1, the NaN ones counted at 0.</param>
+        /// <param name="OverOne">Of them, the samples over 1.</param>
+        /// <param name="Largest">The largest sample over 1, on the reader's scale; 0 when none is over 1.</param>
+        internal readonly record struct OutOfRange(long Clipped, long OverOne, double Largest);
 
         /// <summary>
         /// Writes one header card to the diagnostic log at Trace, as the file holds it (R-172):
@@ -276,8 +305,11 @@ namespace AstroPhotoAnalyzer
         /// <param name="bitpix">The header's BITPIX: 8, 16, 32, -32 or -64.</param>
         /// <param name="bzero">The header's BZERO, 0 when absent.</param>
         /// <param name="bscale">The header's BSCALE, 1 when absent.</param>
-        /// <returns>The number of samples clipped to 0 or 1, NaN ones counted at 0.</returns>
-        static long ReadData(Stream s, Raster r, int bitpix, double bzero, double bscale)
+        /// <returns>
+        /// The samples clipped to 0 or 1, NaN ones counted at 0, and of them how many were over 1
+        /// and the largest, by which <see cref="LoadFrom"/> tells a file on another scale.
+        /// </returns>
+        static OutOfRange ReadData(Stream s, Raster r, int bitpix, double bzero, double bscale)
         {
             int bytesPer = Math.Abs(bitpix) / 8;
             long plane = (long)r.W * r.H;
@@ -292,7 +324,8 @@ namespace AstroPhotoAnalyzer
 
             int chunkSamples = (1 << 20) / bytesPer;
             var buf = new byte[chunkSamples * bytesPer];
-            long clipped = 0;
+            long clipped = 0, overOne = 0;
+            double largest = 0;
             long i = 0;
             while (i < total)
             {
@@ -307,7 +340,11 @@ namespace AstroPhotoAnalyzer
                     // at 0.
                     if (double.IsNaN(v)) { v = 0; clipped++; }
                     else if (v < 0) { v = 0; clipped++; }
-                    else if (v > 1) { v = 1; clipped++; }
+                    else if (v > 1)
+                    {
+                        if (v > largest) largest = v;
+                        v = 1; clipped++; overOne++;
+                    }
                     int p = (int)(i / plane);
                     long idx = i % plane;
                     // The file's first row is the image's bottom row, as Siril shows it (ADR 0049).
@@ -315,7 +352,7 @@ namespace AstroPhotoAnalyzer
                     r.Planes[p][(r.H - 1 - y) * r.W + x] = (float)v;
                 }
             }
-            return clipped;
+            return new OutOfRange(clipped, overOne, largest);
         }
 
         /// <summary>

@@ -237,7 +237,11 @@ sample) when they are at least `RegionSkyMinFraction` (0.25) of it (`OnSkyPixels
 `SkyFraction`) and on every pixel otherwise, with `PixelsNote` for the row (ADR 0056); `Deltas`
 = region - background per plane, `MaxAbsDelta`, `Flagged` (> `CornerGradientLevels` = 3), and
 `Coloured`: spread (max delta - min delta) > 3 **and** > `CornerColourSpreadRatio` (0.5) x mean
-|delta| - the channels move differently. The distinction came from the reference image against
+|delta| - the channels move differently. The three comparisons (the two with 3, and the spread
+with half the mean) are `RasterOps.LevelsOver`'s, passed only by more than `LevelTie` (ADR
+0095): on an 8-bit file a region exactly 3 levels from the sky read 3.0000017 or 2.9999998 by
+the sky's level, and one at +10 / +8 / +6, whose spread is exactly half its mean, was a colour
+at some sky levels and not at others. The distinction came from the reference image against
 the darkest quarter: the horizon corner +9.4 / +1.7 / -9.9 (coloured, light pollution), the
 corner the Milky Way enters +11 / +10 / +16 (neutral, the object). Against the sky patches, on
 their own sky pixels, they read +4.1 / -4.0 / -17.1 (coloured) and +4.2 / +2.9 / +5.6 (neutral;
@@ -337,7 +341,8 @@ shows it under the size table so the dpi column reads against physics rather tha
 **C1 plateau**: at every one of `PlateauPositions` (5000) random positions from
 `SeededRandom(PlateauSeed = 1)`, the tiles accepted when the reference plane's range < 6
 levels and mean < 70 levels (`PlateauTile*` - the strict criterion of the other acceptance
-script). On each, the 8-bit quantised values: changes of value per row, averaged; the tile's
+script; both by `RasterOps.LevelsUnder`, under by more than `LevelTie`, so that a tile of an
+8-bit file spanning exactly 6 levels is refused at every level, ADR 0095). On each, the 8-bit quantised values: changes of value per row, averaged; the tile's
 plateau = 64 / (1 + changes), kept in `PlateauTilePx` (sorted). `PlateauPx` = mean over tiles
 (NaN without tiles), the average step, for information; `PlateauMmAt(dpi)` = PlateauPx x
 25.4 / dpi. The verdict (ADR 0060): `PlateauVisibleFramePctAt(dpi)` = 100 x (tiles with px x
@@ -375,7 +380,9 @@ x 255** - so the error includes the 8-bit rounding, as the acceptance table did.
 row: `Bytes`, `MeanAbsError`, `MaxError`, `P99`, `P999` (from a 0.01-level histogram, no
 sort), `PctOverThreshold` (error > `JpegErrorCountLevels` = 2) and
 `MeanLevelOverThreshold` (where those samples sit), `Acceptable` = MaxError <=
-`JpegMaxErrorReject` (10). `Tiff8LzwBytes` = the same 8-bit image as TIFF LZW with the
+`JpegMaxErrorReject` (10); both thresholds are passed only by more than `LevelTie`
+(`RasterOps.LevelsOver`, ADR 0095), since the reference of an 8-bit file is a whole level a
+float holds a hair off. `Tiff8LzwBytes` = the same 8-bit image as TIFF LZW with the
 horizontal predictor (without it ImageSharp gave 38.6 MB where ImageMagick gives 20).
 
 Measured and relied upon: mean error is **not** monotone in quality this close to

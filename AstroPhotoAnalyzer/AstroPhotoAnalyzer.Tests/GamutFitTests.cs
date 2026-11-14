@@ -131,6 +131,138 @@ public class GamutFitTests
         }
     }
 
+    /// <summary>
+    /// CR-001: the judge, a step function of the 8-bit colour in the run, can disagree with the
+    /// table both ways, and it is the judge the Soft proof tab shows. A pixel it rejects far
+    /// inside the table's edge was never asked about, so it was not counted, not moved and not
+    /// counted after; a pixel it keeps past the edge was counted and cut.
+    /// </summary>
+    [Fact]
+    public void R175_TheJudgeDecidesEveryPixelWhateverTheTableSays()
+    {
+        // The table: a paper that holds a chroma of 10 from L* 30 up. The judge agrees, except
+        // around L* 50, where it rejects every chroma over 6, and around L* 70, where it keeps
+        // every chroma up to 12.
+        static bool Judge(double l, double a, double b)
+        {
+            double c = Math.Sqrt(a * a + b * b);
+            if (l > 45 && l < 55) return c > 6;
+            if (l > 65 && l < 75) return c > 12;
+            return c > 10;
+        }
+        GamutFitTable t = GamutFitTable.Build(FakeRule);
+        t.Judge = Judge;
+        // As the run sets it: the judge asked about the pixel's own sRGB.
+        t.JudgeOfPixel = (red, green, blue) =>
+        {
+            var (l, a, b) = ColorMath.LabD50OfSrgb(red, green, blue);
+            return Judge(l, a, b);
+        };
+        // Rejected inside the table; kept past it; kept inside it; rejected past it.
+        Raster r = RasterOf((50, 8, 0), (70, 11, 0), (60, 8, 0), (60, 11, 0));
+
+        GamutFitOutcome o = GamutFit.Apply(r, t, knee: 1, keepFacts: true);
+
+        Assert.Equal(new[] { true, false, false, true }, o.OutsideBefore);
+        Assert.Equal(new[] { false, false, false, false }, o.OutsideAfter);
+        Assert.Equal(50, o.PctOutsideBefore, 3);
+        Assert.Equal(50, o.PctTouched, 3);
+        Assert.Equal(0, o.PctUnreachable);
+        // Landed where the judge keeps it, just under its own edge of 6 (the search's last step
+        // from zero is a tenth), with the tone and the hue as they were.
+        var landed = LabAt(o.Image, 0);
+        Assert.InRange(ChromaOf(landed), 5.8, 6.0);
+        Assert.InRange(landed.L, 49.85, 50.15);
+        Assert.InRange(HueOf(landed), -1, 1);
+        Assert.InRange(ChromaOf(LabAt(o.Image, 3)), 9.9, 10.0);
+        // The two the judge keeps are the input's own samples, the one past the table's edge too.
+        foreach (int i in new[] { 1, 2 })
+            for (int p = 0; p < 3; p++) Assert.Equal(r.Planes[p][i], o.Image.Planes[p][i]);
+
+        // The recipe counts the same two pixels outside, at L* 50 and L* 60: its band ends over
+        // L* 60 and holds three of the four pixels (the one at L* 70 is not outside).
+        GamutFitRecipe recipe = GamutFit.Recipe(r, t);
+        Assert.InRange(recipe.LstarCeiling, 60, 62);
+        Assert.Equal(75, recipe.PctInBand, 3);
+    }
+
+    /// <summary>
+    /// CR-002: a grey pixel has no chroma to reduce, so the fit copies it; it was copied before
+    /// anything was asked about its tone, and so counted nowhere, while the Soft proof tab
+    /// paints it red and a neighbour with some chroma at the same tone was counted three times.
+    /// </summary>
+    [Fact]
+    public void R175_AGreyPixelWhoseToneIsOutOfReachIsCountedAndLeftAsItIs()
+    {
+        // The fake paper reaches no tone under L* 8. A grey and a coloured pixel under it, a grey
+        // and a coloured pixel well inside.
+        GamutFitTable t = GamutFitTable.Build(FakeRule);
+        Raster r = RasterOf((5, 0, 0), (5, 10, 0), (50, 0, 0), (50, 4, 3));
+        Assert.True(ChromaOf(LabAt(r, 0)) < Thresholds.GamutFitMinChroma, "the first pixel is grey for the fit");
+
+        GamutFitOutcome o = GamutFit.Apply(r, t, knee: 1, keepFacts: true);
+
+        Assert.Equal(new[] { true, true, false, false }, o.OutsideBefore);
+        Assert.Equal(new[] { true, true, false, false }, o.OutsideAfter);
+        Assert.Equal(50, o.PctOutsideBefore, 3);
+        Assert.Equal(50, o.PctOutsideAfter, 3);
+        Assert.Equal(50, o.PctUnreachable, 3);
+        Assert.Equal(0, o.PctTouched);
+        Assert.Equal(100, o.PctOutsideUnderLowSeparation, 3);
+        for (int p = 0; p < 3; p++) Assert.Equal(r.Planes[p], o.Image.Planes[p]);
+
+        // The recipe: both are beyond a mask, so the factor stays at 1 and all of them are left.
+        GamutFitRecipe recipe = GamutFit.Recipe(r, t);
+        Assert.Equal(1, recipe.Factor);
+        Assert.Equal(100, recipe.PctLeft, 3);
+
+        // Without the facts (the save of a whole image) the pixel is copied all the same.
+        Raster saved = GamutFit.Apply(r, t, knee: 1, keepFacts: false).Image;
+        for (int p = 0; p < 3; p++) Assert.Equal(r.Planes[p], saved.Planes[p]);
+    }
+
+    /// <summary>
+    /// The review of the branch (2026-11-14): a pixel the judge keeps at a tone whose grey it
+    /// rejects has no edge under it (the search answers -1), so no chroma nearer the grey is
+    /// known to be inside. The soft knees took its own chroma as the edge and pulled it toward
+    /// that grey: inside before, moved for nothing.
+    /// </summary>
+    [Fact]
+    public void R175_APixelTheJudgeKeepsOverAGreyItRejectsIsLeftByEveryVariant()
+    {
+        // Under L* 8 this judge rejects the grey and every chroma under 3, and keeps the rest.
+        static bool Judge(double l, double a, double b)
+        {
+            double c = Math.Sqrt(a * a + b * b);
+            return l < 8 ? c < 3 : c > Cmax(l);
+        }
+        GamutFitTable t = GamutFitTable.Build(FakeRule);
+        t.Judge = Judge;
+        Raster r = RasterOf((5, 10, 0), (50, 4, 3));
+
+        foreach (double knee in GamutFitRun.Knees)
+        {
+            GamutFitOutcome o = GamutFit.Apply(r, t, knee, keepFacts: true);
+
+            Assert.Equal(new[] { false, false }, o.OutsideBefore);
+            Assert.Equal(new[] { false, false }, o.OutsideAfter);
+            Assert.Equal(0, o.PctTouched);
+            for (int p = 0; p < 3; p++) Assert.Equal(r.Planes[p], o.Image.Planes[p]);
+        }
+    }
+
+    /// <summary>
+    /// The second review of the branch (2026-11-14): a pixel without an edge (positive infinity,
+    /// from <c>Decide</c>) keeps its chroma under every knee the function documents, 0 included,
+    /// where 0 x infinity gave NaN.
+    /// </summary>
+    [Fact]
+    public void R175_WithoutAnEdgeTheKneeKeepsTheChromaAtEveryKnee()
+    {
+        foreach (double knee in new[] { 0, 0.5, 0.8, 0.9, 1 })
+            Assert.Equal(10, GamutFit.Knee(10, double.PositiveInfinity, knee));
+    }
+
     [Fact]
     public void R176_TheThreeVariantsTouchMoreAsTheKneeComesDownAndTheEvidenceSaysHowMuch()
     {
