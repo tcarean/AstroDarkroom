@@ -284,8 +284,8 @@ internal static class DarkReport
         if (l.AssumedSettings > 0)
         {
             rows.Add(new(T("WARNING", "ATENTIE"), T(
-                $"{l.AssumedSettings} {(l.AssumedSettings == 1 ? "light does not give its ISO or exposure; the darks' were taken" : "lights do not give their ISO or exposure; the darks' were taken")} (1 ADU-eq = {F(r.Darks.Norm, 2)} ADU)",
-                $"{RoCount(l.AssumedSettings)}{(l.AssumedSettings == 1 ? "light nu spune ISO-ul sau expunerea; s-au luat cele ale dark-urilor" : "lights nu spun ISO-ul sau expunerea; s-au luat cele ale dark-urilor")} (1 ADU-eq = {F(r.Darks.Norm, 2)} ADU)")));
+                $"{l.AssumedSettings} {(l.AssumedSettings == 1 ? "light does not give its ISO or exposure; the darks' were taken" : "lights do not give their ISO or exposure; the darks' were taken")} (1 ADU-eq = {F(l.AssumedNorm, 2)} ADU)",
+                $"{RoCount(l.AssumedSettings)}{(l.AssumedSettings == 1 ? "light nu spune ISO-ul sau expunerea; s-au luat cele ale dark-urilor" : "lights nu spun ISO-ul sau expunerea; s-au luat cele ale dark-urilor")} (1 ADU-eq = {F(l.AssumedNorm, 2)} ADU)")));
         }
 
         if (l.DarksSilent > 0)
@@ -499,7 +499,7 @@ internal static class DarkReport
                 (null, double e) => $"{InventoryReport.Exposure(e)} s",
                 _ => T("unknown settings", "setari necunoscute"),
             };
-            // a partner with unknown settings has its index in its file's ADU (R-063)
+            // a partner that does not give both settings has its index in its file's ADU (R-063)
             string partnerUnit = p.Iso is double && p.ExposureSeconds is double ? "ADU-eq" : "ADU";
             rows.Add(new(T("partner", "partener"), T(
                 $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} {partnerUnit}; frames read {p.Used} of {p.Frames}, {settings}); label {p.Label}",

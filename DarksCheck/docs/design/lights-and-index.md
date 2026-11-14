@@ -38,7 +38,8 @@ the report's lines: a light that lacks a setting the darks give is marked `Assum
 (`Normalisation.Lacks`); one that gives a setting the darks lack is counted in
 `LightsAnalysis.DarksSilent`; and `LightsAnalysis.UnsaidByBoth` holds the settings the darks
 lack and no measured light gives (`Normalisation.UnsaidBy`, intersected over the lights),
-which were taken as the same. The `INDEX` rows keep their own flag: `DarkReport.IndexRows`
+which were taken as the same; `LightsAnalysis.AssumedNorm` is the factor the marked lights
+were read with, the figure of their row. The `INDEX` rows keep their own flag: `DarkReport.IndexRows`
 gives the darks' figure in `ADU` and ends the row with the files not saying their settings
 when the darks do not give both, where a set that gives both reads `ADU-eq` and the reference
 settings; the partner's row gives the settings the partner gives, and `ADU` unless it gives

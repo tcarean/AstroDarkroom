@@ -164,6 +164,7 @@ each pair has the same defect unless the entry says otherwise.
 | CR-074 | 4 | - | confirmed | Window tests that cannot fail or do not check what their name says | open |
 | CR-075 | 4 | - | confirmed | Design notes, requirements and comments that describe other code | open |
 | CR-076 | 1 | some setups | owner | Sets that give the exposure and no ISO are compared as made at the same settings, though their exposures are known to differ | fixed 91508347 |
+| CR-077 | 1 | rare | confirmed | Darks without an ISO between lights and a partner at two ISOs: the chained verdict can read `as it is`, and two rows take the darks' ISO two ways | open |
 
 The files copied from LightsCheck have their own entries, CP-1 to CP-12, in their own section;
 five of them are of severity 1.
@@ -1601,6 +1602,33 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
   other settings and that nothing is said to be worked out; no test pins the verdicts above.
 - Evidence: owner.
 - Status: fixed 91508347 (the owner chose: a setting both sets give is used, one a set does not give is taken from the other, one neither gives is taken as the same and said in a WARNING row; ADR 0060)
+
+### CR-077 Darks without an ISO between lights and a partner at two ISOs: the chained verdict can read `as it is`, and two rows take the darks' ISO two ways
+
+- Found: 2026-11-14, by the review of the fix of CR-076.
+- Where: `Runs/DarkSeriesRun.cs` (`MatchPartner`: the chained row, `ownAt`, `partnerAt` and
+  each light's place; `IndexAnalyzer.Chain`); ADR 0060, decision 5.
+- What happens: the lights are compared with the partner through the session's darks, one pair
+  at a time. A setting the darks do not give is taken from the lights in the first pair and
+  from the partner in the second, so it drops out of both, and a setting the lights and the
+  partner both give is never compared between the two.
+- Case: darks of 120 s without an ISO, lights at ISO 800, a partner at ISO 400, all as high in
+  the files. Check 2 says `the darks do not give ...; what they do not give was taken as the
+  lights'`, INDEX says `the session's darks do not give ...; what they do not give was taken
+  as the partner's`, the chained ratio reads 1.00 and the verdict `OK: the partner can be
+  subtracted as it is ... at the same temperature`. From the two files alone the lights are
+  at twice the partner's ISO: the ratio is 0.50, the partner 6 degrees warmer, and the pair is
+  at other settings (ADR 0055). The same holds for the exposure.
+- Should: the lights against the partner on the settings those two give, a missing one taken
+  through the darks: the chained ratio in the files over the factor of the light over the
+  partner, the product of the two pairs' ratios kept when all three give both settings, so
+  that no figure of such sessions moves.
+- Deliberate: the rule of the second review of CR-006 to CR-010 and ADR 0060, decision 5 ("a
+  setting that was not used between two sets stands where the set it was taken from stands").
+- Test: `R064_ASetThatDoesNotSayItsSettingsStandsWhereTheOneItWasComparedWithStands` pins
+  `LightsOther` null for this case, and not the verdict.
+- Evidence: confirmed by reading; the verdict's words were not run.
+- Status: open
 
 ## How the list is used
 

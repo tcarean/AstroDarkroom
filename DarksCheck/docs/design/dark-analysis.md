@@ -307,9 +307,9 @@ first decoded frame's settings and the stack's normalisation, the index and labe
 master, the session's darks over it (`IndexAnalyzer.SharedRatios`, the partner as reference),
 the lights over it (`IndexAnalyzer.Chain`), and the overlap of the two hot-pixel sets at
 `Th.PartnerOverlapAdu` (50 ADU-eq): the session's pixels above 50 that the partner has above
-50, and the partner's above 50 that the session has above `Th.HotAdu`, each at its own (the
-partner's at the session's when one of the two does not say its settings, ADR 0053)
-normalisation. Each group is released before the next is decoded. A
+50, and the partner's above 50 that the session has above `Th.HotAdu`, each at its own
+normalisation (the partner's at the session's times the partner's over the session's from the
+settings both give, unless both give both, ADR 0060). Each group is released before the next is decoded. A
 failure of the lights or of the partner is an error carried in the result (`LightsError`,
 `PartnerError`), printed in its section, and does not stop the rest of the report. `DarkReport`
 writes section 2, `INDEX` (the index, the label, the lights' equivalent index, the partner's

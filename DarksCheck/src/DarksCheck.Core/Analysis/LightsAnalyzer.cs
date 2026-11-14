@@ -136,10 +136,11 @@ internal sealed record TraceFigures(int Pixels, double PerUnit, double Median, i
 /// set's hot pixels are <paramref name="RatioInFiles"/> times the master's.
 /// </summary>
 /// <param name="Master">The settings of the master's frames: the first one stacked; for a
-/// partner that does not say its own, the session's darks' it was taken at (ADR 0053).</param>
+/// partner in the chained row, with the settings it does not give taken from the session's
+/// darks (ADR 0060).</param>
 /// <param name="Set">The settings of the set measured against it: for lights, the first measured
-/// light at other settings than the master, or the darks' settings when that light was taken at
-/// them.</param>
+/// light at other settings than the master; in the chained row, with each setting the light or
+/// the darks do not give taken from where the darks stand (ADR 0060).</param>
 /// <param name="RatioInFiles">The set's hot pixels over the master's as the files have them, the
 /// ratio without the two factors; NaN when the ratio is unmeasured.</param>
 internal sealed record SettingsMismatch(FrameInfo Master, FrameInfo Set, double RatioInFiles);
@@ -225,6 +226,15 @@ internal sealed record LightsAnalysis(
     /// factor; 0 when the darks give both settings.
     /// </summary>
     internal int DarksSilent { get; init; }
+
+    /// <summary>
+    /// The factor the lights of <see cref="AssumedSettings"/> were read with, what 1 ADU
+    /// equivalent is in their ADU (R-052): the median over those lights of
+    /// <see cref="LightsAnalyzer.FactorOf"/>. It is the darks' factor when such a light gives no
+    /// setting, and the darks' brought to the light's own exposure or ISO when it gives one. NaN
+    /// when no light took a setting from the darks.
+    /// </summary>
+    internal double AssumedNorm { get; init; } = double.NaN;
 
     /// <summary>
     /// The settings the darks do not give and no measured light gives either (R-052, ADR 0060):
@@ -420,6 +430,10 @@ internal static class LightsAnalyzer
             ok.Length == 0 ? double.NaN : ok[0].AmpRatioMedian, ok.Length == 0 ? double.NaN : ok[^1].AmpRatioMedian, traces)
         {
             DarksSilent = darksSilent,
+            // the factor those lights were read with: the darks' over each light's factor to the darks' ADU
+            AssumedNorm = frames.Any(f => f.Error is null && f.AssumedSettings)
+                ? Planes.Median(frames.Where(f => f.Error is null && f.AssumedSettings).Select(f => (float)(darks.Norm / f.ToDarks)).ToArray())
+                : double.NaN,
             UnsaidByBoth = unsaid,
             Other = other,
         };
@@ -570,7 +584,8 @@ internal static class LightsAnalyzer
     /// <param name="black">The light's black level, in raw ADU.</param>
     /// <param name="white">The light's white level, in raw ADU.</param>
     /// <param name="normL">The factor the light's ADU are divided by (<see cref="FactorOf"/>).</param>
-    /// <param name="assumed">True when the light does not say its ISO or its exposure.</param>
+    /// <param name="assumed">True when the light lacks an ISO or an exposure the darks give and
+    /// took the darks' (<see cref="LightFigures.AssumedSettings"/>).</param>
     /// <param name="darkExcess">The dark master minus its black, row-major, in raw ADU.</param>
     /// <param name="normD">The darks' normalisation factor.</param>
     /// <param name="ampIdx">The mosaic indices of the dark's amplitude pixels.</param>
