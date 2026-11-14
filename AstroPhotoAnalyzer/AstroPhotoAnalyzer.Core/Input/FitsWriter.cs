@@ -166,7 +166,7 @@ namespace AstroPhotoAnalyzer
                 {
                     var card = new byte[Card];
                     Array.Copy(raw, c * Card, card, 0, Card);
-                    string key = Encoding.ASCII.GetString(card, 0, 8).TrimEnd();
+                    string key = Encoding.ASCII.GetString(card, 0, 8).Trim();
                     if (key == "END") break;
                     if (key == "NAXIS1") card = WithValue(card, rect.W.ToString(CultureInfo.InvariantCulture));
                     else if (key == "NAXIS2") card = WithValue(card, rect.H.ToString(CultureInfo.InvariantCulture));
@@ -229,8 +229,10 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// A reference-pixel card moved by the pixels cut before it; a card whose value is not
-        /// a number comes back as it is.
+        /// A reference-pixel card moved by the pixels cut before it, in decimal arithmetic, so
+        /// that 2919.1 less 833 is written 2086.1 and the card keeps its comment; a value some
+        /// writers put between quotes is read as the number it holds and written as one. A
+        /// card whose value is not a number comes back as it is.
         /// </summary>
         /// <param name="card">The card's 80 bytes.</param>
         /// <param name="cut">The pixels cut before the first kept one, along the card's axis.</param>
@@ -240,10 +242,16 @@ namespace AstroPhotoAnalyzer
             string text = Encoding.ASCII.GetString(card);
             if (text[8] != '=') return card;
             int slash = text.IndexOf('/', 10);
-            string value = (slash < 0 ? text.Substring(10) : text.Substring(10, slash - 10)).Trim();
-            // A FITS real may write its exponent with a D.
-            if (!double.TryParse(value.Replace('D', 'E'), NumberStyles.Float, CultureInfo.InvariantCulture, out double was)) return card;
-            string now = (was - cut).ToString("R", CultureInfo.InvariantCulture);
+            // The reader takes a quoted number for the number (ReadHeader strips the quotes), so
+            // the plate solution it reads from the crop must have moved too. A FITS real may
+            // write its exponent with a D.
+            string value = (slash < 0 ? text.Substring(10) : text.Substring(10, slash - 10)).Trim().Trim('\'').Trim().Replace('D', 'E');
+            string now;
+            if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal exact))
+                now = (exact - cut).ToString(CultureInfo.InvariantCulture);
+            else if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double was) && !double.IsNaN(was) && !double.IsInfinity(was))
+                now = (was - cut).ToString("R", CultureInfo.InvariantCulture);
+            else return card;
             // A real keeps its point, as the writers of plate solutions put it ("1811.").
             if (now.IndexOfAny(new[] { '.', 'E' }) < 0) now += ".";
             return WithValue(card, now);

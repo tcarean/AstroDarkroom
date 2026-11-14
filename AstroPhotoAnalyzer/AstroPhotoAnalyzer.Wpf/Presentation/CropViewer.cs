@@ -198,6 +198,8 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>
         /// What a press at a point grabs: the nearest corner within <see cref="HandleGrab"/> on
         /// both axes, otherwise the rectangle when the point is inside it, otherwise nothing.
+        /// Inside the rectangle a corner reaches no further than a third of each side, so that
+        /// the middle of a rectangle smaller than its handles can still be grabbed to move it.
         /// </summary>
         /// <param name="at">The point, in the element's device-independent pixels.</param>
         /// <returns>The grip.</returns>
@@ -207,11 +209,16 @@ namespace AstroPhotoAnalyzer.Wpf
             if (crop.IsEmpty) return Grip.None;
             Grip best = Grip.None;
             double nearest = double.MaxValue;
+            double insideX = Math.Min(HandleGrab, crop.Width / 3), insideY = Math.Min(HandleGrab, crop.Height / 3);
             foreach ((Grip grip, Point corner) in new[] { (Grip.TopLeft, crop.TopLeft), (Grip.TopRight, crop.TopRight), (Grip.BottomLeft, crop.BottomLeft), (Grip.BottomRight, crop.BottomRight) })
             {
-                double dx = Math.Abs(at.X - corner.X), dy = Math.Abs(at.Y - corner.Y);
-                if (dx > HandleGrab || dy > HandleGrab || dx + dy >= nearest) continue;
-                nearest = dx + dy;
+                // The distance from the corner towards the rectangle's inside; negative outside it.
+                double inX = grip is Grip.TopLeft or Grip.BottomLeft ? at.X - corner.X : corner.X - at.X;
+                double inY = grip is Grip.TopLeft or Grip.TopRight ? at.Y - corner.Y : corner.Y - at.Y;
+                if (inX < -HandleGrab || inX > insideX || inY < -HandleGrab || inY > insideY) continue;
+                double distance = Math.Abs(inX) + Math.Abs(inY);
+                if (distance >= nearest) continue;
+                nearest = distance;
                 best = grip;
             }
             if (best != Grip.None) return best;

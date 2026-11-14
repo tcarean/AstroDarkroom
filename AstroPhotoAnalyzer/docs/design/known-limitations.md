@@ -170,7 +170,8 @@
   are not written, a compressed TIFF comes out uncompressed, and a PNG gains a `pHYs` chunk of
   96 dpi (ADR 0093). A FITS keeps every card; of those that depend on where the image starts
   only `CRPIX` is moved, so a keyword of another convention (`LTV1`, a subframe origin) keeps
-  the input's value. A TIFF of a depth other than 8 or 16 bits is refused, since the reader
+  the input's value, and a `CHECKSUM` or `DATASUM` card, which the curve's FITS copies too, no
+  longer matches the data. A TIFF of a depth other than 8 or 16 bits is refused, since the reader
   only gets it converted (R-012).
 - The crop's rectangle is placed on a reduced copy without zoom (the owner's choice, ADR
   0093): on a 23 MP image on a Full HD screen one screen pixel is about four image pixels, and

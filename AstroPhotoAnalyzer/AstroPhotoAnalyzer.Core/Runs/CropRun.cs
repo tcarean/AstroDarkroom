@@ -103,18 +103,36 @@ namespace AstroPhotoAnalyzer
             switch (s.Format)
             {
                 case "FITS":
-                    return new CropOutput { Kind = CropFileKind.Fits, Bits = s.BitDepth, IsFloat = s.IsFloat };
+                    return new CropOutput { Kind = CropFileKind.Fits, Bits = s.BitDepth, IsFloat = s.IsFloat, Extension = ExtensionFor(s.Path, ".fit", ".fits", ".fts") };
                 case "TIFF":
                     return s.BitDepth == 8 || s.BitDepth == 16
-                        ? new CropOutput { Kind = CropFileKind.Tiff, Bits = s.BitDepth }
+                        ? new CropOutput { Kind = CropFileKind.Tiff, Bits = s.BitDepth, Extension = ExtensionFor(s.Path, ".tif", ".tiff") }
                         : new CropOutput { Kind = CropFileKind.Tiff, Bits = s.BitDepth, Problem = CropTexts.TiffDepthRefused(s.BitDepth) };
                 case "PNG":
-                    return new CropOutput { Kind = CropFileKind.Png, Bits = s.BitDepth == 16 ? 16 : 8 };
+                    return new CropOutput { Kind = CropFileKind.Png, Bits = s.BitDepth == 16 ? 16 : 8, Extension = ExtensionFor(s.Path, ".png") };
                 case "JPEG":
                     return new CropOutput { Kind = CropFileKind.Tiff, Bits = 8, Extension = ".tif", FromJpeg = true };
                 default:
                     return new CropOutput { Kind = CropFileKind.Tiff, Bits = 8, Problem = CropTexts.FormatRefused(s.Format) };
             }
+        }
+
+        /// <summary>
+        /// The extension the proposed name must take for a kind of file: none when the input's
+        /// own is one of the kind's, otherwise the kind's first. A file whose name says one
+        /// format and whose content is another (a PNG named .tif, which the reader notes) is
+        /// written as its content, so its crop is named after the content too.
+        /// </summary>
+        /// <param name="inputPath">The input's path; null when it is not known, which keeps the input's extension.</param>
+        /// <param name="own">The extensions of the kind written, with their points, the one to propose first.</param>
+        /// <returns>Null to keep the input's extension, or the extension to propose.</returns>
+        static string ExtensionFor(string inputPath, params string[] own)
+        {
+            if (inputPath == null) return null;
+            string ext = System.IO.Path.GetExtension(inputPath);
+            foreach (string e in own)
+                if (ext.Equals(e, StringComparison.OrdinalIgnoreCase)) return null;
+            return own[0];
         }
 
         /// <summary>

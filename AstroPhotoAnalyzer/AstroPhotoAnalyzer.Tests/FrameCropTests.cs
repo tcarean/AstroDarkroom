@@ -115,18 +115,58 @@ public class FrameCropTests
         Assert.Equal(anchorY, top ? least.Y + least.H : least.Y);
     }
 
-    [Fact]
-    public void R180_AResizeHoldsTheFramesProportionsWithinHalfAPixel()
+    [Theory]
+    [InlineData(FrameW, FrameH)]   // wider than tall, an awkward ratio
+    [InlineData(FrameH, FrameW)]   // taller than wide: the short side is the width
+    [InlineData(37, 10)]           // wider than the image: the room's width decides the largest
+    public void R180_AResizeHoldsTheFramesProportionsWithinHalfAPixel(double fw, double fh)
     {
-        // An awkward ratio, every width from the smallest to the largest the image allows.
-        CropRect r = FrameCrop.Largest(1200, 900, FrameW, FrameH);
-        for (int pull = 0; pull < 1100; pull += 7)
-        {
-            CropRect q = FrameCrop.Resize(r, CropCorner.BottomRight, r.X + pull, r.Y + 1, 1200, 900, FrameW, FrameH);
-            double byWidth = Math.Abs(q.H - q.W * FrameH / FrameW), byHeight = Math.Abs(q.W - q.H * FrameW / FrameH);
-            Assert.True(Math.Min(byWidth, byHeight) <= 0.5, $"{q} is off the frame's proportions");
-            Assert.True(q.X + q.W <= 1200 && q.Y + q.H <= 900, q.ToString());
-        }
+        // Every width, one pixel at a time, from under the smallest to past the largest the
+        // image allows, pulled from two opposite corners.
+        CropRect r = FrameCrop.Largest(1200, 900, fw, fh);
+        var widths = new HashSet<int>();
+        for (int pull = -5; pull < 1300; pull++)
+            foreach (CropCorner corner in new[] { CropCorner.BottomRight, CropCorner.TopLeft })
+            {
+                bool far = corner == CropCorner.BottomRight;
+                CropRect q = FrameCrop.Resize(r, corner, far ? r.X + pull : r.Right - pull, far ? r.Y + 1 : r.Bottom - 1, 1200, 900, fw, fh);
+                double byWidth = Math.Abs(q.H - q.W * fh / fw), byHeight = Math.Abs(q.W - q.H * fw / fh);
+                Assert.True(Math.Min(byWidth, byHeight) <= 0.5, $"{q} is off the frame's proportions");
+                Assert.True(q.FitsIn(1200, 900), q.ToString());
+                Assert.True(Math.Min(q.W, q.H) >= Thresholds.CropMinSide, q.ToString());
+                Assert.Equal(far ? r.X : r.Right, far ? q.X : q.Right);
+                Assert.Equal(far ? r.Y : r.Bottom, far ? q.Y : q.Bottom);
+                widths.Add(q.W);
+            }
+        // The smallest and the largest were both reached: the short side at the minimum, and
+        // the rectangle the image's largest.
+        Assert.Contains(r.W, widths);
+        Assert.Contains((int)Math.Ceiling(fw >= fh ? Thresholds.CropMinSide * fw / fh : Thresholds.CropMinSide), widths);
+    }
+
+    [Theory]
+    [InlineData(40000000.0, 1.0)]
+    [InlineData(1e300, 1e-300)]
+    [InlineData(1.0, 1000000.0)]
+    [InlineData(1e-300, 1e300)]
+    public void R180_AFrameOfAbsurdProportionsStillGivesARectangleInsideTheImage(double fw, double fh)
+    {
+        const int w = 6000, h = 4000;
+        CropRect r = FrameCrop.Largest(w, h, fw, fh);
+        Assert.True(r.FitsIn(w, h), r.ToString());
+        foreach (CropCorner corner in Enum.GetValues<CropCorner>())
+            foreach ((double x, double y) in new[] { (-1e9, -1e9), (1e9, 1e9), (r.X, r.Y), (r.Right, r.Bottom), (3000.0, 2000.0), (double.NaN, 5.0) })
+            {
+                CropRect q = FrameCrop.Resize(r, corner, x, y, w, h, fw, fh);
+                Assert.True(q.FitsIn(w, h), $"{corner} to ({x}, {y}) gave {q}");
+                // The frame's long side stays the rectangle's long side.
+                Assert.True(fw > fh ? q.W >= q.H : q.H >= q.W, q.ToString());
+            }
+    }
+
+    [Fact]
+    public void R180_AnImageSmallerThanTheMinimumStillHasItsOneRectangle()
+    {
         // An image smaller than the minimum still has its one rectangle.
         CropRect tiny = FrameCrop.Largest(40, 30, 1, 1);
         Assert.Equal(new CropRect(5, 0, 30, 30), tiny);
@@ -518,6 +558,108 @@ public class FrameCropTests
         AssertSamePixels(Cropped(memory.Raster, rect), ImageLoader.Load(target));
     }
 
+    [Fact]
+    public void R181_AReferencePixelIsMovedExactlyHoweverItIsWritten()
+    {
+        using var ws = new TempWorkspace();
+        string[] extra =
+        {
+            // 0.3 - 10 is -9.6999999999999993 in binary; the card must say -9.7 and keep its comment.
+            CommentedCard("CRPIX1", "0.3", "Axis1 reference pixel"),
+            // A value some writers quote: still a number, moved and written as one.
+            FitsTestData.StringCard("CRPIX2", "32.5"),
+            // An alternate solution's, with a FITS exponent.
+            FitsTestData.Card("CRPIX1A", "1.5D1"),
+        };
+        byte[] source = FitsTestData.Build(64, 64, 1, (x, y, _) => 0.2 + 0.0001 * (x + 64 * y), bitpix: -32, extraCards: extra);
+        string input = ws.WriteFile("in.fit", source);
+        AnalysisResult a = AnalysisRun.Execute(input, Scenes.OnBuiltForPaper());
+        string target = ws.PathTo("out.fit");
+        CropExport.Save(a, new CropRect(10, 6, 40, 30), FrameW, FrameH, target);
+
+        string[] after = Cards(File.ReadAllBytes(target));
+        Assert.Contains(CommentedCard("CRPIX1", "-9.7", "Axis1 reference pixel"), after);
+        Assert.Contains(FitsTestData.Card("CRPIX2", "4.5"), after);   // 64 - (6 + 30) = 28 file rows cut before
+        Assert.Contains(FitsTestData.Card("CRPIX1A", "5."), after);
+    }
+
+    [Fact]
+    public void R181_AHeaderThatGrowsPastItsBlockAndASourceThatChangedSinceTheAnalysis()
+    {
+        using var ws = new TempWorkspace();
+        // 5 cards of the image and 30 more: END is the 36th, the last of the block, so the
+        // HISTORY cards of the crop open a second one.
+        string[] extra = Enumerable.Range(0, 30).Select(i => FitsTestData.Card("KEY" + i.ToString("00"), i.ToString())).ToArray();
+        byte[] source = FitsTestData.Build(40, 30, 1, (x, y, _) => Sample(-32, x, y, 0), bitpix: -32, extraCards: extra);
+        Assert.Equal(2880, HeaderLength(source));
+        string input = ws.WriteFile("in.fit", source);
+        AnalysisResult a = AnalysisRun.Execute(input, Scenes.OnBuiltForPaper());
+        var rect = new CropRect(5, 3, 20, 16);
+        string target = ws.PathTo("out.fit");
+
+        CropExport.Save(a, rect, FrameW, FrameH, target);
+        byte[] saved = File.ReadAllBytes(target);
+        Assert.Equal(5760, HeaderLength(saved));
+        byte[] want = RectangleBytes(source, 2880, 40, 30, 1, 4, rect);
+        Assert.Equal(want, saved[5760..(5760 + want.Length)]);
+        AssertSamePixels(Cropped(a.Raster, rect), ImageLoader.Load(target));
+        File.Delete(target);
+
+        // The input cut short since the analysis: refused, nothing written.
+        File.WriteAllBytes(input, source[..(source.Length - 2880)]);
+        var e = Assert.Throws<Exception>(() => CropExport.Save(a, rect, FrameW, FrameH, target));
+        Assert.Contains("trunchiat", e.Message);
+        Assert.False(File.Exists(target));
+
+        // Another image under the same name: refused by its geometry.
+        File.WriteAllBytes(input, FitsTestData.Build(30, 40, 1, (x, y, _) => 0.3, bitpix: -32));
+        e = Assert.Throws<Exception>(() => CropExport.Save(a, rect, FrameW, FrameH, target));
+        Assert.Contains("geometria", e.Message);
+        Assert.False(File.Exists(target));
+    }
+
+    [Fact]
+    public void R181_TheOtherDepthsAndColoursOfATiffAndAPngKeepTheirKind()
+    {
+        using var ws = new TempWorkspace();
+        var rect = new CropRect(7, 5, 30, 22);
+        (string Path, string Format, int Bits, int Planes)[] cases =
+        {
+            (ImageFiles.SaveTiff8Gray(Scene(48, 64, 1), ws.PathTo("a.tif")), "TIFF", 8, 1),
+            (ImageFiles.SavePng16Gray(Scene(48, 64, 1), ws.PathTo("b.png")), "PNG", 16, 1),
+            (ImageFiles.SavePng8Rgb(Scene(48, 64, 3), ws.PathTo("c.png")), "PNG", 8, 3),
+        };
+        foreach (var c in cases)
+        {
+            AnalysisResult a = AnalysisRun.Execute(c.Path, Scenes.OnBuiltForPaper());
+            Assert.Equal((c.Format, c.Bits, c.Planes), (a.Raster.Source.Format, a.Raster.Source.BitDepth, a.Raster.Source.PlanesInFile));
+            string target = ws.PathTo("cropped_" + Path.GetFileName(c.Path));
+            CropExport.Save(a, rect, FrameW, FrameH, target);
+            Raster back = ImageLoader.Load(target);
+            Assert.Equal((c.Format, c.Bits, c.Planes), (back.Source.Format, back.Source.BitDepth, back.Source.PlanesInFile));
+            AssertSamePixels(Cropped(a.Raster, rect), back);
+        }
+    }
+
+    [Fact]
+    public void R181_TheSentencesOfTheOutputReadRightInEnglishAndAMisnamedInputGetsItsOwnExtension()
+    {
+        using IDisposable english = Tr.Use(UiLanguage.English);
+        Assert.Contains("writes an 8-bit TIFF with the same pixels", CropTexts.Output(CropExport.OutputOf(new SourceInfo { Format = "JPEG", BitDepth = 8, Path = "poza.jpg" })));
+        Assert.Contains(": an 8-bit PNG.", CropTexts.Output(CropExport.OutputOf(new SourceInfo { Format = "PNG", BitDepth = 8, Path = "a.png" })));
+        Assert.Contains(": a 16-bit TIFF.", CropTexts.Output(CropExport.OutputOf(new SourceInfo { Format = "TIFF", BitDepth = 16, Path = "a.tif" })));
+        Assert.Contains(": a 32-bit FITS (real numbers).", CropTexts.Output(CropExport.OutputOf(new SourceInfo { Format = "FITS", BitDepth = 32, IsFloat = true, Path = "a.fit" })));
+        // A refusal is shown as a sentence of its own.
+        Assert.StartsWith("A TIFF with 32 bits per sample cannot be cropped without loss", CropTexts.Output(CropExport.OutputOf(new SourceInfo { Format = "TIFF", BitDepth = 32, Path = "a.tif" })));
+
+        // The file written follows the content the reader found, so its name does too.
+        Assert.Equal(".png", CropExport.OutputOf(new SourceInfo { Format = "PNG", BitDepth = 16, Path = @"C:\x\poza.tif" }).Extension);
+        Assert.Equal(".tif", CropExport.OutputOf(new SourceInfo { Format = "TIFF", BitDepth = 8, Path = "poza.png" }).Extension);
+        Assert.Null(CropExport.OutputOf(new SourceInfo { Format = "TIFF", BitDepth = 8, Path = "poza.TIFF" }).Extension);
+        Assert.Null(CropExport.OutputOf(new SourceInfo { Format = "FITS", BitDepth = 16, Path = "stack.fts" }).Extension);
+        Assert.Equal("poza_cropped_70x54.62.png", CropTexts.ProposedFileName(@"C:\x\poza.tif", ".png", 70, 54.62));
+    }
+
     // ------------------------------------------------------------------ R-182: the name
 
     [Fact]
@@ -527,5 +669,7 @@ public class FrameCropTests
         Assert.Equal("poza_cropped_50x40.tif", CropTexts.ProposedFileName(@"C:\x\poza.jpg", ".tif", 50, 40.0));
         Assert.Equal("de_printat_cropped_54.62x70.png", CropTexts.ProposedFileName("de_printat.png", null, 54.62, 70));
         Assert.Equal("stack.v2_cropped_100x66.667.fits", CropTexts.ProposedFileName("stack.v2.fits", null, 100, 66.667));
+        // As typed, whatever the number of decimals.
+        Assert.Equal("a_cropped_54.62345x0.00125.tif", CropTexts.ProposedFileName("a.tif", null, 54.62345, 0.00125));
     }
 }

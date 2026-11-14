@@ -49,8 +49,8 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>A frame size as the texts and the file name write it: a point, no trailing zeros.</summary>
         /// <param name="cm">The size.</param>
-        /// <returns>"70", "54.62".</returns>
-        internal static string Size(double cm) => cm.ToString("0.####", CultureInfo.InvariantCulture);
+        /// <returns>"70", "54.62": the number as it was typed, to twelve decimals.</returns>
+        internal static string Size(double cm) => cm.ToString("0.############", CultureInfo.InvariantCulture);
 
         /// <summary>The sentence for a field that does not hold a size (R-180).</summary>
         /// <param name="width">True for the width's field, false for the height's.</param>
@@ -102,11 +102,18 @@ namespace AstroPhotoAnalyzer
         /// <returns>The kind and its depth; for a FITS of real numbers, that too.</returns>
         static string KindName(CropOutput o)
         {
-            string format = o.Kind switch { CropFileKind.Fits => "FITS", CropFileKind.Tiff => "TIFF", _ => "PNG" };
+            string format = FormatName(o);
             string bits = Fmt.Int(o.Bits);
             string real = o.IsFloat ? Tr.Pick(" (real numbers)", " (numere reale)") : "";
-            return Tr.Pick($"a {bits}-bit {format}{real}", $"{format} pe {Fmt.RoCount(bits)}biti{real}");
+            // "an 8-bit", "a 16-bit": of the depths a file has, only eight starts with a vowel.
+            string article = o.Bits == 8 ? "an" : "a";
+            return Tr.Pick($"{article} {bits}-bit {format}{real}", $"{format} pe {Fmt.RoCount(bits)}biti{real}");
         }
+
+        /// <summary>The name of the kind of file a crop is written as: "FITS", "TIFF" or "PNG".</summary>
+        /// <param name="o">The output.</param>
+        /// <returns>The name, the same in both languages.</returns>
+        internal static string FormatName(CropOutput o) => o.Kind switch { CropFileKind.Fits => "FITS", CropFileKind.Tiff => "TIFF", _ => "PNG" };
 
         /// <summary>
         /// What the save will write, or why it cannot (R-183): the input's own kind and depth,
@@ -116,7 +123,8 @@ namespace AstroPhotoAnalyzer
         /// <returns>The sentence; the problem itself when there is one.</returns>
         internal static string Output(CropOutput o)
         {
-            if (o.Problem != null) return o.Problem;
+            // A refusal is worded to follow other words in an exception; here it stands alone.
+            if (o.Problem != null) return char.ToUpperInvariant(o.Problem[0]) + o.Problem.Substring(1);
             string unchanged = Tr.Pick(" The input image is not changed.", " Poza de intrare nu se modifica.");
             if (o.FromJpeg)
                 return Tr.Pick(

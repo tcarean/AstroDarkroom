@@ -265,7 +265,8 @@ exactly its proportions, and you choose which part is left out.
 - The image fills the tab, and the rectangle appears over it, as large as fits, in the middle;
   what is outside it is darkened. Drag inside the rectangle to move it; drag one of its four
   corners to make it smaller or larger. Its proportions stay the frame's, and it cannot leave
-  the image. **Largest** puts it back.
+  the image. **Largest** puts it back. It stays where you put it when the analysis runs again
+  on the same image, after a changed parameter or profile.
 - Under the image: the size that stays, in pixels, its share of the image, the pixels cut on
   each side, and how fine the print would be on that frame, in pixels per inch (ppi).
 - **Save as...** writes a new file with the part inside the rectangle, proposed as the image's
@@ -279,8 +280,9 @@ exactly its proportions, and you choose which part is left out.
   | PNG | a PNG, 16 bits if the image has 16, with the image's ICC profile |
   | JPEG | an 8-bit TIFF with the JPEG's pixels: a JPEG saved again would be compressed again and lose detail |
 
-  A large PNG takes about ten seconds to write; the tab says so meanwhile. The input image is
-  never modified, and saving over it is refused.
+  A large PNG takes ten to twenty seconds to write; the tab says so meanwhile, and a window
+  closed in that time closes once the file is whole. The input image is never modified, and
+  saving over it is refused.
 
 The two sizes stay as typed when you open another image. The image in the tab is a reduced
 copy, without zoom; the saved file is cut from the full image.

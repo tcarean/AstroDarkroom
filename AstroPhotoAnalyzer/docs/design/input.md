@@ -94,13 +94,16 @@ geometry checked against the analysed one, what follows the image copied) and di
 two places of the image HDU. The header: every card as it is, except `NAXIS1` and `NAXIS2`,
 which take the rectangle's size, and `CRPIX1` and `CRPIX2` (and the lettered ones of an
 alternate solution, `CRPIX1A`), which are moved by what was cut before the first kept pixel of
-their axis; a rewritten card keeps its keyword and its comment (`WithValue`), a real keeps its
-point (`Moved`); then the `HISTORY` cards. The data: for each plane, the rectangle's stretch of
+their axis; a rewritten card keeps its keyword and its comment (`WithValue`), the new value
+is computed in decimal, so that it is as short as the old one and the comment still fits, a
+quoted value is read as the number the reader takes it for, and a real keeps its point
+(`Moved`); then the `HISTORY` cards. The data: for each plane, the rectangle's stretch of
 each kept row, read from the source at its offset and written as it is. The rectangle is in
 the raster's pixels, whose row y is the file's row `height - 1 - y` whatever `ROWORDER` says
 (ADR 0049), so the kept file rows start at `height - bottom`, and that many file rows are cut
 before them: what `CRPIX2`, which counts the file's rows, moves by. The SIP polynomials are in
-pixels from `CRPIX` and need no change; no other card depends on where the image starts.
+pixels from `CRPIX` and need no change; no other card of a plate solution depends on where the
+image starts (the cards of other conventions that do are in `known-limitations.md`).
 Measured on 2026-11-14 on the plate-solved FITS, a 4700 x 3667 rectangle at 833, 200: 0.3 s,
 the 206 818 800 data bytes equal to the input's rows, `CRPIX1` 2919.5 to 2086.5, `CRPIX2`
 unchanged (the rectangle reaches the raster's bottom, the file's first row), and the tool's

@@ -36,8 +36,13 @@ never holds one the core did not make:
   (`Fit`: the full width with its rounded height when that fits, otherwise the full height with
   its rounded width); the height is the width over the ratio, rounded, and at the largest size
   the one `Fit` gave. Hence the frame's proportions hold within half a pixel either from the
-  width or from the height, which is what `R180_AResizeHoldsTheFramesProportions...` checks on
-  every width. A point past the fixed corner asks for a negative size and gets the smallest.
+  width or from the height, which is what `R180_AResizeHoldsTheFramesProportions...` checks for
+  three ratios, one pixel of pull at a time from the smallest to past the largest, from two
+  opposite corners. A point past the fixed corner asks for a negative size and gets the
+  smallest. The ratio is held between a millionth and a million (`Ratio`) and every size is
+  clamped as a real number before it becomes a whole one: the first version cast first, and a
+  frame of 40000000 x 1 gave a rectangle of a negative width, which the viewer cannot draw
+  (the review of 2026-11-14; `R180_AFrameOfAbsurdProportions...`).
 
 `ParseSize` is the rule of a typed size (a finite number above 0, with a point). `Facts` gives
 the cut on each side, the share of the image's pixels kept, and the pixels per inch: the kept
@@ -63,8 +68,9 @@ Why the raster is enough for a TIFF or a PNG and not for a FITS: it holds every 
 level exactly (R-013), but it is 32-bit float clipped to 0..1, so a 32-bit integer, a 64-bit
 float or a value outside 0..1 would not survive it. `Save` checks the rectangle and the output
 first, then runs under `CurveExport.Guarded` like the two other exports: the input is never
-opened for writing. The file's kind follows the input, not the target's extension; the dialog
-offers that one kind. A cropped TIFF or PNG carries the input's ICC profile and adds none; the
+opened for writing. The file's kind follows the input's content, not the target's extension;
+the dialog offers that one kind, and `CropOutput.Extension` is the extension to propose when
+the input's own is not one of that kind's (a JPEG, or a file named after another format). A cropped TIFF or PNG carries the input's ICC profile and adds none; the
 TIFF's description tag and the FITS's `HISTORY` cards name the frame and the rectangle
 (`CropTexts.Description`, `History`). One Info line per file written.
 
@@ -87,7 +93,10 @@ reduced copy as a bitmap, and the sentences from `CropTexts`. `Populate` keeps t
 `CropExport.OutputOf` what a save would write, makes the bitmap and calls `Reframe`; `Reframe`
 (also a change of either field, and the `Largest` button) parses the fields and either sets the
 largest rectangle or says why there is none: the sizes are asked for, or the field that is not
-a size is named, in red. The fields are the one thing the tab keeps from an image to the next
+a size is named, in red. `Populate` then puts back the rectangle the user had placed when the
+result is a new analysis of the image last shown with the same frame (`_placed`, noted by
+`Remember` when the image goes: its file, its size, the frame, the rectangle): a changed
+parameter or profile runs the analysis again by itself, and must not undo the placing. The fields are the one thing the tab keeps from an image to the next
 (`Clear` leaves them): the frame does not change with the image. Unlike the galleries, nothing
 here is computed after the analysis on a pool thread: the reduced copy is a subsample, made at
 once, and made again when the area the view reports allows a finer step (`SetArea`, the rule of
@@ -100,7 +109,9 @@ wider dark one, so that it shows on any image) and a square handle at each corne
 dependency properties are the image, the full image's size and the rectangle; it converts
 between its device-independent pixels and the image's pixels (`ImageArea`, `PixelSize`,
 `CropArea`) and decides only what a press grabs (`HitTestGrip`: the nearest corner within
-`HandleGrab` on both axes, otherwise the rectangle when the point is inside it). A drag is told
+`HandleGrab` on both axes, otherwise the rectangle when the point is inside it; inside the
+rectangle a corner reaches no further than a third of each side, or a rectangle smaller than
+its handles, 117 image pixels on a 23 MP image, could not be moved at all). A drag is told
 through four internal events: started, moved by a distance from its start, a corner pulled to a
 point, ended; a corner keeps the distance from the pointer it was grabbed at, so it does not
 jump. `CropView`'s code-behind hands the events to the view-model (`BeginDrag`, `MoveBy`,
@@ -110,7 +121,15 @@ bindings draw. The three drag methods of the viewer are internal and hold the wh
 0093): on a 23 MP image shown at a quarter of its size the rectangle is placed to about four
 image pixels.
 
-The save runs on a pool thread (`SaveAsync`; a 20 MP 16-bit PNG takes about 10 s), with
+The save runs on a pool thread (`SaveAsync`; the 19 MP 16-bit crop of `de_printat.png` took
+10.1 s through `CropExport.Save` on 2026-11-14, and 16.8 s in ADR 0093's probe, which also
+cloned and cropped the image through ImageSharp), with
 `CropTexts.Saving` in the fixed place of the save message and the button off meanwhile; its
 outcome is shown even when another image was opened in between, since the file was written or
-was not, whatever the tab shows now. `Save` is the same on the calling thread, for the tests.
+was not, whatever the tab shows now; while it lasts, another image leaves the message in place
+and a second `SaveAsync` returns the save in progress. `Save` is the same on the calling
+thread, for the tests, and `Writer` is the save itself as a field, so that a test can hold
+one in progress. Being the one export written off the UI thread, it is also the one the end
+of the process could stop in the middle, leaving `AtomicFile`'s temporary file and no crop:
+`MainWindow.WaitForTheCropBeingWritten` cancels a close asked meanwhile and closes the window
+when `Saving` completes (`R183_ClosingTheWindowWaits...`).

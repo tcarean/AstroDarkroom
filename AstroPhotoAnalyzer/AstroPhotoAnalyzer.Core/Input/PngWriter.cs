@@ -79,15 +79,24 @@ namespace AstroPhotoAnalyzer
             var image = new Image<TPixel>(r.W, r.H);
             float[][] planes = r.Planes;
             int w = r.W;
-            image.ProcessPixelRows(acc =>
+            try
             {
-                for (int y = 0; y < acc.Height; y++)
+                image.ProcessPixelRows(acc =>
                 {
-                    Span<TPixel> row = acc.GetRowSpan(y);
-                    int at = y * w;
-                    for (int x = 0; x < row.Length; x++) row[x] = pixel(planes, at + x);
-                }
-            });
+                    for (int y = 0; y < acc.Height; y++)
+                    {
+                        Span<TPixel> row = acc.GetRowSpan(y);
+                        int at = y * w;
+                        for (int x = 0; x < row.Length; x++) row[x] = pixel(planes, at + x);
+                    }
+                });
+            }
+            catch
+            {
+                // The image holds pooled memory: it goes back even when the filling fails.
+                image.Dispose();
+                throw;
+            }
             return image;
         }
     }

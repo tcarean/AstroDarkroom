@@ -56,6 +56,17 @@ namespace AstroPhotoAnalyzer.Wpf
 
         // The step of the reduced copy shown; 0 before any.
         int _stride;
+
+        // Where the rectangle was left on the image last shown, with what made it (the file,
+        // the image's size, the frame): a new analysis of that same image, which a change of a
+        // parameter or of the profile starts by itself, must not undo the placing.
+        (string File, int W, int H, double FrameW, double FrameH, CropRect Rect)? _placed;
+
+        /// <summary>
+        /// What writes the file and words the outcome: the core's save. A field so that a test
+        /// can hold a save in progress for as long as it looks at the tab.
+        /// </summary>
+        internal Func<AnalysisResult, CropRect, double, double, string, (string Saved, string Error)> Writer = Write;
         bool _busy, _isProblem;
         string _message, _keptText, _frameText, _saveMessage, _saveError;
 
@@ -142,9 +153,7 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             get
             {
-                if (_output == null) return "";
-                string name = _output.Kind switch { CropFileKind.Fits => "FITS", CropFileKind.Tiff => "TIFF", _ => "PNG" };
-                return name + "|*" + SaveExtension;
+                return _output == null ? "" : CropTexts.FormatName(_output) + "|*" + SaveExtension;
             }
         }
 
@@ -157,31 +166,60 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Keeps the result, shows its reduced copy and, when the two fields already hold sizes,
-        /// the largest rectangle on the new image.
+        /// the rectangle: the largest one on another image, and the one already placed when the
+        /// result is a new analysis of the image last shown, with the same frame.
         /// </summary>
         /// <param name="r">The analysis; not null.</param>
         internal override void Populate(AnalysisResult r)
         {
+            Remember();
             _result = r;
             _output = CropExport.OutputOf(r.Raster.Source);
             _stride = 0;
-            SaveMessage = null; SaveError = null;
+            ForgetTheLastSave();
             ShowImage();
             HasResult = true;
             Raise(nameof(ImageWidth)); Raise(nameof(ImageHeight));
             Raise(nameof(OutputText)); Raise(nameof(OutputIsProblem));
             Reframe();
+            if (_placed is { } p && _rect != null && r.FullPath != null && p.File == r.FullPath && p.W == ImageWidth && p.H == ImageHeight
+                && p.FrameW == _width && p.FrameH == _height && p.Rect.FitsIn(ImageWidth, ImageHeight))
+            {
+                SetRect(p.Rect);
+                Log.Debug("the same image analysed again: the rectangle stays at " + p.Rect);
+            }
+        }
+
+        /// <summary>
+        /// Notes where the rectangle is on the image shown, before the image goes: only for an
+        /// image from a file, which is what a new analysis can be told to be the same by.
+        /// </summary>
+        void Remember()
+        {
+            if (_result?.FullPath != null && _rect is CropRect r) _placed = (_result.FullPath, ImageWidth, ImageHeight, _width, _height, r);
+        }
+
+        /// <summary>
+        /// Drops the outcome of the last save with the image it was of; while a file is still
+        /// being written its message stays, since the save button is off because of it.
+        /// </summary>
+        void ForgetTheLastSave()
+        {
+            if (_busy) return;
+            SaveMessage = null;
+            SaveError = null;
         }
 
         /// <summary>Empties the tab and drops the result; the two fields stay as typed.</summary>
         internal override void Clear()
         {
             base.Clear();
+            Remember();
             _result = null;
             _output = null;
             _stride = 0;
             Image = null;
-            SaveMessage = null; SaveError = null;
+            ForgetTheLastSave();
             Raise(nameof(ImageWidth)); Raise(nameof(ImageHeight));
             Raise(nameof(OutputText)); Raise(nameof(OutputIsProblem));
             Reframe();
@@ -306,7 +344,7 @@ namespace AstroPhotoAnalyzer.Wpf
         internal void Save(string path)
         {
             if (!CanSave()) return;
-            (string saved, string error) = Write(_result, _rect.Value, _width, _height, path);
+            (string saved, string error) = Writer(_result, _rect.Value, _width, _height, path);
             SaveMessage = saved;
             SaveError = error;
         }
@@ -317,8 +355,8 @@ namespace AstroPhotoAnalyzer.Wpf
         /// an error is told, not thrown.
         /// </summary>
         /// <param name="path">The file to write, as the save dialog gave it.</param>
-        /// <returns>The save, to wait for.</returns>
-        internal Task SaveAsync(string path) => Saving = SaveCore(path);
+        /// <returns>The save, to wait for; the one in progress when there is one, which a second call does not replace.</returns>
+        internal Task SaveAsync(string path) => _busy ? Saving : Saving = SaveCore(path);
 
         /// <summary>The body of <see cref="SaveAsync"/>.</summary>
         /// <param name="path">The file to write.</param>
@@ -332,7 +370,8 @@ namespace AstroPhotoAnalyzer.Wpf
             Requery();
             SaveError = null;
             SaveMessage = CropTexts.Saving;
-            (string saved, string error) = await Task.Run(() => Write(result, rect, w, h, path));
+            Func<AnalysisResult, CropRect, double, double, string, (string Saved, string Error)> writer = Writer;
+            (string saved, string error) = await Task.Run(() => writer(result, rect, w, h, path));
             // The outcome is told even when another image was opened meanwhile: the file is
             // written, or it is not, whatever the tab shows now.
             SaveMessage = saved;

@@ -284,7 +284,7 @@ public class CropTabTests
         tab.SaveAs.Execute(null);
         Assert.Equal("calea-lactee_cropped_70x54.62.tif", proposed);
 
-        // On a pool thread, as the window saves: busy meanwhile, the save button off.
+        // On a pool thread, as the window saves (what the tab shows meanwhile is another test).
         string target = ws.PathTo(proposed!);
         Task saving = tab.SaveAsync(target);
         Assert.Same(saving, tab.Saving);
@@ -330,6 +330,131 @@ public class CropTabTests
         Assert.False(tab.SaveAs.CanExecute(null));
         Assert.Equal("70", tab.FrameWidth);
     }
+
+    /// <summary>A writer that waits until the test lets it go, in place of the core's save.</summary>
+    static Func<AnalysisResult, CropRect, double, double, string, (string Saved, string Error)> Held(ManualResetEventSlim started, ManualResetEventSlim release)
+        => (_, _, _, _, path) =>
+        {
+            started.Set();
+            release.Wait(TimeSpan.FromSeconds(60));
+            return ("salvat: " + path, null!);
+        };
+
+    [Fact]
+    public async Task R183_WhileTheFileIsWrittenTheTabSaysSoAndTheSaveIsOff()
+    {
+        using var ws = new TempWorkspace();
+        using var started = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var tab = new CropTabViewModel { FrameWidth = "2", FrameHeight = "1" };
+        tab.Populate(Result(ws));
+        tab.Writer = Held(started, release);
+
+        Task saving = tab.SaveAsync("x.fit");
+        Assert.True(started.Wait(TimeSpan.FromSeconds(30)));
+        Assert.True(tab.IsBusy);
+        Assert.False(tab.SaveAs.CanExecute(null));
+        Assert.Equal("se scrie fisierul...", tab.SaveMessage);
+        Assert.Null(tab.SaveError);
+
+        // A second save while one is written starts nothing and replaces nothing.
+        Assert.Same(saving, tab.SaveAsync("y.fit"));
+        Assert.Same(saving, tab.Saving);
+        // Another image opened meanwhile: the button is still off, and the tab still says why.
+        tab.Populate(Result(ws));
+        Assert.Equal("se scrie fisierul...", tab.SaveMessage);
+        Assert.False(tab.SaveAs.CanExecute(null));
+
+        release.Set();
+        await saving;
+        Assert.False(tab.IsBusy);
+        Assert.Equal("salvat: x.fit", tab.SaveMessage);
+        Assert.True(tab.SaveAs.CanExecute(null));
+    }
+
+    [Fact]
+    public Task R183_ClosingTheWindowWaitsForTheFileBeingWritten()
+        => _sta.InvokeAsync(async () =>
+        {
+            using var ws = new TempWorkspace();
+            using var started = new ManualResetEventSlim();
+            using var release = new ManualResetEventSlim();
+            var window = new MainWindow();
+            var vm = (MainViewModel)window.DataContext;
+            vm.Crop.FrameWidth = "2";
+            vm.Crop.FrameHeight = "1";
+            vm.Crop.Populate(Result(ws));
+            vm.Crop.Writer = Held(started, release);
+            bool closed = false;
+            window.Closed += (_, _) => closed = true;
+
+            Task saving = vm.Crop.SaveAsync("x.fit");
+            Assert.True(started.Wait(TimeSpan.FromSeconds(30)));
+            window.Close();
+            window.Close();   // a second press adds nothing
+            Assert.False(closed);
+
+            // Once the file is whole the window closes by itself.
+            release.Set();
+            await saving;
+            for (int i = 0; i < 200 && !closed; i++) await Task.Delay(25);
+            Assert.True(closed);
+        });
+
+    [Fact]
+    public void R183_ANewAnalysisOfTheSameImageKeepsTheRectangleAndAnotherImageDoesNot()
+    {
+        using var ws = new TempWorkspace();
+        var tab = new CropTabViewModel { FrameWidth = "2", FrameHeight = "1" };
+        AnalysisResult first = Result(ws, "calea-lactee.tif");
+        tab.Populate(first);
+        tab.BeginDrag();
+        tab.ResizeTo(CropCorner.BottomRight, 200, 150);
+        tab.BeginDrag();
+        tab.MoveBy(30, 20);
+        Assert.Equal((30, 70, 200, 100), Rect(tab));
+
+        // The analysis run again on the same file, as a changed parameter or profile does by
+        // itself: the tabs are emptied and filled, and the rectangle is where it was put.
+        tab.Clear();
+        Assert.False(tab.HasCrop);
+        tab.Populate(AnalysisRun.Execute(first.FullPath, Scenes.OnBuiltForPaper()));
+        Assert.Equal((30, 70, 200, 100), Rect(tab));
+        Assert.StartsWith("ramane 200 x 100 px", tab.KeptText);
+
+        // A change of a field puts it back at the largest, and a new analysis keeps that.
+        tab.FrameHeight = "1.5";
+        tab.FrameHeight = "1";
+        Assert.Equal((0, 50, 400, 200), Rect(tab));
+        tab.Clear();
+        tab.Populate(AnalysisRun.Execute(first.FullPath, Scenes.OnBuiltForPaper()));
+        Assert.Equal((0, 50, 400, 200), Rect(tab));
+
+        // Another image starts at its own largest, wherever the last one's rectangle was.
+        tab.BeginDrag();
+        tab.ResizeTo(CropCorner.BottomRight, 200, 150);
+        tab.Clear();
+        tab.Populate(Result(ws, "alta.tif"));
+        Assert.Equal((0, 50, 400, 200), Rect(tab));
+    }
+
+    [Fact]
+    public void R183_ARectangleSmallerThanItsHandlesCanStillBeMovedByItsMiddle()
+        => _sta.Invoke(() =>
+        {
+            // 18 x 12 DIPs: every point of it is within the handles' reach of a corner.
+            var viewer = new CropViewer { ImageWidth = 400, ImageHeight = 300, HasCrop = true, CropX = 100, CropY = 50, CropWidth = 9, CropHeight = 6 };
+            viewer.Measure(new Size(1000, 600));
+            viewer.Arrange(new Rect(0, 0, 1000, 600));
+            Assert.Equal(new Rect(300, 100, 18, 12), viewer.CropArea);
+            Assert.Equal(CropViewer.Grip.Move, viewer.HitTestGrip(new Point(309, 106)));
+            // Its corners are still grabbed on them and outside them.
+            Assert.Equal(CropViewer.Grip.TopLeft, viewer.HitTestGrip(new Point(300, 100)));
+            Assert.Equal(CropViewer.Grip.TopLeft, viewer.HitTestGrip(new Point(292, 95)));
+            Assert.Equal(CropViewer.Grip.BottomRight, viewer.HitTestGrip(new Point(318, 112)));
+            Assert.Equal(CropViewer.Grip.BottomRight, viewer.HitTestGrip(new Point(326, 120)));
+            Assert.Equal(CropViewer.Grip.TopRight, viewer.HitTestGrip(new Point(316, 101)));
+        });
 
     [Fact]
     public void R183_AnInputThatCannotBeCroppedWithoutLossSaysSoAndCannotBeSaved()

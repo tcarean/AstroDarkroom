@@ -109,7 +109,7 @@ namespace AstroPhotoAnalyzer
         /// <returns>The rectangle; the whole image when it has the frame's proportions.</returns>
         internal static CropRect Largest(int imageW, int imageH, double frameW, double frameH)
         {
-            CropResult c = CropAnalyzer.Analyze(imageW, imageH, frameW / frameH);
+            CropResult c = CropAnalyzer.Analyze(imageW, imageH, Ratio(frameW, frameH));
             return new CropRect(c.X0, c.Y0, c.W, c.H);
         }
 
@@ -143,7 +143,7 @@ namespace AstroPhotoAnalyzer
         /// <returns>The resized rectangle.</returns>
         internal static CropRect Resize(CropRect r, CropCorner corner, double x, double y, int imageW, int imageH, double frameW, double frameH)
         {
-            double ratio = frameW / frameH;
+            double ratio = Ratio(frameW, frameH);
             bool left = corner is CropCorner.TopLeft or CropCorner.BottomLeft;
             bool top = corner is CropCorner.TopLeft or CropCorner.TopRight;
             // The corner that stays, and the room from it to the image's edge the drag goes to.
@@ -153,13 +153,26 @@ namespace AstroPhotoAnalyzer
 
             // The largest width the room holds, with its height, and the smallest allowed.
             (int maxW, int maxH) = Fit(roomW, roomH, ratio);
-            int minW = Math.Min(maxW, (int)Math.Ceiling(ratio >= 1 ? Thresholds.CropMinSide * ratio : Thresholds.CropMinSide));
+            // Every size is clamped as a real number before it becomes a whole one: a cast of a
+            // number past the int's range is not defined, and the review of 2026-11-14 turned a
+            // frame of 40000000 x 1 into a rectangle of a negative width that way.
+            int minW = (int)Math.Min(maxW, Math.Ceiling(ratio >= 1 ? Thresholds.CropMinSide * ratio : Thresholds.CropMinSide));
 
             double asked = Math.Max(askedW, askedH * ratio);
-            int w = (int)Math.Clamp(Math.Round(double.IsNaN(asked) ? minW : asked), minW, maxW);
-            int h = w == maxW ? maxH : Math.Clamp((int)Math.Round(w / ratio), 1, roomH);
+            int w = double.IsNaN(asked) ? minW : (int)Math.Clamp(Math.Round(asked), minW, maxW);
+            int h = w == maxW ? maxH : (int)Math.Clamp(Math.Round(w / ratio), 1, roomH);
             return new CropRect(left ? anchorX - w : anchorX, top ? anchorY - h : anchorY, w, h);
         }
+
+        /// <summary>
+        /// The width over the height of a frame, held between a millionth and a million: past
+        /// that no image has a pixel to give the short side, and the arithmetic of the
+        /// rectangle stays within whole numbers.
+        /// </summary>
+        /// <param name="frameW">The frame's width, above 0.</param>
+        /// <param name="frameH">The frame's height, above 0, in the same unit.</param>
+        /// <returns>The ratio, from 1e-6 to 1e6.</returns>
+        static double Ratio(double frameW, double frameH) => Math.Clamp(frameW / frameH, 1e-6, 1e6);
 
         /// <summary>
         /// The largest size of a given width over height that fits a room, in whole pixels: the
@@ -172,9 +185,9 @@ namespace AstroPhotoAnalyzer
         /// <returns>The width and the height, each at least 1.</returns>
         static (int W, int H) Fit(int roomW, int roomH, double ratio)
         {
-            int h = (int)Math.Round(roomW / ratio);
-            if (h <= roomH) return (roomW, Math.Max(1, h));
-            return (Math.Clamp((int)Math.Round(roomH * ratio), 1, roomW), roomH);
+            double h = Math.Round(roomW / ratio);
+            if (h <= roomH) return (roomW, (int)Math.Max(1, h));
+            return ((int)Math.Clamp(Math.Round(roomH * ratio), 1, roomW), roomH);
         }
 
         /// <summary>The figures of a rectangle for the tab (R-180).</summary>
