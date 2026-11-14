@@ -207,6 +207,12 @@ namespace FlatCheck
         /// </summary>
         internal readonly string LensText;
         /// <summary>
+        /// The one source the --lens text was searched in (--source); null when both were. The
+        /// <see cref="ComparisonGap.LensTextNoMatch"/> gap names it: a text that matches a
+        /// lens of the other source matched nothing here.
+        /// </summary>
+        internal readonly ProfileSource? LensSource;
+        /// <summary>
         /// The lenses found that have no vignetting profile for raw files; usually empty. The
         /// <see cref="ComparisonGap.NoVignettingProfile"/> gap names them.
         /// </summary>
@@ -232,9 +238,12 @@ namespace FlatCheck
         /// was given.</param>
         /// <param name="unprofiled">The lenses found without a vignetting profile for raw
         /// files; null for none.</param>
+        /// <param name="lensSource">The one source <paramref name="lensText"/> was searched in;
+        /// null for both.</param>
         internal VignettingComparison(double masterStops, ShotIdentity shot, IReadOnlyList<ProfileDepth> profiles,
                                       ComparisonGap gap, IReadOnlyList<LensChoice> skippedForCrop, bool? lensesNamedByRaw = null,
-                                      string lensText = null, IReadOnlyList<LensChoice> unprofiled = null)
+                                      string lensText = null, IReadOnlyList<LensChoice> unprofiled = null,
+                                      ProfileSource? lensSource = null)
         {
             MasterStops = masterStops;
             Shot = shot;
@@ -242,6 +251,7 @@ namespace FlatCheck
             Gap = gap;
             SkippedForCrop = skippedForCrop ?? Array.Empty<LensChoice>();
             LensText = lensText;
+            LensSource = lensSource;
             Unprofiled = unprofiled ?? Array.Empty<LensChoice>();
             if (Profiles.Count > 0)
             {
@@ -306,11 +316,13 @@ namespace FlatCheck
         /// --lens text; null takes it from the identity (R-128).</param>
         /// <param name="lensText">The --lens text <paramref name="lenses"/> were searched with;
         /// null or blank when they were not searched by a text.</param>
+        /// <param name="lensSource">The one source that search was narrowed to (--source); null
+        /// when both were searched. Kept for the gap's words only.</param>
         /// <returns>The comparison, or one carrying the <see cref="ComparisonGap"/> that kept it
         /// from being made; never null.</returns>
         internal static VignettingComparison Analyze(StructureResult master, ShotIdentity shot, LensCatalog catalog,
                                                      IReadOnlyList<LensChoice> lenses = null, bool? lensesNamedByRaw = null,
-                                                     string lensText = null)
+                                                     string lensText = null, ProfileSource? lensSource = null)
         {
             lenses ??= shot?.Candidates ?? Array.Empty<LensChoice>();
             double masterStops = master.VignetteStops;
@@ -328,7 +340,7 @@ namespace FlatCheck
                     !string.IsNullOrWhiteSpace(lensText) ? ComparisonGap.LensTextNoMatch
                     : shot != null && shot.RawNamesLens ? ComparisonGap.NoLensMatch
                     : shot != null && shot.RawSaysNoLens ? ComparisonGap.RawWithoutLens
-                    : ComparisonGap.NoRaw, null, lensText: lensText);
+                    : ComparisonGap.NoRaw, null, lensText: lensText, lensSource: lensSource);
             if (catalog == null)
                 return new VignettingComparison(masterStops, shot, null, ComparisonGap.NoProfiles, null);
             if (shot?.FocalMm == null)
@@ -355,7 +367,7 @@ namespace FlatCheck
                 rows.Add(Measure(p, master, crop, all));
             }
             ComparisonGap gap = rows.Count > 0 ? ComparisonGap.None : skipped.Count > 0 ? ComparisonGap.NoCrop : ComparisonGap.NoVignettingProfile;
-            return new VignettingComparison(masterStops, shot, rows, gap, skipped, lensesNamedByRaw, lensText, unprofiled);
+            return new VignettingComparison(masterStops, shot, rows, gap, skipped, lensesNamedByRaw, lensText, unprofiled, lensSource);
         }
 
         /// <summary>

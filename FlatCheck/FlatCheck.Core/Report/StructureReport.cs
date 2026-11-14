@@ -488,8 +488,20 @@ namespace FlatCheck
                         : T("no lens matches the text given; see --lenses",
                             "niciun obiectiv nu se potriveste cu textul dat; vezi --lenses");
                 case ComparisonGap.LensTextNoMatch:
-                    return T($"no lens in the list matches --lens \"{c.LensText?.Trim()}\"; --lenses shows the list",
-                             $"niciun obiectiv din lista nu se potriveste cu --lens \"{c.LensText?.Trim()}\"; --lenses arata lista");
+                    {
+                        string text = c.LensText?.Trim();
+                        if (c.LensSource == null)
+                            return T($"no lens in the list matches --lens \"{text}\"; --lenses shows the list",
+                                     $"niciun obiectiv din lista nu se potriveste cu --lens \"{text}\"; --lenses arata lista");
+                        // With --source the search read one source only: the text may match a
+                        // lens of the other, which --lenses shows. So the source is named, as
+                        // the option spells it and as the reports label it, and the list
+                        // pointed at is the whole one.
+                        bool adobe = c.LensSource == ProfileSource.Adobe;
+                        string label = adobe ? "Adobe" : "lensfun", option = adobe ? "adobe" : "lensfun";
+                        return T($"no {label} lens matches --lens \"{text}\" (--source {option} searches the {label} profiles only); --lenses shows the list of both sources",
+                                 $"niciun obiectiv {label} nu se potriveste cu --lens \"{text}\" (--source {option} cauta doar in profilele {label}); --lenses arata lista ambelor surse");
+                    }
                 case ComparisonGap.NoVignettingProfile:
                     // The reason in the parentheses is SyntheticReport.NoProfile's, word for word.
                     return c.Unprofiled.Count == 1

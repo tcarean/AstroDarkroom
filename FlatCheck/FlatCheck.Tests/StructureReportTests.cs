@@ -616,6 +616,37 @@ public class StructureReportTests
             Assert.Equal("no lens in the list matches --lens \"tokna\"; --lenses shows the list", StructureReport.GapText(o));
     }
 
+    /// <summary>
+    /// The branch review of CR-017: --source narrows the search to one source, so "no lens in
+    /// the list matches" was untrue for a text that matches a lens of the other source, which
+    /// --lenses shows. With a source the reason names it and says only it was searched.
+    /// </summary>
+    [Fact]
+    public void R017_ALensTextThatMatchesNothingInTheSourceAskedForNamesThatSource()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var r = Result(FitsTestData.Radial(512, 512));
+        Assert.NotEmpty(sources.Catalog.Search("Aspherical", null));                    // a lensfun lens only
+        Assert.Empty(sources.Catalog.Search("Aspherical", ProfileSource.Adobe));
+        string Gap(string text, ProfileSource? source)
+            => StructureReport.GapText(StructureRun.Compare(r, MasterFrame(), new StructureQuery { Sources = sources, LensText = text, Source = source }));
+
+        Assert.Equal("niciun obiectiv Adobe nu se potriveste cu --lens \"Aspherical\" (--source adobe cauta doar in profilele Adobe); --lenses arata lista ambelor surse",
+                     Gap("Aspherical", ProfileSource.Adobe));
+        Assert.Equal("niciun obiectiv lensfun nu se potriveste cu --lens \"tokna\" (--source lensfun cauta doar in profilele lensfun); --lenses arata lista ambelor surse",
+                     Gap("tokna", ProfileSource.Lensfun));
+        Assert.Equal("niciun obiectiv din lista nu se potriveste cu --lens \"tokna\"; --lenses arata lista", Gap("tokna", null));
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("no Adobe lens matches --lens \"Aspherical\" (--source adobe searches the Adobe profiles only); --lenses shows the list of both sources",
+                         Gap("Aspherical", ProfileSource.Adobe));
+            Assert.Equal("no lensfun lens matches --lens \"tokna\" (--source lensfun searches the lensfun profiles only); --lenses shows the list of both sources",
+                         Gap("tokna", ProfileSource.Lensfun));
+            Assert.Equal("no lens in the list matches --lens \"tokna\"; --lenses shows the list", Gap("tokna", null));
+        }
+    }
+
     /// <summary>The one-profile LCP of a Canon EF 50 f/1.4 whose only entry was made for
     /// rendered files, so the lens is listed and has no profile to compare with (R-134).</summary>
     static string JpegOnlyLcp(string prettyName, string lensTag)
