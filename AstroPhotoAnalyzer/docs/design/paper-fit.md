@@ -172,7 +172,9 @@ large for an entry's four bytes in a heap after the directory (word-aligned), th
 the heap; the tags are width, length, bits per sample, compression (1), photometric, the
 description (270), strip offsets, samples per pixel, rows per strip, strip byte counts, 72 dpi,
 planar (1), resolution unit, software (305, the banner), sample format (1) and the ICC profile
-(34675). Samples are rounded to 0..65535. An image over 4 GB is refused (a classic TIFF's
+(34675). Samples are rounded to 0..65535. The crop of an 8-bit input (R-181, `crop.md`) asks for
+8 bits per sample through the `bits` argument: the same file with one byte per sample, rounded
+to 0..255; every other caller writes 16. An image over 4 GB is refused (a classic TIFF's
 offsets are 32-bit). Written through `AtomicFile.Write`. Why not ImageSharp's encoder: it writes
 8 bits whatever is asked (`dependencies.md`). Why uncompressed: ADR 0083.
 

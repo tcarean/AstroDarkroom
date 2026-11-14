@@ -22,6 +22,9 @@
 // and the owner's inputs are 16-bit. Uncompressed on purpose: Deflate with the predictor saved
 // 20 % on the measured image at 6 s and a compressor to maintain, and Siril writes the inputs
 // uncompressed too. The file is written whole or not at all (AtomicFile).
+//
+// The crop of an 8-bit input (R-181, ADR 0098) is written at 8 bits per sample, the same file
+// otherwise: the crop keeps the input's depth.
 
 using System;
 using System.Buffers.Binary;
@@ -31,34 +34,43 @@ using System.Text;
 
 namespace AstroPhotoAnalyzer
 {
-    /// <summary>Writes a raster as a 16-bit uncompressed TIFF with its ICC profile (R-177).</summary>
+    /// <summary>
+    /// Writes a raster as an uncompressed TIFF of 16 bits per sample (R-177), or of 8 for the
+    /// crop of an 8-bit input (R-181), with its ICC profile.
+    /// </summary>
     internal static class TiffWriter
     {
         /// <summary>The rows of one strip; the last strip is shorter.</summary>
         internal const int RowsPerStrip = 64;
 
         /// <summary>
-        /// Writes <paramref name="r"/> to <paramref name="target"/>: 16 bits per sample, three
-        /// samples per pixel for a colour raster, one for a mono raster, every sample rounded to
-        /// 0..65535, whole or not at all.
+        /// Writes <paramref name="r"/> to <paramref name="target"/>: <paramref name="bits"/>
+        /// bits per sample, three samples per pixel for a colour raster, one for a mono raster,
+        /// every sample rounded to 0..65535 (0..255 at 8 bits), whole or not at all.
         /// </summary>
         /// <param name="r">The raster, 0..1 per sample.</param>
         /// <param name="icc">The ICC profile to embed; null for none.</param>
         /// <param name="description">The ImageDescription tag's text, ASCII; null for none.</param>
         /// <param name="target">The file to write; replaced when it exists.</param>
-        internal static void Save(Raster r, byte[] icc, string description, string target)
-            => AtomicFile.Write(target, o => Write(r, icc, description, o));
+        /// <param name="bits">The bits per sample: 16, or 8; anything else throws.</param>
+        internal static void Save(Raster r, byte[] icc, string description, string target, int bits = 16)
+        {
+            if (bits != 8 && bits != 16) throw new ArgumentException("a TIFF is written at 8 or 16 bits per sample, not " + bits, nameof(bits));
+            AtomicFile.Write(target, o => Write(r, icc, description, bits, o));
+        }
 
         /// <summary>The body of <see cref="Save"/>, to an open stream at its start.</summary>
         /// <param name="r">The raster.</param>
         /// <param name="icc">The ICC profile; null for none.</param>
         /// <param name="description">The description; null for none.</param>
+        /// <param name="bits">The bits per sample: 16 or 8.</param>
         /// <param name="o">The output.</param>
-        static void Write(Raster r, byte[] icc, string description, Stream o)
+        static void Write(Raster r, byte[] icc, string description, int bits, Stream o)
         {
             int spp = r.IsColor ? 3 : 1;
+            int bytesPer = bits / 8;
             int strips = (r.H + RowsPerStrip - 1) / RowsPerStrip;
-            long bytesPerRow = (long)r.W * spp * 2;
+            long bytesPerRow = (long)r.W * spp * bytesPer;
             byte[] software = Ascii(VersionInfo.Banner);
             byte[] desc = description == null ? null : Ascii(description);
 
@@ -68,7 +80,7 @@ namespace AstroPhotoAnalyzer
             {
                 (256, 4, 1, U32((uint)r.W)),
                 (257, 4, 1, U32((uint)r.H)),
-                (258, 3, (uint)spp, Shorts(spp, 16)),
+                (258, 3, (uint)spp, Shorts(spp, (ushort)bits)),
                 (259, 3, 1, U16(1)),
                 (262, 3, 1, U16((ushort)(r.IsColor ? 2 : 1))),
             };
@@ -141,8 +153,8 @@ namespace AstroPhotoAnalyzer
                     for (int p = 0; p < spp; p++)
                     {
                         float v = r.Planes[p][y * r.W + x];
-                        ushort level = (ushort)Math.Round(Math.Clamp(v, 0f, 1f) * 65535.0);
-                        BinaryPrimitives.WriteUInt16LittleEndian(row.AsSpan((x * spp + p) * 2, 2), level);
+                        if (bytesPer == 1) row[x * spp + p] = (byte)RasterOps.Level8(v);
+                        else BinaryPrimitives.WriteUInt16LittleEndian(row.AsSpan((x * spp + p) * 2, 2), (ushort)RasterOps.Level16(v));
                     }
                 o.Write(row, 0, row.Length);
             }

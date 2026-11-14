@@ -99,9 +99,9 @@ Every logger is a `Logger` named `Log`, taken from `LogManager.GetLogger` with `
 `static readonly` field everywhere but in `LogSetup` and `App`, where it is a property fetched on
 use. Loggers are named, not taken from the stack: the class name in the core (`ImageLoader`,
 `FitsReader`, `ImageSharpReader`, `IccPaperBlack`, `AnalysisRun`, `CurveRun`, `CurveExport`,
-`ProofRun`, `GamutFitRun`, `GamutFitExport`), `Process` for the first and last lines and the
-crashes, `Cli` for the console, and the window's five from `Loggers`: `App`, `Window`,
-`Window.Curves`, `Window.SoftProof`, `Window.GamutFit`.
+`ProofRun`, `GamutFitRun`, `GamutFitExport`, `CropExport`), `Process` for the first and last
+lines and the crashes, `Cli` for the console, and the window's six from `Loggers`: `App`,
+`Window`, `Window.Curves`, `Window.SoftProof`, `Window.GamutFit`, `Window.Crop`.
 
 ## A run's lines
 
@@ -136,6 +136,7 @@ as done lines too, as the tab shows them.
 | `CurveRun`, `CurveExport` | Info, Debug, Warn | the clock `curves`, stages `anchors`, `gamut`, `suggestions`; the anchors with the method and the class levels, every suggestion's points and evidence; a gamut table that cannot be built, with `GamutTable.Cause`; every FITS written with its size; a save over the input the system refuses, with the system's exception |
 | `ProofRun` | Info, Debug, Warn | the clock `proof`, stages `profile`, `gamut`, `mask`, done with the share outside the paper's gamut and the profile's figures; a profile or a table that cannot be used, with `ProofProfile.Cause` or `GamutTable.Cause`; each render at Debug with its intent and time; for the image a comparison adds (R-165), the clock `proof-other`, inputs the file and the size it must match, stages `load` (a file) and `mask`, done with its share outside, or `refused:` with another size, a linear image or the reader's message, a file that cannot be read also a warning with the exception |
 | `GamutFitRun`, `GamutFitExport` | Info, Debug, Warn | the clock `gamutfit`, stages `profile`, `table`, each variant's name, `recipe`, done with the share outside, the recipe and the profile's name; each variant's figures at Debug; a gamut table that cannot be built, with `GamutTable.Cause`; every file written with its size and kind (FITS or 16-bit TIFF) and where its ICC profile came from; a save over the input the system refuses, through `CurveExport.Guarded` |
+| `CropExport` | Info, Warn | every crop written with its size and kind (`fits crop`, `tiff 16-bit crop`, `png 8-bit crop`), the rectangle, the image's size and the frame, and for a FITS the file its bytes came from, for a TIFF or PNG whether a profile was embedded; a save over the input the system refuses, with the system's exception (`CurveExport.Guarded`) |
 | `App` | Info, Warn | the language and the file from the command line; a `--lang` refused |
 | `MainViewModel` (`Window`) | Info, Warn, Error | `run N started`, `done in` with the verdict, `refused after` (a linear image), `failed after` with the exception; a field refused; `result dropped` when another image is chosen over a result; an exception that leaves the run (`LogUnhandled`, an exception filter, marked with `LogSetup.Wrote`); the profile restored, in use, cleared; the report written, or not with the exception |
 | `MainWindow`, `IccPickerWindow`, `SoftProofControls` (`Window`) | Info | each dialog's answer (the comparison's file dialog is `compare dialog: chose`, with `; not taken, the tab cannot compare now` when it cannot, or `cancelled`), the buttons, the secondary windows opened |

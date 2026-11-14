@@ -10,8 +10,9 @@ recommendation comes with the figure it measured and the threshold it judged it 
 It measures and recommends; the export itself is made cleanly from Siril. Besides its report and
 its log (see "Logs") it writes a file only when you ask for it: from the window's **Curves
 Editing** tab, a new FITS with a suggested contrast curve applied; from its **Colours for paper**
-tab, a new FITS or 16-bit TIFF with the colours the paper cannot reproduce fitted to it. The
-image you open is never modified.
+tab, a new FITS or 16-bit TIFF with the colours the paper cannot reproduce fitted to it; from
+its **Crop with aspect ratio** tab, the part of the image that goes on a frame you already
+have, as a new file of the same kind as the image. The image you open is never modified.
 
 There are two applications, and both give the same figures: the window,
 `AstroPhotoAnalyzer.Wpf.exe`, with a dark theme, and the console, `AstroPhotoAnalyzer.exe`, which
@@ -96,7 +97,7 @@ starless frame, too few to judge the detail by. A star must stand 12 times the l
 over its surroundings, so the grain of a stretched sky is not counted as one; faint stars are
 left out with it, and the resolution is the bright stars'.
 
-**On the right, seven tabs.** Most figures have a line under them saying what they measure and,
+**On the right, nine tabs.** Most figures have a line under them saying what they measure and,
 where one applies, the threshold they are judged by. A screen reader such as Narrator reads what
 each tab shows.
 
@@ -110,6 +111,7 @@ each tab shows.
 | **Curves Editing** | Suggested contrast curves, computed with the analysis: see below. |
 | **Colours for paper** | The image with the colours the paper cannot reproduce fitted to it, in three variants, each compared with the original across a line you drag, to save as a new FITS or 16-bit TIFF: see below. |
 | **Soft proof** | What the paper would do to the image, through its ICC profile, the way Lightroom soft-proofs: see below. |
+| **Crop with aspect ratio** | The image with a rectangle of your frame's proportions over it, to choose what is left out and save the rest: see below. |
 
 **Save the report...** writes `Report.txt` beside the image by default (`Raport.txt` in
 Romanian), byte for byte what the console writes with `-o`, and says under the buttons where it
@@ -254,6 +256,39 @@ Under the image: the profile's name, its paper white in L\*a\*b\* (what the imag
 becomes), its paper black in L\* and Dmax, and the warning's share.
 The pixels and the screen are assumed sRGB, as everywhere in the tool; the proof is a reduced
 copy. The controls keep their state from one image to the next and start afresh with the window.
+
+### Crop for a frame
+
+The **Crop with aspect ratio** tab is for a frame you already have: the image must come out in
+exactly its proportions, and you choose which part is left out.
+
+- Type the frame's **width** and **height**, in cm, with a point: `70` and `54.62`. They are
+  taken as typed: 70 by 54.62 gives a rectangle wider than tall, 54.62 by 70 one taller than
+  wide. A field that is not a number above 0 is named in red.
+- The image fills the tab, and the rectangle appears over it, as large as fits, in the middle;
+  what is outside it is darkened. Drag inside the rectangle to move it; drag one of its four
+  corners to make it smaller or larger. Its proportions stay the frame's, and it cannot leave
+  the image. **Largest** puts it back. It stays where you put it when the analysis runs again
+  on the same image, after a changed parameter or profile.
+- Under the image: the size that stays, in pixels, its share of the image, the pixels cut on
+  each side, and how fine the print would be on that frame, in pixels per inch (ppi).
+- **Save as...** writes a new file with the part inside the rectangle, proposed as the image's
+  name followed by `_cropped_` and the two sizes: `M31_cropped_70x54.62.fit`. The file is of
+  the same kind and depth as the image, and no pixel is changed:
+
+  | The image | The saved file |
+  | --- | --- |
+  | FITS, 8, 16 or 32-bit integers, 32 or 64-bit reals | a FITS of the same kind, with the same header; a plate solution still points at the same sky |
+  | TIFF, 8 or 16 bits | a TIFF of the same depth, uncompressed, with the image's ICC profile |
+  | PNG | a PNG, 16 bits if the image has 16, with the image's ICC profile |
+  | JPEG | an 8-bit TIFF with the JPEG's pixels: a JPEG saved again would be compressed again and lose detail |
+
+  A large PNG takes ten to twenty seconds to write; the tab says so meanwhile, and a window
+  closed in that time closes once the file is whole. The input image is never modified, and
+  saving over it is refused.
+
+The two sizes stay as typed when you open another image. The image in the tab is a reduced
+copy, without zoom; the saved file is cut from the full image.
 
 ## The console
 
@@ -443,6 +478,13 @@ Some limits you may meet on your own images:
 - On an 8-bit file the sky's colour is measured in whole levels, so its chroma can differ by up
   to about 0.7 from that of the 16-bit version of the same image, and a cast near the threshold
   of 3 can fall on either side of it.
+
+- The crop of a TIFF or a PNG keeps the pixels and the ICC profile, nothing else: a
+  transparency channel, a second page and the other notes of the file are not carried, and a
+  compressed TIFF comes out uncompressed. A TIFF of 32 bits per sample is not cropped: save it
+  from Siril at 16 bits first.
+- The crop's rectangle is placed on a reduced copy of the image: on a 23 MP image on a Full HD
+  screen it moves in steps of about four pixels of the image.
 
 ## Logs
 

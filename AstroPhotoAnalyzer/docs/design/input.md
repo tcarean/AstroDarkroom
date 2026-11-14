@@ -49,10 +49,11 @@ stack, before the user's exception, which carries no inner one, is thrown (`logg
 
 ### The writer (`Input/FitsWriter.cs`, R-145, ADR 0032)
 
-The first of the two images the tool writes (the second, the 16-bit TIFF of the paper fit, and
-the sRGB profile it embeds are `Input/TiffWriter.cs` and `Input/IccProfiles.cs`, described in
-`paper-fit.md`; this writer serves the fit too, with an identity curve): a new FITS with a curve
-applied, hand-written like the reader.
+The first of the images the tool writes (the 16-bit TIFF of the paper fit and the sRGB profile
+it embeds are `Input/TiffWriter.cs` and `Input/IccProfiles.cs`, described in `paper-fit.md`; the
+PNG of a crop is `Input/PngWriter.cs`, in `crop.md`; this writer serves the fit too, with an
+identity curve, and the crop of a FITS, below): a new FITS with a curve applied, hand-written
+like the reader.
 From a FITS source the file is re-opened for reading only and copied as it is, byte for byte,
 except two places of the image HDU: the header gets `HISTORY` cards before `END` (every other
 card stays, in order; a full last block grows by one), and the data are written from the
@@ -85,6 +86,29 @@ the operating system. An input that is gone refuses the save, since a FITS would
 written without its header. On the plate-solved FITS the saved file keeps every card of the
 source, has the same 270 869 760 bytes, and reads back equal to the curve applied to the
 raster, with its WCS (V-008).
+
+**The crop of a FITS** (`SaveCrop`, R-181, ADR 0098) is the one thing written that never passes
+through the raster, which is 32-bit float clipped to 0..1 and could not carry every BITPIX whole.
+It walks the source as the curve's writer does (the HDUs before the image copied, the image's
+geometry checked against the analysed one, what follows the image copied) and differs in the
+two places of the image HDU. The header: every card as it is, except `NAXIS1` and `NAXIS2`,
+which take the rectangle's size, and `CRPIX1` and `CRPIX2` (and the lettered ones of an
+alternate solution, `CRPIX1A`), which are moved by what was cut before the first kept pixel of
+their axis; a rewritten card keeps its keyword and its comment (`WithValue`), the new value
+is computed in decimal, so that an ordinary value stays as short as it was and the comment
+still fits (2919.1 less 833 is 2086.1, not the 2086.0999999999999 of a double), a
+quoted value is read as the number the reader takes it for, and a real keeps its point
+(`Moved`); then the `HISTORY` cards. The data: for each plane, the rectangle's stretch of
+each kept row, read from the source at its offset and written as it is. The rectangle is in
+the raster's pixels, whose row y is the file's row `height - 1 - y` whatever `ROWORDER` says
+(ADR 0049), so the kept file rows start at `height - bottom`, and that many file rows are cut
+before them: what `CRPIX2`, which counts the file's rows, moves by. The SIP polynomials are in
+pixels from `CRPIX` and need no change; no other card of a plate solution depends on where the
+image starts (the cards of other conventions that do are in `known-limitations.md`).
+Measured on 2026-11-14 on the plate-solved FITS, a 4700 x 3667 rectangle at 833, 200: 0.3 s,
+the 206 818 800 data bytes equal to the input's rows, `CRPIX1` 2919.5 to 2086.5, `CRPIX2`
+unchanged (the rectangle reaches the raster's bottom, the file's first row), and the tool's
+own `Wcs` naming the same sky for four pixels before and after, to the last digit.
 
 ### The WCS (`Input/Wcs.cs`, `Input/Astrometry.cs`)
 
@@ -216,5 +240,10 @@ Written down because each one cost a probe to find, and each one shapes code or 
   `Metadata.IccProfile`. The reader therefore takes the profile from the decoded image.
 - **The TIFF decoder puts the ICC profile on the first frame's metadata**
   (`Frames[0].Metadata.IccProfile`), not on `Image.Metadata`. The reader checks both.
-- The PNG encoder does not write `iCCP` from `Metadata.IccProfile`; the PNG-with-profile
-  test uses a hand-built PNG (`PngTestData`, with its own CRC-32 and `ZLibStream`).
+- The PNG encoder was recorded here, in phase 1, as not writing `iCCP` from
+  `Metadata.IccProfile`. Measured again on 2026-11-14 (ADR 0098), it does: a 16-bit crop of
+  `de_printat.png` and a fresh image given a profile both came out with an `iCCP` chunk whose
+  profile read back to the same bytes (and a `pHYs` chunk of 96 dpi). `PngWriter` relies on
+  it, and `R181_APngIsWritten...` guards it. The PNG-with-profile fixture of the reader's
+  tests stays hand-built (`PngTestData`, with its own CRC-32 and `ZLibStream`): a file made
+  from a formula tests the decoder, not the package against itself.

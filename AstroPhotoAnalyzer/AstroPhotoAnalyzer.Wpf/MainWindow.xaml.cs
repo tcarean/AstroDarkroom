@@ -59,6 +59,10 @@ namespace AstroPhotoAnalyzer.Wpf
             _vm.Curves.SaveRequested += SaveCurve;
             // The Culori pentru hartie tab (R-178): the save dialog; the arrow keys are shared.
             _vm.GamutFit.SaveRequested += SaveGamutFit;
+            // The Crop with aspect ratio tab (R-183): the save dialog, and a close that waits
+            // for the file being written.
+            _vm.Crop.SaveRequested += SaveCrop;
+            Closing += WaitForTheCropBeingWritten;
             // The Soft proof tab (R-163): its full-screen window (R-164), over the tab's own view-model.
             _vm.SoftProof.ProofRequested += p => Open("the soft proof full screen", new SoftProofWindow { Owner = this, DataContext = p });
             PreviewKeyDown += GalleryKeys;
@@ -249,6 +253,59 @@ namespace AstroPhotoAnalyzer.Wpf
             try { _vm.GamutFit.Save(dlg.FileName); }
             finally { System.Windows.Input.Mouse.OverrideCursor = null; }
         }
+
+        /// <summary>
+        /// Asks where the crop is saved (R-181, R-182), as the one kind of file the core writes
+        /// for this input; the core does the writing, on a pool thread, the tab saying so
+        /// meanwhile.
+        /// </summary>
+        /// <param name="proposedName">The file name the core proposes, shown in the dialog.</param>
+        void SaveCrop(string proposedName)
+        {
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = Tr.Pick("Save the part of the image inside the rectangle", "Salveaza partea din poza aflata in dreptunghi"),
+                FileName = proposedName,
+                InitialDirectory = _vm.Crop.InputFolder,
+                Filter = _vm.Crop.SaveFilter,
+                DefaultExt = _vm.Crop.SaveExtension,
+            };
+            if (dlg.ShowDialog(this) != true)
+            {
+                Log.Info("crop save dialog: cancelled");
+                return;
+            }
+            Log.Info("crop save dialog: chose " + dlg.FileName);
+            _ = _vm.Crop.SaveAsync(dlg.FileName);
+        }
+
+        /// <summary>
+        /// A close asked while a crop is being written waits for it (R-183): the crop is the
+        /// one export written on a pool thread, which the end of the process would stop in
+        /// the middle, leaving the temporary file beside the target and no crop. The window
+        /// closes by itself as soon as the file is whole.
+        /// </summary>
+        /// <param name="sender">The window; not read.</param>
+        /// <param name="e">The close, cancelled while the save lasts.</param>
+        void WaitForTheCropBeingWritten(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            System.Threading.Tasks.Task saving = _vm.Crop.Saving;
+            if (saving.IsCompleted) return;
+            e.Cancel = true;
+            if (_closesAfterTheSave) return;
+            _closesAfterTheSave = true;
+            Log.Info("close asked while a crop is being written: the window closes when the file is whole");
+            System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            saving.ContinueWith(_ => Dispatcher.BeginInvoke(new System.Action(() =>
+            {
+                System.Windows.Input.Mouse.OverrideCursor = null;
+                Close();
+            })), System.Threading.Tasks.TaskScheduler.Default);
+        }
+
+        // A close is already waiting for the crop being written: a second press of the close
+        // button adds nothing.
+        bool _closesAfterTheSave;
 
         /// <summary>
         /// "Salveaza raportul...": the save dialog, proposing Raport.txt beside the image.

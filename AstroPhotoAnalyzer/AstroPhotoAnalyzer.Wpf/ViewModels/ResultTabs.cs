@@ -32,7 +32,7 @@ using System.Linq;
 namespace AstroPhotoAnalyzer.Wpf
 {
     /// <summary>
-    /// The base of the seven tabs: <see cref="HasResult"/>, filled by <see cref="Populate"/>
+    /// The base of the nine tabs: <see cref="HasResult"/>, filled by <see cref="Populate"/>
     /// from an analysis and emptied by <see cref="Clear"/>.
     /// </summary>
     public abstract class ResultTabViewModel : ObservableObject

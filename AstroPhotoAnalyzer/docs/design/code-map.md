@@ -23,17 +23,19 @@ docs/plans/                            approved plans, the implementation plan o
 
 AstroPhotoAnalyzer.Core/
   Input/Raster.cs                      Raster, SourceInfo
-  Input/RasterOps.cs                   subsample, crop, gamma, levels, L* plane, linear guard
+  Input/RasterOps.cs                   subsample, crop (a rectangle as a new raster, R-181), gamma, levels, L* plane, linear guard
   Input/LiftTable.cs                   the two linearisers: exact, or lifted with a gamma through one 16-bit table (ADR 0035)
   Input/ColorMath.cs                   sRGB, luminance, L*, L*a*b*, paper black
   Input/Stats.cs                       percentiles (numpy), robust sigma, Otsu, SeededRandom
   Input/IFrameReader.cs, FitsReader.cs, ImageSharpReader.cs, IccProfileInfo.cs, IccPaperBlack.cs (the Dmax of a printer profile, R-028), ImageLoader.cs,
-        FitsWriter.cs (the saved FITS with a curve applied, R-145), AtomicFile.cs (a file written whole or not at all, R-005, R-145),
-        TiffWriter.cs (the saved 16-bit TIFF of the paper fit, R-177), IccProfiles.cs (the sRGB profile it embeds when the input has none)
+        FitsWriter.cs (the saved FITS with a curve applied, R-145; the crop of a FITS, copied from its bytes, R-181), AtomicFile.cs (a file written whole or not at all, R-005, R-145),
+        TiffWriter.cs (the saved 16-bit TIFF of the paper fit, R-177, and the TIFF of a crop, 16 or 8 bits, R-181), IccProfiles.cs (the sRGB profile the fit embeds when the input has none),
+        PngWriter.cs (the PNG of a crop, through ImageSharp's encoder, R-181)
   Input/Wcs.cs                         the TAN WCS of a plate-solved FITS, pixel <-> sky (R-018)
   Input/Astrometry.cs                  unit vectors, separation, B1950 -> J2000, galactic latitude
   Input/DarkNebulaCatalogue.cs, ldn.txt  the Lynds catalogue (embedded resource) and its reader
   Analysis/FileFacts.cs, BitDepthAnalyzer.cs, CropAnalyzer.cs, TonalAnalyzer.cs,
+           FrameCrop.cs (the crop rectangle for a frame: the largest, a move, a resize from a corner, its figures; R-180),
            DustAnalyzer.cs (the five classes of the patches, by the band or by the modelled sky, the one measurement of the dust and the sky, the catalogue's clouds),
            PrintStretchSimulator.cs (the grid, the ladder, the recommendation, the cloud rows),
            PrintPreview.cs (a row as an image, for the preview window),
@@ -51,10 +53,12 @@ AstroPhotoAnalyzer.Core/
   Report/CurveTexts.cs                 the Editare Curbe tab's sentences and the HISTORY text
   Report/ProofTexts.cs                 the Soft proof tab's sentences
   Report/GamutFitTexts.cs              the Culori pentru hartie tab's sentences, the HISTORY and description texts
+  Report/CropTexts.cs                  the Crop with aspect ratio tab's sentences, the proposed name, the HISTORY and description texts
   Runs/AnalysisRun.cs                  the chain, AnalysisResult, RefusedImageException
   Runs/CurveRun.cs                     the second run, after the analysis: CurveSet, CurveExport
   Runs/ProofRun.cs                     the third run, after the analysis: ProofSet (ADR 0066)
   Runs/GamutFitRun.cs                  the fourth run, after the analysis: GamutFitSet, GamutFitExport (ADR 0083)
+  Runs/CropRun.cs                      the crop: the reduced copy, CropOutput (the kind of file), CropExport (ADR 0098)
   Logging/LogSetup.cs                  the diagnostic log's configuration, its first and last lines (ADR 0069)
   Logging/LogText.cs                   how a value is written in the log; a result record's figures
   Logging/RunClock.cs                  a run's start and done lines, with the time of each stage
@@ -72,7 +76,8 @@ AstroPhotoAnalyzer.Wpf/
                AccessibleTabControl.cs (the window's tabs, their content in the UI Automation tree, R-157),
                ZoomPanViewer.cs (the soft proof's viewer: wheel zoom, drag pan, double-click fit, R-163),
                BeforeAfterViewer.xaml(.cs) (two images compared across a dragged line, over that viewer, R-179),
-               SplitDivider.cs (the line: its place, its handle, what a press grabs, R-179)
+               SplitDivider.cs (the line: its place, its handle, what a press grabs, R-179),
+               CropViewer.cs (the image with the crop rectangle over it and the drags that move it, R-183)
   ViewModels/MainViewModel.cs, ParameterFields.cs, ResultTabs.cs, Rows.cs, AboutViewModel.cs,
              MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131),
              IccPickerViewModel.cs (the profile window, R-132),

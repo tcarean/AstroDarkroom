@@ -22,7 +22,7 @@ namespace AstroPhotoAnalyzer.Wpf
 {
     /// <summary>
     /// The names of the window's loggers (R-171): the application, the window and its view-model,
-    /// and the two tabs that run the core after the analysis, whose computations are numbered under
+    /// and the tabs that run the core after the analysis, whose computations are numbered under
     /// a name of their own so a curves run and a proof run of the same analysis are told apart.
     /// </summary>
     internal static class Loggers
@@ -41,5 +41,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>The Culori pentru hartie tab: its computations, its box and its saves.</summary>
         internal const string GamutFit = "Window.GamutFit";
+
+        /// <summary>The Crop with aspect ratio tab: its frame, its rectangle and its saves.</summary>
+        internal const string Crop = "Window.Crop";
     }
 }

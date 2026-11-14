@@ -900,5 +900,13 @@ namespace AstroPhotoAnalyzer
         /// saturation slider a person sets by hand.
         /// </summary>
         internal const double GamutFitRecipeStep = 0.05;
+
+        /// <summary>
+        /// The smallest short side of the crop rectangle, in image pixels (R-180): a resize
+        /// stops there. A rule of thumb with no measurement behind it: on the reduced copy the
+        /// tab shows (a 23 MP image at a quarter of its size) 64 pixels are 16 on the screen,
+        /// about the least a hand can still grab by its corners, and no print is made from less.
+        /// </summary>
+        internal const int CropMinSide = 64;
     }
 }

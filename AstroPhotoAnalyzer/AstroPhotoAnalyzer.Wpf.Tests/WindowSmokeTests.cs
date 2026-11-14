@@ -225,6 +225,14 @@ public class WindowSmokeTests
             Assert.False(vm.GamutFit.HasGallery);
             Assert.True(vm.GamutFit.IsProblem, vm.GamutFit.Message);
             Render(new GamutFitView { DataContext = vm.GamutFit }, name: "tab-culori-hartie-fara-profil");
+            // R-183: the Crop with aspect ratio tab, filled with the analysis: the image alone
+            // until the frame's two sizes are typed, then the rectangle over it.
+            Assert.NotNull(vm.Crop.Image);
+            Assert.False(vm.Crop.HasCrop);
+            vm.Crop.FrameWidth = "70";
+            vm.Crop.FrameHeight = "54.62";
+            Assert.True(vm.Crop.HasCrop);
+            Render(new CropView { DataContext = vm.Crop }, name: "tab-decupare-dupa-analiza");
 
             // R-130, R-131: the two windows of the Tonuri tab, built from the same result.
             MapViewModel map = vm.Tones.BuildMap();

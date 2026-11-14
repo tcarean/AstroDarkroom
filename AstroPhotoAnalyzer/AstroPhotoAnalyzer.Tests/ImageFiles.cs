@@ -95,6 +95,27 @@ internal static class ImageFiles
         return path;
     }
 
+    internal static string SaveTiff8Gray(Raster r, string path)
+    {
+        using var img = ToL8(r);
+        img.SaveAsTiff(path, new TiffEncoder { Compression = TiffCompression.Lzw, BitsPerPixel = TiffBitsPerPixel.Bit8 });
+        return path;
+    }
+
+    internal static string SavePng16Gray(Raster r, string path)
+    {
+        using var img = ToL16(r);
+        img.SaveAsPng(path, new PngEncoder { BitDepth = PngBitDepth.Bit16, ColorType = PngColorType.Grayscale });
+        return path;
+    }
+
+    internal static string SavePng8Rgb(Raster r, string path)
+    {
+        using var img = ToRgb48(r);
+        img.SaveAsPng(path, new PngEncoder { BitDepth = PngBitDepth.Bit8, ColorType = PngColorType.Rgb });
+        return path;
+    }
+
     internal static string SaveJpeg(Raster r, string path, int quality = 95)
     {
         using var img = ToRgb48(r);
