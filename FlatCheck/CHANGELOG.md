@@ -237,6 +237,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The reasons `the focal length is not known` and `the aperture is not known` no longer say there
+  was no raw when one was read: they name the file that does not give the value and stop
+  offering `--raw`; when the raw could not be read they say so, with the error (R-106, R-017,
+  the review's CR-018).
 - `flatcheck master.fit --lens <text>` with a text that matches no lens now says so (`no lens in
   the list matches --lens "tokna"; --lenses shows the list`); it said `no raw beside the master
   ... Give --lens <text>`, or that the raw's own lens matched nothing. A lens that is found but

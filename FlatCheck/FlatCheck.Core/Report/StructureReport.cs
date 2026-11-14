@@ -496,17 +496,51 @@ namespace FlatCheck
                         : T($"{c.Unprofiled.Count} lenses were found, but none has a vignetting profile for raw files (their files describe distortion or colour only, or were made for JPEGs). Give another lens with --lens <text>",
                             $"s-au gasit {c.Unprofiled.Count} obiective, dar niciunul nu are profil de vignetare pentru fisiere raw (fisierele lor descriu doar distorsiunea sau culoarea, ori sunt facute pentru JPEG). Da alt obiectiv cu --lens <text>");
                 case ComparisonGap.NoFocal:
-                    return T("the focal length is not known - no FOCALLEN in the master, and no raw; give --focal <mm>",
-                             "focala nu se stie - nici FOCALLEN in master, nici raw; da --focal <mm>");
+                    return T("the focal length is not known - no FOCALLEN in the master, ", "focala nu se stie - nici FOCALLEN in master, ")
+                         + RawPart(o, T("and no raw", "nici raw"))
+                         + T("; give --focal <mm>", "; da --focal <mm>");
                 case ComparisonGap.NoFStop:
-                    return T("the aperture is not known - Siril does not write it in the master, and there was no raw beside it; give --fstop <f> or --raw <file>",
-                             "diafragma nu se stie - Siril n-o scrie in master, si n-a fost niciun raw langa el; da --fstop <f> sau --raw <fisier>");
+                    // --raw is offered only when there was no raw: one that was read gives no
+                    // aperture, and another would say the same.
+                    return T("the aperture is not known - Siril does not write it in the master, ", "diafragma nu se stie - Siril n-o scrie in master, ")
+                         + RawPart(o, T("and there was no raw beside it", "si n-a fost niciun raw langa el"))
+                         + (HadRaw(o) ? T("; give --fstop <f>", "; da --fstop <f>")
+                                      : T("; give --fstop <f> or --raw <file>", "; da --fstop <f> sau --raw <fisier>"));
                 case ComparisonGap.NoCrop:
                     return T($"lensfun profiles only, and the camera's crop is not known ({shot?.CropSource}); give --crop <factor>",
                              $"doar profile lensfun, si crop-ul aparatului nu se stie ({shot?.CropSource}); da --crop <factor>");
                 default:
                     return "";
             }
+        }
+
+        /// <summary>
+        /// Whether the run had a raw to ask, read or not: one was read (beside the master, or
+        /// the frame itself), or one was there and could not be read. False only when there was
+        /// none, the one case whose remedy is a raw.
+        /// </summary>
+        /// <param name="o">The run, with a comparison.</param>
+        /// <returns>True when a raw was read or failed to read.</returns>
+        static bool HadRaw(StructureOutcome o) => o.RawError != null || o.Profiles.Shot?.Raw != null;
+
+        /// <summary>
+        /// What became of the raw, for the gaps of a value the raw could have given (the focal
+        /// length, the aperture): it could not be read, with the error; it was read and does
+        /// not give the value, named by its file ("the raw" when the frame itself is the raw);
+        /// or there was none, in the caller's words. A raw that was read is never called
+        /// missing (R-106).
+        /// </summary>
+        /// <param name="o">The run, with a comparison.</param>
+        /// <param name="noRaw">The words for "there was no raw", ready to print.</param>
+        /// <returns>The clause, without a leading space or closing punctuation.</returns>
+        static string RawPart(StructureOutcome o, string noRaw)
+        {
+            if (o.RawError != null)
+                return T($"and the raw beside it could not be read ({o.RawError})", $"iar raw-ul de langa el nu s-a putut citi ({o.RawError})");
+            ShotIdentity shot = o.Profiles.Shot;
+            if (shot?.Raw == null) return noRaw;
+            string raw = shot.RawName ?? T("the raw", "raw-ul");
+            return T($"and {raw} does not give it", $"si nici {raw} nu o da");
         }
 
         /// <summary>

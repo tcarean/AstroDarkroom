@@ -682,6 +682,71 @@ public class StructureReportTests
         Assert.Equal(gap, StructureReport.GapText(byName));
     }
 
+    /// <summary>
+    /// CR-018: the focal and aperture gaps said "no raw" whatever had happened. With a raw that
+    /// was read and gives neither (the Canon EOS 40D of R-106, here with a --lens text) the gap
+    /// names the file and does not offer --raw; with a raw that could not be read it says that,
+    /// with the error; only without a raw does it say there was none.
+    /// </summary>
+    [Fact]
+    public void R106_TheFocalAndApertureGapsSayNoRawOnlyWhenThereWasNone()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var r = Result(FitsTestData.Radial(512, 512));
+        var noLens = new LoadedFrame { Header = new Dictionary<string, string>(), Camera = "Canon EOS 40D" };
+        var bare = new LoadedFrame { Header = new Dictionary<string, string> { ["SIMPLE"] = "T" } };   // no FOCALLEN
+        StructureQuery WithRaw(Func<string, LoadedFrame> load)
+            => new StructureQuery { Sources = sources, RawPath = "IMG_7290.CR2", LoadInfo = load, LensText = "Tokina" };
+        var noRaw = new StructureQuery { Sources = sources, LensText = "Tokina" };
+        string Gap(LoadedFrame master, StructureQuery query, ComparisonGap expected)
+        {
+            StructureOutcome o = StructureRun.Compare(r, master, query);
+            Assert.Equal(expected, o.Profiles.Gap);
+            return StructureReport.GapText(o);
+        }
+
+        // a raw that was read and gives neither value
+        Assert.Equal("diafragma nu se stie - Siril n-o scrie in master, si nici IMG_7290.CR2 nu o da; da --fstop <f>",
+                     Gap(MasterFrame(), WithRaw(_ => noLens), ComparisonGap.NoFStop));
+        Assert.Equal("focala nu se stie - nici FOCALLEN in master, si nici IMG_7290.CR2 nu o da; da --focal <mm>",
+                     Gap(bare, WithRaw(_ => noLens), ComparisonGap.NoFocal));
+
+        // a raw that could not be read
+        const string error = "IMG_7290.CR2 nu s-a putut citi: stricat";
+        Assert.Equal($"diafragma nu se stie - Siril n-o scrie in master, iar raw-ul de langa el nu s-a putut citi ({error}); da --fstop <f>",
+                     Gap(MasterFrame(), WithRaw(_ => throw new IOException("stricat")), ComparisonGap.NoFStop));
+        Assert.Equal($"focala nu se stie - nici FOCALLEN in master, iar raw-ul de langa el nu s-a putut citi ({error}); da --focal <mm>",
+                     Gap(bare, WithRaw(_ => throw new IOException("stricat")), ComparisonGap.NoFocal));
+
+        // no raw at all: the texts as they were
+        Assert.Equal("diafragma nu se stie - Siril n-o scrie in master, si n-a fost niciun raw langa el; da --fstop <f> sau --raw <fisier>",
+                     Gap(MasterFrame(), noRaw, ComparisonGap.NoFStop));
+        Assert.Equal("focala nu se stie - nici FOCALLEN in master, nici raw; da --focal <mm>",
+                     Gap(bare, noRaw, ComparisonGap.NoFocal));
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("the aperture is not known - Siril does not write it in the master, and IMG_7290.CR2 does not give it; give --fstop <f>",
+                         Gap(MasterFrame(), WithRaw(_ => noLens), ComparisonGap.NoFStop));
+            Assert.Equal("the focal length is not known - no FOCALLEN in the master, and IMG_7290.CR2 does not give it; give --focal <mm>",
+                         Gap(bare, WithRaw(_ => noLens), ComparisonGap.NoFocal));
+            const string errorEn = "IMG_7290.CR2 could not be read: stricat";
+            Assert.Equal($"the aperture is not known - Siril does not write it in the master, and the raw beside it could not be read ({errorEn}); give --fstop <f>",
+                         Gap(MasterFrame(), WithRaw(_ => throw new IOException("stricat")), ComparisonGap.NoFStop));
+            Assert.Equal($"the focal length is not known - no FOCALLEN in the master, and the raw beside it could not be read ({errorEn}); give --focal <mm>",
+                         Gap(bare, WithRaw(_ => throw new IOException("stricat")), ComparisonGap.NoFocal));
+            Assert.Equal("the aperture is not known - Siril does not write it in the master, and there was no raw beside it; give --fstop <f> or --raw <file>",
+                         Gap(MasterFrame(), noRaw, ComparisonGap.NoFStop));
+            Assert.Equal("the focal length is not known - no FOCALLEN in the master, and no raw; give --focal <mm>",
+                         Gap(bare, noRaw, ComparisonGap.NoFocal));
+        }
+
+        // the raw as the frame itself (the console on a raw): no file name beside it, so "the raw"
+        string self = Gap(noLens, new StructureQuery { Sources = sources, LensText = "Tokina" }, ComparisonGap.NoFocal);
+        Assert.Equal("focala nu se stie - nici FOCALLEN in master, si nici raw-ul nu o da; da --focal <mm>", self);
+    }
+
     [Fact]
     public void EveryGapHasWordsAndNoneOfThemUsesDiacritics()
     {
