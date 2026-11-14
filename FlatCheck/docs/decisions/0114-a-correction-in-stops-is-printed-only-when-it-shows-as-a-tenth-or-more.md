@@ -53,7 +53,7 @@ whenever it would show as less than a tenth":
 - R-043 holds the rule; `R043_TheCorrectionFigureIsPrintedOnlyWhenItShowsAsATenthOfAStopOrMore`
   in `ExposureReportTests.cs` reads the sentence at the four levels above and at 81 % without
   clipping, in both languages and in the console's block.
-- No golden changes: the three goldens that print the sentence are too high by their level
+- No golden changes: the four goldens that print the sentence are too high by their level
   (0.5 and 0.6 stops).
 - The other sentences with a figure cannot reach a small one: "raise" is printed below 50 %
   (0.2 stops or more), "you could lower it" above 65 % (0.2 or more).

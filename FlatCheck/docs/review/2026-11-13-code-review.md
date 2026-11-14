@@ -80,11 +80,11 @@ first" and "Test before fix"), and a formula change re-validates on the masters.
 | CR-013 | 2 | crafted | confirmed | The FITS reader uses `NAXISn` and `BITPIX` before checking them | fixed 96efd6a4 |
 | CR-014 | 2 | rare | confirmed | A lens name with non-ASCII digits throws out of the identification | fixed 411deeb8 |
 | CR-015 | 2 | rare | to measure | Stopping Siril can crash the window when a child process cannot be killed | fixed f4aa182b |
-| CR-016 | 3 | rare | confirmed | An input folder that cannot be listed leaves a dead Run button and no log line | open |
-| CR-017 | 3 | slip | confirmed | A `--lens` text that matches nothing is reported as "no raw" | open |
-| CR-018 | 3 | some setups | confirmed | The "focal length / aperture not known" texts say "no raw" when a raw was read | open |
-| CR-019 | 3 | some setups | confirmed | The "crop not known" text says the calibration sensor "is taken" | open |
-| CR-020 | 3 | common | confirmed | "Lower the exposure by ~-0.1 stops" when the centre clips below the target | open |
+| CR-016 | 3 | rare | confirmed | An input folder that cannot be listed leaves a dead Run button and no log line | fixed 779d7108 |
+| CR-017 | 3 | slip | confirmed | A `--lens` text that matches nothing is reported as "no raw" | fixed 67344ab6 |
+| CR-018 | 3 | some setups | confirmed | The "focal length / aperture not known" texts say "no raw" when a raw was read | fixed 4dd5e09b |
+| CR-019 | 3 | some setups | confirmed | The "crop not known" text says the calibration sensor "is taken" | fixed 8a30755a |
+| CR-020 | 3 | common | confirmed | "Lower the exposure by ~-0.1 stops" when the centre clips below the target | fixed 12827b91 |
 | CR-021 | 3 | rare | confirmed | A series of one frame prints "NaN" and says the frames differ | open |
 | CR-022 | 3 | common | confirmed | A negative sky correlation is flagged "above the threshold of 0.70" | open |
 | CR-023 | 3 | common | confirmed | `--lenses <text>` lists every lens, and a refusal recommends that form | open |
@@ -479,6 +479,16 @@ twice.
 - Test: `R080_AnUnlistableProcessFolderStillGetsTheMissingMasterCard` denies `process/`, which
   is not an input folder.
 - Evidence: confirmed (three reviewers reported it independently).
+- Status: fixed 779d7108 (R-080, ADR 0113). The failing tests showed three outcomes: the grey
+  button with no reason (no master), the whole session refused with the "could not be read"
+  card (a master, `lights/` denied), and a press on Start Split that threw into a task nobody
+  reads. `SirilSession.CheckInputFolders` catches the listing's error per folder and
+  `ScriptChoiceViewModel.FindBlocker` shows it as a blocker of its own, with a Warn line; the
+  owner chose that a session with a master opens and only the Split tab is blocked. The
+  window's three unawaited tasks go through `Detached.Watch`, which logs a fault at Error.
+  `R080_...` in `MainViewModelTests` and `SplitTabTests`, `R110_ATaskTheWindowDoesNotAwait...`.
+  Left as it is: nothing re-checks a blocked choice by itself, so the text says to open the
+  folder again; the older "missing or empty" text still says "press again" (CR-037's kind).
 
 ### CR-017 A `--lens` text that matches nothing is reported as "no raw"
 
@@ -495,6 +505,13 @@ twice.
   as gaps of their own.
 - Test: none for the words.
 - Evidence: confirmed.
+- Status: fixed 67344ab6 (R-017). Two gaps of their own, `LensTextNoMatch` and
+  `NoVignettingProfile`; `VignettingComparer.Analyze` takes the text and keeps the lenses found
+  without a profile. The case left to measure was shown by a test with an Adobe file made for
+  JPEGs (R-134): the report said "no lens matches the text given", and the same lens found by
+  the raw's own name said the raw's lens matched nothing. `R017_ALensTextThatMatchesNothing...`
+  and `R017_ALensFoundWithoutAVignettingProfile...` in `StructureReportTests`. The new sentence
+  points at `--lenses`, not at `--lenses <text>`, the form CR-023 lists.
 
 ### CR-018 The "focal length / aperture not known" texts say "no raw" when a raw was read
 
@@ -509,6 +526,11 @@ twice.
   `--raw` (R-106: "never as a missing raw").
 - Test: `WithALensButNoFStopTheGapIsTheFStop` runs without a raw only.
 - Evidence: confirmed.
+- Status: fixed 4dd5e09b (R-106, R-017). The two texts say what became of the raw
+  (`StructureReport.RawPart`): read and silent, named by its file; unreadable, with the error;
+  or absent, the old words, and only then is `--raw` offered. The no-raw texts are letter for
+  letter the old ones (a golden prints one).
+  `R106_TheFocalAndApertureGapsSayNoRawOnlyWhenThereWasNone` in `StructureReportTests`.
 
 ### CR-019 The "crop not known" text says the calibration sensor "is taken"
 
@@ -520,6 +542,12 @@ twice.
 - Also: `SyntheticReport.cs:85-86` prints "camera crop : unknown  (unknown - ...)", the word
   doubled.
 - Evidence: confirmed.
+- Status: fixed 8a30755a (R-017, R-072). The gap says why the crop is not known, in the words
+  of the `--synthetic` refusal (`SyntheticReport.WhyNoCrop`: the camera is not in the lensfun
+  database, or no file names it); the crop row words the stand-in itself. `ShotIdentity.CropSource`
+  keeps its text, which two older tests read, and is printed nowhere as it stands.
+  `R017_TheCropGapSaysWhy...` in `StructureReportTests`, `R072_TheCropRowSaysUnknownOnce...` in
+  `LensProfileTests`.
 
 ### CR-020 "Lower the exposure by ~-0.1 stops" when the centre clips below the target
 
@@ -532,6 +560,11 @@ twice.
   the same text.
 - Should: no figure when the centre is at or below the target.
 - Evidence: confirmed.
+- Status: fixed 12827b91 (R-043, ADR 0114). The owner chose a wider rule than "at or below the
+  target": the figure is printed only when it is positive and shows as 0.1 stops or more, so a
+  burnt centre at 58 % no longer reads "~0.0 stops" either; otherwise the sentence is "Lower
+  the exposure." No golden changed. `R043_TheCorrectionFigureIsPrintedOnlyWhen...` in
+  `ExposureReportTests`.
 
 ### CR-021 A series of one frame prints "NaN" and says the frames differ
 
