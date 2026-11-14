@@ -217,13 +217,14 @@ internal sealed record StackLimit(double Limit, int Lights, double LightNoise, d
 /// <summary>
 /// Check 9: whether the frames are enough (R-024, ADR 0051): at least <see cref="Th.MinDarks"/>,
 /// and, with measured lights, a master that keeps their stack within the limit of
-/// <see cref="Stack"/>; without lights, the median master's noise under the quantisation step.
+/// <see cref="Stack"/>; without lights the minimum alone is judged (ADR 0056).
 /// </summary>
 /// <param name="Verdict">Ok when the frames are at least <paramref name="FramesNeeded"/>;
 /// Unmeasured under two frames or without a noise.</param>
 /// <param name="Frames">The frames stacked.</param>
 /// <param name="MasterNoise">The median master's predicted noise, in raw ADU.</param>
-/// <param name="QuantStep">The quantisation step, in ADU (0 unknown, read as 1).</param>
+/// <param name="QuantStep">The quantisation step of the file's values, in ADU (0 unknown); kept
+/// for the record, no rule reads it (ADR 0056).</param>
 /// <param name="FramesNeeded">The frames the rule in force asks for, at least
 /// <see cref="Th.MinDarks"/>.</param>
 /// <param name="TooFew">True under <see cref="Th.MinDarks"/> frames.</param>

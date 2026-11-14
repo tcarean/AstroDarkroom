@@ -466,9 +466,11 @@ internal static class DarkSeriesRun
 
         // A partner made at other settings than the set it is measured against is never subtracted
         // as it is (ADR 0055): in the files the hot pixels are the ratio times one factor over the
-        // other. A silent set was compared as made at the same settings and is no other.
+        // other. Only sets that say both their settings can be at others: a set that does not was
+        // compared as made at the same settings (ADR 0053).
         SettingsMismatch? other = null, lightsOther = null;
-        if (silent == SilentSide.None && own.FirstStacked is FrameInfo ownFirst && !FrameStack.SameSettings(ownFirst, first))
+        FrameInfo? ownFirst = own.FirstStacked;
+        if (ownSays && partnerSays && ownFirst is not null && !FrameStack.SameSettings(ownFirst, first))
         {
             other = new SettingsMismatch(first, ownFirst, match.Ratio * own.Norm / partnerNorm);
             match = match with { Verdict = LightsAnalysis.NeverDirect(match.Verdict, true) };
@@ -476,14 +478,17 @@ internal static class DarkSeriesRun
 
         if (lights is not null && partnerSays)
         {
-            // the lights against the partner's settings, by the rule they are held to the darks' with
+            // The lights against the partner's settings, by the rule they are held to the darks'
+            // with. A light that does not say its settings was taken at the darks', so against the
+            // partner it stands where the darks stand.
             LightFigures[] measured = lights.Frames.Where(f => f.Error is null).ToArray();
-            LightFigures[] others = measured.Where(f => Normalisation.Says(f.Info) && !FrameStack.SameSettings(f.Info, first)).ToArray();
+            LightFigures[] others = measured.Where(f => f.AssumedSettings ? other is not null : !FrameStack.SameSettings(f.Info, first)).ToArray();
             if (2 * others.Length > measured.Length)
             {
                 // the lights over the darks in the files, then the darks over the partner in the files
                 double lightsInFiles = lights.Other?.RatioInFiles ?? lights.LightsOverDark.Ratio;
-                lightsOther = new SettingsMismatch(first, others[0].Info, lightsInFiles * match.Ratio * own.Norm / partnerNorm);
+                FrameInfo set = others[0].AssumedSettings && ownFirst is not null ? ownFirst : others[0].Info;
+                lightsOther = new SettingsMismatch(first, set, lightsInFiles * match.Ratio * own.Norm / partnerNorm);
                 lightsOverPartner = lightsOverPartner with { Verdict = LightsAnalysis.NeverDirect(lightsOverPartner.Verdict, true) };
             }
         }

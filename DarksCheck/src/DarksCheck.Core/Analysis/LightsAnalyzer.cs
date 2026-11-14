@@ -58,10 +58,13 @@ internal sealed record LightFigures(FrameInfo Info, string? Error, bool AssumedS
     /// <summary>
     /// True when the light's ISO or exposure is not the darks', by the rule that decides whether
     /// a frame belongs to a stack and that check 1 applies (<see cref="FrameStack.SameSettings"/>:
-    /// another ISO, or an exposure further than <see cref="Th.ExposureTolerance"/>); false when
-    /// either side does not say a setting, and for a light without figures. It is read from the
-    /// settings, not from <see cref="ToDarks"/>: twice the ISO at half the exposure has a factor
-    /// of 1 and is still another setting.
+    /// another ISO, or an exposure further than <see cref="Th.ExposureTolerance"/>), both the
+    /// light and the darks saying their ISO and their exposure (<see cref="Normalisation.Says"/>).
+    /// False when either does not say both, the two then being compared as made at the same
+    /// settings with nothing brought from one to the other (ADR 0053), even if the one setting
+    /// both give differs, which check 1 says; false for a light without figures. It is read from
+    /// the settings, not from <see cref="ToDarks"/>: twice the ISO at half the exposure has a
+    /// factor of 1 and is still another setting.
     /// </summary>
     internal bool OtherSettings { get; init; }
 }
@@ -83,13 +86,14 @@ internal sealed record OverlapAtLevel(double LevelAdu, int DarkCount, int Both);
 /// the light's noise on the pixel's colour, both in ADU equivalent, so it grows in step with
 /// `|ratio - 1|`: <paramref name="PerUnit"/> is the level over the noise at a typical pixel, and
 /// the band inside which the typical trace stays under <see cref="Th.TraceNoiseLimit"/> x the
-/// noise follows from it.
+/// noise follows from it. For lights at other settings than the darks the 1 is
+/// <see cref="Centre"/>, the ratio at which the files' subtraction leaves nothing (ADR 0055).
 /// </summary>
 /// <param name="Pixels">How many amplitude pixels were read: those of a colour whose noise in
 /// the lights is positive.</param>
 /// <param name="PerUnit">The median over those pixels of the master's level over the light's
 /// noise; NaN when no pixel was read.</param>
-/// <param name="Median">The night's median trace, in times the noise: `|ratio - 1|` x
+/// <param name="Median">The night's median trace, in times the noise: `|ratio - Centre|` x
 /// <paramref name="PerUnit"/>; NaN when no pixel was read or the ratio is unmeasured.</param>
 /// <param name="AboveNoise">The pixels whose trace is above 1 x the noise.</param>
 /// <param name="AboveStrong">The pixels whose trace is above
@@ -160,7 +164,7 @@ internal sealed record SettingsMismatch(FrameInfo Master, FrameInfo Set, double 
 /// on.</param>
 /// <param name="LightsOverDark">The lights' ratios over the master, one per light, as a
 /// match; its verdict is the ratio's with <paramref name="Traces"/>' wider Direct band
-/// (R-067).</param>
+/// (R-067), and never Direct for lights at other settings than the darks (ADR 0055).</param>
 /// <param name="RatioFirst">The first measured light's ratio; NaN when none.</param>
 /// <param name="RatioLast">The last measured light's ratio; NaN when none.</param>
 /// <param name="Traces">What a plain subtraction leaves at the master's hot pixels.</param>
@@ -182,7 +186,9 @@ internal sealed record LightsAnalysis(
 {
     /// <summary>
     /// The verdict of a ratio of these lights over their dark, the night's or one light's: R-062's
-    /// bounds with the Direct band of <see cref="Traces"/> (R-067).
+    /// bounds with the Direct band of <see cref="Traces"/> (R-067), and never
+    /// <see cref="MatchVerdict.Direct"/> for lights at other settings than the darks
+    /// (<see cref="Other"/>, ADR 0055).
     /// </summary>
     /// <param name="ratio">The amplitude ratio; NaN for unmeasured.</param>
     /// <returns>The verdict.</returns>
@@ -293,7 +299,7 @@ internal static class LightsAnalyzer
                     bool assumed = !Normalisation.Says(frame.Info);
                     double normL = FactorOf(frame.Info, darks);
                     (LightFigures f, List<int> isolated) = Measure(frame, w, h, lightBlack, white, normL, assumed, excess, darks.Norm, ampIdx);
-                    frames[i] = f with { ToDarks = darks.Norm / normL, OtherSettings = darkSettings is not null && !FrameStack.SameSettings(frame.Info, darkSettings) };
+                    frames[i] = f with { ToDarks = darks.Norm / normL, OtherSettings = !assumed && darks.SaysSettings && darkSettings is not null && !FrameStack.SameSettings(frame.Info, darkSettings) };
                     lock (gate)
                     {
                         used++;

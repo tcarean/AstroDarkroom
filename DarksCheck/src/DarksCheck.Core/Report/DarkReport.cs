@@ -348,7 +348,8 @@ internal static class DarkReport
     /// <summary>
     /// The `ce ramane` row of check 2 (R-067): what a plain subtraction of the dark leaves at a hot
     /// pixel, against the noise of a light, and at how many pixels it passes that noise. A ratio
-    /// under 1 takes too much and leaves a hole, one over 1 too little and leaves a rest.
+    /// under <see cref="TraceFigures.Centre"/> (1 for lights at the darks' settings) takes too much
+    /// and leaves a hole, one over it too little and leaves a rest.
     /// </summary>
     /// <param name="m">The lights over the dark.</param>
     /// <param name="t">The traces.</param>

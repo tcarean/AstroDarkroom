@@ -147,7 +147,10 @@ only the ratio, so the partner's verdicts and the lights' index do not move. No 
 (`TraceFigures.None`) leaves the plain band.
 
 Lights at other settings than the darks (ADR 0055) are found by `LightsAnalyzer.OtherOf`, before
-the traces: more than half of the measured lights carry `LightFigures.OtherSettings`. It gives a
+the traces: more than half of the measured lights carry `LightFigures.OtherSettings`, which
+`Analyze` sets only for a light that says both its settings against darks that say theirs
+(`Normalisation.Says`); a light or darks that do not were read at one factor, so nothing is
+at "other" settings there, whatever the one setting both give. It gives a
 `SettingsMismatch`, kept as `LightsAnalysis.Other`: the first stacked dark's metadata, the first
 such light's, and the ratio in the files, the median over the lights of `AmpRatioMedian /
 ToDarks` (the light's ratio times its factor over the darks'). `TracesOf` then takes a centre
@@ -160,7 +163,10 @@ the light's noise as the files have them; `TraceFigures.Centre` carries it, and 
 (`PartnerAnalysis.Other`, the session's first stacked dark against the partner's first decoded
 one, the ratio in the files being the ratio times the session's factor over the partner's) and
 for the chained row (`PartnerAnalysis.LightsOther`, more than half of the measured lights
-against the partner's settings, the lights' ratio in the files times the darks'). The report
+against the partner's settings, the lights' ratio in the files times the darks'; a light with
+`AssumedSettings` was taken at the darks' settings, so it counts as other exactly when the
+darks are, and the darks' settings are then the ones named). Both need the sets to say both
+their settings (`ownSays`, `partnerSays`). The report
 turns a mismatch into words with `DarkReport.OtherWords` and marks the verdict row
 (`ReportRow.Alert`).
 

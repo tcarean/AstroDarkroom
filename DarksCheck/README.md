@@ -199,6 +199,16 @@ The verdict, on the lights / dark ratio:
 | 0.4 to 0.7 | `WARNING: use the dark for the cosmetic correction only (-cc=dark: ...)` | the dark is much warmer: it finds every hot pixel, but subtracted it would take out too much and leave black dots |
 | other | `WARNING: they do not match` | too cold or too warm |
 
+When the lights are at another ISO or another exposure than the darks (most of them, both sets
+saying their settings), the ratio still compares the two with both brought to one setting, so
+it still tells the temperatures apart, but the dark is never said to be subtracted as it is: in
+the files the hot pixels of the lights are not as high as the dark's. The verdict then reads
+`WARNING: do not subtract the dark as it is`, names both settings and how many times higher the
+hot pixels are in the files, and advises, in this order, darks made at the lights' settings,
+then `-opt` (which needs the biases too) or the cosmetic correction only. The row `lights
+against dark` gives the ratio in the files beside the one worked out, the row `what is left`
+is worked out on the files, and the same holds for a partner made at other settings.
+
 The same ratio does not mean the same thing on a cold dark and on a warm one: a cold master
 has few hot pixels, and weak ones, so a dark that is 15 % off leaves little behind. The row
 `what is left` measures it. At every hot pixel of the master, a plain subtraction leaves the
@@ -524,9 +534,13 @@ Reads the metadata without decoding the pixels: under three seconds for a sessio
   after frame have none; a gap means Live View, a menu or the camera left alone, so the sensor
   cooled.
 - `match`: `OK` when the darks have the lights' exposure (within 2 %) and ISO, `WARNING` with
-  both settings when they do not, `UNMEASURED` without lights.
+  both settings when they do not, `UNMEASURED` without lights. A setting both groups give and
+  that differs is a `WARNING` even when the files do not state the other one; `UNMEASURED` is
+  then left for files that do not state a setting, with nothing known to differ.
 - `bias`: `OK` with the exposure when the biases are at most 1 s, `WARNING` above, `(none)`
-  without biases.
+  without biases. Biases at another ISO than the darks are not used: a `WARNING` line names the
+  two ISOs, every figure is worked out without them, and the exit code is 1, as for biases of
+  another size.
 - `gap`, in the tables, is the time from the end of the previous exposure to the start of this
   one. The time comes from the EXIF of a raw (the camera's clock) and from the `DATE-OBS` of a
   FITS (UTC, as Siril writes it).
@@ -543,7 +557,8 @@ tabs:
   how well the dark fits the lights, right under them (with the darks' and the lights' indexes on
   rows of their own and the overlap at each threshold as a table); every check is a card of rows,
   its verdict a coloured chip (green `OK`, amber `WARNING`, red `REDO`, grey `UNMEASURED`) with the
-  rest of the text beside it. The verdicts of checks 3 and 4 put each statement on a line of its
+  rest of the text beside it. Darks that do not have the lights' settings stand out: the `match`
+  row and the verdict of check 2 are then drawn large and in red. The verdicts of checks 3 and 4 put each statement on a line of its
   own. The hot-pixel card keeps only the stability, one statement per line, and the verdict; the
   rest is on the Hot pixels tab. Check 9 shows what the master would be with fewer or more
   frames as a table; with lights, a dropdown above it sets how much noisier the stack may be than with an ideal dark master,

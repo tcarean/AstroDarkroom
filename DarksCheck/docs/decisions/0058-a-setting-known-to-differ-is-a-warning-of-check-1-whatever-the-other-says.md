@@ -36,7 +36,10 @@ which the frames do not state.
 
 A session whose frames give both settings reads as before; no golden file changed. With CR-006
 (ADR 0055) the WARNING is drawn large and red in the window, in the partly known case too.
-Check 2 already took a setting known to differ as "other settings"
-(`FrameStack.SameSettings`), so the two checks now agree on such files. Guarded by
+Check 2 does not follow there: without both settings on both sides it has no factor to bring
+one set to the other, compares the two as made at the same settings (ADR 0053) and judges the
+ratio the files have, so in the partly known case the mismatch is said by check 1 alone. The
+two checks can also part on lights of mixed settings: check 1 names the largest group of
+lights, check 2 asks for more than half of the measured ones. Guarded by
 `R007_ASettingKnownToDifferIsAWarningEvenWhenTheOtherIsNotGiven`;
 `R007_WithoutExposuresOrIsoTheMatchIsUnmeasured` still pins equal exposures without an ISO.
