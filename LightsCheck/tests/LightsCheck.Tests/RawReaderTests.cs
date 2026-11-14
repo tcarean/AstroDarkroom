@@ -27,8 +27,9 @@ namespace LightsCheck.Tests;
 /// Reading camera raws is the one place the tool leans on someone else's code, so what is
 /// pinned here is the seam (R-007): which paths are routed to libraw, that a FITS never is,
 /// that the assembly stays lazily loaded, and what the user and the log are told when libraw
-/// cannot be loaded (R-074). A raw cannot live in the repo (the smallest real NEF is 18 MB), so
-/// the decode itself is checked only when LIGHTSCHECK_NEF points at one.
+/// cannot be loaded (R-074). A camera's raw cannot live in the repo (the smallest real NEF is
+/// 18 MB): the decode is checked on small DNG files written by <see cref="DngTestData"/>, and on
+/// a real raw only when LIGHTSCHECK_NEF points at one.
 /// </summary>
 public partial class RawReaderTests
 {
@@ -90,6 +91,64 @@ public partial class RawReaderTests
         Assert.Equal($"{path}: libraw cannot read the file", english.Message);
         Assert.NotNull(full.InnerException);
         Assert.Contains("minte.NEF", full.InnerException.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The one raw the gate decodes, a small DNG written by <see cref="DngTestData"/>: a Bayer
+    /// mosaic with one black level comes back undeveloped, pixel for pixel, on the scale the file
+    /// states, with its colour order (R-007).
+    /// </summary>
+    [Fact]
+    public void R007_AGeneratedDngDecodesToItsMosaicOnItsOwnScale()
+    {
+        using TempWorkspace ws = new();
+        string path = ws.WriteFile("bayer.dng", DngTestData.Build(64, 48, (x, y) => 164 + 10 * (y % 2) + (x % 2), [64]));
+
+        LoadedFrame f = Reader.Load(path);
+
+        Assert.Equal((64, 48), (f.Width, f.Height));
+        Assert.Equal("RGGB", f.Cfa!.Letters);
+        Assert.Equal((16383.0, 64.0), (f.Scale!.White, f.Scale.Black));
+        Assert.Equal([164.0, 165.0, 174.0, 175.0], [f.Image!.D[0], f.Image.D[1], f.Image.D[64], f.Image.D[65]]);
+    }
+
+    /// <summary>
+    /// A raw whose colour mosaic is not a Bayer one, here the 6 x 6 of Fujifilm's X-Trans, is
+    /// refused naming the sensor, in the run's language, as a raw without a mosaic is (R-007).
+    /// Until 2026-11-14 it was measured as a monochrome frame, on pixels of three colours (CR-008
+    /// of the review of 2026-11-13). Its metadata is still read, so the inventory lists it.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R007_ARawWhoseMosaicIsNotBayerIsRefusedNamingTheSensor(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using TempWorkspace ws = new();
+        string path = ws.WriteFile("xtrans.dng", DngTestData.Build(64, 48, (x, y) => 264, [64], xTrans: true));
+
+        InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => Reader.Load(path));
+
+        Assert.Equal(
+            english
+                ? $"{path}: the sensor's colour mosaic is not a Bayer one (Fujifilm X-Trans); LightsCheck measures only Bayer and monochrome raws."
+                : $"{path}: mozaicul de culori al senzorului nu este Bayer (Fujifilm X-Trans); LightsCheck masoara doar raw-uri Bayer si monocrome.",
+            e.Message);
+        Assert.Equal((64, 48), (Reader.LoadInfo(path).Width, Reader.LoadInfo(path).Height));
+    }
+
+    /// <summary>
+    /// The refusal names X-Trans for libraw's value of that mosaic alone; any other mosaic that
+    /// is not Bayer (a Leaf back, four colours) gets the sentence without a name (R-007).
+    /// </summary>
+    [Fact]
+    public void R007_TheRefusalNamesXTransAndNoOtherSensor()
+    {
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        Assert.Equal("a.raf: the sensor's colour mosaic is not a Bayer one (Fujifilm X-Trans); LightsCheck measures only Bayer and monochrome raws.", RawReader.NotBayer("a.raf", 9));
+        Assert.Equal("a.mos: the sensor's colour mosaic is not a Bayer one; LightsCheck measures only Bayer and monochrome raws.", RawReader.NotBayer("a.mos", 1));
+        using IDisposable ro = Ui.Use(UiLanguage.Romanian);
+        Assert.Equal("a.mos: mozaicul de culori al senzorului nu este Bayer; LightsCheck masoara doar raw-uri Bayer si monocrome.", RawReader.NotBayer("a.mos", 1));
     }
 
     /// <summary>

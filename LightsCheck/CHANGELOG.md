@@ -226,6 +226,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   stays as it is, since on real frames a wider window reads the sky and not the star, and FOCUS
   now has a `wide stars` row that says so when the session's stars are wider than 5 px (R-014,
   R-088, ADR 0052; CR-007 of the review of 2026-11-13).
+- A raw whose colour mosaic is not a Bayer one, such as Fujifilm's X-Trans, was measured as a
+  monochrome frame, on pixels of three colours, with nothing said. It is now refused: `<file>:
+  the sensor's colour mosaic is not a Bayer one (Fujifilm X-Trans); LightsCheck measures only
+  Bayer and monochrome raws.` (R-007, ADR 0053; CR-008 of the review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

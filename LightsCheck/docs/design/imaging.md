@@ -24,7 +24,13 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   colour order from `filters` and `cdesc` evaluated at the visible origin, and the shot
   fields from `imgother` (`Shutter`, `IsoSpeed`, `Timestamp`, `FocalLength`, `Aperture`) and
   `LensInfo`. `LoadInfo` opens the file without `Unpack`: tens of milliseconds per NEF (the
-  87 frames of the Veil session in 1.2 s), which is what the inventory uses.
+  87 frames of the Veil session in 1.2 s), which is what the inventory uses. A raw without a
+  colour mosaic (`filters` 0, a monochrome sensor) is read with no colour order. One with a
+  mosaic that `CfaPattern.FromLibRaw` gives no order for (`filters` 9, X-Trans; 1, a Leaf back;
+  a `cdesc` of four colours) is refused by `Decode` with `NotBayer`'s sentence (ADR 0053),
+  after libraw's line is logged: with no order `Raster.InterpolateGreen` takes a frame for
+  monochrome, and such a mosaic would be measured as one image over pixels of three colours.
+  `LoadInfo` does not judge the mosaic, so the inventory still lists the file.
 - `FitsReader` parses the header and the first 2D HDU; `LoadInfo` reads the header only.
   Its `FillShootingInfo` also reads `EXPTIME`, `ISOSPEED`, `DATE-OBS` and `XPIXSZ`.
 - `CfaPattern` names the four Bayer positions from `filters`+`cdesc` or `BAYERPAT`, shifted

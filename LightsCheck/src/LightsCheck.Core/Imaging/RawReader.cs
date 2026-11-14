@@ -25,7 +25,8 @@
 //   - raw_image, cropped to the visible area   -> the CFA mosaic, as rawpy's raw_image_visible
 //   - color.maximum                            -> white
 //   - color.black + color.cblack[0..3]         -> black, per channel
-//   - iparams.filters + iparams.cdesc          -> the colour of each Bayer position
+//   - iparams.filters + iparams.cdesc          -> the colour of each Bayer position; a colour
+//                                                 mosaic that is not Bayer is refused
 //   - other (shutter, iso_speed, timestamp, focal_len, aperture) and lens info -> metadata
 // No interpolation, no white balance, no gamma.
 //
@@ -89,7 +90,8 @@ namespace LightsCheck.Core
         /// Decodes the raw: the visible mosaic in ADU (no development), the exact scale from
         /// libraw, the CFA order and the shot metadata. Throws FileNotFoundException for a
         /// missing file; InvalidOperationException when libraw cannot be loaded, or gives no
-        /// 16-bit Bayer mosaic, invalid dimensions or an impossible scale; and
+        /// 16-bit mosaic, a colour mosaic that is not a Bayer one (<see cref="NotBayer"/>),
+        /// invalid dimensions or an impossible scale; and
         /// InvalidDataException naming the file when libraw cannot open or unpack it (a file
         /// that is not a raw at all), libraw's own exception kept as the inner one (R-007).
         /// </summary>
@@ -271,6 +273,23 @@ namespace LightsCheck.Core
             => new InvalidDataException(T($"{path}: libraw cannot read the file", $"{path}: libraw nu poate citi fisierul"), inner);
 
         /// <summary>
+        /// The error for a raw whose colour mosaic is not a Bayer one (R-007, ADR 0053), in the
+        /// run's language: it names the file and, for libraw's <c>filters</c> value of X-Trans,
+        /// the sensor.
+        /// </summary>
+        /// <param name="path">The raw file.</param>
+        /// <param name="filters">libraw's <c>filters</c> mask: 9 for X-Trans, 6 x 6; any other
+        /// value of a mosaic <see cref="CfaPattern.FromLibRaw"/> gives no order for.</param>
+        /// <returns>The message, a full sentence after the file's name.</returns>
+        internal static string NotBayer(string path, uint filters)
+        {
+            string sensor = filters == 9 ? " (Fujifilm X-Trans)" : "";
+            return T(
+                $"{path}: the sensor's colour mosaic is not a Bayer one{sensor}; LightsCheck measures only Bayer and monochrome raws.",
+                $"{path}: mozaicul de culori al senzorului nu este Bayer{sensor}; LightsCheck masoara doar raw-uri Bayer si monocrome.");
+        }
+
+        /// <summary>
         /// Opens the file in libraw. Here and not in Load or LoadInfo, so that those two keep no
         /// Sdcb.LibRaw type in their bodies and the lazy-loading guards around them still see a
         /// missing assembly as a load failure (see the note at the top).
@@ -340,10 +359,16 @@ namespace LightsCheck.Core
                 blacks.Add(c.Black + (c.CBlack != null && i < c.CBlack.Length ? c.CBlack[i] : 0));
             double black = Stats.Percentile(blacks, 50);
 
-            // Before the scale is judged, so a refused scale leaves its figures.
+            // Before the mosaic and the scale are judged, so a refused file leaves its figures.
             if (Log.IsDebugEnabled)
                 Log.Debug(FiguresLine(path, w, h, s.RawWidth, s.RawHeight, s.TopMargin, s.LeftMargin, s.RawPitch,
                                       ip.Filters, ip.Cdesc, cfa, white, c.Black, blacks, black));
+
+            // A colour mosaic without a Bayer order (X-Trans, Leaf, four colours) is not a
+            // monochrome frame: read as one, its pixels of three colours would be measured as a
+            // single image. Only a raw without any mosaic (filters 0) goes on without an order.
+            if (cfa == null && ip.Filters != 0)
+                throw new InvalidOperationException(NotBayer(path, ip.Filters));
 
             if (!(white > black))
                 throw new InvalidOperationException(T(
