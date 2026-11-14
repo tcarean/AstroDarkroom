@@ -266,6 +266,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   2026-11-13: 30 and 35 darks where there were none. Both sessions hold a plate-solved stack at
   their root again, and keep their RA axis and polar figures (`docs/validation.md`). V-013's
   fixed pattern is no longer measured (CR-005, above). No code changed for the three.
+- The validation case V-008 records the fixed pattern's strength as the report now prints it,
+  1.3 / 2.1 / 2.1 / 2.2 ADU where it was 1.4 / 2.1 / 2.1 / 2.3, after the fix of CR-006 (ADR
+  0051). No code changed.
 
 ## [1.0.0] - 2026-10-25
 
