@@ -121,6 +121,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `Change A…` or `Change B…`, after a zoom or a pan, and while the line is dragged. It was
   written only when the pointer reached another pixel, so it could go on showing the values of
   the images that were on screen before (R-051).
+- A float FITS or float TIFF shows the levels of the 16-bit PNG or TIFF Siril exports of it,
+  for every value. The 16-bit step was computed in double precision where Siril computes it in
+  single: 127 of the float values between 0.5 and 1 came out one level lower than in Siril's
+  export, a difference of one level that was in neither file. None of the five real float
+  stacks measured had such a pixel (R-015, ADR 0055).
 
 ### Internal
 

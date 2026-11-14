@@ -86,8 +86,9 @@ Added on 2026-10-05 (ADR 0029). The path of a FITS file, from the dialog to the 
 3. `FitsRowDecoder.ReadFileRow` fills one row of 16-bit samples, the planes one after another.
    FITS is plane-sequential (all of red, then all of green, then all of blue), so the row is
    read from one place per plane (`ReadPlaneRow`); the decoder seeks, reads `Width` samples
-   into its one row buffer, and `Convert` writes each through `FitsScale.SixteenBit`, in one
-   loop per sample type so that nothing is decided per sample. For float files it also counts
+   into its one row buffer, and `Convert` writes each through `FitsScale.SixteenBit`, or
+   `SixteenBitOfFloat` for a float sample, in one loop per sample type so that nothing is
+   decided per sample. For float files it also counts
    the finite samples above `FitsScale.RescaleThreshold`. The stream has no buffer of its own
    (`FitsImageLoader.OpenRead`): each read is a whole row, and a buffer would be filled past
    the row and thrown away at the next seek. The overload that fills a Bgra32 row is the same
@@ -102,10 +103,19 @@ Added on 2026-10-05 (ADR 0029). The path of a FITS file, from the dialog to the 
    so far is wrong (nearly all white), and the same loop runs again with 65 535 as the full
    scale. Then `Freeze`. A size WPF makes no bitmap of becomes the too-large message here.
 
-`FitsScale.SixteenBit` is the one place a value becomes a sample: the value, already multiplied
-to count in 0 to 65 535 (`ToSixteenBits`, one multiplication a sample instead of a division),
-is clamped and rounded to a 16-bit sample, the one a 16-bit PNG of the image would hold;
-`FitsScale.Level` is its high byte. The last step is WIC's own reduction of a 16-bit sample,
+`FitsScale` is the one place a value becomes a sample, in two methods. For an integer sample,
+`SixteenBit`: the value, already multiplied to count in 0 to 65 535 (`ToSixteenBits`, one
+multiplication a sample instead of a division), is clamped and rounded to a 16-bit sample, the
+one a 16-bit PNG of the image would hold, in double precision, which is exact for integers. For
+a float sample, `SixteenBitOfFloat`: the sample as a `float`, times its factor to 0 to 1
+(`ToUnitSingle`: 1, or Siril's `.000015259022f` for a file read as 0 to 65 535), times 65535,
+plus 0.5, every step rounded to a `float`, then clamped and cut. That is Siril's own expression
+for its display and its 16-bit exports, and it does not always agree with the same arithmetic in
+double precision: from 0.5 up a `float` product is rounded to 1/256, a product just under a half
+becomes the half, and the sample comes out one higher, for 16,384 of the 8,388,608 floats in
+[0.5, 1) and with another level for 127 of them (ADR 0055). `FitsRowDecoder` narrows a double
+sample, and any sample after BZERO and BSCALE, to a `float` first, as cfitsio hands them to
+Siril. `FitsScale.Level` is the high byte of a sample. The last step is WIC's own reduction of a 16-bit sample,
 measured, and it is what makes a FITS and its 16-bit export agree to the level;
 `FitsScaleTests` walks all 65 536 values on each scale a file can have.
 
@@ -176,8 +186,8 @@ generated file, a pixel stored as 0.2, 0.2, 0.2 with alpha 0.5 came back 0.4, on
 came back 0, and a sample of 0.3 at an alpha of 0.25 came back 1.2; asked for as
 `Prgba128Float`, the four floats came back as stored. The fourth float is not read either way.
 `LoadFloat` then copies a band of rows at a time, at most 8 MB of floats (`Pass`), into
-`FloatSamples.ToSixteenBit` in Core, which puts each sample through `FitsScale.SixteenBit` as
-`FitsRowDecoder` does and counts the samples `FitsScale.IsAboveThreshold` takes, and the
+`FloatSamples.ToSixteenBit` in Core, which puts each sample through
+`FitsScale.SixteenBitOfFloat` as `FitsRowDecoder` does a float FITS's and counts the samples `FitsScale.IsAboveThreshold` takes, and the
 `DisplayRenderer` of the mode asked for turns the row into Bgra32. Then, as for a FITS,
 `FitsScale.IsRescaled` decides whether the image counts to 65 535, and if it does the bands
 are decoded again on that scale; a mode that counts first counts them again and renders after,

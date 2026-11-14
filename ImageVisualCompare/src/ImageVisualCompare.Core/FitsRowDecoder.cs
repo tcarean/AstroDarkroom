@@ -32,6 +32,9 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
 {
     private readonly byte[] _row = new byte[layout.Width * layout.BytesPerSample];
     private readonly double _toSixteenBits = FitsScale.ToSixteenBits(fullScale);
+
+    /// <summary>What brings a float sample to 0 to 1, in single precision; read for floats only.</summary>
+    private readonly float _toUnit = FitsScale.ToUnitSingle(fullScale);
     private ushort[]? _planesRow;
     private DisplayRenderer? _linear;
 
@@ -109,7 +112,9 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
     /// <summary>
     /// The row in hand into sixteen-bit samples. One loop per sample type, so that nothing is
     /// decided per sample: an image of 23 megapixels in three planes passes here 69 million
-    /// times.
+    /// times. An integer sample is scaled in double precision, which is exact for it; a float
+    /// one, after BZERO and BSCALE, is held as a <see cref="float"/>, as Siril holds it, and
+    /// brought to sixteen bits in single precision (<see cref="FitsScale.SixteenBitOfFloat"/>).
     /// </summary>
     /// <param name="sixteenBit">Receives the layout's width in samples.</param>
     private void Convert(Span<ushort> sixteenBit)
@@ -119,6 +124,7 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
         double zero = layout.BZero;
         double scale = layout.BScale;
         double toSixteenBits = _toSixteenBits;
+        float toUnit = _toUnit;
         long above = 0;
 
         switch (layout.BitPix)
@@ -154,7 +160,7 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
                 {
                     double value = zero + (scale * BinaryPrimitives.ReadSingleBigEndian(row.Slice(x * 4, 4)));
                     above += FitsScale.IsAboveThreshold(value) ? 1 : 0;
-                    sixteenBit[x] = FitsScale.SixteenBit(value * toSixteenBits);
+                    sixteenBit[x] = FitsScale.SixteenBitOfFloat((float)value, toUnit);
                 }
 
                 break;
@@ -162,9 +168,11 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
             default:
                 for (int x = 0; x < width; x++)
                 {
+                    // Narrowed to a float first: Siril has cfitsio hand it a double image as
+                    // floats, and quantises those.
                     double value = zero + (scale * BinaryPrimitives.ReadDoubleBigEndian(row.Slice(x * 8, 8)));
                     above += FitsScale.IsAboveThreshold(value) ? 1 : 0;
-                    sixteenBit[x] = FitsScale.SixteenBit(value * toSixteenBits);
+                    sixteenBit[x] = FitsScale.SixteenBitOfFloat((float)value, toUnit);
                 }
 
                 break;
