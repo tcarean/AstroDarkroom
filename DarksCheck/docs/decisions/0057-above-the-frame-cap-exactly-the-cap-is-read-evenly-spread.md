@@ -9,8 +9,8 @@ Supersedes: 0007 in part (every k-th file above the cap)
 The darks and the biases are held in memory, so a group is capped at `Th.MaxFramesInMemory`
 (60) frames or at `--max-frames` (ADR 0007). Above the cap one file in k was decoded, k =
 ceil(count / cap). The code review of 2026-11-13 (CR-008) counted what that gives: 61 darks
-read 31, 90 read 45, 119 read 60 and 121 read 41; the cap was filled only at its exact
-multiples. The master,
+read 31, 90 read 45 and 119 read 60, then 121 read 41: just above the cap, and just above each
+of its multiples, the count read fell to about half the cap or under it. The master,
 its noise, the index and check 9 were those of the frames read, so a folder of 61 darks whose
 lights need 39 read `WARNING: 31 frames are few` while its own master of 61 is enough. The
 memory the cap protects was never at stake: 60 frames are 60 frames however they are chosen.

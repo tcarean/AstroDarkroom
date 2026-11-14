@@ -419,8 +419,12 @@ internal sealed record PartnerAnalysis(
     /// <summary>
     /// The session's lights' settings against the partner's, when more than half of the measured
     /// lights are at other settings than the partner (R-064, ADR 0055):
-    /// <see cref="LightsOverPartner"/> is then never <see cref="MatchVerdict.Direct"/>. Null
-    /// without lights, at the same settings, and when either set does not say its own.
+    /// <see cref="LightsOverPartner"/> is then never <see cref="MatchVerdict.Direct"/>. A set that
+    /// does not say both its settings stands where the set it was compared with stands (ADR
+    /// 0053), and the mismatch then names those settings: a light taken at the darks' settings
+    /// the darks', a partner that does not say its own the session's darks'. Null without
+    /// lights, at the same settings, and when neither the session's darks nor the partner say
+    /// theirs.
     /// </summary>
     internal SettingsMismatch? LightsOther { get; init; }
 }

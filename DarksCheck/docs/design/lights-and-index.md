@@ -163,10 +163,13 @@ the light's noise as the files have them; `TraceFigures.Centre` carries it, and 
 (`PartnerAnalysis.Other`, the session's first stacked dark against the partner's first decoded
 one, the ratio in the files being the ratio times the session's factor over the partner's) and
 for the chained row (`PartnerAnalysis.LightsOther`, more than half of the measured lights
-against the partner's settings, the lights' ratio in the files times the darks'; a light with
-`AssumedSettings` was taken at the darks' settings, so it counts as other exactly when the
-darks are, and the darks' settings are then the ones named). Both need the sets to say both
-their settings (`ownSays`, `partnerSays`). The report
+against the partner's settings, the lights' ratio in the files times the darks'). `Other`
+needs both sets of darks to say both their settings (`ownSays`, `partnerSays`). For
+`LightsOther` a set that does not stands where the set it was compared with stands (`ownAt`,
+`partnerAt`: the partner at the session's darks' settings, the session's darks at the
+partner's, null when neither says), and a light that was read at the darks' factor
+(`AssumedSettings`, or darks that do not say theirs) stands at `ownAt`; those settings are the
+ones the mismatch names. The report
 turns a mismatch into words with `DarkReport.OtherWords` and marks the verdict row
 (`ReportRow.Alert`).
 

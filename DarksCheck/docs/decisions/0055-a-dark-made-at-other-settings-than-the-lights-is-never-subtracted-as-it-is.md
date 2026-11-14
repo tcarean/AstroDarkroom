@@ -32,10 +32,13 @@ cosmetic correction (`-cc=dark`) only looks for the pixels that stand out in the
    than half of the measured lights are (`LightFigures.OtherSettings`), the rule the scale
    section's note already follows. For a partner: its first decoded dark against the
    session's first stacked dark, and against more than half of the measured lights for the
-   chained row, a light that does not say its settings standing where the darks stand, since
-   it was taken at theirs. A set that gives one setting and not the other is not at other
-   settings, even when that one differs: nothing was brought from one set to the other, and
-   check 1 says the difference (ADR 0058).
+   chained row. In the chained row a set that does not say both its settings stands where
+   the set it was compared with stands (ADR 0053): a light taken at the darks' settings and a
+   partner that does not say its own at the session's darks', the session's darks at the
+   partner's. Two sets that each give one setting and not the other are not at other
+   settings, even when that one differs: nothing was brought from one set to the other. For
+   the lights against the darks check 1 says that difference (ADR 0058); for the darks against
+   a partner nothing does, which the review list holds as CR-076.
 2. **The ratio stays.** It still compares the temperatures, and the degrees, the lights'
    equivalent index and the label are read from it as before.
 3. **Never `Direct`.** With other settings a ratio that would be `Direct` is `WithOpt`
@@ -81,5 +84,6 @@ puts new darks first for that reason. Guarded by
 `R067_AtOtherSettingsWhatASubtractionLeavesIsWorkedOutOnTheFiles`,
 `R063_APartnerAtOtherSettingsThanTheSessionIsNeverSubtractedAsItIs`,
 `R064_LightsTakenAtTheDarksSettingsFollowTheDarksAgainstAPartnerAtOtherSettings`,
+`R064_ASetThatDoesNotSayItsSettingsStandsWhereTheOneItWasComparedWithStands`,
 `R052_SetsThatDoNotSayBothSettingsAreNotAtOtherSettings` and
 `R124_DarksThatDoNotHaveTheLightsSettingsStandOutLargeAndRed`.

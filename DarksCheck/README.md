@@ -202,12 +202,14 @@ The verdict, on the lights / dark ratio:
 When the lights are at another ISO or another exposure than the darks (most of them, both sets
 saying their settings), the ratio still compares the two with both brought to one setting, so
 it still tells the temperatures apart, but the dark is never said to be subtracted as it is: in
-the files the hot pixels of the lights are not as high as the dark's. The verdict then reads
-`WARNING: do not subtract the dark as it is`, names both settings and how many times higher the
-hot pixels are in the files, and advises, in this order, darks made at the lights' settings,
-then `-opt` (which needs the biases too) or the cosmetic correction only. The row `lights
-against dark` gives the ratio in the files beside the one worked out, the row `what is left`
-is worked out on the files, and the same holds for a partner made at other settings.
+the files the hot pixels of the lights do not have the height they have in the dark. For a
+ratio between 0.7 and 1.4 the verdict then reads `WARNING: do not subtract the dark as it is`,
+names both settings and how many times the dark's the hot pixels of the lights are in the
+files, and advises, in this order, darks made at the lights' settings, then `-opt` (which needs
+the biases too) or the cosmetic correction only; outside 0.7 to 1.4 the verdicts of the table
+keep their words and say that the ratio is worked out for the same settings. The row `lights
+against dark` gives the ratio in the files beside the one worked out, and the row `what is
+left` is worked out on the files. A partner made at other settings gets the same verdict.
 
 The same ratio does not mean the same thing on a cold dark and on a warm one: a cold master
 has few hot pixels, and weak ones, so a dark that is 15 % off leaves little behind. The row
@@ -557,8 +559,9 @@ tabs:
   how well the dark fits the lights, right under them (with the darks' and the lights' indexes on
   rows of their own and the overlap at each threshold as a table); every check is a card of rows,
   its verdict a coloured chip (green `OK`, amber `WARNING`, red `REDO`, grey `UNMEASURED`) with the
-  rest of the text beside it. Darks that do not have the lights' settings stand out: the `match`
-  row and the verdict of check 2 are then drawn large and in red. The verdicts of checks 3 and 4 put each statement on a line of its
+  rest of the text beside it. Darks that do not have the lights' settings stand out: the
+  `match` row is then drawn large and in red, and so are the verdict of check 2 and the
+  partner's verdict when they say not to subtract the dark, or the partner, as it is. The verdicts of checks 3 and 4 put each statement on a line of its
   own. The hot-pixel card keeps only the stability, one statement per line, and the verdict; the
   rest is on the Hot pixels tab. Check 9 shows what the master would be with fewer or more
   frames as a table; with lights, a dropdown above it sets how much noisier the stack may be than with an ideal dark master,

@@ -133,9 +133,11 @@ internal sealed record TraceFigures(int Pixels, double PerUnit, double Median, i
 /// setting, which says how their temperatures compare; a subtraction works on the files, where the
 /// set's hot pixels are <paramref name="RatioInFiles"/> times the master's.
 /// </summary>
-/// <param name="Master">The settings of the master's frames: the first one stacked.</param>
+/// <param name="Master">The settings of the master's frames: the first one stacked; for a
+/// partner that does not say its own, the session's darks' it was taken at (ADR 0053).</param>
 /// <param name="Set">The settings of the set measured against it: for lights, the first measured
-/// light at other settings than the master.</param>
+/// light at other settings than the master, or the darks' settings when that light was taken at
+/// them.</param>
 /// <param name="RatioInFiles">The set's hot pixels over the master's as the files have them, the
 /// ratio without the two factors; NaN when the ratio is unmeasured.</param>
 internal sealed record SettingsMismatch(FrameInfo Master, FrameInfo Set, double RatioInFiles);

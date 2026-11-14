@@ -163,6 +163,7 @@ each pair has the same defect unless the entry says otherwise.
 | CR-073 | 4 | - | confirmed | Core tests that cannot fail or do not check what their name says | open |
 | CR-074 | 4 | - | confirmed | Window tests that cannot fail or do not check what their name says | open |
 | CR-075 | 4 | - | confirmed | Design notes, requirements and comments that describe other code | open |
+| CR-076 | 1 | some setups | owner | Sets that give the exposure and no ISO are compared as made at the same settings, though their exposures are known to differ | open |
 
 The files copied from LightsCheck have their own entries, CP-1 to CP-12, in their own section;
 five of them are of severity 1.
@@ -1565,6 +1566,41 @@ context, and no handle leaks (area 7). Overlapping runs cannot be reached from t
 inputs are disabled while a run goes; a new result leaves no stale row; the view-model computes
 no figure (area 8). Every binding path of the seven views, all 92 language pairs of the XAML
 and every theme resource (area 9).
+
+## Found later
+
+Entries added after the review, by the task that met them (ADR 0052, point 7).
+
+### CR-076 Sets that give the exposure and no ISO are compared as made at the same settings, though their exposures are known to differ
+
+- Found: 2026-11-14, by the two reviews of the fixes of CR-006 to CR-010.
+- Where: `Analysis/Normalisation.cs` (`Says`: a factor needs the ISO and the exposure, both;
+  `NormOf` returns 1 otherwise); `Analysis/LightsAnalyzer.cs` (`FactorOf`, and
+  `LightFigures.OtherSettings`, which asks both sides to say both settings);
+  `Runs/DarkSeriesRun.cs` (`MatchPartner`: `ownSays`, `partnerSays`).
+- What happens: a set whose frames give the exposure and no ISO (a capture program that writes
+  `GAIN` and no `ISOSPEED`) has no factor, so it is compared with another set as made at the
+  same settings (ADR 0053), and the known exposure is not used. Since ADR 0055 such a pair is
+  not "at other settings", because nothing was brought from one to the other.
+- Case: (a) darks of 300 s and lights of 120 s, no ISO anywhere, the hot pixels as high in both
+  files: check 1 reads a red `WARNING: the darks (300.0 s) do not have the lights' exposure
+  (120.0 s)`, and check 2 reads `OK: the dark can be subtracted as it is ... the dark is at the
+  same temperature`, with a WARNING row that the lights were taken at the darks' settings. The
+  heights in the files do match, so the subtraction is right as far as the hot pixels go; the
+  temperature is not known, the index and the degrees are in the file's ADU. (b) the session's
+  darks of 120 s against a partner of 300 s, no ISO on either side: no row says that the
+  exposures differ (check 1 does not look at a partner), the partner's row prints `unknown
+  settings`, and the verdict can read `OK: the partner can be subtracted as it is`.
+- Should: the owner's call. One direction: when neither set gives the ISO and both give the
+  exposure, take the ISOs as equal and bring the sets to one exposure, with a row that says so;
+  the pair is then judged as any pair at other settings (ADR 0055). Another: keep the
+  comparison and say the known difference in the verdict.
+- Deliberate: ADR 0053 ("a set that does not say its settings is compared as made at the other
+  set's"); ADR 0055, decision 1; ADR 0058 names case (a) in its consequences.
+- Test: `R052_SetsThatDoNotSayBothSettingsAreNotAtOtherSettings` pins that such sets are not at
+  other settings and that nothing is said to be worked out; no test pins the verdicts above.
+- Evidence: owner.
+- Status: open
 
 ## How the list is used
 

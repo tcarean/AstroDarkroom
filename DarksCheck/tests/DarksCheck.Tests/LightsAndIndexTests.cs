@@ -1104,6 +1104,44 @@ public class LightsAndIndexTests
     }
 
     /// <summary>
+    /// The second review: the same with the silent set swapped. A partner that does not say its settings is
+    /// taken at the darks' (ADR 0053), so lights at other settings than the darks are at other settings than
+    /// it too, and the chained verdict read "the partner can be subtracted as it is". And when it is the
+    /// session's darks that do not say theirs, the lights were read at one factor with them and the partner:
+    /// nothing is at other settings, and nothing is "worked out for the same settings".
+    /// </summary>
+    [Fact]
+    public void R064_ASetThatDoesNotSayItsSettingsStandsWhereTheOneItWasComparedWithStands()
+    {
+        // darks ISO 400; lights ISO 800 with twice the amplitude; a partner as hot as the darks, without an ISO
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i, 2.0), iso: 800);
+        using SessionFixture silentPartner = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, iso: null, inSubfolder: false);
+        DarkSeriesResult r = Run(s, silentPartner.Root);
+        PartnerAnalysis partner = Assert.IsType<PartnerAnalysis>(r.Partner);
+        Assert.Equal(SilentSide.Partner, partner.Silent);
+        Assert.Null(partner.Other);
+        Assert.InRange(partner.LightsOverPartner.Ratio, 0.95, 1.05);
+        Assert.Equal(MatchVerdict.WithOpt, partner.LightsOverPartner.Verdict);
+        // in the files the lights are twice the darks, and the darks as high as the partner
+        Assert.InRange(partner.LightsOther!.RatioInFiles, 1.9, 2.1);
+        string report = Report(r);
+        Assert.DoesNotContain("partenerul se poate scadea asa cum e", report, StringComparison.Ordinal);
+        // the partner's settings are the darks', which it was taken at
+        Assert.Contains("    verdict partener   : ATENTIE: nu scadea partenerul asa cum e: e facut la alte setari decat lights-urile (120.0 s, ISO 400 fata de 120.0 s, ISO 800), asa ca in fisiere pixelii fierbinti din lights sunt de 2.0", report, StringComparison.Ordinal);
+
+        // darks without an ISO; lights at ISO 800 and a partner at ISO 400, all as hot in the files
+        using SessionFixture silentDarks = new SessionFixture().WithDarkSeries(6, Dark, iso: null).WithLights(3, i => Light(i), iso: 800);
+        using SessionFixture p400 = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);
+        DarkSeriesResult rd = Run(silentDarks, p400.Root);
+        Assert.Equal(SilentSide.Own, rd.Partner!.Silent);
+        Assert.Equal(3, rd.Lights!.DarksSilent);
+        Assert.Null(rd.Lights.Other);
+        Assert.Null(rd.Partner.Other);
+        Assert.Null(rd.Partner.LightsOther);
+        Assert.DoesNotContain("socotiti pentru aceleasi setari", Report(rd), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// The review of the CR-006 fix: frames that give an exposure and no ISO have no factor of their own and are
     /// compared as made at the same settings (ADR 0053), so nothing is "worked out for the same settings"; the
     /// report said so all the same, with the same figure twice, for darks of 300 s against lights of 120 s.
@@ -1122,6 +1160,18 @@ public class LightsAndIndexTests
         Assert.DoesNotContain("socotit pentru ISO-ul si expunerea dark-urilor", report, StringComparison.Ordinal);
         Assert.DoesNotContain("socotiti pentru aceleasi setari", report, StringComparison.Ordinal);
         Assert.DoesNotContain("cifrele sunt socotite pentru ISO-ul si expunerea dark-urilor", report, StringComparison.Ordinal);
+
+        // each side on its own: darks that do not say both settings against lights that do, and the reverse
+        using SessionFixture silentDarks = new SessionFixture().WithDarkSeries(6, Dark, exposure: 300, iso: null).WithLights(3, i => Light(i), iso: 800);
+        LightsAnalysis ld = Run(silentDarks).Lights!;
+        Assert.Equal(3, ld.DarksSilent);
+        Assert.All(ld.Frames, f => Assert.False(f.OtherSettings));
+        Assert.Null(ld.Other);
+        using SessionFixture silentLights = new SessionFixture().WithDarkSeries(6, Dark, exposure: 300).WithLights(3, i => Light(i), exposure: 120, iso: null);
+        LightsAnalysis ll = Run(silentLights).Lights!;
+        Assert.Equal(3, ll.AssumedSettings);
+        Assert.All(ll.Frames, f => Assert.False(f.OtherSettings));
+        Assert.Null(ll.Other);
 
         // the same for a partner: neither set says both settings
         using SessionFixture own = new SessionFixture().WithDarkSeries(6, Dark, iso: null);

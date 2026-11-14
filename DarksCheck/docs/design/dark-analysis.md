@@ -263,8 +263,10 @@ from `FactorOf` when it measures the light, so `StackNoise.Of` needs no settings
 `StackNoise.Scaled` says that more than half of those lights are at other settings than the
 darks, so the medians are those of brought figures. A light is at other settings when
 `FrameStack.SameSettings` says so of its metadata and the darks' (`LightFigures.OtherSettings`,
-set beside `ToDarks`; `DarkSeriesAnalysis.FirstStacked` is the darks' side): the rule that keeps
-a frame in a stack, with check 1's tolerance on the exposure. It is not read back from the
+set beside `ToDarks`; `DarkSeriesAnalysis.FirstStacked` is the darks' side), both the light and
+the darks saying their ISO and their exposure (`Normalisation.Says`): the rule that keeps
+a frame in a stack, with check 1's tolerance on the exposure, and only where the light's own
+factor was used, so the note never speaks of figures that were not brought. It is not read back from the
 factor, which is exactly 1 for twice the ISO at half the exposure and falls on either side of
 the tolerance by rounding. When `Scaled` is true the `cer` row says the
 figures were worked out for the darks' ISO and exposure, and the third paragraph, which gives

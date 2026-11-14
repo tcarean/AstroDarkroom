@@ -466,8 +466,8 @@ internal static class DarkSeriesRun
 
         // A partner made at other settings than the set it is measured against is never subtracted
         // as it is (ADR 0055): in the files the hot pixels are the ratio times one factor over the
-        // other. Only sets that say both their settings can be at others: a set that does not was
-        // compared as made at the same settings (ADR 0053).
+        // other. The two sets of darks are at other settings only when both say both of theirs: a
+        // set that does not was compared as made at the other's settings (ADR 0053).
         SettingsMismatch? other = null, lightsOther = null;
         FrameInfo? ownFirst = own.FirstStacked;
         if (ownSays && partnerSays && ownFirst is not null && !FrameStack.SameSettings(ownFirst, first))
@@ -476,19 +476,26 @@ internal static class DarkSeriesRun
             match = match with { Verdict = LightsAnalysis.NeverDirect(match.Verdict, true) };
         }
 
-        if (lights is not null && partnerSays)
+        // The lights against the partner, by the rule they are held to the darks' with. A set that
+        // does not say both its settings stands where the set it was compared with stands (ADR
+        // 0053): the partner at the session's darks' settings, the session's darks at the
+        // partner's, and a light that was read at the darks' factor (it does not say its own, or
+        // the darks do not say theirs) where the darks stand. Null when neither set of darks says
+        // its settings: nothing is then at other settings.
+        FrameInfo? ownAt = ownSays ? ownFirst : partnerSays ? first : null;
+        FrameInfo? partnerAt = partnerSays ? first : ownSays ? ownFirst : null;
+        if (lights is not null && ownAt is not null && partnerAt is not null)
         {
-            // The lights against the partner's settings, by the rule they are held to the darks'
-            // with. A light that does not say its settings was taken at the darks', so against the
-            // partner it stands where the darks stand.
-            LightFigures[] measured = lights.Frames.Where(f => f.Error is null).ToArray();
-            LightFigures[] others = measured.Where(f => f.AssumedSettings ? other is not null : !FrameStack.SameSettings(f.Info, first)).ToArray();
+            (LightFigures Light, FrameInfo At)[] measured = lights.Frames
+                .Where(f => f.Error is null)
+                .Select(f => (f, f.AssumedSettings || !ownSays ? ownAt : f.Info))
+                .ToArray();
+            (LightFigures Light, FrameInfo At)[] others = measured.Where(x => !FrameStack.SameSettings(x.At, partnerAt)).ToArray();
             if (2 * others.Length > measured.Length)
             {
                 // the lights over the darks in the files, then the darks over the partner in the files
                 double lightsInFiles = lights.Other?.RatioInFiles ?? lights.LightsOverDark.Ratio;
-                FrameInfo set = others[0].AssumedSettings && ownFirst is not null ? ownFirst : others[0].Info;
-                lightsOther = new SettingsMismatch(first, set, lightsInFiles * match.Ratio * own.Norm / partnerNorm);
+                lightsOther = new SettingsMismatch(partnerAt, others[0].At, lightsInFiles * match.Ratio * own.Norm / partnerNorm);
                 lightsOverPartner = lightsOverPartner with { Verdict = LightsAnalysis.NeverDirect(lightsOverPartner.Verdict, true) };
             }
         }
