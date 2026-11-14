@@ -1277,7 +1277,7 @@ public partial class DarkSeriesTests
             Assert.Contains(english ? " (no biases, glow included)" : " (fara bias-uri, cu glow)", all, StringComparison.Ordinal);
             Assert.Contains(english ? "against the centre (UNMEASURED)" : "fata de centru (NEMASURAT)", all, StringComparison.Ordinal);
             Assert.Contains(english ? "the end of the series is not measured" : "sfarsitul seriei nu se masoara", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "frames only one in 3 is read)" : "cadre se citeste doar unul din 3)", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "frames only 2 are read, evenly spread)" : "cadre se citesc doar 2, raspandite egal)", all, StringComparison.Ordinal);
             Assert.Contains(english ? "no dark could be read" : "niciun dark nu s-a putut citi", all, StringComparison.Ordinal);
             Assert.Contains(english ? "no bias could be read" : "niciun bias nu s-a putut citi", all, StringComparison.Ordinal);
             Assert.Contains(english ? "no light could be read" : "niciun light nu s-a putut citi", all, StringComparison.Ordinal);
@@ -1576,20 +1576,44 @@ public partial class DarkSeriesTests
         Assert.False(r.Verdicts.Leak.FromDarkMinusBias);
     }
 
+    /// <summary>
+    /// CR-008: above the cap one file in k was read, k = ceil(count / cap), so 61 darks under the cap of 60 gave
+    /// 31 and five under a cap of 2 gave files 1 and 4. Exactly the cap is read, from the first file to the last
+    /// at even distances (ADR 0057).
+    /// </summary>
     [Fact]
-    public void R027_AboveTheCapOnlyEveryKthFrameIsDecoded()
+    public void R027_AboveTheCapExactlyTheCapIsDecodedEvenlySpreadFromTheFirstToTheLast()
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(5, Plain);
         FrameStack stack = FrameStack.Load(SessionFolder.Open(s.Root).Darks, 2, maxFrames: 2);
         Assert.Equal(2, stack.Decoded.Count);
-        Assert.Equal([1, 4], stack.Decoded.Select(f => f.Info.Index));
-        Assert.Contains("sarit (peste 2 cadre se citeste doar unul din 3)", stack.Frames[1].Error, StringComparison.Ordinal);
+        Assert.Equal([1, 5], stack.Decoded.Select(f => f.Info.Index));
+        Assert.Equal("sarit (peste 2 cadre se citesc doar 2, raspandite egal)", stack.Frames[1].Error);
+        Assert.All(stack.Frames.Where(f => f.Pixels is null), f => Assert.True(f.Skipped));
         Assert.Equal(5, stack.Frames.Count);
 
-        // a cap of 1 takes the singular
+        // a cap of 1 reads the first file, and says so in the singular
         FrameStack one = FrameStack.Load(SessionFolder.Open(s.Root).Darks, 2, maxFrames: 1);
-        Assert.Single(one.Decoded);
-        Assert.Equal("sarit (peste 1 cadru se citeste doar unul din 5)", one.Frames[1].Error);
+        Assert.Equal([1], one.Decoded.Select(f => f.Info.Index));
+        Assert.Equal("sarit (peste 1 cadru se citeste doar primul)", one.Frames[1].Error);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("skipped (over 2 frames only 2 are read, evenly spread)", FrameStack.Load(SessionFolder.Open(s.Root).Darks, 2, maxFrames: 2).Frames[1].Error);
+            Assert.Equal("skipped (over 1 frame only the first is read)", FrameStack.Load(SessionFolder.Open(s.Root).Darks, 2, maxFrames: 1).Frames[1].Error);
+        }
+
+        // seven files under a cap of four: every second one, the last included
+        using SessionFixture seven = new SessionFixture().WithDarkSeries(7, Plain);
+        Assert.Equal([1, 3, 5, 7], FrameStack.Load(SessionFolder.Open(seven.Root).Darks, 2, maxFrames: 4).Decoded.Select(f => f.Info.Index));
+
+        // one file over the default cap: sixty are read, not thirty-one, and the one left out is in the middle
+        using SessionFixture many = new SessionFixture().WithDarkSeries(61, i => new SyntheticDark { Seed = 100 + i, Width = 24, Height = 16 });
+        FrameStack sixty = FrameStack.Load(SessionFolder.Open(many.Root).Darks, 2, Th.MaxFramesInMemory);
+        Assert.Equal(60, sixty.Decoded.Count);
+        Assert.Equal(1, sixty.Decoded[0].Info.Index);
+        Assert.Equal(61, sixty.Decoded[^1].Info.Index);
+        Assert.Equal(31, Assert.Single(sixty.Frames, f => f.Skipped).Info.Index);
+        Assert.Equal("sarit (peste 60 de cadre se citesc doar 60, raspandite egal)", sixty.Frames[30].Error);
     }
 
     /// <summary>A corrupt first file does not hand the geometry to whichever thread finishes first: the next file in order sets it.</summary>

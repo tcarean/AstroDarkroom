@@ -2065,7 +2065,7 @@ internal static class DarkReport
     /// </summary>
     /// <param name="e">Check 9's verdict.</param>
     /// <param name="allRead">True when the frame cap left no dark out; false when it did, and the
-    /// frames stacked are then every k-th of the folder's, so the verdict does not say how many
+    /// frames stacked are then only some of the folder's, so the verdict does not say how many
     /// could be left out. A dark that failed to decode does not count here: it has its own error
     /// line, and the count is true of the frames that decoded.</param>
     /// <returns>The verdict's words, opening with OK, WARNING or UNMEASURED (OK, ATENTIE or

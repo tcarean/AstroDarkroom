@@ -117,7 +117,8 @@ English, `OK`, `ATENTIE`, `REFA` and `NEMASURAT` in Romanian.
 `darkscheck <folder>` reads the biases, if there are any, then the darks, `--threads N` at a
 time (the progress goes to stderr: `Reading the darks: 3 / 20`), and holds them in memory as 16-bit
 mosaics, 48 MB a frame at 24 MP. Above 60 frames, or the cap `--max-frames N` sets, it decodes
-one file in k and lists the others as `skipped`, which is not an error. Then it reads every
+exactly that many, from the first file to the last at even distances, and lists the others as
+`skipped`, which is not an error. Then it reads every
 light, one by one, without keeping them, so the cap does not apply to them. It prints the session's lines (check 1: the frames, their
 settings and whether the darks match the lights), one section per check, from check 2, how well
 the dark fits the lights, to check 9, each with its figures and a `verdict` row that starts with `OK`, `WARNING`, `REDO`

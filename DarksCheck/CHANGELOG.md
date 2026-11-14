@@ -395,6 +395,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   rows from ten frames up carry no rating (R-024, ADR 0056; CR-007 of the code review). With
   lights nothing changes.
 
+- A folder with more darks or biases than the frame cap is read up to the cap: one file in k
+  was read, so 61 darks under the cap of 60 gave a master of 31, and 119 one of 60. Exactly as
+  many files as the cap are now read, from the first to the last at even distances, and a
+  skipped frame says so (R-027, ADR 0057; CR-008 of the code review). Up to the cap nothing
+  changes.
+
 - The console's lights table: from `sky` on, each column name ended one column before its figures;
   each now ends above them (R-086).
 

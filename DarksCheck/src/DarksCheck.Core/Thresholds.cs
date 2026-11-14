@@ -62,7 +62,7 @@ internal static class Th
 
     /// <summary>
     /// Frames held in memory for the median master, 48 MB each at 24 MP: 60 is 2.9 GB, a
-    /// tenth of the owner's 32 GB. Above it every k-th frame is decoded.
+    /// tenth of the owner's 32 GB. Above it exactly so many frames are decoded, evenly spread (ADR 0057).
     /// </summary>
     internal const int MaxFramesInMemory = 60;
 

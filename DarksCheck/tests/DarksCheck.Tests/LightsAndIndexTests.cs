@@ -1554,7 +1554,7 @@ public class LightsAndIndexTests
     [Fact]
     public void R024_WhenTheFrameCapLeavesDarksOutTheVerdictDoesNotSayHowManyToLeaveOut()
     {
-        // forty darks under a cap of twenty: every second one is read, so the twenty are not the folder's frames
+        // forty darks under a cap of twenty: twenty are read, spread over the forty, so they are not the folder's frames
         using SessionFixture s = new SessionFixture().WithDarkSeries(40, i => new SyntheticDark { Seed = 100 + i, Noise = 4, Hot = SyntheticLight.Lattice }).WithLights(5, i => Light(i));
         DarkSeriesResult r = Run(s, maxFrames: 20);
         EnoughVerdict e = r.Verdicts.Enough;

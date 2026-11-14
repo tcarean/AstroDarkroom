@@ -40,7 +40,7 @@ decodes); the others decode in parallel and must match its size, its ISO and its
 level, so the black of a FITS stack is the median of
 the first decoded frame's reference plane, or the black the biases' stack established when
 `DarkSeriesRun` read the biases first (a dark's median would overstate the pedestal by the
-dark current). Above `Th.MaxFramesInMemory` only every k-th file is decoded. `Norm` is the
+dark current). Above `Th.MaxFramesInMemory` (or the cap given) exactly that many files are decoded: `FrameStack.Chosen` flags the first, the last and those at even distances between them, file `round(j x (count - 1) / (cap - 1))`, and `Load` lists the others as skipped without opening their pixels (ADR 0057). `Norm` is the
 normalisation factor of ADR 0004, read from the first frame's ISO and exposure through the
 `Normalisation` the caller hands in (`Normalisation.Default` when none): the record of the
 two settings of ADR 0009, the gain per ISO stop (`NormOf`: `gain ^ log2(ISO / 400)`, the
@@ -391,7 +391,7 @@ plain lines: `CurveRow` prints the last point of `NoiseVsN.Curve` beside what th
 gave to expect, `EnoughFrom` the frames needed, the limit in force first and the other limits'
 after it, and `EnoughVerdictText` the verdict, with the frames that could be left out
 (`Frames - FramesNeeded`) when there are any and no dark was skipped by the frame cap: `Frames`
-is `DarkSeriesAnalysis.Used`, the frames read, which above the cap are every k-th of the
+is `DarkSeriesAnalysis.Used`, the frames read, which above the cap are only some of the
 folder's, so the table's `(acum)` row and the frames needed speak of the frames read.
 `StackPercent` prints the stack's figure with one decimal, or with more, up to four, while the
 text would be that of one of `Th.StackNoiseLimits` for a figure that is not that limit, since the

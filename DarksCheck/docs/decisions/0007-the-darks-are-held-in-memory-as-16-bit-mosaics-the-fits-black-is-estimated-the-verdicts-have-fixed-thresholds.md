@@ -1,7 +1,7 @@
 # 0007. The darks are held in memory as 16-bit mosaics, a FITS black is estimated, and the verdicts of checks 2 to 8 have fixed thresholds
 
 Date: 2026-10-11
-Status: accepted 2026-10-11; the drift verdict (1 °C first to last) superseded by 0017; enough frames by the quantisation step superseded by 0056
+Status: accepted 2026-10-11; the drift verdict (1 °C first to last) superseded by 0017; enough frames by the quantisation step superseded by 0056; every k-th file above the cap superseded by 0057
 
 ## Context
 

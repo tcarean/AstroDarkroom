@@ -343,7 +343,7 @@ public class AcceptanceTests
         (int code, string stdout, _) = Cli.Run(s.Root, "--threads", "2", "--max-frames", "2");
         Assert.Equal(0, code);
         Assert.Contains("=== DARK-URI: cadre citite 2 din 5", stdout, StringComparison.Ordinal);
-        Assert.Contains("  2  DSC_0002.fit          sarit (peste 2 cadre se citeste doar unul din 3)", stdout, StringComparison.Ordinal);
+        Assert.Contains("  2  DSC_0002.fit          sarit (peste 2 cadre se citesc doar 2, raspandite egal)", stdout, StringComparison.Ordinal);
         Assert.DoesNotContain("eroare:", stdout, StringComparison.Ordinal);
     }
 
