@@ -164,7 +164,7 @@ each pair has the same defect unless the entry says otherwise.
 | CR-074 | 4 | - | confirmed | Window tests that cannot fail or do not check what their name says | open |
 | CR-075 | 4 | - | confirmed | Design notes, requirements and comments that describe other code | open |
 | CR-076 | 1 | some setups | owner | Sets that give the exposure and no ISO are compared as made at the same settings, though their exposures are known to differ | fixed 91508347 |
-| CR-077 | 1 | rare | confirmed | Darks without an ISO between lights and a partner at two ISOs: the chained verdict can read `as it is`, and two rows take the darks' ISO two ways | open |
+| CR-077 | 1 | rare | confirmed | Darks without an ISO between lights and a partner at two ISOs: the chained verdict can read `as it is`, and two rows take the darks' ISO two ways | fixed 581dd50a |
 
 The files copied from LightsCheck have their own entries, CP-1 to CP-12, in their own section;
 five of them are of severity 1.
@@ -1628,7 +1628,7 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
 - Test: `R064_ASetThatDoesNotSayItsSettingsStandsWhereTheOneItWasComparedWithStands` pins
   `LightsOther` null for this case, and not the verdict.
 - Evidence: confirmed by reading; the verdict's words were not run.
-- Status: open
+- Status: fixed 581dd50a (the lights are compared with the partner on the settings those two give, a missing one taken from the darks; the two rows stay, each true of its own pair; ADR 0060, decision 5)
 
 ## How the list is used
 
