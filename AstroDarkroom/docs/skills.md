@@ -39,7 +39,9 @@ Values (the solution, the folders, the publish list, what the auditor may also r
 ## /wrap-up
 
 - At step 1, after the gate: a change under `src/AstroDarkroom.Wpf/` is checked by starting the
-  launcher from a published suite folder (`scripts/release.ps1 -Version X.Y.Z -PublishOnly`),
+  launcher from a published suite folder (`scripts/release.ps1 -Version X.Y.Z -PublishOnly`,
+  with the `<Version>` of `Directory.Build.props` as `X.Y.Z`, so the folder and the window say
+  one number; such a folder is a trial and is not handed out, ADR 0029),
   only when the owner is not using the PC, and reading `log\AstroDarkroom.log` there: the first
   line, a line for each thing the check did, `exit 0`, and no `ERROR` or `WARN` the check did
   not mean to cause (ADR 0012).
@@ -72,6 +74,14 @@ Values (the solution, the folders, the publish list, what the auditor may also r
   Check that the folder's root holds `LICENSE`, `THIRD-PARTY-NOTICES.txt`, `DOTNET-LICENSE.txt`
   and `DOTNET-THIRD-PARTY-NOTICES.txt` (R-017, ADR 0014), the last two equal to the files of the
   `Microsoft.NETCore.App` runtime pack whose version the windows' `.runtimeconfig.json` names.
+- At steps 5 and 7: one number for one zip (ADR 0029). The window shows the `<Version>` of
+  `Directory.Build.props`; the folder, the zip and `release.json` take the script's `-Version`.
+  A full release makes the two equal. `-PublishOnly` checks nothing and leaves
+  `Directory.Build.props` untouched, so a package it makes under another number than `<Version>`
+  says two numbers: it is a trial, and it is never handed out, uploaded or attached to a GitHub
+  Release. Before the upload of step 7, read `artifacts/<version>/release.json`: its `version`
+  and the `version` of its `AstroDarkroom` component must be the same; if they differ, stop and
+  say so.
 - At step 7: the zip and its `.sha256` go to the GitHub Release of the tag, which the owner
   makes by hand on the web; nothing here uploads them or asks for a GitHub token (ADR 0015).
   Propose the push of the release commit and the tag for the owner to run,
