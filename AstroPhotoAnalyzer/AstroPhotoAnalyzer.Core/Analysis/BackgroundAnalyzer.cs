@@ -102,8 +102,8 @@ namespace AstroPhotoAnalyzer
         /// mono the notion does not exist. See Thresholds.CornerColourSpreadRatio. The spread is
         /// compared with CornerGradientLevels and with its share of the mean departure as
         /// <see cref="Flagged"/> compares, by more than the tie of ADR 0095: on an 8-bit file a
-        /// region at +10 / +8 / +6 has a spread of exactly half its mean, a colour or not by the
-        /// sky's level until 2026-11-14.
+        /// region at +10 / +8 / +6 has a spread of exactly half its mean, which a bare compare
+        /// calls a colour at some sky levels and not at others.
         /// </summary>
         internal bool Coloured
         {

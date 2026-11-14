@@ -251,6 +251,18 @@ public class GamutFitTests
         }
     }
 
+    /// <summary>
+    /// The second review of the branch (2026-11-14): a pixel without an edge (positive infinity,
+    /// from <c>Decide</c>) keeps its chroma under every knee the function documents, 0 included,
+    /// where 0 x infinity gave NaN.
+    /// </summary>
+    [Fact]
+    public void R175_WithoutAnEdgeTheKneeKeepsTheChromaAtEveryKnee()
+    {
+        foreach (double knee in new[] { 0, 0.5, 0.8, 0.9, 1 })
+            Assert.Equal(10, GamutFit.Knee(10, double.PositiveInfinity, knee));
+    }
+
     [Fact]
     public void R176_TheThreeVariantsTouchMoreAsTheKneeComesDownAndTheEvidenceSaysHowMuch()
     {

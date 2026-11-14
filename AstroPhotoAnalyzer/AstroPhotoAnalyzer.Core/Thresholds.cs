@@ -55,7 +55,11 @@ namespace AstroPhotoAnalyzer
         /// sits on the threshold reads up to 3e-5 levels off it (255 x 2^-23). Measured
         /// 2026-11-14: 3.0000017 and 2.9999998 for a corner exactly 3 levels over the sky,
         /// 2.0000038 for a JPEG error of exactly 2 at level 64. The finest real step, one 16-bit
-        /// level, is 0.0039 levels, 39 times the tie.
+        /// level, is 0.0039 levels, 39 times the tie. One use compares two computed figures, a
+        /// region's spread with half the mean of its three departures (EdgeRegion.Coloured):
+        /// there the float's error adds up over six medians, and the finest real step is a
+        /// sixth of a 16-bit level, 0.00065 levels, still 6 times the tie; the test of that tie
+        /// holds on departures up to 20 levels at every sky level from 10 to 60.
         /// </summary>
         internal const double LevelTie = 1e-4;
 

@@ -460,11 +460,16 @@ namespace AstroPhotoAnalyzer
         /// hard clip at the edge.
         /// </summary>
         /// <param name="c">The chroma.</param>
-        /// <param name="cmax">The largest chroma the paper holds there.</param>
+        /// <param name="cmax">
+        /// The largest chroma the paper holds there; positive infinity for a pixel without an
+        /// edge, which keeps its chroma under every knee.
+        /// </param>
         /// <param name="knee">The share of the edge the compression starts from, 0..1.</param>
         /// <returns>The chroma to keep, at most <paramref name="cmax"/>.</returns>
         internal static double Knee(double c, double cmax, double knee)
         {
+            // Without an edge there is nothing to compress towards (and 0 x infinity is NaN).
+            if (double.IsPositiveInfinity(cmax)) return c;
             double start = knee * cmax;
             if (c <= start) return c;
             double room = cmax - start;

@@ -28,8 +28,9 @@ is, on its own samples, for every pixel (`GamutFit.Decide`, `GamutFitTable.Judge
 table and the edge search only say where a pixel lands: when the judge rejects a pixel that
 edge keeps, the edge is searched again in a band ending at the pixel's own chroma; when the
 judge keeps a pixel past the edge, the pixel is not outside and the hard fit leaves it (the
-soft knees compress it from a share of its own chroma, and leave it too where the judge
-rejects the grey of its tone, since nothing nearer the grey is known to be inside). The
+soft knees compress it from a share of its own chroma, and leave it too where the edge search
+finds no chroma the judge keeps under it, the grey of its tone included, since nothing nearer
+the grey is then known to be inside). The
 share left after the fit is the judge's on every pixel, moved or not. The recipe counts the
 same pixels.
 
@@ -52,4 +53,5 @@ same pixels.
   caches, against 3.2 s and 3.3 s.
 - V-016's figures move with the rule (the share outside as is from 1.9073 % to 1.9427 %).
 - Guards: `R175_TheJudgeDecidesEveryPixelWhateverTheTableSays`,
-  `R175_APixelTheJudgeKeepsOverAGreyItRejectsIsLeftByEveryVariant`.
+  `R175_APixelTheJudgeKeepsOverAGreyItRejectsIsLeftByEveryVariant`,
+  `R175_WithoutAnEdgeTheKneeKeepsTheChromaAtEveryKnee`.

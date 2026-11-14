@@ -238,7 +238,7 @@ bit. The 16-bit reference image is not touched.
 - Evidence: to measure. The lines were read; the figures are the replicas'. The task starts with
   a C# test: a raster built as the reader builds an 8-bit level (`(ushort)(n * 257) *
   (1f / 65535f)`) through each analyzer.
-- Status: fixed ae70ca1d (ADR 0095)
+- Status: fixed ae70ca1d (ADR 0095; the second half of `Coloured` in ac1fd396, found by the review of the branch)
 
 ### CR-004 A float FITS that is not on a 0..1 scale is analysed as a white frame
 

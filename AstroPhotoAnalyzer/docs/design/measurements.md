@@ -237,9 +237,11 @@ sample) when they are at least `RegionSkyMinFraction` (0.25) of it (`OnSkyPixels
 `SkyFraction`) and on every pixel otherwise, with `PixelsNote` for the row (ADR 0056); `Deltas`
 = region - background per plane, `MaxAbsDelta`, `Flagged` (> `CornerGradientLevels` = 3), and
 `Coloured`: spread (max delta - min delta) > 3 **and** > `CornerColourSpreadRatio` (0.5) x mean
-|delta| - the channels move differently. The two comparisons with 3 are
-`RasterOps.LevelsOver`'s, passed only by more than `LevelTie` (ADR 0095): on an 8-bit file a
-region exactly 3 levels from the sky read 3.0000017 or 2.9999998 by the sky's level. The distinction came from the reference image against
+|delta| - the channels move differently. The three comparisons (the two with 3, and the spread
+with half the mean) are `RasterOps.LevelsOver`'s, passed only by more than `LevelTie` (ADR
+0095): on an 8-bit file a region exactly 3 levels from the sky read 3.0000017 or 2.9999998 by
+the sky's level, and one at +10 / +8 / +6, whose spread is exactly half its mean, was a colour
+at some sky levels and not at others. The distinction came from the reference image against
 the darkest quarter: the horizon corner +9.4 / +1.7 / -9.9 (coloured, light pollution), the
 corner the Milky Way enters +11 / +10 / +16 (neutral, the object). Against the sky patches, on
 their own sky pixels, they read +4.1 / -4.0 / -17.1 (coloured) and +4.2 / +2.9 / +5.6 (neutral;

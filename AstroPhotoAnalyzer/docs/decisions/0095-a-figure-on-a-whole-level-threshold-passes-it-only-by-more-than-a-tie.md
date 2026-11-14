@@ -35,6 +35,15 @@ plateau's tile (range and mean, `QuantizationAnalyzer.Accept`), the edge regions
 (`EdgeRegion.Flagged`, both halves of `Coloured`, `Recommendations.ColourOf`) and the JPEG error
 (`ErrorAccumulator.Add`, `JpegRow.Acceptable`). The figures themselves are not rounded.
 
+One of these uses compares no fixed threshold: the second half of `Coloured` sets a region's
+spread against half the mean of its three departures, two computed figures. The float's error
+there adds up over six medians (by the bound above, up to about 1.3e-4, over the tie; the
+largest the branch's reviewer found in a single-precision replica of 557 000 such ties was
+2.1e-5, a figure of that replica, not of a run of the tool), and the finest real step is a
+sixth of a 16-bit level, 0.00065 levels, 6 times the tie. The test of this tie runs regions
+at +10 / +8 / +6, +15 / +12 / +9 and +20 / +16 / +12 over every sky level from 10 to 60, on
+both floats an 8-bit level becomes.
+
 ## Alternatives rejected
 
 - **Round both sides to 16-bit steps (1/257 of a level) before comparing.** Tried first, the
