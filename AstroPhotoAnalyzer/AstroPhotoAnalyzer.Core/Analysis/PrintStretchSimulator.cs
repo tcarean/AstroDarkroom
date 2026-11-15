@@ -246,16 +246,18 @@ namespace AstroPhotoAnalyzer
         internal int DustPatchCount => AsIsDust.DustPatchCount;
 
         /// <summary>
-        /// How the dust class is defined on the map's path, in plain words (ADR 0072): "dalele cu
-        /// 4.5 L* mai intunecate decat banda din jur sau decat cerul (de 4 ori zgomotul cerului)"
-        /// or "dalele cu 3.2 L* mai intunecate decat cerul (de 3 ori zgomotul lui)"; the same
-        /// sentence in the map's legend.
+        /// How the dust class is defined on the map's path, in plain words (ADR 0072), with its
+        /// second condition (ADR 0099; "the average sky" is the median of the sky patches, the
+        /// owner's word for it): "dalele cu 4.5 L* mai intunecate decat banda din jur sau decat
+        /// cerul (de 4 ori zgomotul cerului), dar nu mai deschise decat cerul mediu" or "dalele cu
+        /// 3.2 L* mai intunecate decat cerul din jurul lor (de 3 ori zgomotul lui), dar nu mai
+        /// deschise decat cerul mediu"; the same sentence in the map's legend.
         /// </summary>
         internal string DustClassDefinition => Map.Method == DustMethod.Band
-            ? Tr.Pick($"the patches {Fmt.F1(Map.NoiseThreshold)} L* darker than the band around them or than the sky ({Fmt.F0(Thresholds.BandDustK)} times the sky's noise)",
-                      $"dalele cu {Fmt.F1(Map.NoiseThreshold)} L* mai intunecate decat banda din jur sau decat cerul (de {Fmt.F0(Thresholds.BandDustK)} ori zgomotul cerului)")
-            : Tr.Pick($"the patches {Fmt.F1(Map.NoiseThreshold)} L* darker than the sky ({Fmt.F0(Thresholds.SkyNoiseK)} times its noise)",
-                      $"dalele cu {Fmt.F1(Map.NoiseThreshold)} L* mai intunecate decat cerul (de {Fmt.F0(Thresholds.SkyNoiseK)} ori zgomotul lui)");
+            ? Tr.Pick($"the patches {Fmt.F1(Map.NoiseThreshold)} L* darker than the band around them or than the sky ({Fmt.F0(Thresholds.BandDustK)} times the sky's noise), but no lighter than the average sky",
+                      $"dalele cu {Fmt.F1(Map.NoiseThreshold)} L* mai intunecate decat banda din jur sau decat cerul (de {Fmt.F0(Thresholds.BandDustK)} ori zgomotul cerului), dar nu mai deschise decat cerul mediu")
+            : Tr.Pick($"the patches {Fmt.F1(Map.NoiseThreshold)} L* darker than the sky around them ({Fmt.F0(Thresholds.SkyNoiseK)} times its noise), but no lighter than the average sky",
+                      $"dalele cu {Fmt.F1(Map.NoiseThreshold)} L* mai intunecate decat cerul din jurul lor (de {Fmt.F0(Thresholds.SkyNoiseK)} ori zgomotul lui), dar nu mai deschise decat cerul mediu");
 
         /// <summary>
         /// What the dust is, by what gave its L* (ADR 0033): "the darkest extended areas of the

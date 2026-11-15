@@ -112,6 +112,7 @@ public class ViewModelTests
         Assert.Contains($"cel mai intunecat {Thresholds.SkyDarkestFraction * 100:0} % din dalele de cer", guide);
         Assert.Contains($"de {Thresholds.SkyNoiseK:0} ori zgomotul cerului", guide);
         Assert.Contains($"cel putin {Thresholds.DustClassMinFraction * 100:0} % din dale", guide);
+        Assert.Contains("o dala mai deschisa decat cerul mediu nu e praf", guide);
         Assert.Contains("nivelul MINIM", guide);
         Assert.Contains("nivelul 13 e L* 4 (negrul baryta)", guide);
         Assert.Contains("canvas 1.5 -> L* 20.7", guide);

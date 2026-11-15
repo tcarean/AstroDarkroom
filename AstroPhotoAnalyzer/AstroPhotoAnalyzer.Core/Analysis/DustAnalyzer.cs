@@ -36,6 +36,10 @@
 //     SkyNoiseK sky sigmas over the model, the dust as much under it, the bright nebula over the
 //     Otsu threshold of the nebula's tail (without the peaks), the peaks as above, the sky the
 //     rest.
+// On either path a dust patch must also be no lighter than the sky, the median of the patches
+// classed sky (KeepDustNoLighterThanTheSky, ADR 0099): one that is lighter goes back to the band,
+// the nebula or the sky, since what is lighter than the sky is not the darkest part of the print,
+// however bright its surroundings.
 // On either path the verdict measures the same way (Measure): the sky is the median of the sky
 // class; the dust is the darkest extended area, decided ONCE on the image as it is
 // (DecideDustSource): the DustClassFraction percentile of the dust class when the class holds
@@ -465,7 +469,8 @@ namespace AstroPhotoAnalyzer
         /// The band classes (ADR 0026) on the L*s as it is; or the sky path, with the reason, when
         /// the band or the sky outside it is missing, or when the field is narrower than the band
         /// (ADR 0037). With a sigma of 0 (a posterised sky) the depth and the height are 0: a
-        /// patch a hair under the local level is dust, one a hair over it a bright cloud.
+        /// patch a hair under the local level is dust, one a hair over it a bright cloud. The
+        /// dust then passes <see cref="KeepDustNoLighterThanTheSky"/> (ADR 0099).
         /// </summary>
         /// <param name="map">
         /// The map, with its grid and galactic latitudes; its classes, models, thresholds, method
@@ -514,6 +519,47 @@ namespace AstroPhotoAnalyzer
             map.SkySigma = sigma;
             map.NoiseThreshold = k;
             map.BrightThreshold = kb;
+            KeepDustNoLighterThanTheSky(map, L, band);
+        }
+
+        /// <summary>
+        /// The second condition of the dust class, on either path (ADR 0099): a dust patch stays
+        /// dust only when it is also at or under the median of the patches classed sky, the
+        /// average sky of the texts. A patch darker than its surroundings and still lighter than
+        /// the sky (a nebula's faint edge beside its core, a lane of the band lighter than the sky
+        /// outside it) cannot be the darkest part of the print; it takes the class it would
+        /// otherwise have: on the band path, band inside the band and sky outside it; on the sky
+        /// path, nebula (<see cref="PatchClass.Band"/>) when over that median by more than the
+        /// map's noise threshold, sky otherwise. With no patch classed sky nothing changes:
+        /// there is no sky to compare with.
+        /// </summary>
+        /// <param name="map">
+        /// The map, with its classes and its noise threshold already written; its dust patches
+        /// lighter than the sky are re-classed in place.
+        /// </param>
+        /// <param name="L">
+        /// The L* of each patch of the image as it is, in the map's row order.
+        /// </param>
+        /// <param name="band">
+        /// On the band path, whether each patch lies inside the band; null on the sky path.
+        /// </param>
+        internal static void KeepDustNoLighterThanTheSky(DustMap map, float[] L, bool[] band)
+        {
+            PatchClass[] cls = map.Classes;
+            var sky = new List<float>();
+            for (int i = 0; i < cls.Length; i++) if (cls[i] == PatchClass.Sky) sky.Add(L[i]);
+            if (sky.Count == 0) return;
+
+            // The median is taken once, before any patch moves: a patch that rejoins the sky is
+            // over it, so the sky's figure can only rise and no dust patch ends up over it.
+            double mid = Stats.PercentileSorted(Stats.Sorted(sky.ToArray()), 50);
+            for (int i = 0; i < cls.Length; i++)
+            {
+                if (cls[i] != PatchClass.Dust || L[i] <= mid) continue;
+                cls[i] = band != null
+                    ? (band[i] ? PatchClass.Band : PatchClass.Sky)
+                    : (L[i] > mid + map.NoiseThreshold ? PatchClass.Band : PatchClass.Sky);
+            }
         }
 
         /// <summary>
@@ -557,7 +603,8 @@ namespace AstroPhotoAnalyzer
         /// on the map, for the legend and the report.
         /// With sigma 0 (a posterised sky, more than half of the patches at one value) the noise
         /// threshold is 0: a residual under 0 is dust, one over 0 is nebula or, over the Otsu
-        /// threshold of those, bright nebula.
+        /// threshold of those, bright nebula. The dust then passes
+        /// <see cref="KeepDustNoLighterThanTheSky"/> (ADR 0099).
         /// </summary>
         /// <param name="map">
         /// The map, with its grid; its classes, sky model, thresholds, method and reason are
@@ -595,6 +642,7 @@ namespace AstroPhotoAnalyzer
             map.SkySigma = sigma;
             map.NoiseThreshold = noise;
             map.BrightThreshold = bright;
+            KeepDustNoLighterThanTheSky(map, L, null);
         }
 
         /// <summary>

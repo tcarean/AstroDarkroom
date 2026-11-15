@@ -360,7 +360,7 @@ public class PrintStretchSimulatorTests
         Assert.Equal(s.Clouds.OrderBy(c => c.Lstar).Select(c => c.Name), s.Clouds.Select(c => c.Name));
         Assert.StartsWith("cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e ", s.DustDescription);
         Assert.Contains(" din cadru, dalele cu ", s.DustDescription);
-        Assert.EndsWith(" L* mai intunecate decat banda din jur sau decat cerul (de 4 ori zgomotul cerului))", s.DustDescription);
+        Assert.EndsWith(" L* mai intunecate decat banda din jur sau decat cerul (de 4 ori zgomotul cerului), dar nu mai deschise decat cerul mediu)", s.DustDescription);
         Assert.StartsWith("cerul din afara benzii Caii Lactee, la peste 10 grade de ea", s.SkyDescription);
         Assert.Null(s.MethodNote);
         Assert.StartsWith("praf ", s.ClassFractions);
@@ -411,6 +411,22 @@ public class PrintStretchSimulatorTests
         Assert.Equal(Lstar(0.05), ldn42.Lstar, 1);
         Assert.NotNull(ldn42.ExactTarget);
         Assert.Equal(s.ExactTarget!.Value, ldn42.ExactTarget!.Value, 3);   // the darkest sky is the cloud
+    }
+
+    /// <summary>The dust's definition names the second condition on both paths and in both languages (ADR 0099).</summary>
+    [Fact]
+    public void R044_TheDustDefinitionSaysNoLighterThanTheAverageSky()
+    {
+        // The nebula scene with its dark lane: the sky path, the dust class decides.
+        var sky = Simulate(WcsFixtures.NebulaScene(withLane: true));
+        Assert.Equal(DustMethod.Sky, sky.Method);
+        Assert.EndsWith(" L* mai intunecate decat cerul din jurul lor (de 3 ori zgomotul lui), dar nu mai deschise decat cerul mediu)", sky.DustDescription);
+        var band = Simulate(WcsFixtures.BandScene());
+        using (Tr.Use(UiLanguage.English))
+        {
+            Assert.EndsWith(" L* darker than the sky around them (3 times its noise), but no lighter than the average sky", sky.DustClassDefinition);
+            Assert.EndsWith(" L* darker than the band around them or than the sky (4 times the sky's noise), but no lighter than the average sky", band.DustClassDefinition);
+        }
     }
 
     [Fact]

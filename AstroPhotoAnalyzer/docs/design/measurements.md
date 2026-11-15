@@ -120,7 +120,13 @@ cannot move it (`PatchLstars(sub)`). Three parts:
   the rest. With sigma 0 (a
   posterised sky) the threshold is 0 and the class is the sign of the residual. The map keeps
   `SkySigma`, `NoiseThreshold` and `BrightThreshold` for the legend and Anexa B; `BandLevel` is
-  null. The five `PatchClass` values are one enum on both paths and `ClassNames(Method)` gives
+  null. On either path `KeepDustNoLighterThanTheSky` then runs (ADR 0099): the median of the
+  patches classed `Sky` is taken once, and every `Dust` patch over it is re-classed, on the
+  band path `Band` inside the band and `Sky` outside it, on the sky path `Band` when over that
+  median by more than `NoiseThreshold` and `Sky` otherwise; with no `Sky` patch nothing
+  changes. The median is taken before any patch moves, and a patch that rejoins the sky is
+  over it, so no dust patch ends over the `LstarSky` that `Measure` reports.
+  The five `PatchClass` values are one enum on both paths and `ClassNames(Method)` gives
   their names in the interface language (`band` / `bright clouds` or `nebula` / `bright nebula`;
   in Romanian `banda` / `nori luminosi` or `nebuloasa` / `nebuloasa stralucitoare`).
 - `Measure(patchLstars, map, paperBlack)` gives the `DustStats` of a (lifted) subsample on one

@@ -98,6 +98,9 @@ internal static class WcsFixtures
     /// <summary>The dust blob's centre (the frame's centre, on the plane) and the bright blob's, 100 px to the right, still in the band.</summary>
     internal const int DustX = 255, DustY = 255, BrightX = 355, BrightY = 255;
 
+    /// <summary>The light blob's centre, the centre of the patch (4, 7), in the band on the other side of the dust blob.</summary>
+    internal const int LightX = 144, LightY = 240;
+
     /// <summary>
     /// The band scene: plain sky at 0.25 outside |b| &lt; 10 degrees, the band at 0.35 inside it, a
     /// dark blob (0.05, radius 80 px: with its edge patches about 10 % of the frame, over the
@@ -109,7 +112,14 @@ internal static class WcsFixtures
     internal static Raster BandScene(bool withDust = true) => BandScene(OnThePlane(), withDust);
 
     /// <summary>The band scene drawn under another WCS: the same blobs and peak, the band strip where that WCS puts |b| &lt; 10 degrees.</summary>
-    internal static Raster BandScene(Wcs wcs, bool withDust)
+    /// <param name="wcs">The WCS the band strip is drawn under; it goes on the source.</param>
+    /// <param name="withDust">The dark blob and the brighter band; without it the band sits at the sky's level.</param>
+    /// <param name="withLightBlob">
+    /// A second blob in the band (0.29, radius 40 px, on the patch at <see cref="LightX"/>,
+    /// <see cref="LightY"/>): darker than the band around it (0.35) and lighter than the sky outside
+    /// the band (0.25).
+    /// </param>
+    internal static Raster BandScene(Wcs wcs, bool withDust, bool withLightBlob = false)
     {
         var inBand = new bool[512 * 512];
         for (int y = 0; y < 512; y++)
@@ -125,6 +135,7 @@ internal static class WcsFixtures
             if (x >= 384 && x < 416 && y >= 256 && y < 288) return 1.0f;
             if (withDust && dd <= 80 * 80) return 0.05f;
             if (db <= 40 * 40) return 0.6f;
+            if (withLightBlob && (x - LightX) * (x - LightX) + (y - LightY) * (y - LightY) <= 40 * 40) return 0.29f;
             // Without the dust blob the band sits at the sky's level too: a band that is only
             // brighter than the sky has mixed patches on its edge that read as dust by a hair.
             float level = inBand[y * 512 + x] && withDust ? 0.35f : 0.25f;
@@ -163,4 +174,7 @@ internal static class WcsFixtures
     /// <summary>The patch of the band scene fully inside the dust blob, and the one fully inside the bright blob.</summary>
     internal static int DustPatchIndex(DustMap map) => (DustY / 32) * map.Cols + DustX / 32;
     internal static int BrightPatchIndex(DustMap map) => (BrightY / 32) * map.Cols + (BrightX + 16) / 32;
+
+    /// <summary>The patch of the band scene fully inside the light blob.</summary>
+    internal static int LightPatchIndex(DustMap map) => (LightY / 32) * map.Cols + LightX / 32;
 }
