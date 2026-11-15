@@ -72,6 +72,12 @@ and no new threshold.
 - **Every removed patch back to the sky class.** One sentence shorter, but it puts patches
   14 to 17 L\* over the sky into the class the sky's figure, its colour and the coming ranges
   are measured on.
+- **Every removed patch to the nebula class on the sky path, the sky class untouched.** Put to
+  the owner on 2026-11-15, when the validation run showed the corner flag below; the owner
+  kept the rule as it is. It would leave the sky's figure, its colour and the corner flags
+  exactly as before the rule, and paint as nebula the removed patches that sit at the sky's
+  level (206 of 449 on Rosetta, 474 of 813 on `de_printat.png`), moving the curves' nebula
+  anchor further down (not measured).
 - **Leave the classes and fix only what the window shows (the ranges).** The map and the dust's
   share of the frame would still call the nebula's edge dust.
 
@@ -91,6 +97,11 @@ and no new threshold.
   0.2 levels (`de_printat.png`: red minus blue -2.12 to -2.00, chroma 0.98 to 0.95; Rosetta:
   3.01 to 3.20, 1.40 to 1.48), and the band or nebula anchor of the curves down by 0.5 to 1.2
   L\* (`de_printat.png` 25.3 to 24.8, Rosetta 34.8 to 33.6).
+- One colour flag flips on the validation images: Rosetta's top-left corner is now reported as
+  cooler than the rest of the sky. The corner's red did not move (23.84 levels); the sky's rose
+  from 26.71 to 26.88 with the 206 patches it took, so the corner's red is 3.04 levels under it
+  against 2.87, with the limit at 3.0. The section's verdict was ATENTIE before and stays so.
+  The owner accepted it on 2026-11-15: the corner sat on the limit already.
 - A dark cloud that is darker than its surroundings and lighter than the image's average sky
   (a lane on the bright side of a strong gradient) is no longer dust; it could never have been
   the darkest part of the print.
