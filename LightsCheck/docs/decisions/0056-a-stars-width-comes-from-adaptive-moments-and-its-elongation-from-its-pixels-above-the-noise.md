@@ -1,7 +1,7 @@
 # 0056. A star's width comes from adaptive moments and its elongation from its pixels above the noise
 
 Date: 2026-11-15
-Status: accepted 2026-11-15
+Status: accepted 2026-11-15; the wide stars row kept from 7 px, the limit of area left in pixels and the halo's rings of 3, 5 and 10 px superseded by 0059
 Supersedes: 0052 in part (the moment window of 6 px, and the limit and the words of the wide stars row); 0006 in part (the star shapes, FWHM, elongation and angle, reproducing the prototype's moments)
 
 ## Context

@@ -56,7 +56,7 @@ The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
 `PatternCrop`, `PatternHotSigma`, `PatternMinFrames`, `PatternClusterFraction`,
 `PatternClusterWidths`, `PatternSharePx`; the drift pairs and the polar alignment, `DriftMinPairs`,
 `PolarDriftFwhmFraction`, `PolarRotationMinHours`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
-`TailCoreRatio`, `WideStarFwhm` (the session's width from which FOCUS says the brightest stars are left out),
+`TailCoreRatio`,
 `CloudStarFraction`, `BackgroundJumpPct`, `BackgroundNeighbours`; trends, `TrendFrames`,
 `DewFwhmRise`, `DewHaloRise`, `FocusHeldFraction`, `SwampingRatioOk`; the RA axis from the
 trails, `TrailAxisMinFrames`, `TrailAxisCoherence`, `TrailAxisTolerance`.
@@ -362,9 +362,7 @@ alignment is not measured (no registered pair, under three drift pairs, no axis,
 when unknown.
 `DitherExplanation` is the list of paragraphs the window's Dithering card shows under its
 tables (R-045), built from `Th` like `RejectedExplanation`, the third one emphasised. FOCUS closes with a
-`verdict` row from the same `Focus` pair the summary uses; before it, when the session's width
-is above `Th.WideStarFwhm`, `FocusRows` adds the `wide stars` row (R-088), which says that the
-detection leaves the brightest of such stars out (`frame-analysis.md`, step 7) and changes no figure. The console prints `DitherRows`
+`verdict` row from the same `Focus` pair the summary uses. The console prints `DitherRows`
 and never the tables.
 
 The report prints the session header shared with the inventory, then the sections the

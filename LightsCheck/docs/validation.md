@@ -27,10 +27,10 @@ scripts in `prototype/`, which read the same libraw through rawpy).
 | ID | Session | Kind | Figures | Measured on |
 | --- | --- | --- | --- | --- |
 | V-001 | `Veil/2026-10-06-3h` (Nikon D3300, Samyang 135 f/2.8, L-eNhance, SA GTi) | inventory | 87 lights, 30 biases, 30 darks (none until `darks\` was added on 2026-11-08), `Nikon D3300`, 120.2 s at ISO 1600, first start 2026-10-06 23:35:03, span 12166.2 s (3 h 22 min), duty 86.06 % (10470.4 s of shutter: 86 x 120.2 + 133.2) | 2026-10-09, the darks 2026-11-13 |
-| V-002 | same, frame 1 (trailed, the first of the night) | frame | 12308 / 1532 stars, FWHM 4.12 (p90 4.42), elongation 1.78, 97 % elongated, angle 84 deg at coherence 0.88, halo 0.033, background 128, sigma 13.9, channels 27 / 126 / 126 / 144 | 2026-10-09, the shapes 2026-11-15 |
+| V-002 | same, frame 1 (trailed, the first of the night) | frame | 12308 / 1532 stars, FWHM 4.12 (p90 4.42), elongation 1.78, 97 % elongated, angle 84 deg at coherence 0.88, halo 0.016 (0.033 in rings of 3, 5 and 10 px, until ADR 0059), background 128, sigma 13.9, channels 27 / 126 / 126 / 144 | 2026-10-09, the shapes and the halo 2026-11-15 |
 | V-003 | same, frame 4 (clean) | frame | 15132 / 2104, FWHM 2.51 (2.96), elongation 1.17, 20 %, angle 84 at 0.43, halo 0.021, background 120, sigma 13.1, channels 25 / 120 / 120 / 138 | 2026-10-09, the shapes 2026-11-15 |
-| V-004 | same, frame 17 (the worst: doubled stars) | frame | 9763 / 1176, FWHM 2.84 (7.51), the width of one copy, elongation 2.49, 97 %, angle -89 at 0.94, halo 0.467, background 131, sigma 14.3, channels 27 / 129 / 129 / 147 | 2026-10-09, the shapes 2026-11-15 |
-| V-005 | same, frame 23 (doubled stars) | frame | 11352 / 1340, FWHM 3.04 (5.60), elongation 2.57, 98 %, angle -87 at 0.98, halo 0.307, background 135, sigma 14.5, channels 27 / 135 / 135 / 153 | 2026-10-09, the shapes 2026-11-15 |
+| V-004 | same, frame 17 (the worst: doubled stars) | frame | 9763 / 1176, FWHM 2.84 (7.51), the width of one copy, elongation 2.49, 97 %, angle -89 at 0.94, halo 0.289 (0.467 until ADR 0059), background 131, sigma 14.3, channels 27 / 129 / 129 / 147 | 2026-10-09, the shapes and the halo 2026-11-15 |
+| V-005 | same, frame 23 (doubled stars) | frame | 11352 / 1340, FWHM 3.04 (5.60), elongation 2.57, 98 %, angle -87 at 0.98, halo 0.133 (0.307 until ADR 0059), background 135, sigma 14.5, channels 27 / 135 / 135 / 153 | 2026-10-09, the shapes and the halo 2026-11-15 |
 | V-006 | same, frame 72 (clean, late) | frame | 13338 / 1886, FWHM 2.48 (2.94), elongation 1.18, 21 %, angle -75 at 0.51, halo 0.014, background 161, sigma 15.0, channels 33 / 159 / 159 / 183 | 2026-10-09, the shapes 2026-11-15 |
 | V-007 | same, frame 83 (clean, last hour) | frame | 12135 / 1662, FWHM 2.48 (2.95), elongation 1.15, 15 %, angle -82 at 0.22, halo -0.007, background 174, sigma 15.8, channels 35 / 174 / 174 / 195 | 2026-10-09, the shapes 2026-11-15 |
 | V-008 | same, the whole session | series | 48 good / 22 marginal / 17 bad, the bad frames 1, 13, 15, 18, 20, 25, 27, 38, 43, 45, 50, 52, 56, 63, 68, 70, 76 (until 2026-11-15 also 17, 22, 23, 54 and 60, whose stars the mount's jumps doubled: marginal since, for a second copy beside a sharp core, R-090); 87 registered; 41 moves (>= 5 px), 47 pauses, 9 pauses without a move; 38 distinct spots at 5 px, 25 at 10 px, 1 isolated, longest run at 10 px 10 frames (61-70); median move 13.29 px; rotation 8.5 arcmin; drift -0.20 / -0.73 px/min over the 36 pairs without a pause or a move (X / Y); session FWHM 2.64 px (3.12 with the moments of the first versions); read noise G1 2.9 ADU; swamping of R on frame 1 9.4; RA along Y (WCS); focus held, no dew, hot pixels fine, drift 1.52 px per exposure, a dash of 13.7 px in the run of 10, 53 frames in the 11 stretches whose dash reaches 3 px (61 %, R-084), word `Insufficient`; polar error between 4.5' and 6.7' (the DEC drift of 1.2 "/min; the tracking's rotation of 1.1'/h at DEC +31.6, the dithers' slews taken out of the 2.5'/h end to end), at most 0.46 px of drift per exposure, `Ok`; 30 darks (none until 2026-11-08); pattern measured on 87 crops: sigma 1.3 / 2.1 / 2.1 / 2.2 ADU on R / G1 / G2 / B (12, 10, 10 and 9 % of a frame's noise), 4 hot pixels per megapixel; 1.6 % of one frame's pattern survives in the mean (16 pairs within 1.5 px; ideal 1.1 %) | 2026-10-09, the drift, darks and pattern figures 2026-10-10, the drift and polar figures 2026-10-24, the darks 2026-11-13, the pattern's strength 2026-11-14, the classes and the width 2026-11-15 |
@@ -101,6 +101,30 @@ drift instead of editing the figures.
 
 ## History
 
+- 2026-11-15, later: the limits of what is a star and the halo's rings follow the stars' width,
+  and a trail is no star (R-014, R-015, ADR 0059). All 14 cases run with
+  `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 14, Passed: 11, Failed: 3,
+  Total time: 7.6753 Minutes`. The three stop at the halo, as the change means them to:
+  `halo: expected 0.033 +- 0.01, measured 0.01605757150377302` (V-002, frame 1), `halo:
+  expected 0.467 +- 0.01, measured 0.2891134437926253` (V-004, frame 17), `halo: expected 0.307
+  +- 0.01, measured 0.1325760565988347` (V-005, frame 23). V-003, V-006 and V-007 pass with
+  their halo inside the tolerance (0.021, 0.014 and -0.007 recorded; the harness of ADR 0059,
+  which read the three failing ones to the same digits, read 0.019, 0.006 and -0.003; the
+  console prints `halo : 0.019` for frame 4). Every
+  other figure of the six frames passed before the halo is reached or, after it, was read as
+  recorded by that harness (the centre and edge widths, the trails). V-008, V-013 and V-014
+  pass whole: no class, count, width, move or verdict leaves its tolerance, the limit of area
+  being 400 px on every frame under 4.5 px of width and the trails that were also stars being
+  seven, on four Smida frames (two on each of frames 1, 5 and 23, one on frame 3). In the reports the halo of the first and last good frames
+  reads 0.020 / 0.007 where it read 0.025 / 0.012 (`Veil/2026-10-06-3h`), 0.042 / 0.036 for
+  0.086 / 0.057 (Smida) and 0.031 / 0.008 for 0.135 / 0.112 (`Veil/2026-11-06`), the dew `NO`
+  on all three; Smida's median move reads 15.53 px where 15.52 is recorded (tolerance 0.1),
+  its first frame's list of registration stars having lost a piece of trail.
+  Re-recorded the same day at the owner's word ("Da, reinregistreaza"), the halo alone: V-002
+  0.033 to 0.016, V-004 0.467 to 0.289, V-005 0.307 to 0.133. The halo of V-003, V-006 and
+  V-007 stays as recorded (0.021, 0.014, -0.007), inside its tolerance of what is read now
+  (0.019, 0.006, -0.003). All 14 cases re-run against the new figures:
+  `Failed: 0, Passed: 14, Skipped: 0, Total: 14, Duration: 11 m 45 s`.
 - 2026-11-15: the stars' shapes are measured by adaptive moments and by the pixels above the
   noise (R-014, ADR 0056), a frame is bad from an elongation of 1.73 and marginal from 1.45,
   and a frame with a tail or a second copy beside a sharp core is marginal (R-090, ADR 0057).

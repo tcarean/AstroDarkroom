@@ -106,42 +106,33 @@ public class SeriesTests
     }
 
     /// <summary>
-    /// Three frames whose stars are drawn 8 px wide read about 8 px, above the 7 px from which
-    /// the brightest stars pass the limit of area and are left out: FOCUS says so before its
-    /// verdict, in the console and in the rows of the window, in plain words (R-088).
+    /// Three frames whose stars are drawn 8 px wide read about 8 px with every star counted, the
+    /// brightest included, and FOCUS keeps its four rows: the limits of the detection follow the
+    /// stars' width, so nothing is left out of such a session (R-014, ADR 0059; the `wide stars`
+    /// row of R-088 is dropped).
     /// </summary>
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void R088_ASessionOfWideStarsSaysTheBrightestAreLeftOut(bool english)
+    [Fact]
+    public void R014_ASessionOfWideStarsIsReadAtItsWidthWithEveryStarCounted()
     {
-        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using IDisposable _ = Ui.Use(UiLanguage.English);
         SeriesFrame[] frames = [new(0, 0, 1.0, 0, Fwhm: 8.0), new(0.5, 0.2, 1.0, 1, Fwhm: 8.0), new(12, 0, 1.0, 30, Fwhm: 8.0)];
         using SessionFixture f = new SessionFixture().WithStarSeries(frames);
         SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
 
         Assert.InRange(r.Series.SessionFwhm!.Value, 7.8, 8.4);
+        Assert.All(r.Frames, fr => Assert.InRange(fr.Measurement!.Detected, 40, 41));
         IReadOnlyList<ReportRow> rows = SeriesReport.FocusRows(r);
-        Assert.Equal(5, rows.Count);
+        Assert.Equal(4, rows.Count);
         Assert.Equal("verdict", rows[^1].Label);
-        Assert.Equal(english ? "wide stars" : "stele late", rows[^2].Label);
-        Assert.Equal(
-            english
-                ? "the stars are wider than 7 px; LightsCheck leaves the brightest of such stars out, so its figures rest on fewer and fainter stars"
-                : "stelele sunt mai late de 7 px; LightsCheck lasa deoparte cele mai stralucitoare dintre ele, asa ca cifrele se sprijina pe stele mai putine si mai slabe",
-            rows[^2].Value);
-        PlainWords.AssertPlain(rows[^2].Label + " " + rows[^2].Value, "the wide stars row of FOCUS");
-        using StringWriter sw = new();
-        SeriesReport.Write(r, sw);
-        Assert.Contains(rows[^2].Value, sw.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain(rows, row => row.Label == "wide stars");
     }
 
     /// <summary>
     /// Stars 4.9 px wide are read at their width, where the moments of the first versions read
-    /// them 4.7 px and the row stood from 4.5: the session has no row (R-088, ADR 0056).
+    /// them 4.7 px (R-014, ADR 0056).
     /// </summary>
     [Fact]
-    public void R088_ASessionOfStarsFivePixelsWideIsReadAtItsWidthAndHasNoRow()
+    public void R014_ASessionOfStarsFivePixelsWideIsReadAtItsWidth()
     {
         using IDisposable _ = Ui.Use(UiLanguage.English);
         SeriesFrame[] frames = [new(0, 0, 1.0, 0, Fwhm: 4.9), new(0.5, 0.2, 1.0, 1, Fwhm: 4.9), new(12, 0, 1.0, 30, Fwhm: 4.9)];
@@ -149,7 +140,7 @@ public class SeriesTests
         SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
 
         Assert.InRange(r.Series.SessionFwhm!.Value, 4.85, 5.2);
-        Assert.DoesNotContain(SeriesReport.FocusRows(r), row => row.Label == "wide stars");
+        Assert.Equal(4, SeriesReport.FocusRows(r).Count);
     }
 
     /// <summary>
@@ -205,19 +196,6 @@ public class SeriesTests
     public void R090_ASessionWithoutATailHasNoTailRow()
     {
         Assert.Equal(3, SeriesReport.TrailRows(RunPattern()).Count);
-    }
-
-    /// <summary>A session whose stars read 7 px wide or under has no such row (R-088).</summary>
-    [Fact]
-    public void R088_ASessionOfOrdinaryStarsHasNoWideStarsRow()
-    {
-        using IDisposable _ = Ui.Use(UiLanguage.English);
-        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(3).ToList());
-        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
-
-        Assert.True(r.Series.SessionFwhm <= Th.WideStarFwhm);
-        Assert.Equal(4, SeriesReport.FocusRows(r).Count);
-        Assert.DoesNotContain(SeriesReport.FocusRows(r), row => row.Label == "wide stars");
     }
 
     /// <summary>

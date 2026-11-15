@@ -20,8 +20,10 @@ namespace LightsCheck.Core;
 /// <summary>
 /// Measures one light frame (R-012 to R-016): the levels of the four CFA positions, the
 /// green channel's background and noise, the stars and their shapes, the long trails, and
-/// the star list a later registration uses. The method is the Python prototype's
-/// (`prototype/analyze.py`), step for step; docs/design/frame-analysis.md says why each step.
+/// the star list a later registration uses. The method started as the Python prototype's
+/// (`prototype/analyze.py`); the shapes (ADR 0056) and the limits of what is a star, which
+/// follow the stars' width (ADR 0059), are no longer its own. docs/design/frame-analysis.md
+/// says why each step.
 /// </summary>
 internal static class FrameAnalyzer
 {
@@ -90,8 +92,9 @@ internal static class FrameAnalyzer
         double smSigma = Raster.CentralMadSigma(sm, Th.NoiseWindowHalf, Th.NoiseSampleStep);
         List<Component> comps = Components.Find(sm, Th.DetectionSigmas * smSigma, d, raw);
 
-        // Trails (R-015): big, long and thin.
+        // Trails (R-015): big, long and thin. A trail is no star, whatever its area.
         List<Trail> trails = [];
+        HashSet<Component> trailed = [];
         foreach (Component c in comps)
         {
             if (c.Area <= Th.TrailMinArea)
@@ -103,35 +106,62 @@ internal static class FrameAnalyzer
             if (length > Th.TrailMinLength && c.Area < Th.TrailMaxFill * c.Height * c.Width + Th.TrailFillSlack)
             {
                 trails.Add(new Trail(length, c.Area, c.X0, c.Y0));
+                trailed.Add(c);
             }
         }
 
-        // Stars: the components of star-like area, once in flux order for both lists below.
-        List<Component> stars = comps.Where(c => c.Area >= Th.MinStarArea && c.Area <= Th.MaxStarArea)
+        // What may be a star: every component from the smallest star's area that is no trail,
+        // once in flux order for the lists below.
+        List<Component> candidates = comps.Where(c => c.Area >= Th.MinStarArea && !trailed.Contains(c))
             .OrderByDescending(c => c.Flux).ToList();
-        int bright = stars.Count(c => c.Peak > Th.BrightPeakSigmas * sigma);
         double margin = Th.SaturationMargin(top);
+
+        // A component votes on shape when it is bright and not saturated. Peak is above the sky,
+        // so under a bright sky a clipped star falls below the fraction of the scale: the raw
+        // peak is asked too, by the test of the saturated count.
+        bool Votes(Component c) => c.Peak < Th.ShapePeakMaxFraction * top && c.PeakRaw < top - margin && c.Peak > Th.ShapePeakSigmas * sigma;
+
+        // A component is measured once, whichever list asks for it first.
+        Dictionary<Component, StarShape?> measured = [];
+        StarShape? Shape(Component c)
+        {
+            if (!measured.TryGetValue(c, out StarShape? shape))
+            {
+                shape = StarShapes.Measure(d, c.CentroidY, c.CentroidX, c.Peak, c.Area);
+                measured[c] = shape;
+            }
+
+            return shape;
+        }
+
+        // The frame's first width (ADR 0059): the stars' width before the list of stars is
+        // known, read on the brightest components of any area. The limits of area and of width
+        // follow it, and never fall under what they were in pixels.
+        double? firstWidth = FirstWidth(candidates.Where(Votes).Take(Th.ShapeStars).Select(Shape));
+        double maxArea = firstWidth is double wa ? Math.Max(Th.MaxStarAreaFloor, Th.MaxStarAreaWidths * wa * wa) : Th.MaxStarAreaFloor;
+        double maxFwhm = firstWidth is double wf ? Math.Max(Th.MaxFwhmFloor, Th.MaxFwhmWidths * wf) : Th.MaxFwhmFloor;
+
+        // Stars: the candidates of star-like area.
+        List<Component> stars = candidates.Where(c => c.Area <= maxArea).ToList();
+        int bright = stars.Count(c => c.Peak > Th.BrightPeakSigmas * sigma);
         int saturated = comps.Count(c => c.PeakRaw >= top - margin);
 
-        // Shapes of the brightest unsaturated stars. Peak is above the sky, so under a bright sky
-        // a clipped star falls below the fraction of the scale: the raw peak is asked too, by the
-        // test of the saturated count.
+        // Shapes of the brightest unsaturated stars.
         List<StarShape> shapes = [];
-        foreach (Component c in stars
-            .Where(c => c.Peak < Th.ShapePeakMaxFraction * top && c.PeakRaw < top - margin && c.Peak > Th.ShapePeakSigmas * sigma)
-            .Take(Th.ShapeStars))
+        foreach (Component c in stars.Where(Votes).Take(Th.ShapeStars))
         {
-            StarShape? s = StarShapes.Measure(d, c.CentroidY, c.CentroidX, c.Peak, c.Area);
-            if (s is not null && s.Fwhm >= Th.MinFwhm && s.Fwhm <= Th.MaxFwhm)
+            StarShape? s = Shape(c);
+            if (s is not null && s.Fwhm >= Th.MinFwhm && s.Fwhm <= maxFwhm)
             {
                 shapes.Add(s);
             }
         }
 
+        // The halo, in rings that follow each star's own width.
         List<double> halos = [];
         foreach (StarShape s in shapes.Take(Th.HaloStars))
         {
-            double? hl = StarShapes.Halo(d, s.Y, s.X, Th.HaloCore, Th.HaloInner, Th.HaloOuter);
+            double? hl = StarShapes.Halo(d, s.Y, s.X, Th.HaloCoreWidths * s.Fwhm, Th.HaloInnerWidths * s.Fwhm, Th.HaloOuterWidths * s.Fwhm);
             if (hl is double v)
             {
                 halos.Add(v);
@@ -191,6 +221,30 @@ internal static class FrameAnalyzer
         {
             CoreElongationMedian = coreElong.Length > 0 ? Raster.Percentile(coreElong, 50) : null,
         };
+    }
+
+    /// <summary>
+    /// The frame's first width (R-014, ADR 0059): the median core FWHM of the components
+    /// measured before the list of stars is known. A reading under <see cref="Th.MinFwhm"/> is
+    /// left out; none is too wide, since the limit of width is what this figure sets.
+    /// </summary>
+    /// <param name="shapes">
+    /// The shapes of the brightest unsaturated components of any area, null where a component
+    /// could not be measured. Not null.
+    /// </param>
+    /// <returns>The median FWHM, in pixels; null when no component was measured.</returns>
+    private static double? FirstWidth(IEnumerable<StarShape?> shapes)
+    {
+        List<double> widths = [];
+        foreach (StarShape? s in shapes)
+        {
+            if (s is not null && s.Fwhm >= Th.MinFwhm)
+            {
+                widths.Add(s.Fwhm);
+            }
+        }
+
+        return widths.Count > 0 ? Raster.Percentile(widths, 50) : null;
     }
 
     /// <summary>

@@ -37,7 +37,7 @@ Copyright (C) 2026 Tudor Carean
     ce inseamna        : shot/citire de la 10 in sus: cerul acopera zgomotul de citire, care adauga sub 5 %; sub 10: canalul sufera de zgomotul de citire, iar expuneri mai lungi ar ajuta
 
   ROUA
-    halo (lumina din jurul stelelor), primele / ultimele: 0.000 / 0.001; stele gasite 40 -> 36 (-10 %); latimea stelelor 3.22 / 3.22 px (-0 %)
+    halo (lumina din jurul stelelor), primele / ultimele: -0.000 / -0.000; stele gasite 40 -> 36 (-10 %); latimea stelelor 3.22 / 3.22 px (-0 %)
     verdict            : NU - latimea stelelor -0 %, lumina din jurul stelelor (halo) +0.000
 
   CADRE MISCATE

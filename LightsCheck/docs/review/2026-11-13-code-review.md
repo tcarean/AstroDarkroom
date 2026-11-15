@@ -1012,7 +1012,8 @@ there first, and the cleanup list, which holds what is not a defect.
   - `src/LightsCheck.Wpf/Presentation/Charts.cs:391-394`: the map's 10 px grid, "the
     walking-noise distance".
   - `src/LightsCheck.Core/Report/FrameReport.cs:74-75`: `ring 5-10 px / core 3 px`, beside a 40
-    that is read from `Th`.
+    that is read from `Th`. (Settled on 2026-11-15 by the change of ADR 0059: the line reads its
+    rings, now in star widths, from `Th`. The other items stay open.)
   - `src/LightsCheck.Core/Report/SeriesReport.cs:481-482`: `adds under 5 %` (CR-017); `:817`:
     `never 2 frames`.
   - `src/LightsCheck.Core/Session/SessionFolder.cs:114`: `.fit, .fits, .fts`, beside
