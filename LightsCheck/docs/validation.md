@@ -155,7 +155,9 @@ drift instead of editing the figures.
   their tolerances.
   All 14 cases re-run against the new figures, the Romanian reason of a tail reworded in
   between (no figure in it): `Failed: 0, Passed: 14, Skipped: 0, Total: 14, Duration: 8 m
-  26 s`.
+  26 s`. Run once more on the branch's last state, after the second review's fixes and the
+  rows of TRAILED FRAMES that list a tail frame once: `Failed: 0, Passed: 14, Skipped: 0,
+  Total: 14, Duration: 7 m 59 s`.
 - 2026-11-14, after the fixes of CR-006 to CR-010 of the review (ADRs 0051 to 0054): all 14
   cases re-run (19.8 min) and passing, no recorded figure changed. One formula changed, the
   share of the noise taken out of the fixed pattern's strength (ADR 0051), and the strength

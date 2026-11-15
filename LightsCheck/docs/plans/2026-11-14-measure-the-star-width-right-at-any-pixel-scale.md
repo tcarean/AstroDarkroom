@@ -174,7 +174,11 @@ star is read as well, from its pixels above the local noise in a circle of 2.4 c
   frame alone explains (the exposure verdict reads frames 1, 7 and 14 where it read 1, 6 and
   13, and the field rotation ends on frame 14).
 - A subagent reviewed the change before its first commit, and its findings went into that
-  commit; the fixes were not reviewed a second time.
+  commit. A second one reviewed the whole branch and the wiki page at the owner's word: no
+  defect in the code or in the re-recorded figures; tests that pin the tail rule's limits more
+  closely, figures some documents had left behind and three slips of the wiki page followed.
+  Two wordings it questioned went to the owner: a tail frame is listed on its own row only,
+  and the Romanian reason ends `deci cadrul ramane in stiva`.
 - The window was not run on a real session: its tests render the new row and paragraph on the
   synthetic sessions, and the console was run on the three real ones.
 - The wiki page was brought up to date on a branch of the wiki's clone made from `master`; its
