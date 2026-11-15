@@ -234,7 +234,8 @@ value is the whole star's elongation and whose threshold field carries the cores
 was probably still settling (R-090, ADR 0057). A frame without a cores' figure, a hand-made
 measurement, is read as stretched, and a frame too short to stack is never a tail: it is bad
 by its exposure, and the tail's reason would say it stays. `Tail` takes the trail's axis as the two trailing flags do,
-and `SeriesReport.Reason` words it; `TrailRows` adds its row only when a frame has the flag.
+and `SeriesReport.Reason` words it; `TrailRows` adds its row only when a frame has the flag,
+and keeps those frames off the `marginal` row (`MarginalWithoutTail`).
 
 Two passes: the classes that need no session figure (trailing, as above)
 and the session medians (FWHM over the good frames, stars over all), then the flags against

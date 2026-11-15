@@ -270,7 +270,7 @@ internal static class SeriesReport
     [
         new($"Alungirea spune de cate ori sunt stelele unui cadru mai lungi decat late, in medie (1 = rotunde). De la {RunReport.F(Th.ElongationBad, 2)} cadrul e slab si iese din stiva.", false),
         new($"Intre {RunReport.F(Th.ElongationMarginal, 2)} si {RunReport.F(Th.ElongationBad, 2)} cadrul e la limita si ramane in stiva, daca nu hotarasti altfel. Cadrele la limita sunt pe randul 'la limita' din CADRE MISCATE, pe tabul Rezumat, iar pe tabul Cadre au clasa galbena.", false),
-        new("Un cadru in care stelele au o dara sau o a doua copie langa un miez bun e la limita, oricat de mare i-ar fi alungirea: doar o parte mica din lumina fiecarei stele e in afara locului ei, iar la stivuire respingerea (rejection) o scoate la cele mai multe stele. Cand cadrul vine imediat dupa o miscare a monturii, motivul o spune: montura probabil inca se aseza cand a inceput expunerea, iar o pauza mai lunga dupa dithering evita dara.", false),
+        new("Un cadru in care stelele au o dara sau o a doua copie langa un miez bun e la limita, oricat de mare i-ar fi alungirea: doar o parte mica din lumina fiecarei stele e in afara locului ei, iar la stivuire respingerea (rejection) o scoate la cele mai multe stele. Cand cadrul vine imediat dupa o miscare a monturii, motivul o spune: montura probabil inca se aseza cand a inceput expunerea, iar o pauza mai lunga dupa dithering evita dara. Aceste cadre sunt pe randul 'dara sau dublura' din CADRE MISCATE.", false),
         new("Dara e directia in care s-au intins stelele in timpul expunerii, data ca unghi fata de orizontala imaginii. Cand se stie care axa a imaginii e RA si stelele cadrului s-au intins toate cam in aceeasi directie, motivul spune si pe ce axa a monturii cade dara.", false),
         new("O dara pe RA vine de la urmarire: eroarea periodica a monturii, o viteza de urmarire gresita sau jocul din angrenaje (backlash) pe RA. O dara pe DEC vine de la alinierea polara, de la vant sau de la o atingere a monturii. Una oblica vine de la amandoua sau de la o lovitura.", true),
         new($"Un cadru expus sub {ShortFractionWord} din timpul obisnuit e slab si iese din stiva: aduce aproape deloc semnal, iar Siril ar trebui sa-i intinda zgomotul pana la nivelul celorlalte. Un cadru cu alta expunere, mai lunga sau putin mai scurta, ramane: Siril egalizeaza nivelurile la stivuire, iar motivul doar o noteaza.", false),
@@ -279,7 +279,7 @@ internal static class SeriesReport
     [
         new($"The elongation says how many times longer than wide the stars of a frame are, on average (1 = round). From {RunReport.F(Th.ElongationBad, 2)} the frame is bad and leaves the stack.", false),
         new($"Between {RunReport.F(Th.ElongationMarginal, 2)} and {RunReport.F(Th.ElongationBad, 2)} the frame is marginal and stays in the stack unless you decide otherwise. The marginal frames are on the 'marginal' row of TRAILED FRAMES, on the Summary tab, and on the Frames tab their class is yellow.", false),
-        new("A frame whose stars have a tail or a second copy beside a sharp core is marginal whatever its elongation: only a small part of each star's light is out of place, and stacking with rejection removes it on most stars. When the frame comes right after a move of the mount, the reason says so: the mount was probably still settling when the exposure began, and a longer wait after dithering avoids the tail.", false),
+        new("A frame whose stars have a tail or a second copy beside a sharp core is marginal whatever its elongation: only a small part of each star's light is out of place, and stacking with rejection removes it on most stars. When the frame comes right after a move of the mount, the reason says so: the mount was probably still settling when the exposure began, and a longer wait after dithering avoids the tail. These frames are on the 'tail or double' row of TRAILED FRAMES.", false),
         new("The trail is the direction the stars were stretched in during the exposure, given as an angle to the image's horizontal. When it is known which image axis is RA and the frame's stars were all stretched about the same way, the reason also says which mount axis the trail falls on.", false),
         new("A trail on RA comes from the tracking: the mount's periodic error, a wrong tracking rate or the play in the gears (backlash) on RA. A trail on DEC comes from the polar alignment, the wind or a touch on the mount. An oblique one comes from both, or from a knock.", true),
         new($"A frame exposed under {ShortFractionWord} the usual time is bad and leaves the stack: it brings almost no signal, and Siril would have to stretch its noise up to the others' level. A frame with another exposure, longer or a little shorter, stays in: Siril evens the levels out when stacking, and the reason only notes it.", false),
@@ -543,10 +543,11 @@ internal static class SeriesReport
         List<ReportRow> rows =
         [
             new(T($"bad (elongation of at least {bad})", $"slabe (alungire de cel putin {bad})"), List(r, FlagKind.Trailed)),
-            new(T($"marginal (elongation between {marginal} and {bad})", $"la limita (alungire intre {marginal} si {bad})"), List(r, FrameClass.Marginal)),
+            new(T($"marginal (elongation between {marginal} and {bad})", $"la limita (alungire intre {marginal} si {bad})"), MarginalWithoutTail(r)),
         ];
         // The frames whose elongation is a tail or a second copy beside a sharp core (R-090):
-        // marginal whatever they read, so they get a row of their own, which says why.
+        // marginal whatever they read, so they get a row of their own, which says why, and
+        // stay off the row above, whose bounds some of them pass.
         if (s.Flags.Any(fl => fl.Any(f => f.Kind == FlagKind.Tail)))
         {
             rows.Add(new(T("tail or double", "dara sau dublura"), List(r, FlagKind.Tail) + T(
@@ -1378,7 +1379,7 @@ internal static class SeriesReport
             FlagKind.MarginalTrail => T($"elongation {RunReport.F(f.Value, 2)} (from {RunReport.F(f.Threshold, 2)} the frame is marginal){TrailSuffix(f)}", $"alungire {RunReport.F(f.Value, 2)} (de la {RunReport.F(f.Threshold, 2)} cadrul e la limita){TrailSuffix(f)}"),
             FlagKind.Tail => T(
                 $"the stars have a tail or a second copy: elongation {RunReport.F(f.Value, 2)} with it, {RunReport.F(f.Threshold, 2)} without it; stacking with rejection removes it on most stars, so the frame stays in the stack{TrailSuffix(f)}",
-                $"stelele au o dara sau o a doua copie: alungire {RunReport.F(f.Value, 2)} cu ea, {RunReport.F(f.Threshold, 2)} fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca ramane in stiva{TrailSuffix(f)}")
+                $"stelele au o dara sau o a doua copie: alungire {RunReport.F(f.Value, 2)} cu ea, {RunReport.F(f.Threshold, 2)} fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, deci cadrul ramane in stiva{TrailSuffix(f)}")
                 + (f.AfterMove ? T(
                     "; the frame comes right after a move of the mount, which was probably still settling when the exposure began",
                     "; cadrul vine imediat dupa o miscare a monturii, care probabil inca se aseza cand a inceput expunerea") : ""),
@@ -1771,14 +1772,14 @@ internal static class SeriesReport
         => Indices(Enumerable.Range(0, r.Frames.Count).Where(i => r.Series.Flags[i].Any(f => f.Kind == k)), r);
 
     /// <summary>
-    /// The indices of the frames of one class: the marginal frames for the `marginal` row of
-    /// TRAILED FRAMES, which the R-081 explanation points at for every marginal frame.
+    /// The indices of the marginal frames for the `marginal` row of TRAILED FRAMES, which the
+    /// R-081 explanation points at: every marginal frame but those with a tail, which have a
+    /// row of their own (R-090).
     /// </summary>
     /// <param name="r">The result of the series run.</param>
-    /// <param name="c">The class to list.</param>
     /// <returns>The indices joined by ", ", or `none`.</returns>
-    private static string List(SeriesResult r, FrameClass c)
-        => Indices(Enumerable.Range(0, r.Frames.Count).Where(i => r.Series.Classes[i] == c), r);
+    private static string MarginalWithoutTail(SeriesResult r)
+        => Indices(Enumerable.Range(0, r.Frames.Count).Where(i => r.Series.Classes[i] == FrameClass.Marginal && !r.Series.Flags[i].Any(f => f.Kind == FlagKind.Tail)), r);
 
     /// <summary>The frames' indices in words, for the two listers above.</summary>
     /// <param name="positions">The 0-based positions of the frames to list, in series order.</param>

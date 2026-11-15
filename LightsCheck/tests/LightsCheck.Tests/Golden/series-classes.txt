@@ -42,7 +42,7 @@ Copyright (C) 2026 Tudor Carean
 
   CADRE MISCATE
     slabe (alungire de cel putin 1.73): 7
-    la limita (alungire intre 1.45 si 1.73): 3, 4, 5, 14
+    la limita (alungire intre 1.45 si 1.73): 3, 4, 5
     dara sau dublura   : 14 (miezul stelei e bun; stiva cu respingere le repara pe cele mai multe)
     directia darelor   : nu se stie (prea putine cadre slabe cu dare in aceeasi directie); nu se stie care axa e RA
 
@@ -88,7 +88,7 @@ Copyright (C) 2026 Tudor Carean
      11  DSC_0011.fit          20:57:38     0.2 s  SLAB       1.01   3.22      37   2000   30 s   38.5    80.0   -15.0  -                                           1/3 de la 11    expunere 0.2 s, sub jumatate din cea obisnuita, 120.0 s: prea scurta ca sa merite stivuita
      12  DSC_0012.fit          20:57:39   137.5 s  bun        1.01   3.22      36   2280    1 s    0.5    80.5   -15.2  -                                           2/3 de la 11    expunere 137.5 s in loc de cea obisnuita, 120.0 s (Siril o egalizeaza la stivuire); fondul cerului sare cu +14 % fata de cadrele vecine (se semnaleaza de la 8 %), din cauza expunerii
      13  DSC_0013.fit          21:00:26   120.0 s  bun        1.01   3.22      36   2001   30 s    0.5    80.9   -15.0  -                                           3/3 de la 11    
-     14  DSC_0014.fit          21:02:56   120.0 s  la limita   2.38   3.23      35   2000   30 s   29.1   110.0   -13.3  -                                           -               stelele au o dara sau o a doua copie: alungire 2.38 cu ea, 1.01 fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca ramane in stiva, dara la -90 de grade; cadrul vine imediat dupa o miscare a monturii, care probabil inca se aseza cand a inceput expunerea
+     14  DSC_0014.fit          21:02:56   120.0 s  la limita   2.38   3.23      35   2000   30 s   29.1   110.0   -13.3  -                                           -               stelele au o dara sau o a doua copie: alungire 2.38 cu ea, 1.01 fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, deci cadrul ramane in stiva, dara la -90 de grade; cadrul vine imediat dupa o miscare a monturii, care probabil inca se aseza cand a inceput expunerea
 --- stderr ---
 (progresul, omis)
 --- exit 1 ---

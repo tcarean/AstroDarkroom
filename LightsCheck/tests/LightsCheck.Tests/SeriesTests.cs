@@ -178,7 +178,7 @@ public class SeriesTests
 
         string reason = SeriesReport.Reason(flag);
         Assert.StartsWith(english ? "the stars have a tail or a second copy: elongation " : "stelele au o dara sau o a doua copie: alungire ", reason, StringComparison.Ordinal);
-        Assert.Contains(english ? "stacking with rejection removes it on most stars, so the frame stays in the stack" : "la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca ramane in stiva", reason, StringComparison.Ordinal);
+        Assert.Contains(english ? "stacking with rejection removes it on most stars, so the frame stays in the stack" : "la stivuire, respingerea (rejection) o scoate la cele mai multe stele, deci cadrul ramane in stiva", reason, StringComparison.Ordinal);
         Assert.EndsWith(english ? "; the frame comes right after a move of the mount, which was probably still settling when the exposure began" : "; cadrul vine imediat dupa o miscare a monturii, care probabil inca se aseza cand a inceput expunerea", reason, StringComparison.Ordinal);
         PlainWords.AssertPlain(reason, "the reason of a tail");
 
@@ -187,11 +187,14 @@ public class SeriesTests
         Assert.Equal(english ? "tail or double" : "dara sau dublura", rows[2].Label);
         Assert.Equal(english ? "14 (the star's core is sharp; a stack with rejection repairs most of them)" : "14 (miezul stelei e bun; stiva cu respingere le repara pe cele mai multe)", rows[2].Value);
         Assert.DoesNotContain("14", rows[0].Value, StringComparison.Ordinal);
+        // The frame reads past the marginal row's upper bound and has its own row: not listed twice.
+        Assert.Equal("3, 4, 5", rows[1].Value);
         PlainWords.AssertPlain(rows[2].Label + " " + rows[2].Value, "the tail row of TRAILED FRAMES");
 
         IReadOnlyList<ReportParagraph> why = SeriesReport.RejectedExplanation;
         Assert.Equal(6, why.Count);
         Assert.StartsWith(english ? "A frame whose stars have a tail or a second copy beside a sharp core is marginal whatever its elongation" : "Un cadru in care stelele au o dara sau o a doua copie langa un miez bun e la limita, oricat de mare i-ar fi alungirea", why[2].Text, StringComparison.Ordinal);
+        Assert.EndsWith(english ? "These frames are on the 'tail or double' row of TRAILED FRAMES." : "Aceste cadre sunt pe randul 'dara sau dublura' din CADRE MISCATE.", why[2].Text, StringComparison.Ordinal);
         using StringWriter sw = new();
         SeriesReport.Write(r, sw);
         Assert.Contains(rows[2].Value, sw.ToString(), StringComparison.Ordinal);
