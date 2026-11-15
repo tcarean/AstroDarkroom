@@ -56,7 +56,7 @@ The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
 `PatternCrop`, `PatternHotSigma`, `PatternMinFrames`, `PatternClusterFraction`,
 `PatternClusterWidths`, `PatternSharePx`; the drift pairs and the polar alignment, `DriftMinPairs`,
 `PolarDriftFwhmFraction`, `PolarRotationMinHours`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
-`WideStarFwhm` (the session's width from which FOCUS says the width is read too narrow),
+`TailCoreRatio`, `WideStarFwhm` (the session's width from which FOCUS says the brightest stars are left out),
 `CloudStarFraction`, `BackgroundJumpPct`, `BackgroundNeighbours`; trends, `TrendFrames`,
 `DewFwhmRise`, `DewHaloRise`, `FocusHeldFraction`, `SwampingRatioOk`; the RA axis from the
 trails, `TrailAxisMinFrames`, `TrailAxisCoherence`, `TrailAxisTolerance`.
@@ -223,7 +223,19 @@ or not the session has darks; the report's `fixed pattern` row adds what the `da
 
 ## Classes, trends, drift, axes (`SeriesAnalyzer`)
 
-Two passes: the classes that need no session figure (trailing, from the median elongation)
+A frame has two elongations (`frame-analysis.md`, step 7): that of the whole star, which a
+tail or a second copy lengthens, and that of the cores, which they leave alone. The trailing
+class reads the first against `Th.ElongationBad` and `Th.ElongationMarginal`, the flags
+`Trailed` and `MarginalTrail`. Before that it asks whether the elongation is a tail: the whole
+star at least `Th.ElongationMarginal`, at least `Th.TailCoreRatio` times the cores', and the
+cores' under `Th.ElongationBad`. Then the frame is `Marginal` with the one flag `Tail`, whose
+value is the whole star's elongation and whose threshold field carries the cores', and whose
+`AfterMove` is `DitherAnalysis.IsMove` of the frame: the step into it was a move, so the mount
+was probably still settling (R-090, ADR 0057). A frame without a cores' figure, a hand-made
+measurement, is read as stretched. `Tail` takes the trail's axis as the two trailing flags do,
+and `SeriesReport.Reason` words it; `TrailRows` adds its row only when a frame has the flag.
+
+Two passes: the classes that need no session figure (trailing, as above)
 and the session medians (FWHM over the good frames, stars over all), then the flags against
 the session (soft, clouds, background jump against the two neighbours on each side). Before
 the first pass the usual exposure is read (R-085, ADR 0040): the exposures over 0, rounded to
@@ -350,7 +362,7 @@ when unknown.
 tables (R-045), built from `Th` like `RejectedExplanation`, the third one emphasised. FOCUS closes with a
 `verdict` row from the same `Focus` pair the summary uses; before it, when the session's width
 is above `Th.WideStarFwhm`, `FocusRows` adds the `wide stars` row (R-088), which says that the
-moment window reads such stars too narrow (`frame-analysis.md`, step 7) and changes no figure. The console prints `DitherRows`
+detection leaves the brightest of such stars out (`frame-analysis.md`, step 7) and changes no figure. The console prints `DitherRows`
 and never the tables.
 
 The report prints the session header shared with the inventory, then the sections the

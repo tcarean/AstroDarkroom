@@ -28,9 +28,11 @@ namespace LightsCheck.Tests;
 /// One frame of a synthetic series: the shift from the reference, the drawn elongation (1 =
 /// round), the pause before it, and what varies per class: the FWHM, how many of the 40 grid
 /// stars are kept, the factor on the sky background, the exposure when it is not the series',
-/// and whether the frame is drawn turned by 180 degrees, as after a meridian flip.
+/// whether the frame is drawn turned by 180 degrees, as after a meridian flip, and the peak
+/// of a second copy of every star, 7 px below it, as a fraction of the star (0 = none): a
+/// mount that was still settling when the exposure began (R-090).
 /// </summary>
-internal sealed record SeriesFrame(double Dx, double Dy, double Elongation, double PauseSeconds, double Fwhm = 3.0, int StarsKept = 40, double BackgroundFactor = 1.0, double? Exposure = null, bool Turned = false);
+internal sealed record SeriesFrame(double Dx, double Dy, double Elongation, double PauseSeconds, double Fwhm = 3.0, int StarsKept = 40, double BackgroundFactor = 1.0, double? Exposure = null, bool Turned = false, double Copy = 0);
 
 internal sealed class SessionFixture : IDisposable
 {
@@ -142,6 +144,14 @@ internal sealed class SessionFixture : IDisposable
             f.Stars.RemoveRange(frame.StarsKept, f.Stars.Count - frame.StarsKept);
         }
 
+        if (frame.Copy > 0)
+        {
+            for (int i = 0, n = f.Stars.Count; i < n; i++)
+            {
+                f.Stars.Add(SyntheticStar.Round(f.Stars[i].X, f.Stars[i].Y + 7, f.Stars[i].Peak * frame.Copy, frame.Fwhm));
+            }
+        }
+
         Func<int, int, double> px = f.Pixel();
         if (frame.Turned)
         {
@@ -232,12 +242,13 @@ internal sealed class SessionFixture : IDisposable
     ];
 
     /// <summary>
-    /// The thirteen-frame pattern of the classes golden: the dither of <see cref="Pattern"/> with
+    /// The fourteen-frame pattern of the classes golden: the dither of <see cref="Pattern"/> with
     /// one frame of every class and flag, so the report's words for each are pinned: 3 a trail
     /// at the limit, 4 soft, 5 half the stars (clouds), 6 a brighter sky (jump), 7 trailed,
     /// 9 overwritten with junk by the test (unreadable), 11 a 0.2 s exposure (short, bad), 12 a
     /// 137.5 s exposure with the 14 % brighter sky it explains (noted, R-085), 13 a plain frame
-    /// so that 12 has two readable neighbours to judge its sky against.
+    /// so that 12 has two readable neighbours to judge its sky against, 14 right after a move,
+    /// every star with a second copy a third as bright beside a sharp core (a tail, R-090).
     /// </summary>
     internal static readonly SeriesFrame[] ClassesPattern =
     [
@@ -245,6 +256,7 @@ internal sealed class SessionFixture : IDisposable
         new(12, -15, 1.0, 30, StarsKept: 20), new(12.5, -15, 1.0, 1, BackgroundFactor: 1.3), new(40, -15, 2.0, 30), new(40.5, -15.3, 1.0, 1),
         new(41, -15, 1.0, 30), new(41.5, -15.2, 1.0, 1),
         new(80, -15, 1.0, 30, Exposure: 0.2), new(80.5, -15.2, 1.0, 1, BackgroundFactor: 1.14, Exposure: 137.5), new(81, -15, 1.0, 30),
+        new(110, -15, 1.0, 30, Copy: 0.33),
     ];
 
     /// <summary>How many warm and hot pixels <see cref="SensorPattern"/> puts on a light, and how high above the 40 ADU noise.</summary>

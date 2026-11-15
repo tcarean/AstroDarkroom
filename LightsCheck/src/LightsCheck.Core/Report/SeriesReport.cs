@@ -260,7 +260,8 @@ internal static class SeriesReport
 
     /// <summary>
     /// What the Rejected tab says under its heading, one paragraph per line, in plain words
-    /// (R-081): the elongation, where the marginal frames are, the trail and its axis, in bold
+    /// (R-081): the elongation, where the marginal frames are, the tail or second copy that keeps
+    /// a frame marginal (R-090), the trail and its axis, in bold
     /// what each axis points to (R-035, R-036), and which exposure leaves the stack (R-085).
     /// Built when read, in the language of that moment.
     /// </summary>
@@ -269,6 +270,7 @@ internal static class SeriesReport
     [
         new($"Alungirea spune de cate ori sunt stelele unui cadru mai lungi decat late, in medie (1 = rotunde). De la {RunReport.F(Th.ElongationBad, 2)} cadrul e slab si iese din stiva.", false),
         new($"Intre {RunReport.F(Th.ElongationMarginal, 2)} si {RunReport.F(Th.ElongationBad, 2)} cadrul e la limita si ramane in stiva, daca nu hotarasti altfel. Cadrele la limita sunt pe randul 'la limita' din CADRE MISCATE, pe tabul Rezumat, iar pe tabul Cadre au clasa galbena.", false),
+        new("Un cadru in care stelele au o dara sau o a doua copie langa un miez bun e la limita, oricat de mare i-ar fi alungirea: doar o parte mica din lumina fiecarei stele e in afara locului ei, iar la stivuire respingerea (rejection) o scoate la cele mai multe stele. Cand cadrul vine imediat dupa o miscare a monturii, motivul o spune: montura probabil inca se aseza cand a inceput expunerea, iar o pauza mai lunga dupa dithering evita dara.", false),
         new("Dara e directia in care s-au intins stelele in timpul expunerii, data ca unghi fata de orizontala imaginii. Cand se stie care axa a imaginii e RA si stelele cadrului s-au intins toate cam in aceeasi directie, motivul spune si pe ce axa a monturii cade dara.", false),
         new("O dara pe RA vine de la urmarire: eroarea periodica a monturii, o viteza de urmarire gresita sau jocul din angrenaje (backlash) pe RA. O dara pe DEC vine de la alinierea polara, de la vant sau de la o atingere a monturii. Una oblica vine de la amandoua sau de la o lovitura.", true),
         new($"Un cadru expus sub {ShortFractionWord} din timpul obisnuit e slab si iese din stiva: aduce aproape deloc semnal, iar Siril ar trebui sa-i intinda zgomotul pana la nivelul celorlalte. Un cadru cu alta expunere, mai lunga sau putin mai scurta, ramane: Siril egalizeaza nivelurile la stivuire, iar motivul doar o noteaza.", false),
@@ -277,6 +279,7 @@ internal static class SeriesReport
     [
         new($"The elongation says how many times longer than wide the stars of a frame are, on average (1 = round). From {RunReport.F(Th.ElongationBad, 2)} the frame is bad and leaves the stack.", false),
         new($"Between {RunReport.F(Th.ElongationMarginal, 2)} and {RunReport.F(Th.ElongationBad, 2)} the frame is marginal and stays in the stack unless you decide otherwise. The marginal frames are on the 'marginal' row of TRAILED FRAMES, on the Summary tab, and on the Frames tab their class is yellow.", false),
+        new("A frame whose stars have a tail or a second copy beside a sharp core is marginal whatever its elongation: only a small part of each star's light is out of place, and stacking with rejection removes it on most stars. When the frame comes right after a move of the mount, the reason says so: the mount was probably still settling when the exposure began, and a longer wait after dithering avoids the tail.", false),
         new("The trail is the direction the stars were stretched in during the exposure, given as an angle to the image's horizontal. When it is known which image axis is RA and the frame's stars were all stretched about the same way, the reason also says which mount axis the trail falls on.", false),
         new("A trail on RA comes from the tracking: the mount's periodic error, a wrong tracking rate or the play in the gears (backlash) on RA. A trail on DEC comes from the polar alignment, the wind or a touch on the mount. An oblique one comes from both, or from a knock.", true),
         new($"A frame exposed under {ShortFractionWord} the usual time is bad and leaves the stack: it brings almost no signal, and Siril would have to stretch its noise up to the others' level. A frame with another exposure, longer or a little shorter, stays in: Siril evens the levels out when stacking, and the reason only notes it.", false),
@@ -378,8 +381,8 @@ internal static class SeriesReport
     /// <summary>
     /// The FOCUS section, in plain words (R-078): the stars' width on the good frames, the first
     /// against the last good frames and whether the focus held, the width in three zones, on a
-    /// session of stars wider than <see cref="Th.WideStarFwhm"/> that such stars are read narrower
-    /// than they are (R-088), and the verdict.
+    /// session of stars wider than <see cref="Th.WideStarFwhm"/> that the brightest of them are
+    /// left out (R-088), and the verdict.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>The four rows, five on a session of wide stars, in the console's order.</returns>
@@ -396,15 +399,14 @@ internal static class SeriesReport
             new(T($"first / last {s.Fwhm.Count.ToString(Inv)} good frames", $"primele / ultimele {RoCount(s.Fwhm.Count)}cadre bune"), $"{Opt(s.Fwhm.First, 2)} px / {Opt(s.Fwhm.Last, 2)} px{ChangeWord(s.Fwhm)}: {held}"),
             new(T("in the centre / in the middle / at the edge", "in centru / la mijloc / la margine"), T($"the stars' width {ZoneMedians(r)} {average}", $"latimea stelelor {ZoneMedians(r)} {average}")),
         ];
-        // Stars this wide are read narrower than they are, by the window the width is taken in
-        // (R-088, ADR 0052): the frames' widths sit closer together than the stars', and so does
-        // a soft frame to the session.
+        // The brightest stars of a session this wide pass the detection's limit of area and are
+        // left out (R-088, ADR 0056): the figures rest on fewer and fainter stars.
         if (s.SessionFwhm is double width && width > Th.WideStarFwhm)
         {
             string limit = Th.WideStarFwhm.ToString("0.#", Inv);
             rows.Add(new(T("wide stars", "stele late"), T(
-                $"the stars are wider than {limit} px; LightsCheck reads such stars narrower than they are, so a frame slightly out of focus can pass as good",
-                $"stelele sunt mai late de {limit} px; LightsCheck citeste astfel de stele mai inguste decat sunt, asa ca un cadru usor defocalizat poate trece drept bun")));
+                $"the stars are wider than {limit} px; LightsCheck leaves the brightest of such stars out, so its figures rest on fewer and fainter stars",
+                $"stelele sunt mai late de {limit} px; LightsCheck lasa deoparte cele mai stralucitoare dintre ele, asa ca cifrele se sprijina pe stele mai putine si mai slabe")));
         }
 
         rows.Add(new("verdict", ft, fv));
@@ -526,7 +528,10 @@ internal static class SeriesReport
     /// falls on.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
-    /// <returns>The three rows, in the console's order.</returns>
+    /// <returns>
+    /// The three rows, four when a frame has a tail or a second copy beside a sharp core (R-090),
+    /// in the console's order.
+    /// </returns>
     internal static IReadOnlyList<ReportRow> TrailRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -535,12 +540,22 @@ internal static class SeriesReport
         string direction = s.TrailAngleDeg is double ta
             ? T(RunReport.F(ta, 0) + " degrees from the horizontal, on the bad frames", RoCount(RunReport.F(ta, 0)) + "grade fata de orizontala, pe cadrele slabe") + (s.TrailOn == TrailAxis.Unknown ? "" : T(", that is ", ", adica ") + AxisWord(s.TrailOn))
             : T("not known (too few bad frames with trails in the same direction)", "nu se stie (prea putine cadre slabe cu dare in aceeasi directie)");
-        return
+        List<ReportRow> rows =
         [
             new(T($"bad (elongation of at least {bad})", $"slabe (alungire de cel putin {bad})"), List(r, FlagKind.Trailed)),
             new(T($"marginal (elongation between {marginal} and {bad})", $"la limita (alungire intre {marginal} si {bad})"), List(r, FrameClass.Marginal)),
-            new(T("trail direction", "directia darelor"), $"{direction}; {AxisLine(s)}"),
         ];
+        // The frames whose elongation is a tail or a second copy beside a sharp core (R-090):
+        // marginal whatever they read, so they get a row of their own, which says why.
+        if (s.Flags.Any(fl => fl.Any(f => f.Kind == FlagKind.Tail)))
+        {
+            rows.Add(new(T("tail or double", "dara sau dublura"), List(r, FlagKind.Tail) + T(
+                " (the star's core is sharp; a stack with rejection repairs most of them)",
+                " (miezul stelei e bun; stiva cu respingere le repara pe cele mai multe)")));
+        }
+
+        rows.Add(new(T("trail direction", "directia darelor"), $"{direction}; {AxisLine(s)}"));
+        return rows;
     }
 
     /// <summary>
@@ -1361,6 +1376,12 @@ internal static class SeriesReport
         {
             FlagKind.Trailed => T($"elongation {RunReport.F(f.Value, 2)} (from {RunReport.F(f.Threshold, 2)} the frame is bad){TrailSuffix(f)}", $"alungire {RunReport.F(f.Value, 2)} (de la {RunReport.F(f.Threshold, 2)} cadrul e slab){TrailSuffix(f)}"),
             FlagKind.MarginalTrail => T($"elongation {RunReport.F(f.Value, 2)} (from {RunReport.F(f.Threshold, 2)} the frame is marginal){TrailSuffix(f)}", $"alungire {RunReport.F(f.Value, 2)} (de la {RunReport.F(f.Threshold, 2)} cadrul e la limita){TrailSuffix(f)}"),
+            FlagKind.Tail => T(
+                $"the stars have a tail or a second copy: elongation {RunReport.F(f.Value, 2)} with it, {RunReport.F(f.Threshold, 2)} without it; stacking with rejection removes it on most stars, so the frame stays in the stack{TrailSuffix(f)}",
+                $"stelele au o dara sau o a doua copie: alungire {RunReport.F(f.Value, 2)} cu ea, {RunReport.F(f.Threshold, 2)} fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca cadrul ramane in stiva{TrailSuffix(f)}")
+                + (f.AfterMove ? T(
+                    "; the frame comes right after a move of the mount, which was probably still settling when the exposure began",
+                    "; cadrul vine imediat dupa o miscare a monturii, care probabil inca se aseza cand a inceput expunerea") : ""),
             FlagKind.Soft => T($"wide stars: width (FWHM) {RunReport.F(f.Value, 2)} px, over {RunReport.F(f.Threshold, 2)}, that is {RunReport.F(Th.SoftFwhmFactor, 1)} times the session's average width", $"stele late: latimea (FWHM) {RunReport.F(f.Value, 2)} px, peste {RunReport.F(f.Threshold, 2)}, adica de {RunReport.F(Th.SoftFwhmFactor, 1)} ori latimea medie din sesiune"),
             FlagKind.Clouds => T($"too few stars: {RunReport.F(f.Value, 0)}, under {RunReport.F(f.Threshold, 0)} ({RunReport.F(100 * Th.CloudStarFraction, 0)} % of a frame's average count): clouds or haze", $"prea putine stele: {RunReport.F(f.Value, 0)}, sub {RunReport.F(f.Threshold, 0)} ({RunReport.F(100 * Th.CloudStarFraction, 0)} % din cate are in medie un cadru): nori sau ceata"),
             FlagKind.BackgroundJump => T($"the sky background jumps by {Signed(f.Value, 0)} % against the neighbouring frames (flagged from {RunReport.F(f.Threshold, 0)} %)", $"fondul cerului sare cu {Signed(f.Value, 0)} % fata de cadrele vecine (se semnaleaza de la {RunReport.F(f.Threshold, 0)} %)") + ExposureSuffix(f),

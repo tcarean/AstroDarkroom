@@ -128,6 +128,28 @@ task; whether the change seems to warrant a version bump (the owner's call). The
 8. **`/wrap-up`**, a subagent's review of the branch and one of the fix commit, then the merge
    is proposed and asked. No merge and no push without the owner's word.
 
+## What stage 1 measured, and the owner's answers (2026-11-15)
+
+The figures are in ADR 0056 (the estimators) and ADR 0057 (the classes); the harness stayed in
+the session's scratchpad. In short: the moments in the fixed circle were wrong below 4 px too
+(the same star reads wider when it is fainter); adaptive moments and a Gaussian fit read 2 to
+15 px within 1 % at every brightness; both follow one core of a doubled star, so the whole
+star is read as well, from its pixels above the local noise in a circle of 2.4 core widths.
+
+1. The estimator: the combined one (the core by adaptive moments, the whole star by its pixels
+   above the noise), as recommended. "merg pe recomandarile tale".
+2. The limits 1.45 and 1.73, which keep the classes of `Veil/2026-10-06-3h`. Same answer.
+3. The limit of area (`Th.MaxStarArea`) is a task of its own; the `wide stars` row stays,
+   reworded, from 7 px. Same answer.
+4. The owner then asked whether the 11 frames of `Veil/2026-11-06` the limits make bad should
+   leave the stack. Measured: no (ADR 0057). A frame with a tail or a second copy beside a sharp
+   core is therefore marginal, never bad: "punele la limita, si explica ca pe majoritatea stiva
+   le repara. Daca stii ca ii probabil sa fie de la cum s-a asezat montura dupa dithering, spune
+   si asta".
+5. The new texts (the reason, the `tail or double` row, the paragraph of the Rejected tab),
+   shown in both languages and approved as shown; frame 4 of `Veil/2026-11-06`, whose core is
+   itself stretched, stays bad.
+
 ## Verification
 
 - Stage 1: the harness reproduces today's readings first (clean Gaussians 3.00 / 3.98 / 4.82 /

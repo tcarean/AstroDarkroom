@@ -116,10 +116,10 @@ minutes. The report's sections:
   against the read noise of the biases, dew, the trailed frames, the dithering, the polar
   alignment, and how many frames to leave out of the stack and how much exposure stays.
 - **FOCUS**: the stars' width (FWHM) on the good frames, at the start and at the end of the night
-  and in three zones (centre, middle, edge), and the verdict. The width is read as it is up to
-  about 4 px and too narrow above (stars 7 px wide read about 6). When the session's stars are
-  wider than 4.5 px a `wide stars` row says so: the frames then read closer to one another than
-  they are, and a frame slightly out of focus can pass as good.
+  and in three zones (centre, middle, edge), and the verdict. A star is read at its width
+  whatever that is in pixels, so the figure holds at any focal length and pixel size. When the
+  session's stars are wider than 7 px a `wide stars` row says that the brightest of them are left
+  out, so the figures rest on fewer and fainter stars.
 - **EXPOSURE AND NOISE**: the sky background, the read noise of each channel (the noise the sensor
   adds to every frame), and on the first, the middle and the last frame (one too short to stack
   is skipped) the shot/read ratio of each
@@ -127,8 +127,12 @@ minutes. The report's sections:
   noise, and longer exposures would help.
 - **DEW**: the light around the bright stars (the halo) and the star count at the start and at the
   end, and the verdict.
-- **TRAILED FRAMES**: the bad frames (an elongation of 1.60 or more) and the marginal ones (1.35
-  to 1.60), the direction of the trails and which image axis is RA. When the RA axis is known and
+- **TRAILED FRAMES**: the bad frames (an elongation of 1.73 or more) and the marginal ones (1.45
+  to 1.73), the direction of the trails and which image axis is RA. A frame whose stars have a
+  tail or a second copy beside a sharp core is marginal whatever its elongation, on a
+  `tail or double` row of its own: a stack with rejection repairs most such stars, and when the
+  frame comes right after a move of the mount its reason says the mount was probably still
+  settling when the exposure began. When the RA axis is known and
   a frame's stars agree on their direction (above 0.8, where 1 is all the same way), the reason of
   a trailed frame names the mount axis its trail falls on:
   - `trail on RA (-90 degrees)`: the tracking (periodic error, rate, backlash on RA);
@@ -320,10 +324,10 @@ you moved the mount. The time comes from the EXIF of a raw (the camera's clock) 
     size               : 6016 x 4016 px; scale 150 .. 4095 ADU (libraw (exact))
     CFA levels         : R 25 (saturated 63, min -3)  G1 120 (saturated 414, min 1)  G2 120 (saturated 416, min 13)  B 138 (saturated 404, min 11)  [ADU above black]
     green background   : median 120, centre 165, corners 76 .. 86 (tiles 71 .. 171); noise sigma 13.1
-    stars              : 15132 detected, 2104 bright, 357 saturated; 398 measured
-    FWHM               : 3.06 px median (p90 3.64); centre 3.15 (95), middle 3.08 (202), edge 2.90 (101)
-    elongation         : 1.15 median (p90 1.39); 14 % above 1.3; angle 86 degrees, coherence 0.36; centre 1.11 (95), edge 1.14 (101)
-    halo               : 0.019 (ring 5-10 px / core 3 px, over the 40 brightest stars)
+    stars              : 15132 detected, 2104 bright, 357 saturated; 394 measured
+    FWHM               : 2.51 px median (p90 2.96); centre 2.56 (92), middle 2.54 (202), edge 2.43 (100)
+    elongation         : 1.17 median (p90 1.44); 20 % above 1.3; angle 84 degrees, coherence 0.43; centre 1.14 (92), edge 1.16 (100)
+    halo               : 0.021 (ring 5-10 px / core 3 px, over the 40 brightest stars)
     trails             : 0
     registration       : 600 stars kept
 ```
@@ -370,7 +374,7 @@ The analysis starts by itself, the same as `lightscheck <folder>`, with a progre
   the step and the mount's move), the distance to the nearest other frame, and on the right the
   DITHERING card: its rows, its tables (how often, how far, direction, how close the frames are at
   each distance, the runs) and the explanation of walking noise.
-- **Quality**: the stars' width (FWHM), how elongated they are (with the yellow 1.35 and red 1.6
+- **Quality**: the stars' width (FWHM), how elongated they are (with the yellow 1.45 and red 1.73
   lines), the stars found and the sky background, frame by frame, each chart with a line on what
   moves it; above them, a line says that each point is a frame and that on the first two charts
   its colour is the frame's class.

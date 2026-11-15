@@ -59,6 +59,7 @@ internal enum FlagKind
     ShortExposure,
     OtherExposure,
     AfterFlip,
+    Tail,
 }
 
 /// <summary>
@@ -74,6 +75,7 @@ internal enum FlagKind
 /// </param>
 /// <param name="Threshold">
 /// The threshold <paramref name="Value"/> was judged against, in its units; 0 where none applies.
+/// For a tail flag, the median elongation of the cores, which the whole star's is read against.
 /// </param>
 /// <param name="Detail">
 /// For a trailing flag the stars' angle in whole degrees, null without one; for an unreadable frame
@@ -84,7 +86,12 @@ internal enum FlagKind
 /// For a trailing flag, the mount axis the trail runs along; unknown otherwise or without an RA
 /// axis.
 /// </param>
-internal sealed record FrameFlag(FlagKind Kind, double Value, double Threshold, string? Detail = null, TrailAxis On = TrailAxis.Unknown)
+/// <param name="AfterMove">
+/// For a tail flag, whether the frame comes right after a move of the mount (the step into it is
+/// a move of the dithering analysis), which was then probably still settling when the exposure
+/// began (R-090); false otherwise.
+/// </param>
+internal sealed record FrameFlag(FlagKind Kind, double Value, double Threshold, string? Detail = null, TrailAxis On = TrailAxis.Unknown, bool AfterMove = false)
 {
     /// <summary>
     /// The <see cref="Detail"/> of a background jump that the frame's own exposure predicts, so
@@ -509,7 +516,17 @@ internal static class SeriesAnalyzer
 
             double el = m.ElongationMedian ?? 1;
             string? angle = m.AngleDeg is double a ? a.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) : null;
-            if (el >= Th.ElongationBad)
+            // A tail or a second copy beside a sharp core (R-090): the whole star reads well
+            // more elongated than its core, and the core alone would not make the frame bad. A
+            // stack with rejection removes it, so the frame is marginal whatever it reads. A
+            // frame too short to stack leaves it anyway: it keeps the plain elongation flag.
+            double coreEl = m.CoreElongationMedian ?? el;
+            if (!shortExposure[i] && el >= Th.ElongationMarginal && coreEl < Th.ElongationBad && el >= Th.TailCoreRatio * coreEl)
+            {
+                classes[i] = FrameClass.Marginal;
+                flags[i].Add(new FrameFlag(FlagKind.Tail, el, coreEl, angle, AfterMove: dither.IsMove[i]));
+            }
+            else if (el >= Th.ElongationBad)
             {
                 classes[i] = FrameClass.Bad;
                 flags[i].Add(new FrameFlag(FlagKind.Trailed, el, Th.ElongationBad, angle));
@@ -704,7 +721,7 @@ internal static class SeriesAnalyzer
                 {
                     for (int k = 0; k < flags[i].Count; k++)
                     {
-                        if (flags[i][k].Kind is FlagKind.Trailed or FlagKind.MarginalTrail)
+                        if (flags[i][k].Kind is FlagKind.Trailed or FlagKind.MarginalTrail or FlagKind.Tail)
                         {
                             flags[i][k] = flags[i][k] with { On = TrailAxisOf(fa, ra) };
                         }

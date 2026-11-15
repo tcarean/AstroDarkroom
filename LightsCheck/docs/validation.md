@@ -101,6 +101,51 @@ drift instead of editing the figures.
 
 ## History
 
+- 2026-11-15: the stars' shapes are measured by adaptive moments and by the pixels above the
+  noise (R-014, ADR 0056), a frame is bad from an elongation of 1.73 and marginal from 1.45,
+  and a frame with a tail or a second copy beside a sharp core is marginal (R-090, ADR 0057).
+  All 14 cases run with `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Failed: 9, Passed:
+  5, Skipped: 0, Total: 14, Duration: 8 m 11 s`. V-001, V-009, V-010, V-011 and V-012 pass
+  (V-009 with the five tail frames of the Veil session of 2026-10-06 among its marginal ones,
+  their trails on RA). The nine others stop at their first shape figure, as the change means
+  them to: `fwhm: expected 3.85 +- 0.05, measured 4.118` (V-002), `3.06, measured 2.513`
+  (V-003), `4.92, measured 2.842` (V-004), `4.88, measured 3.039` (V-005), `3.03, measured
+  2.476` (V-006), `3.06, measured 2.477` (V-007), `Expected: 17, Actual: 22` on the marginal
+  count of V-008, `sessionFwhm: expected 4.17 +- 0.05, measured 3.993` (V-013), `Expected: 80,
+  Actual: 64` on the good count of V-014. A case stops at its first difference, so the
+  figures below are read from the console's runs of the same build on the three sessions and
+  on the six frames, recorded to measured:
+  - V-002 (frame 1): FWHM 3.85 to 4.12, its 90th percentile 4.17 to 4.42, elongation 1.68 to
+    1.78, the share elongated 0.98 to 0.97, the angle 83 to 84, its coherence 0.94 to 0.88,
+    the halo 0.035 to 0.033, the centre FWHM 3.90 to 4.23, the edge 3.74 to 3.93.
+  - V-003 (frame 4): 3.06 to 2.51, 3.64 to 2.96, 1.15 to 1.17, 0.14 to 0.20, 86 to 84, 0.36 to
+    0.43, 0.019 to 0.021, 3.15 to 2.56, 2.90 to 2.43.
+  - V-004 (frame 17, doubled stars): 4.92 to 2.84, 5.58 to 7.51, 2.29 to 2.49, 0.99 to 0.97,
+    -89 as recorded, 0.98 to 0.94, 0.387 to 0.467, 4.90 to 2.75, 4.92 to 2.66.
+  - V-005 (frame 23, doubled stars): 4.88 to 3.04, 5.24 to 5.60, 2.23 to 2.57, 0.98, -87 and
+    0.98 as recorded, 0.182 to 0.307, 4.93 to 3.12, 4.78 to 2.89.
+  - V-006 (frame 72): 3.03 to 2.48, 3.64 to 2.94, 1.16 to 1.18, 0.15 to 0.21, -76 to -75, 0.46
+    to 0.51, 0.012 to 0.014, 3.10 to 2.53, 2.88 to 2.40.
+  - V-007 (frame 83): 3.06 to 2.48, 3.58 to 2.95, 1.13 to 1.15, 0.13 to 0.15, -87 to -82, 0.17
+    to 0.22, -0.006 to -0.007, 3.12 to 2.54, 2.92 to 2.37.
+  - V-008 (`Veil/2026-10-06-3h`): 48 good as recorded, marginal 17 to 22, bad 22 to 17: frames
+    17, 22, 23, 54 and 60, whose stars the mount's jumps doubled, leave the bad list for the
+    `tail or double` row; the session FWHM 3.12 to 2.64. The report prints every other figure
+    as recorded: 87 registered, 41 moves, 47 pauses, 9 without a move, 38 and 25 spots, 1
+    alone, the run of 10, 13.29 px, 8.5', -0.20 / -0.73 px/min over 36 pairs, the swamping of R
+    9.4, RA along Y, the focus held, no dew, 1.52 px per exposure, 13.7 px, 53 frames,
+    `Insufficient`, 4.6' to 6.7', 0.45 px, `Ok`, 30 darks, the pattern 1.3 / 2.1 / 2.1 / 2.2
+    ADU and 4 hot pixels per megapixel, 1.6 %.
+  - V-013 (Smida): 32 good as recorded; the session FWHM 4.17 to 3.99; **the focus held, true
+    to false**: the width goes from 4.24 px over the first ten frames to 3.79 px over the last
+    ten, -10.4 %, at the 10 % of `Th.FocusHeldFraction`, where the old figure read 4.34 to
+    4.04, -7 %. The pattern stays refused, now within 12 px (three widths). The rest as
+    recorded.
+  - V-014 (`Veil/2026-11-06`): good 80 to 64, marginal 2 to 17, bad 0 to 1. The bad one is
+    frame 4, whose core is itself stretched; 16 of the marginal ones are on the `tail or double`
+    row (1, 11, 23, 25, 32, 36, 39, 46, 48, 53, 56, 59, 66, 69, 72, 77) and frame 81 is
+    marginal by its elongation. The session FWHM 4.70 to 4.69. The rest as recorded.
+  The recorded figures of `validation.json` are **not changed here; the owner decides**.
 - 2026-11-14, after the fixes of CR-006 to CR-010 of the review (ADRs 0051 to 0054): all 14
   cases re-run (19.8 min) and passing, no recorded figure changed. One formula changed, the
   share of the noise taken out of the fixed pattern's strength (ADR 0051), and the strength

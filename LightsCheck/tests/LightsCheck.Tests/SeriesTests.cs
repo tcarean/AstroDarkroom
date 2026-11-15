@@ -106,29 +106,29 @@ public class SeriesTests
     }
 
     /// <summary>
-    /// Three frames whose stars are drawn 7 px wide read about 5.9 px, above the 4.5 px from
-    /// which the report says so: FOCUS says, before its verdict, in the console and in the
-    /// window's rows, that such stars are read narrower than they are, in plain words (R-088).
+    /// Three frames whose stars are drawn 8 px wide read about 8 px, above the 7 px from which
+    /// the brightest stars pass the limit of area and are left out: FOCUS says so before its
+    /// verdict, in the console and in the rows of the window, in plain words (R-088).
     /// </summary>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void R088_ASessionOfWideStarsSaysTheyAreReadNarrowerThanTheyAre(bool english)
+    public void R088_ASessionOfWideStarsSaysTheBrightestAreLeftOut(bool english)
     {
         using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
-        SeriesFrame[] frames = [new(0, 0, 1.0, 0, Fwhm: 7.0), new(0.5, 0.2, 1.0, 1, Fwhm: 7.0), new(12, 0, 1.0, 30, Fwhm: 7.0)];
+        SeriesFrame[] frames = [new(0, 0, 1.0, 0, Fwhm: 8.0), new(0.5, 0.2, 1.0, 1, Fwhm: 8.0), new(12, 0, 1.0, 30, Fwhm: 8.0)];
         using SessionFixture f = new SessionFixture().WithStarSeries(frames);
         SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
 
-        Assert.InRange(r.Series.SessionFwhm!.Value, 5.5, 6.3);
+        Assert.InRange(r.Series.SessionFwhm!.Value, 7.8, 8.4);
         IReadOnlyList<ReportRow> rows = SeriesReport.FocusRows(r);
         Assert.Equal(5, rows.Count);
         Assert.Equal("verdict", rows[^1].Label);
         Assert.Equal(english ? "wide stars" : "stele late", rows[^2].Label);
         Assert.Equal(
             english
-                ? "the stars are wider than 4.5 px; LightsCheck reads such stars narrower than they are, so a frame slightly out of focus can pass as good"
-                : "stelele sunt mai late de 4.5 px; LightsCheck citeste astfel de stele mai inguste decat sunt, asa ca un cadru usor defocalizat poate trece drept bun",
+                ? "the stars are wider than 7 px; LightsCheck leaves the brightest of such stars out, so its figures rest on fewer and fainter stars"
+                : "stelele sunt mai late de 7 px; LightsCheck lasa deoparte cele mai stralucitoare dintre ele, asa ca cifrele se sprijina pe stele mai putine si mai slabe",
             rows[^2].Value);
         PlainWords.AssertPlain(rows[^2].Label + " " + rows[^2].Value, "the wide stars row of FOCUS");
         using StringWriter sw = new();
@@ -137,23 +137,74 @@ public class SeriesTests
     }
 
     /// <summary>
-    /// The row stands from a reading of 4.5 px, not from the 5 px it was first written for: a
-    /// session that reads between the two, where a frame is flagged as soft only from about
-    /// 1.6 times the session's width, has it (R-088, ADR 0052).
+    /// Stars 4.9 px wide are read at their width, where the moments of the first versions read
+    /// them 4.7 px and the row stood from 4.5: the session has no row (R-088, ADR 0056).
     /// </summary>
     [Fact]
-    public void R088_ASessionThatReadsBetweenFourAndAHalfAndFivePixelsHasTheRow()
+    public void R088_ASessionOfStarsFivePixelsWideIsReadAtItsWidthAndHasNoRow()
     {
         using IDisposable _ = Ui.Use(UiLanguage.English);
         SeriesFrame[] frames = [new(0, 0, 1.0, 0, Fwhm: 4.9), new(0.5, 0.2, 1.0, 1, Fwhm: 4.9), new(12, 0, 1.0, 30, Fwhm: 4.9)];
         using SessionFixture f = new SessionFixture().WithStarSeries(frames);
         SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
 
-        Assert.InRange(r.Series.SessionFwhm!.Value, 4.55, 4.95);
-        Assert.Contains(SeriesReport.FocusRows(r), row => row.Label == "wide stars");
+        Assert.InRange(r.Series.SessionFwhm!.Value, 4.85, 5.2);
+        Assert.DoesNotContain(SeriesReport.FocusRows(r), row => row.Label == "wide stars");
     }
 
-    /// <summary>A session whose stars read 4.5 px wide or under has no such row (R-088).</summary>
+    /// <summary>
+    /// A frame whose stars carry a second copy a third as bright beside a sharp core, the last of
+    /// the classes pattern, right after a move: marginal with the tail flag, its reason in plain
+    /// words with the move, a row of its own in TRAILED FRAMES and a paragraph in the explanation
+    /// of the Rejected tab (R-090).
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R090_AFrameWithATailBesideASharpCoreIsMarginalAndSaysTheStackRepairsIt(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        SeriesAnalysis s = r.Series;
+
+        Assert.Equal(FrameClass.Marginal, s.Classes[13]);
+        FrameFlag flag = Assert.Single(s.Flags[13]);
+        Assert.Equal(FlagKind.Tail, flag.Kind);
+        Assert.True(flag.AfterMove);
+        Assert.True(flag.Value >= Th.ElongationBad, $"whole-star elongation {flag.Value}");
+        Assert.InRange(flag.Threshold, 1.0, 1.3);
+        Assert.InRange(r.Frames[13].Measurement!.FwhmMedian!.Value, 2.9, 3.6);
+
+        string reason = SeriesReport.Reason(flag);
+        Assert.StartsWith(english ? "the stars have a tail or a second copy: elongation " : "stelele au o dara sau o a doua copie: alungire ", reason, StringComparison.Ordinal);
+        Assert.Contains(english ? "stacking with rejection removes it on most stars, so the frame stays in the stack" : "la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca cadrul ramane in stiva", reason, StringComparison.Ordinal);
+        Assert.EndsWith(english ? "; the frame comes right after a move of the mount, which was probably still settling when the exposure began" : "; cadrul vine imediat dupa o miscare a monturii, care probabil inca se aseza cand a inceput expunerea", reason, StringComparison.Ordinal);
+        PlainWords.AssertPlain(reason, "the reason of a tail");
+
+        IReadOnlyList<ReportRow> rows = SeriesReport.TrailRows(r);
+        Assert.Equal(4, rows.Count);
+        Assert.Equal(english ? "tail or double" : "dara sau dublura", rows[2].Label);
+        Assert.Equal(english ? "14 (the star's core is sharp; a stack with rejection repairs most of them)" : "14 (miezul stelei e bun; stiva cu respingere le repara pe cele mai multe)", rows[2].Value);
+        Assert.DoesNotContain("14", rows[0].Value, StringComparison.Ordinal);
+        PlainWords.AssertPlain(rows[2].Label + " " + rows[2].Value, "the tail row of TRAILED FRAMES");
+
+        IReadOnlyList<ReportParagraph> why = SeriesReport.RejectedExplanation;
+        Assert.Equal(6, why.Count);
+        Assert.StartsWith(english ? "A frame whose stars have a tail or a second copy beside a sharp core is marginal whatever its elongation" : "Un cadru in care stelele au o dara sau o a doua copie langa un miez bun e la limita, oricat de mare i-ar fi alungirea", why[2].Text, StringComparison.Ordinal);
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        Assert.Contains(rows[2].Value, sw.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>The pattern session, none of whose frames has a tail, keeps the three rows (R-090).</summary>
+    [Fact]
+    public void R090_ASessionWithoutATailHasNoTailRow()
+    {
+        Assert.Equal(3, SeriesReport.TrailRows(RunPattern()).Count);
+    }
+
+    /// <summary>A session whose stars read 7 px wide or under has no such row (R-088).</summary>
     [Fact]
     public void R088_ASessionOfOrdinaryStarsHasNoWideStarsRow()
     {
@@ -249,8 +300,9 @@ public class SeriesTests
 
         Assert.True(r.HasErrors);
         Assert.Equal(
-            [FrameClass.Good, FrameClass.Good, FrameClass.Marginal, FrameClass.Marginal, FrameClass.Marginal, FrameClass.Good, FrameClass.Bad, FrameClass.Good, FrameClass.Unknown, FrameClass.Good, FrameClass.Bad, FrameClass.Good, FrameClass.Good],
+            [FrameClass.Good, FrameClass.Good, FrameClass.Marginal, FrameClass.Marginal, FrameClass.Marginal, FrameClass.Good, FrameClass.Bad, FrameClass.Good, FrameClass.Unknown, FrameClass.Good, FrameClass.Bad, FrameClass.Good, FrameClass.Good, FrameClass.Marginal],
             s.Classes);
+        Assert.Equal(FlagKind.Tail, Assert.Single(s.Flags[13]).Kind);   // a second copy beside a sharp core, right after a move (R-090)
         Assert.Equal(FlagKind.MarginalTrail, Assert.Single(s.Flags[2]).Kind);
         Assert.InRange(s.Flags[2][0].Value, Th.ElongationMarginal, Th.ElongationBad);
         Assert.Equal(FlagKind.Soft, Assert.Single(s.Flags[3]).Kind);
@@ -266,7 +318,7 @@ public class SeriesTests
         Assert.Equal([FlagKind.OtherExposure, FlagKind.BackgroundJump], s.Flags[11].Select(x => x.Kind));   // 137.5 s, and the +14 % jump it explains
         Assert.Equal(FrameFlag.ExposureDetail, s.Flags[11][1].Detail);
         Assert.Equal(7, s.GoodCount);
-        Assert.Equal(3, s.MarginalCount);
+        Assert.Equal(4, s.MarginalCount);   // frames 3, 4, 5 and the tail of 14
         Assert.Equal(2, s.BadCount);
         Assert.Equal(1, s.UnknownCount);
     }
@@ -306,7 +358,7 @@ public class SeriesTests
         Assert.Equal(6, s.GoodCount);
         FrameFlag flag = Assert.Single(s.Flags[2]);
         Assert.Equal(FlagKind.Trailed, flag.Kind);
-        Assert.InRange(flag.Value, 1.6, 2.2);
+        Assert.InRange(flag.Value, Th.ElongationBad, 2.2);
         Assert.Equal(Th.ElongationBad, flag.Threshold);
         Assert.Empty(s.Flags[0]);
     }
@@ -533,7 +585,7 @@ public class SeriesTests
 
         if (!english)
         {
-            Assert.Contains("    verdict            : BUN - latimea stelelor (FWHM) e in medie 3.25 px = 19.4\" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (-0 %): focusul a tinut toata sesiunea", patternSummary, StringComparison.Ordinal);
+            Assert.Contains("    verdict            : BUN - latimea stelelor (FWHM) e in medie 3.22 px = 19.3\" pe cadrele bune; 3.22 px la inceput si 3.22 px la sfarsit (+0 %): focusul a tinut toata sesiunea", patternSummary, StringComparison.Ordinal);
         }
     }
 
@@ -551,8 +603,10 @@ public class SeriesTests
         FrameFlag[] flags =
         [
             new(FlagKind.Trailed, 1.76, Th.ElongationBad, "-90", TrailAxis.Ra),
-            new(FlagKind.MarginalTrail, 1.40, Th.ElongationMarginal, "-85", TrailAxis.Dec),
-            new(FlagKind.Trailed, 1.70, Th.ElongationBad, "88"),
+            new(FlagKind.MarginalTrail, 1.50, Th.ElongationMarginal, "-85", TrailAxis.Dec),
+            new(FlagKind.Trailed, 1.80, Th.ElongationBad, "88"),
+            new(FlagKind.Tail, 1.83, 1.21, "88", TrailAxis.Ra, AfterMove: true),
+            new(FlagKind.Tail, 1.95, 1.30, "-80"),
             new(FlagKind.Soft, 4.5, 4.06),
             new(FlagKind.Clouds, 400, 600),
             new(FlagKind.BackgroundJump, 25, Th.BackgroundJumpPct),
@@ -582,9 +636,9 @@ public class SeriesTests
 
         if (!english)
         {
-            Assert.Equal("alungire 1.76 (de la 1.60 cadrul e slab), dara pe RA (-90 de grade)", SeriesReport.Reason(flags[0]));
-            Assert.Equal("1 dara de satelit sau avion (Siril o scoate la stivuire)", SeriesReport.Reason(flags[6]));
-            Assert.Equal("3 dare de satelit sau avion (Siril le scoate la stivuire)", SeriesReport.Reason(flags[7]));
+            Assert.Equal("alungire 1.76 (de la 1.73 cadrul e slab), dara pe RA (-90 de grade)", SeriesReport.Reason(flags[0]));
+            Assert.Equal("1 dara de satelit sau avion (Siril o scoate la stivuire)", SeriesReport.Reason(flags[8]));
+            Assert.Equal("3 dare de satelit sau avion (Siril le scoate la stivuire)", SeriesReport.Reason(flags[9]));
         }
     }
 
@@ -764,7 +818,7 @@ public class SeriesTests
         Assert.Equal(Axis.Y, s.RaAxis);
         FrameFlag flag = Assert.Single(s.Flags[2]);
         Assert.Equal(TrailAxis.Ra, flag.On);
-        Assert.Equal($"alungire {RunReport.F(flag.Value, 2)} (de la 1.60 cadrul e slab), dara pe RA (-90 de grade)", SeriesReport.Reasons(s.Flags[2]));
+        Assert.Equal($"alungire {RunReport.F(flag.Value, 2)} (de la 1.73 cadrul e slab), dara pe RA (-90 de grade)", SeriesReport.Reasons(s.Flags[2]));
         Assert.Equal(TrailAxis.Ra, s.TrailOn);
         Assert.Contains(", adica pe RA", SeriesReport.TrailRows(r).Single(x => x.Label == "directia darelor").Value, StringComparison.Ordinal);
 
@@ -813,10 +867,10 @@ public class SeriesTests
         ReportRow focus = SeriesReport.FocusRows(r)[^1];
         Assert.Equal("verdict", focus.Label);
         Assert.Equal("BUN", focus.Verdict);
-        Assert.StartsWith("latimea stelelor (FWHM) e in medie 3.25 px", focus.Value, StringComparison.Ordinal);
+        Assert.StartsWith("latimea stelelor (FWHM) e in medie 3.22 px", focus.Value, StringComparison.Ordinal);
         using StringWriter sw = new();
         SeriesReport.Write(r, sw);
-        Assert.Contains("    verdict            : BUN - latimea stelelor (FWHM) e in medie 3.25 px = 19.4\" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (-0 %): focusul a tinut toata sesiunea", sw.ToString(), StringComparison.Ordinal);
+        Assert.Contains("    verdict            : BUN - latimea stelelor (FWHM) e in medie 3.22 px = 19.3\" pe cadrele bune; 3.22 px la inceput si 3.22 px la sfarsit (+0 %): focusul a tinut toata sesiunea", sw.ToString(), StringComparison.Ordinal);
 
         IReadOnlyList<ReportParagraph> paragraphs = SeriesReport.RejectedExplanation;
         Assert.True(paragraphs.Count >= 3, "fewer than three paragraphs");

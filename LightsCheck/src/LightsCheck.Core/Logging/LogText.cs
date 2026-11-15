@@ -181,7 +181,7 @@ internal static class LogText
             + " stars detected=" + Int(m.Detected) + " bright=" + Int(m.DetectedBright) + " saturated=" + Int(m.SaturatedStars)
             + " shapes=" + Int(m.Shapes.Count)
             + " fwhm=" + Num(m.FwhmMedian) + " p90 " + Num(m.FwhmP90)
-            + " elongation=" + Num(m.ElongationMedian) + " p90 " + Num(m.ElongationP90) + " elongatedFraction=" + Num(m.ElongatedFraction)
+            + " elongation=" + Num(m.ElongationMedian) + " p90 " + Num(m.ElongationP90) + " core " + Num(m.CoreElongationMedian) + " elongatedFraction=" + Num(m.ElongatedFraction)
             + " angle=" + Num(m.AngleDeg) + " coherence=" + Num(m.AngleCoherence)
             + " zones centre " + ZoneOf(m.Centre) + " mid " + ZoneOf(m.Mid) + " edge " + ZoneOf(m.Edge)
             + " halo=" + Num(m.Halo)
@@ -313,7 +313,8 @@ internal static class LogText
         ArgumentNullException.ThrowIfNull(flags);
         string moved = move is null ? "none" : "ra " + Num(move.RaPx) + " dec " + Num(move.DecPx) + " px signed=" + Yes(move.Signed);
         return c + " flags=" + List(flags.Select(f => f.Kind + " value " + Num(f.Value) + " threshold " + Num(f.Threshold)
-            + (f.Kind is FlagKind.Trailed or FlagKind.MarginalTrail ? " angle " + Str(f.Detail) + " on " + f.On : "")))
+            + (f.Kind is FlagKind.Trailed or FlagKind.MarginalTrail or FlagKind.Tail ? " angle " + Str(f.Detail) + " on " + f.On : "")
+            + (f.Kind is FlagKind.Tail ? " afterMove " + Yes(f.AfterMove) : "")))
             + " move=" + moved;
     }
 

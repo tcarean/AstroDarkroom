@@ -186,7 +186,7 @@ public class ValidationTests
         IReadOnlyList<FrameTableRow> rows = SeriesReport.FrameRows(r);
         for (int i = 0; i < r.Frames.Count; i++)
         {
-            FrameFlag? trail = s.Flags[i].FirstOrDefault(f => f.Kind is FlagKind.Trailed or FlagKind.MarginalTrail);
+            FrameFlag? trail = s.Flags[i].FirstOrDefault(f => f.Kind is FlagKind.Trailed or FlagKind.MarginalTrail or FlagKind.Tail);
             if (trail is null)
             {
                 continue;
