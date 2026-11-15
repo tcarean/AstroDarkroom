@@ -34,7 +34,7 @@ the modelled sky at its own place; C, at or under the 25 % percentile of the sky
 
 The last two columns are the probe's, which sent every patch A removes to the sky class. With
 the destinations of the Decision, Rosetta reads 6.1 and 8.2 instead of 6.2 and 8.3 (the code's
-figures are in the Consequences); `de_printat.png`, Andromeda and Orion, measured both ways,
+figures, recorded as V-010 in `docs/validation.md`); `de_printat.png`, Andromeda and Orion, measured both ways,
 differ by under 0.05 L\*.
 
 - B changes nothing on the sky path (the model there is the level the nebula lifted, so every
@@ -120,7 +120,7 @@ and no new threshold.
   (a lane on the bright side of a strong gradient) is no longer dust; it could never have been
   the darkest part of the print.
 - The sky-level patches beside a bright object that fall under the lifted model and under the
-  sky's median stay dust (Rosetta keeps 105): the condition halves that known limit, it does
+  sky's median stay dust (Rosetta keeps 105): the condition narrows that known limit, it does
   not remove it.
 - Guarded by `R044_APatchLighterThanTheSkyIsNotDustHoweverBrightItsSurroundings`,
   `R044_ALaneOfTheBandLighterThanTheSkyIsBandNotDust` and
