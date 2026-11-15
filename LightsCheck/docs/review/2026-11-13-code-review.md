@@ -89,7 +89,7 @@ rule "Golden files").
 | CR-010 | 1 | rare | confirmed | Frames are read in file-name order as if it were time order | fixed 804e4a14 |
 | CR-011 | 1 | rare | confirmed | The corner shift uses the first aligned frame's exposure | open |
 | CR-012 | 1 | rare | owner | A trailed frame with a short exposure votes for the RA axis | open |
-| CR-013 | 1 | rare | confirmed | A thin mark of 251 to 400 px is counted as a trail and as a star | open |
+| CR-013 | 1 | rare | confirmed | A thin mark of 251 to 400 px is counted as a trail and as a star | fixed e0ec7248 |
 | CR-014 | 2 | slip | confirmed | The report files can be written into `lights/` or `biases/` | open |
 | CR-015 | 2 | rare | confirmed | One late failure loses the whole run, after every frame was measured | open |
 | CR-016 | 3 | common | confirmed | A wrong pixel size is not marked in the window | open |
@@ -385,7 +385,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: `R015_ALongThinStreakIsATrailNotAStar` draws a 671 px streak, which the area limit
   alone keeps out. A streak of about 90 px, with the star count asserted.
 - Evidence: confirmed (the prototype does the same, `analyze.py:132`); the effect is small.
-- Status: open
+- Status: fixed e0ec7248 (a trail is taken out of what may be a star before the star list, whatever its area, so it is not counted, measured or kept for registration: R-015, ADR 0059; two such pieces on each of frames 1, 5 and 23 of the Smida session, and one on frame 3, were both until then)
 
 ## Severity 2: a crash, a hang, or a file written where it must not be
 
