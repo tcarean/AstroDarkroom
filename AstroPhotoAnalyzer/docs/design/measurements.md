@@ -141,6 +141,14 @@ cannot move it (`PatchLstars(sub)`). Three parts:
   Always `PctPatchesBelowPaperBlack` ("negru pur") and `CloudLstars`, the `DustCloudFraction`
   (10 %) percentile of each cloud's own patches, for the rows. The map window paints
   `map.Classes` as they are.
+- The ranges (R-046, ADR 0100). With the two figures, `Measure` returns for each zone the
+  middle half and the wide range of its patch L\*s (`DustHalf`, `DustWide`, `SkyHalf`,
+  `SkyWide`: from the percentile `RangeHalfCut` (25 %) or `RangeWideCut` (10 %) to the one as
+  far from the other end), read from the two sorted sets the figures come from: the dust
+  class, null when it has no patch, and the set that gives the sky's figure. The dust's are
+  the class's whatever `DustSource` says, so when the darkest sky gives the figure it can lie
+  outside them (`de_printat.png`: 4.4 against 4.9 to 7.6). `SimulationRow` carries the four at
+  its own lift. They decide nothing: only the window's table reads them.
 
 The first form (ADR 0025: every cloud-disc patch as dust, every outside patch as sky; the
 owner rejected it on the map on 2026-10-02) and the second (the patches at or under the two

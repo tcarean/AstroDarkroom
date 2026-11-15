@@ -89,6 +89,10 @@
   than its surroundings and still not the darkest part of the print. A patch that leaves the
   dust class on the sky path is nebula at most, never bright nebula, however far over the
   average sky it sits (ADR 0099).
+- With a range shown in the Tonuri tab (R-046), a dust figure that comes from the darkest sky
+  can stand outside the dust zone's bracket (`de_printat.png`: `4.4 (4.9 - 7.6)`): the bracket
+  is the dust class's, the figure is not. The note under the table says so, with the reason;
+  the owner chose the bracket always shown over a dust without one (ADR 0100).
 - Without a WCS, a foreground or a silhouette darker than the modelled sky by the sky's noise and
   larger than 5 % of the frame becomes "the dust".
 - On either path a posterised or synthetic sky, where more than half the patches share one

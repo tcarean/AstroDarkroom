@@ -16,6 +16,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   own bytes at its own BITPIX and keeps the header, with the plate solution's reference pixel
   moved; a 16-bit TIFF or PNG stays 16-bit with its ICC profile; a JPEG becomes an 8-bit TIFF,
   since a JPEG saved again is compressed again.
+- **Show intervals**, a list above the background simulation of the Tones tab (R-046, R-047,
+  ADR 0100): **The middle half** or **Without 10 % at each end** puts in brackets, beside the
+  dust's and the sky's L\* on every row, the range the zone's patches lie in, with a note under
+  the table; **None**, the choice at every start, leaves the table as it was. The ranges change
+  no figure, verdict or recommendation, and the console and the saved report do not show them.
+  The tab's guide has two new paragraphs, on what the two figures are and on the intervals.
 
 ### Changed
 

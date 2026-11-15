@@ -203,6 +203,21 @@ namespace AstroPhotoAnalyzer
         internal const double BrightClassMinTailFraction = 0.05;
 
         /// <summary>
+        /// The share of a zone's patches left out at each end by the first range the Tonuri tab
+        /// offers, the middle half: from the 25 % percentile to the 75 % one. The owner's choice
+        /// of 2026-11-15 (ADR 0100). No rule reads it: a range decides nothing (R-046).
+        /// </summary>
+        internal const double RangeHalfCut = 0.25;
+
+        /// <summary>
+        /// The share left out at each end by the second range, "without 10 % at each end": from
+        /// the 10 % percentile to the 90 % one. The owner's choice of 2026-11-15 (ADR 0100); the
+        /// whole spread is not offered, since one patch decides each of its ends (on
+        /// de_printat.png the sky's lightest patch is L* 30.2, its 90 % percentile 14.5).
+        /// </summary>
+        internal const double RangeWideCut = 0.10;
+
+        /// <summary>
         /// The dust class decides the verdict only when it has at least this share of the
         /// patches; under the threshold, the dust is the darkest sky (SkyDarkestFraction). With
         /// the band, the Great Rift is 9.4 % of the frame; without the band, the dust class finds

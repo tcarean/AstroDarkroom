@@ -152,7 +152,8 @@ namespace AstroPhotoAnalyzer.Wpf
         IReadOnlyList<string> _ladder = Array.Empty<string>();
         IReadOnlyList<GuideParagraph> _guide = Array.Empty<GuideParagraph>();
         double _paperBlack = double.NaN, _lowSeparation = double.NaN;
-        string _definition, _exactLine, _noWcs;
+        string _definition, _exactLine, _noWcs, _rangeNote;
+        int _selectedRange;
         AnalysisResult _result;
 
         public IReadOnlyList<MetricRow> Rows { get => _rows; private set => Set(ref _rows, value); }
@@ -215,6 +216,35 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>The red sentence without a WCS; null with one (hidden).</summary>
         public string NoWcsWarning { get => _noWcs; private set => Set(ref _noWcs, value); }
 
+        /// <summary>The three choices of the "Show intervals" list, in its order (R-047).</summary>
+        public IReadOnlyList<string> RangeChoices => new[] { RangeNone, RangeHalf, RangeWide };
+
+        /// <summary>The first choice of the list: no range.</summary>
+        static string RangeNone => Tr.Pick("None", "Niciunul");
+
+        /// <summary>The second choice of the list: the middle half of a zone's patches.</summary>
+        static string RangeHalf => Tr.Pick("The middle half", "Jumatatea din mijloc");
+
+        /// <summary>The third choice of the list, its percentage from Thresholds.RangeWideCut.</summary>
+        static string RangeWide => Tr.Pick($"Without {Fmt.F0(Thresholds.RangeWideCut * 100)} % at each end", $"Fara cate {Fmt.F0(Thresholds.RangeWideCut * 100)} % la capete");
+
+        /// <summary>The list's label, in the tab and in the guide.</summary>
+        static string RangeListName => Tr.Pick("Show intervals", "Arata intervalele");
+
+        /// <summary>
+        /// The chosen entry of <see cref="RangeChoices"/>: 0, no range, at every start; kept when
+        /// another image is opened (R-047). Setting it rewrites the table and its note from the
+        /// result at hand, without a new analysis.
+        /// </summary>
+        public int SelectedRange
+        {
+            get => _selectedRange;
+            set { if (Set(ref _selectedRange, value) && _result != null) BuildSimulationTable(_result.Simulation); }
+        }
+
+        /// <summary>The note under the table while a range is shown; null with none (hidden).</summary>
+        public string RangeNote { get => _rangeNote; private set => Set(ref _rangeNote, value); }
+
         /// <summary>
         /// The level - L* table of the tab's landmarks, from TonalAnalyzer.LstarLadder; in the
         /// window only.
@@ -255,6 +285,32 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <param name="row">A row of the current result's simulation table.</param>
         /// <returns>A new preview view-model; a result must be present.</returns>
         internal PreviewWindowViewModel BuildPreview(SimulationRow row) => PreviewWindowViewModel.From(_result, row);
+
+        /// <summary>
+        /// Writes the simulation's table and the note under it for the chosen range (R-047): the
+        /// same mono text as in Anexa B when no range is chosen, the core's rows with the ranges
+        /// in brackets otherwise, and the preview button on every row (the header and the footer
+        /// have none).
+        /// </summary>
+        /// <param name="s">The simulation of the result at hand.</param>
+        void BuildSimulationTable(SimulationResult s)
+        {
+            RangeKind kind = _selectedRange == 1 ? RangeKind.MiddleHalf : _selectedRange == 2 ? RangeKind.Wide : RangeKind.None;
+            var sim = new List<SimulationRowItem> { new SimulationRowItem { Text = ReportWriter.SimulationHeaderFor(kind) } };
+            foreach (SimulationRow row in s.Rows)
+            {
+                SimulationRow captured = row;
+                sim.Add(new SimulationRowItem
+                {
+                    Text = ReportWriter.SimulationLine(row, kind),
+                    Target = row.AsIs ? Tr.Pick("as is", "asa cum e") : Fmt.Level(row.Target) + (row.Explicit ? Tr.Pick(" (given)", " (dat)") : ""),
+                    Preview = new RelayCommand(() => PreviewRequested?.Invoke(BuildPreview(captured))),
+                });
+            }
+            sim.Add(new SimulationRowItem { Text = ReportWriter.SimulationFooter(s) });
+            SimulationRows = sim;
+            RangeNote = ReportWriter.RangeNote(s, kind);
+        }
 
         /// <inheritdoc/>
         internal override void Populate(AnalysisResult r)
@@ -323,21 +379,7 @@ namespace AstroPhotoAnalyzer.Wpf
             Histogram = t.LstarHistogramPct;
             PaperBlack = t.PaperBlackLstar;
             LowSeparation = Thresholds.LowSeparationLstar;
-            // The same mono text as in Anexa B, plus the preview button on every row (the header
-            // has none).
-            var sim = new List<SimulationRowItem> { new SimulationRowItem { Text = ReportWriter.SimulationHeader } };
-            foreach (SimulationRow row in s.Rows)
-            {
-                SimulationRow captured = row;
-                sim.Add(new SimulationRowItem
-                {
-                    Text = ReportWriter.SimulationLine(row),
-                    Target = row.AsIs ? Tr.Pick("as is", "asa cum e") : Fmt.Level(row.Target) + (row.Explicit ? Tr.Pick(" (given)", " (dat)") : ""),
-                    Preview = new RelayCommand(() => PreviewRequested?.Invoke(BuildPreview(captured))),
-                });
-            }
-            sim.Add(new SimulationRowItem { Text = ReportWriter.SimulationFooter(s) });
-            SimulationRows = sim;
+            BuildSimulationTable(s);
             Definition = ReportWriter.DustDefinition(s);
             ExactLine = ReportWriter.ExactLine(s);
             NoWcsWarning = r.Raster.Source?.Wcs == null ? NoWcsSentence : null;
@@ -366,6 +408,8 @@ namespace AstroPhotoAnalyzer.Wpf
             Definition = null;
             ExactLine = null;
             NoWcsWarning = null;
+            // The choice of the range stays: it is the user's, not the image's (R-047).
+            RangeNote = null;
             (OpenMap as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
@@ -440,9 +484,6 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "one as much under the sky, the bright nebula the brightest part of the nebula, the peaks as above. "
                         + "On either path, a patch lighter than the average sky is not dust, however bright its surroundings: the faint edge of a nebula, "
                         + "or a lane of the band lighter than the sky, stays nebula, band or sky. "
-                        + $"On either path, the sky's L* is the middle value of the sky patches, and the dust's L* is the darkest extended area: the threshold under which "
-                        + $"{Fmt.F0(Thresholds.DustClassFraction * 100)} % of the dust patches lie, when the dust has at least {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % of the patches "
-                        + $"(under that they are cores or artefacts), or the darkest {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % of the sky patches, whichever of the two is darker. "
                         + $"The \"Dust / sky map\" button shows the kinds of patches on the image and, from the Lynds catalogue, the clouds by name: each one with at least {Thresholds.DustCloudMinPatches} patches, "
                         + $"listed with its L* and the background at which it reaches black, the darkest {Thresholds.DustCloudReportRows} written on the image.",
                         $"Programul nu judeca pixel cu pixel, ci pe dale (patrate) de {Thresholds.DustPatchPx} x {Thresholds.DustPatchPx} px, cam cat vede ochiul "
@@ -460,11 +501,44 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "cea la fel de mult sub cer, nebuloasa stralucitoare partea cea mai luminoasa a nebuloasei, varfurile ca mai sus. "
                         + "Pe orice cale, o dala mai deschisa decat cerul mediu nu e praf, oricat de luminos ar fi ce are in jur: marginea stearsa a unei nebuloase "
                         + "sau o fasie din banda mai luminoasa decat cerul raman nebuloasa, banda sau cer. "
-                        + $"Pe orice cale, L*-ul cerului e valoarea din mijloc a dalelor de cer, iar L*-ul prafului e cea mai intunecata zona intinsa: pragul sub care stau "
-                        + $"{Fmt.F0(Thresholds.DustClassFraction * 100)} % din dalele de praf, daca praful are cel putin {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % din dale "
-                        + $"(sub atat sunt nuclee sau artefacte), sau cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % din dalele de cer, care din doua e mai intunecata. "
                         + $"Butonul \"Harta praf / cer\" arata felurile de dale pe imagine si, din catalogul Lynds, norii pe nume: fiecare cu cel putin {Thresholds.DustCloudMinPatches} dale, "
                         + $"in lista cu L*-ul lui si fundalul la care el ajunge pe negru, cei mai intunecati {Thresholds.DustCloudReportRows} scrisi pe imagine."),
+                },
+                new GuideParagraph
+                {
+                    Lead = Tr.Pick("The sky's L* and the dust's L*.", "L* cer si L* praf."),
+                    Text = Tr.Pick("Each is one number for a whole zone, and the verdict is given on these two numbers. "
+                        + "The sky's L* is the average sky: the middle value of the sky patches, with half of them darker and half lighter; "
+                        + "it is neither the darkest part of the sky nor the lightest. "
+                        + $"The dust's L* is its dark part, the darkest extended area: the threshold under which {Fmt.F0(Thresholds.DustClassFraction * 100)} % of the dust patches lie, "
+                        + $"when the dust has at least {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % of the patches (under that they are cores or artefacts), "
+                        + $"or the darkest {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % of the sky patches, whichever of the two is darker.",
+                        "Fiecare e un singur numar pentru o zona intreaga, iar verdictul se da pe aceste doua numere. "
+                        + "L*-ul cerului e cerul mediu: valoarea din mijloc a dalelor de cer, cu jumatate din ele mai intunecate si jumatate mai deschise; "
+                        + "nu e nici cea mai intunecata parte a cerului, nici cea mai luminoasa. "
+                        + $"L*-ul prafului e partea lui intunecata, cea mai intunecata zona intinsa: pragul sub care stau {Fmt.F0(Thresholds.DustClassFraction * 100)} % din dalele de praf, "
+                        + $"daca praful are cel putin {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % din dale (sub atat sunt nuclee sau artefacte), "
+                        + $"sau cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % din dalele de cer, care din doua e mai intunecata."),
+                },
+                new GuideParagraph
+                {
+                    Lead = Tr.Pick("The intervals.", "Intervalele."),
+                    Text = Tr.Pick($"The \"{RangeListName}\" list above the table puts in brackets, beside L* dust and L* sky, the values the zone's patches lie between. "
+                        + $"\"{RangeHalf}\" leaves out the darkest {Fmt.F0(Thresholds.RangeHalfCut * 100)} % and the lightest {Fmt.F0(Thresholds.RangeHalfCut * 100)} % of the patches; "
+                        + $"\"{RangeWide}\" leaves out {Fmt.F0(Thresholds.RangeWideCut * 100)} % at each end. "
+                        + "The whole spread, from the darkest patch to the lightest, is not offered, because a single patch would decide each end of it. "
+                        + "The intervals change nothing: the verdict reads the figure before the brackets. "
+                        + "The dust's interval and the sky's can touch or overlap: a patch is dust when it is darker than what is around it, not when it is under a fixed level, "
+                        + "and the sky is not equally light across the frame; the dust never goes over the average sky, though. "
+                        + "When the dust's figure comes from the darkest sky it can fall outside the dust zone's interval; the note under the table says when.",
+                        $"Lista \"{RangeListName}\" de deasupra tabelului pune in paranteze, langa L* praf si L* cer, intre ce valori stau dalele zonei. "
+                        + $"\"{RangeHalf}\" lasa deoparte cele mai intunecate {Fmt.F0(Thresholds.RangeHalfCut * 100)} % si cele mai deschise {Fmt.F0(Thresholds.RangeHalfCut * 100)} % din dale; "
+                        + $"\"{RangeWide}\" lasa deoparte cate {Fmt.F0(Thresholds.RangeWideCut * 100)} %. "
+                        + "Intervalul intreg, de la cea mai intunecata dala la cea mai deschisa, nu e oferit, fiindca fiecare capat al lui ar fi hotarat de o singura dala. "
+                        + "Intervalele nu schimba nimic: verdictul citeste cifra dinaintea parantezei. "
+                        + "Intervalul prafului si al cerului se pot atinge sau suprapune: o dala e praf cand e mai intunecata decat ce are in jur, nu cand e sub un nivel fix, "
+                        + "iar cerul nu e la fel de luminos in tot cadrul; praful nu trece insa niciodata peste cerul mediu. "
+                        + "Cand cifra prafului vine din cerul cel mai intunecat, ea poate cadea in afara intervalului zonei de praf; nota de sub tabel spune cand e asa."),
                 },
                 new GuideParagraph
                 {
