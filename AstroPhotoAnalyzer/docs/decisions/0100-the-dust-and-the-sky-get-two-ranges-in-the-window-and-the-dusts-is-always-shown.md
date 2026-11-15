@@ -63,9 +63,11 @@ a note under the table that says where the figure comes from and why, in the rep
   the feature and not decoration.
 - On every row the dust's figure equals the low end of its middle half whenever the class
   decides, since both are the class's 25 % percentile.
-- A row with a range is 28 characters wider. Computed from the render at 1400 px (6.6 px a
-  character, the Preview button, the paddings and the 300 px parameter column; not rendered
-  narrower): under a window of about 1270 px the end of the row, the last column and the mark,
-  is cut at the right, where the plain table fits down to about 1080 px.
+- A row with a range is 28 characters wider. Computed, not rendered at those widths (7 px a
+  character, Consolas 12 px in the window's Display mode; the Preview button, the paddings,
+  the scroll bar and the 300 px parameter column): under a window of about 1330 px the end of
+  the row, the last column and the mark, is cut at the right, where the plain table fits down
+  to about 1135 px. The first figures written here, 1270 and 1080, took the 6.6 px of the
+  tests' stand-alone render, which is not in Display mode.
 - Guarded by the `R046_...` tests in `AstroPhotoAnalyzer.Tests` and the `R047_...` tests in
   `AstroPhotoAnalyzer.Wpf.Tests`; the as-is ranges are recorded in `docs/validation.json`.

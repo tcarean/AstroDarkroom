@@ -161,7 +161,9 @@ mismatches it named were closed, and the owner accepted three changes of wording
 quoted above are not the final ones: in the note, the reason now follows "the darkest sky"
 (`... vine din cerul cel mai intunecat (<motivul>), nu din zona de praf, asa ca ...`) and the
 English says "not the interval"; in the guide's "Intervalele.", "the dust never goes over the
-average sky" became "a patch lighter than the average sky is not counted as dust", since the
-rule is not applied when no patch is sky and a lifted row can move a patch by a hair. Two
-limits went into `docs/design/known-limitations.md`: a ranged row is cut at the right under a
-window of about 1270 px, and a bracket ending at L\* 100.0 is wider than its place.
+average sky" became "a patch lighter than the average sky is not counted as dust", which
+states the rule instead of promising a result: a lifted row can move a patch by a hair. With no
+patch classed sky the rule is not applied at all, an exception the guide leaves out there as
+it does in the sentence of "Praful si cerul." beside it. Two limits went into
+`docs/design/known-limitations.md`: a ranged row is cut at the right under a window of about
+1330 px, and a bracket ending at L\* 100.0 can be wider than its place.

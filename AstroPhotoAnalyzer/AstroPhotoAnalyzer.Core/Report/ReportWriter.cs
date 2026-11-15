@@ -241,8 +241,8 @@ namespace AstroPhotoAnalyzer
         /// <returns>The header, without the indent.</returns>
         internal static string SimulationHeaderFor(RangeKind kind)
         {
-            // The word over the brackets is the same in the two languages; it is a pair all the
-            // same, like every text the user sees.
+            // The word over the brackets is the same in the two languages, and written as a pair
+            // all the same, so that a later change of one of them has its place.
             string range = kind == RangeKind.None ? "" : " " + Tr.Pick("(interval)", "(interval)").PadRight(RangeBracketWidth);
             return Tr.Pick(
                 $"target background    gamma   L* dust{range}   L* sky{range}  pure black    L* < 15      L* > 50",
