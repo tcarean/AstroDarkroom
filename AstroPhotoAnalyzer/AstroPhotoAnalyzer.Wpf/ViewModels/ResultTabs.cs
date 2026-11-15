@@ -417,7 +417,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// The panel's text: explanation, not diagnosis - it does not depend on the image, only
         /// on the thresholds.
         /// </summary>
-        /// <returns>The six paragraphs, "HOW TO READ THE TAB" ("CUM SE CITESTE TABUL").</returns>
+        /// <returns>The eight paragraphs, "HOW TO READ THE TAB" ("CUM SE CITESTE TABUL").</returns>
         static IReadOnlyList<GuideParagraph> GuideParagraphs()
         {
             double barytaBlack = ColorMath.PaperBlackLstar(Parameters.DmaxOf(PrintMedium.Baryta));

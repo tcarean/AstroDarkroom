@@ -108,6 +108,15 @@ public class TonesRangeTests
 
         vm.SelectedRange = 0;
         Assert.Equal(plain, Texts(vm));
+
+        // An index that names no choice (a list with nothing selected reports -1) is no range.
+        foreach (int index in new[] { -1, 3 })
+        {
+            vm.SelectedRange = 2;
+            vm.SelectedRange = index;
+            Assert.Equal(plain, Texts(vm));
+            Assert.Null(vm.RangeNote);
+        }
     }
 
     [Fact]

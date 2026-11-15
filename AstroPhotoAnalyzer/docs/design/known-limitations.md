@@ -93,6 +93,12 @@
   can stand outside the dust zone's bracket (`de_printat.png`: `4.4 (4.9 - 7.6)`): the bracket
   is the dust class's, the figure is not. The note under the table says so, with the reason;
   the owner chose the bracket always shown over a dust without one (ADR 0100).
+- With a range shown, a row of the simulation table is 28 characters wider: in a window narrower
+  than about 1270 px the end of the row (the last column and the mark) is cut at the right,
+  where the plain table fits down to about 1080 px (computed from the render at 1400 px, not
+  rendered narrower). And a bracket with an end at L\* 100.0 is wider than the 13
+  characters it is padded to and pushes the rest of its row; it takes a zone whose upper part is
+  white.
 - Without a WCS, a foreground or a silhouette darker than the modelled sky by the sky's noise and
   larger than 5 % of the frame becomes "the dust".
 - On either path a posterised or synthetic sky, where more than half the patches share one

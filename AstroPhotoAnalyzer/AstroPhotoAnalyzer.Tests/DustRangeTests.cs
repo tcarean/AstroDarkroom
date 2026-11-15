@@ -122,6 +122,9 @@ public class DustRangeTests
             Assert.Equal(row.SkyWide, row.SkyRange(RangeKind.Wide));
             Assert.Null(row.DustRange(RangeKind.None));
             Assert.Null(row.SkyRange(RangeKind.None));
+            // The two ranges are two measurements, not one carried twice.
+            Assert.NotEqual(row.DustHalf, row.DustWide);
+            Assert.NotEqual(row.SkyHalf, row.SkyWide);
         }
         // Each row is measured at its own lift: a higher target lifts both ends of the sky's range.
         for (int i = 1; i < s.Rows.Count; i++)
@@ -130,8 +133,10 @@ public class DustRangeTests
             Assert.True(s.Rows[i].SkyWide.High > s.Rows[i - 1].SkyWide.High);
         }
         // The as-is row is the measurement of the image as it is.
-        Assert.Equal(s.AsIsDust.SkyHalf, s.AsIs.SkyHalf);
+        Assert.Equal(s.AsIsDust.DustHalf, s.AsIs.DustHalf);
         Assert.Equal(s.AsIsDust.DustWide, s.AsIs.DustWide);
+        Assert.Equal(s.AsIsDust.SkyHalf, s.AsIs.SkyHalf);
+        Assert.Equal(s.AsIsDust.SkyWide, s.AsIs.SkyWide);
     }
 
     [Theory]
@@ -197,8 +202,14 @@ public class DustRangeTests
         Assert.EndsWith(ReportWriter.SimulationHeader[(ReportWriter.SimulationHeader.IndexOf(sky, StringComparison.Ordinal) + sky.Length)..], header);
     }
 
+    /// <summary>
+    /// On the rows of a real simulation, with their marks, the star and the as-is label: a range
+    /// adds its two brackets and leaves the rest of the row where it was. That the ranges decide
+    /// nothing is not shown here but by the goldens and the validation figures, which they leave
+    /// as they were.
+    /// </summary>
     [Fact]
-    public void R046_TheRangesChangeNoMarkAndNoRecommendation()
+    public void R046_ARangeLeavesTheRestOfEveryRowWhereItWas()
     {
         SimulationResult s = Simulate(WcsFixtures.BandScene());
         foreach (SimulationRow row in s.Rows)
@@ -213,6 +224,30 @@ public class DustRangeTests
                 Assert.EndsWith(plain[45..], line);
             }
         }
+    }
+
+    /// <summary>
+    /// The third reason of the dust's definition: a dust class over the 5 % floor whose dark part
+    /// is lighter than the darkest sky. The note carries it as the definition words it.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R046_TheNoteGivesTheReasonWhenTheDarkestSkyIsDarkerThanTheDustClass(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        var s = new SimulationResult
+        {
+            Map = Map(i => i < 10 ? PatchClass.Dust : PatchClass.Sky, DustSource.DarkestSky),
+            AsIsDust = new DustStats { DustPatchCount = 10 },
+        };
+        string reason = s.DarkestSkyReason;
+        Assert.Equal(
+            Tr.Pick("darker than the 25 % threshold of the dust patches, 10.0 % of the frame", "mai intunecat decat pragul de 25 % al dalelor de praf, 10.0 % din cadru"),
+            reason);
+        Assert.Contains("(" + reason + ")", s.DustDescription);
+        Assert.Contains("(" + reason + ")", ReportWriter.RangeNote(s, RangeKind.Wide));
+        Assert.Contains(Tr.Pick("can fall outside the brackets", "poate cadea in afara parantezei"), ReportWriter.RangeNote(s, RangeKind.Wide));
     }
 
     [Theory]

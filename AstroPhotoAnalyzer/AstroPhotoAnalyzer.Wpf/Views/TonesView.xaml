@@ -49,8 +49,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="{local:T En='BACKGROUND SIMULATION (what happens if you move the background)', Ro='SIMULAREA FUNDALULUI (ce se intampla daca muti fundalul)'}" />
-          <!-- The same mono text as in Anexa B; on each row with a target, the button that
-               opens the row's preview (R-131). The header and the note have no button. -->
           <!-- The ranges of the dust and the sky beside their figures (R-047): the view-model
                rewrites the table and the note under it when the choice changes. -->
           <StackPanel Orientation="Horizontal" Margin="0,2,0,8">
@@ -58,6 +56,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ComboBox ItemsSource="{Binding RangeChoices}" SelectedIndex="{Binding SelectedRange, Mode=TwoWay}" MinWidth="200" VerticalAlignment="Center"
                       AutomationProperties.Name="{local:T En='Show intervals', Ro='Arata intervalele'}" />
           </StackPanel>
+          <!-- The same mono text as in Anexa B; on each row with a target, the button that
+               opens the row's preview (R-131). The header and the note have no button. -->
           <ItemsControl ItemsSource="{Binding SimulationRows}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
