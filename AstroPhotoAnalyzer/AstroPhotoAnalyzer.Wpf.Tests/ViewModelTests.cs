@@ -196,6 +196,10 @@ public class ViewModelTests
         Assert.Contains(Tr.Pick(" (no WCS); sky = the middle value of the sky patches", " (fara WCS); cerul = valoarea din mijloc a dalelor de cer"), noWcs.Definition);
         Assert.StartsWith(Tr.Pick("dust = the darkest extended areas of the dust clouds (", "praful = cele mai intunecate zone intinse din norii de praf ("), band.Definition);
         Assert.StartsWith(Tr.Pick("the background at which the dust reaches exactly paper black:", "fundalul la care praful ajunge exact pe negrul hartiei:"), noWcs.ExactLine);
+        // The second condition of the dust (ADR 0099) is in the guide in both languages.
+        Assert.Contains(
+            Tr.Pick("a patch lighter than the average sky is not dust", "o dala mai deschisa decat cerul mediu nu e praf"),
+            string.Join(" ", noWcs.Guide.Select(g => g.Text)));
 
         // A mono image has no green channel: the two labels that name it say "the only channel".
         var mono = new TonesTabViewModel(); mono.Populate(Result(Scenes.MonoSky()));

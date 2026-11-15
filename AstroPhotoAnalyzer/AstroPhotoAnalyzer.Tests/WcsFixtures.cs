@@ -103,8 +103,9 @@ internal static class WcsFixtures
 
     /// <summary>
     /// The band scene: plain sky at 0.25 outside |b| &lt; 10 degrees, the band at 0.35 inside it, a
-    /// dark blob (0.05, radius 80 px: with its edge patches about 10 % of the frame, over the
-    /// `DustClassMinFraction` a dust class needs to decide the verdict) on the plane, a bright
+    /// dark blob (0.05, radius 80 px: its patches, less the edge ones lighter than the sky, which
+    /// ADR 0099 takes out of the class, stay over the `DustClassMinFraction` a dust class needs
+    /// to decide the verdict) on the plane, a bright
     /// blob (0.6, radius 40 px) in the band, and one 32 px patch at 1.0 inside the bright blob,
     /// the peak, a ripple of 0.01 on the sky and the band, and pixel noise (0.3 of 255). The
     /// WCS is on the source.

@@ -32,12 +32,17 @@ the modelled sky at its own place; C, at or under the 25 % percentile of the sky
 | the Smida frame of ADR 0085, with its WCS (band) | 2158 | 17.7 % | 1775 | 5.0 -> 4.5 | 12.0 -> 12.0 |
 | the same frame as a TIFF, no WCS (sky) | 2149 | 24.4 % | 1625 | 4.9 -> 4.3 | 12.1 -> 12.2 |
 
+The last two columns are the probe's, which sent every patch A removes to the sky class. With
+the destinations of the Decision, Rosetta reads 6.1 and 8.2 instead of 6.2 and 8.3 (the code's
+figures are in the Consequences); `de_printat.png`, Andromeda and Orion, measured both ways,
+differ by under 0.05 L\*.
+
 - B changes nothing on the sky path (the model there is the level the nebula lifted, so every
   dust patch is under it by definition) and leaves 4 to 11 % of the class lighter than the sky
   on the band path. C leaves 14 patches on Andromeda and 38 on Rosetta.
-- With A the middle half of the dust class no longer overlaps the middle half of the sky class
-  on the frames whose class decides (the reference FITS: 7.7 to 12.9 against 15.4 to 19.0; it
-  was 8.1 to 14.3).
+- With A the middle half of the dust class moves further from the middle half of the sky
+  class on the frames whose class decides (the reference FITS: 7.7 to 12.9 against 15.4 to
+  19.0; it was 8.1 to 14.3).
 - On the Milky Way frames the dust's figure, the class's 25 % percentile, goes down by 0.2 to
   0.6 L\*: the light patches leave the class, so its dark quarter sits lower. On the Smida
   frame the class still decides on both paths (8.1 % and 7.4 % of the patches) and the two
@@ -102,6 +107,15 @@ and no new threshold.
   from 26.71 to 26.88 with the 206 patches it took, so the corner's red is 3.04 levels under it
   against 2.87, with the limit at 3.0. The section's verdict was ATENTIE before and stays so.
   The owner accepted it on 2026-11-15: the corner sat on the limit already.
+- The 5 % floor (`DustClassMinFraction`) counts the class after the condition. On
+  `de_printat.png` the class goes from 7.8 % to 4.2 % of the patches, so the reason the report
+  gives for taking the darkest sky changes, from the class's dark quarter being lighter than
+  the darkest sky to too little dust; the figure, 4.4, is the same. The reference FITS keeps
+  8.9 % and the Smida frame 8.1 % and 7.4 %, so their class still decides.
+- On the sky path a removed patch far over the average sky is nebula, never bright nebula,
+  whatever its height: it is under the level of its own surroundings. On Rosetta the 449
+  removed patches have a 90 % percentile 12.5 L\* over the sky's median and a maximum of 16.8,
+  with the bright nebula starting 13.7 over the modelled sky: fewer than a tenth of them.
 - A dark cloud that is darker than its surroundings and lighter than the image's average sky
   (a lane on the bright side of a strong gradient) is no longer dust; it could never have been
   the darkest part of the print.
