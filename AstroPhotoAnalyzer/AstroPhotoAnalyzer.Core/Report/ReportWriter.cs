@@ -276,15 +276,15 @@ namespace AstroPhotoAnalyzer
             if (kind == RangeKind.None) return null;
             string cut = Fmt.F0((kind == RangeKind.MiddleHalf ? Thresholds.RangeHalfCut : Thresholds.RangeWideCut) * 100);
             string note = Tr.Pick(
-                $"In brackets: the L* values the zone's patches lie between, without the darkest {cut} % and the lightest {cut} % of them. The verdict reads the figure before the brackets, not the range.",
+                $"In brackets: the L* values the zone's patches lie between, without the darkest {cut} % and the lightest {cut} % of them. The verdict reads the figure before the brackets, not the interval.",
                 $"In paranteze: intre ce valori de L* stau dalele zonei, fara cele mai intunecate {cut} % si fara cele mai deschise {cut} % din ele. Verdictul citeste cifra dinaintea parantezei, nu intervalul.");
             string reason = s.DarkestSkyReason;
             if (reason == null) return note;
             return note + " " + (s.DustPatchCount == 0
                 ? Tr.Pick("On this image no dust was found, so the dust has no interval; its figure comes from the darkest sky.",
                           "Pe imaginea asta nu s-a gasit praf, asa ca praful nu are interval; cifra lui vine din cerul cel mai intunecat.")
-                : Tr.Pick($"On this image the dust's figure comes from the darkest sky, not from the dust zone ({reason}), so it can fall outside the brackets.",
-                          $"Pe imaginea asta cifra prafului vine din cerul cel mai intunecat, nu din zona de praf ({reason}), asa ca poate cadea in afara parantezei."));
+                : Tr.Pick($"On this image the dust's figure comes from the darkest sky ({reason}), not from the dust zone, so it can fall outside the brackets.",
+                          $"Pe imaginea asta cifra prafului vine din cerul cel mai intunecat ({reason}), nu din zona de praf, asa ca poate cadea in afara parantezei."));
         }
 
         /// <summary>

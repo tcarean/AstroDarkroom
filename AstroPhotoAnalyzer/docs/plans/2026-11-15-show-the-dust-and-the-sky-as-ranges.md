@@ -153,3 +153,15 @@ the map's legends, the console.
   `de_printat.png` the note names the reason (`prea putin praf: 4.2 % din cadru, sub 5 %`).
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1`, and the validation
   cases (`--filter "Category=Validation"`) with the drift table.
+
+## After the review (2026-11-16)
+
+A subagent review of the commit found no defect in the code. The test gaps and the small
+mismatches it named were closed, and the owner accepted three changes of wording, so the texts
+quoted above are not the final ones: in the note, the reason now follows "the darkest sky"
+(`... vine din cerul cel mai intunecat (<motivul>), nu din zona de praf, asa ca ...`) and the
+English says "not the interval"; in the guide's "Intervalele.", "the dust never goes over the
+average sky" became "a patch lighter than the average sky is not counted as dust", since the
+rule is not applied when no patch is sky and a lifted row can move a patch by a hair. Two
+limits went into `docs/design/known-limitations.md`: a ranged row is cut at the right under a
+window of about 1270 px, and a bracket ending at L\* 100.0 is wider than its place.

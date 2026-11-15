@@ -246,7 +246,8 @@ public class DustRangeTests
             Tr.Pick("darker than the 25 % threshold of the dust patches, 10.0 % of the frame", "mai intunecat decat pragul de 25 % al dalelor de praf, 10.0 % din cadru"),
             reason);
         Assert.Contains("(" + reason + ")", s.DustDescription);
-        Assert.Contains("(" + reason + ")", ReportWriter.RangeNote(s, RangeKind.Wide));
+        // The reason stands beside the sky it describes, not beside the dust zone.
+        Assert.Contains(Tr.Pick("the darkest sky (", "cerul cel mai intunecat (") + reason + ")", ReportWriter.RangeNote(s, RangeKind.Wide));
         Assert.Contains(Tr.Pick("can fall outside the brackets", "poate cadea in afara parantezei"), ReportWriter.RangeNote(s, RangeKind.Wide));
     }
 
@@ -261,11 +262,11 @@ public class DustRangeTests
         SimulationResult band = Simulate(WcsFixtures.BandScene());
         Assert.Null(band.DarkestSkyReason);
         Assert.Equal(
-            Tr.Pick("In brackets: the L* values the zone's patches lie between, without the darkest 25 % and the lightest 25 % of them. The verdict reads the figure before the brackets, not the range.",
+            Tr.Pick("In brackets: the L* values the zone's patches lie between, without the darkest 25 % and the lightest 25 % of them. The verdict reads the figure before the brackets, not the interval.",
                     "In paranteze: intre ce valori de L* stau dalele zonei, fara cele mai intunecate 25 % si fara cele mai deschise 25 % din ele. Verdictul citeste cifra dinaintea parantezei, nu intervalul."),
             ReportWriter.RangeNote(band, RangeKind.MiddleHalf));
         Assert.Equal(
-            Tr.Pick("In brackets: the L* values the zone's patches lie between, without the darkest 10 % and the lightest 10 % of them. The verdict reads the figure before the brackets, not the range.",
+            Tr.Pick("In brackets: the L* values the zone's patches lie between, without the darkest 10 % and the lightest 10 % of them. The verdict reads the figure before the brackets, not the interval.",
                     "In paranteze: intre ce valori de L* stau dalele zonei, fara cele mai intunecate 10 % si fara cele mai deschise 10 % din ele. Verdictul citeste cifra dinaintea parantezei, nu intervalul."),
             ReportWriter.RangeNote(band, RangeKind.Wide));
 
@@ -279,8 +280,8 @@ public class DustRangeTests
         Assert.StartsWith(Tr.Pick("too little dust: ", "prea putin praf: "), reason);
         Assert.Contains("(" + reason + ")", little.DustDescription);
         Assert.EndsWith(
-            Tr.Pick($" On this image the dust's figure comes from the darkest sky, not from the dust zone ({reason}), so it can fall outside the brackets.",
-                    $" Pe imaginea asta cifra prafului vine din cerul cel mai intunecat, nu din zona de praf ({reason}), asa ca poate cadea in afara parantezei."),
+            Tr.Pick($" On this image the dust's figure comes from the darkest sky ({reason}), not from the dust zone, so it can fall outside the brackets.",
+                    $" Pe imaginea asta cifra prafului vine din cerul cel mai intunecat ({reason}), nu din zona de praf, asa ca poate cadea in afara parantezei."),
             ReportWriter.RangeNote(little, RangeKind.MiddleHalf));
         Assert.StartsWith(ReportWriter.RangeNote(band, RangeKind.Wide), ReportWriter.RangeNote(little, RangeKind.Wide));
 

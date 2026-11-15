@@ -188,7 +188,7 @@ public class TonesRangeTests
         Assert.Contains(Tr.Pick($"\"Without {Thresholds.RangeWideCut * 100:0} % at each end\" leaves out {Thresholds.RangeWideCut * 100:0} % at each end",
                                 $"\"Fara cate {Thresholds.RangeWideCut * 100:0} % la capete\" lasa deoparte cate {Thresholds.RangeWideCut * 100:0} %"), intervals);
         Assert.Contains(Tr.Pick("the verdict reads the figure before the brackets", "verdictul citeste cifra dinaintea parantezei"), intervals);
-        Assert.Contains(Tr.Pick("the dust never goes over the average sky", "praful nu trece insa niciodata peste cerul mediu"), intervals);
+        Assert.Contains(Tr.Pick("a patch lighter than the average sky is not counted as dust, though", "o dala mai deschisa decat cerul mediu nu e insa socotita praf"), intervals);
         Assert.Contains(Tr.Pick("it can fall outside the dust zone's interval", "ea poate cadea in afara intervalului zonei de praf"), intervals);
 
         // Plain words (ADR 0071): none of the method's words.

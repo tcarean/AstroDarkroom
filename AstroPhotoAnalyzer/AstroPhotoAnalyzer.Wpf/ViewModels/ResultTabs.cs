@@ -529,7 +529,7 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "The whole spread, from the darkest patch to the lightest, is not offered, because a single patch would decide each end of it. "
                         + "The intervals change nothing: the verdict reads the figure before the brackets. "
                         + "The dust's interval and the sky's can touch or overlap: a patch is dust when it is darker than what is around it, not when it is under a fixed level, "
-                        + "and the sky is not equally light across the frame; the dust never goes over the average sky, though. "
+                        + "and the sky is not equally light across the frame; a patch lighter than the average sky is not counted as dust, though. "
                         + "When the dust's figure comes from the darkest sky it can fall outside the dust zone's interval; the note under the table says when.",
                         $"Lista \"{RangeListName}\" de deasupra tabelului pune in paranteze, langa L* praf si L* cer, intre ce valori stau dalele zonei. "
                         + $"\"{RangeHalf}\" lasa deoparte cele mai intunecate {Fmt.F0(Thresholds.RangeHalfCut * 100)} % si cele mai deschise {Fmt.F0(Thresholds.RangeHalfCut * 100)} % din dale; "
@@ -537,7 +537,7 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "Intervalul intreg, de la cea mai intunecata dala la cea mai deschisa, nu e oferit, fiindca fiecare capat al lui ar fi hotarat de o singura dala. "
                         + "Intervalele nu schimba nimic: verdictul citeste cifra dinaintea parantezei. "
                         + "Intervalul prafului si al cerului se pot atinge sau suprapune: o dala e praf cand e mai intunecata decat ce are in jur, nu cand e sub un nivel fix, "
-                        + "iar cerul nu e la fel de luminos in tot cadrul; praful nu trece insa niciodata peste cerul mediu. "
+                        + "iar cerul nu e la fel de luminos in tot cadrul; o dala mai deschisa decat cerul mediu nu e insa socotita praf. "
                         + "Cand cifra prafului vine din cerul cel mai intunecat, ea poate cadea in afara intervalului zonei de praf; nota de sub tabel spune cand e asa."),
                 },
                 new GuideParagraph
