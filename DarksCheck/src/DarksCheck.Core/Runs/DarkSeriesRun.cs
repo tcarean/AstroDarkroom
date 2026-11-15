@@ -517,7 +517,8 @@ internal static class DarkSeriesRun
             {
                 // the lights over the darks in the files, then the darks over the partner in the files
                 double lightsInFiles = lights.Other?.RatioInFiles ?? lights.LightsOverDark.Ratio;
-                lightsOther = new SettingsMismatch(partnerAt, others[0].At, lightsInFiles * darksInFiles);
+                // multiplied in the order of ever, so the printed figure of a session that gives every setting keeps its last digit
+                lightsOther = new SettingsMismatch(partnerAt, others[0].At, lightsInFiles * match.Ratio * own.Norm / partnerNorm);
                 lightsOverPartner = lightsOverPartner with { Verdict = LightsAnalysis.NeverDirect(lightsOverPartner.Verdict, true) };
             }
         }

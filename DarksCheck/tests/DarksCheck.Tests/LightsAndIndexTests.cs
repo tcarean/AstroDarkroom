@@ -1162,9 +1162,12 @@ public class LightsAndIndexTests
         Assert.InRange(rd.Partner.LightsOther!.RatioInFiles, 0.95, 1.05);
         string cold = Report(rd);
         Assert.DoesNotContain("partenerul se poate scadea asa cum e", cold, StringComparison.Ordinal);
-        Assert.Contains("    lights / partener  : pixelii fierbinti sunt in lights de 0.5", cold, StringComparison.Ordinal);
+        // half the partner's: 6 degrees colder by the doubling rule
+        Assert.InRange(rd.Partner.LightsOverPartner.DeltaCelsius, -6.6, -5.4);
+        Assert.Contains("    lights / partener  : pixelii fierbinti sunt in lights de 0.", cold, StringComparison.Ordinal);
         Assert.Contains("    verdict partener   : ATENTIE: foloseste partenerul doar pentru corectia cosmetica", cold, StringComparison.Ordinal);
-        Assert.Contains(" ori cat la partener, socotiti pentru aceleasi setari: partenerul e mai cald cu 6.", cold, StringComparison.Ordinal);
+        Assert.Contains(" ori cat la partener, socotiti pentru aceleasi setari: partenerul e mai cald cu ", cold, StringComparison.Ordinal);
+        Assert.True(DarkReport.Sections(rd).Single(x => x.Check == ReportCheck.Index).Rows.Single(row => row.Label == "verdict partener").Alert);
 
         // the same with lights twice as high: the same temperature as the partner, at other settings
         using SessionFixture sameTemperature = new SessionFixture().WithDarkSeries(6, Dark, iso: null).WithLights(3, i => Light(i, 2.0), iso: 800);
@@ -1172,7 +1175,28 @@ public class LightsAndIndexTests
         Assert.InRange(rt.Partner!.LightsOverPartner.Ratio, 0.95, 1.05);
         Assert.Equal(MatchVerdict.WithOpt, rt.Partner.LightsOverPartner.Verdict);
         Assert.InRange(rt.Partner.LightsOther!.RatioInFiles, 1.9, 2.1);
-        Assert.Contains("    verdict partener   : ATENTIE: nu scadea partenerul asa cum e: e facut la alte setari decat lights-urile (120.0 s, ISO 400 fata de 120.0 s, ISO 800), asa ca in fisiere pixelii fierbinti din lights sunt de 2.0", Report(rt), StringComparison.Ordinal);
+        Assert.Contains("    verdict partener   : ATENTIE: nu scadea partenerul asa cum e: e facut la alte setari decat lights-urile (120.0 s, ISO 400 fata de 120.0 s, ISO 800), asa ca in fisiere pixelii fierbinti din lights sunt de ", Report(rt), StringComparison.Ordinal);
+
+        // the usual case of darks without an ISO: lights and a partner at one ISO. Nothing differs, by the same
+        // reckoning: 1.00, as it is
+        using SessionFixture sameIso = new SessionFixture().WithDarkSeries(6, Dark, iso: null).WithLights(3, i => Light(i));
+        DarkSeriesResult rs = Run(sameIso, p400.Root);
+        Assert.Equal(SilentSide.Own, rs.Partner!.Silent);
+        Assert.Null(rs.Partner.LightsOther);
+        Assert.InRange(rs.Partner.LightsOverPartner.Ratio, 0.95, 1.05);
+        Assert.Equal(MatchVerdict.Direct, rs.Partner.LightsOverPartner.Verdict);
+        Assert.Contains("    verdict partener   : OK: partenerul se poate scadea asa cum e", Report(rs), StringComparison.Ordinal);
+
+        // mixed lights, each brought by its own settings: the first gives no ISO and reads 1.00 of the partner,
+        // the other two are at ISO 800 and read 0.50; the night's figure is the median, and most lights are at
+        // other settings than the partner
+        using SessionFixture mixed = new SessionFixture().WithDarkSeries(6, Dark, iso: null).WithLights(3, i => Light(i), iso: 800);
+        File.WriteAllBytes(Path.Combine(mixed.LightsDir, "light_0001.fit"), Light(0).Build(SessionFixture.FirstStart.AddSeconds(-4050), 120, null));
+        DarkSeriesResult rm = Run(mixed, p400.Root);
+        Assert.Equal(2, rm.Lights!.DarksSilent);
+        Assert.InRange(rm.Partner!.LightsOverPartner.Ratio, 0.47, 0.53);
+        Assert.NotNull(rm.Partner.LightsOther);
+        Assert.Equal(800, rm.Partner.LightsOther!.Set.Iso);
 
         // lights that give no ISO either: nothing to compare the partner's ISO with, the three as made at the same
         using SessionFixture noIso = new SessionFixture().WithDarkSeries(6, Dark, iso: null).WithLights(3, i => Light(i), iso: null);
@@ -1180,6 +1204,31 @@ public class LightsAndIndexTests
         Assert.Null(rn.Partner!.LightsOther);
         Assert.InRange(rn.Partner.LightsOverPartner.Ratio, 0.95, 1.05);
         Assert.Equal(MatchVerdict.Direct, rn.Partner.LightsOverPartner.Verdict);
+    }
+
+    /// <summary>
+    /// The two ways the lights are read against a partner meet where nothing is missing in effect: the same
+    /// pixels, one light with its ISO in the file (the product of the two ratios, as ever) and without it (each
+    /// light's ratio in the files, brought by its factor over the partner's), give the same figure.
+    /// </summary>
+    [Fact]
+    public void R064_TheChainedRatioIsTheSameWhetherALightGivesTheDarksIsoOrTakesIt()
+    {
+        // darks at ISO 400, a partner at ISO 1600 four times as high; two lights at ISO 800 twice as high and a
+        // third at the darks' ISO, as high as the darks: one temperature
+        using SessionFixture p1600 = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 4 }, iso: 1600, inSubfolder: false);
+        using SessionFixture gives = new SessionFixture().WithDarkSeries(6, Dark).WithLights(2, i => Light(i, 2.0), iso: 800);
+        using SessionFixture takes = new SessionFixture().WithDarkSeries(6, Dark).WithLights(2, i => Light(i, 2.0), iso: 800);
+        DateTime third = SessionFixture.FirstStart.AddSeconds(-3000);
+        File.WriteAllBytes(Path.Combine(gives.LightsDir, "light_0003.fit"), Light(2).Build(third, 120, 400));
+        File.WriteAllBytes(Path.Combine(takes.LightsDir, "light_0003.fit"), Light(2).Build(third, 120, null));
+        DarkSeriesResult rg = Run(gives, p1600.Root), rt = Run(takes, p1600.Root);
+        Assert.Equal(0, rg.Lights!.AssumedSettings);
+        Assert.Equal(1, rt.Lights!.AssumedSettings);
+        Assert.InRange(rg.Partner!.LightsOverPartner.Ratio, 0.9, 1.1);
+        Assert.Equal(rg.Partner.LightsOverPartner.Ratio, rt.Partner!.LightsOverPartner.Ratio, 5);
+        Assert.Equal(rg.Partner.LightsOverPartner.Verdict, rt.Partner.LightsOverPartner.Verdict);
+        Assert.Equal(rg.Partner.LightsOther!.RatioInFiles, rt.Partner.LightsOther!.RatioInFiles, 5);
     }
 
     /// <summary>

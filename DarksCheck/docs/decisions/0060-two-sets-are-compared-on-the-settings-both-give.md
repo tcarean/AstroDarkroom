@@ -2,7 +2,7 @@
 
 Date: 2026-11-14
 Status: accepted 2026-11-14
-Supersedes: 0053 in part (a set needing both settings to be compared on any); 0055 in part (other settings needing both settings on both sides)
+Supersedes: 0053 in part (a set needing both settings to be compared on any); 0055 in part (other settings needing both settings on both sides, and where a set stands in the chained row)
 
 ## Context
 
@@ -78,7 +78,8 @@ darks lack too. `R052_SetsThatDoNotSayBothSettingsAreNotAtOtherSettings`, which 
 0055's carve-out, was replaced. Guarded by
 `R052_ASettingBothSetsGiveIsUsedAndOneASetDoesNotGiveIsTakenFromTheOther`,
 `R063_APartnerIsComparedOnTheSettingBothGiveAndTheReportSaysWhatWasTaken`,
-`R064_TheLightsAreComparedWithThePartnerOnTheSettingsThoseTwoGive` and
+`R064_TheLightsAreComparedWithThePartnerOnTheSettingsThoseTwoGive`,
+`R064_TheChainedRatioIsTheSameWhetherALightGivesTheDarksIsoOrTakesIt` and
 `R052_TheFactorBetweenTwoFramesIsReadFromTheSettingsBothGive`. With darks that give no ISO
 between lights and a partner that do, check 2 still says the darks' ISO was taken as the
 lights' and INDEX that it was taken as the partner's: each is true of its own pair, and the

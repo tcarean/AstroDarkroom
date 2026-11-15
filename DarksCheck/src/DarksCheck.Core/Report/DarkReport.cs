@@ -551,7 +551,8 @@ internal static class DarkReport
             if (p.LightsOverPartner.Verdict != MatchVerdict.Unmeasured)
             {
                 // lights over the partner, through the session's darks: (lights / dark) x (dark /
-                // partner)
+                // partner) when the three sets give both settings, else each light's ratio in the
+                // files brought by its factor over the partner's (ADR 0060)
                 MatchFigures chained = p.LightsOverPartner;
                 string lightsWarmth = Warmth(chained.DeltaCelsius, T("the lights are ", "lights-urile sunt "), partnerWords);
                 rows.Add(new(T("lights / partner", "lights / partener"), T(
