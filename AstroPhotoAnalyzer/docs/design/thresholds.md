@@ -36,6 +36,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `DustClassFraction` | 0.25 | the dust's L\* for the verdict: this percentile of the dust patches (the owner's choice, ADR 0026) |
 | `DustCloudMinPatches` | 9 | a cloud with this many patches gets its own row and circle |
 | `SkyDarkestFraction` | 0.01 | the darkest sky: this percentile of the sky patches; the dust is the lower of it and the dust class's percentile |
+| `RangeHalfCut` / `RangeWideCut` | 0.25 / 0.10 | the share of a zone's patches left out at each end by the two ranges the Tonuri tab can show beside the dust and the sky (the owner's choices, ADR 0100); no rule reads them |
 | `DustCloudReportRows` | 15 | clouds named in Anexa B and in the Because; the window lists all |
 | `ExactTargetLo` / `ExactTargetHi` / `ExactTargetStep` | 0.05 / 0.60 / 0.01 | the ladder of lifts the exact targets are interpolated on |
 | `DmaxMax` | 4 | the largest Dmax accepted, typed or read from an ICC profile; a profile above it is damaged |

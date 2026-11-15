@@ -225,9 +225,67 @@ namespace AstroPhotoAnalyzer
         // the clouds. The headers are properties, picked when they are shown (ADR 0048); each
         // English column title ends where the Romanian one does, over the right-aligned figures.
 
-        internal static string SimulationHeader => Tr.Pick(
-            "target background    gamma   L* dust   L* sky  pure black    L* < 15      L* > 50",
-            "fundal-tinta         gamma   L* praf   L* cer   negru pur   sub L*15   peste L*50");
+        internal static string SimulationHeader => SimulationHeaderFor(RangeKind.None);
+
+        /// <summary>
+        /// The width a range's bracket is padded to in the table, the bracket of two figures under
+        /// 100: "(10.0 - 99.9)".
+        /// </summary>
+        const int RangeBracketWidth = 13;
+
+        /// <summary>
+        /// The table's header; with a range, the two L* columns are widened by the bracket that
+        /// follows each figure, each title still ending over its figure (R-046).
+        /// </summary>
+        /// <param name="kind">The range the rows will carry; None gives the header of R-043.</param>
+        /// <returns>The header, without the indent.</returns>
+        internal static string SimulationHeaderFor(RangeKind kind)
+        {
+            // The word over the brackets is the same in the two languages, and written as a pair
+            // all the same, so that a later change of one of them has its place.
+            string range = kind == RangeKind.None ? "" : " " + Tr.Pick("(interval)", "(interval)").PadRight(RangeBracketWidth);
+            return Tr.Pick(
+                $"target background    gamma   L* dust{range}   L* sky{range}  pure black    L* < 15      L* > 50",
+                $"fundal-tinta         gamma   L* praf{range}   L* cer{range}   negru pur   sub L*15   peste L*50");
+        }
+
+        /// <summary>
+        /// What follows a figure of the table for a range: nothing with RangeKind.None, otherwise
+        /// a space and the bracket "(7.7 - 12.9)", to one decimal, padded to
+        /// <see cref="RangeBracketWidth"/>; blank, at the same width, for a zone without a range.
+        /// </summary>
+        /// <param name="range">The zone's range; null when it has none.</param>
+        /// <param name="kind">The range the table shows.</param>
+        /// <returns>The text to put after the figure.</returns>
+        static string RangeBracket(LstarRange? range, RangeKind kind)
+            => kind == RangeKind.None
+                ? ""
+                : " " + (range is LstarRange r ? $"({Fmt.F1(r.Low)} - {Fmt.F1(r.High)})" : "").PadRight(RangeBracketWidth);
+
+        /// <summary>
+        /// The note for under the table while a range is shown (R-046, ADR 0100): what the
+        /// brackets hold and that the verdict reads the figure; when the darkest sky gives the
+        /// dust's figure, that it does and why, in the words of the dust's definition, since the
+        /// figure can then stand outside the dust zone's bracket.
+        /// </summary>
+        /// <param name="s">The simulation.</param>
+        /// <param name="kind">The range shown.</param>
+        /// <returns>The note; null for RangeKind.None.</returns>
+        internal static string RangeNote(SimulationResult s, RangeKind kind)
+        {
+            if (kind == RangeKind.None) return null;
+            string cut = Fmt.F0((kind == RangeKind.MiddleHalf ? Thresholds.RangeHalfCut : Thresholds.RangeWideCut) * 100);
+            string note = Tr.Pick(
+                $"In brackets: the L* values the zone's patches lie between, without the darkest {cut} % and the lightest {cut} % of them. The verdict reads the figure before the brackets, not the interval.",
+                $"In paranteze: intre ce valori de L* stau dalele zonei, fara cele mai intunecate {cut} % si fara cele mai deschise {cut} % din ele. Verdictul citeste cifra dinaintea parantezei, nu intervalul.");
+            string reason = s.DarkestSkyReason;
+            if (reason == null) return note;
+            return note + " " + (s.DustPatchCount == 0
+                ? Tr.Pick("On this image no dust was found, so the dust has no interval; its figure comes from the darkest sky.",
+                          "Pe imaginea asta nu s-a gasit praf, asa ca praful nu are interval; cifra lui vine din cerul cel mai intunecat.")
+                : Tr.Pick($"On this image the dust's figure comes from the darkest sky ({reason}), not from the dust zone, so it can fall outside the brackets.",
+                          $"Pe imaginea asta cifra prafului vine din cerul cel mai intunecat ({reason}), nu din zona de praf, asa ca poate cadea in afara parantezei."));
+        }
 
         /// <summary>
         /// A row of the simulation's table, under <see cref="SimulationHeader"/>, without the
@@ -240,10 +298,22 @@ namespace AstroPhotoAnalyzer
         /// the dust's and the sky's L*, the three shares, and the row's mark
         /// (<see cref="RowMark"/>).
         /// </returns>
-        internal static string SimulationLine(SimulationRow row)
+        internal static string SimulationLine(SimulationRow row) => SimulationLine(row, RangeKind.None);
+
+        /// <summary>
+        /// A row of the simulation's table with its two ranges in brackets after the dust's and
+        /// the sky's figure (R-046), under <see cref="SimulationHeaderFor"/>, without the indent.
+        /// </summary>
+        /// <param name="row">The row.</param>
+        /// <param name="kind">The range to write; None gives the row of R-043, byte for byte.</param>
+        /// <returns>
+        /// The row of <see cref="SimulationLine(SimulationRow)"/> with, for a range, "(7.7 - 12.9)"
+        /// after each of the two figures, the figures and every other column where they were.
+        /// </returns>
+        internal static string SimulationLine(SimulationRow row, RangeKind kind)
         {
             string target = Fmt.Level(row.Target) + (row.AsIs ? Tr.Pick(" as is", " asa cum e") : row.Explicit ? Tr.Pick(" (given)", " (dat)") : "") + (row.Recommended ? " *" : "");
-            return $"{target,-18}   {Fmt.F3(row.Gamma),5}   {Fmt.F1(row.LstarDust),7}   {Fmt.F1(row.LstarSky),6}   {Fmt.Pct(row.PctPatchesBelowPaperBlack),9}   {Fmt.Pct(row.PctBelowLowSeparation),8}   {Fmt.Pct(row.PctAboveHighlight),10}{RowMark(row)}";
+            return $"{target,-18}   {Fmt.F3(row.Gamma),5}   {Fmt.F1(row.LstarDust),7}{RangeBracket(row.DustRange(kind), kind)}   {Fmt.F1(row.LstarSky),6}{RangeBracket(row.SkyRange(kind), kind)}   {Fmt.Pct(row.PctPatchesBelowPaperBlack),9}   {Fmt.Pct(row.PctBelowLowSeparation),8}   {Fmt.Pct(row.PctAboveHighlight),10}{RowMark(row)}";
         }
 
         /// <summary>

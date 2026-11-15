@@ -89,6 +89,19 @@
   than its surroundings and still not the darkest part of the print. A patch that leaves the
   dust class on the sky path is nebula at most, never bright nebula, however far over the
   average sky it sits (ADR 0099).
+- With a range shown in the Tonuri tab (R-046), a dust figure that comes from the darkest sky
+  can stand outside the dust zone's bracket (`de_printat.png`: `4.4 (4.9 - 7.6)`): the bracket
+  is the dust class's, the figure is not. The note under the table says so, with the reason;
+  the owner chose the bracket always shown over a dust without one (ADR 0100).
+- With a range shown, a row of the simulation table is 28 characters wider: in a window narrower
+  than about 1330 px the end of the row (the last column and the mark) is cut at the right,
+  where the plain table fits down to about 1135 px. Computed, not rendered at those widths:
+  the longest row with its mark (125 characters against 97) at the 7 px a character of Consolas
+  12 px in the window's Display mode, plus the Preview button (74 px), the card and the
+  scroll padding (70), the scroll bar (11) and the parameter column (300); the frame of a
+  window that is not maximised comes on top. And a bracket with an end at L\* 100.0 and the
+  other at 10.0 or over is wider than the 13 characters it is padded to and pushes the rest of
+  its row; it takes a zone whose upper part is white.
 - Without a WCS, a foreground or a silhouette darker than the modelled sky by the sky's noise and
   larger than 5 % of the frame becomes "the dust".
 - On either path a posterised or synthetic sky, where more than half the patches share one

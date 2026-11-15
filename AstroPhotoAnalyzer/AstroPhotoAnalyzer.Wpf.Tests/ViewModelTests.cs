@@ -106,7 +106,7 @@ public class ViewModelTests
         Assert.Equal(1 + 9, tones.LadderRows.Count);
         Assert.Contains(tones.LadderRows, s => s.Contains("fundalul recomandat 0.1"));
         Assert.Single(tones.LadderRows, s => s.EndsWith("<- mediul ales") && s.Contains("Dmax explicit 2.0"));
-        Assert.Equal(6, tones.Guide.Count);
+        Assert.Equal(8, tones.Guide.Count);
         string guide = string.Join(" ", tones.Guide.Select(g => g.Lead + " " + g.Text));
         Assert.Contains($"pragul sub care stau {Thresholds.DustClassFraction * 100:0} % din dalele de praf", guide);
         Assert.Contains($"cel mai intunecat {Thresholds.SkyDarkestFraction * 100:0} % din dalele de cer", guide);

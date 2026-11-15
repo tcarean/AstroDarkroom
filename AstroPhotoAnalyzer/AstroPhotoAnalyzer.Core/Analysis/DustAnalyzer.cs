@@ -253,6 +253,33 @@ namespace AstroPhotoAnalyzer
         DarkestSky,
     }
 
+    /// <summary>A range of patch L*s, from its low end to its high end (R-046).</summary>
+    /// <param name="Low">The low end, in L*.</param>
+    /// <param name="High">The high end, in L*; at or above <paramref name="Low"/>.</param>
+    internal readonly record struct LstarRange(double Low, double High);
+
+    /// <summary>
+    /// Which range of a zone's patches stands beside its figure in the simulation's table
+    /// (R-046, ADR 0100). A range decides nothing.
+    /// </summary>
+    internal enum RangeKind
+    {
+        /// <summary>No range: the table of R-043 as it is.</summary>
+        None,
+
+        /// <summary>
+        /// The middle half: without the darkest and the lightest Thresholds.RangeHalfCut of the
+        /// patches.
+        /// </summary>
+        MiddleHalf,
+
+        /// <summary>
+        /// The wide range: without the darkest and the lightest Thresholds.RangeWideCut of the
+        /// patches.
+        /// </summary>
+        Wide,
+    }
+
     /// <summary>The dust and the sky on a map, at a given lift.</summary>
     internal sealed record DustStats
     {
@@ -275,6 +302,25 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>How many patches the dust class holds.</summary>
         internal int DustPatchCount { get; init; }
+
+        /// <summary>
+        /// The middle half of the dust class's L*s (R-046); null when the class has no patch.
+        /// Taken on the class whatever gave the dust's L*, so with DustSource.DarkestSky the
+        /// figure can lie outside it (ADR 0100).
+        /// </summary>
+        internal LstarRange? DustHalf { get; init; }
+
+        /// <summary>The wide range of the dust class's L*s; null when the class has no patch.</summary>
+        internal LstarRange? DustWide { get; init; }
+
+        /// <summary>
+        /// The middle half of the L*s that give the sky's figure: the sky class, or all the
+        /// patches when the class is empty.
+        /// </summary>
+        internal LstarRange SkyHalf { get; init; }
+
+        /// <summary>The wide range of the same L*s.</summary>
+        internal LstarRange SkyWide { get; init; }
     }
 
     /// <summary>
@@ -886,7 +932,8 @@ namespace AstroPhotoAnalyzer
         /// </param>
         /// <returns>
         /// The dust's and the sky's L*, the share of the patches under paper black, each cloud's
-        /// L* and the dust class's size; the patch L*s are kept, not copied.
+        /// L*, the dust class's size and the two ranges of each zone (R-046); the patch L*s are
+        /// kept, not copied.
         /// </returns>
         internal static DustStats Measure(float[] patchLstars, DustMap map, double paperBlackLstar)
         {
@@ -917,7 +964,21 @@ namespace AstroPhotoAnalyzer
                 PatchLstars = patchLstars,
                 CloudLstars = cloudLstars,
                 DustPatchCount = dustSorted.Length,
+                DustHalf = dustSorted.Length > 0 ? Range(dustSorted, Thresholds.RangeHalfCut) : null,
+                DustWide = dustSorted.Length > 0 ? Range(dustSorted, Thresholds.RangeWideCut) : null,
+                SkyHalf = Range(skySorted, Thresholds.RangeHalfCut),
+                SkyWide = Range(skySorted, Thresholds.RangeWideCut),
             };
         }
+
+        /// <summary>
+        /// The range of a set of L*s without a share of them at each end (R-046): what stands in
+        /// brackets beside a zone's figure. It decides nothing.
+        /// </summary>
+        /// <param name="sorted">The L*s, sorted in ascending order; at least one.</param>
+        /// <param name="cut">The share left out at each end, 0 to 0.5.</param>
+        /// <returns>From the percentile <paramref name="cut"/> to the percentile 1 - cut.</returns>
+        static LstarRange Range(float[] sorted, double cut)
+            => new LstarRange(Stats.PercentileSorted(sorted, cut * 100), Stats.PercentileSorted(sorted, 100 - cut * 100));
     }
 }

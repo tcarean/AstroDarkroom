@@ -80,7 +80,9 @@ VERDICT: <OK|ATENTIE|PROBLEMA>
 ... sections 2-6, "(nimic de semnalat)" when empty
 
 Anexa A. Tonuri        means, % below 32/64, percentiles, L* line
-Anexa B. Simularea     table: target (as-is among the grid, "(dat)", "*"), gamma, L* praf, L* cer, negru pur (% patches), % below 15, % above 50, print-safe;
+Anexa B. Simularea     table: target (as-is among the grid, "(dat)", "*"), gamma, L* praf, L* cer, negru pur (% patches), % below 15, % above 50, print-safe
+                       (`SimulationHeaderFor` and `SimulationLine(row, kind)` write the same table with a range in brackets after the two L* figures, and
+                       `RangeNote` the note for under it, for the window's "Show intervals" list alone: the report always asks for `RangeKind.None`, R-046);
                        the footer, the definition line (dust, sky, method), the exact-target line (at Dmax, Dmax -/+ 0.1, the Dmax from which the as-is dust reaches paper black, with the sky's caveat under L\* 15: `ReportWriter.DustDmaxText`),
                        the cloud table (name, patches, L*, target), the darkest DustCloudReportRows of them;
                        every target goes through ReportWriter.TargetText: the value, or a bound at the ladder's

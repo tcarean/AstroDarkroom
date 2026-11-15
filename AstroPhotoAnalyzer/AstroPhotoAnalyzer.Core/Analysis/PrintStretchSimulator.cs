@@ -108,6 +108,30 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>The recommended row; the simulator marks it after choosing.</summary>
         internal bool Recommended { get; set; }
+
+        /// <summary>The middle half of the dust class at the row's lift; null without a dust patch (R-046).</summary>
+        internal LstarRange? DustHalf { get; init; }
+
+        /// <summary>The wide range of the dust class at the row's lift; null without a dust patch.</summary>
+        internal LstarRange? DustWide { get; init; }
+
+        /// <summary>The middle half of the patches that give the sky's figure, at the row's lift.</summary>
+        internal LstarRange SkyHalf { get; init; }
+
+        /// <summary>The wide range of the same patches.</summary>
+        internal LstarRange SkyWide { get; init; }
+
+        /// <summary>The dust class's range of a kind, at the row's lift.</summary>
+        /// <param name="kind">The range asked for.</param>
+        /// <returns>The range; null for RangeKind.None and when the dust class has no patch.</returns>
+        internal LstarRange? DustRange(RangeKind kind)
+            => kind == RangeKind.MiddleHalf ? DustHalf : kind == RangeKind.Wide ? DustWide : null;
+
+        /// <summary>The range, of a kind, of the patches that give the sky's figure, at the row's lift.</summary>
+        /// <param name="kind">The range asked for.</param>
+        /// <returns>The range; null for RangeKind.None.</returns>
+        internal LstarRange? SkyRange(RangeKind kind)
+            => kind == RangeKind.MiddleHalf ? SkyHalf : kind == RangeKind.Wide ? SkyWide : null;
     }
 
     /// <summary>
@@ -260,6 +284,27 @@ namespace AstroPhotoAnalyzer
                       $"dalele cu {Fmt.F1(Map.NoiseThreshold)} L* mai intunecate decat cerul din jurul lor (de {Fmt.F0(Thresholds.SkyNoiseK)} ori zgomotul lui), dar nu mai deschise decat cerul mediu");
 
         /// <summary>
+        /// Why the darkest sky gives the dust's L* and not the dust class, in the report's words:
+        /// no dust found, too little of it, or the darkest sky darker than the class's threshold;
+        /// null when the dust class decides.
+        /// </summary>
+        internal string DarkestSkyReason
+        {
+            get
+            {
+                if (Map.DustSource == DustSource.DustClass) return null;
+                string dustPct = Fmt.Pct(100.0 * DustPatchCount / PatchCount);
+                return DustPatchCount == 0
+                    ? Tr.Pick("no dust found", "nu s-a gasit praf")
+                    : DustPatchCount < Thresholds.DustClassMinFraction * PatchCount
+                        ? Tr.Pick($"too little dust: {dustPct} of the frame, under {Fmt.F0(Thresholds.DustClassMinFraction * 100)} %, so it does not decide",
+                                  $"prea putin praf: {dustPct} din cadru, sub {Fmt.F0(Thresholds.DustClassMinFraction * 100)} %, deci nu decide")
+                        : Tr.Pick($"darker than the {Fmt.F0(Thresholds.DustClassFraction * 100)} % threshold of the dust patches, {dustPct} of the frame",
+                                  $"mai intunecat decat pragul de {Fmt.F0(Thresholds.DustClassFraction * 100)} % al dalelor de praf, {dustPct} din cadru");
+            }
+        }
+
+        /// <summary>
         /// What the dust is, by what gave its L* (ADR 0033): "the darkest extended areas of the
         /// dust clouds (the threshold under which 25 % of the dust patches lie; the dust is 9.3 %
         /// of the frame, ...)" when the dust class decides; otherwise "the darkest 1 % of the sky
@@ -274,13 +319,7 @@ namespace AstroPhotoAnalyzer
                 if (Map.DustSource == DustSource.DustClass)
                     return Tr.Pick($"the darkest extended areas of the dust clouds (the threshold under which {Fmt.F0(Thresholds.DustClassFraction * 100)} % of the dust patches lie; the dust is {dustPct} of the frame, {DustClassDefinition})",
                                    $"cele mai intunecate zone intinse din norii de praf (pragul sub care stau {Fmt.F0(Thresholds.DustClassFraction * 100)} % din dalele de praf; praful e {dustPct} din cadru, {DustClassDefinition})");
-                string why = DustPatchCount == 0
-                    ? Tr.Pick("no dust found", "nu s-a gasit praf")
-                    : DustPatchCount < Thresholds.DustClassMinFraction * PatchCount
-                        ? Tr.Pick($"too little dust: {dustPct} of the frame, under {Fmt.F0(Thresholds.DustClassMinFraction * 100)} %, so it does not decide",
-                                  $"prea putin praf: {dustPct} din cadru, sub {Fmt.F0(Thresholds.DustClassMinFraction * 100)} %, deci nu decide")
-                        : Tr.Pick($"darker than the {Fmt.F0(Thresholds.DustClassFraction * 100)} % threshold of the dust patches, {dustPct} of the frame",
-                                  $"mai intunecat decat pragul de {Fmt.F0(Thresholds.DustClassFraction * 100)} % al dalelor de praf, {dustPct} din cadru");
+                string why = DarkestSkyReason;
                 return Map.SkyClassEmpty
                     ? Tr.Pick($"the darkest {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % of all the patches (no sky found; {why})",
                               $"cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % din toate dalele (nu s-a gasit cer; {why})")
@@ -391,6 +430,10 @@ namespace AstroPhotoAnalyzer
                 Gamma = 1,
                 LstarSky = asIsDust.LstarSky,
                 LstarDust = asIsDust.LstarDust,
+                DustHalf = asIsDust.DustHalf,
+                DustWide = asIsDust.DustWide,
+                SkyHalf = asIsDust.SkyHalf,
+                SkyWide = asIsDust.SkyWide,
                 PctPatchesBelowPaperBlack = asIsDust.PctPatchesBelowPaperBlack,
                 PctBelowLowSeparation = tonal.PctBelowLowSeparation,
                 PctAboveHighlight = tonal.PctAboveHighlight,
@@ -470,6 +513,10 @@ namespace AstroPhotoAnalyzer
                             Gamma = gamma,
                             LstarSky = d.LstarSky,
                             LstarDust = d.LstarDust,
+                            DustHalf = d.DustHalf,
+                            DustWide = d.DustWide,
+                            SkyHalf = d.SkyHalf,
+                            SkyWide = d.SkyWide,
                             PctPatchesBelowPaperBlack = d.PctPatchesBelowPaperBlack,
                             PctBelowLowSeparation = low,
                             PctAboveHighlight = high,

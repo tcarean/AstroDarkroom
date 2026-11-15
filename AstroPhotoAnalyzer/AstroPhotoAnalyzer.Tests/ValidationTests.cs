@@ -384,6 +384,15 @@ public class ValidationTests
         f["simulation.dustPatchCount"] = s.DustPatchCount;
         f["simulation.asIs.lstarDust"] = R(s.AsIs.LstarDust);
         f["simulation.asIs.lstarSky"] = R(s.AsIs.LstarSky);
+        // The ranges of R-046 on the image as it is; a dust class without patches has none.
+        foreach (var (name, range) in new (string, LstarRange?)[]
+        {
+            ("dustHalf", s.AsIs.DustHalf), ("dustWide", s.AsIs.DustWide), ("skyHalf", s.AsIs.SkyHalf), ("skyWide", s.AsIs.SkyWide),
+        })
+        {
+            f["simulation.asIs." + name + ".low"] = range is LstarRange lo ? R(lo.Low) : "none";
+            f["simulation.asIs." + name + ".high"] = range is LstarRange hi ? R(hi.High) : "none";
+        }
         f["simulation.asIs.pctPatchesBelowPaperBlack"] = R(s.AsIs.PctPatchesBelowPaperBlack);
         f["simulation.dustOnPaperBlackAsIs"] = s.DustOnPaperBlackAsIs;
         f["simulation.skyBelowPaperBlack"] = s.SkyBelowPaperBlack;

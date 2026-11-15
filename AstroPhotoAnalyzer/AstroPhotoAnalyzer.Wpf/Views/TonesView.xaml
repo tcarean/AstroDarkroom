@@ -49,6 +49,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="{local:T En='BACKGROUND SIMULATION (what happens if you move the background)', Ro='SIMULAREA FUNDALULUI (ce se intampla daca muti fundalul)'}" />
+          <!-- The ranges of the dust and the sky beside their figures (R-047): the view-model
+               rewrites the table and the note under it when the choice changes. -->
+          <StackPanel Orientation="Horizontal" Margin="0,2,0,8">
+            <TextBlock Style="{StaticResource Faint}" VerticalAlignment="Center" Margin="0,0,8,0" Text="{local:T En='Show intervals', Ro='Arata intervalele'}" />
+            <ComboBox ItemsSource="{Binding RangeChoices}" SelectedIndex="{Binding SelectedRange, Mode=TwoWay}" MinWidth="200" VerticalAlignment="Center"
+                      AutomationProperties.Name="{local:T En='Show intervals', Ro='Arata intervalele'}" />
+          </StackPanel>
           <!-- The same mono text as in Anexa B; on each row with a target, the button that
                opens the row's preview (R-131). The header and the note have no button. -->
           <ItemsControl ItemsSource="{Binding SimulationRows}">
@@ -67,6 +74,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding RangeNote}"
+                     Visibility="{Binding RangeNote, Converter={StaticResource NotNullToVis}}" />
           <TextBlock Style="{StaticResource Mono}" Margin="0,8,0,0" TextWrapping="Wrap" Text="{Binding ExactLine}" />
           <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap" Text="{Binding Definition}" />
           <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{StaticResource BadBr}" Text="{Binding NoWcsWarning}"
