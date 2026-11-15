@@ -85,5 +85,5 @@ puts new darks first for that reason. Guarded by
 `R063_APartnerAtOtherSettingsThanTheSessionIsNeverSubtractedAsItIs`,
 `R064_LightsTakenAtTheDarksSettingsFollowTheDarksAgainstAPartnerAtOtherSettings`,
 `R064_APartnerThatDoesNotSayItsSettingsStandsWhereTheDarksStandForTheLights`,
-`R052_SetsThatDoNotSayBothSettingsAreNotAtOtherSettings` and
+`R052_ASettingBothSetsGiveIsUsedAndOneASetDoesNotGiveIsTakenFromTheOther` and
 `R124_DarksThatDoNotHaveTheLightsSettingsStandOutLargeAndRed`.

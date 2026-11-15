@@ -305,7 +305,7 @@ settings is counted (`Failed`, `FirstError`) and makes the result an error; its
 `PartnerAnalysis` carries the
 first decoded frame's settings and the stack's normalisation, the index and label of its
 master, the session's darks over it (`IndexAnalyzer.SharedRatios`, the partner as reference),
-the lights over it (`IndexAnalyzer.Chain`), and the overlap of the two hot-pixel sets at
+the lights over it (`IndexAnalyzer.Chain`, or each light's ratio in the files brought by its factor over the partner's when a set does not give both settings, `lights-and-index.md`), and the overlap of the two hot-pixel sets at
 `Th.PartnerOverlapAdu` (50 ADU-eq): the session's pixels above 50 that the partner has above
 50, and the partner's above 50 that the session has above `Th.HotAdu`, each at its own
 normalisation (the partner's at the session's times the partner's over the session's from the

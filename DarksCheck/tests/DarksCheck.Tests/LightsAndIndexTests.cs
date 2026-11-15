@@ -1197,6 +1197,14 @@ public class LightsAndIndexTests
         Assert.InRange(rm.Partner!.LightsOverPartner.Ratio, 0.47, 0.53);
         Assert.NotNull(rm.Partner.LightsOther);
         Assert.Equal(800, rm.Partner.LightsOther!.Set.Iso);
+        // and the other way: two lights without an ISO, one at ISO 800. The night's figure is the two's, 1.00
+        using SessionFixture mostlySilent = new SessionFixture().WithDarkSeries(6, Dark, iso: null).WithLights(3, i => Light(i), iso: null);
+        File.WriteAllBytes(Path.Combine(mostlySilent.LightsDir, "light_0003.fit"), Light(2).Build(SessionFixture.FirstStart.AddSeconds(-3750), 120, 800));
+        DarkSeriesResult rq = Run(mostlySilent, p400.Root);
+        Assert.Equal(1, rq.Lights!.DarksSilent);
+        Assert.InRange(rq.Partner!.LightsOverPartner.Ratio, 0.95, 1.05);
+        Assert.Null(rq.Partner.LightsOther);
+        Assert.Equal(MatchVerdict.Direct, rq.Partner.LightsOverPartner.Verdict);
 
         // lights that give no ISO either: nothing to compare the partner's ISO with, the three as made at the same
         using SessionFixture noIso = new SessionFixture().WithDarkSeries(6, Dark, iso: null).WithLights(3, i => Light(i), iso: null);
@@ -1214,21 +1222,29 @@ public class LightsAndIndexTests
     [Fact]
     public void R064_TheChainedRatioIsTheSameWhetherALightGivesTheDarksIsoOrTakesIt()
     {
-        // darks at ISO 400, a partner at ISO 1600 four times as high; two lights at ISO 800 twice as high and a
-        // third at the darks' ISO, as high as the darks: one temperature
+        // darks at ISO 400, a partner at ISO 1600 four times as high; one light at ISO 800 twice as high and two
+        // at the darks' ISO, as high as the darks: one temperature. The two decide the median, so a light that
+        // took the darks' ISO and was then read without it (a quarter of the figure) would show
         using SessionFixture p1600 = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 4 }, iso: 1600, inSubfolder: false);
-        using SessionFixture gives = new SessionFixture().WithDarkSeries(6, Dark).WithLights(2, i => Light(i, 2.0), iso: 800);
-        using SessionFixture takes = new SessionFixture().WithDarkSeries(6, Dark).WithLights(2, i => Light(i, 2.0), iso: 800);
-        DateTime third = SessionFixture.FirstStart.AddSeconds(-3000);
-        File.WriteAllBytes(Path.Combine(gives.LightsDir, "light_0003.fit"), Light(2).Build(third, 120, 400));
-        File.WriteAllBytes(Path.Combine(takes.LightsDir, "light_0003.fit"), Light(2).Build(third, 120, null));
+        using SessionFixture gives = new SessionFixture().WithDarkSeries(6, Dark).WithLights(1, i => Light(i, 2.0), iso: 800);
+        using SessionFixture takes = new SessionFixture().WithDarkSeries(6, Dark).WithLights(1, i => Light(i, 2.0), iso: 800);
+        for (int i = 1; i < 3; i++)
+        {
+            DateTime start = SessionFixture.FirstStart.AddSeconds(-3000 + i * 150);
+            File.WriteAllBytes(Path.Combine(gives.LightsDir, $"light_{i + 1:0000}.fit"), Light(i).Build(start, 120, 400));
+            File.WriteAllBytes(Path.Combine(takes.LightsDir, $"light_{i + 1:0000}.fit"), Light(i).Build(start, 120, null));
+        }
+
         DarkSeriesResult rg = Run(gives, p1600.Root), rt = Run(takes, p1600.Root);
         Assert.Equal(0, rg.Lights!.AssumedSettings);
-        Assert.Equal(1, rt.Lights!.AssumedSettings);
+        Assert.Equal(2, rt.Lights!.AssumedSettings);
         Assert.InRange(rg.Partner!.LightsOverPartner.Ratio, 0.9, 1.1);
-        Assert.Equal(rg.Partner.LightsOverPartner.Ratio, rt.Partner!.LightsOverPartner.Ratio, 5);
+        Assert.InRange(rt.Partner!.LightsOverPartner.Ratio, 0.9, 1.1);
+        Assert.Equal(rg.Partner.LightsOverPartner.Ratio, rt.Partner.LightsOverPartner.Ratio, 5);
         Assert.Equal(rg.Partner.LightsOverPartner.Verdict, rt.Partner.LightsOverPartner.Verdict);
-        Assert.Equal(rg.Partner.LightsOther!.RatioInFiles, rt.Partner.LightsOther!.RatioInFiles, 5);
+        // every light is at another ISO than the partner, given or taken
+        Assert.NotNull(rg.Partner.LightsOther);
+        Assert.NotNull(rt.Partner.LightsOther);
     }
 
     /// <summary>
@@ -1285,6 +1301,13 @@ public class LightsAndIndexTests
         Assert.Equal(2.5, rl.Darks.Norm, 9);
         Assert.Contains("    ATENTIE            : 3 lights nu spun ISO-ul sau expunerea; s-au luat cele ale dark-urilor (1 ADU-eq = 1.00 ADU)", Report(rl), StringComparison.Ordinal);
         Assert.Contains("(300.0 s, ISO 400 fata de 120.0 s)", Report(rl), StringComparison.Ordinal);
+        // and where it is neither 1.00 nor the darks' own: darks at ISO 800 and 300 s have a factor of 5, the
+        // lights of 120 s read at 5 x 120 / 300
+        using SessionFixture iso800 = new SessionFixture().WithDarkSeries(6, Dark, exposure: 300, iso: 800).WithLights(3, i => Light(i, 0.4), exposure: 120, iso: null);
+        DarkSeriesResult r8 = Run(iso800);
+        Assert.Equal(5, r8.Darks.Norm, 9);
+        Assert.Equal(2, r8.Lights!.AssumedNorm, 6);
+        Assert.Contains("    ATENTIE            : 3 lights nu spun ISO-ul sau expunerea; s-au luat cele ale dark-urilor (1 ADU-eq = 2.00 ADU)", Report(r8), StringComparison.Ordinal);
 
         // darks that give the exposure and no ISO against lights that give both: the ISO is the lights'
         using SessionFixture noIsoDarks = new SessionFixture().WithDarkSeries(6, Dark, exposure: 300, iso: null).WithLights(3, i => Light(i, 0.4), iso: 800);
@@ -1310,6 +1333,27 @@ public class LightsAndIndexTests
         Assert.Equal(2, lx.DarksSilent);
         Assert.Equal(0, lx.AssumedSettings);
         Assert.Equal(UnsaidSettings.None, lx.UnsaidByBoth);
+
+        // frames without an exposure (an EXPTIME of 0 is none): lights at ISO 800 twice as high against darks at
+        // ISO 400 and 120 s take the darks' exposure and are brought by the ISO alone
+        using SessionFixture isoOnly = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i, 2.0), exposure: 0, iso: 800);
+        DarkSeriesResult ri = Run(isoOnly);
+        Assert.All(ri.Lights!.Frames, f => Assert.Null(f.Info.ExposureSeconds));
+        Assert.Equal(3, ri.Lights.AssumedSettings);
+        Assert.All(ri.Lights.Frames, f => Assert.Equal(0.5, f.ToDarks, 9));
+        Assert.InRange(ri.Lights.LightsOverDark.Ratio, 0.95, 1.05);
+        Assert.Equal(MatchVerdict.WithOpt, ri.Lights.LightsOverDark.Verdict);
+        Assert.Contains("    ATENTIE            : 3 lights nu spun ISO-ul sau expunerea; s-au luat cele ale dark-urilor (1 ADU-eq = 2.00 ADU)", Report(ri), StringComparison.Ordinal);
+        Assert.Contains("(120.0 s, ISO 400 fata de ISO 800)", Report(ri), StringComparison.Ordinal);
+
+        // neither the darks nor the lights give the exposure: taken as the same, and the row names it
+        using SessionFixture noExposure = new SessionFixture().WithDarkSeries(6, Dark, exposure: 0).WithLights(3, i => Light(i), exposure: 0);
+        DarkSeriesResult re = Run(noExposure);
+        Assert.Equal(UnsaidSettings.Exposure, re.Lights!.UnsaidByBoth);
+        Assert.Equal(0, re.Lights.AssumedSettings);
+        Assert.Null(re.Lights.Other);
+        Assert.InRange(re.Lights.LightsOverDark.Ratio, 0.95, 1.05);
+        Assert.Contains("    ATENTIE            : nici dark-urile, nici lights-urile nu spun expunerea; s-a luat ca fiind aceeasi", Report(re), StringComparison.Ordinal);
 
         // the three wordings of what neither set gives
         Assert.Equal("nici dark-urile, nici lights-urile nu spun expunerea; s-a luat ca fiind aceeasi", DarkReport.UnsaidText(UnsaidSettings.Exposure, partner: false));
@@ -1366,6 +1410,33 @@ public class LightsAndIndexTests
         Assert.InRange(rl.Partner.LightsOther!.RatioInFiles, 0.38, 0.42);
         Assert.Contains("    verdict partener   : ATENTIE: nu scadea partenerul asa cum e: e facut la alte setari decat lights-urile (300.0 s fata de 120.0 s), asa ca in fisiere pixelii fierbinti din lights sunt de 0.4", Report(rl), StringComparison.Ordinal);
 
+        // each set lacks what the other gives: the session's darks give the ISO alone, the partner the exposure
+        // alone. Nothing both give, so nothing differs, and both rows say what was taken
+        using SessionFixture isoAlone = new SessionFixture().WithDarkSeries(6, Dark, exposure: 0);
+        using SessionFixture exposureAlone = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, iso: null, inSubfolder: false);
+        DarkSeriesResult rb = Run(isoAlone, exposureAlone.Root);
+        Assert.Equal(SilentSide.Both, rb.Partner!.Silent);
+        Assert.Equal(UnsaidSettings.None, rb.Partner.UnsaidByBoth);
+        Assert.Null(rb.Partner.Other);
+        Assert.InRange(rb.Partner.OwnOverPartner.Ratio, 0.95, 1.05);
+        Assert.Contains("    ATENTIE            : dark-urile partenerului nu spun ISO-ul sau expunerea; ce nu spun s-a luat ca la dark-urile sesiunii", Report(rb), StringComparison.Ordinal);
+        Assert.Contains("    ATENTIE            : dark-urile sesiunii nu spun ISO-ul sau expunerea; ce nu spun s-a luat ca la partener", Report(rb), StringComparison.Ordinal);
+        Assert.Contains("; cadre citite 5 din 5, 120.0 s); eticheta ", Report(rb), StringComparison.Ordinal);
+
+        // CR-077 for the exposure: darks without one, between lights of 120 s and a partner of 300 s with hot
+        // pixels 2.5 times as high, all at ISO 400 and one temperature. The darks' exposure drops out of the two
+        // pairs; the lights and the partner are compared on theirs
+        using SessionFixture noExposureDarks = new SessionFixture().WithDarkSeries(6, Dark, exposure: 0).WithLights(3, i => Light(i));
+        using SessionFixture long400 = new SessionFixture().WithDarkSeries(5, Long, exposure: 300, inSubfolder: false);
+        DarkSeriesResult rx = Run(noExposureDarks, long400.Root);
+        Assert.Equal(3, rx.Lights!.DarksSilent);
+        Assert.Equal(SilentSide.Own, rx.Partner!.Silent);
+        Assert.InRange(rx.Partner.OwnOverPartner.Ratio, 0.38, 0.42);
+        Assert.InRange(rx.Partner.LightsOverPartner.Ratio, 0.95, 1.05);
+        Assert.Equal(MatchVerdict.WithOpt, rx.Partner.LightsOverPartner.Verdict);
+        Assert.InRange(rx.Partner.LightsOther!.RatioInFiles, 0.38, 0.42);
+        Assert.Contains("e facut la alte setari decat lights-urile (300.0 s, ISO 400 fata de 120.0 s, ISO 400), asa ca in fisiere pixelii fierbinti din lights sunt de 0.4", Report(rx), StringComparison.Ordinal);
+
         // setting by setting: darks at ISO 400 and 300 s, lights of 120 s without an ISO, a partner at ISO 400 and
         // 120 s, all at one temperature (the lights' and the partner's hot pixels 0.4 times the darks'). The lights
         // took their ISO from the darks and kept their exposure, so they stand at the partner's settings, though
@@ -1383,9 +1454,9 @@ public class LightsAndIndexTests
     }
 
     /// <summary>
-    /// The helpers of ADR 0060 on frames built by hand, since a generated frame always gives an exposure: the
-    /// factor of one frame over another from the settings both give, what a frame lacks, what neither gives,
-    /// and a frame's settings with the missing ones taken from another.
+    /// The helpers of ADR 0060 on frames built by hand, every combination at once: the factor of one frame over
+    /// another from the settings both give, what a frame lacks, what neither gives, and a frame's settings with
+    /// the missing ones taken from another.
     /// </summary>
     [Fact]
     public void R052_TheFactorBetweenTwoFramesIsReadFromTheSettingsBothGive()
@@ -1410,8 +1481,14 @@ public class LightsAndIndexTests
         Assert.Equal(1.0, linear.Relative(F(120, null), F(null, 400)));
         Assert.Equal(1.0, linear.Relative(a, a));
         Assert.Equal(1.0, linear.Relative(a, null));
-        // a setting of 0 is not given
+        // a setting of 0 is not given, on either side
         Assert.Equal(0.4, linear.Relative(F(120, 0), b), 12);
+        Assert.Equal(2.0, linear.Relative(F(0, 800), b), 12);
+        Assert.Equal(0.4, linear.Relative(a, F(300, 0)), 12);
+        Assert.Equal(2.0, linear.Relative(a, F(0, 400)), 12);
+        Assert.False(Normalisation.GivesExposure(F(0, 400)));
+        Assert.False(Normalisation.GivesIso(F(120, 0)));
+        Assert.True(Normalisation.Lacks(F(0, 400), b));
 
         Assert.True(Normalisation.Lacks(F(120, null), b));
         Assert.False(Normalisation.Lacks(b, F(120, null)));

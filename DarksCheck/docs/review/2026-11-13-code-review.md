@@ -1623,10 +1623,12 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
   through the darks: the chained ratio in the files over the factor of the light over the
   partner, the product of the two pairs' ratios kept when all three give both settings, so
   that no figure of such sessions moves.
-- Deliberate: the rule of the second review of CR-006 to CR-010 and ADR 0060, decision 5 ("a
-  setting that was not used between two sets stands where the set it was taken from stands").
-- Test: `R064_ASetThatDoesNotSayItsSettingsStandsWhereTheOneItWasComparedWithStands` pins
-  `LightsOther` null for this case, and not the verdict.
+- Deliberate: the rule of the second review of CR-006 to CR-010 (ADR 0055, decision 1: a set
+  that does not say both its settings stands, in the chained row, where the set it was compared
+  with stands), which the fix of CR-076 had kept setting by setting.
+- Test: `R064_ASetThatDoesNotSayItsSettingsStandsWhereTheOneItWasComparedWithStands` pinned
+  `LightsOther` null for this case, and not the verdict; the fix split it, and
+  `R064_TheLightsAreComparedWithThePartnerOnTheSettingsThoseTwoGive` holds the case now.
 - Evidence: confirmed by reading; the verdict's words were not run.
 - Status: fixed 581dd50a (the lights are compared with the partner on the settings those two give, a missing one taken from the darks; the two rows stay, each true of its own pair; ADR 0060, decision 5)
 
