@@ -39,14 +39,28 @@ stages on the clock `FrameRun.Run` hands it (`logging.md`).
    carries area, box, the peak and flux on `d`, the peak on the raw raster above black (the
    saturation test: within 1 ADU of white - black) and the flux-weighted centroid.
 6. **Trails**: components over 250 px whose box diagonal exceeds 80 px and whose area is under
-   a quarter of the box plus 60: a line, not a blob.
-7. **Stars**: components of 5 to 400 px. Bright = peak over 50 sigma. The 400 brightest by
-   flux among those with a peak over 20 sigma and under 0.8 of the scale get `StarShapes.Measure`
-   (the peak is the one on `d`, above the sky, so a clipped star under a sky of 20 % of the scale
-   or more would pass; a star whose raw peak is within 1 ADU of the top, the saturated count's
-   test, is left out as well; the prototype has the first test alone, and on a sky of 3 % of the
-   scale, the Veil's, the two agree):
-   two readings of each star, neither with a size in pixels of its own (ADR 0056).
+   a quarter of the box plus 60: a line, not a blob. A trail is taken out of what may be a
+   star, whatever its area (R-015).
+7. **Stars**: the components of at least 5 px that are no trail, in flux order, are the
+   candidates. A candidate *votes* when its peak is over 20 sigma and under 0.8 of the scale
+   and it is not saturated (the peak is the one on `d`, above the sky, so a clipped star under
+   a sky of 20 % of the scale or more would pass; a star whose raw peak is within 1 ADU of the
+   top, the saturated count's test, is left out as well; the prototype has the first test
+   alone, and on a sky of 3 % of the scale, the Veil's, the two agree).
+   *The first width* (`FirstWidth`, ADR 0059): the 400 brightest voting candidates, of any
+   area, get `StarShapes.Measure`, and the median of their core widths, with no upper bound,
+   is the stars' width before the list of stars is known. It sets the two limits that follow
+   the stars' width, neither of which falls under what it was in pixels: a candidate is a star
+   up to `Th.MaxStarAreaWidths` (20) times the square of the first width, at least
+   `Th.MaxStarAreaFloor` (400 px), and a shape is kept up to `Th.MaxFwhmWidths` (3) times the
+   first width, at least `Th.MaxFwhmFloor` (15 px). A frame where no candidate was measured
+   keeps the two floors. Being a median, the first width is the stars' while the bright
+   patches that are no stars are fewer than the bright stars. `Shape` keeps what `Measure` read of a component, so the 400 brightest
+   voting stars, which then get their shape, are not measured twice: the first width costs
+   only the candidates that turn out too large to be stars, clumps and cloud for the most part.
+   Bright = peak over 50 sigma.
+   `StarShapes.Measure` takes two readings of each star, neither with a size in pixels of its
+   own (ADR 0056).
    *The core*, `StarShapes.Core`, by adaptive moments. A Gaussian weight starts round at the
    component's centroid, its sigma the radius of a disc of the component's area over
    `Th.CoreStartDivisor`. Each round sums the star's zeroth, first and second moments under
@@ -74,10 +88,14 @@ stages on the clock `FrameRun.Run` hands it (`logging.md`).
    tail or a second copy, which is what the classes read (R-090, `series-analysis.md`).
    The circle and the ring must lie inside the raster, so a star nearer the edge than about
    five of its widths is not measured.
-   Kept when the FWHM is in 1..15 px. The detection above still has limits in pixels: a
-   component over `Th.MaxStarArea` is no star, so the brightest stars of a session wider than
-   about 7 px never reach this step, and the series report says so (R-088). The halo of the 40
-   brightest: annulus (5, 10] over core 3 on the unclipped `d`, rings in pixels as well.
+   Kept when the FWHM is at least 1 px and within the limit of width above. The halo of the 40
+   brightest: for each star the flux in the annulus from `Th.HaloInnerWidths` (2) to
+   `Th.HaloOuterWidths` (4) of its own core width over the flux within `Th.HaloCoreWidths`
+   (1.2) of it, on the unclipped `d` (`StarShapes.Halo` takes the three radii in pixels). A
+   star nearer the border than four of its widths has no halo and is not replaced among the 40. The
+   rings are each star's, not the frame's: a fast lens draws wider stars in the centre than at
+   the edge, and rings of the frame's one width left the halo following the width there
+   (ADR 0059).
 8. **Summary**: percentiles with numpy's linear interpolation; the angle as the vector mean of
    the doubled angles of the stars over 1.2 (coherence = the vector's length, 1 = every star
    agrees), reported with 6 voters or more; three radial zones by fractions of the
@@ -92,14 +110,14 @@ a doc comment that says what it bounds; the value lives there only (ADR 0006). T
 constants, the drift-aware walking verdict's and the pattern's included, are listed in
 `series-analysis.md`. The names here, so a change is made by name: background and noise, `BackgroundTile`, `BackgroundSampleStep`,
 `NoiseWindowHalf`, `NoiseSampleStep`, `DetectionSmoothSigma`; detection and shape,
-`DetectionSigmas`, `MinStarArea`, `MaxStarArea`, `BrightPeakSigmas`, `ShapePeakSigmas`,
+`DetectionSigmas`, `MinStarArea`, `MaxStarAreaWidths`, `MaxStarAreaFloor`, `BrightPeakSigmas`, `ShapePeakSigmas`,
 `ShapePeakMaxFraction`, `ShapeStars`, the core's `CoreStartDivisor`, `CoreStartMinFwhm`,
 `CoreStartMaxFwhm`, `CoreIterations`, `CoreTolerance`, `CoreCentreTolerance`, `CoreWeightReach`,
 `CoreGrowthLimit`, `CoreDivergedFwhm`, `CoreCentreDriftMin`, the whole star's
 `WholeStarRadiusWidths`, `WholeStarMinRadius`, `WholeStarSigmas`, `WholeStarCentreIterations`,
 `LocalRingGap`, `LocalRingWidthFraction`, `LocalRingMinWidth`, then `MinFwhm`,
-`MaxFwhm`, `ElongatedRatio`, `AngleVoteRatio`, `AngleVoteMin`, `CentreZoneFraction`,
-`MidZoneFraction`, `ZoneStarsMin`, `HaloStars`, `HaloCore`, `HaloInner`, `HaloOuter`,
+`MaxFwhmWidths`, `MaxFwhmFloor`, `ElongatedRatio`, `AngleVoteRatio`, `AngleVoteMin`, `CentreZoneFraction`,
+`MidZoneFraction`, `ZoneStarsMin`, `HaloStars`, `HaloCoreWidths`, `HaloInnerWidths`, `HaloOuterWidths`,
 `SaturationMargin(top)`; trails, `TrailMinArea`, `TrailMinLength`, `TrailMaxFill`,
 `TrailFillSlack`; the star list for registration, `RegistrationStars`. The series' own
 constants are listed in `series-analysis.md`.
@@ -108,7 +126,10 @@ constants are listed in `series-analysis.md`.
 
 Since 2026-11-15 the shapes are no longer the prototype's (ADR 0056): the widths and the
 elongations below are those of the first versions, kept as the record of that comparison; the
-counts, the levels, the background and the noise still equal the prototype's.
+counts, the levels, the background and the noise still equal the prototype's. The same day the
+limits of what is a star and the halo's rings began to follow the stars' width (ADR 0059, which
+holds what was measured): the halo is no longer the prototype's, and the star counts are its
+own only on a frame whose stars are under 4.5 px wide and where no trail was also a star.
 
 On six Veil frames (1, 4, 17, 23, 72, 83) the C# figures equalled the prototype's: the detected
 and bright counts to the unit, the channel medians and the background to the ADU, the noise

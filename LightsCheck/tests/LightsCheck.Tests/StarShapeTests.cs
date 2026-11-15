@@ -265,4 +265,22 @@ public class StarShapeTests
         Assert.InRange(StarShapes.Halo(tight, 20, 20, 3, 5, 10)!.Value, 0, 0.02);
         Assert.True(StarShapes.Halo(wide, 20, 20, 3, 5, 10)!.Value > 1.0);
     }
+
+    /// <summary>
+    /// In rings of the star's own width (<see cref="Th.HaloCoreWidths"/>,
+    /// <see cref="Th.HaloInnerWidths"/>, <see cref="Th.HaloOuterWidths"/>) a Gaussian reads the
+    /// same halo, near zero, whatever its width in pixels (R-014, ADR 0059).
+    /// </summary>
+    [Theory]
+    [InlineData(2.5)]
+    [InlineData(5.0)]
+    [InlineData(10.0)]
+    [InlineData(20.0)]
+    public void R014_HaloInRingsOfTheStarsOwnWidthIsNearZeroAtAnyWidth(double fwhm)
+    {
+        double sigma = fwhm / 2.3548;
+        Raster r = Gaussian(201, 100, 100, sigma, sigma, 0, 1000);
+        double halo = StarShapes.Halo(r, 100, 100, Th.HaloCoreWidths * fwhm, Th.HaloInnerWidths * fwhm, Th.HaloOuterWidths * fwhm)!.Value;
+        Assert.InRange(halo, 0, 0.001);
+    }
 }

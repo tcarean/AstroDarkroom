@@ -27,8 +27,21 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   most stars, and leaving the frames out costs more than it gains. When the frame comes right
   after a move of the mount the reason says that the mount was probably still settling when the
   exposure began. Frames with stars doubled by a jump of the mount, bad until now, are marginal.
-- The `wide stars` row of FOCUS stands from 7 px, in place of 4.5, and says that the brightest
-  of such stars are left out, so the figures rest on fewer and fainter stars (R-088).
+- What counts as a star follows the stars' width (R-014, ADR 0059): a spot is a star up to 20
+  times the square of its frame's star width, never under the 400 px it was, and a star's shape
+  is kept up to three times that width, never under the 15 px it was. With 400 px and 15 px
+  alone the brightest stars of a session wider than about 7 px were left out, and a frame of
+  stars 15 px wide had no width at all; stars drawn 3 to 30 px wide are now counted and
+  measured alike (from about 20 px a star with wings adds specks of its skirt to the count). The `wide stars` row of FOCUS, which said that the brightest stars were left
+  out, is gone (R-088 dropped). A session whose stars are under 4.5 px wide reads as it did.
+- The halo is read in rings that follow each star's own width, from 2 to 4 widths against the
+  light within 1.2 widths, in place of rings of 3, 5 and 10 px (R-014, ADR 0059). On stars wider
+  than about 3 px the rings in pixels read the width over again, so a change of focus could pass
+  for dew; a plain star now reads about 0 at any width. Every halo figure moves: a 135 mm
+  session that read 0.025 at its start reads 0.020, one at 4.7 px reads 0.031 where it read
+  0.135. The frame report's `halo` line names the rings in star widths. The halo of three
+  frame cases of `docs/validation.json` was measured again on its session and recorded at the
+  owner's word (`docs/validation.md`, 2026-11-15).
 - FOCUS says the focus changed from a change of 15 % of the stars' width between the start and
   the end of the session, in place of 10 % (R-023, ADR 0058): the old widths read a change
   smaller than it was, and a session that moved by 10 % stacks under 5 % wider than its
@@ -251,9 +264,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   review of 2026-11-13).
 - Stars wider than about 4 px are read narrower than they are (5 px read 4.8, 7 px about 6), so
   on such a session a frame slightly out of focus could pass as good with nothing said. The
-  measurement stays as it is, since on real frames a wider window reads the sky and not the
-  star, and FOCUS now has a `wide stars` row that says so when the session's stars read wider
-  than 4.5 px (R-014, R-088, ADR 0052; CR-007 of the review of 2026-11-13).
+  width is now measured in a way that follows the star, the first entry under Changed (R-014,
+  ADR 0052 and ADR 0056; CR-007 of the review of 2026-11-13).
+- A short satellite or plane trail, of 251 to 400 px, was counted as a trail and as a star too:
+  one star too many, and a point in the list the frames are aligned by. What the program calls
+  a trail is now a trail and nothing else (R-015; CR-013 of the review of 2026-11-13).
 - A raw whose colour mosaic is not a Bayer one, such as Fujifilm's X-Trans, was measured as a
   monochrome frame, on pixels of three colours, with nothing said. It is now refused: `<file>:
   the sensor's colour mosaic is not a Bayer one (Fujifilm X-Trans); LightsCheck measures only

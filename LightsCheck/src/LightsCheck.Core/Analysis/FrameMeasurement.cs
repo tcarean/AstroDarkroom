@@ -76,8 +76,8 @@ internal sealed record ZoneShape(double? Fwhm, double? Elongation, int Stars);
 
 /// <summary>
 /// Everything measured on one light frame (R-012 to R-016). Every figure is in pixels of the
-/// frame or ADU above black, and none is scaled by the camera, the lens or the session; the
-/// stars' width is right up to about 4 px and too narrow above (R-014, R-088).
+/// frame or ADU above black, and none is scaled by the camera, the lens or the session; what
+/// is a star, and where its halo is read, follow the stars' width in pixels (R-014, ADR 0059).
 /// </summary>
 /// <param name="Height">The frame's height, in pixels.</param>
 /// <param name="Width">The frame's width, in pixels.</param>
@@ -99,8 +99,9 @@ internal sealed record ZoneShape(double? Fwhm, double? Elongation, int Stars);
 /// 1.4826 times the MAD of the residual (green minus background) in the central window, in ADU.
 /// </param>
 /// <param name="Detected">
-/// The detected components of star-like area, <see cref="Th.MinStarArea"/> to
-/// <see cref="Th.MaxStarArea"/> pixels.
+/// The detected components of star-like area that are no trail: from
+/// <see cref="Th.MinStarArea"/> pixels to <see cref="Th.MaxStarAreaWidths"/> times the square of
+/// the frame's first width, never under <see cref="Th.MaxStarAreaFloor"/> pixels.
 /// </param>
 /// <param name="DetectedBright">
 /// Those whose peak exceeds <see cref="Th.BrightPeakSigmas"/> times <paramref name="NoiseSigma"/>.
@@ -110,8 +111,9 @@ internal sealed record ZoneShape(double? Fwhm, double? Elongation, int Stars);
 /// <see cref="Th.SaturationMargin"/> of the top of the scale.
 /// </param>
 /// <param name="Shapes">
-/// The measured stars kept (FWHM within <see cref="Th.MinFwhm"/> to <see cref="Th.MaxFwhm"/>),
-/// brightest first.
+/// The measured stars kept (FWHM from <see cref="Th.MinFwhm"/> to
+/// <see cref="Th.MaxFwhmWidths"/> times the frame's first width, never under
+/// <see cref="Th.MaxFwhmFloor"/>), brightest first.
 /// </param>
 /// <param name="FwhmMedian">
 /// The median FWHM of <paramref name="Shapes"/>, in pixels; null without a shape.
@@ -148,8 +150,10 @@ internal sealed record ZoneShape(double? Fwhm, double? Elongation, int Stars);
 /// The stars from <see cref="Th.MidZoneFraction"/> of the half-diagonal outward.
 /// </param>
 /// <param name="Halo">
-/// The median halo (annulus flux over core flux) of up to <see cref="Th.HaloStars"/> of the
-/// brightest shapes; null when none could be measured.
+/// The median halo (annulus flux over core flux, the rings <see cref="Th.HaloCoreWidths"/>,
+/// <see cref="Th.HaloInnerWidths"/> and <see cref="Th.HaloOuterWidths"/> times each star's own
+/// FWHM) of up to <see cref="Th.HaloStars"/> of the brightest shapes; null when none could be
+/// measured.
 /// </param>
 /// <param name="Trails">The long, thin components found (R-015).</param>
 /// <param name="RegistrationStars">

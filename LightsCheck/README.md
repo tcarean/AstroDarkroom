@@ -117,9 +117,9 @@ minutes. The report's sections:
   alignment, and how many frames to leave out of the stack and how much exposure stays.
 - **FOCUS**: the stars' width (FWHM) on the good frames, at the start and at the end of the night
   and in three zones (centre, middle, edge), and the verdict. A star is read at its width
-  whatever that is in pixels, so the figure holds at any focal length and pixel size. When the
-  session's stars are wider than 7 px a `wide stars` row says that the brightest of them are left
-  out, so the figures rest on fewer and fainter stars.
+  whatever that is in pixels, so the figure holds at any focal length and pixel size. What
+  counts as a star follows the stars' width too, so wide stars are counted and measured like
+  narrow ones.
 - **EXPOSURE AND NOISE**: the sky background, the read noise of each channel (the noise the sensor
   adds to every frame), and on the first, the middle and the last frame (one too short to stack
   is skipped) the shot/read ratio of each
@@ -327,7 +327,7 @@ you moved the mount. The time comes from the EXIF of a raw (the camera's clock) 
     stars              : 15132 detected, 2104 bright, 357 saturated; 394 measured
     FWHM               : 2.51 px median (p90 2.96); centre 2.56 (92), middle 2.54 (202), edge 2.43 (100)
     elongation         : 1.17 median (p90 1.44); 20 % above 1.3; angle 84 degrees, coherence 0.43; centre 1.14 (92), edge 1.16 (100)
-    halo               : 0.021 (ring 5-10 px / core 3 px, over the 40 brightest stars)
+    halo               : 0.019 (ring 2-4 star widths / core 1.2 star widths, over the 40 brightest stars)
     trails             : 0
     registration       : 600 stars kept
 ```
@@ -351,8 +351,9 @@ you moved the mount. The time comes from the EXIF of a raw (the camera's clock) 
   well the stars agree on it (near 1 = all the same way, so the tracking; small = no direction, so
   the optics or the noise). Above 0.8 the report of the night ties the angle to a mount axis
   (TRAILED FRAMES).
-- `halo`: how much of a bright star's light sits in a ring of 5 to 10 px against its core of
-  3 px; it grows with dew or haze.
+- `halo`: how much of a bright star's light sits in a ring from 2 to 4 times the star's own
+  width against the light within 1.2 times that width; it grows with dew or haze, and stays the
+  same when the stars only get wider.
 - `trails`: satellite or plane trails, each with its length and its top-left corner.
 - `registration`: the stars kept to register the frame on the others.
 

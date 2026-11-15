@@ -70,9 +70,12 @@ internal static class FrameReport
             $"    elongation         : {elong} median (p90 {elong90}); {share} % above {ratio}; angle {Opt(m.AngleDeg, 0, " degrees")}, coherence {coherence}; centre {ec}, edge {ee}",
             $"    alungire           : {elong} mediana (p90 {elong90}); {share} % peste {ratio}; unghi {(m.AngleDeg is double a ? RoCount(RunReport.F(a, 0)) + "grade" : "-")}, coerenta {coherence}; centru {ec}, margine {ee}"));
         string halo = Opt(m.Halo, 3), haloStars = Th.HaloStars.ToString(CultureInfo.InvariantCulture);
+        // The rings follow each star's width (ADR 0059); the three figures are read from the constants.
+        string ring = Th.HaloInnerWidths.ToString("0.#", CultureInfo.InvariantCulture) + "-" + Th.HaloOuterWidths.ToString("0.#", CultureInfo.InvariantCulture);
+        string core = Th.HaloCoreWidths.ToString("0.#", CultureInfo.InvariantCulture);
         w.WriteLine(T(
-            $"    halo               : {halo} (ring 5-10 px / core 3 px, over the {haloStars} brightest stars)",
-            $"    halo               : {halo} (inel 5-10 px / nucleu 3 px, la cele mai luminoase {RoCount(haloStars)}stele)"));
+            $"    halo               : {halo} (ring {ring} star widths / core {core} star widths, over the {haloStars} brightest stars)",
+            $"    halo               : {halo} (inel {ring} latimi de stea / nucleu {core} latimi de stea, la cele mai luminoase {RoCount(haloStars)}stele)"));
         string trails = m.Trails.Count.ToString(CultureInfo.InvariantCulture) + (m.Trails.Count > 0
             ? " (" + string.Join(", ", m.Trails.Select(t => $"{RunReport.F(t.Length, 0)} px {T("at", "la")} ({t.X.ToString(CultureInfo.InvariantCulture)},{t.Y.ToString(CultureInfo.InvariantCulture)})")) + ")"
             : "");

@@ -137,6 +137,251 @@ public class FrameAnalyzerTests
         Assert.InRange(m.Detected, 29, 32);
     }
 
+    /// <summary>
+    /// Stars 10, 15 and 20 px wide at a peak of 200 sigma cover 500 to 2200 px each: all are
+    /// counted, bright, measured at their width and kept for registration, since the limits of
+    /// area and of width follow the stars' width (R-014, ADR 0059). With the limits of 400 px
+    /// and 15 px none was counted.
+    /// </summary>
+    [Theory]
+    [InlineData(10.0)]
+    [InlineData(15.0)]
+    [InlineData(20.0)]
+    public void R014_BrightWideStarsAreCountedBrightAndMeasuredAtTheirWidth(double fwhm)
+    {
+        SyntheticFrame f = new SyntheticFrame { Width = 2400, Height = 1600 }.WithStarGrid(40, fwhm, 2400, 2400);
+        FrameMeasurement m = Analyze(f);
+
+        Assert.InRange(m.Detected, 40, 41);
+        Assert.InRange(m.DetectedBright, 40, 41);
+        Assert.Equal(0, m.SaturatedStars);
+        Assert.Equal(40, m.Shapes.Count);
+        Assert.InRange(m.FwhmMedian!.Value, 0.97 * fwhm, 1.05 * fwhm);
+        Assert.InRange(m.ElongationMedian!.Value, 1.0, 1.1);
+        Assert.InRange(m.RegistrationStars.Count, 40, 41);
+        Assert.Empty(m.Trails);
+    }
+
+    /// <summary>
+    /// A knot of nebula four star widths across, at 25 times the sky's noise, among stars 10 px
+    /// wide. It covers about 4700 px, over the 20 widths squared a star may cover: the stars
+    /// are all counted and the knot is not, nor is it measured or kept for registration (R-014).
+    /// The noise may leave a speck or two on the knot's rim, which are counted as any speck is.
+    /// </summary>
+    [Fact]
+    public void R014_AKnotOfNebulaAmongWideStarsIsNotAStar()
+    {
+        SyntheticFrame f = new SyntheticFrame { Width = 2400, Height = 1600 }.WithStarGrid(40, 10.0, 2400, 2400);
+        f.Stars.Add(SyntheticStar.Round(330, 344, 300, 40.0));
+        FrameMeasurement m = Analyze(f);
+
+        Assert.InRange(m.Detected, 40, 44);
+        Assert.Equal(40, m.DetectedBright);
+        Assert.Equal(40, m.Shapes.Count);
+        Assert.DoesNotContain(m.RegistrationStars, s => Math.Abs(s.X - 330) < 20 && Math.Abs(s.Y - 344) < 20);
+        Assert.DoesNotContain(m.Shapes, s => Math.Abs(s.X - 330) < 60 && Math.Abs(s.Y - 344) < 60);
+    }
+
+    /// <summary>
+    /// Under 4.5 px of width the limits are the 400 px and the 15 px they were: among stars
+    /// 3 px wide a round patch 11 px wide, about 330 px above the threshold, is over 20 widths
+    /// squared and over three widths, and is counted and measured all the same (R-014, the two
+    /// floors of ADR 0059).
+    /// </summary>
+    [Fact]
+    public void R014_UnderFourAndAHalfPixelsTheLimitsAreThoseInPixels()
+    {
+        SyntheticFrame f = new SyntheticFrame { Width = 2400, Height = 1600 }.WithStarGrid(40, 3.0, 2400, 2400);
+        f.Stars.Add(SyntheticStar.Round(330, 344, 230, 11.0));
+        FrameMeasurement m = Analyze(f);
+
+        Assert.InRange(m.FwhmMedian!.Value, 2.8, 3.6);
+        Assert.InRange(m.Detected, 41, 42);
+        Assert.Contains(m.RegistrationStars, s => Math.Abs(s.X - 330) < 5 && Math.Abs(s.Y - 344) < 5);
+        StarShape patch = Assert.Single(m.Shapes, s => Math.Abs(s.X - 330) < 5 && Math.Abs(s.Y - 344) < 5);
+        Assert.InRange(patch.Fwhm, Th.MaxFwhmWidths * m.FwhmMedian.Value, Th.MaxFwhmFloor);
+    }
+
+    /// <summary>
+    /// A star with a broad skirt covers about three and a half times the area of a plain one,
+    /// some 15 squares of its width as read: it is a star, under the 20 the limit allows, and every drawn star
+    /// is kept for registration (R-014, ADR 0059). The noise leaves specks on the skirts' rims,
+    /// which are counted as any speck is.
+    /// </summary>
+    [Fact]
+    public void R014_StarsWithABroadSkirtAreCounted()
+    {
+        SyntheticFrame f = new SyntheticFrame { Width = 2400, Height = 1600 }.WithStarGrid(40, 10.0, 2000, 2000);
+        foreach (SyntheticStar s in f.Stars.ToList())
+        {
+            f.Stars.Add(SyntheticStar.Round(s.X, s.Y, 150, 30.0));
+        }
+
+        FrameMeasurement m = Analyze(f);
+        Assert.Equal(40, m.DetectedBright);
+        Assert.All(f.Stars.Take(40), d => Assert.Contains(m.RegistrationStars, s => Math.Abs(s.X - d.X) < 3 && Math.Abs(s.Y - d.Y) < 3));
+    }
+
+    /// <summary>
+    /// A frame whose stars are all saturated has no star to read a width on, so the limit of
+    /// area stays the 400 px it was: stars 10 px wide, saturated, are over it and are not
+    /// counted (R-014: a frame without a first width keeps the limits in pixels).
+    /// </summary>
+    [Fact]
+    public void R014_AFrameWithoutAnUnsaturatedBrightStarKeepsTheLimitInPixels()
+    {
+        SyntheticFrame f = new SyntheticFrame { Width = 2400, Height = 1600 }.WithStarGrid(40, 10.0, 20000, 20000);
+        FrameMeasurement m = Analyze(f);
+
+        Assert.Equal(40, m.SaturatedStars);
+        Assert.Empty(m.Shapes);
+        Assert.Null(m.FwhmMedian);
+        Assert.Equal(0, m.Detected);
+    }
+
+    /// <summary>
+    /// The frame's first width is the middle value of what is read, so a few bright patches
+    /// among more stars do not move it: six stars 3 px wide and three round patches 20 px wide
+    /// read the stars' width, and the patches, some 1300 px each, are no stars (R-014). Their
+    /// mean width would let the patches in.
+    /// </summary>
+    [Fact]
+    public void R014_AFewBrightPatchesDoNotSetTheStarsWidth()
+    {
+        SyntheticFrame f = new SyntheticFrame { Width = 1600, Height = 1200 };
+        (double X, double Y)[] stars = [(300, 300), (800, 300), (1300, 300), (300, 900), (800, 900), (1300, 900)];
+        (double X, double Y)[] patches = [(550, 600), (1050, 600), (800, 600)];
+        foreach ((double x, double y) in stars)
+        {
+            f.Stars.Add(SyntheticStar.Round(x, y, 2000, 3.0));
+        }
+
+        foreach ((double x, double y) in patches)
+        {
+            f.Stars.Add(SyntheticStar.Round(x, y, 400, 20.0));
+        }
+
+        FrameMeasurement m = Analyze(f);
+        Assert.InRange(m.FwhmMedian!.Value, 2.8, 3.6);
+        Assert.Equal(6, m.Shapes.Count);
+        Assert.InRange(m.Detected, 6, 8);
+        Assert.All(patches, p => Assert.DoesNotContain(m.RegistrationStars, s => Math.Abs(s.X - p.X) < 10 && Math.Abs(s.Y - p.Y) < 10));
+    }
+
+    /// <summary>
+    /// The rings are each star's own, not the frame's: in a frame of 39 stars 5 px wide and 21
+    /// stars 10 px wide, where the frame's width is the narrow stars' and most of the 40
+    /// brightest are the wide ones, the halo still reads about zero (R-014, ADR 0059). Rings of
+    /// the frame's one width read this frame about 0.07.
+    /// </summary>
+    [Fact]
+    public void R014_TheHaloIsReadInRingsOfEachStarsOwnWidth()
+    {
+        SyntheticFrame f = new SyntheticFrame { Width = 2400, Height = 1600 }.WithStarGrid(60, 5.0, 2400, 2400);
+        for (int i = 0; i < 21; i++)
+        {
+            SyntheticStar s = f.Stars[i * 60 / 21];
+            f.Stars[i * 60 / 21] = SyntheticStar.Round(s.X, s.Y, 1000, 10.0);
+        }
+
+        FrameMeasurement m = Analyze(f);
+        Assert.InRange(m.FwhmMedian!.Value, 4.8, 5.6);
+        Assert.Equal(60, m.Shapes.Count);
+        Assert.Equal(21, m.Shapes.Take(Th.HaloStars).Count(s => s.Fwhm > 8));
+        Assert.InRange(m.Halo!.Value, -0.02, 0.02);
+    }
+
+    /// <summary>
+    /// The halo is read in rings that follow each star's width: plain stars read about zero
+    /// whether 3 or 10 px wide, and the same stars with a tenth of their light in a skirt five
+    /// widths wide read the same halo at both widths (R-014, ADR 0059). Rings of 3, 5 and 10 px
+    /// read a plain star of 10 px 2.0.
+    /// </summary>
+    [Theory]
+    [InlineData(3.0)]
+    [InlineData(10.0)]
+    public void R014_TheHaloReadsTheSameOnNarrowAndOnWideStars(double fwhm)
+    {
+        SyntheticFrame plain = new SyntheticFrame { Width = 2400, Height = 1600 }.WithStarGrid(40, fwhm, 2400, 2400);
+        Assert.InRange(Analyze(plain).Halo!.Value, -0.03, 0.03);
+
+        SyntheticFrame skirt = new SyntheticFrame { Width = 2400, Height = 1600 }.WithStarGrid(40, fwhm, 2160, 2160);
+        foreach (SyntheticStar s in skirt.Stars.ToList())
+        {
+            // A skirt 5 widths wide is 25 times the core's area: a tenth of the light at 1/225 of the peak.
+            skirt.Stars.Add(SyntheticStar.Round(s.X, s.Y, 2400 * 0.1 / 25, 5 * fwhm));
+        }
+
+        Assert.InRange(Analyze(skirt).Halo!.Value, 0.02, 0.07);
+    }
+
+    /// <summary>
+    /// A faint streak about 90 px long is a trail of 251 to 400 px, an area a star may have: it
+    /// is a trail and nothing else, and the frame counts the stars it counts without the streak
+    /// (R-015; CR-013 of the review of 2026-11-13).
+    /// </summary>
+    [Fact]
+    public void R015_AShortThinStreakIsATrailAndNotAStar()
+    {
+        SyntheticFrame without = new SyntheticFrame { Width = 1000, Height = 700 }.WithStarGrid(20, 3.0, 400, 2000);
+        SyntheticFrame with = new SyntheticFrame { Width = 1000, Height = 700, TrailLine = (300, 300, 362, 362, 70) }.WithStarGrid(20, 3.0, 400, 2000);
+        FrameMeasurement m0 = Analyze(without), m = Analyze(with);
+
+        Trail t = Assert.Single(m.Trails);
+        Assert.InRange(t.Area, Th.TrailMinArea + 1, 400);
+        Assert.Empty(m0.Trails);
+        Assert.Equal(m0.Detected, m.Detected);
+        Assert.Equal(m0.RegistrationStars.Count, m.RegistrationStars.Count);
+        Assert.DoesNotContain(m.RegistrationStars, s => s.X > 295 && s.X < 367 && Math.Abs(s.X - s.Y) < 5);
+    }
+
+    /// <summary>
+    /// Among stars 10 px wide a component may cover about 2000 px and be a star; a bright
+    /// streak of some 670 px that fades along its length is under that, and the shape
+    /// measurement reads it, about 27 px wide, under the three widths a shape may have. It is a
+    /// trail and nothing else: the frame counts and measures what it does without the streak,
+    /// and the streak is not kept for registration (R-015).
+    /// </summary>
+    [Fact]
+    public void R015_ABrightStreakAmongWideStarsIsATrailAndNotAStar()
+    {
+        SyntheticFrame without = new SyntheticFrame { Width = 2400, Height = 1600 }.WithStarGrid(40, 10.0, 2400, 2400);
+        SyntheticFrame with = new SyntheticFrame { Width = 2400, Height = 1600 }.WithStarGrid(40, 10.0, 2400, 2400);
+        with.Stars.Add(SyntheticStar.Elongated(331, 331, 1500, 3.0, 12.5, 45));
+        FrameMeasurement m0 = Analyze(without), m = Analyze(with);
+
+        Trail t = Assert.Single(m.Trails);
+        Assert.InRange(t.Area, 401, 1500);
+        Assert.Empty(m0.Trails);
+        Assert.Equal(m0.Detected, m.Detected);
+        Assert.Equal(40, m.Shapes.Count);
+        Assert.DoesNotContain(m.Shapes, s => Math.Abs(s.X - 331) < 40 && Math.Abs(s.Y - 331) < 40);
+        Assert.DoesNotContain(m.RegistrationStars, s => Math.Abs(s.X - 331) < 40 && Math.Abs(s.Y - 331) < 40);
+    }
+
+    /// <summary>
+    /// A shape is kept up to three times the frame's first width, never under 15 px. Among
+    /// stars 3 px wide a streak along a row that reads about 17 px, and among stars 10 px wide
+    /// one that reads about 34 px, over the 30 px three widths allow: each is counted and kept
+    /// for registration, being under the limit of area and no trail, and is not among the
+    /// measured stars (R-014).
+    /// </summary>
+    [Theory]
+    [InlineData(3.0, 1000.0, 2.0, 12.0)]
+    [InlineData(10.0, 2000.0, 6.0, 8.0)]
+    public void R014_AShapeWiderThanTheLimitOfWidthIsNotKept(double fwhm, double peak, double fwhmMinor, double elongation)
+    {
+        SyntheticFrame f = new SyntheticFrame { Width = 2400, Height = 1600 }.WithStarGrid(40, fwhm, 2400, 2400);
+        f.Stars.Add(SyntheticStar.Elongated(330, 344, peak, fwhmMinor, elongation, 0));
+        FrameMeasurement m = Analyze(f);
+
+        Assert.Empty(m.Trails);
+        Assert.InRange(m.Detected, 41, 42);
+        Assert.Contains(m.RegistrationStars, s => Math.Abs(s.X - 330) < 8 && Math.Abs(s.Y - 344) < 8);
+        Assert.Equal(40, m.Shapes.Count);
+        Assert.DoesNotContain(m.Shapes, s => Math.Abs(s.X - 330) < 40 && Math.Abs(s.Y - 344) < 40);
+    }
+
     [Fact]
     public void R015_ALongThinStreakIsATrailNotAStar()
     {

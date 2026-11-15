@@ -24,8 +24,8 @@
       "kind": "frame",
       "session": "Veil/2026-10-06-3h",
       "frame": 1,
-      "measuredOn": "2026-10-09, the shapes 2026-11-15",
-      "expected": { "detected": 12308, "bright": 1532, "fwhm": 4.12, "fwhmP90": 4.42, "elongation": 1.78, "elongatedFraction": 0.97, "angle": 84, "coherence": 0.88, "halo": 0.033, "background": 128, "sigma": 13.9, "channels": [27, 126, 126, 144], "fwhmCentre": 4.23, "fwhmEdge": 3.93, "trails": 0 },
+      "measuredOn": "2026-10-09, the shapes and the halo 2026-11-15",
+      "expected": { "detected": 12308, "bright": 1532, "fwhm": 4.12, "fwhmP90": 4.42, "elongation": 1.78, "elongatedFraction": 0.97, "angle": 84, "coherence": 0.88, "halo": 0.016, "background": 128, "sigma": 13.9, "channels": [27, 126, 126, 144], "fwhmCentre": 4.23, "fwhmEdge": 3.93, "trails": 0 },
       "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 3, "coherence": 0.03, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
     },
     {
@@ -42,8 +42,8 @@
       "kind": "frame",
       "session": "Veil/2026-10-06-3h",
       "frame": 17,
-      "measuredOn": "2026-10-09, the shapes 2026-11-15",
-      "expected": { "detected": 9763, "bright": 1176, "fwhm": 2.84, "fwhmP90": 7.51, "elongation": 2.49, "elongatedFraction": 0.97, "angle": -89, "coherence": 0.94, "halo": 0.467, "background": 131, "sigma": 14.3, "channels": [27, 129, 129, 147], "fwhmCentre": 2.75, "fwhmEdge": 2.66, "trails": 0 },
+      "measuredOn": "2026-10-09, the shapes and the halo 2026-11-15",
+      "expected": { "detected": 9763, "bright": 1176, "fwhm": 2.84, "fwhmP90": 7.51, "elongation": 2.49, "elongatedFraction": 0.97, "angle": -89, "coherence": 0.94, "halo": 0.289, "background": 131, "sigma": 14.3, "channels": [27, 129, 129, 147], "fwhmCentre": 2.75, "fwhmEdge": 2.66, "trails": 0 },
       "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 3, "coherence": 0.03, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
     },
     {
@@ -51,8 +51,8 @@
       "kind": "frame",
       "session": "Veil/2026-10-06-3h",
       "frame": 23,
-      "measuredOn": "2026-10-09, the shapes 2026-11-15",
-      "expected": { "detected": 11352, "bright": 1340, "fwhm": 3.04, "fwhmP90": 5.60, "elongation": 2.57, "elongatedFraction": 0.98, "angle": -87, "coherence": 0.98, "halo": 0.307, "background": 135, "sigma": 14.5, "channels": [27, 135, 135, 153], "fwhmCentre": 3.12, "fwhmEdge": 2.89, "trails": 0 },
+      "measuredOn": "2026-10-09, the shapes and the halo 2026-11-15",
+      "expected": { "detected": 11352, "bright": 1340, "fwhm": 3.04, "fwhmP90": 5.60, "elongation": 2.57, "elongatedFraction": 0.98, "angle": -87, "coherence": 0.98, "halo": 0.133, "background": 135, "sigma": 14.5, "channels": [27, 135, 135, 153], "fwhmCentre": 3.12, "fwhmEdge": 2.89, "trails": 0 },
       "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 3, "coherence": 0.03, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
     },
     {

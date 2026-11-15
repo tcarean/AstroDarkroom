@@ -1,7 +1,7 @@
 # 0052. The moment window stays at 6 px, and the report says when the stars are too wide for it
 
 Date: 2026-11-14
-Status: accepted 2026-11-14; the moment window of 6 px, and the limit and the words of the wide stars row superseded by 0056
+Status: accepted 2026-11-14; the moment window of 6 px, and the limit and the words of the wide stars row superseded by 0056; the wide stars row superseded by 0059
 
 ## Context
 

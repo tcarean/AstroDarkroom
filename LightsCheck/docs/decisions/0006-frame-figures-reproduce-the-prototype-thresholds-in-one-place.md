@@ -1,7 +1,7 @@
 # 0006. The frame figures reproduce the Python prototype step for step; every constant lives in Thresholds.cs
 
 Date: 2026-10-09
-Status: accepted 2026-10-09; the star shapes, FWHM, elongation and angle, reproducing the prototype's moments superseded by 0056
+Status: accepted 2026-10-09; the star shapes, FWHM, elongation and angle, reproducing the prototype's moments superseded by 0056; the limit of a star's area, the limit of a kept width, the halo's rings and a trail that is also a star, reproducing the prototype's superseded by 0059
 
 ## Context
 

@@ -54,10 +54,23 @@ internal static class Th
     internal const double DetectionSigmas = 5.0;
 
     /// <summary>
-    /// A component is a star when its area is in [MinStarArea, MaxStarArea] pixels.
+    /// A component is a star from this area, in pixels: under it a hot pixel or a speck of
+    /// noise, which are pixels at any scale.
     /// </summary>
     internal const int MinStarArea = 5;
-    internal const int MaxStarArea = 400;
+
+    /// <summary>
+    /// ... and up to this many times the square of the frame's first width (ADR 0059): above the
+    /// detection threshold a star covers 3 to 13 of its widths squared at every width, a
+    /// saturated one more. It is what 400 px are to stars 4.5 px wide.
+    /// </summary>
+    internal const double MaxStarAreaWidths = 20.0;
+
+    /// <summary>
+    /// ... and never under this area, in pixels: the limit of the first versions, which stays
+    /// that of every frame whose stars are under 4.5 px wide, and of a frame without a width.
+    /// </summary>
+    internal const int MaxStarAreaFloor = 400;
 
     /// <summary>A "bright" star peaks above this many sigmas of the frame's noise.</summary>
     internal const double BrightPeakSigmas = 50.0;
@@ -145,11 +158,20 @@ internal static class Th
     internal const double LocalRingWidthFraction = 0.5;
     internal const double LocalRingMinWidth = 4.0;
 
-    /// <summary>
-    /// A shape measurement is kept when its FWHM is in [MinFwhm, MaxFwhm] pixels.
-    /// </summary>
+    /// <summary>A shape measurement is kept when its FWHM is at least this, in pixels ...</summary>
     internal const double MinFwhm = 1.0;
-    internal const double MaxFwhm = 15.0;
+
+    /// <summary>
+    /// ... and at most this many times the frame's first width (ADR 0059): a core that settled
+    /// on something three times as wide as the frame's stars is no star.
+    /// </summary>
+    internal const double MaxFwhmWidths = 3.0;
+
+    /// <summary>
+    /// ... and never under this FWHM, in pixels: the limit of the first versions, which stays
+    /// that of every frame whose stars are under 5 px wide, and of a frame without a width.
+    /// </summary>
+    internal const double MaxFwhmFloor = 15.0;
 
     /// <summary>
     /// A star counts as elongated above this ratio when the fraction of elongated stars is
@@ -177,12 +199,13 @@ internal static class Th
     internal const int HaloStars = 40;
 
     /// <summary>
-    /// Halo: the flux in the annulus (HaloInner, HaloOuter] over the flux within HaloCore, in
-    /// pixels.
+    /// Halo: the flux in the annulus (HaloInnerWidths, HaloOuterWidths] over the flux within
+    /// HaloCoreWidths, each a multiple of the star's own core FWHM (ADR 0059). They are what
+    /// the 3, 5 and 10 px of the first versions were to a star 2.5 px wide.
     /// </summary>
-    internal const double HaloCore = 3.0;
-    internal const double HaloInner = 5.0;
-    internal const double HaloOuter = 10.0;
+    internal const double HaloCoreWidths = 1.2;
+    internal const double HaloInnerWidths = 2.0;
+    internal const double HaloOuterWidths = 4.0;
 
     /// <summary>
     /// A pixel within this many ADU of the top of the scale is saturated: 1 ADU on an integer
@@ -406,15 +429,6 @@ internal static class Th
     /// soft.
     /// </summary>
     internal const double SoftFwhmFactor = 1.3;
-
-    /// <summary>
-    /// A session whose median FWHM of the good frames is above this many pixels has stars so
-    /// wide that the brightest of them pass <see cref="MaxStarArea"/> and are left out, so the
-    /// figures rest on fewer and fainter stars, and the report says it (R-088, ADR 0056): a
-    /// star with wings 7 px wide is dropped at a peak of 200 sigma, and a Gaussian of 10 px at 60
-    /// sigma, which passes at 25.
-    /// </summary>
-    internal const double WideStarFwhm = 7.0;
 
     /// <summary>
     /// A frame with fewer detected stars than this fraction of the session's median has clouds or
