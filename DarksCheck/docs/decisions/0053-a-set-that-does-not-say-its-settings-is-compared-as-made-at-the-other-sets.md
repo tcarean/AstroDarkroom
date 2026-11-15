@@ -1,7 +1,7 @@
 # 0053. A set that does not say its settings is compared as made at the other set's
 
 Date: 2026-11-13
-Status: accepted 2026-11-13
+Status: accepted 2026-11-13; a set needing both settings to be compared on any superseded by 0060
 
 ## Context
 

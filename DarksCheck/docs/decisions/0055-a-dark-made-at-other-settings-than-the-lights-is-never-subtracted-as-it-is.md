@@ -1,7 +1,7 @@
 # 0055. A dark made at other settings than the lights is never subtracted as it is, and the window says so in red
 
 Date: 2026-11-14
-Status: accepted 2026-11-14
+Status: accepted 2026-11-14; other settings needing both settings on both sides, and where a set stands in the chained row superseded by 0060
 
 ## Context
 
@@ -84,6 +84,6 @@ puts new darks first for that reason. Guarded by
 `R067_AtOtherSettingsWhatASubtractionLeavesIsWorkedOutOnTheFiles`,
 `R063_APartnerAtOtherSettingsThanTheSessionIsNeverSubtractedAsItIs`,
 `R064_LightsTakenAtTheDarksSettingsFollowTheDarksAgainstAPartnerAtOtherSettings`,
-`R064_ASetThatDoesNotSayItsSettingsStandsWhereTheOneItWasComparedWithStands`,
-`R052_SetsThatDoNotSayBothSettingsAreNotAtOtherSettings` and
+`R064_APartnerThatDoesNotSayItsSettingsStandsWhereTheDarksStandForTheLights`,
+`R052_ASettingBothSetsGiveIsUsedAndOneASetDoesNotGiveIsTakenFromTheOther` and
 `R124_DarksThatDoNotHaveTheLightsSettingsStandOutLargeAndRed`.

@@ -284,16 +284,22 @@ internal static class DarkReport
         if (l.AssumedSettings > 0)
         {
             rows.Add(new(T("WARNING", "ATENTIE"), T(
-                $"{l.AssumedSettings} {(l.AssumedSettings == 1 ? "light does not give its ISO or exposure; the darks' were taken" : "lights do not give their ISO or exposure; the darks' were taken")} (1 ADU-eq = {F(r.Darks.Norm, 2)} ADU)",
-                $"{RoCount(l.AssumedSettings)}{(l.AssumedSettings == 1 ? "light nu spune ISO-ul sau expunerea; s-au luat cele ale dark-urilor" : "lights nu spun ISO-ul sau expunerea; s-au luat cele ale dark-urilor")} (1 ADU-eq = {F(r.Darks.Norm, 2)} ADU)")));
+                $"{l.AssumedSettings} {(l.AssumedSettings == 1 ? "light does not give its ISO or exposure; the darks' were taken" : "lights do not give their ISO or exposure; the darks' were taken")} (1 ADU-eq = {F(l.AssumedNorm, 2)} ADU)",
+                $"{RoCount(l.AssumedSettings)}{(l.AssumedSettings == 1 ? "light nu spune ISO-ul sau expunerea; s-au luat cele ale dark-urilor" : "lights nu spun ISO-ul sau expunerea; s-au luat cele ale dark-urilor")} (1 ADU-eq = {F(l.AssumedNorm, 2)} ADU)")));
         }
 
         if (l.DarksSilent > 0)
         {
-            // the mirror case (ADR 0053): the lights say their settings, the darks do not
+            // the mirror case (ADR 0053, ADR 0060): the lights give a setting the darks do not
             rows.Add(new(T("WARNING", "ATENTIE"), T(
-                "the darks do not give their ISO or exposure; they were compared with the lights as made at the same settings",
-                "dark-urile nu spun ISO-ul sau expunerea; s-au comparat cu lights-urile ca facute la aceleasi setari")));
+                "the darks do not give their ISO or exposure; what they do not give was taken as the lights'",
+                "dark-urile nu spun ISO-ul sau expunerea; ce nu spun s-a luat ca la lights-uri")));
+        }
+
+        if (l.UnsaidByBoth != UnsaidSettings.None)
+        {
+            // a setting neither set gives is taken as the same, and the report says so (ADR 0060)
+            rows.Add(new(T("WARNING", "ATENTIE"), UnsaidText(l.UnsaidByBoth, partner: false)));
         }
 
         bool one = l.Persistent == 1;
@@ -485,8 +491,15 @@ internal static class DarkReport
         if (r.Partner is PartnerAnalysis p)
         {
             MatchFigures m = p.OwnOverPartner;
-            string settings = p.Iso is double iso && p.ExposureSeconds is double e ? $"ISO {F(iso, 0)}, {InventoryReport.Exposure(e)} s" : T("unknown settings", "setari necunoscute");
-            // a partner with unknown settings has its index in its file's ADU (R-063)
+            // the settings the partner gives; "unknown" only when it gives neither (R-063)
+            string settings = (p.Iso, p.ExposureSeconds) switch
+            {
+                (double iso, double e) => $"ISO {F(iso, 0)}, {InventoryReport.Exposure(e)} s",
+                (double iso, null) => $"ISO {F(iso, 0)}",
+                (null, double e) => $"{InventoryReport.Exposure(e)} s",
+                _ => T("unknown settings", "setari necunoscute"),
+            };
+            // a partner that does not give both settings has its index in its file's ADU (R-063)
             string partnerUnit = p.Iso is double && p.ExposureSeconds is double ? "ADU-eq" : "ADU";
             rows.Add(new(T("partner", "partener"), T(
                 $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} {partnerUnit}; frames read {p.Used} of {p.Frames}, {settings}); label {p.Label}",
@@ -498,16 +511,24 @@ internal static class DarkReport
                     $"{RoCount(p.Failed)}{(p.Failed == 1 ? "dark al partenerului nu s-a putut folosi" : "dark-uri ale partenerului nu s-au putut folosi")} (primul: {p.FirstError})")));
             }
 
-            if (p.Silent != SilentSide.None)
+            // a set that lacks a setting the other gives took it from the other (R-063, ADR 0053, ADR 0060)
+            if (p.Silent is SilentSide.Partner or SilentSide.Both)
             {
-                // one set does not say its settings: the two were compared as made at the same (R-063, ADR 0053)
-                rows.Add(new(T("WARNING", "ATENTIE"), p.Silent == SilentSide.Partner
-                    ? T(
-                        "the partner's darks do not give their ISO or exposure; they were compared with the session's as made at the same settings",
-                        "dark-urile partenerului nu spun ISO-ul sau expunerea; s-au comparat cu ale sesiunii ca facute la aceleasi setari")
-                    : T(
-                        "the session's darks do not give their ISO or exposure; they were compared with the partner's as made at the same settings",
-                        "dark-urile sesiunii nu spun ISO-ul sau expunerea; s-au comparat cu ale partenerului ca facute la aceleasi setari")));
+                rows.Add(new(T("WARNING", "ATENTIE"), T(
+                    "the partner's darks do not give their ISO or exposure; what they do not give was taken as the session's darks'",
+                    "dark-urile partenerului nu spun ISO-ul sau expunerea; ce nu spun s-a luat ca la dark-urile sesiunii")));
+            }
+
+            if (p.Silent is SilentSide.Own or SilentSide.Both)
+            {
+                rows.Add(new(T("WARNING", "ATENTIE"), T(
+                    "the session's darks do not give their ISO or exposure; what they do not give was taken as the partner's",
+                    "dark-urile sesiunii nu spun ISO-ul sau expunerea; ce nu spun s-a luat ca la partener")));
+            }
+
+            if (p.UnsaidByBoth != UnsaidSettings.None)
+            {
+                rows.Add(new(T("WARNING", "ATENTIE"), UnsaidText(p.UnsaidByBoth, partner: true)));
             }
 
             string partnerWords = T("the partner", "partenerul");
@@ -530,7 +551,8 @@ internal static class DarkReport
             if (p.LightsOverPartner.Verdict != MatchVerdict.Unmeasured)
             {
                 // lights over the partner, through the session's darks: (lights / dark) x (dark /
-                // partner)
+                // partner) when the three sets give both settings, else each light's ratio in the
+                // files brought by its factor over the partner's (ADR 0060)
                 MatchFigures chained = p.LightsOverPartner;
                 string lightsWarmth = Warmth(chained.DeltaCelsius, T("the lights are ", "lights-urile sunt "), partnerWords);
                 rows.Add(new(T("lights / partner", "lights / partener"), T(
@@ -938,6 +960,27 @@ internal static class DarkReport
             (double e, null) => $"{InventoryReport.Exposure(e)} s",
             (null, double i) => $"ISO {F(i, 0)}",
             _ => "?",
+        };
+    }
+
+    /// <summary>
+    /// The row that says which settings neither of two compared sets gives, and that they were
+    /// taken as the same (R-052, R-063, ADR 0060).
+    /// </summary>
+    /// <param name="unsaid">The settings neither gives; not <see cref="UnsaidSettings.None"/>.</param>
+    /// <param name="partner">True for the session's darks against a partner's, false for the
+    /// darks against the lights.</param>
+    /// <returns>The row's value, in the run's language.</returns>
+    internal static string UnsaidText(UnsaidSettings unsaid, bool partner)
+    {
+        string neither = partner
+            ? T("neither the session's darks nor the partner's give", "nici dark-urile sesiunii, nici ale partenerului nu spun")
+            : T("neither the darks nor the lights give", "nici dark-urile, nici lights-urile nu spun");
+        return unsaid switch
+        {
+            UnsaidSettings.Iso => T($"{neither} the ISO; it was taken as the same", $"{neither} ISO-ul; s-a luat ca fiind acelasi"),
+            UnsaidSettings.Exposure => T($"{neither} the exposure; it was taken as the same", $"{neither} expunerea; s-a luat ca fiind aceeasi"),
+            _ => T($"{neither} the ISO or the exposure; they were taken as the same", $"{neither} nici ISO-ul, nici expunerea; s-au luat ca fiind aceleasi"),
         };
     }
 

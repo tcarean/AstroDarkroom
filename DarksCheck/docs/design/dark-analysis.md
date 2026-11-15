@@ -213,8 +213,8 @@ another limit, reading nothing again (the window's dropdown, R-123).
 
 With lights it takes `LightsAnalyzer.NoiseOnPlane` on the reference plane: the median over the
 decoded lights of `LightFigures.LocalSigma` (how much a pixel differs from its neighbours), each
-divided by its factor (`LightsAnalyzer.FactorOf`: its own, or the darks' when either set does
-not say its settings, ADR 0053), and how many lights gave it; times the darks' normalisation
+divided by its factor (`LightsAnalyzer.FactorOf`: its own, or the darks' times the light's
+over the darks' from the settings both give, ADR 0060), and how many lights gave it; times the darks' normalisation
 it is `StackLimit.LightNoise`, in the darks' raw ADU, so it compares with the master's noise.
 `StackLimit.ShareAdu` is that noise over sqrt(lights), the lights' own part of the stack's
 noise. The master is subtracted from every light alike, so without dithering its noise adds
@@ -263,10 +263,10 @@ from `FactorOf` when it measures the light, so `StackNoise.Of` needs no settings
 `StackNoise.Scaled` says that more than half of those lights are at other settings than the
 darks, so the medians are those of brought figures. A light is at other settings when
 `FrameStack.SameSettings` says so of its metadata and the darks' (`LightFigures.OtherSettings`,
-set beside `ToDarks`; `DarkSeriesAnalysis.FirstStacked` is the darks' side), both the light and
-the darks saying their ISO and their exposure (`Normalisation.Says`): the rule that keeps
-a frame in a stack, with check 1's tolerance on the exposure, and only where the light's own
-factor was used, so the note never speaks of figures that were not brought. It is not read back from the
+set beside `ToDarks`; `DarkSeriesAnalysis.FirstStacked` is the darks' side): the rule that keeps
+a frame in a stack, with check 1's tolerance on the exposure, each setting compared when both
+give it, which are the settings `FactorOf` brings a light by, so the note never speaks of
+figures that were not brought (ADR 0060). It is not read back from the
 factor, which is exactly 1 for twice the ISO at half the exposure and falls on either side of
 the tolerance by rounding. When `Scaled` is true the `cer` row says the
 figures were worked out for the darks' ISO and exposure, and the third paragraph, which gives
@@ -305,11 +305,11 @@ settings is counted (`Failed`, `FirstError`) and makes the result an error; its
 `PartnerAnalysis` carries the
 first decoded frame's settings and the stack's normalisation, the index and label of its
 master, the session's darks over it (`IndexAnalyzer.SharedRatios`, the partner as reference),
-the lights over it (`IndexAnalyzer.Chain`), and the overlap of the two hot-pixel sets at
+the lights over it (`IndexAnalyzer.Chain`, or each light's ratio in the files brought by its factor over the partner's when a set does not give both settings, `lights-and-index.md`), and the overlap of the two hot-pixel sets at
 `Th.PartnerOverlapAdu` (50 ADU-eq): the session's pixels above 50 that the partner has above
-50, and the partner's above 50 that the session has above `Th.HotAdu`, each at its own (the
-partner's at the session's when one of the two does not say its settings, ADR 0053)
-normalisation. Each group is released before the next is decoded. A
+50, and the partner's above 50 that the session has above `Th.HotAdu`, each at its own
+normalisation (the partner's at the session's times the partner's over the session's from the
+settings both give, unless both give both, ADR 0060). Each group is released before the next is decoded. A
 failure of the lights or of the partner is an error carried in the result (`LightsError`,
 `PartnerError`), printed in its section, and does not stop the rest of the report. `DarkReport`
 writes section 2, `INDEX` (the index, the label, the lights' equivalent index, the partner's
