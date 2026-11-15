@@ -390,6 +390,10 @@ two paths. The report says which path it took and why, and gives each class's sh
   a WCS, this path found the dark clouds to within a few tenths of an L\* of the band path. The
   report gives the thresholds in L\*.
 
+On either path a patch lighter than the average sky (the median of the sky patches) is never
+dust, however bright its surroundings: the faint edge of a nebula, or a lane of the band lighter
+than the sky, stays nebula, band or sky.
+
 On either path the verdict measures the same way. The **sky** is the median of the sky patches.
 The **dust** is the darkest extended area: the 25th percentile of the dust patches when the dust
 class holds at least 5 % of the patches (fewer are cores or artefacts), or the darkest 1 % of the

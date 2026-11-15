@@ -58,12 +58,16 @@
   its cell, which takes 73 % of the band path's dust patches and some sky and band patches at
   the Rift's edges (the Smida frame with stars: L\* 4.90 against 4.85; the same frame starless:
   4.92 against 4.03, the class 13 % of the frame against 9 %, since without stars the sky's
-  sigma is a third lower). On `de_printat.png` the class's 25 % percentile (6.1) is lighter
-  than the darkest 1 % of the sky (4.4), so the sky still decides there. A plate-solved FITS, or
+  sigma is a third lower). Since ADR 0099, which takes the patches lighter than the sky out
+  of the class on both paths, the frame with stars reads 4.3 against 4.5 (4.9 against 5.0
+  just before it). On `de_printat.png`
+  the class keeps 4.2 % of the patches, under the 5 % floor, so the darkest 1 % of the sky
+  (4.4) decides there. A plate-solved FITS, or
   `--wcs` with the stack's header, is the way to the band classes and the clouds' names.
 - On the sky path a 32 px patch holding a bright star reads as nebula or bright nebula, so a
   frame with stars has speckles on the map; the anchors move by under 1 L\* (Rosetta with and
-  without stars: 34.2 against 34.8 since ADR 0085; 32.0 against 32.2 before). A 3 x 3 median on the patches was measured and rejected
+  without stars: 34.2 against 34.8 since ADR 0085; 32.0 against 32.2 before; the starless
+  figure is 33.6 since ADR 0099, the one with stars not re-measured). A 3 x 3 median on the patches was measured and rejected
   (ADR 0033).
 - An object that fills the frame becomes the modelled sky: on a 1.3 degree field on LDN 42 the
   cloud is the sky class and the plain sky around it the bright nebula, and the verdict's "sky"
@@ -75,6 +79,16 @@
   never that small; a real frame has tens of cells.
 - The dark globules inside a nebula are not dust on the sky path: they are under the nebula,
   not under the modelled sky; that would need the band path's local level over the whole frame.
+- A dust patch must also be no lighter than the average sky, the median of the sky class (ADR
+  0099). That narrows, without removing it, the limit of the object's halo that lifts the
+  model, two bullets up: a sky-level patch beside a bright
+  object, under the lifted model and at or under the sky's median, still counts as dust
+  (`Rosetta_starless_no_WCS.fit` keeps 105 such patches, 1.3 % of the frame, of the 554 it had;
+  the `dark-sky` scene keeps its 30 %, all at the sky's level). And a dark cloud lighter than
+  the image's average sky, on the bright side of a strong gradient, is not dust: it is darker
+  than its surroundings and still not the darkest part of the print. A patch that leaves the
+  dust class on the sky path is nebula at most, never bright nebula, however far over the
+  average sky it sits (ADR 0099).
 - Without a WCS, a foreground or a silhouette darker than the modelled sky by the sky's noise and
   larger than 5 % of the frame becomes "the dust".
 - On either path a posterised or synthetic sky, where more than half the patches share one

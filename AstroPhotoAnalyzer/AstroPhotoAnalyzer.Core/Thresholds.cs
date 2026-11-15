@@ -208,7 +208,10 @@ namespace AstroPhotoAnalyzer
         /// the band, the Great Rift is 9.4 % of the frame; without the band, the dust class finds
         /// only cores or artefacts: 0.8 % on de_printat.png (the Pipe's cores, p25 at L* 2.5,
         /// which ADR 0025 rejected as dust), 0.4 % on Rosetta (the nebula's edge, brighter than
-        /// the sky), 0-2.7 % on the others. The owner chose 5 % on 2026-10-06 (ADR 0033).
+        /// the sky), 0-2.7 % on the others. The owner chose 5 % on 2026-10-06 (ADR 0033). The
+        /// classes moved since (ADR 0085, ADR 0086), and since ADR 0099 the share is counted
+        /// after the patches lighter than the average sky leave the class: 8.9 % on the
+        /// reference FITS, 4.2 % on de_printat.png, 1.3 % on Rosetta.
         /// </summary>
         internal const double DustClassMinFraction = 0.05;
 

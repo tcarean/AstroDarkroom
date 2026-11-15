@@ -19,6 +19,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- A patch lighter than the average sky is no longer counted as dust, however bright its
+  surroundings (R-044, ADR 0099): the faint edge of a nebula, or a lane of the Milky Way band
+  lighter than the sky outside it, goes back to nebula, band or sky. The Dust / sky map, the
+  dust's share of the frame and the dust's definition in the report follow. On a Milky Way
+  frame the dust reads a few tenths of an L\* darker, since its light patches no longer
+  count (7.7 against 8.1 on a test image, the recommended background unchanged); on a nebula
+  frame the dust class shrinks (1.3 % of the frame against 6.7 % on a test image).
 - In Romanian the buttons that move through the Curves Editing and Colours for paper galleries
   are `Precedenta` and `Urmatoarea` (were `Inapoi` and `Inainte`), so that `Inainte` names one
   thing on the screen, the Before side of the comparison (ADR 0090).

@@ -233,6 +233,128 @@ public class DustAnalyzerTests
         Assert.InRange(noLane.LstarDust, 13, 17);       // the sky at 0.15 is L* 15.3
     }
 
+    /// <summary>
+    /// A patch darker than its surroundings and still lighter than the sky is not dust (ADR
+    /// 0099): on the sky path it is nebula when well over the sky, sky otherwise.
+    /// </summary>
+    [Fact]
+    public void R044_APatchLighterThanTheSkyIsNotDustHoweverBrightItsSurroundings()
+    {
+        // 80 x 80 patches by hand, a 2560 px frame with 4 x 4 cells of the sky model: a sky at
+        // L* 15 with the unevenness a real one has; a nebula at L* 47 filling one cell, so the
+        // model there is the nebula and slopes down to the sky over the cells around it; a
+        // hole in the nebula at L* 27, darker than the nebula and lighter than the sky; a dark
+        // cloud at L* 2 on the plain sky, far from the nebula.
+        const int n = 80;
+        var L = new float[n * n];
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                float v = 15f + 0.5f * (float)(Math.Sin(x * 1.7) * Math.Cos(y * 2.3));
+                if (x >= 20 && x < 40 && y >= 20 && y < 40) v += 32;
+                if (x >= 28 && x < 31 && y >= 28 && y < 31) v = 27;
+                if (x >= 68 && x < 71 && y >= 68 && y < 71) v = 2;
+                L[y * n + x] = v;
+            }
+        DustMap map = DustAnalyzer.Build(n * 32, n * 32, null, L);
+        Assert.Equal(n, map.Cols);
+        Assert.Equal(n, map.Rows);
+        Assert.Equal(DustMethod.Sky, map.Method);
+        double noise = map.NoiseThreshold;
+        Assert.InRange(noise, 0.1, 5);
+
+        // The sky as first classed: within the noise of the model, the peaks aside.
+        var skyFirst = new List<float>();
+        for (int i = 0; i < L.Length; i++)
+        {
+            float v = L[i] - map.SkyModel[i];
+            if (map.Classes[i] != PatchClass.Peak && !(v < -noise) && !(v > noise)) skyFirst.Add(L[i]);
+        }
+        double mid = Stats.PercentileSorted(Stats.Sorted(skyFirst.ToArray()), 50);
+        Assert.InRange(mid, 14.5, 15.5);
+
+        // Every patch under the model by more than the noise: dust when at or under the sky's
+        // median, nebula when over it by more than the noise, sky in between. No other patch is dust.
+        int dust = 0, toSky = 0, toNebula = 0;
+        for (int i = 0; i < L.Length; i++)
+        {
+            if (map.Classes[i] == PatchClass.Peak) continue;
+            float v = L[i] - map.SkyModel[i];
+            if (!(v < -noise)) { Assert.NotEqual(PatchClass.Dust, map.Classes[i]); continue; }
+            if (L[i] <= mid) { Assert.Equal(PatchClass.Dust, map.Classes[i]); dust++; }
+            else if (L[i] > mid + noise) { Assert.Equal(PatchClass.Band, map.Classes[i]); toNebula++; }
+            else { Assert.Equal(PatchClass.Sky, map.Classes[i]); toSky++; }
+        }
+        Assert.True(dust >= 9, $"dust {dust}");
+        Assert.True(toSky > 0, "no patch under the model between the sky's median and the noise over it");
+        Assert.True(toNebula >= 9, $"to nebula {toNebula}");
+
+        // The hole is nebula, the cloud is dust, and no dust patch is lighter than the sky the verdict reports.
+        Assert.Equal(PatchClass.Band, map.Classes[29 * n + 29]);
+        Assert.Equal(PatchClass.Dust, map.Classes[69 * n + 69]);
+        DustStats d = DustAnalyzer.Measure(L, map, 9);
+        for (int i = 0; i < L.Length; i++)
+            if (map.Classes[i] == PatchClass.Dust) Assert.True(L[i] <= d.LstarSky, $"dust patch {i} at {L[i]}, sky {d.LstarSky}");
+    }
+
+    /// <summary>
+    /// On the band path a lane of the band lighter than the sky outside it is band, not dust,
+    /// however much darker than the band around it (ADR 0099).
+    /// </summary>
+    [Fact]
+    public void R044_ALaneOfTheBandLighterThanTheSkyIsBandNotDust()
+    {
+        Raster r = WcsFixtures.BandScene(WcsFixtures.OnThePlane(), withDust: true, withLightBlob: true);
+        DustMap map = Build(r, WcsFixtures.OnThePlane());
+        float[] L = Patches(r);
+        DustStats d = DustAnalyzer.Measure(L, map, 9);
+        Assert.Equal(DustMethod.Band, map.Method);
+
+        // The light blob (0.29, L* 31): in the band, deeper under the band around it (0.35,
+        // L* 38) than the dust's depth, and lighter than the sky (0.25, L* 27).
+        int light = WcsFixtures.LightPatchIndex(map);
+        Assert.True(Math.Abs(map.GalacticLatitude[light]) < Thresholds.BandGalacticLatitudeDeg);
+        Assert.True(L[light] < map.BandLevel[light] - map.NoiseThreshold);
+        Assert.True(L[light] > d.LstarSky);
+        Assert.Equal(PatchClass.Band, map.Classes[light]);
+
+        // The dark blob stays dust, and no dust patch is lighter than the sky.
+        Assert.Equal(PatchClass.Dust, map.Classes[WcsFixtures.DustPatchIndex(map)]);
+        for (int i = 0; i < L.Length; i++)
+            if (map.Classes[i] == PatchClass.Dust) Assert.True(L[i] <= d.LstarSky, $"dust patch {i} at {L[i]}, sky {d.LstarSky}");
+    }
+
+    /// <summary>With no patch classed sky there is no sky to compare with: the dust class is left as it was (ADR 0099).</summary>
+    [Fact]
+    public void R044_WithoutASkyPatchTheSecondConditionIsNotApplied()
+    {
+        var map = new DustMap { Cols = 10, Rows = 10, Side = 8, Stride = 4, Classes = new PatchClass[100], Clouds = Array.Empty<DustCloud>(), NoiseThreshold = 1 };
+        var L = new float[100];
+        for (int i = 0; i < 100; i++) { map.Classes[i] = i < 10 ? PatchClass.Dust : PatchClass.Band; L[i] = i < 10 ? 30 + i : 20; }
+        var before = (PatchClass[])map.Classes.Clone();
+        DustAnalyzer.KeepDustNoLighterThanTheSky(map, L, null);
+        Assert.Equal(before, map.Classes);
+        DustAnalyzer.KeepDustNoLighterThanTheSky(map, L, new bool[100]);
+        Assert.Equal(before, map.Classes);
+
+        // One sky patch at L* 34 is enough: on the sky path the dust at or under it stays, the
+        // dust within the noise over it is sky and the rest nebula; on the band path the dust
+        // over it is band inside the band and sky outside it.
+        map.Classes[99] = PatchClass.Sky;
+        L[99] = 34;
+        DustAnalyzer.KeepDustNoLighterThanTheSky(map, L, null);
+        Assert.All(map.Classes.Take(5), c => Assert.Equal(PatchClass.Dust, c));      // 30..34
+        Assert.Equal(PatchClass.Sky, map.Classes[5]);                                // 35 = 34 + the noise, not over it
+        Assert.All(map.Classes.Skip(6).Take(4), c => Assert.Equal(PatchClass.Band, c));
+        for (int i = 0; i < 10; i++) map.Classes[i] = PatchClass.Dust;
+        var band = new bool[100];
+        for (int i = 0; i < 8; i++) band[i] = true;
+        DustAnalyzer.KeepDustNoLighterThanTheSky(map, L, band);
+        Assert.All(map.Classes.Take(5), c => Assert.Equal(PatchClass.Dust, c));
+        Assert.All(map.Classes.Skip(5).Take(3), c => Assert.Equal(PatchClass.Band, c));
+        Assert.All(map.Classes.Skip(8).Take(2), c => Assert.Equal(PatchClass.Sky, c));
+    }
+
     [Fact]
     public void R044_AFrameFarFromThePlaneOrWhollyInsideItTakesTheSkyPathAndSaysWhy()
     {
