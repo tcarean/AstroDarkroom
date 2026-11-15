@@ -286,7 +286,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: `R014_ARoundGaussianGivesItsFwhmAndElongationOne` measures one width, 3.06 px. A star
   of sigma 3 (7.06 px) expecting 7 within 0.3.
 - Evidence: owner (the arithmetic is certain; the window is a requirement).
-- Status: fixed 49db7b96 (the 6 px window stays, since on real frames a wider one reads the sky and not the star, and FOCUS says the limit in a `wide stars` row when the session's stars read wider than 4.5 px, the owner's answer of 2026-11-14: ADR 0052, R-088; the 4.5 px, in place of the 5 px of that commit, came with the fixes after the review of the branch; a width that is right above 4 px needs another estimator, a feature of its own, which the owner asked for after the merge)
+- Status: fixed 49db7b96 (the 6 px window stays, since on real frames a wider one reads the sky and not the star, and FOCUS says the limit in a `wide stars` row when the session's stars read wider than 4.5 px, the owner's answer of 2026-11-14: ADR 0052, R-088; the 4.5 px, in place of the 5 px of that commit, came with the fixes after the review of the branch; a width that is right above 4 px needs another estimator, a feature of its own, which the owner asked for after the merge and ADR 0056 records)
 
 ### CR-008 A Fujifilm X-Trans raw is measured as a monochrome frame
 

@@ -110,7 +110,9 @@ plain terms below.
 | respinse / de scos din stiva | rejected / leave out of stack |
 | cele la limita raman in stiva, la alegerea ta | the marginal ones stay in the stack, your choice |
 | eroarea periodica / jocul din angrenaje (backlash) | periodic error / the play in the gears (backlash) |
-| de la 1.60 cadrul e slab / de la 1.35 cadrul e la limita | from 1.60 the frame is bad / from 1.35 the frame is marginal |
+| de la 1.73 cadrul e slab / de la 1.45 cadrul e la limita | from 1.73 the frame is bad / from 1.45 the frame is marginal |
+| stelele au o dara sau o a doua copie: alungire ... cu ea, ... fara ea / dara sau dublura / miezul stelei | the stars have a tail or a second copy: elongation ... with it, ... without it / tail or double / the star's core |
+| la stivuire, respingerea (rejection) o scoate la cele mai multe stele | stacking with rejection removes it on most stars |
 | stele late / prea putine stele / latimea medie din sesiune / din cate are in medie un cadru | wide stars / too few stars / the session's average width / of a frame's average count |
 | fondul cerului sare cu ... fata de cadrele vecine (se semnaleaza de la ...) | the sky background jumps by ... against the neighbouring frames (flagged from ...) |
 | dara / dare de satelit sau avion (Siril o / le scoate la stivuire) | satellite or plane trail / trails (Siril takes it / them out when stacking) |

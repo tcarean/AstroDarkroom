@@ -161,9 +161,9 @@ public class SeriesAnalyzerTests
         AnalyzedFrame[] frames =
         [
             Frame(1, Measurement(3.0, 1.1, 10000, 120)),
-            Frame(2, Measurement(3.0, 1.7, 10000, 120)),
-            Frame(3, Measurement(3.0, 1.7, 100, 1), exposure: 0.2),
-            Frame(4, Measurement(3.0, 1.4, 100, 1), exposure: 0.2),
+            Frame(2, Measurement(3.0, 1.8, 10000, 120)),
+            Frame(3, Measurement(3.0, 1.8, 100, 1), exposure: 0.2),
+            Frame(4, Measurement(3.0, 1.5, 100, 1), exposure: 0.2),
         ];
         Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
         double?[] zeros = new double?[4];
@@ -346,25 +346,101 @@ public class SeriesAnalyzerTests
     {
         SeriesAnalysis s = Analyze(VeilWcs,
             Frame(1, Measurement(3.0, 1.1, 10000, 120)),
-            Frame(2, Measurement(3.0, 1.7, 9000, 121)),                       // bad, coherent: `pe RA`
-            Frame(3, Measurement(3.1, 1.4, 10000, 122)),                      // marginal, coherent: `pe RA`
-            Frame(4, Measurement(3.0, 1.7, 9000, 121, coherence: 0.5)));      // bad, the stars disagree: angle alone
+            Frame(2, Measurement(3.0, 1.8, 9000, 121)),                       // bad, coherent: `pe RA`
+            Frame(3, Measurement(3.1, 1.5, 10000, 122)),                      // marginal, coherent: `pe RA`
+            Frame(4, Measurement(3.0, 1.8, 9000, 121, coherence: 0.5)));      // bad, the stars disagree: angle alone
         Assert.Equal(TrailAxis.Ra, s.Flags[1][0].On);
-        Assert.Equal("alungire 1.70 (de la 1.60 cadrul e slab), dara pe RA (88 de grade)", SeriesReport.Reason(s.Flags[1][0]));
+        Assert.Equal("alungire 1.80 (de la 1.73 cadrul e slab), dara pe RA (88 de grade)", SeriesReport.Reason(s.Flags[1][0]));
         Assert.Equal(TrailAxis.Ra, s.Flags[2][0].On);
-        Assert.Equal("alungire 1.40 (de la 1.35 cadrul e la limita), dara pe RA (88 de grade)", SeriesReport.Reason(s.Flags[2][0]));
+        Assert.Equal("alungire 1.50 (de la 1.45 cadrul e la limita), dara pe RA (88 de grade)", SeriesReport.Reason(s.Flags[2][0]));
         Assert.Equal(TrailAxis.Unknown, s.Flags[3][0].On);
-        Assert.Equal("alungire 1.70 (de la 1.60 cadrul e slab), dara la 88 de grade", SeriesReport.Reason(s.Flags[3][0]));
+        Assert.Equal("alungire 1.80 (de la 1.73 cadrul e slab), dara la 88 de grade", SeriesReport.Reason(s.Flags[3][0]));
 
         // One bad frame cannot set the axis from the trails (Th.TrailAxisMinFrames is 2): no axis, the angle alone.
         SeriesAnalysis u = Analyze(
             Frame(1, Measurement(3.0, 1.1, 10000, 120)),
-            Frame(2, Measurement(3.0, 1.7, 9000, 121)),
-            Frame(3, Measurement(3.1, 1.4, 10000, 122)));
+            Frame(2, Measurement(3.0, 1.8, 9000, 121)),
+            Frame(3, Measurement(3.1, 1.5, 10000, 122)));
         Assert.Equal(Axis.Unknown, u.RaAxis);
         Assert.Equal(TrailAxis.Unknown, u.TrailOn);
-        Assert.Equal("alungire 1.70 (de la 1.60 cadrul e slab), dara la 88 de grade", SeriesReport.Reason(u.Flags[1][0]));
-        Assert.Equal("alungire 1.40 (de la 1.35 cadrul e la limita), dara la 88 de grade", SeriesReport.Reason(u.Flags[2][0]));
+        Assert.Equal("alungire 1.80 (de la 1.73 cadrul e slab), dara la 88 de grade", SeriesReport.Reason(u.Flags[1][0]));
+        Assert.Equal("alungire 1.50 (de la 1.45 cadrul e la limita), dara la 88 de grade", SeriesReport.Reason(u.Flags[2][0]));
+    }
+
+    /// <summary>
+    /// The rule of the tail (R-090): a whole star well longer than a core that alone would not be
+    /// bad is a tail, marginal whatever it reads, and says the move it follows; a core as long as
+    /// the whole star is a stretched star, bad or marginal by its elongation as before.
+    /// </summary>
+    [Fact]
+    public void R090_ATailIsToldFromAStretchedStarByItsCore()
+    {
+        AnalyzedFrame[] frames =
+        [
+            Frame(1, Measurement(3.0, 1.1, 10000, 120)),
+            Frame(2, Measurement(3.0, 1.9, 10000, 120) with { CoreElongationMedian = 1.25 }),   // a tail, right after a move
+            Frame(3, Measurement(3.0, 1.9, 10000, 120) with { CoreElongationMedian = 1.9 }),    // stretched: bad
+            Frame(4, Measurement(3.0, 1.5, 10000, 120) with { CoreElongationMedian = 1.45 }),   // stretched a little: marginal
+            Frame(5, Measurement(3.0, 1.9, 10000, 120) with { CoreElongationMedian = 1.25 }),   // a tail, no move before it
+            Frame(6, Measurement(3.0, 2.4, 10000, 120) with { CoreElongationMedian = 1.8 }),    // a tail beside a stretched core: bad
+            Frame(7, Measurement(3.0, 1.9, 10000, 120)),                                         // no core figure: read as stretched
+            Frame(8, Measurement(3.0, 1.6, 10000, 120) with { CoreElongationMedian = 1.25 }),   // a tail under the bad limit: still a tail
+            Frame(9, Measurement(3.0, 1.4, 10000, 120) with { CoreElongationMedian = 1.1 }),    // under the marginal limit: good, whatever its core
+            Frame(10, Measurement(3.0, 1.5, 10000, 120) with { CoreElongationMedian = 1.3 }),   // 1.15 times its core, under 1.2: marginal by its elongation
+            Frame(11, Measurement(3.0, 1.9, 10000, 120) with { CoreElongationMedian = 1.7 }),   // 1.12 times its core: stretched, bad
+            Frame(12, Measurement(3.0, 1.9, 100, 1) with { CoreElongationMedian = 1.25 }, exposure: 0.2),   // a tail on a frame too short to stack
+            Frame(13, Measurement(3.0, 2.2, 10000, 120) with { CoreElongationMedian = 1.70 }),  // cores just under the bad limit: a tail
+            Frame(14, Measurement(3.0, 2.2, 10000, 120) with { CoreElongationMedian = 1.75 }),  // cores just over it: bad
+            Frame(15, Measurement(3.0, 1.5, 10000, 120) with { CoreElongationMedian = 1.24 }),  // 1.21 times its cores: a tail
+            Frame(16, Measurement(3.0, 1.5, 10000, 120) with { CoreElongationMedian = 1.26 }),  // 1.19 times: marginal by its elongation
+        ];
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+        double?[] x = [0, 20, 20.5, 21, 21.5, 22, 22.5, 23, 23.5, 24, 24.5, 25, 25.5, 26, 26.5, 27], y = new double?[16];
+        Array.Fill(y, 0.0);
+        DitherAnalysis d = DitherAnalyzer.Analyze(x, y, c.PauseSeconds);
+        Assert.True(d.IsMove[1]);
+        Assert.False(d.IsMove[4]);
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+
+        Assert.Equal(
+            [FrameClass.Good, FrameClass.Marginal, FrameClass.Bad, FrameClass.Marginal, FrameClass.Marginal, FrameClass.Bad, FrameClass.Bad,
+                FrameClass.Marginal, FrameClass.Good, FrameClass.Marginal, FrameClass.Bad, FrameClass.Bad,
+                FrameClass.Marginal, FrameClass.Bad, FrameClass.Marginal, FrameClass.Marginal],
+            s.Classes);
+        Assert.Equal(FlagKind.Tail, Assert.Single(s.Flags[12]).Kind);
+        Assert.Equal(FlagKind.Trailed, Assert.Single(s.Flags[13]).Kind);
+        Assert.Equal(FlagKind.Tail, Assert.Single(s.Flags[14]).Kind);
+        Assert.Equal(FlagKind.MarginalTrail, Assert.Single(s.Flags[15]).Kind);
+        Assert.Equal(FlagKind.Tail, Assert.Single(s.Flags[7]).Kind);
+        Assert.Empty(s.Flags[8]);
+        Assert.Equal(FlagKind.MarginalTrail, Assert.Single(s.Flags[9]).Kind);
+        Assert.Equal(FlagKind.Trailed, Assert.Single(s.Flags[10]).Kind);
+        // Bad by its exposure, so it gets no flag whose reason says the frame stays in the stack.
+        Assert.Equal([FlagKind.ShortExposure, FlagKind.Trailed], s.Flags[11].Select(f => f.Kind));
+        FrameFlag tail = Assert.Single(s.Flags[1]);
+        Assert.Equal((FlagKind.Tail, 1.9, 1.25, true), (tail.Kind, tail.Value, tail.Threshold, tail.AfterMove));
+        Assert.Equal(FlagKind.Trailed, Assert.Single(s.Flags[2]).Kind);
+        Assert.Equal(FlagKind.MarginalTrail, Assert.Single(s.Flags[3]).Kind);
+        FrameFlag still = Assert.Single(s.Flags[4]);
+        Assert.Equal((FlagKind.Tail, false), (still.Kind, still.AfterMove));
+        Assert.Equal(FlagKind.Trailed, Assert.Single(s.Flags[5]).Kind);
+        Assert.Equal(FlagKind.Trailed, Assert.Single(s.Flags[6]).Kind);
+        // The frames flagged as trailed agree on 88 degrees, so the RA axis is known from them, and the tails name it.
+        Assert.Equal(TrailAxis.Ra, tail.On);
+
+        Assert.Equal(
+            "stelele au o dara sau o a doua copie: alungire 1.90 cu ea, 1.25 fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, deci cadrul ramane in stiva, dara pe RA (88 de grade); cadrul vine imediat dupa o miscare a monturii, care probabil inca se aseza cand a inceput expunerea",
+            SeriesReport.Reason(tail));
+        Assert.Equal(
+            "stelele au o dara sau o a doua copie: alungire 1.90 cu ea, 1.25 fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, deci cadrul ramane in stiva, dara pe RA (88 de grade)",
+            SeriesReport.Reason(still));
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal(
+                "the stars have a tail or a second copy: elongation 1.90 with it, 1.25 without it; stacking with rejection removes it on most stars, so the frame stays in the stack, trail on RA (88 degrees); the frame comes right after a move of the mount, which was probably still settling when the exposure began",
+                SeriesReport.Reason(tail));
+        }
     }
 
     [Fact]
@@ -373,8 +449,8 @@ public class SeriesAnalyzerTests
         AnalyzedFrame[] frames =
         [
             Frame(1, Measurement(3.0, 1.1, 10000, 120)),
-            Frame(2, Measurement(3.0, 1.7, 9000, 121)),            // bad: trailed
-            Frame(3, Measurement(3.1, 1.4, 10000, 122)),           // marginal: trail at the limit
+            Frame(2, Measurement(3.0, 1.8, 9000, 121)),            // bad: trailed
+            Frame(3, Measurement(3.1, 1.5, 10000, 122)),           // marginal: trail at the limit
             Frame(4, Measurement(4.5, 1.1, 10000, 123)),           // marginal: soft (> 1.3 x 3.0)
             Frame(5, Measurement(3.0, 1.1, 5000, 124)),            // marginal: clouds (< 60 % of 10000)
             Frame(6, Measurement(3.0, 1.1, 10000, 160)),           // good, with a background jump flag
@@ -542,6 +618,27 @@ public class SeriesAnalyzerTests
         Assert.Equal(3.8, s.Fwhm.Last!.Value, 0.01);
     }
 
+    /// <summary>
+    /// The focus held while the width of the stars moved by under 15 % between the ends of the
+    /// session, either way (R-023, ADR 0058): the 10 % of the Smida session, whose picture came
+    /// out well, is a focus that held.
+    /// </summary>
+    [Theory]
+    [InlineData(4.24, 3.80, true)]
+    [InlineData(3.0, 3.4, true)]
+    [InlineData(4.24, 3.55, false)]
+    [InlineData(3.0, 3.5, false)]
+    public void R023_TheFocusHeldUpToAChangeOfFifteenPercent(double first, double last, bool held)
+    {
+        AnalyzedFrame[] frames = Enumerable.Range(1, 20).Select(i => Frame(i, Measurement(i <= 10 ? first : last, 1.1, 10000, 120))).ToArray();
+
+        SeriesAnalysis s = Analyze(frames);
+
+        Assert.Equal(first, s.Fwhm.First!.Value, 0.01);
+        Assert.Equal(last, s.Fwhm.Last!.Value, 0.01);
+        Assert.Equal(held, s.FocusHeld);
+    }
+
     [Fact]
     public void R023_AStableNightKeepsFocusAndNoDew()
     {
@@ -634,7 +731,7 @@ public class SeriesAnalyzerTests
         double[] t = Enumerable.Range(0, count).Select(k => k * 121.0).ToArray();
         double[] x = t.Select(s => decPxPerMin * s / 60).ToArray(), y = t.Select((s, k) => -raPxPerMin * s / 60 + (k >= 15 ? ditherPx : 0)).ToArray();
         double ditherDeg = -Math.Tan(30 * Math.PI / 180) * ditherPx * 6.0 / 206265 * 180 / Math.PI;
-        return Session(t, x, y, k => Timed(k + 1, SessionFixture.FirstStart.AddSeconds(t[k]), rotationArcminPerHour / 60 * t[k] / 3600 + (k >= 15 ? ditherDeg : 0), trailed && k >= count - 2 ? Measurement(3.0, 1.7, 10000, 120) : null));
+        return Session(t, x, y, k => Timed(k + 1, SessionFixture.FirstStart.AddSeconds(t[k]), rotationArcminPerHour / 60 * t[k] / 3600 + (k >= 15 ? ditherDeg : 0), trailed && k >= count - 2 ? Measurement(3.0, 1.8, 10000, 120) : null));
     }
 
     /// <summary>

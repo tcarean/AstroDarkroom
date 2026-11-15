@@ -37,6 +37,8 @@ whole in their tooltip and on the Rejected tab.
 
 ## Alternatives rejected
 
+(Restated 2026-11-15: the reasons quoted in the Decision, `de la 1.60 cadrul e slab` and `de la 1.35 cadrul e la limita`, now read 1.73 and 1.45, the limits of ADR 0057; the words stand.)
+
 - **The window only.** The reasons are composed once (ADR 0008, ADR 0012) and the console's
   reader is the same person; ADR 0032 rejected the same split.
 - **A reasons column of 480 or 530 px.** At 100 % scaling 480 px holds 67 letters, which cuts

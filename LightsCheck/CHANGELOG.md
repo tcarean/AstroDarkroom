@@ -6,6 +6,34 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Changed
+
+- The stars' width (FWHM), elongation and angle are measured in a way that follows the star, so
+  they hold at any focal length and pixel size (R-014, ADR 0056, which supersedes ADR 0052 in
+  part). The width is that of the star's core, read by adaptive moments; the elongation and the
+  angle are those of the whole star, tails and second copies included. Until now they came from
+  a fixed circle of 6 px, which read a star of 7 px as 5.9 and of 10 px as 6.5, and read the
+  same star wider when it was fainter (a 3 px star 30 % wide at a peak of 25 sigma). Every width
+  and elongation the program prints moves: the clean frames of a 135 mm session read about
+  2.5 px where they read 3.06. The figures of `docs/validation.json` that hold a width, an
+  elongation or a class count were measured again on the three recorded sessions and recorded
+  at the owner's word (`docs/validation.md`, 2026-11-15).
+- A frame is bad from an elongation of 1.73 and marginal from 1.45, in place of 1.60 and 1.35
+  (R-022, ADR 0057): with the new measurement those limits give the session they were chosen on
+  the classes it had, frame for frame.
+- A frame whose stars have a tail or a second copy beside a sharp core is marginal whatever its
+  elongation, with a reason that says so, a `tail or double` row in TRAILED FRAMES and a
+  paragraph on the Rejected tab (R-090, ADR 0057): a stack with rejection removes such a tail on
+  most stars, and leaving the frames out costs more than it gains. When the frame comes right
+  after a move of the mount the reason says that the mount was probably still settling when the
+  exposure began. Frames with stars doubled by a jump of the mount, bad until now, are marginal.
+- The `wide stars` row of FOCUS stands from 7 px, in place of 4.5, and says that the brightest
+  of such stars are left out, so the figures rest on fewer and fainter stars (R-088).
+- FOCUS says the focus changed from a change of 15 % of the stars' width between the start and
+  the end of the session, in place of 10 % (R-023, ADR 0058): the old widths read a change
+  smaller than it was, and a session that moved by 10 % stacks under 5 % wider than its
+  sharpest frames.
+
 ### Added
 
 - A diagnostic log, for bug reports (R-070 to R-073, ADR 0029): each application writes

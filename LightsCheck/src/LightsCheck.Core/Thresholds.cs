@@ -75,11 +75,75 @@ internal static class Th
     /// <summary>How many stars, the brightest unsaturated, are measured for shape.</summary>
     internal const int ShapeStars = 400;
 
-    /// <summary>Radius of the circular window the moments are taken in, in pixels.</summary>
-    internal const int MomentRadius = 6;
+    // The star's core, by adaptive moments (R-014, ADR 0056): the weight takes the star's own
+    // size and shape, so none of these is a size the star must have.
 
-    /// <summary>How many centroid iterations the moments take.</summary>
-    internal const int MomentIterations = 3;
+    /// <summary>
+    /// The core's first sigma is the radius of a disc of the component's area over this; the
+    /// result does not depend on it, only how many rounds it takes.
+    /// </summary>
+    internal const double CoreStartDivisor = 2.2;
+
+    /// <summary>The bounds of the FWHM the core's first sigma stands for, in pixels.</summary>
+    internal const double CoreStartMinFwhm = 1.5;
+    internal const double CoreStartMaxFwhm = 40.0;
+
+    /// <summary>How many rounds the core's weight may take to agree with the star.</summary>
+    internal const int CoreIterations = 60;
+
+    /// <summary>
+    /// The weight agrees with the star when a round changes its second moments by less than this
+    /// fraction of their sum ...
+    /// </summary>
+    internal const double CoreTolerance = 1e-4;
+
+    /// <summary>... and moves its centre by less than this many pixels, both axes summed.</summary>
+    internal const double CoreCentreTolerance = 1e-3;
+
+    /// <summary>The weight is summed out to this many of its sigmas along each axis.</summary>
+    internal const double CoreWeightReach = 4.0;
+
+    /// <summary>A round may grow the weight's second moments by at most this factor.</summary>
+    internal const double CoreGrowthLimit = 4.0;
+
+    /// <summary>
+    /// A core whose weight grows past this FWHM, in pixels, has run away into the sky and is
+    /// not measured.
+    /// </summary>
+    internal const double CoreDivergedFwhm = 60.0;
+
+    /// <summary>
+    /// A core whose centre leaves the component's centroid by more than its first FWHM, and
+    /// at least this many pixels, on an axis has slid onto a neighbour and is not measured.
+    /// </summary>
+    internal const double CoreCentreDriftMin = 4.0;
+
+    // The whole star, tails and second copies included (R-014, ADR 0056).
+
+    /// <summary>
+    /// The whole star is read inside a circle of this many core FWHMs: what the 6 px window of
+    /// the first versions was to the 2.5 px stars it was written on.
+    /// </summary>
+    internal const double WholeStarRadiusWidths = 2.4;
+
+    /// <summary>... and never under this radius, in pixels.</summary>
+    internal const double WholeStarMinRadius = 3.0;
+
+    /// <summary>
+    /// A pixel belongs to the whole star when it stands this many local sigmas above the local
+    /// sky, both read in a ring around the circle.
+    /// </summary>
+    internal const double WholeStarSigmas = 3.0;
+
+    /// <summary>How many times the whole star's centre is refined before its moments.</summary>
+    internal const int WholeStarCentreIterations = 3;
+
+    /// <summary>The local ring starts this many pixels outside the circle ...</summary>
+    internal const double LocalRingGap = 2.0;
+
+    /// <summary>... and is this fraction of the circle's radius wide, at least so many pixels.</summary>
+    internal const double LocalRingWidthFraction = 0.5;
+    internal const double LocalRingMinWidth = 4.0;
 
     /// <summary>
     /// A shape measurement is kept when its FWHM is in [MinFwhm, MaxFwhm] pixels.
@@ -322,10 +386,20 @@ internal static class Th
     // ---- frame classes (R-022)
 
     /// <summary>
-    /// Median elongation at or above which a frame is bad, and at or above which it is marginal.
+    /// Median elongation of the whole star at or above which a frame is bad, and at or above
+    /// which it is marginal. On the Veil session of 2026-10-06 they give the classes the limits
+    /// 1.6 and 1.35 gave with the first versions' moments, frame for frame (ADR 0057).
     /// </summary>
-    internal const double ElongationBad = 1.6;
-    internal const double ElongationMarginal = 1.35;
+    internal const double ElongationBad = 1.73;
+    internal const double ElongationMarginal = 1.45;
+
+    /// <summary>
+    /// A frame's elongation comes from a tail or a second copy beside a sharp core when the
+    /// whole star reads at least this many times as elongated as its core, and the core alone
+    /// stays under <see cref="ElongationBad"/>; such a frame is marginal whatever its elongation
+    /// (R-090, ADR 0057).
+    /// </summary>
+    internal const double TailCoreRatio = 1.2;
 
     /// <summary>
     /// A frame whose median FWHM exceeds this factor of the session's median of the good frames is
@@ -334,13 +408,13 @@ internal static class Th
     internal const double SoftFwhmFactor = 1.3;
 
     /// <summary>
-    /// A session whose median FWHM of the good frames, as read, is above this many pixels has
-    /// stars too wide for the moment window of <see cref="MomentRadius"/>, which reads them
-    /// narrower than they are (a true 5 px reads 4.8, 7 reads 5.9, 10 reads 6.5), so the report
-    /// says it (R-088). At this reading a frame is flagged as soft only from 1.5 times the
-    /// session's true width, where <see cref="SoftFwhmFactor"/> means 1.3 (ADR 0052).
+    /// A session whose median FWHM of the good frames is above this many pixels has stars so
+    /// wide that the brightest of them pass <see cref="MaxStarArea"/> and are left out, so the
+    /// figures rest on fewer and fainter stars, and the report says it (R-088, ADR 0056): a
+    /// star with wings 7 px wide is dropped at a peak of 200 sigma, and a Gaussian of 10 px at 60
+    /// sigma, which passes at 25.
     /// </summary>
-    internal const double WideStarFwhm = 4.5;
+    internal const double WideStarFwhm = 7.0;
 
     /// <summary>
     /// A frame with fewer detected stars than this fraction of the session's median has clouds or
@@ -389,9 +463,11 @@ internal static class Th
     internal const double DewHaloRise = 0.02;
 
     /// <summary>
-    /// Focus held when the median FWHM moved by less than this fraction between the ends.
+    /// Focus held when the median FWHM moved by less than this fraction between the ends. A
+    /// steady drift of this size stacks 7 % wider than its sharp end; the Smida session, good
+    /// in print, moved by 10.4 % (ADR 0058).
     /// </summary>
-    internal const double FocusHeldFraction = 0.10;
+    internal const double FocusHeldFraction = 0.15;
 
     /// <summary>
     /// The read-noise swamping ratio (shot variance over read variance) under which a channel is

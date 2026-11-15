@@ -112,7 +112,7 @@ internal static class SeriesOutputs
             AnalyzedFrame f = r.Frames[i];
             FrameMeasurement? m = f.Measurement;
             RegistrationResult? g = f.Registration is { Ok: true } rg ? rg : null;
-            FrameFlag? trail = r.Series.Flags[i].FirstOrDefault(fl => fl.Kind is FlagKind.Trailed or FlagKind.MarginalTrail);
+            FrameFlag? trail = r.Series.Flags[i].FirstOrDefault(fl => fl.Kind is FlagKind.Trailed or FlagKind.MarginalTrail or FlagKind.Tail);
             SpotRun? spot = r.Dither.SpotRun[i];
             List<string> cells =
             [

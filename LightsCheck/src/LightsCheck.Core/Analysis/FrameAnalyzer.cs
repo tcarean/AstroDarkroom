@@ -121,7 +121,7 @@ internal static class FrameAnalyzer
             .Where(c => c.Peak < Th.ShapePeakMaxFraction * top && c.PeakRaw < top - margin && c.Peak > Th.ShapePeakSigmas * sigma)
             .Take(Th.ShapeStars))
         {
-            StarShape? s = StarShapes.Measure(d, c.CentroidY, c.CentroidX, Th.MomentRadius, Th.MomentIterations, c.Peak, c.Area);
+            StarShape? s = StarShapes.Measure(d, c.CentroidY, c.CentroidX, c.Peak, c.Area);
             if (s is not null && s.Fwhm >= Th.MinFwhm && s.Fwhm <= Th.MaxFwhm)
             {
                 shapes.Add(s);
@@ -145,6 +145,7 @@ internal static class FrameAnalyzer
         // Summary figures.
         double[] fwhm = shapes.Select(s => s.Fwhm).ToArray();
         double[] elong = shapes.Select(s => s.Elongation).ToArray();
+        double[] coreElong = shapes.Select(s => s.CoreElongation).ToArray();
         double? angle = null, coherence = null;
         double[] votes = shapes.Where(s => s.Elongation > Th.AngleVoteRatio).Select(s => s.AngleDeg).ToArray();
         if (votes.Length > Th.AngleVoteMin - 1)
@@ -186,7 +187,10 @@ internal static class FrameAnalyzer
             Zone(r => r >= Th.CentreZoneFraction && r < Th.MidZoneFraction),
             Zone(r => r >= Th.MidZoneFraction),
             halos.Count > 0 ? Raster.Percentile(halos, 50) : null,
-            trails, reg);
+            trails, reg)
+        {
+            CoreElongationMedian = coreElong.Length > 0 ? Raster.Percentile(coreElong, 50) : null,
+        };
     }
 
     /// <summary>

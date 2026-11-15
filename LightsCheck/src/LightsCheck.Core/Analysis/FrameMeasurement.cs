@@ -118,8 +118,8 @@ internal sealed record ZoneShape(double? Fwhm, double? Elongation, int Stars);
 /// </param>
 /// <param name="FwhmP90">The 90th percentile of that FWHM, in pixels; null without a shape.</param>
 /// <param name="ElongationMedian">
-/// The median elongation (major over minor axis) of <paramref name="Shapes"/>; null without a
-/// shape.
+/// The median elongation of the whole star (major over minor axis, tails and second copies
+/// included) of <paramref name="Shapes"/>; null without a shape.
 /// </param>
 /// <param name="ElongationP90">
 /// The 90th percentile of that elongation; null without a shape.
@@ -187,4 +187,12 @@ internal sealed record FrameMeasurement(
 {
     /// <summary>The level of the brightest channel, the one that saturates first.</summary>
     internal ChannelLevel BrightestChannel => Channels.MaxBy(c => c.Median)!;
+
+    /// <summary>
+    /// The median elongation of the cores of <see cref="Shapes"/>
+    /// (<see cref="StarShape.CoreElongation"/>); null without a shape. Well under
+    /// <see cref="ElongationMedian"/> on a frame whose stars have a tail or a second copy beside
+    /// a sharp core (R-090).
+    /// </summary>
+    internal double? CoreElongationMedian { get; init; }
 }

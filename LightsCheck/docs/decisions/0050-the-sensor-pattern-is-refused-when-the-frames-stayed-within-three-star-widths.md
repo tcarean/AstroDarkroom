@@ -53,6 +53,8 @@ the distance and what it is: `the largest group within 13 px, three times the st
 
 ## Alternatives rejected
 
+(Restated 2026-11-15: the widths this rule multiplies are now those of ADR 0056, so the distances stated above moved with them, Smida's 12.5 px to 12.0 px and the two Veil sessions' 9.8 and 14.1 px in proportion to their widths (`docs/validation.md`, History, 2026-11-15); the rule and its three widths stand.)
+
 - **A pixel is hot only when it is hot in nearly every frame** (a low percentile across the
   frames beside the median). It would keep a figure on Smida, but it is a new method with a
   threshold of its own to measure, and frames that did not move at all would still need the
