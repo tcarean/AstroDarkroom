@@ -92,7 +92,9 @@ public class StarShapeTests
         StarShape fromSmall = StarShapes.Measure(r, half, half, 1000, 30)!;
         StarShape fromLarge = StarShapes.Measure(r, half, half, 1000, (int)(Math.PI * fwhm * fwhm))!;
 
-        Assert.InRange(fromSmall.Fwhm, 0.985 * fwhm, 1.015 * fwhm);
+        // Within 1 % from 3 px up; at 2 px the sampling at the pixel centres adds a little.
+        double slack = fwhm < 3 ? 0.015 : 0.01;
+        Assert.InRange(fromSmall.Fwhm, (1 - slack) * fwhm, (1 + slack) * fwhm);
         Assert.Equal(fromSmall.Fwhm, fromLarge.Fwhm, 0.005 * fwhm);
         Assert.Equal(1.0, fromSmall.Elongation, 0.03);
     }

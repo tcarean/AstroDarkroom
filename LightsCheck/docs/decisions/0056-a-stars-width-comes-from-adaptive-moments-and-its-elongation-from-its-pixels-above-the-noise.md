@@ -24,8 +24,10 @@ profile; **D** a fit of a 2D elliptical Gaussian with its own background; **DM**
 a Moffat profile.
 
 Synthetic Gaussians drawn by integrating each pixel, 196 per cell, under the noise of a Veil
-frame (sigma 14 ADU), through the tool's own detection; the median reading against the drawn
-width, in percent, at a peak of 25 / 60 / 200 sigma:
+frame (sigma 14 ADU), through the tool's own detection with its limit of area lifted, so that
+the wide stars reach the estimators (the limit is the subject of the last paragraph of this
+section); the median reading against the drawn width, in percent, at a peak of 25 / 60 / 200
+sigma:
 
 | Width | O | A | B | C | D | DM |
 | ---: | --- | --- | --- | --- | --- | --- |

@@ -389,9 +389,13 @@ public class SeriesAnalyzerTests
             Frame(10, Measurement(3.0, 1.5, 10000, 120) with { CoreElongationMedian = 1.3 }),   // 1.15 times its core, under 1.2: marginal by its elongation
             Frame(11, Measurement(3.0, 1.9, 10000, 120) with { CoreElongationMedian = 1.7 }),   // 1.12 times its core: stretched, bad
             Frame(12, Measurement(3.0, 1.9, 100, 1) with { CoreElongationMedian = 1.25 }, exposure: 0.2),   // a tail on a frame too short to stack
+            Frame(13, Measurement(3.0, 2.2, 10000, 120) with { CoreElongationMedian = 1.70 }),  // cores just under the bad limit: a tail
+            Frame(14, Measurement(3.0, 2.2, 10000, 120) with { CoreElongationMedian = 1.75 }),  // cores just over it: bad
+            Frame(15, Measurement(3.0, 1.5, 10000, 120) with { CoreElongationMedian = 1.24 }),  // 1.21 times its cores: a tail
+            Frame(16, Measurement(3.0, 1.5, 10000, 120) with { CoreElongationMedian = 1.26 }),  // 1.19 times: marginal by its elongation
         ];
         Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
-        double?[] x = [0, 20, 20.5, 21, 21.5, 22, 22.5, 23, 23.5, 24, 24.5, 25], y = new double?[12];
+        double?[] x = [0, 20, 20.5, 21, 21.5, 22, 22.5, 23, 23.5, 24, 24.5, 25, 25.5, 26, 26.5, 27], y = new double?[16];
         Array.Fill(y, 0.0);
         DitherAnalysis d = DitherAnalyzer.Analyze(x, y, c.PauseSeconds);
         Assert.True(d.IsMove[1]);
@@ -401,8 +405,13 @@ public class SeriesAnalyzerTests
 
         Assert.Equal(
             [FrameClass.Good, FrameClass.Marginal, FrameClass.Bad, FrameClass.Marginal, FrameClass.Marginal, FrameClass.Bad, FrameClass.Bad,
-                FrameClass.Marginal, FrameClass.Good, FrameClass.Marginal, FrameClass.Bad, FrameClass.Bad],
+                FrameClass.Marginal, FrameClass.Good, FrameClass.Marginal, FrameClass.Bad, FrameClass.Bad,
+                FrameClass.Marginal, FrameClass.Bad, FrameClass.Marginal, FrameClass.Marginal],
             s.Classes);
+        Assert.Equal(FlagKind.Tail, Assert.Single(s.Flags[12]).Kind);
+        Assert.Equal(FlagKind.Trailed, Assert.Single(s.Flags[13]).Kind);
+        Assert.Equal(FlagKind.Tail, Assert.Single(s.Flags[14]).Kind);
+        Assert.Equal(FlagKind.MarginalTrail, Assert.Single(s.Flags[15]).Kind);
         Assert.Equal(FlagKind.Tail, Assert.Single(s.Flags[7]).Kind);
         Assert.Empty(s.Flags[8]);
         Assert.Equal(FlagKind.MarginalTrail, Assert.Single(s.Flags[9]).Kind);
@@ -417,7 +426,7 @@ public class SeriesAnalyzerTests
         Assert.Equal((FlagKind.Tail, false), (still.Kind, still.AfterMove));
         Assert.Equal(FlagKind.Trailed, Assert.Single(s.Flags[5]).Kind);
         Assert.Equal(FlagKind.Trailed, Assert.Single(s.Flags[6]).Kind);
-        // The three bad frames agree on 88 degrees, so the RA axis is known from them, and the tails name it.
+        // The frames flagged as trailed agree on 88 degrees, so the RA axis is known from them, and the tails name it.
         Assert.Equal(TrailAxis.Ra, tail.On);
 
         Assert.Equal(

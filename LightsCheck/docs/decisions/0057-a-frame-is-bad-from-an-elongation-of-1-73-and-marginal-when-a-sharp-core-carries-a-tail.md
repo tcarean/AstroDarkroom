@@ -12,14 +12,15 @@ moments: the frame now has the elongation of the whole star and that of its core
 
 With the whole-star elongation the classes of `Veil/2026-10-06-3h`, the session the limits
 were chosen on (87 frames; 48 good, 17 marginal, 22 bad), come out 38 / 19 / 30 at 1.35 and
-1.6: the new figure is not diluted by the noise, so a trailed frame reads higher (1.69 became
-1.78, 1.38 became 1.49). At 1.45 and 1.73 they come out 48 / 17 / 22, the same frames in each
+1.6: the new figure is not diluted by the noise, so a trailed frame reads higher (frame 1 went from
+1.68 to 1.78, frame 2 from 1.38 to 1.49). At 1.45 and 1.73 they come out 48 / 17 / 22, the same frames in each
 class.
 
 On `Veil/2026-11-06` (82 frames, 80 good and 2 marginal until now) those limits make 11
 frames bad and 7 marginal. Their stars carry a faint tail along RA, 11 to 17 px long, always
-on the same side, beside a core as sharp as the other frames': 6 to 17 % of each star's
-light, where the other 64 frames keep under 2 % there (the tail of `DSC_0001` was seen in the
+on the same side: 6 to 17 % of each star's light, where the other 64 frames keep under 2 %
+there. The cores are within a fifth of the other frames' width on all but frames 4 and 59, a
+third wider (the tail of `DSC_0001` was seen in the
 pixels; a frame's average star, each star scaled to its core's flux, gave the shares). The
 moments in a circle of 6 px read those frames 1.13 to 1.31: at 4.7 px stars the circle does
 not reach the tail. The owner asked whether such frames should leave the stack. Measured on
@@ -39,9 +40,9 @@ The bad frames of `Veil/2026-10-06-3h` are of two kinds by the same measure: 17 
 stretched core (1.4 to 1.9 times the session's width, a core elongation of 2.0 to 2.9), which
 no stacking repairs, and 5 with a sharp core and a second copy of every star (frames 17, 23,
 54, 22 and 60: 30, 24, 22, 15 and 12 % of the light out of place), the kind of the tails. Of
-the 19 tail and double frames of the two sessions, 17 come right after a move of the mount of
-5 px or more, one after a step of 4 px and one is the first frame; the tail lies on the same
-side whatever the direction of the move. On `Veil/2026-11-06` 75 of the 82 frames follow a
+the 21 frames the rule below flags as a tail on the two sessions (5 and 16), 18 come right
+after a move of the mount of 5 px or more, two after a step of 4 px and one is the first
+frame; the tail lies on the same side whatever the direction of the move. On `Veil/2026-11-06` 75 of the 82 frames follow a
 move, so that alone shows little there; on `Veil/2026-10-06-3h` 41 of 87 do, and 4 of the 5.
 
 Put to the owner with three options and the first recommended; the owner chose it, and asked

@@ -232,7 +232,8 @@ cores' under `Th.ElongationBad`. Then the frame is `Marginal` with the one flag 
 value is the whole star's elongation and whose threshold field carries the cores', and whose
 `AfterMove` is `DitherAnalysis.IsMove` of the frame: the step into it was a move, so the mount
 was probably still settling (R-090, ADR 0057). A frame without a cores' figure, a hand-made
-measurement, is read as stretched. `Tail` takes the trail's axis as the two trailing flags do,
+measurement, is read as stretched, and a frame too short to stack is never a tail: it is bad
+by its exposure, and the tail's reason would say it stays. `Tail` takes the trail's axis as the two trailing flags do,
 and `SeriesReport.Reason` words it; `TrailRows` adds its row only when a frame has the flag.
 
 Two passes: the classes that need no session figure (trailing, as above)
