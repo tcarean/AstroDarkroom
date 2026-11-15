@@ -27,6 +27,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   exposure began. Frames with stars doubled by a jump of the mount, bad until now, are marginal.
 - The `wide stars` row of FOCUS stands from 7 px, in place of 4.5, and says that the brightest
   of such stars are left out, so the figures rest on fewer and fainter stars (R-088).
+- FOCUS says the focus changed from a change of 15 % of the stars' width between the start and
+  the end of the session, in place of 10 % (R-023, ADR 0058): the old widths read a change
+  smaller than it was, and a session that moved by 10 % stacks under 5 % wider than its
+  sharpest frames.
 
 ### Added
 

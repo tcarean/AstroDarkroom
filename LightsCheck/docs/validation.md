@@ -136,11 +136,13 @@ drift instead of editing the figures.
     9.4, RA along Y, the focus held, no dew, 1.52 px per exposure, 13.7 px, 53 frames,
     `Insufficient`, 4.6' to 6.7', 0.45 px, `Ok`, 30 darks, the pattern 1.3 / 2.1 / 2.1 / 2.2
     ADU and 4 hot pixels per megapixel, 1.6 %.
-  - V-013 (Smida): 32 good as recorded; the session FWHM 4.17 to 3.99; **the focus held, true
-    to false**: the width goes from 4.24 px over the first ten frames to 3.79 px over the last
-    ten, -10.4 %, at the 10 % of `Th.FocusHeldFraction`, where the old figure read 4.34 to
-    4.04, -7 %. The pattern stays refused, now within 12 px (three widths). The rest as
-    recorded.
+  - V-013 (Smida): 32 good as recorded; the session FWHM 4.17 to 3.99. The width goes from
+    4.24 px over the first ten frames to 3.79 px over the last ten, -10.4 %, where the old
+    figure read 4.34 to 4.04, -7 %: at the 10 % `Th.FocusHeldFraction` then had, the focus
+    held turned from true to false. The owner, whose picture of that session came out well
+    in print, asked what the change costs; measured, 5 % of the stack's star width (ADR
+    0058), and the limit is 15 % since the same day, so the focus held stays true. The
+    pattern stays refused, now within 12 px (three widths). The rest as recorded.
   - V-014 (`Veil/2026-11-06`): good 80 to 64, marginal 2 to 17, bad 0 to 1. The bad one is
     frame 4, whose core is itself stretched; 16 of the marginal ones are on the `tail or double`
     row (1, 11, 23, 25, 32, 36, 39, 46, 48, 53, 56, 59, 66, 69, 72, 77) and frame 81 is

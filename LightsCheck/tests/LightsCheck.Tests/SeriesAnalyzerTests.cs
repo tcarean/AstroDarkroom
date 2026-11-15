@@ -609,6 +609,27 @@ public class SeriesAnalyzerTests
         Assert.Equal(3.8, s.Fwhm.Last!.Value, 0.01);
     }
 
+    /// <summary>
+    /// The focus held while the width of the stars moved by under 15 % between the ends of the
+    /// session, either way (R-023, ADR 0058): the 10 % of the Smida session, whose picture came
+    /// out well, is a focus that held.
+    /// </summary>
+    [Theory]
+    [InlineData(4.24, 3.80, true)]
+    [InlineData(3.0, 3.4, true)]
+    [InlineData(4.24, 3.55, false)]
+    [InlineData(3.0, 3.5, false)]
+    public void R023_TheFocusHeldUpToAChangeOfFifteenPercent(double first, double last, bool held)
+    {
+        AnalyzedFrame[] frames = Enumerable.Range(1, 20).Select(i => Frame(i, Measurement(i <= 10 ? first : last, 1.1, 10000, 120))).ToArray();
+
+        SeriesAnalysis s = Analyze(frames);
+
+        Assert.Equal(first, s.Fwhm.First!.Value, 0.01);
+        Assert.Equal(last, s.Fwhm.Last!.Value, 0.01);
+        Assert.Equal(held, s.FocusHeld);
+    }
+
     [Fact]
     public void R023_AStableNightKeepsFocusAndNoDew()
     {

@@ -463,9 +463,11 @@ internal static class Th
     internal const double DewHaloRise = 0.02;
 
     /// <summary>
-    /// Focus held when the median FWHM moved by less than this fraction between the ends.
+    /// Focus held when the median FWHM moved by less than this fraction between the ends. A
+    /// steady drift of this size stacks 7 % wider than its sharp end; the Smida session, good
+    /// in print, moved by 10.4 % (ADR 0058).
     /// </summary>
-    internal const double FocusHeldFraction = 0.10;
+    internal const double FocusHeldFraction = 0.15;
 
     /// <summary>
     /// The read-noise swamping ratio (shot variance over read variance) under which a channel is
