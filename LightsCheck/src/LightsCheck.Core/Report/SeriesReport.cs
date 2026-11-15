@@ -1378,7 +1378,7 @@ internal static class SeriesReport
             FlagKind.MarginalTrail => T($"elongation {RunReport.F(f.Value, 2)} (from {RunReport.F(f.Threshold, 2)} the frame is marginal){TrailSuffix(f)}", $"alungire {RunReport.F(f.Value, 2)} (de la {RunReport.F(f.Threshold, 2)} cadrul e la limita){TrailSuffix(f)}"),
             FlagKind.Tail => T(
                 $"the stars have a tail or a second copy: elongation {RunReport.F(f.Value, 2)} with it, {RunReport.F(f.Threshold, 2)} without it; stacking with rejection removes it on most stars, so the frame stays in the stack{TrailSuffix(f)}",
-                $"stelele au o dara sau o a doua copie: alungire {RunReport.F(f.Value, 2)} cu ea, {RunReport.F(f.Threshold, 2)} fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca cadrul ramane in stiva{TrailSuffix(f)}")
+                $"stelele au o dara sau o a doua copie: alungire {RunReport.F(f.Value, 2)} cu ea, {RunReport.F(f.Threshold, 2)} fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca ramane in stiva{TrailSuffix(f)}")
                 + (f.AfterMove ? T(
                     "; the frame comes right after a move of the mount, which was probably still settling when the exposure began",
                     "; cadrul vine imediat dupa o miscare a monturii, care probabil inca se aseza cand a inceput expunerea") : ""),

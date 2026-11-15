@@ -421,10 +421,10 @@ public class SeriesAnalyzerTests
         Assert.Equal(TrailAxis.Ra, tail.On);
 
         Assert.Equal(
-            "stelele au o dara sau o a doua copie: alungire 1.90 cu ea, 1.25 fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca cadrul ramane in stiva, dara pe RA (88 de grade); cadrul vine imediat dupa o miscare a monturii, care probabil inca se aseza cand a inceput expunerea",
+            "stelele au o dara sau o a doua copie: alungire 1.90 cu ea, 1.25 fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca ramane in stiva, dara pe RA (88 de grade); cadrul vine imediat dupa o miscare a monturii, care probabil inca se aseza cand a inceput expunerea",
             SeriesReport.Reason(tail));
         Assert.Equal(
-            "stelele au o dara sau o a doua copie: alungire 1.90 cu ea, 1.25 fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca cadrul ramane in stiva, dara pe RA (88 de grade)",
+            "stelele au o dara sau o a doua copie: alungire 1.90 cu ea, 1.25 fara ea; la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca ramane in stiva, dara pe RA (88 de grade)",
             SeriesReport.Reason(still));
         using (Ui.Use(UiLanguage.English))
         {

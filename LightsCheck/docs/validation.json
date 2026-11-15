@@ -24,8 +24,8 @@
       "kind": "frame",
       "session": "Veil/2026-10-06-3h",
       "frame": 1,
-      "measuredOn": "2026-10-09",
-      "expected": { "detected": 12308, "bright": 1532, "fwhm": 3.85, "fwhmP90": 4.17, "elongation": 1.68, "elongatedFraction": 0.98, "angle": 83, "coherence": 0.94, "halo": 0.035, "background": 128, "sigma": 13.9, "channels": [27, 126, 126, 144], "fwhmCentre": 3.90, "fwhmEdge": 3.74, "trails": 0 },
+      "measuredOn": "2026-10-09, the shapes 2026-11-15",
+      "expected": { "detected": 12308, "bright": 1532, "fwhm": 4.12, "fwhmP90": 4.42, "elongation": 1.78, "elongatedFraction": 0.97, "angle": 84, "coherence": 0.88, "halo": 0.033, "background": 128, "sigma": 13.9, "channels": [27, 126, 126, 144], "fwhmCentre": 4.23, "fwhmEdge": 3.93, "trails": 0 },
       "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 3, "coherence": 0.03, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
     },
     {
@@ -33,8 +33,8 @@
       "kind": "frame",
       "session": "Veil/2026-10-06-3h",
       "frame": 4,
-      "measuredOn": "2026-10-09",
-      "expected": { "detected": 15132, "bright": 2104, "fwhm": 3.06, "fwhmP90": 3.64, "elongation": 1.15, "elongatedFraction": 0.14, "angle": 86, "coherence": 0.36, "halo": 0.019, "background": 120, "sigma": 13.1, "channels": [25, 120, 120, 138], "fwhmCentre": 3.15, "fwhmEdge": 2.90, "trails": 0 },
+      "measuredOn": "2026-10-09, the shapes 2026-11-15",
+      "expected": { "detected": 15132, "bright": 2104, "fwhm": 2.51, "fwhmP90": 2.96, "elongation": 1.17, "elongatedFraction": 0.20, "angle": 84, "coherence": 0.43, "halo": 0.021, "background": 120, "sigma": 13.1, "channels": [25, 120, 120, 138], "fwhmCentre": 2.56, "fwhmEdge": 2.43, "trails": 0 },
       "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 8, "coherence": 0.05, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
     },
     {
@@ -42,8 +42,8 @@
       "kind": "frame",
       "session": "Veil/2026-10-06-3h",
       "frame": 17,
-      "measuredOn": "2026-10-09",
-      "expected": { "detected": 9763, "bright": 1176, "fwhm": 4.92, "fwhmP90": 5.58, "elongation": 2.29, "elongatedFraction": 0.99, "angle": -89, "coherence": 0.98, "halo": 0.387, "background": 131, "sigma": 14.3, "channels": [27, 129, 129, 147], "fwhmCentre": 4.90, "fwhmEdge": 4.92, "trails": 0 },
+      "measuredOn": "2026-10-09, the shapes 2026-11-15",
+      "expected": { "detected": 9763, "bright": 1176, "fwhm": 2.84, "fwhmP90": 7.51, "elongation": 2.49, "elongatedFraction": 0.97, "angle": -89, "coherence": 0.94, "halo": 0.467, "background": 131, "sigma": 14.3, "channels": [27, 129, 129, 147], "fwhmCentre": 2.75, "fwhmEdge": 2.66, "trails": 0 },
       "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 3, "coherence": 0.03, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
     },
     {
@@ -51,8 +51,8 @@
       "kind": "frame",
       "session": "Veil/2026-10-06-3h",
       "frame": 23,
-      "measuredOn": "2026-10-09",
-      "expected": { "detected": 11352, "bright": 1340, "fwhm": 4.88, "fwhmP90": 5.24, "elongation": 2.23, "elongatedFraction": 0.98, "angle": -87, "coherence": 0.98, "halo": 0.182, "background": 135, "sigma": 14.5, "channels": [27, 135, 135, 153], "fwhmCentre": 4.93, "fwhmEdge": 4.78, "trails": 0 },
+      "measuredOn": "2026-10-09, the shapes 2026-11-15",
+      "expected": { "detected": 11352, "bright": 1340, "fwhm": 3.04, "fwhmP90": 5.60, "elongation": 2.57, "elongatedFraction": 0.98, "angle": -87, "coherence": 0.98, "halo": 0.307, "background": 135, "sigma": 14.5, "channels": [27, 135, 135, 153], "fwhmCentre": 3.12, "fwhmEdge": 2.89, "trails": 0 },
       "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 3, "coherence": 0.03, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
     },
     {
@@ -60,8 +60,8 @@
       "kind": "frame",
       "session": "Veil/2026-10-06-3h",
       "frame": 72,
-      "measuredOn": "2026-10-09",
-      "expected": { "detected": 13338, "bright": 1886, "fwhm": 3.03, "fwhmP90": 3.64, "elongation": 1.16, "elongatedFraction": 0.15, "angle": -76, "coherence": 0.46, "halo": 0.012, "background": 161, "sigma": 15.0, "channels": [33, 159, 159, 183], "fwhmCentre": 3.10, "fwhmEdge": 2.88, "trails": 0 },
+      "measuredOn": "2026-10-09, the shapes 2026-11-15",
+      "expected": { "detected": 13338, "bright": 1886, "fwhm": 2.48, "fwhmP90": 2.94, "elongation": 1.18, "elongatedFraction": 0.21, "angle": -75, "coherence": 0.51, "halo": 0.014, "background": 161, "sigma": 15.0, "channels": [33, 159, 159, 183], "fwhmCentre": 2.53, "fwhmEdge": 2.40, "trails": 0 },
       "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 8, "coherence": 0.05, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
     },
     {
@@ -69,21 +69,21 @@
       "kind": "frame",
       "session": "Veil/2026-10-06-3h",
       "frame": 83,
-      "measuredOn": "2026-10-09",
-      "expected": { "detected": 12135, "bright": 1662, "fwhm": 3.06, "fwhmP90": 3.58, "elongation": 1.13, "elongatedFraction": 0.13, "angle": -87, "coherence": 0.17, "halo": -0.006, "background": 174, "sigma": 15.8, "channels": [35, 174, 174, 195], "fwhmCentre": 3.12, "fwhmEdge": 2.92, "trails": 0 },
+      "measuredOn": "2026-10-09, the shapes 2026-11-15",
+      "expected": { "detected": 12135, "bright": 1662, "fwhm": 2.48, "fwhmP90": 2.95, "elongation": 1.15, "elongatedFraction": 0.15, "angle": -82, "coherence": 0.22, "halo": -0.007, "background": 174, "sigma": 15.8, "channels": [35, 174, 174, 195], "fwhmCentre": 2.54, "fwhmEdge": 2.37, "trails": 0 },
       "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 8, "coherence": 0.05, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
     },
     {
       "id": "V-008",
       "kind": "series",
       "session": "Veil/2026-10-06-3h",
-      "measuredOn": "2026-10-09, the drift and polar figures 2026-10-24, the darks 2026-11-13",
+      "measuredOn": "2026-10-09, the drift and polar figures 2026-10-24, the darks 2026-11-13, the classes and the width 2026-11-15",
       "expected": {
-        "good": 48, "marginal": 17, "bad": 22,
-        "badFrames": [1, 13, 15, 17, 18, 20, 22, 23, 25, 27, 38, 43, 45, 50, 52, 54, 56, 60, 63, 68, 70, 76],
+        "good": 48, "marginal": 22, "bad": 17,
+        "badFrames": [1, 13, 15, 18, 20, 25, 27, 38, 43, 45, 50, 52, 56, 63, 68, 70, 76],
         "registered": 87, "moves": 41, "pauses": 47, "pausesWithoutMove": 9,
         "distinctMid": 38, "distinctLoose": 25, "isolated": 1, "longestRunLoose": 10,
-        "medianMove": 13.29, "rotationArcmin": 8.5, "driftYPerMin": -0.73, "sessionFwhm": 3.12,
+        "medianMove": 13.29, "rotationArcmin": 8.5, "driftYPerMin": -0.73, "sessionFwhm": 2.64,
         "readNoiseG1": 2.9, "swampingRFrame1": 9.4,
         "raAxis": "Y", "focusHeld": true, "dew": false, "hotPixelsOk": true,
         "driftPerExposurePx": 1.52, "walkingStreakPx": 13.7, "walkingSharedFrames": 53, "walkingNoise": "Insufficient",
@@ -160,13 +160,13 @@
       "id": "V-013",
       "kind": "series",
       "session": "Milkyway-Core/2026-08-12-Smida",
-      "measuredOn": "2026-10-10, the drift pairs 2026-10-24, the pattern 2026-11-13",
+      "measuredOn": "2026-10-10, the drift pairs 2026-10-24, the pattern 2026-11-13, the width 2026-11-15",
       "expected": {
         "good": 32, "marginal": 0, "bad": 0,
         "badFrames": [],
         "registered": 32, "moves": 2, "pauses": 31, "pausesWithoutMove": 29,
         "distinctMid": 3, "distinctLoose": 3, "isolated": 0, "longestRunLoose": 12,
-        "medianMove": 15.52, "rotationArcmin": -6.3, "driftYPerMin": -0.07, "sessionFwhm": 4.17,
+        "medianMove": 15.52, "rotationArcmin": -6.3, "driftYPerMin": -0.07, "sessionFwhm": 3.99,
         "readNoiseG1": 1.3, "swampingRFrame1": 10.1,
         "raAxis": "Unknown", "focusHeld": true, "dew": false, "hotPixelsOk": false,
         "driftPerExposurePx": 0.17, "walkingStreakPx": 1.9, "walkingSharedFrames": 0, "walkingNoise": "Static",
@@ -179,13 +179,13 @@
       "id": "V-014",
       "kind": "series",
       "session": "Veil/2026-11-06",
-      "measuredOn": "2026-11-07, the darks 2026-11-13",
+      "measuredOn": "2026-11-07, the darks 2026-11-13, the classes and the width 2026-11-15",
       "expected": {
-        "good": 80, "marginal": 2, "bad": 0,
-        "badFrames": [],
+        "good": 64, "marginal": 17, "bad": 1,
+        "badFrames": [4],
         "registered": 82, "moves": 75, "pauses": 81, "pausesWithoutMove": 6,
         "distinctMid": 52, "distinctLoose": 37, "isolated": 14, "longestRunLoose": 4,
-        "medianMove": 17.14, "rotationArcmin": 5.4, "driftYPerMin": -0.59, "sessionFwhm": 4.70,
+        "medianMove": 17.14, "rotationArcmin": 5.4, "driftYPerMin": -0.59, "sessionFwhm": 4.69,
         "readNoiseG1": 3.0, "swampingRFrame1": 11.6,
         "raAxis": "Y", "focusHeld": true, "dew": false, "hotPixelsOk": true,
         "driftPerExposurePx": 1.19, "walkingStreakPx": 3.6, "walkingSharedFrames": 4, "walkingNoise": "Ok",

@@ -15,7 +15,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   a fixed circle of 6 px, which read a star of 7 px as 5.9 and of 10 px as 6.5, and read the
   same star wider when it was fainter (a 3 px star 30 % wide at a peak of 25 sigma). Every width
   and elongation the program prints moves: the clean frames of a 135 mm session read about
-  2.5 px where they read 3.06.
+  2.5 px where they read 3.06. The figures of `docs/validation.json` that hold a width, an
+  elongation or a class count were measured again on the three recorded sessions and recorded
+  at the owner's word (`docs/validation.md`, 2026-11-15).
 - A frame is bad from an elongation of 1.73 and marginal from 1.45, in place of 1.60 and 1.35
   (R-022, ADR 0057): with the new measurement those limits give the session they were chosen on
   the classes it had, frame for frame.

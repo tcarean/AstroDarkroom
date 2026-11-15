@@ -178,7 +178,7 @@ public class SeriesTests
 
         string reason = SeriesReport.Reason(flag);
         Assert.StartsWith(english ? "the stars have a tail or a second copy: elongation " : "stelele au o dara sau o a doua copie: alungire ", reason, StringComparison.Ordinal);
-        Assert.Contains(english ? "stacking with rejection removes it on most stars, so the frame stays in the stack" : "la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca cadrul ramane in stiva", reason, StringComparison.Ordinal);
+        Assert.Contains(english ? "stacking with rejection removes it on most stars, so the frame stays in the stack" : "la stivuire, respingerea (rejection) o scoate la cele mai multe stele, asa ca ramane in stiva", reason, StringComparison.Ordinal);
         Assert.EndsWith(english ? "; the frame comes right after a move of the mount, which was probably still settling when the exposure began" : "; cadrul vine imediat dupa o miscare a monturii, care probabil inca se aseza cand a inceput expunerea", reason, StringComparison.Ordinal);
         PlainWords.AssertPlain(reason, "the reason of a tail");
 
