@@ -158,3 +158,25 @@ star is read as well, from its pixels above the local noise in a circle of 2.4 c
 - Stage 2: the new tests red before the code and green after; `scripts/verify.ps1` green
   (`--no-incremental -warnaserror` build before the last run); the golden diff read whole;
   `/validate` with the drift table; a run of the console and of the window on one real session.
+
+## What deviated from this plan, and why
+
+- Stage 2 measures each star twice, not once: the candidates that read the width right follow
+  one core of a doubled star, so the elongation and the angle come from a second reading of
+  the whole star (ADR 0056). The frame keeps both elongations.
+- The classes changed, which the plan did not foresee: the limits went to 1.45 and 1.73, and a
+  frame with a tail or a second copy beside a sharp core is marginal (R-090, ADR 0057), after
+  the owner asked whether such frames should leave the stack and the measurement said no.
+- The focus limit went from 10 % to 15 % (ADR 0058), after the owner asked what the change
+  the new widths show on the Smida session costs.
+- A fourteenth frame, with a second copy of every star, joined `SessionFixture.ClassesPattern`,
+  so the classes golden pins the new reason; with it two lines of that golden moved that the
+  frame alone explains (the exposure verdict reads frames 1, 7 and 14 where it read 1, 6 and
+  13, and the field rotation ends on frame 14).
+- A subagent reviewed the change before its first commit, and its findings went into that
+  commit; the fixes were not reviewed a second time.
+- The window was not run on a real session: its tests render the new row and paragraph on the
+  synthetic sessions, and the console was run on the three real ones.
+- The wiki page was brought up to date on a branch of the wiki's clone made from `master`; its
+  screenshots still show the figures of the first versions.
+- The version stays 1.0.0, the owner's choice.
