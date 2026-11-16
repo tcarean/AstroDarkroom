@@ -192,8 +192,13 @@ to its value for both the verdict and the split; `Planes.Median(IReadOnlyList<do
 the fits. `SidesOf` reads the four sides (`MapSide`, an edge with its two corners,
 `SideLight.RegionsOf`) the same way, on the same frames (`KeptForSplit`): the side's per-frame
 offset is the mean of its three regions (`SideOffset`), fitted on the ratio; the intercept is
-the constant with the standard error `scale x sqrt(1 / n + mean(x)^2 / Sxx)` of a line read at
-x = 0, and with biases the bias master's side offset is taken out. The sides need `Th.LeakSidesMinFrames` frames left after the lit ones, the split three;
+the constant, with the error `sqrt(scale^2 / n + (mean(x) x slope error)^2)` of a line read at
+x = 0: the line's level at the mean ratio is known to the scale over sqrt(n), and carrying it
+to ratio 0 adds the slope's error times that distance. The slope error is `SlopeError`, half
+the range the line's own pairwise slopes give at one sigma (Sen's interval, ADR 0064), so it
+says how well this estimator holds the slope: least squares' formula, used before, shrinks
+with one far frame, which the median of the pairwise slopes does not use that way. With biases
+the bias master's side offset is taken out. The sides need `Th.LeakSidesMinFrames` frames left after the lit ones, the split three;
 `DarkReport.SplitUnmeasured` turns the three reasons (too few frames with a ratio, too little
 warming, too few frames left) into the rows' `NEMASURAT` words. `LeakVerdict.ConstantLight`
 is the strongest side whose remainder passes `Th.LeakConstantAdu` and `Th.LeakConstantSigmas`

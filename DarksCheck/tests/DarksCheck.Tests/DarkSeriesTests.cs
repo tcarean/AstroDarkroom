@@ -761,6 +761,58 @@ public partial class DarkSeriesTests
         Assert.Equal(LeakCause.Leak, sd.Cause);
     }
 
+    /// <summary>
+    /// CR-015: a side's constant light is the value of its line at ratio 0, and the line is the median of the
+    /// pairwise slopes. One far frame gave the old error formula (least squares') a long lever and so a small
+    /// error, though a median of pairwise slopes gains nothing from one frame: the error printed was several
+    /// times too small, and a side without light could pass for light.
+    /// </summary>
+    [Fact]
+    public void R029_AWarmingThatRestsOnOneColdFrameGivesASideAnErrorThatFitsItsLine()
+    {
+        // thirty darks, no light anywhere: the first at half the master's warmth, the others within 0.03 of each other
+        using SessionFixture cold = new SessionFixture().WithDarkSeries(30, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = i == 0 ? 0.5 : 1.0 + 0.001 * i }, biases: 3);
+        DarkSeriesResult rc = Run(cold);
+        // the same darks warming evenly over the same range of the first frame's lever
+        using SessionFixture even = new SessionFixture().WithDarkSeries(30, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = 0.5 + 0.53 * i / 29 }, biases: 3);
+        DarkSeriesResult re = Run(even);
+        Assert.Equal(4, rc.Verdicts.Leak.Sides.Count);
+        Assert.Equal(4, re.Verdicts.Leak.Sides.Count);
+        // one frame opens the gate of the span (0.1), as before
+        Assert.InRange(rc.Verdicts.Leak.Frames!.RatioSpan, 0.4, 0.65);
+        foreach (MapSide side in Enum.GetValues<MapSide>())
+        {
+            SideLight one = rc.Verdicts.Leak.Sides.Single(s => s.Side == side), spread = re.Verdicts.Leak.Sides.Single(s => s.Side == side);
+            // with the warming spread over the frames the line is well held; resting on one frame it is not
+            Assert.True(one.ErrorAdu > 3 * spread.ErrorAdu, $"{side}: {one.ErrorAdu} against {spread.ErrorAdu}");
+            Assert.False(LeakVerdict.IsConstantLight(one), $"{side}: {one.LightAdu} +/- {one.ErrorAdu}");
+        }
+
+        Assert.Null(rc.Verdicts.Leak.ConstantLight);
+    }
+
+    /// <summary>The error of a Theil-Sen slope from its own pairwise slopes (Sen's interval at one sigma), on figures worked out by hand.</summary>
+    [Fact]
+    public void R029_TheSlopeErrorIsHalfTheRangeOfThePairwiseSlopesAtOneSigma()
+    {
+        // four points; the six pairwise slopes sorted: 0.7, 0.95, 0.95, 1.0333, 1.2, 1.2. C = sqrt(4 x 3 x 13 / 18) = 2.944,
+        // so from slope floor((6 - 2.944) / 2) = 1 to slope ceil((6 + 2.944) / 2) = 5: (1.2 - 0.95) / 2
+        double[] x = [0, 1, 2, 3], y = [0, 1.2, 1.9, 3.1];
+        bool[] all = [true, true, true, true];
+        Assert.Equal(0.125, LeakAnalyzer.SlopeError(x, y, all), 9);
+
+        // points on a line: every pairwise slope is the line's
+        Assert.Equal(0, LeakAnalyzer.SlopeError(x, [1, 3, 5, 7], all), 9);
+
+        // only the kept points count: without the last one, three slopes 1.2, 0.95, 0.7 and C = sqrt(3 x 2 x 11 / 18) = 1.915,
+        // from slope floor(0.54) = 0 to slope ceil(2.46) = 2 (the last): (1.2 - 0.7) / 2
+        Assert.Equal(0.25, LeakAnalyzer.SlopeError(x, y, [true, true, true, false]), 9);
+
+        // no two distinct abscissae: no slope, no error
+        Assert.True(double.IsNaN(LeakAnalyzer.SlopeError([1, 1, 1], [1, 2, 3], [true, true, true])));
+        Assert.True(double.IsNaN(LeakAnalyzer.SlopeError(x, y, [true, false, false, false])));
+    }
+
     [Fact]
     public void R029_ALeftOrRightSideIsNamedWithItsPreposition()
     {
@@ -791,7 +843,8 @@ public partial class DarkSeriesTests
     {
         // a band of +2 ADU over the top 64 rows (the top third) of every dark, the raised mirror's shadow of an eyepiece leak
         // (noise 1 ADU instead of the fixture's 3: a region of these 256 x 192 frames has 256 pixels, so at noise 3 the
-        // intercept error reaches 0.7 ADU and the band of 2 sits at the 3-sigma condition; the D3300's regions have 2.4 Mpx)
+        // intercept error is far over the 0.67 at which a band of 2 stops passing the 3-sigma condition; the D3300's
+        // regions have 2.4 Mpx)
         static double Band(int x, int y) => y < 64 ? 2 : 0;
 
         // flat biases: light the bias does not hold, in every frame
@@ -814,7 +867,9 @@ public partial class DarkSeriesTests
         Assert.Contains(" ADU; latura de sus trece de 0.15 si de 3 ori cat poate gresi masuratoarea; +", text, StringComparison.Ordinal);
         Assert.Contains(" ADU e ", text, StringComparison.Ordinal);
         Assert.Contains(" din zgomotul pe pixel al masterului dark (", text, StringComparison.Ordinal);
-        Assert.True(top.ErrorAdu > 0 && top.ErrorAdu < 0.4, $"error {top.ErrorAdu}");
+        // the band of 2 passes three times its error while the error is under 0.67 (the bound was 0.4 for the error of
+        // before ADR 0064, which was too small for a line read from eight frames; it reads 0.59 here)
+        Assert.True(top.ErrorAdu > 0 && top.ErrorAdu < 0.67, $"error {top.ErrorAdu}");
         // the row and the verdict mark the light and the master's noise bold (ADR 0016); check 9's master row marks its noise
         IReadOnlyList<ReportSection> sections = DarkReport.Sections(r);
         ReportRow constantRow = sections.Single(x => x.Check == ReportCheck.Leaks).Rows.Single(x => x.Label == "lumina constanta");

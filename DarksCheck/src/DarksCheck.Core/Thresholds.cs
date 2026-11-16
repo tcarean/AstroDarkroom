@@ -179,9 +179,9 @@ internal static class Th
     internal const double LeakConstantAdu = 0.15;
 
     /// <summary>
-    /// ... and above this many times its own standard error (the side's per-frame scatter around
-    /// its line, carried to ratio 0), so a short or noisy series cannot name a leak it cannot
-    /// resolve; the leak set's top side is 0.19 ± 0.01.
+    /// ... and above this many times its own error (the side's per-frame scatter around its
+    /// line and the error of the line's slope, carried to ratio 0; ADR 0064), so a short or noisy
+    /// series, or one whose warming rests on one frame, cannot name a leak it cannot resolve.
     /// </summary>
     internal const double LeakConstantSigmas = 3.0;
 

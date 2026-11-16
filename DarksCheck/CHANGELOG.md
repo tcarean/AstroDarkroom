@@ -342,6 +342,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The `+/-` beside each side's constant light in check 3 is worked out from the line the value
+  itself comes from. When the warming of the series rested on one cold frame the error shown
+  was several times too small (about 0.04 where the value really scattered by 0.28), and a
+  side without light passed for light in about one series in six. The values of the sides do
+  not change; on an ordinary series the error grows a little (R-029, ADR 0064; CR-015 of the
+  code review).
+
 - Check 3 names a block of lit frames that takes up to nearly half of the series: when about a
   third of the darks, at one end of the warming, carried light (the lamp came on for the last
   eleven of thirty), the fit tilted through them, no frame was named and the check could read
