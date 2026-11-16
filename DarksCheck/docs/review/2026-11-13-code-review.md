@@ -98,11 +98,11 @@ each pair has the same defect unless the entry says otherwise.
 | CR-008 | 1 | some setups | owner | With 61 to 119 darks only 31 to 60 are read | fixed 7e8d7a2f |
 | CR-009 | 1 | some setups | owner | FITS without an ISO: a known exposure mismatch reads UNMEASURED | fixed bfe04ca6 |
 | CR-010 | 1 | slip | confirmed | Biases at another ISO than the darks are subtracted as they are | fixed a047f9ea |
-| CR-011 | 1 | slip | confirmed | FITS darks take their black from biases that are then refused for their size | open |
-| CR-012 | 1 | slip | owner | Check 1 judges the dominant setting, the analysis keeps the first file's | open |
-| CR-013 | 1 | rare | owner | Frames are taken in file-name order as if it were shooting order | open |
-| CR-014 | 1 | rare | to measure | When about a third of the frames at one end carry light, no frame is named and check 3 can read OK | open |
-| CR-015 | 1 | rare | to measure | A warming that rests on one cold frame gives the constant light an error several times too small | open |
+| CR-011 | 1 | slip | confirmed | FITS darks take their black from biases that are then refused for their size | fixed 50c4ae76 |
+| CR-012 | 1 | slip | owner | Check 1 judges the dominant setting, the analysis keeps the first file's | fixed 91022f20 |
+| CR-013 | 1 | rare | owner | Frames are taken in file-name order as if it were shooting order | fixed edb0fd48 |
+| CR-014 | 1 | rare | to measure | When about a third of the frames at one end carry light, no frame is named and check 3 can read OK | fixed 256afe32 |
+| CR-015 | 1 | rare | to measure | A warming that rests on one cold frame gives the constant light an error several times too small | fixed 457500f5 |
 | CR-016 | 1 | rare | confirmed | A frame is checked against the first frame's size, ISO and exposure, never against its black and white | open |
 | CR-017 | 1 | rare | owner | `--lights DIR` falls back to DIR's own FITS, so a stacked `result.fit` is measured as the one light | open |
 | CR-018 | 1 | rare | owner | The master's noise rests on the first two decoded frames alone | open |
@@ -165,6 +165,7 @@ each pair has the same defect unless the entry says otherwise.
 | CR-075 | 4 | - | confirmed | Design notes, requirements and comments that describe other code | open |
 | CR-076 | 1 | some setups | owner | Sets that give the exposure and no ISO are compared as made at the same settings, though their exposures are known to differ | fixed 91508347 |
 | CR-077 | 1 | rare | confirmed | Darks without an ISO between lights and a partner at two ISOs: the chained verdict can read `as it is`, and two rows take the darks' ISO two ways | fixed 581dd50a |
+| CR-078 | 1 | some setups | to measure | On a short clean series whose frames scatter more than the 0.1 ADU-eq floor, check 3 names a frame as lit in a few series in a hundred | open |
 
 The files copied from LightsCheck have their own entries, CP-1 to CP-12, in their own section;
 five of them are of severity 1.
@@ -376,7 +377,7 @@ five of them are of severity 1.
 - Test: `R041_BiasesOfAnotherSizeAreReportedAndLeftOut` uses pedestal 200 for both groups, so it
   cannot see this.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed 50c4ae76 (the black the biases established is taken only by darks of the biases' size)
 
 ### CR-012 Check 1 judges the dominant setting, the analysis keeps the first file's
 
@@ -393,7 +394,7 @@ five of them are of severity 1.
   they contradict on this input.
 - Test: `R007_TheOddFrameFirstDoesNotNameTheGroup` covers the inventory only.
 - Evidence: owner.
-- Status: open
+- Status: fixed 91022f20 (the owner chose the setting most frames have, for the stack as for check 1; ADR 0061; a follow-up in ac03cb68)
 
 ### CR-013 Frames are taken in file-name order as if it were shooting order
 
@@ -422,7 +423,7 @@ five of them are of severity 1.
   against times.
 - Evidence: owner (the order and the cadence were read; the verdict of check 4 on such a set
   needs a run). Same as LightsCheck's CR-010.
-- Status: open
+- Status: fixed edb0fd48 (the owner chose a WARNING in the session lines, the names' order kept, as in LightsCheck; ADR 0062, R-125; taking the frames in the order of their times is a feature of its own)
 
 ### CR-014 When about a third of the frames at one end carry light, no frame is named and check 3 can read OK
 
@@ -444,7 +445,7 @@ five of them are of severity 1.
 - Test: `R028_TheFitIsNotTiltedByLitFramesAtTheWarmEnd` uses 4 lit of 12, the last proportion
   that works. The same test with 3 of 8.
 - Evidence: to measure (the mechanism was read; the table is the reviewer's replica).
-- Status: open
+- Status: fixed 256afe32 (measured on a copy of the fit; the owner chose a second fit, taken only when it finds a block of lit frames between a quarter and half of the series; ADR 0063)
 
 ### CR-015 A warming that rests on one cold frame gives the constant light an error several times too small
 
@@ -464,7 +465,7 @@ five of them are of severity 1.
   one frame makes.
 - Test: `R029_ASeriesThatDidNotWarmLeavesTheSplitUnmeasured` covers a flat series only.
 - Evidence: to measure (the real per-frame scatter of a side decides how often).
-- Status: open
+- Status: fixed 457500f5 (measured on a copy of the fit; the owner chose the error read from the line's own pairwise slopes, the value kept; ADR 0064)
 
 ### CR-016 A frame is checked against the first frame's size, ISO and exposure, never against its black and white
 
@@ -1631,6 +1632,34 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
   `R064_TheLightsAreComparedWithThePartnerOnTheSettingsThoseTwoGive` holds the case now.
 - Evidence: confirmed by reading; the verdict's words were not run.
 - Status: fixed 581dd50a (the lights are compared with the partner on the settings those two give, a missing one taken from the darks; the two rows stay, each true of its own pair; ADR 0060, decision 5)
+
+### CR-078 On a short clean series whose frames scatter more than the 0.1 ADU-eq floor, check 3 names a frame as lit in a few series in a hundred
+
+- Found: 2026-11-16, while CR-014 was measured.
+- Where: `Analysis/LeakAnalyzer.cs` (`FrameLightOf`, `Passes`, `Scale`): the limit of a lit frame
+  is `Th.LeakFrameSigmas` (5) times a scale read as 1.4826 x the median absolute residual of the
+  fitted frames, at least `Th.LeakFrameAdu` (0.1 ADU-eq).
+- What happens: with few frames the median absolute residual of a line fitted to those same
+  frames comes out too small, so five times it is passed by a frame that carries no light. The
+  floor of 0.1 ADU-eq hides this while the frames scatter by about 0.02 ADU-eq (the libraries
+  at ISO 1600: 0.012 to 0.024); it does not when the scatter is of the floor's size (the Smida
+  darks at ISO 400: 0.10).
+- Case (a Python copy of the fit, kept outside the repository; no light anywhere, the ratio
+  rising evenly from 0.8 to 1.2, a scatter of 0.1 ADU-eq, 4000 series each): a frame is named
+  in 8.8 % of series of 6 frames, 5.8 % of 8, 4.4 % of 10, 3.0 % of 12, 1.3 % of 20, 0.4 % of
+  30. With a scatter of 0.02 none. A named frame makes check 3 a `WARNING` with `take them out
+  of darks\ or redo the series`.
+- Should: a limit that allows for the number of frames the scale was read from, or a lit frame
+  asked to stand out from its neighbours too.
+- Deliberate: no. ADR 0012 set five scales on three series of 20 and 30 frames, whose clean
+  residuals stay under 2.2 scales. ADR 0063 measured these figures and left them: its second
+  fit adds under a point to them from eight frames up, and five points at six (13.9 %).
+- Test: none on a series without light at a scatter over the floor;
+  `R028_FramesWithLightOverTheWarmingAreNamedAndTheTableShowsEachFramesExcess` has a clean
+  series of eight at a scatter of about 0.014.
+- Evidence: to measure (the figures are the copy's; a run on generated darks at such a scatter
+  shows them on the real code).
+- Status: open
 
 ## How the list is used
 

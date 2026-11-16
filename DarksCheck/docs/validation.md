@@ -298,3 +298,15 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   the library with the Veil lights of 2026-10-06 (V-012); the stack comes out 3.1 % noisier at
   35 darks, 5.4 % at 20 and 12.8 % at 30, and 11 / 11 / 39 darks are needed at 10 %, 22 / 22 /
   80 at 5 %.
+- 2026-11-16: two formulas of check 3 changed (CR-014 and CR-015 of the code review): the
+  per-frame fit runs a second time from a sturdier line and that result is taken only for a
+  block of lit frames (ADR 0063, three new constants in `Thresholds.cs`), and the error of a
+  side's constant light is read from the line's own pairwise slopes (ADR 0064). All eleven
+  cases run with `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 11, Passed:
+  11, Total time: 9.6576 Minutes`; every session was present, and no recorded figure was
+  changed. Read from the logs of two console copies, `main`'s and the branch's, on the six dark
+  sets: the lit frames, the scale, every frame's excess, the splits, each side's value and
+  every other verdict's figures are identical; only the error of a side moves, which
+  `validation.json` does not record (Smida's top side 0.054 to 0.071 ADU-eq, the leak set's
+  0.045 to 0.032, its top side still constant light at +0.198). The table is at the end of
+  `docs/plans/2026-11-16-fix-cr-011-to-cr-015.md`.
