@@ -201,3 +201,9 @@ Worktree (already made, from `main` at dec039cf):
   - "Help works during an analysis" now also asks the command's `CanExecute` on the button.
   - The corrected figures changed the premise of the owner's first answer (23 px for the folder,
     not 39): asked again with a render at 1024 px, the owner kept 1040 px.
+- A third subagent review, of the two fix commits together, at the owner's word ("Mai cere un
+  code review ... doar pe fixurile tale"): no correctness defect. Applied: a run a test starts is
+  stopped and awaited in a `finally`, so a failed assertion cannot leave it going into the next
+  test; ADR 0060's Consequences named the tests of the first commit only; the comment of
+  `_f1Through`. Accepted and written in ADR 0060: F1 kept held while clicking back into the window
+  opens the manual once more, since WPF cannot tell it from a press whose release the browser took.

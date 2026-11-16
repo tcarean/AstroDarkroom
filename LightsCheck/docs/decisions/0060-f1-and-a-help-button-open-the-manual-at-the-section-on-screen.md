@@ -90,8 +90,15 @@ them and on a render at the real width, the owner kept 1040 px (2026-11-16).
 - A wiki heading renamed moves its anchor: `Manual.cs` must follow, or the browser lands at the
   top of the page (GitHub ignores an anchor it does not know). The wiki is outside the
   repository, so no gate test can check the anchors; `docs/design/window.md` says so.
-- `HelpTests` pins the seven addresses, the tabs' tags, F1 pressed in the window in each state,
-  the button's icon, word, tooltip and place in both languages, and the bar's fit and height at
-  the minimum width with Stop shown.
+- `HelpTests` pins the seven addresses, the tabs' tags, F1 pressed in the window in each state
+  (a tab selected while the tabs give way included), F1 held down opening the manual once and
+  the first F1 after the window comes back to the front opening it again, the button's icon,
+  word, tooltip and place in both languages, and the bar at the content width of a window at
+  its minimum width: its fit and height idle and during a real analysis, with Help still usable
+  then.
+- F1 kept held while the user clicks back into the window opens the manual once more: the first
+  repeat after the window comes to the front goes through. WPF cannot tell it from a press whose
+  release the browser took, and that one must open the manual; the extra page was accepted (the
+  third review of the branch, 2026-11-16).
 - The minimum width of 1040 px also covers the Frames tab's 980 px, a case of review entry
   CR-055, which the task that takes that entry closes (ADR 0046).

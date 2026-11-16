@@ -126,12 +126,21 @@ public class HelpTests
 
             // a tab stays selected while the tabs give way to another screen: the screen decides,
             // not the tab (a window never shown has no tab selected before this point)
+            // the run is stopped and awaited even when an assertion fails, so that it cannot go on
+            // into the next test's log and dispatcher over a deleted session
             Task again = vm.OpenAsync(f.Root);
-            Assert.True(vm.IsRunning && w.Tabs.SelectedIndex == 5);
-            Assert.True(PressF1(w.Tabs));
-            Assert.Equal(Page + "#opening-a-session", opened[^1]);
-            vm.CancelPending();
-            await again;
+            try
+            {
+                Assert.True(vm.IsRunning && w.Tabs.SelectedIndex == 5);
+                Assert.True(PressF1(w.Tabs));
+                Assert.Equal(Page + "#opening-a-session", opened[^1]);
+            }
+            finally
+            {
+                vm.CancelPending();
+                await again;
+            }
+
             Assert.True(!vm.HasResult && w.Tabs.SelectedIndex == 5);
             Assert.True(PressF1(w.Tabs));
             Assert.Equal(Page + "#opening-a-session", opened[^1]);
@@ -257,17 +266,23 @@ public class HelpTests
             // inside the bar, and the folder's column, left with a few pixels, cuts its texts on
             // one line instead of making the bar taller (the owner's answer of 2026-11-16)
             Button stop = row.Children.OfType<Button>().Single(b => b.Content as string == Ui.T("Stop", "Opreste"));
+            // the run is stopped and awaited even when an assertion fails (see above)
             Task run = vm.OpenAsync(f.Root);
-            Assert.True(vm.IsRunning);
-            WindowSmokeTests.Render(host, width, 560, romanian ? "ro-help-top-bar" : "en-help-top-bar");
-            Assert.True(stop.ActualWidth > 0);
-            Assert.True(help.IsEnabled);
-            Assert.True(ApplicationCommands.Help.CanExecute(null, help));
-            Assert.True(aboutButton.TranslatePoint(new Point(aboutButton.ActualWidth, 0), host).X < width - 20 + 0.5);
-            Assert.Equal(idleHeight, bar.ActualHeight);
-
-            vm.CancelPending();
-            await run;
+            try
+            {
+                Assert.True(vm.IsRunning);
+                WindowSmokeTests.Render(host, width, 560, romanian ? "ro-help-top-bar" : "en-help-top-bar");
+                Assert.True(stop.ActualWidth > 0);
+                Assert.True(help.IsEnabled);
+                Assert.True(ApplicationCommands.Help.CanExecute(null, help));
+                Assert.True(aboutButton.TranslatePoint(new Point(aboutButton.ActualWidth, 0), host).X < width - 20 + 0.5);
+                Assert.Equal(idleHeight, bar.ActualHeight);
+            }
+            finally
+            {
+                vm.CancelPending();
+                await run;
+            }
         });
     }
 

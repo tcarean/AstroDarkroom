@@ -35,7 +35,7 @@ public partial class MainWindow : Window
     private readonly MainViewModel _vm;
 
     /// <summary>
-    /// Whether a press of F1 went through to the Help command since the window last came to the
+    /// Whether a key-down of F1 went on, not taken as a repeat, since the window last came to the
     /// front: only then is a key-down that WPF marks a repeat a repeat of that press.
     /// </summary>
     private bool _f1Through;
