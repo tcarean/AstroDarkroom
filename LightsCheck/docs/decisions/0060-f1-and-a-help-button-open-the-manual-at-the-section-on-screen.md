@@ -19,8 +19,9 @@ Measured on 2026-11-16: a window's minimum width counts the frame Windows 10 dra
 inside its padding. With a Help button of 80 px in English and 88 px in Romanian, plus its 10 px
 margin, the bar's fixed columns need 864 and 874 px while no analysis runs, and 931 and 961 px
 during one, when Stop shows too: About was cut by 27 and 57 px. The owner was first asked with
-the frame left out (920 px, cut by 11 and 41 px); the branch's review found the frame, and the
-figures here are the corrected ones. They change none of the answers below.
+the frame left out (920 px, cut by 11 and 41 px, 39 px left for the folder at 1040); the
+branch's review found the frame, and the figures here are the corrected ones. Asked again on
+them and on a render at the real width, the owner kept 1040 px (2026-11-16).
 
 ## Decision
 
@@ -32,7 +33,10 @@ figures here are the corrected ones. They change none of the answers below.
 - F1 held down opens the manual once. WPF turns every repeat of a held key into the command,
   some thirty a second, and each would open the browser again; the window takes the repeats of
   F1 before they become the command, as ImageVisualCompare does since its R-066 (found by the
-  branch's review).
+  branch's review). WPF forgets a held key only when it sees the key released, and the browser
+  the press brought to the front may take the release, so a repeat counts only after an F1 that
+  went through since the window last came to the front; otherwise the first F1 after a return
+  by mouse would open nothing (found by the second review).
 - The button is an icon followed by the word, just left of About, after `Write the files...`:
   FlatCheck's place, between its folder button and About, transposed to LightsCheck's bar. The
   icon is FlatCheck's: a question mark on a disc of the theme's accent colour, drawn in XAML as a
@@ -40,7 +44,7 @@ figures here are the corrected ones. They change none of the answers below.
 - The window's minimum width goes from 960 to 1040 px, so that the bar fits during an analysis
   too: in Romanian, with Stop, it needs 1001 px of the 1024 px of content such a window holds,
   which leaves about 23 px for the folder's column (the owner's answer of 2026-11-16 to the
-  question with the measurement above).
+  question with the measurement above, kept on the corrected figures).
 - The folder's column, the one that gives way, keeps each of its texts on one line, cut with an
   ellipsis, as the folder's path already was. Its label and `(none chosen)` wrapped: on a render
   1040 px wide during an analysis the Romanian label broke letter by letter and the bar grew
@@ -59,7 +63,8 @@ figures here are the corrected ones. They change none of the answers below.
 - **Shift+F1 for About.** A second key to learn and to write in the tooltip and the manual, for a
   window opened rarely; FlatCheck's owner chose the button alone.
 - **The icon alone, without the word.** It would be the window's only button without text, and
-  what it does would show only in the tooltip; it would also have fitted at 960 px.
+  what it does would show only in the tooltip. At 960 px it would have fitted in English only:
+  during an analysis the Romanian bar would still have needed about 919 px of the 904.
 - **Stop taking the place of `Write the files...` during an analysis.** It keeps 960 px, but the
   buttons to its left would shift at every run's start and end.
 - **Leaving the bar cut at 960 px during an analysis.** About would lose its end whenever the

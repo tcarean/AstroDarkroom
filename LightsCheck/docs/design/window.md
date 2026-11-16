@@ -66,8 +66,11 @@ a renamed heading, so a heading and `Manual.cs` change together. `OpenAddress`,
 
 WPF turns every key-down that matches a command's gesture into that command, the repeats of a
 held key included. The window's `PreviewKeyDown`, `IgnoreHeldF1`, marks a repeat of F1 handled,
-so the KeyDown that follows with the same arguments no longer becomes the command: F1 held down
-opens the manual once.
+so WPF raises no KeyDown for it and the command never sees it: F1 held down opens the manual
+once. WPF calls a key-down a repeat when the same key went down last with no release seen in
+between, and it forgets nothing when the window loses the front: the browser a press brings
+forward may take the release. So the window counts a repeat only after an F1 that went through
+since it was last activated (`_f1Through`, cleared on `Activated`).
 
 `ExternalLink.Open` is the one place that starts the browser, for the manual and for the About
 window's links. A failure, a relative link included (asking for its absolute address throws
@@ -209,8 +212,9 @@ need; the assembly disables test parallelization. `MainViewModelTests` cover R-0
 without a window. `AutomationTreeTests` ask the automation peers in process, the same ones a
 client in another process is answered by: every tab's content under its item, once, and under
 no other tab's item; and nothing in the tabs' applied template by the stock name, a lookup,
-since keyboard focus needs a window on screen. `HelpTests` raise F1 as the input manager does,
-a PreviewKeyDown and then a KeyDown with the same arguments, through a stand-in presentation
-source, as `AboutWindowFitTests` do with the About window's keys, so the key goes through WPF's
-own translation of a gesture into a command; a repeat is marked through `KeyEventArgs`'s own
-`SetRepeat`, by reflection.
+since keyboard focus needs a window on screen. `HelpTests` raise F1 as WPF's keyboard device
+does, a PreviewKeyDown and, only when nothing handled it, a KeyDown with new arguments, through
+a stand-in presentation source, as `AboutWindowFitTests` do with the About window's keys, so the
+key goes through WPF's own translation of a gesture into a command; a repeat is marked through
+`KeyEventArgs`'s own `SetRepeat`, and the window's activation is raised through `OnActivated`,
+both by reflection.

@@ -173,6 +173,28 @@ public class HelpTests
     }
 
     /// <summary>
+    /// A first press of F1 after the window comes back to the front opens the manual, though WPF
+    /// marks it a repeat: WPF forgets a held key only when it sees the key released, and the
+    /// browser the first press brought to the front took that release (the second review of the
+    /// branch, 2026-11-16).
+    /// </summary>
+    [Fact]
+    public void R091_F1OpensTheManualAgainOnceTheWindowIsBackInFront()
+        => _sta.Invoke(() =>
+        {
+            List<string> opened = [];
+            MainWindow w = new() { OpenAddress = u => opened.Add(u.AbsoluteUri) };
+
+            Assert.True(PressF1(w.Tabs));
+            typeof(Window).GetMethod("OnActivated", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .Invoke(w, [EventArgs.Empty]);
+            PressF1(w.Tabs, isRepeat: true);
+            PressF1(w.Tabs, isRepeat: true);
+
+            Assert.Equal([Page + "#opening-a-session", Page + "#opening-a-session"], opened);
+        });
+
+    /// <summary>
     /// The top bar's Help button runs the Help command and shows a drawn icon and the word, with
     /// its tooltip, just left of About; About opens from its own click, and its tooltip names no
     /// key. At the window's minimum width the bar fits, idle and during a run, its widest with
@@ -240,6 +262,7 @@ public class HelpTests
             WindowSmokeTests.Render(host, width, 560, romanian ? "ro-help-top-bar" : "en-help-top-bar");
             Assert.True(stop.ActualWidth > 0);
             Assert.True(help.IsEnabled);
+            Assert.True(ApplicationCommands.Help.CanExecute(null, help));
             Assert.True(aboutButton.TranslatePoint(new Point(aboutButton.ActualWidth, 0), host).X < width - 20 + 0.5);
             Assert.Equal(idleHeight, bar.ActualHeight);
 
@@ -249,13 +272,29 @@ public class HelpTests
     }
 
     /// <summary>
-    /// Presses F1 on <paramref name="target"/> as the keyboard would with the focus there: a
-    /// PreviewKeyDown, then a KeyDown with the same arguments, as WPF's input manager raises them,
-    /// a repeat of a held key when asked; returns whether something handled it.
+    /// Presses F1 on <paramref name="target"/> as the keyboard would with the focus there, as
+    /// WPF's keyboard device raises it: a PreviewKeyDown, and only when nothing handled it a
+    /// KeyDown with new arguments that keep its repeat mark; a repeat of a held key when asked.
+    /// Returns whether something handled the key.
     /// </summary>
     private static bool PressF1(UIElement target, bool isRepeat = false)
     {
-        KeyEventArgs e = new(Keyboard.PrimaryDevice, new KeySource(), 0, Key.F1) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+        KeyEventArgs preview = F1Args(Keyboard.PreviewKeyDownEvent, isRepeat);
+        target.RaiseEvent(preview);
+        if (preview.Handled)
+        {
+            return true;
+        }
+
+        KeyEventArgs down = F1Args(Keyboard.KeyDownEvent, isRepeat);
+        target.RaiseEvent(down);
+        return down.Handled;
+    }
+
+    /// <summary>The arguments of one key event of F1, a repeat when asked.</summary>
+    private static KeyEventArgs F1Args(RoutedEvent routedEvent, bool isRepeat)
+    {
+        KeyEventArgs e = new(Keyboard.PrimaryDevice, new KeySource(), 0, Key.F1) { RoutedEvent = routedEvent };
         if (isRepeat)
         {
             // WPF marks a repeat from the keyboard's state, through a member of its own; the test
@@ -265,10 +304,7 @@ public class HelpTests
                 .Invoke(e, [true]);
         }
 
-        target.RaiseEvent(e);
-        e.RoutedEvent = Keyboard.KeyDownEvent;
-        target.RaiseEvent(e);
-        return e.Handled;
+        return e;
     }
 
     /// <summary>Every element under <paramref name="node"/> in the visual tree, depth first.</summary>

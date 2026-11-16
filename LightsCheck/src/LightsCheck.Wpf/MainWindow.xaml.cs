@@ -34,6 +34,12 @@ public partial class MainWindow : Window
 
     private readonly MainViewModel _vm;
 
+    /// <summary>
+    /// Whether a press of F1 went through to the Help command since the window last came to the
+    /// front: only then is a key-down that WPF marks a repeat a repeat of that press.
+    /// </summary>
+    private bool _f1Through;
+
     /// <summary>The window over a new view-model, as the application opens it.</summary>
     public MainWindow() : this(new MainViewModel())
     {
@@ -52,22 +58,36 @@ public partial class MainWindow : Window
         DataContext = _vm;
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         PreviewKeyDown += IgnoreHeldF1;
+        Activated += (_, _) => _f1Through = false;
         Closed += (_, _) => _vm.CancelPending();
     }
 
     /// <summary>
     /// Takes the repeats of F1 held down (R-091): a held key repeats some thirty times a second,
     /// and WPF turns each repeat into the Help command, which would open the browser again each
-    /// time. Marked handled here, before the key reaches the command, a repeat does nothing; the
-    /// first press goes on to the command.
+    /// time. Marked handled here, WPF raises no KeyDown for a repeat, so the command never sees
+    /// it; the first press goes on to the command. WPF forgets a held key only when it sees the
+    /// key released, and the browser a press brings to the front may take that release: the
+    /// first F1 after the window comes back to the front goes through though WPF calls it a
+    /// repeat.
     /// </summary>
     /// <param name="sender">The window; not used.</param>
-    /// <param name="e">The key pressed; marked handled when it is a repeat of F1.</param>
-    private static void IgnoreHeldF1(object sender, KeyEventArgs e)
+    /// <param name="e">The key pressed; marked handled when it is a repeat of an F1 that went
+    /// through.</param>
+    private void IgnoreHeldF1(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.F1 && e.IsRepeat)
+        if (e.Key != Key.F1)
+        {
+            return;
+        }
+
+        if (e.IsRepeat && _f1Through)
         {
             e.Handled = true;
+        }
+        else
+        {
+            _f1Through = true;
         }
     }
 

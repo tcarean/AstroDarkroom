@@ -185,3 +185,19 @@ Worktree (already made, from `main` at dec039cf):
     address here is a constant.
   - The CHANGELOG entry said the folder's name stays on one line; it is the label and
     `(none chosen)`, as the name already did.
+- A second subagent reviewed the fix commit (the owner's "Yes, review the fix"). Checked in
+  WPF's source (`KeyboardDevice`): a key-down is a repeat when the same key went down last with
+  no PreviewKeyUp seen in between, and nothing clears that when the window loses the front; WPF
+  raises the KeyDown only when the PreviewKeyDown went unhandled, with new arguments. So:
+  - The first fix swallowed a real first F1 after a return to the window by mouse, when the
+    browser had taken the key's release. The window now counts a repeat only after an F1 that
+    went through since it was last activated; `R091_F1OpensTheManualAgainOnceTheWindowIsBackInFront`
+    failed without it (1 address for 2). ImageVisualCompare's R-066 has the same test of
+    `IsRepeat`; that is its own task.
+  - The tests' `PressF1` raised the KeyDown with the same arguments even when the preview was
+    handled; it now follows the keyboard device. The design note said the same; corrected.
+  - ADR 0060 still said the icon alone would have fitted at 960 px: in English only, with the
+    frame counted.
+  - "Help works during an analysis" now also asks the command's `CanExecute` on the button.
+  - The corrected figures changed the premise of the owner's first answer (23 px for the folder,
+    not 39): asked again with a render at 1024 px, the owner kept 1040 px.
