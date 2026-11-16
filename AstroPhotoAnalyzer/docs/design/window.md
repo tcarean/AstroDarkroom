@@ -15,7 +15,7 @@ with its "Scoate" button (R-155: `ParameterFields.ProfileText`, red through a st
 `ProfileIsProblem`, muted on none; the button visible on `HasProfile`, enabled on the window's
 `IsIdle`, in a two-column grid so a long reason is trimmed instead of pushing the button out),
 "Deschide imagine...",
-"Salveaza raportul...", "Despre" = F1, and under the three buttons a fixed two-line place for
+"Salveaza raportul...", "Ajutor" (the manual, R-186), "Despre", and under the four buttons a fixed two-line place for
 `SaveMessage` / `SaveError`, as the Editare Curbe tab has for its own save); left column `ParameterFields` card with
 "Analizeaza" (the WCS field, R-027, under the target background); right: a placeholder when nothing is loaded, an error card when the run
 failed, otherwise a `TabControl` with Raport, Tonuri, Export, Rezolutie, Culoare,
@@ -121,6 +121,23 @@ top that keeps a window inside an area).
 - At `ContentRendered`, when its size is final, `FitInto` keeps its top inside the area and
   writes its Debug line. At `Loaded` it still has its first height.
 - Where it fits, the margins add up to the same layout as before.
+
+**The manual: Help and F1** (R-186, ADR 0102). One `ApplicationCommands.Help` binding on
+`MainWindow`, whose default gesture is F1, serves the top bar's button and the key; "Despre" is a
+plain click. The handler reads the selected tab's `Tag` (a `ManualSection`, set on each `TabItem`
+in the XAML) and the view-model's `IsBusy`, `HasResult` and `HasError`, and asks
+`Presentation/Manual.SectionFor` for the section in the order the right side stacks: the busy
+overlay over everything, the tabs (drawn over the error card when a refused field leaves both,
+CR-040), the error card, the invitation. Each viewing window (`Views/OverlayWindows.xaml.cs`) binds
+the same command to its own section; the soft proof's full screen to the Soft proof section, which
+explains it. `Manual.Open` writes `Help opened: <address>` and hands the address to the window's
+`OpenAddress`, `ExternalLink.Open(string)` outside the tests; `Presentation/ExternalLink.cs` also
+opens the "Despre" window's links, a relative one failing on its absolute form before the shell
+sees it. `Manual.Url` makes the address from the anchors GitHub derives from the wiki page's
+headings (`The Dust / sky map window` keeps two hyphens where its slash was); the wiki is a
+repository of its own, so a heading renamed there is renamed in `Manual.cs` by hand, and nothing
+in the gate notices if it is not (the browser then lands at the top of the page). The icon is the
+theme's `HelpIcon`, a `DrawingImage`, FlatCheck's.
 
 **Culture**: `App.ForceInvariantNumbers` pins `DefaultThreadCurrentCulture` and
 `CurrentCulture` to invariant at startup; `InvariantGlobalization` must **not** be set on

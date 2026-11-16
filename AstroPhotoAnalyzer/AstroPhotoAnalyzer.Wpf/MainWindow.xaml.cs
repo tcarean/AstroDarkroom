@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainWindow.xaml.cs - the window: the dialogs and the dark title bar. Everything that means a
-// decision sits in MainViewModel.
+// MainWindow.xaml.cs - the window: the dialogs, the manual opened in the browser (Help, F1) and
+// the dark title bar. Everything that means a decision sits in MainViewModel.
 
 using System.Linq;
 using System.Windows;
@@ -129,13 +129,30 @@ namespace AstroPhotoAnalyzer.Wpf
             _ = _vm.ClearProfile();
         }
 
-        /// <summary>"Despre", the button or F1: the about window, modal (R-119), no taller than this window's screen (R-158).</summary>
-        /// <param name="sender">The command's source; not read.</param>
-        /// <param name="e">The command's arguments; not read.</param>
-        void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        /// <summary>"Despre", its button alone (F1 opens the manual, R-186): the about window, modal (R-119), no taller than this window's screen (R-158).</summary>
+        /// <param name="sender">The button; not read.</param>
+        /// <param name="e">The click; not read.</param>
+        void ShowAbout(object sender, RoutedEventArgs e)
         {
             Log.Info("About opened");
             new AboutWindow(ScreenArea.WorkAreaOf(this)) { Owner = this }.ShowDialog();
+        }
+
+        /// <summary>What opens an address in the browser: <see cref="ExternalLink.Open(string)"/>,
+        /// replaced in the tests so that no browser starts.</summary>
+        internal System.Action<string> OpenAddress { get; set; } = ExternalLink.Open;
+
+        /// <summary>
+        /// The Help button and F1, through ApplicationCommands.Help - see MainWindow.xaml: the
+        /// manual at the section of what is on screen, the selected tab's read from its Tag
+        /// (R-186, ADR 0102).
+        /// </summary>
+        /// <param name="sender">The window; not read.</param>
+        /// <param name="e">The command; not read.</param>
+        void ShowHelp(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            var tab = (Tabs.SelectedItem as System.Windows.Controls.TabItem)?.Tag as ManualSection?;
+            Manual.Open(Manual.SectionFor(_vm.IsBusy, _vm.HasResult, _vm.HasError, tab), OpenAddress);
         }
 
         /// <summary>

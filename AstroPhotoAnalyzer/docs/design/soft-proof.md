@@ -232,7 +232,9 @@ a wheel notch or a drag begun inside the band goes to the band, not to the viewe
 in the viewer holds its own capture, so panning across the band does not show the panel). The keys are in `PreviewKeyDown`: Esc closes
 (the window, even with the margin list open, since the window sees the key first), G and O
 toggle the boxes and I moves to the next intent through `SoftProofTabViewModel.HandleKey`,
-ignored while the focus is in a text box or a modifier is held.
+ignored while the focus is in a text box or a modifier is held. F1 passes them by and opens the
+manual's Soft proof section through the window's `ApplicationCommands.Help` binding (R-186,
+`window.md`).
 
 ## What was measured
 

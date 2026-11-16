@@ -17,9 +17,11 @@
 
 // OverlayWindows.xaml.cs - the links with the XAML of the viewing windows: the dust / sky map
 // (R-130), the preview of a row (R-131), the suggested curve (R-147) and the soft proof full
-// screen (R-163, R-164). The behaviour is in the view-models; here only the dark title bar and
-// Esc, and, for the soft proof window, its hover panel and its keys.
+// screen (R-163, R-164). The behaviour is in the view-models; here only the dark title bar, Esc,
+// F1, which opens the window's section of the manual (R-186, ADR 0102), and, for the soft proof
+// window, its hover panel and its keys.
 
+using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
@@ -30,14 +32,20 @@ namespace AstroPhotoAnalyzer.Wpf
     public partial class MapWindow : Window
     {
         /// <summary>
-        /// Loads the XAML, asks for the dark title bar once there is a handle; Esc closes.
+        /// Loads the XAML, asks for the dark title bar once there is a handle; Esc closes, F1
+        /// opens the map's section of the manual (R-186).
         /// </summary>
         public MapWindow()
         {
             InitializeComponent();
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
             KeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Help, (_, _) => Manual.Open(ManualSection.DustSkyMapWindow, OpenAddress)));
         }
+
+        /// <summary>What opens an address in the browser: <see cref="ExternalLink.Open(string)"/>,
+        /// replaced in the tests so that no browser starts.</summary>
+        internal Action<string> OpenAddress { get; set; } = ExternalLink.Open;
     }
 
     /// <summary>
@@ -46,14 +54,20 @@ namespace AstroPhotoAnalyzer.Wpf
     public partial class CurveWindow : Window
     {
         /// <summary>
-        /// Loads the XAML, asks for the dark title bar once there is a handle; Esc closes.
+        /// Loads the XAML, asks for the dark title bar once there is a handle; Esc closes, F1
+        /// opens the curve window's section of the manual (R-186).
         /// </summary>
         public CurveWindow()
         {
             InitializeComponent();
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
             KeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Help, (_, _) => Manual.Open(ManualSection.CurveWindow, OpenAddress)));
         }
+
+        /// <summary>What opens an address in the browser: <see cref="ExternalLink.Open(string)"/>,
+        /// replaced in the tests so that no browser starts.</summary>
+        internal Action<string> OpenAddress { get; set; } = ExternalLink.Open;
     }
 
     /// <summary>
@@ -61,7 +75,7 @@ namespace AstroPhotoAnalyzer.Wpf
     /// <see cref="SoftProofTabViewModel"/>; non-modal, borderless, over the whole screen. Its
     /// panel of controls shows while the mouse is over the band it occupies at the top, and
     /// when the tab has a reason to show in red (<see cref="PanelShown"/>). The keys G, O and
-    /// I go to the view-model; Esc and the panel's Close button close.
+    /// I go to the view-model; Esc and the panel's Close button close; F1 opens the manual.
     /// </summary>
     public partial class SoftProofWindow : Window
     {
@@ -77,7 +91,8 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>
         /// Loads the XAML; the band's MouseEnter and MouseLeave drive <see cref="PanelShown"/>,
         /// held while the margin list is open, and so does the tab's reason in red, the one it
-        /// has when the window gets it included; the keys as above.
+        /// has when the window gets it included; the keys as above, and F1, which opens the Soft
+        /// proof section of the manual, where the full screen is explained (R-186).
         /// </summary>
         public SoftProofWindow()
         {
@@ -111,7 +126,12 @@ namespace AstroPhotoAnalyzer.Wpf
                 if (Keyboard.Modifiers != ModifierKeys.None) return;
                 if (DataContext is SoftProofTabViewModel vm && vm.HandleKey(e.Key)) e.Handled = true;
             };
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Help, (_, _) => Manual.Open(ManualSection.SoftProof, OpenAddress)));
         }
+
+        /// <summary>What opens an address in the browser: <see cref="ExternalLink.Open(string)"/>,
+        /// replaced in the tests so that no browser starts.</summary>
+        internal Action<string> OpenAddress { get; set; } = ExternalLink.Open;
 
         /// <summary>Whether the panel over the top of the image is shown (R-164).</summary>
         public bool PanelShown
@@ -157,13 +177,19 @@ namespace AstroPhotoAnalyzer.Wpf
     public partial class PreviewWindow : Window
     {
         /// <summary>
-        /// Loads the XAML, asks for the dark title bar once there is a handle; Esc closes.
+        /// Loads the XAML, asks for the dark title bar once there is a handle; Esc closes, F1
+        /// opens the preview's section of the manual (R-186).
         /// </summary>
         public PreviewWindow()
         {
             InitializeComponent();
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
             KeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Help, (_, _) => Manual.Open(ManualSection.PreviewWindow, OpenAddress)));
         }
+
+        /// <summary>What opens an address in the browser: <see cref="ExternalLink.Open(string)"/>,
+        /// replaced in the tests so that no browser starts.</summary>
+        internal Action<string> OpenAddress { get; set; } = ExternalLink.Open;
     }
 }
