@@ -115,18 +115,46 @@ public class HelpTests
         });
 
     /// <summary>
-    /// F1 no longer reaches About: the window binds no Help command, so the key's default gesture
-    /// runs nothing, and the About button opens its window on its own click (R-035, R-039).
+    /// About opens from its button, once a click, over the main window, and says so in the log;
+    /// F1 then opens the manual and not About (R-035, R-039, R-043). The About window is replaced
+    /// by a count, so no modal window blocks the test.
     /// </summary>
     [Fact]
-    public void R039_F1IsNoLongerTheAboutWindowsKey()
+    public void R035_AboutOpensFromItsButtonOnly()
         => _sta.Invoke(() =>
         {
-            MainWindow w = new();
-            Assert.DoesNotContain(w.CommandBindings.Cast<System.Windows.Input.CommandBinding>(), b => b.Command == ApplicationCommands.Help);
-            Assert.Null(w.AboutButton.Command);
-            Assert.Null(w.HelpButton.Command);
+            List<string> opened = [];
+            List<Window> owners = [];
+            MainWindow w = new() { OpenAddress = opened.Add, OpenAbout = owners.Add };
+            using LogCapture capture = LogCapture.Start();
+
+            Click(w.AboutButton);
+
+            Assert.Same(w, Assert.Single(owners));
+            LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == "Window");
+            Assert.Equal(LogLevel.Info, line.Level);
+            Assert.Equal("About opened", line.Message);
+
+            Assert.True(PressF1(w));
+            Assert.Single(owners);
+            Assert.Equal([Page + "#the-window"], opened);
         });
+
+    /// <summary>
+    /// F1 alone is Help's key; with Shift, Ctrl, Alt or Windows held it is not, and goes on to
+    /// whatever else takes it, as does any other key (R-039).
+    /// </summary>
+    [Fact]
+    public void R039_OnlyF1AloneIsTheHelpKey()
+    {
+        Assert.True(MainWindow.IsHelpKey(Key.F1, ModifierKeys.None));
+        Assert.False(MainWindow.IsHelpKey(Key.F1, ModifierKeys.Shift));
+        Assert.False(MainWindow.IsHelpKey(Key.F1, ModifierKeys.Control));
+        Assert.False(MainWindow.IsHelpKey(Key.F1, ModifierKeys.Alt));
+        Assert.False(MainWindow.IsHelpKey(Key.F1, ModifierKeys.Windows));
+        Assert.False(MainWindow.IsHelpKey(Key.F2, ModifierKeys.None));
+        Assert.False(MainWindow.IsHelpKey(Key.Help, ModifierKeys.None));
+    }
 
     /// <summary>
     /// Only an absolute http or https address reaches the shell: any other text would be resolved

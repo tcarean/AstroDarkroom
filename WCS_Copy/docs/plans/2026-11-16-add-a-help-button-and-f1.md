@@ -104,3 +104,10 @@ Merge; wiki push; a minor version bump (a new feature) is the owner's call.
   `WindowSmokeTests`, where the rendering tests live, not in `HelpTests`.
 - ADR 0016 supersedes ADR 0008 in part (About alone on the band's right, opened by F1); 0008's
   Status line says so.
+- `OnHelpKey(isRepeat)` of step 5 was folded into `OnPreviewKeyDown`; the warning case of step 4
+  is a forced Preview, not a forced copy.
+- The branch review (a subagent) found no bug; it found About's click and F1 with a modifier
+  untested, and ADR 0009's `(F1)` in the About tooltip superseded without a record. Applied:
+  `OpenAbout` (the About window, replaceable as `OpenAddress` is) and `IsHelpKey` with their
+  tests, ADR 0016 superseding 0009 in part, R-038's "below 803 px", the design index and the
+  requirements' plan list.

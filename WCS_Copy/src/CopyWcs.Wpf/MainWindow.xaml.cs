@@ -46,6 +46,12 @@ public partial class MainWindow : Window
     /// </summary>
     internal Action<string> OpenAddress { get; set; } = ExternalLink.Open;
 
+    /// <summary>
+    /// Shows the About window, modal, over the window given: a new <see cref="AboutWindow"/> each
+    /// time, which a test replaces so that no modal window blocks it.
+    /// </summary>
+    internal Action<Window> OpenAbout { get; set; } = owner => new AboutWindow { Owner = owner }.ShowDialog();
+
     /// <summary>The window over a new view-model.</summary>
     public MainWindow() : this(new MainViewModel())
     {
@@ -160,7 +166,7 @@ public partial class MainWindow : Window
     private void ShowAbout(object sender, RoutedEventArgs e)
     {
         Log.Info("About opened");
-        new AboutWindow { Owner = this }.ShowDialog();
+        OpenAbout(this);
     }
 
     /// <summary>The band's Help button: the manual at the section of what the card shows (R-039).</summary>
@@ -178,7 +184,7 @@ public partial class MainWindow : Window
     /// <param name="e">The key; marked handled when it is F1.</param>
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.F1 && Keyboard.Modifiers == ModifierKeys.None)
+        if (IsHelpKey(e.Key, Keyboard.Modifiers))
         {
             e.Handled = true;
             if (!e.IsRepeat)
@@ -187,6 +193,12 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    /// <summary>Whether a key pressed with these modifiers is Help's: F1 alone (R-039).</summary>
+    /// <param name="key">The key pressed.</param>
+    /// <param name="modifiers">The modifier keys held with it, as <see cref="Keyboard.Modifiers"/> reads them.</param>
+    /// <returns>True for F1 with no modifier; false for any other key and for F1 with Shift, Ctrl, Alt or Windows.</returns>
+    internal static bool IsHelpKey(Key key, ModifierKeys modifiers) => key == Key.F1 && modifiers == ModifierKeys.None;
 
     /// <summary>
     /// The Help button and F1 (R-039, ADR 0016): the manual in the browser, at the section that

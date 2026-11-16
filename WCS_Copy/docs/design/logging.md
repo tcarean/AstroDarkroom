@@ -40,8 +40,9 @@ process:
 
 `CopyWcsCli.Run` configures nothing, so the tests call it in process; the window's test fixture
 (`StaFixture`) builds a plain `Application`, not `App`, for the same reason. No test therefore
-runs `Program.Main`, `App`'s constructor (with its dispatcher hook), `OnStartup` and `OnExit`, the
-dialogs' handlers of `MainWindow` or `ShowAbout`; the tests cover the text `App.StartLine` builds,
+runs `Program.Main`, `App`'s constructor (with its dispatcher hook), `OnStartup` and `OnExit`, or
+the dialogs' handlers of `MainWindow`; `ShowAbout` runs with the About window replaced, and so
+does `ShowHelp` with the browser replaced. The tests cover the text `App.StartLine` builds,
 `LogSetup.Fatal` called directly, and `AboutWindow.OpenLink`'s catch through a raised navigation to
 a relative link (its `InvalidOperationException`). The runs by hand of 2026-10-30 (the plan's
 Outcome) wrote the process's first and last lines of both applications, `App`'s start line and

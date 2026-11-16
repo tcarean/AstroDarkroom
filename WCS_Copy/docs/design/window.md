@@ -22,7 +22,7 @@ automation name is the word, since its content is not a string) and, 8 px after 
 (`AboutButton`), whose `MinWidth` of 88 is the Browse buttons', so the right edges line up.
 The band is 57 px high in both languages while the explanation takes two lines; beside Help
 and About that needs 787 px inside the window, 803 px with its 16 px frame, so the window opens
-820 px wide; narrower, down to its minimum of 720, the explanation takes three lines and the
+820 px wide; below 803 px, down to its minimum of 720, the explanation takes three lines and the
 band 70 px (measured on 2026-11-16 in both languages, ADR 0016). The band made the window open
 700 px high instead of 640, with a minimum height of 620 instead of 560 (2026-10-28): the
 outcome card keeps its room.
@@ -40,13 +40,15 @@ and the closing notes. The built-in `BooleanToVisibilityConverter` does every vi
 there is no converter of the project's own. Every label is `{l:T En='...', Ro='...'}`,
 resolved by `TExtension` when the element is made (its header says why a binding and not a
 string). About's click opens `AboutWindow` modally, made anew at every open. Help's click and F1
-open the manual: the window reads F1 without a modifier in its `PreviewKeyDown`, before any
-control sees it, and takes it, a repeat of a held key included, which then does nothing; the
-window binds no command, so `ApplicationCommands.Help`, whose gesture F1 is, reaches nothing.
+open the manual: the window reads F1 without a modifier (`IsHelpKey`) in its `PreviewKeyDown`,
+before any control sees it, and takes it, a repeat of a held key included, which then does
+nothing; the window binds no command, so `ApplicationCommands.Help`, whose gesture F1 is,
+reaches nothing.
 
 `MainWindow.xaml.cs` owns what needs a window: the two `OpenFileDialog`s and the
 `SaveFileDialog` (the FITS filter first, every file second, the folder of the current path
-proposed), the About window (`ShowAbout`, About's click), the manual (`ShowHelp`, behind
+proposed), the About window (`ShowAbout`, About's click, through `OpenAbout`, which a test
+replaces), the manual (`ShowHelp`, behind
 `HelpClick` and `OnPreviewKeyDown`: `Manual.SectionFor` over the view-model's `HasOutcome`,
 `HasError` and `HasWarnings`, `Manual.Url`, the log line, then `OpenAddress`, which is
 `ExternalLink.Open` unless a test replaced it), and `Start(source, dest)`, which `App` calls
@@ -175,10 +177,12 @@ language. `HelpTests` pin the three addresses and `SectionFor`, press F1 through
 `PreviewKeyDown` (a `KeyEventArgs` with a `PresentationSource` of its own, a repeat marked
 through WPF's internal `SetRepeat`, as ImageVisualCompare's test does) on the window and on a
 box inside it, and click Help, over a card with nothing, a result, a refusal and a warning,
-with `OpenAddress` replaced so no browser starts; a held F1 opens once, and `ExternalLink`
-refuses a relative, `file:` or `mailto:` address with a Debug line. `AboutTests` bind the
-About view-model to `VersionInfo` and `LicenseInfo`, check the console prints the same five
-warranty lines and that the card lists `ThirdParty.Components`, in both languages;
+with `OpenAddress` replaced so no browser starts; a held F1 opens once, F1 with a modifier is
+not the Help key, About's click opens About once and logs it while F1 does not open it, and
+`ExternalLink` refuses a relative, `file:` or `mailto:` address with a Debug line.
+`AboutTests` bind the About view-model to `VersionInfo` and `LicenseInfo`, check the console
+prints the same five warranty lines and that the card lists `ThirdParty.Components`, in both
+languages;
 `WindowLoggingTests`, in the `window` collection on the `StaFixture` thread, check the start
 line, the facts' Debug line, that a copy from the window logs what the console's copy logs,
 that a link the About window cannot open (a relative one) is a Debug line and leaves the window
