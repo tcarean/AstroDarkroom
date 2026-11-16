@@ -21,7 +21,11 @@ second window.
 Each of the four inputs is a group (`PixelInput`, `ThreadsInput`, `EastInput`, `NorthInput`, its
 label and its field) whose tooltip is an `x:Static` of `MainViewModel`'s static tip properties
 (R-083). They are read once, when the window is built, after the start-up has set the language;
-`ToolTipService.ShowOnDisabled` keeps them while a run disables the fields.
+`ToolTipService.ShowOnDisabled` keeps them while a run disables the fields. The pixel field has
+the theme's `SettingField` style and its `Tag` bound to `PixelIsValid`: while that is false a
+trigger of the style gives the field the bad colour's border and a tooltip of its own, which
+then shows over the field in place of the group's (R-029, ADR 0063). The thread field keeps the
+plain `Field` style: it has no wrong state.
 
 `AboutWindow` fits its screen (R-076, ADR 0031), as AstroPhotoAnalyzer's does. `MainWindow`
 passes the work area of its own screen, `ScreenArea.WorkAreaOf`. That asks Windows for the screen

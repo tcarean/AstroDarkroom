@@ -233,6 +233,37 @@ public class WindowSmokeTests
         });
     }
 
+    /// <summary>
+    /// A wrong pixel size is marked in the window: the field's border takes the theme's bad
+    /// colour and the field gets a tooltip that says what is wrong and what the run does; a blank
+    /// field and a right value look as always (R-029, ADR 0063, CR-016). `4,5` is the case of a
+    /// Romanian keyboard's decimal comma.
+    /// </summary>
+    [Fact]
+    public void R029_AWrongPixelSizeIsMarkedAndABlankOrRightOneIsNot()
+        => _sta.Invoke(() =>
+        {
+            using BindingErrors errors = new();
+            MainViewModel vm = new();
+            MainWindow w = new(vm);
+            FrameworkElement content = (FrameworkElement)w.Content;
+            Render(content);
+            TextBox field = Assert.Single(((StackPanel)w.FindName("PixelInput")).Children.OfType<TextBox>());
+            object bad = w.FindResource("BadBr"), ordinary = w.FindResource("BorderBr");
+            Assert.NotSame(bad, ordinary);
+
+            foreach ((string typed, bool wrong) in new[] { ("", false), ("4,5", true), ("4.5", false), ("abc", true), ("  ", false) })
+            {
+                vm.PixelText = typed;
+                Render(content, name: typed == "4,5" ? "window-pixel-wrong" : null);
+
+                Assert.Same(wrong ? bad : ordinary, field.BorderBrush);
+                Assert.Equal(wrong ? "Nu e un numar pozitiv (cu punct): marimea pixelului se ia ca si cum campul ar fi gol" : null, field.ToolTip);
+            }
+
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+        });
+
     /// <summary>The charts alone, with gaps (NaN) and guides: the drawing code has its own branches.</summary>
     [Fact]
     public void TheChartsRenderWithGapsAndGuides()

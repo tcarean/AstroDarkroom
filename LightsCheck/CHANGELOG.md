@@ -312,6 +312,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   Such a file is now skipped as the plate solve, such a frame reads `could not be aligned`, each
   with a line in the log, and the report is written from what was measured (R-018, R-025,
   R-026, ADR 0062; CR-015 of the review of 2026-11-13).
+- In the window, a pixel size that is not a number, such as `3,76` typed with a comma, looked
+  like any other and the run went on as if the field were empty, with nothing said. The field
+  now has a red border while its value is wrong, and a tooltip: `Not a positive number (with a
+  dot as the separator): the pixel size is taken as if the field were empty` (R-029, ADR 0063;
+  CR-016 of the review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

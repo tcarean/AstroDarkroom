@@ -249,7 +249,10 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Blank, or a pixel size the core accepts; a wrong value is the one invalid state.</summary>
+    /// <summary>
+    /// Blank, or a pixel size the core accepts; a wrong value is the one invalid state, which the
+    /// window marks on the field: a red border and a tooltip (R-029, ADR 0063).
+    /// </summary>
     public bool PixelIsValid => string.IsNullOrWhiteSpace(_pixelText) || TypedPixel is not null;
 
     /// <summary>The pixel size typed, in microns, or null when the field is blank or wrong.</summary>
