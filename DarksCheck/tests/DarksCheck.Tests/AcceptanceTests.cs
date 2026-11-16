@@ -348,6 +348,19 @@ public class AcceptanceTests
     }
 
     [Fact]
+    public void R020_AStrayFirstFramePrintsItsReasonAndTheSeriesIsAnalysed_Exit1()
+    {
+        // CR-012: the test frame of 1 s listed first is the one left out, not the six darks after it
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i });
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0000.fit"), new SyntheticDark { Seed = 9 }.Build(SessionFixture.FirstStart.AddSeconds(-60), 1, 400));
+        (int code, string stdout, _) = Cli.Run(s.Root, "--threads", "2");
+        Assert.Equal(1, code);
+        Assert.Contains("=== DARK-URI: cadre citite 6 din 7", stdout, StringComparison.Ordinal);
+        Assert.Contains("eroare: alte setari decat majoritatea cadrelor: ISO 400, 1 s", stdout, StringComparison.Ordinal);
+        Assert.DoesNotContain("setari diferite de primul cadru", stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void R041_UnusableBiasesPrintTheirAttentionLine_Exit1()
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i }, biases: 2, bias: i => new SyntheticDark { Seed = 500 + i, Width = 128, Height = 96 });

@@ -1493,17 +1493,69 @@ public partial class DarkSeriesTests
         Assert.Null(r.Darks.Frames[0].Error);
     }
 
+    /// <summary>
+    /// CR-012: check 1 named the setting most frames have while the stack kept the first file's, so one test frame
+    /// of 1 s listed before a series of 120 s left the whole series out under a match that read OK.
+    /// </summary>
+    [Fact]
+    public void R020_AStrayFirstFrameDoesNotSetTheGroupsSettings()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Plain);
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0000.fit"), new SyntheticDark { Seed = 9 }.Build(SessionFixture.FirstStart.AddSeconds(-60), 1, 400));
+        DarkSeriesResult r = Run(s);
+        Assert.Equal(6, r.Darks.Used);
+        Assert.Equal("alte setari decat majoritatea cadrelor: ISO 400, 1 s", r.Darks.Frames[0].Error);
+        Assert.All(r.Darks.Frames.Skip(1), f => Assert.Null(f.Error));
+        Assert.True(r.HasErrors);
+        // check 1 and the analysis read the same setting
+        Assert.Equal(120, r.Inventory.Match.Darks!.ExposureSeconds);
+        Assert.Equal(120, r.Darks.FirstStacked!.ExposureSeconds);
+        Assert.Equal(1.0, r.Darks.Norm, 1e-9);
+        Assert.Equal([5, 4, 3, 2, 1], Enumerable.Range(0, 5).Select(k => r.Darks.Master.Sum(m => m.Above[k])).ToArray());
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("other settings than most frames: ISO 400, 1 s", Run(s).Darks.Frames[0].Error);
+        }
+
+        // a stray first frame of another size as well: it is named for its settings and sets no size
+        using SessionFixture crop = new SessionFixture().WithDarkSeries(6, Plain);
+        File.WriteAllBytes(Path.Combine(crop.DarksDir, "DSC_0000.fit"), new SyntheticDark { Seed = 9, Width = 128, Height = 96 }.Build(SessionFixture.FirstStart.AddSeconds(-60), 1, 800));
+        DarkSeriesResult rc = Run(crop);
+        Assert.Equal(6, rc.Darks.Used);
+        Assert.Equal(256, rc.Darks.Width);
+        Assert.Equal("alte setari decat majoritatea cadrelor: ISO 800, 1 s", rc.Darks.Frames[0].Error);
+
+        // the same for the biases' stack: one bias at another ISO listed first does not take the others out
+        using SessionFixture b = new SessionFixture().WithDarkSeries(4, Plain, biases: 4);
+        File.WriteAllBytes(Path.Combine(b.BiasesDir, "bias_0000.fit"), new SyntheticDark { Seed = 499, Noise = 2 }.Build(SessionFixture.FirstStart.AddSeconds(-3700), 0.0002, 1600));
+        DarkSeriesResult rb = Run(b);
+        Assert.Null(rb.BiasError);
+        Assert.Equal(4, rb.Biases!.Used);
+        Assert.Equal("alte setari decat majoritatea cadrelor: ISO 1600, 0 s", rb.Biases.Frames[0].Error);
+
+        // a tie goes to the setting met first, as in check 1: three of 60 s, then three of 120 s
+        using SessionFixture tie = new SessionFixture().WithDarkSeries(3, Plain, exposure: 60);
+        for (int i = 0; i < 3; i++)
+        {
+            File.WriteAllBytes(Path.Combine(tie.DarksDir, $"DSC_{i + 4:0000}.fit"), Plain(i + 3).Build(SessionFixture.FirstStart.AddSeconds(360 + i * 120), 120, 400));
+        }
+
+        DarkSeriesResult rt = Run(tie);
+        Assert.Equal(60, rt.Inventory.Match.Darks!.ExposureSeconds);
+        Assert.Equal([1, 2, 3], rt.Darks.Frames.Where(f => f.Error is null).Select(f => f.Info.Index));
+    }
+
     [Fact]
     public void R027_AFrameWithOtherSettingsIsLeftOutWithItsError()
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(4, Plain);
         File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0005.fit"), new SyntheticDark { Seed = 9 }.Build(SessionFixture.FirstStart.AddSeconds(480), 60, 400));
-        // ISO 800 at 60 s has the first frame's ISO x exposure product: each setting is compared on its own
+        // ISO 800 at 60 s has the ISO x exposure product of the other four: each setting is compared on its own
         File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0006.fit"), new SyntheticDark { Seed = 10 }.Build(SessionFixture.FirstStart.AddSeconds(600), 60, 800));
         DarkSeriesResult r = Run(s);
         Assert.Equal(4, r.Darks.Used);
-        Assert.Contains("setari diferite de primul cadru: ISO 400, 60 s", r.Darks.Frames[4].Error, StringComparison.Ordinal);
-        Assert.Contains("setari diferite de primul cadru: ISO 800, 60 s", r.Darks.Frames[5].Error, StringComparison.Ordinal);
+        Assert.Contains("alte setari decat majoritatea cadrelor: ISO 400, 60 s", r.Darks.Frames[4].Error, StringComparison.Ordinal);
+        Assert.Contains("alte setari decat majoritatea cadrelor: ISO 800, 60 s", r.Darks.Frames[5].Error, StringComparison.Ordinal);
     }
 
     [Fact]

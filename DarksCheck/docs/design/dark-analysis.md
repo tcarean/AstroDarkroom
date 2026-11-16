@@ -32,10 +32,15 @@ its options and leaves the two settings at their defaults; the window builds it 
 readers return a raster of doubles (194 MB at 24 MP); it is converted to `ushort` as soon as
 it lands and dropped, with a forced collection per frame, since the collector otherwise lets
 those rasters pile up (14 GB of working set measured before the collection and the
-`System.GC.ConserveMemory=9` knob of the console's runtime config). The first file in order
-is decoded alone and sets the geometry and the scale (the files are tried in order until one
-decodes); the others decode in parallel and must match its size, its ISO and its exposure
-(each on its own, within `Th.ExposureTolerance`). A float FITS on 0 .. 1 is brought to 0 ..
+`System.GC.ConserveMemory=9` knob of the console's runtime config). Before a pixel is decoded
+`Load` reads the metadata of every file, the ones the cap skips included, and `Reference` picks
+the frame that carries the group's setting: the first readable frame of the dominant setting
+`MatchAnalyzer.Settings` finds, the one check 1 names (ADR 0061). The files are then decoded
+one at a time, in order, until one decodes with that setting (`SameSettings`: the ISO and the
+exposure each on its own, within `Th.ExposureTolerance`) and sets the geometry and the scale;
+the others decode in parallel and must match that setting and that size. A frame at another
+setting sets nothing and is left out wherever it stands; when no file's metadata can be read
+the first decoded frame's settings decide. A float FITS on 0 .. 1 is brought to 0 ..
 65535, one already in ADU is kept with 65535 as the presumed white. A FITS carries no black
 level, so the black of a FITS stack is the median of
 the first decoded frame's reference plane, or the black the biases' stack established when
@@ -43,7 +48,7 @@ the first decoded frame's reference plane, or the black the biases' stack establ
 dark current). That black is handed to `Load` as a `FitsBlack`, with the size of the biases it
 was read on, and a stack of another size does not take it: the biases are refused for their
 size only after the darks are measured, and must give them nothing. Above `Th.MaxFramesInMemory` (or the cap given) exactly that many files are decoded: `FrameStack.Chosen` flags the first, the last and those at even distances between them, file `round(j x (count - 1) / (cap - 1))`, and `Load` lists the others as skipped without opening their pixels (ADR 0057). `Norm` is the
-normalisation factor of ADR 0004, read from the first frame's ISO and exposure through the
+normalisation factor of ADR 0004, read from the ISO and exposure of the frame that set the geometry, through the
 `Normalisation` the caller hands in (`Normalisation.Default` when none): the record of the
 two settings of ADR 0009, the gain per ISO stop (`NormOf`: `gain ^ log2(ISO / 400)`, the
 linear `ISO / 400` when the gain is 2, times `exposure / 120`) and the degrees per doubling

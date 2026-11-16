@@ -485,7 +485,7 @@ public partial class LoggingTests
         [
             "FrameStack: frame 3 " + light + " left out: 128x96 instead of 256x192; its row says so",
             "FrameStack: frame 4/5 " + small + " left out: 128x96 instead of 256x192; its row says so",
-            "FrameStack: frame 5/5 " + iso + " left out: ISO 800 and 120 s, the first frame ISO 400 and 120 s; its row says so",
+            "FrameStack: frame 5/5 " + iso + " left out: ISO 800 and 120 s, most frames ISO 400 and 120 s; its row says so",
         ];
         Assert.Equal(expected, warned);
         Assert.DoesNotContain(capture.Events, e => e.Level == LogLevel.Warn && e.Exception is not null);

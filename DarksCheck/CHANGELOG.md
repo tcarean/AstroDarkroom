@@ -342,6 +342,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A stray frame listed first no longer leaves the whole series out: with one test frame of 1 s
+  before twenty darks of 120 s, check 1 read `OK` on the twenty while the analysis kept the one
+  and dropped the twenty as `settings differ from the first frame`. The analysis now takes the
+  setting most frames have, the one check 1 names, for the darks, the biases and a partner; the
+  frame left out reads `other settings than most frames: ISO 400, 1 s` (R-020, ADR 0061;
+  CR-012 of the code review).
+
 - FITS darks beside biases of another size (another camera or crop) are no longer measured
   against those biases' black level: the biases were reported as left out, yet with darks at a
   level of 200 and biases at 1000 no hot pixel was counted and every pixel read as dead, under
