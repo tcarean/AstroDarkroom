@@ -152,11 +152,12 @@ entry gives. Paths are relative to the project folder.
 | CR-074 | 4 | common | confirmed | Two figures of the paper fit are not the same from one run to the next | open |
 | CR-075 | 3 | rare | owner | On a frame with too few stars a zone reads n/a under a description that promises its width from 5 stars | open |
 | CR-076 | 3 | rare | owner | "You lose nothing going to 8 bits" is also said of a file caught by its levels alone | open |
+| CR-077 | 4 | crafted | confirmed | The crop and the reader take a reference pixel with broken quoting apart differently | open |
 
 9 entries of severity 1, 4 of severity 2, 39 of severity 3, 15 of severity 4; 45 confirmed, 14
 to measure, 8 for the owner. (As counted on 2026-11-13; CR-068 and CR-069 were added on 2026-11-14, CR-070 to
-CR-074 on 2026-11-16 with the dust move of the suggested curves (ADR 0101), CR-075 and CR-076
-on 2026-11-16 by the review of the fixes of CR-006 to CR-010, and the
+CR-074 on 2026-11-16 with the dust move of the suggested curves (ADR 0101), CR-075 to CR-077
+on 2026-11-16 by the reviews of the fixes of CR-006 to CR-010, and the
 Status column says what has been closed since.) After the entries: what the owner may want to
 look at though no rule is broken, then the cleanup list (dead code, duplicates, work done twice).
 
@@ -1079,7 +1080,7 @@ Added on 2026-11-16, by the review of the fix of CR-008 (ADR 0104).
   exactly. Since ADR 0104 it is also given when no plane uses more than 256 levels, where the
   levels need not sit on the 8-bit steps.
 - Case (arithmetic, not run): a file saved by a shift, level x 256, rounded to 8 bits
-  (`RasterOps.Level8`): level 128 gives 127.50 and level 129 gives 128.50, both 128, so one pair
+  (`RasterOps.Level8`): level 128 gives 127.502 and level 129 gives 128.498, both 128, so one pair
   of neighbouring levels merges. A file whose 256 levels are packed closely (20000 to 20255 of
   65535) keeps one or two levels in an 8-bit copy.
 - Should: "only 8 bits of information" stays true in both; the half about losing nothing holds
@@ -1400,6 +1401,26 @@ History). Not from the dust move: the paper fit is not touched by that branch.
   exact, and it keeps the figures of 2026-11-14.
 - Test: V-016 passes inside its tolerance of 0.01 either way.
 - Evidence: confirmed (two runs; the cause was not looked for).
+- Status: open
+
+### CR-077 The crop and the reader take a reference pixel with broken quoting apart differently
+
+Added on 2026-11-16, by the second review of the fixes of CR-006 to CR-010. Older than that
+branch, which only added a letter to what `Moved` takes as an exponent.
+
+- Where: `Input/FitsWriter.cs` (`Moved`, the value of a `CRPIX` card) against
+  `Input/FitsReader.cs` (`ReadHeader`, the value of any card).
+- What happens: the reader takes what lies between the first two quotes and ignores a `/`
+  inside them; `Moved` cuts the card at the first `/` from column 10 and then strips quotes
+  from both ends. For a well-formed card the two agree.
+- Case (read, not run): `CRPIX1  = '1.5' x` is 1.5 for the reader and no number for `Moved`, so
+  the crop keeps the card and its plate solution is off by the pixels cut. `CRPIX1  = '1.5/2'`
+  is no number for the reader (no WCS) and 1.5 for `Moved`, which writes a readable reference
+  pixel the source did not have (`-8.5 /2'` for a cut of 10); a stray closing quote and an
+  unclosed one behave the same way.
+- Should: one way to take a card's value apart, the reader's, used by both.
+- Test: none; `R181_AReferencePixelIsMovedExactlyHoweverItIsWritten` has well-formed cards.
+- Evidence: confirmed (by reading; each of these cards is invalid FITS).
 - Status: open
 
 ## For the owner's look

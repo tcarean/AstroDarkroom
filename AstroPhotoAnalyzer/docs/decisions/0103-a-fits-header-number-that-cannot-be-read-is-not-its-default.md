@@ -41,11 +41,13 @@ An absent keyword keeps its default, as before.
 
 ## Consequences
 
-- `FitsWriter` reads the same members, so a curve or a crop saved from a FITS reads `BZERO` and
-  `BSCALE` the same way; the reader has refused an unreadable one before any save. The crop's
-  move of `CRPIX` (`FitsWriter.Moved`) parses its card by itself, in decimal arithmetic, and
-  takes the same exponent letters, so a reference pixel the reader reads is one the crop moves
-  (`R181_AReferencePixelIsMovedWhateverTheCaseOfItsExponent`, from the review of the branch).
+- `FitsWriter` reads the same members: a curve and a crop saved from a FITS read the sizes the
+  same way, and a curve `BZERO` and `BSCALE` (a crop copies the samples' bytes and reads
+  neither); the reader has refused an unreadable one before any save. The crop's move of `CRPIX`
+  (`FitsWriter.Moved`) parses its card by itself, in decimal arithmetic, and takes the same
+  exponent letters, so a reference pixel the reader reads from a well-formed card is one the
+  crop moves (`R181_AReferencePixelIsMovedWhateverTheCaseOfItsExponent`, from the review of the
+  branch; a card with broken quoting is CR-077, open).
 - A header whose sizes parse but are impossible (a negative axis, a product past the file) is
   CR-012, its own entry, still open.
 - Guards: `R011_ARealWithADExponentIsReadAsFitsWritesIt`,

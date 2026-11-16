@@ -585,9 +585,10 @@ public class FrameCropTests
 
     /// <summary>
     /// The review of the branch that fixed CR-007 (2026-11-16): the reader now takes an exponent
-    /// after a lower-case d or e for a number, so a plate solution written that way is read; the
+    /// after a lower-case d for a number, so a plate solution written that way is read; the
     /// crop moved a reference pixel only when its exponent letter was E, e or D, and left
-    /// "1.5d1" where it was, a plate solution off by the pixels cut.
+    /// "1.5d1" where it was, a plate solution off by the pixels cut. The card with a lower-case
+    /// e was moved before too and stays as the guard beside it.
     /// </summary>
     [Fact]
     public void R181_AReferencePixelIsMovedWhateverTheCaseOfItsExponent()
