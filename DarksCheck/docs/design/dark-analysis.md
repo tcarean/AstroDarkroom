@@ -164,7 +164,20 @@ refits on the rest, stopping when the kept set no longer changes or would fall u
 frames. Every frame's final residual against the last fit, divided by the normalisation, is its
 excess light (`FrameLight.ExcessAdu`, aligned with the series' frames, NaN without figures);
 the frames over the limit on the positive side are lit (`LitFrames`, the file index, with their
-excess beside them). `EdgeSplitsOf` then takes the frames that are not lit and, for each of the
+excess beside them). Those passes are `Passes`, and `FrameLightOf` runs them twice. The median
+of the pairwise slopes holds while fewer than about three frames in ten carry light; beyond
+that most pairs join a lit frame to a clean one, the line tilts through the lit frames, the
+scale grows and nothing is over the limit. So the second run starts from `BlockStart`: among
+the lines through two frames, each given the median of the residuals as its intercept, the one
+with the smallest median absolute residual (it needs half of the frames to lie close, whatever
+the other half does), read again by Theil-Sen over the frames within
+`Th.LeakBlockInlierSigmas` scales of it, since a line through two frames is a poor reading of
+the many that fit. `Passes` ends by refitting Theil-Sen over the frames it kept, which changes
+nothing for the first run and brings the second run's figures to the same estimator. The
+second result replaces the first only when it names more lit frames, more than
+`Th.LeakBlockMinFraction` and fewer than `Th.LeakBlockMaxFraction` of the fitted frames, with
+a smaller scale: a line read from half of a short clean series misreads the other half often
+enough that, taken always, it would name clean frames (ADR 0063 has the measurement). `EdgeSplitsOf` then takes the frames that are not lit and, for each of the
 eight regions, fits the frame's offset to the centre on the ratio without clipping: the slope
 is the glow part (the value at ratio 1, the master's temperature), the intercept the constant
 part; with biases, the bias mean map's offset of the same region (the bias's own regions, raw

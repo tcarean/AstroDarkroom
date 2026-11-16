@@ -199,6 +199,28 @@ internal static class Th
     internal const int LeakFitPasses = 3;
 
     /// <summary>
+    /// The second fit of R-028 replaces the first only when it names more than this share of the
+    /// fitted frames as lit (and more frames than the first, with a smaller scale): up to about a
+    /// quarter of the frames the median of the pairwise slopes holds on its own, and under it the
+    /// second fit's line, read from half of the frames, would only add false alarms on short clean
+    /// series (ADR 0063: 6.5 % against 5.8 % at eight frames with this bound, 14.9 % without it).
+    /// </summary>
+    internal const double LeakBlockMinFraction = 0.25;
+
+    /// <summary>
+    /// ... and fewer than this share: with half of the frames or more above the line, which half
+    /// carries the light cannot be told.
+    /// </summary>
+    internal const double LeakBlockMaxFraction = 0.5;
+
+    /// <summary>
+    /// The first line of R-028's second fit is read again, by Theil-Sen, over the frames within
+    /// this many scales of the line found through two frames: the cut of a reweighted fit, wide
+    /// enough to keep the frames without light (98.8 % of them for a Gaussian scatter).
+    /// </summary>
+    internal const double LeakBlockInlierSigmas = 2.5;
+
+    /// <summary>
     /// A frame whose mean exceeds the warming fit by more than this many scales (1.4826 x the
     /// median absolute residual) carries light; the clean residuals of the three measured series
     /// stay under 2.2 scales (the Smida, library and 2026-10-20 leak series, ADR 0012).

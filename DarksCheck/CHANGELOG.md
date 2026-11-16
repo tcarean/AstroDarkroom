@@ -342,6 +342,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- Check 3 names a block of lit frames that takes up to nearly half of the series: when about a
+  third of the darks, at one end of the warming, carried light (the lamp came on for the last
+  eleven of thirty), the fit tilted through them, no frame was named and the check could read
+  `OK`. A second fit, from a line that holds while fewer than half of the frames are lit, is
+  now taken when it finds such a block; on every other series the figures are the same as
+  before (R-028, ADR 0063; CR-014 of the code review).
+
 - The session lines say when the file names are not in the order the frames were taken: a
   `WARNING` under the darks' interval, and one under the lights', names the first two files out
   of order. The frames are read in the order of their names, so on a series whose counter

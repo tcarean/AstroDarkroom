@@ -126,7 +126,8 @@ internal sealed record EdgeSplit(MapRegion Where, double GlowAdu, double Constan
 /// Tells a light leak from the sensor's glow by the warming of the series (R-028, R-029,
 /// ADR 0012). Both fits read a per-frame figure against the hot pixels' amplitude ratio of
 /// R-023: dark current, glow included, follows it; light from outside does not. The fit is
-/// Theil-Sen, so a few lit frames do not tilt it.
+/// Theil-Sen, so a few lit frames do not tilt it; a block of lit frames, over a quarter of the
+/// series, is found by a second fit that starts from a sturdier line (ADR 0063).
 /// </summary>
 internal static class LeakAnalyzer
 {
@@ -138,7 +139,9 @@ internal static class LeakAnalyzer
 
     /// <summary>
     /// The frame mean above black against the ratio (R-028); null under
-    /// <see cref="Th.LeakFitMinFrames"/> frames with a ratio.
+    /// <see cref="Th.LeakFitMinFrames"/> frames with a ratio. The fit is run twice, from
+    /// Theil-Sen's line and from <see cref="BlockStart"/>'s; the second result stands only when it
+    /// names a block of lit frames the first one misses.
     /// </summary>
     /// <param name="frames">The series' frames; not null.</param>
     /// <param name="norm">The normalisation factor from raw ADU to ADU equivalent.</param>
@@ -155,31 +158,23 @@ internal static class LeakAnalyzer
         double[] x = idx.Select(i => frames[i].AmpRatioMedian).ToArray();
         double[] y = idx.Select(i => frames[i].MeanAboveBlack).ToArray();
         double floor = Th.LeakFrameAdu * norm;
-        bool[] kept = new bool[x.Length];
-        Array.Fill(kept, true);
-        (double slope, double intercept) = TheilSen(x, y, kept);
-        double scale = Scale(x, y, kept, slope, intercept);
-        for (int pass = 0; pass < Th.LeakFitPasses; pass++)
+        bool[] all = new bool[x.Length];
+        Array.Fill(all, true);
+        (double slope, double intercept, double scale, int lit) fit = Passes(x, y, floor, TheilSen(x, y, all));
+
+        // The median of the pairwise slopes gives way once about a third of the frames, at one end
+        // of the warming, carry light: the line tilts through them, the scale grows and no frame is
+        // over the limit. So the passes are run again from a line that holds up to nearly half of
+        // the frames being lit, and that result stands only when it shows what the first cannot: a
+        // block of lit frames, more of them than the first names, with a tighter fit of the rest.
+        // On any other series every figure is the first fit's (ADR 0063).
+        (double slope, double intercept, double scale, int lit) block = Passes(x, y, floor, BlockStart(x, y));
+        if (block.lit > fit.lit && block.lit > Th.LeakBlockMinFraction * x.Length && block.lit < Th.LeakBlockMaxFraction * x.Length && block.scale < fit.scale)
         {
-            double limit = Math.Max(Th.LeakFrameSigmas * scale, floor);
-            bool[] next = new bool[x.Length];
-            int count = 0;
-            for (int k = 0; k < x.Length; k++)
-            {
-                next[k] = Math.Abs(y[k] - intercept - slope * x[k]) <= limit;
-                count += next[k] ? 1 : 0;
-            }
-
-            if (count < MinKept || next.SequenceEqual(kept))
-            {
-                break;
-            }
-
-            kept = next;
-            (slope, intercept) = TheilSen(x, y, kept);
-            scale = Scale(x, y, kept, slope, intercept);
+            fit = block;
         }
 
+        (double slope, double intercept, double scale, _) = fit;
         double finalLimit = Math.Max(Th.LeakFrameSigmas * scale, floor);
         double[] excess = new double[frames.Count];
         Array.Fill(excess, double.NaN);
@@ -203,6 +198,126 @@ internal static class LeakAnalyzer
         }
 
         return new FrameLight(excess, scale / norm, lit, litExcess, slope, intercept, x.Length, hi >= lo ? hi - lo : 0);
+    }
+
+    /// <summary>
+    /// The passes of R-028's fit from a given first line: each leaves out the frames further from
+    /// the line than the limit (<see cref="Th.LeakFrameSigmas"/> scales, at least
+    /// <paramref name="floor"/>) and refits Theil-Sen on the rest, up to
+    /// <see cref="Th.LeakFitPasses"/> times, stopping when nothing changes or too few frames would
+    /// be left. The figures returned are always Theil-Sen's over the frames kept, whatever line
+    /// the passes started from.
+    /// </summary>
+    /// <param name="x">The frames' ratios; not null.</param>
+    /// <param name="y">The frames' means above black, raw ADU, as many; not null.</param>
+    /// <param name="floor">The least limit, in raw ADU.</param>
+    /// <param name="start">The line the first pass measures the frames against.</param>
+    /// <returns>The line over the frames kept, its scale in raw ADU, and how many frames lie
+    /// above it by more than the limit.</returns>
+    private static (double Slope, double Intercept, double Scale, int Lit) Passes(double[] x, double[] y, double floor, (double Slope, double Intercept) start)
+    {
+        bool[] kept = new bool[x.Length];
+        Array.Fill(kept, true);
+        (double slope, double intercept) = start;
+        double scale = Scale(x, y, kept, slope, intercept);
+        for (int pass = 0; pass < Th.LeakFitPasses; pass++)
+        {
+            double limit = Math.Max(Th.LeakFrameSigmas * scale, floor);
+            bool[] next = new bool[x.Length];
+            int count = 0;
+            for (int k = 0; k < x.Length; k++)
+            {
+                next[k] = Math.Abs(y[k] - intercept - slope * x[k]) <= limit;
+                count += next[k] ? 1 : 0;
+            }
+
+            if (count < MinKept || next.SequenceEqual(kept))
+            {
+                break;
+            }
+
+            kept = next;
+            (slope, intercept) = TheilSen(x, y, kept);
+            scale = Scale(x, y, kept, slope, intercept);
+        }
+
+        // From Theil-Sen's own line this recomputes the same values; from another first line that
+        // no pass replaced it brings the figures back to Theil-Sen's.
+        (slope, intercept) = TheilSen(x, y, kept);
+        scale = Scale(x, y, kept, slope, intercept);
+        double finalLimit = Math.Max(Th.LeakFrameSigmas * scale, floor);
+        int lit = 0;
+        for (int k = 0; k < x.Length; k++)
+        {
+            lit += y[k] - intercept - slope * x[k] > finalLimit ? 1 : 0;
+        }
+
+        return (slope, intercept, scale, lit);
+    }
+
+    /// <summary>
+    /// The first line of R-028's second fit (ADR 0063): among the lines through two of the points,
+    /// each with the median of the residuals as its intercept, the one whose median absolute
+    /// residual is smallest (it needs only half of the points to lie close, so up to nearly half
+    /// may carry light), then Theil-Sen over the points within
+    /// <see cref="Th.LeakBlockInlierSigmas"/> scales of it, which reads the line from all the
+    /// points that fit and not from two.
+    /// </summary>
+    /// <param name="x">The abscissae; not null.</param>
+    /// <param name="y">The ordinates, as many; not null.</param>
+    /// <returns>The slope and the intercept; slope 0 and the median of <paramref name="y"/> when
+    /// no two abscissae differ.</returns>
+    internal static (double Slope, double Intercept) BlockStart(double[] x, double[] y)
+    {
+        ArgumentNullException.ThrowIfNull(x);
+        ArgumentNullException.ThrowIfNull(y);
+        int n = x.Length;
+        double best = double.PositiveInfinity, bestSlope = 0, bestIntercept = Planes.Median(y);
+        double[] r = new double[n];
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = i + 1; j < n; j++)
+            {
+                if (x[j] == x[i])
+                {
+                    continue;
+                }
+
+                double slope = (y[j] - y[i]) / (x[j] - x[i]);
+                for (int k = 0; k < n; k++)
+                {
+                    r[k] = y[k] - slope * x[k];
+                }
+
+                double intercept = Planes.Median(r);
+                for (int k = 0; k < n; k++)
+                {
+                    r[k] = Math.Abs(r[k] - intercept);
+                }
+
+                double middle = Planes.Median(r);
+                if (middle < best)
+                {
+                    (best, bestSlope, bestIntercept) = (middle, slope, intercept);
+                }
+            }
+        }
+
+        if (double.IsPositiveInfinity(best))
+        {
+            return (bestSlope, bestIntercept);
+        }
+
+        double limit = Th.LeakBlockInlierSigmas * MadToSigma * best;
+        bool[] near = new bool[n];
+        int count = 0;
+        for (int k = 0; k < n; k++)
+        {
+            near[k] = Math.Abs(y[k] - bestIntercept - bestSlope * x[k]) <= limit;
+            count += near[k] ? 1 : 0;
+        }
+
+        return count >= MinKept ? TheilSen(x, y, near) : (bestSlope, bestIntercept);
     }
 
     /// <summary>

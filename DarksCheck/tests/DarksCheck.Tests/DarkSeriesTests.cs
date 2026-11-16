@@ -624,6 +624,73 @@ public partial class DarkSeriesTests
         Assert.InRange(fl.RatioSpan, 0.2, 0.35);
     }
 
+    /// <summary>
+    /// CR-014: the median of the pairwise slopes gives way once about a third of the frames, at one end of the
+    /// warming, carry light: the line tilts through them, the scale grows, and no frame is named. A second fit,
+    /// from a line that holds up to nearly half, finds such a block.
+    /// </summary>
+    [Fact]
+    public void R028_ABlockOfLitFramesOverAQuarterOfTheSeriesIsNamed()
+    {
+        // eight frames warming 0.8 -> 1.2, the last three carrying +0.6 ADU
+        using SessionFixture warm = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = i >= 5 ? (x, y) => 0.6 : null });
+        DarkSeriesResult r = Run(warm);
+        FrameLight fl = r.Verdicts.Leak.Frames!;
+        Assert.Equal([6, 7, 8], fl.LitFrames);
+        Assert.All(fl.LitExcessAdu, v => Assert.InRange(v, 0.4, 0.8));
+        Assert.All(Enumerable.Range(0, 5), k => Assert.InRange(fl.ExcessAdu[k], -0.1, 0.1));
+        Assert.InRange(fl.Slope, -0.5, 0.5);
+        Assert.InRange(fl.ScaleAdu, 0, 0.05);
+        Assert.Equal(Verdict.Warning, r.Verdicts.Leak.Verdict);
+        using StringWriter sw = new();
+        DarkReport.Write(r, sw);
+        Assert.Contains("    lumina pe cadre    : 3 cadre sunt mai luminoase decat ar explica incalzirea: 6: +0.", sw.ToString(), StringComparison.Ordinal);
+
+        // the same block at the cold end
+        using SessionFixture cold = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = i < 3 ? (x, y) => 0.6 : null });
+        Assert.Equal([1, 2, 3], Run(cold).Verdicts.Leak.Frames!.LitFrames);
+
+        // two of six, a third of the shortest series the fit reads
+        using SessionFixture six = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = 0.8 + 0.4 * i / 5, Extra = i >= 4 ? (x, y) => 0.6 : null });
+        Assert.Equal([5, 6], Run(six).Verdicts.Leak.Frames!.LitFrames);
+
+        // eleven of thirty, as on a long series whose last third had the lamp on
+        using SessionFixture thirty = new SessionFixture().WithDarkSeries(30, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = 0.8 + 0.4 * i / 29, Extra = i >= 19 ? (x, y) => 0.6 : null });
+        Assert.Equal(Enumerable.Range(20, 11), Run(thirty).Verdicts.Leak.Frames!.LitFrames);
+    }
+
+    /// <summary>
+    /// The two starts of R-028's fit on their own: Theil-Sen's line is tilted by a block of a third of the points,
+    /// the block start's is not, and on points without a block the two agree.
+    /// </summary>
+    [Fact]
+    public void R028_TheBlockStartHoldsWhereTheMedianOfThePairwiseSlopesTilts()
+    {
+        // twelve points on y = 1 + 2x with a small wobble, the last five lifted by 1: most pairs join a lifted point to a clean one
+        double[] x = Enumerable.Range(0, 12).Select(i => 0.8 + 0.4 * i / 11).ToArray();
+        double[] wobble = [0.004, -0.006, 0.002, -0.003, 0.005, -0.001, 0.003, -0.004, 0.001, -0.002, 0.006, -0.005];
+        double[] clean = x.Select((v, i) => 1 + 2 * v + wobble[i]).ToArray();
+        double[] lifted = clean.Select((v, i) => i >= 7 ? v + 1 : v).ToArray();
+        bool[] all = Enumerable.Repeat(true, 12).ToArray();
+
+        (double tiltedSlope, _) = LeakAnalyzer.TheilSen(x, lifted, all);
+        Assert.True(tiltedSlope > 3, $"the median of the pairwise slopes is tilted by the block: {tiltedSlope}");
+        (double slope, double intercept) = LeakAnalyzer.BlockStart(x, lifted);
+        Assert.InRange(slope, 1.9, 2.1);
+        Assert.InRange(intercept, 0.9, 1.1);
+
+        // without a block the start is the line the points lie on
+        (double cleanSlope, double cleanIntercept) = LeakAnalyzer.BlockStart(x, clean);
+        Assert.InRange(cleanSlope, 1.9, 2.1);
+        Assert.InRange(cleanIntercept, 0.9, 1.1);
+
+        // every abscissa the same: no line through two points, so the level alone
+        double[] flat = Enumerable.Repeat(1.0, 6).ToArray();
+        (double flatSlope, double flatIntercept) = LeakAnalyzer.BlockStart(flat, [5, 5.1, 4.9, 5, 5.2, 4.8]);
+        Assert.Equal(0, flatSlope);
+        Assert.Equal(5, flatIntercept, 6);
+    }
+
     [Fact]
     public void R029_AnEdgeIsSplitIntoGlowAndConstantAndTheBiasNamesTheReadoutOffset()
     {
