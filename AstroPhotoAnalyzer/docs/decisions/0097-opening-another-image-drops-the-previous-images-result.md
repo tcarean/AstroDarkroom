@@ -36,7 +36,9 @@ result until the run replaces it, as before.
 - The tabs never show one image's figures under another's path, and the save never names
   another image's folder.
 - A second image chosen while a run lasts is CR-009, its own entry, still open: `OpenAsync`
-  drops nothing during a run.
+  drops nothing during a run. (Restated 2026-11-16: CR-009 was closed by ADR 0105, no image is
+  taken while a run lasts; the second guard below reached its state through that defect and was
+  replaced by `R111_ASecondImageChosenDuringARunChangesNothing`.)
 - `SoftProofTabViewModel.EndComparison` is called for an image that was only chosen too, and
   its log line says which case it was.
 - Guards: `R111_OpeningAnotherImageWhileAFieldIsWrongDropsThePreviousResult`,

@@ -19,7 +19,7 @@ writer emits `D` was not checked on a file, the standard allows it.
 ## Decision
 
 One parser reads a header number, `FitsReader.TryNumber`: a sign, digits with an optional point,
-an optional exponent after `E` or `D`, nothing else, and finite. What a caller does with a
+an optional exponent after `E` or `D` in either case, nothing else, and finite. What a caller does with a
 keyword that is present and is not such a number depends on what the number is for:
 
 - a number the image cannot be read without (`BITPIX`, `NAXIS`, `NAXISn`, `BZERO`, `BSCALE`)
@@ -42,7 +42,10 @@ An absent keyword keeps its default, as before.
 ## Consequences
 
 - `FitsWriter` reads the same members, so a curve or a crop saved from a FITS reads `BZERO` and
-  `BSCALE` the same way; the reader has refused an unreadable one before any save.
+  `BSCALE` the same way; the reader has refused an unreadable one before any save. The crop's
+  move of `CRPIX` (`FitsWriter.Moved`) parses its card by itself, in decimal arithmetic, and
+  takes the same exponent letters, so a reference pixel the reader reads is one the crop moves
+  (`R181_AReferencePixelIsMovedWhateverTheCaseOfItsExponent`, from the review of the branch).
 - A header whose sizes parse but are impossible (a negative axis, a product past the file) is
   CR-012, its own entry, still open.
 - Guards: `R011_ARealWithADExponentIsReadAsFitsWritesIt`,

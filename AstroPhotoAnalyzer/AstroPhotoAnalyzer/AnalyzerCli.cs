@@ -25,7 +25,8 @@
 // EXIT CODES:
 //     0  OK - no recommendation above "Ok"
 //     1  error (missing file or a folder, wrong argument, invalid parameter combination,
-//        unusable ICC profile, format not read, linear image, -o file not written)
+//        unusable ICC profile, format not read, linear image, -o file not written, -o
+//        naming a file the run reads)
 //     2  ATENTIE - at least one recommendation of level "Atentie"
 //     3  PROBLEMA - at least one of level "Problema"
 // The verdicts are monotone, so "anything != 0" means "not clean, take a look".

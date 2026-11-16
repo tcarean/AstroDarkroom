@@ -293,8 +293,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   such a number in the plate solution means no plate solution, never one somewhere else in the
   sky (CR-007 of the code review of 2026-11-13, ADR 0103).
 - A frame with too few stars to measure is no longer told that its corners are soft, and shows
-  no star width for a zone either: the zones and the corner / centre figure read `n/a`, as the
-  width over the whole frame already did (CR-006 of the code review of 2026-11-13, ADR 0102).
+  no star width for a zone either: the zones read `n/a`, as the width over the whole frame
+  already did, and the corner / centre figure is left out (CR-006 of the code review of
+  2026-11-13, ADR 0102).
 - A disabled check box is dimmed, as the disabled buttons are: it used to keep the brightness of
   its text and read as one that can be ticked (CR-022 of the code review of 2026-11-13; the
   labels box of the Dust / sky map of an image without a WCS, the map's boxes of the single

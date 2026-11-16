@@ -150,10 +150,13 @@ entry gives. Paths are relative to the project folder.
 | CR-072 | 4 | rare | confirmed | A failed computation of one gallery of the curves tab takes both away, and the box cannot be unticked to go round it | open |
 | CR-073 | 3 | rare | to measure | A curve can be missing from the gallery with the dust move: its strengths are judged with other points than the ones it gets | open |
 | CR-074 | 4 | common | confirmed | Two figures of the paper fit are not the same from one run to the next | open |
+| CR-075 | 3 | rare | owner | On a frame with too few stars a zone reads n/a under a description that promises its width from 5 stars | open |
+| CR-076 | 3 | rare | owner | "You lose nothing going to 8 bits" is also said of a file caught by its levels alone | open |
 
 9 entries of severity 1, 4 of severity 2, 39 of severity 3, 15 of severity 4; 45 confirmed, 14
 to measure, 8 for the owner. (As counted on 2026-11-13; CR-068 and CR-069 were added on 2026-11-14, CR-070 to
-CR-074 on 2026-11-16 with the dust move of the suggested curves (ADR 0101), and the
+CR-074 on 2026-11-16 with the dust move of the suggested curves (ADR 0101), CR-075 and CR-076
+on 2026-11-16 by the review of the fixes of CR-006 to CR-010, and the
 Status column says what has been closed since.) After the entries: what the owner may want to
 look at though no rule is broken, then the cleanup list (dead code, duplicates, work done twice).
 
@@ -1049,6 +1052,40 @@ Added on 2026-11-16, by the review of the whole branch of the dust move (R-184, 
   falling back to the plain one with the reason beside the box.
 - Test: none.
 - Evidence: to measure (by reading; an image with a capped full curve would show it).
+- Status: open
+
+### CR-075 On a frame with too few stars a zone reads n/a under a description that promises its width from 5 stars
+
+Added on 2026-11-16, from the fix of CR-006 (ADR 0102) and the review of its branch.
+
+- Where: `AstroPhotoAnalyzer.Wpf/ViewModels/ResultTabs.cs`, the description of the centre's row
+  of the Rezolutie tab ("A zone is shown only when it has at least 5 stars, otherwise n/a").
+- What happens: since ADR 0102 a frame whose stars are too few has no width in any zone, however
+  many detections the zone holds; the description names the zone's own count as the only reason.
+- Case: the scene of `Golden/mono-png8.txt` (16 detections, 6 in the centre): the row reads
+  `n/a` beside "6 stars", under that sentence. The row "Stars measured" above it does say the
+  stars are too few.
+- Should: the sentence names both reasons. A text of the window changes only on the owner's yes
+  (the rule "Plain words"); a wording was put to the owner on 2026-11-16.
+- Evidence: owner.
+- Status: open
+
+### CR-076 "You lose nothing going to 8 bits" is also said of a file caught by its levels alone
+
+Added on 2026-11-16, by the review of the fix of CR-008 (ADR 0104).
+
+- Where: `Report/Recommendations.cs` (`Warnings`), the sentence of the 8-bit upscale.
+- What happens: the sentence was written for the form level x 257, which an 8-bit copy holds
+  exactly. Since ADR 0104 it is also given when no plane uses more than 256 levels, where the
+  levels need not sit on the 8-bit steps.
+- Case (arithmetic, not run): a file saved by a shift, level x 256, rounded to 8 bits
+  (`RasterOps.Level8`): level 128 gives 127.50 and level 129 gives 128.50, both 128, so one pair
+  of neighbouring levels merges. A file whose 256 levels are packed closely (20000 to 20255 of
+  65535) keeps one or two levels in an 8-bit copy.
+- Should: "only 8 bits of information" stays true in both; the half about losing nothing holds
+  for the first form only, so the levels' case needs a sentence of its own, or one that holds
+  for both. The owner's call on the wording.
+- Evidence: owner.
 - Status: open
 
 ## Severity 4: robustness and cleanliness

@@ -429,8 +429,9 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// A header number as FITS writes one: an optional sign, digits with an optional point,
         /// and an optional exponent after E or D ("3.2768D+04"), which .NET does not read by
-        /// itself. Nothing else is a number: no thousands separator, no brackets, no currency
-        /// sign (NumberStyles.Any read "0,5" as 5 and "(5)" as -5), and no NaN or infinity.
+        /// itself; the letter is taken in either case. Nothing else is a number: no thousands
+        /// separator, no brackets, no currency sign (NumberStyles.Any read "0,5" as 5 and "(5)"
+        /// as -5), and no NaN or infinity.
         /// </summary>
         /// <param name="text">The card's value, as <see cref="ReadHeader"/> gives it; not null.</param>
         /// <param name="value">The number; 0 when the text is not one.</param>
