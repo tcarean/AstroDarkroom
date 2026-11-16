@@ -274,6 +274,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- An 8-bit image saved as 16 bits by moving each byte into the upper byte (the value = the level
+  x 256) no longer passes as real 16 bits: a file in which no channel uses more than 256
+  different levels gets the "only 8 bits of information" caution, whatever the conversion was,
+  with the levels it uses as the evidence (CR-008 of the code review of 2026-11-13, ADR 0104).
 - A FITS whose header writes a number with a `D` exponent (`BZERO = 3.2768D+04`), as the standard
   allows, is read right: the number used to be taken as its default, so a 16-bit image was read
   with half of its tones cut, and a complete plate solution as none. A size, a `BZERO` or a

@@ -70,6 +70,14 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal const double UpscaledFraction = 0.5;
 
+        /// <summary>
+        /// The levels 8 bits can hold. A 16-bit file in which no plane uses more distinct levels
+        /// than this holds 8 bits of information whatever put them there: a shift (level x 256),
+        /// a constant low byte, a table (R-031, ADR 0104). Real 16-bit data is nowhere near: the
+        /// reference image uses 63862 / 39918 / 42878 levels (V-001).
+        /// </summary>
+        internal const int EightBitLevels = 256;
+
         // ------------------------------------------------------------ tones
 
         /// <summary>
