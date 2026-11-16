@@ -2,14 +2,16 @@
 
 **Covers:** `src/DarksCheck.Wpf/`, `tests/DarksCheck.Wpf.Tests/`, `Icon/make_icon.py`.
 
-The behaviour is R-070 to R-079, R-120 and R-121; the reasons are ADR 0009 and, for About, ADR
-0027. The pieces copied from LightsCheck (`Theme/Dark.xaml`, `Presentation/*.cs` but three,
+The behaviour is R-070 to R-079, R-120, R-121 and R-125; the reasons are ADR 0009 and, for
+About, ADR 0027, for Help, ADR 0061. The pieces copied from LightsCheck (`Theme/Dark.xaml`,
+`Presentation/*.cs` but five,
 `Views/AboutWindow.*`, `ViewModels/AboutViewModel.cs`, the test fixture `StaFixture`) are marked
 as such in their headers and are LightsCheck's to improve first; `Presentation/ScreenArea.cs` and
-About's fit to its screen came with LightsCheck's ADR 0031 (here ADR 0027). Of the three,
+About's fit to its screen came with LightsCheck's ADR 0031 (here ADR 0027). Of the five,
 `Presentation/AccessibleTabControl.cs` was taken from AstroPhotoAnalyzer with the theme's tab
 style it reads, as LightsCheck took both (ADR 0024), `Presentation/TExtension.cs` from FlatCheck
-(ADR 0021), and `Presentation/Emphasis.cs` is DarksCheck's own, as are `Theme/Rows.xaml`
+(ADR 0021), and `Presentation/Emphasis.cs` is DarksCheck's own, as are `Presentation/Manual.cs`
+and `Presentation/ExternalLink.cs` (FlatCheck's Help, rewritten for this window), `Theme/Rows.xaml`
 (DarksCheck's templates, merging the theme), `MainViewModel`, the views and `WindowTexts`.
 
 ## The shape
@@ -61,6 +63,29 @@ Down, Page Up, Page Down, Home and End to the cards only while they can scroll (
 where the window fits the arrows still move the focus between the links. The cards' panel
 (`24,20,24,0`) and the button (`24,16,24,20`) add up to the old margins where the window fits.
 The heights measured at four work areas are in ADR 0027.
+
+## Help and the manual
+
+The Help button and F1 reach one handler, `MainWindow.ShowHelp`, through
+`ApplicationCommands.Help`, whose default gesture is F1: the button's `Command` is that command
+and the window's `CommandBinding` runs the handler, so no input binding is needed. About opens
+from its own `Click` (R-125). `ShowHelp` reads the selected tab's section from its `Tag` (each
+`TabItem` carries a `ManualSection`), asks `Manual.SectionFor` with the view-model's
+`HasProblem`, `HasResult` and `IsRunning`, writes the Info line `Help opened: <address>` and
+hands the address to `OpenAddress`, which is `ExternalLink.Open` unless a test replaced it.
+`SectionFor` follows what `MainWindow.xaml` shows: the wait screen first, since it covers
+everything, then the problem card, then the tabs while a result is there, and "Opening a folder"
+for the rest (no folder yet, the empty window after a stopped run). `Manual.Url` puts the
+anchor GitHub makes from the wiki heading after the page's address. The wiki is a separate
+repository, so no gate test can read its headings: a heading renamed there must be renamed in
+`Manual.Anchor` in the same breath, or the browser lands at the top of the page.
+
+The icon is a `DrawingImage` in the main window's own resources, FlatCheck's drawing, since the
+theme is LightsCheck's copy; `ExternalLink` fails as About's link handler does, a Debug line and
+nothing more, while About keeps that handler as LightsCheck wrote it. The window's `MinWidth`,
+1180 px, counts the window's 16 px frame; the 1164 px left inside keep the top bar's folder
+heading on two lines with Help in the bar, 11 px over the narrowest that does (the heights per
+width are in ADR 0061): that column takes what the others leave, and its heading wraps.
 
 ## One view-model, fed by the core
 
@@ -267,4 +292,11 @@ the atomic file target (`logging.md`, "In the tests"). `AboutTests` hold About's
 core's list and its lead to the core's; `AboutWindowFitTests` (R-121, LightsCheck's) lay About's
 content out at the height a capped window leaves it, raise the keys through a stand-in
 presentation source, call the window's `OnContentRendered` for the fit, and test `TopInside`,
-`ToDips` at 125 % and 150 % and Windows' answer apart.
+`ToDips` at 125 % and 150 % and Windows' answer apart. `HelpTests` (R-125) hold the ten
+addresses to the states and tabs, the tabs' tags, F1 raised as a key event on elements of a
+window never shown (a stand-in presentation source, `OpenAddress` replaced so no browser
+starts), the Debug line of an address the shell refuses, and the top bar, moved into a `Border`
+host since an unshown window renders white, laid out in the window's text mode at what the
+minimum width leaves inside the frame (`Frame`, 16 px, measured on a real window shown
+off-screen): the button's icon, word, tooltip and place, About without F1, the bar's fit and its
+height.

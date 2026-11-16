@@ -8,6 +8,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A Help button in the window's top bar, a question mark on a blue disc and the word, also on
+  F1 (R-125, ADR 0061): it opens the window's manual in the suite's wiki, in the browser, at the
+  section of the tab on screen, at "Opening a folder" before a result or while one is read, and
+  at "When something goes wrong" on the card of a folder that cannot be analysed.
+
 - The lights of another folder, so the question "do these darks fit that session's lights?" is
   asked darks first (R-055, R-122, ADR 0039): `--lights DIR` in the console, the card
   `Lights from another folder` on the window's Lights tab. DIR is a session, whose `lights\` is
@@ -41,6 +46,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   are missing (R-080, ADR 0023); until now only the `electrons` row said so.
 
 ### Changed
+
+- F1 no longer opens About, which opens from its button alone; the window is at least 1180 px
+  wide instead of 960, so the whole top bar shows with Help in both languages (R-125, ADR 0061).
 
 - Check 9 says what fewer or more darks would give, and with lights judges the darks against
   the lights' stack (R-024, R-123, ADR 0051). A new row `with n frames` gives, for 5, 10, 15,
