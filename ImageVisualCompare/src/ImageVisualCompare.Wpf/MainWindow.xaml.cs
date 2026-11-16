@@ -210,11 +210,10 @@ public partial class MainWindow : Window
     /// <summary>
     /// Takes a press of F1 (R-066): the first opens the manual, as the Help button does; a repeat
     /// of the key held down does nothing and writes nothing, since a held key repeats some thirty
-    /// times a second and each would open the browser again. Separate from the key handler so a
-    /// test can give it a repeat.
+    /// times a second and each would open the browser again.
     /// </summary>
     /// <param name="isRepeat">True for a repeat of a key held down.</param>
-    internal void OnHelpKey(bool isRepeat)
+    private void OnHelpKey(bool isRepeat)
     {
         if (!isRepeat)
         {

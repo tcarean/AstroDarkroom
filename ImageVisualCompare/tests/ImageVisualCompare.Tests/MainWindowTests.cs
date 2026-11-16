@@ -358,8 +358,8 @@ public class MainWindowTests
 
     /// <summary>
     /// A held H switches once: its repeats, which come about thirty times a second, would each
-    /// decode the pair again once the switch before them has ended (R-114, ADR 0044). A test cannot
-    /// make a <c>KeyEventArgs</c> a repeat, so it calls what the key handler hands the repeat to.
+    /// decode the pair again once the switch before them has ended (R-114, ADR 0044). The test
+    /// calls what the key handler hands the repeat to; the F1 test presses a real repeat.
     /// </summary>
     [Fact]
     public async Task R114_AHeldModeKeySwitchesOnce_ItsRepeatsDoNothing()
@@ -633,8 +633,8 @@ public class MainWindowTests
 
     /// <summary>
     /// A held F1 opens the manual once: its repeats, some thirty a second, would each open the
-    /// browser again. A test cannot make a <c>KeyEventArgs</c> a repeat, so it calls what the key
-    /// handler hands the key to, as for a held H (ADR 0044).
+    /// browser again. The repeats go through the window's key handler, as the keyboard's would,
+    /// so a handler that dropped the key's repeat flag would fail here.
     /// </summary>
     [Fact]
     public async Task R066_AHeldF1_OpensTheManualOnce()
@@ -643,9 +643,9 @@ public class MainWindowTests
         await WpfThread.RunAsync(() =>
         {
             var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader())) { OpenAddress = opened.Add };
-            window.OnHelpKey(isRepeat: false);
-            window.OnHelpKey(isRepeat: true);
-            window.OnHelpKey(isRepeat: true);
+            Assert.True(PressF1(window.Compare));
+            Assert.True(PressF1(window.Compare, isRepeat: true));
+            Assert.True(PressF1(window.Compare, isRepeat: true));
         });
 
         Assert.Equal([ManualPage + "#opening-a-pair"], opened);
@@ -686,10 +686,20 @@ public class MainWindowTests
     }
 
     /// <summary>Raises a key-down of F1, without a modifier, on <paramref name="target"/>, as the
-    /// keyboard would with the focus there; returns whether something handled it.</summary>
-    private static bool PressF1(UIElement target)
+    /// keyboard would with the focus there, a repeat of a held key when asked; returns whether
+    /// something handled it.</summary>
+    private static bool PressF1(UIElement target, bool isRepeat = false)
     {
         var e = new KeyEventArgs(Keyboard.PrimaryDevice, new KeySource(), 0, Key.F1) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+        if (isRepeat)
+        {
+            // WPF marks a repeat from the keyboard's state, through a member of its own; the test
+            // marks it the same way.
+            typeof(KeyEventArgs)
+                .GetMethod("SetRepeat", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .Invoke(e, [true]);
+        }
+
         target.RaiseEvent(e);
         return e.Handled;
     }

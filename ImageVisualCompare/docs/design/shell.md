@@ -166,7 +166,8 @@ the page and the anchor GitHub gives the section's heading. The window opens it 
 `OpenAddress` delegate, `ExternalLink.Open` outside the tests. `F1` is read in `OnPreviewKeyDown`,
 the window's handler for the keys that work wherever the focus is, without a modifier, and goes
 to `OnHelpKey` with `KeyEventArgs.IsRepeat`, which ignores a repeat. The veil covers the whole
-window, the toolbar included, so while it shows only `F1` reaches Help.
+window, the toolbar included, but stops only the mouse (R-006): `F1`, or `Space` on the Help
+button reached with `Tab`, still opens the manual while it shows, at "Opening a pair".
 
 The button's content is a `StackPanel`, the `HelpIcon` image of `Theme.xaml` (16 DIPs) and the
 `HelpText` block, so the code sets the button's automation name to the word. `HelpIcon` is
@@ -199,9 +200,10 @@ the banner, the copyright and the licence page from `VersionInfo`, when the wind
 logo is the 256-pixel frame of `Assets/ImageVisualCompare.ico`, which the csproj also makes a WPF
 `Resource` for that: an `Image` given the file takes its first frame, maybe the 16-pixel one.
 A `Hyperlink` outside a navigation window only raises `RequestNavigate`, so the window catches it
-on its root and hands it to `ExternalLink.Open`, which the main window's Help shares: it opens the
-address with `UseShellExecute`, disposing the process the shell may return; a refusal writes one
-`Debug` line with the address, as written for a relative one, since `AbsoluteUri` throws on it. The
+on its root and hands it to `ExternalLink.Open`, which the main window's Help shares: it opens an
+absolute http or https address with `UseShellExecute`, disposing the process the shell may
+return, and a refusal writes one `Debug` line with the address. Any other text, a relative link
+above all, is only logged: the shell would resolve it against the working folder and the PATH. The
 constructor applies the dark caption, as every window does. `MainWindow` writes `About opened` and
 shows it modal over itself.
 

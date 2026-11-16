@@ -22,8 +22,9 @@ ADR 0112). This window has no tabs, so two questions were put in chat and answer
 
 - A `Help` (`Ajutor`) button between `Open…` and `About`, with FlatCheck's icon, a question mark
   on a disc of the accent colour drawn as a `DrawingImage` in `Theme.xaml`, then the word, and a
-  tooltip that names F1. It and F1 open the manual through `ExternalLink`, which only logs a
-  computer without a browser; `About` keeps its button and was never on F1. The manual is English
+  tooltip that names F1. It and F1 open the manual through `ExternalLink`, About's link opener
+  moved out of its window, which hands the shell only a web address and only logs a computer
+  without a browser; `About` keeps its button and was never on F1. The manual is English
   in both languages, the wiki having no Romanian page.
 - The section rule and the addresses are Core's (`Manual.cs`), not the window project's as in
   FlatCheck: this project's rule "Core has no UI" puts each decision the window shows in Core,
@@ -51,5 +52,6 @@ ADR 0112). This window has no tabs, so two questions were put in chat and answer
 - A wiki heading renamed moves its anchor: `Manual.cs` must follow, or the browser lands at the
   top of the page. The wiki is outside the repository, so no gate test can read the anchors;
   `ManualTests` pins the four addresses.
-- The wiki manual's top bar table, its status bar text and its two crops of the bars change with
-  this decision (ADR 0050).
+- The wiki manual's top bar table, its status bar text and its crop of the toolbar change with
+  this decision (ADR 0050); its full-window screenshots keep the toolbar without Help until they
+  are taken again.

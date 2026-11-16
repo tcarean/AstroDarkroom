@@ -40,24 +40,29 @@ internal static class ExternalLink
     internal static void Open(RequestNavigateEventArgs e)
     {
         e.Handled = true;
-
-        // The address as written for a relative one: AbsoluteUri throws for it, and the shell then
-        // refuses the text, which is logged.
-        Open(e.Uri.IsAbsoluteUri ? e.Uri.AbsoluteUri : e.Uri.OriginalString);
+        Open(e.Uri.OriginalString);
     }
 
     /// <summary>
-    /// Opens an address in the system's browser. <c>UseShellExecute</c> is what opens a URL on
+    /// Opens a web address in the system's browser. <c>UseShellExecute</c> is what opens a URL on
     /// .NET; a system with no browser for it throws, which only writes a line in the log. The
     /// process the shell may return is not watched, so it is disposed at once.
     /// </summary>
-    /// <param name="address">An absolute http or https address for every caller; anything the
-    /// shell cannot open is logged.</param>
+    /// <param name="address">The address as written: an absolute http or https address for
+    /// every caller; anything else is only logged, never handed to the shell.</param>
     internal static void Open(string address)
     {
+        // The shell resolves any other text against the working folder and the PATH, so a relative
+        // link would open a file or start a program: only a web address goes to it.
+        if (!Uri.TryCreate(address, UriKind.Absolute, out Uri? uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            Log.Debug("the link " + address + " is not a web address, so it was not opened");
+            return;
+        }
+
         try
         {
-            Process.Start(new ProcessStartInfo(address) { UseShellExecute = true })?.Dispose();
+            Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true })?.Dispose();
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
         {

@@ -101,7 +101,7 @@ and `decoded A:` and `decoded B:` with the range the values were read in and the
 | `WicImageLoader` | `Wic` | Debug | `probed` and `decoding <path>: decoder=<type> format=<WPF's name, or unnamed> bpp=<n> WxH`, for a TIFF its `SampleFormat`, `BitsPerSample` and `SamplesPerPixel`, then `profiles=<n>`, the colour profiles it carries; a float TIFF's range decision (`LogText.FloatRange`). A tag or a profile the codec cannot give is written as such, never thrown |
 | `FitsImageLoader` | `Fits` | Debug, Trace | `probed` and `decoding <path>: WxH planes bitpix bzero bscale data at <offset>`, BZERO and BSCALE with `Exact`; a float file's range decision; at Trace, from `Probe`'s `finally`, every card of the headers |
 | `DarkTitleBar` | `Chrome` | Debug | the build, the attribute set and the HRESULTs of the dark caption and, on Windows 11, of the caption and border colours |
-| `ExternalLink` | `Window` | Debug | `the link <url> could not be opened`, with the exception, when the system will not open a link of About or the manual of Help |
+| `ExternalLink` | `Window` | Debug | `the link <url> could not be opened`, with the exception, when the system will not open a link of About or the manual of Help; `the link <text> is not a web address, so it was not opened` for anything but an absolute http or https address, which never reaches the shell |
 
 `LogCards`, the Trace lines of `FitsImageLoader`, reads up to 1 MiB of the file on a stream of its
 own, without the reader, so a header the reader refuses is written too. It walks each header card

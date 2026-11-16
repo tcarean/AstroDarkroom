@@ -185,6 +185,29 @@ public class WindowLoggingTests
     }
 
     /// <summary>
+    /// A link that is not a web address, a relative one above all, is only logged: the shell would
+    /// resolve it against the working folder and the PATH and could open a file or start a program
+    /// (the review of 2026-11-16: the About window's opener, moved into ExternalLink, had begun to
+    /// hand it over). Were it handed over, the shell would fail on this name and log another line.
+    /// </summary>
+    [Fact]
+    public void R072_ALinkThatIsNotAWebAddress_IsLogged_NeverHandedToTheShell()
+    {
+        using LogCapture capture = LogCapture.Start();
+        var e = new System.Windows.Navigation.RequestNavigateEventArgs(new Uri("no-such-imagevisualcompare-page.html", UriKind.Relative), null)
+        {
+            RoutedEvent = System.Windows.Documents.Hyperlink.RequestNavigateEvent,
+        };
+
+        ExternalLink.Open(e);
+
+        Assert.True(e.Handled);
+        Assert.Equal(
+            ["the link no-such-imagevisualcompare-page.html is not a web address, so it was not opened"],
+            capture.MessagesOf(Loggers.Window));
+    }
+
+    /// <summary>
     /// The window's lines without those that report a state, not an action: how WPF renders,
     /// written when a window is built, and the memory, written when a pair is shown.
     /// </summary>
