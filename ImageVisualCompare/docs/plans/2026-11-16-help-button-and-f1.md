@@ -117,3 +117,9 @@ Branch `claude/Open-the-wiki-manual-from-a-Help-button-and-F1`, in its own workt
 - The launch of the real application on the pair (the wrap-up step of `docs/skills.md`) waits
   for the owner to be away from the PC; the off-screen render of the real window, in English
   and Romanian, showed the button, the icon and the new key reminder.
+- After the two subagent reviews (c80c459d and the commit after it): the held-F1 test presses a
+  real repeat through the window's key handler (`KeyEventArgs`'s internal `SetRepeat`), so
+  `OnHelpKey` is private and not called by a test; `ExternalLink` hands the shell only an absolute
+  http or https address (`IsWebAddress`, tested on every address the windows open) and logs
+  anything else with a line of its own, `the link <text> is not a web address, so it was not
+  opened`, where About's old opener had refused a relative link through `AbsoluteUri`.

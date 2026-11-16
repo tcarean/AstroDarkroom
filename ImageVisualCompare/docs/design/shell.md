@@ -203,7 +203,8 @@ A `Hyperlink` outside a navigation window only raises `RequestNavigate`, so the 
 on its root and hands it to `ExternalLink.Open`, which the main window's Help shares: it opens an
 absolute http or https address with `UseShellExecute`, disposing the process the shell may
 return, and a refusal writes one `Debug` line with the address. Any other text, a relative link
-above all, is only logged: the shell would resolve it against the working folder and the PATH. The
+above all, is only logged (`IsWebAddress`): the shell would resolve it against the working folder
+and the PATH. `ExternalLinkTests` holds every address the two windows open to that test. The
 constructor applies the dark caption, as every window does. `MainWindow` writes `About opened` and
 shows it modal over itself.
 

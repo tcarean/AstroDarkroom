@@ -143,7 +143,7 @@ language (ADR 0038), since it switches `UiText.Current`, and checks that the sam
 same messages in English on an English culture and in Romanian on a Romanian one. `Program.Main`,
 `Apply` and `Close` run in no test:
 `TheEntryPointStartsTheLogBeforeTheApplication_AndEveryCrashIsHooked` reads their order, their `try`
-and `finally` and their hooks in the source, and the rest is checked by launching the application. A
-test cannot make a `KeyEventArgs` a repeat: the held `H` and `F` are tested through
-`OnModeKeyAsync`, which takes the repeat as an argument; the repeats of `Ctrl+O` and of the zoom
+and `finally` and their hooks in the source, and the rest is checked by launching the application. The
+held `H` and `F` are tested through `OnModeKeyAsync`, which takes the repeat as an argument, and a
+held `F1` is pressed as a repeat through `KeyEventArgs`'s internal `SetRepeat`; the repeats of `Ctrl+O` and of the zoom
 keys, and the zoom line of a held key's release, are checked by launching the application.

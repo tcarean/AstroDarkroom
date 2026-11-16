@@ -17,6 +17,7 @@
 
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows.Navigation;
 using ImageVisualCompare.Wpf.Logging;
 using NLog;
@@ -52,9 +53,7 @@ internal static class ExternalLink
     /// every caller; anything else is only logged, never handed to the shell.</param>
     internal static void Open(string address)
     {
-        // The shell resolves any other text against the working folder and the PATH, so a relative
-        // link would open a file or start a program: only a web address goes to it.
-        if (!Uri.TryCreate(address, UriKind.Absolute, out Uri? uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        if (!IsWebAddress(address, out Uri? uri))
         {
             Log.Debug("the link " + address + " is not a web address, so it was not opened");
             return;
@@ -69,4 +68,16 @@ internal static class ExternalLink
             Log.Debug(ex, "the link " + address + " could not be opened");
         }
     }
+
+    /// <summary>
+    /// Whether an address may go to the shell: an absolute http or https one. The shell resolves
+    /// any other text against the working folder and the PATH, so a relative link would open a
+    /// file or start a program, and a <c>file:</c> one would open a file.
+    /// </summary>
+    /// <param name="address">The address as written.</param>
+    /// <param name="uri">The parsed address when it is a web address; otherwise not to be read.</param>
+    /// <returns>True for an absolute http or https address.</returns>
+    internal static bool IsWebAddress(string address, [NotNullWhen(true)] out Uri? uri) =>
+        Uri.TryCreate(address, UriKind.Absolute, out uri)
+        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 }
