@@ -236,8 +236,23 @@ public class WindowSmokeTests
 
             // R-130, R-131: the two windows of the Tonuri tab, built from the same result.
             MapViewModel map = vm.Tones.BuildMap();
-            Render((FrameworkElement)new MapWindow { DataContext = map }.Content, name: "harta-praf-cer");
+            var mapContent = (FrameworkElement)new MapWindow { DataContext = map }.Content;
+            Render(mapContent, name: "harta-praf-cer");
             Assert.False(map.HasWcs);   // a TIFF: no WCS, the labels box is disabled
+            // And it looks disabled: dimmed as the theme's disabled buttons, the others not.
+            var boxes = new List<System.Windows.Controls.CheckBox>();
+            void Boxes(DependencyObject d)
+            {
+                foreach (object child in LogicalTreeHelper.GetChildren(d))
+                {
+                    if (child is System.Windows.Controls.CheckBox c) boxes.Add(c);
+                    if (child is DependencyObject o) Boxes(o);
+                }
+            }
+            Boxes(mapContent);
+            System.Windows.Controls.CheckBox off = Assert.Single(boxes, b => !b.IsEnabled);
+            Assert.Equal(0.4, off.Opacity, 3);
+            Assert.All(boxes.Where(b => b.IsEnabled), b => Assert.Equal(1, b.Opacity));
             PreviewWindowViewModel preview = vm.Tones.BuildPreview(AnalysisRun.Execute(tif, Scenes.OnBuiltForPaper()).Simulation.Rows[3]);
             Render((FrameworkElement)new PreviewWindow { DataContext = preview }.Content, name: "preview-rand");
 

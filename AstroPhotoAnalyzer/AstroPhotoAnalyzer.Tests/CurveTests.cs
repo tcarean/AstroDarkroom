@@ -817,4 +817,546 @@ public class CurveTests
         Assert.All(texts.Where(t => t != null), t => Assert.False(methodWords.IsMatch(t), t));
         Assert.All(CurveTexts.History("Puternica", Curve(Earlier)), line => Assert.True(line.Length <= 72, line));
     }
+
+    // ---- R-184: the dust move (ADR 0101) ----
+
+    static readonly string[] BandLabels = { "praf", "cer", "banda", "nori luminosi", "varfuri" };
+
+    /// <summary>The anchors of the reference FITS (V-008), and its sky's dark end.</summary>
+    static CurveAnchors ReferenceAnchors => new() { Dust = 0.0897, Sky = 0.1690, Band = 0.3035, Clouds = 0.5374, Peaks = 0.7199 };
+    const double ReferenceHold = 0.1396;
+
+    /// <summary>A neutral, even dust: its L* after a curve is the L* of the curve's output at its anchor.</summary>
+    static Func<ToneCurve, double> GreyDust(CurveAnchors a) => c => ColorMath.LstarOfGrayLevel(c.Map(a.Dust) * 255);
+
+    /// <summary>
+    /// The stripe scene with its dust at 0.09 (L* 7.7), one column, 6 % of the patches, so that
+    /// the dust zone gives the dust's figure; the sky is one level, 0.15 (L* 15.0).
+    /// </summary>
+    internal static Raster DustStripeScene()
+        => SyntheticRasters.From(512, 512, 3, (x, y, p) =>
+            x >= 448 && x < 480 && y >= 224 && y < 256 ? 0.7f : x < 32 ? 0.09f : x < 416 ? 0.15f : x < 480 ? 0.3f : 0.5f);
+
+    static AnalysisResult DustStripes(double dmax) => AnalysisRun.Execute(DustStripeScene(), "memorie", new Parameters { DmaxOverride = dmax });
+
+    /// <summary>
+    /// The same stripes with a sky that has its own spread: it brightens down the frame, from
+    /// 0.14 to 0.16 (L* 14.0 to 16.0), so that its dark end lies under its middle and the dust
+    /// move has a point of its own to hold.
+    /// </summary>
+    internal static Raster DustStripeSceneWithASpreadSky()
+        => SyntheticRasters.From(512, 512, 3, (x, y, p) =>
+            x >= 448 && x < 480 && y >= 224 && y < 256 ? 0.7f : x < 32 ? 0.09f : x < 416 ? 0.14f + 0.02f * y / 511 : x < 480 ? 0.3f : 0.5f);
+
+    static CurveSet Moved(AnalysisResult a, CurvePurpose purpose = CurvePurpose.Print) => CurveRun.Execute(a, purpose, 256, 256, dustOnPaperBlack: true);
+
+    [Fact]
+    public void R184_TheMovePutsItsPointsUnderTheSkyAndLeavesTheRestAsItWas()
+    {
+        CurveAnchors a = ReferenceAnchors;
+        IReadOnlyList<(string Name, ToneCurve Curve)> plain = CurveAdvisor.Curves(a, BandLabels);
+
+        foreach (bool helper in new[] { false, true })
+        {
+            var move = new DustMove { DustOutput = 0.0505, Hold = ReferenceHold, Helper = helper };
+            IReadOnlyList<(string Name, ToneCurve Curve)> moved = CurveAdvisor.Curves(a, BandLabels, move);
+            Assert.Equal(plain.Select(c => c.Name).ToArray(), moved.Select(c => c.Name).ToArray());
+
+            for (int k = 0; k < moved.Count; k++)
+            {
+                IReadOnlyList<CurvePoint> p = moved[k].Curve.Points;
+                string?[] labels = helper
+                    ? new[] { null, "sub praf", "praf", "cer inchis", "cer", "banda", "nori luminosi", "varfuri", null }
+                    : new[] { null, "praf", "cer inchis", "cer", "banda", "nori luminosi", "varfuri", null };
+                Assert.Equal(labels, p.Select(q => q.Label).ToArray());
+                int d = helper ? 2 : 1;
+                if (helper)
+                {
+                    Assert.Equal(new CurvePoint(a.Dust * Thresholds.CurveDustHelperFraction, 0.0505 * Thresholds.CurveDustHelperFraction, "sub praf", true), p[1]);
+                }
+                // The dust's point is the move's at every strength; the held point and the sky map to themselves.
+                Assert.Equal(new CurvePoint(a.Dust, 0.0505, "praf"), p[d]);
+                Assert.Equal(new CurvePoint(ReferenceHold, ReferenceHold, "cer inchis", true), p[d + 1]);
+                Assert.Equal(new CurvePoint(a.Sky, a.Sky, "cer"), p[d + 2]);
+                Assert.True(moved[k].Curve.IsSuggestible);
+
+                // Above the sky nothing changed, and the shadow chart still ends past the band.
+                IReadOnlyList<CurvePoint> q0 = plain[k].Curve.Points;
+                for (int i = 0; i < 3; i++)
+                {
+                    Assert.Equal(q0[3 + i].X, p[d + 3 + i].X, 12);
+                    Assert.Equal(q0[3 + i].Y, p[d + 3 + i].Y, 9);
+                }
+                Assert.Equal(CurveAdvisor.ShadowChartLimit(plain[k].Curve), CurveAdvisor.ShadowChartLimit(moved[k].Curve), 12);
+            }
+        }
+    }
+
+    [Fact]
+    public void R184_TheAimPutsTheDustOnPaperBlackLoweredOrLifted()
+    {
+        CurveAnchors a = ReferenceAnchors;
+        double dust = ColorMath.LstarOfGrayLevel(a.Dust * 255);
+        Assert.Equal(7.67, dust, 1);
+
+        // Paper black under the dust (Dmax 2.4) and over it (Dmax 2.0): lowered, then lifted.
+        foreach (double black in new[] { ColorMath.PaperBlackLstar(2.4), ColorMath.PaperBlackLstar(2.0) })
+        {
+            DustMove m = CurveAdvisor.AimDust(a, BandLabels, ReferenceHold, dust, black, GreyDust(a));
+            Assert.NotNull(m);
+            Assert.Equal(ReferenceHold, m.Hold, 12);
+            Assert.False(m.Helper);
+            Assert.False(m.StoppedShort);
+            Assert.Equal(black < dust, m.DustOutput < a.Dust);
+
+            IReadOnlyList<(string Name, ToneCurve Curve)> curves = CurveAdvisor.Curves(a, BandLabels, m);
+            Assert.True(curves.Count >= 3);
+            foreach (var (_, c) in curves)
+            {
+                Assert.True(c.IsSuggestible);
+                // At paper black or a hair above it, never under.
+                Assert.InRange(GreyDust(a)(c), black, black + 0.02);
+                Assert.Equal(ReferenceHold, c.Map(ReferenceHold), 6);
+                Assert.Equal(a.Sky, c.Map(a.Sky), 6);
+            }
+        }
+
+        // A sky of one level: its dark end is its own point, and no point is added.
+        DustMove flat = CurveAdvisor.AimDust(a, BandLabels, a.Sky, dust, ColorMath.PaperBlackLstar(2.4), GreyDust(a));
+        Assert.NotNull(flat);
+        Assert.True(double.IsNaN(flat.Hold));
+        Assert.DoesNotContain(CurveAdvisor.Curves(a, BandLabels, flat)[0].Curve.Points, p => p.Extra && p.Label == "cer inchis");
+    }
+
+    [Fact]
+    public void R184_AHelperPointIsAddedOnlyWhenTheSplineNeedsItAndTheMoveStopsWhereNoSplineIsLeft()
+    {
+        CurveAnchors a = ReferenceAnchors;
+        double dust = ColorMath.LstarOfGrayLevel(a.Dust * 255);
+        ToneCurve full = CurveAdvisor.Curves(a, BandLabels)[2].Curve;
+
+        // A black of L* 2.6: the plain spline through the dust's point at that grey is not monotone near black.
+        double black = 2.6, grey = ColorMath.GrayLevelOfLstar(black) / 255;
+        var byHand = new List<CurvePoint> { new(0, 0, null), new(a.Dust, grey, "praf"), new(ReferenceHold, ReferenceHold, "cer inchis", true) };
+        byHand.AddRange(full.Points.Skip(2));
+        Assert.False(ToneCurve.WouldBeSuggestible(byHand));
+
+        DustMove m = CurveAdvisor.AimDust(a, BandLabels, ReferenceHold, dust, black, GreyDust(a));
+        Assert.NotNull(m);
+        Assert.True(m.Helper);
+        Assert.False(m.StoppedShort);
+        foreach (var (_, c) in CurveAdvisor.Curves(a, BandLabels, m))
+        {
+            Assert.True(c.IsSuggestible);
+            Assert.Equal(new CurvePoint(a.Dust * Thresholds.CurveDustHelperFraction, m.DustOutput * Thresholds.CurveDustHelperFraction, "sub praf", true), c.Points[1]);
+            Assert.InRange(GreyDust(a)(c), black, black + 0.02);
+        }
+
+        // A black no spline reaches: the move stops short, as far as a suggestible spline goes.
+        DustMove far = CurveAdvisor.AimDust(a, BandLabels, ReferenceHold, dust, 0.5, GreyDust(a));
+        Assert.NotNull(far);
+        Assert.True(far.StoppedShort);
+        Assert.True(far.DustOutput < a.Dust);
+        foreach (var (_, c) in CurveAdvisor.Curves(a, BandLabels, far))
+        {
+            Assert.True(c.IsSuggestible);
+            Assert.InRange(GreyDust(a)(c), 0.5 + 0.1, dust - 1);
+        }
+    }
+
+    [Fact]
+    public void R184_TheMoveIsRefusedWithItsReason()
+    {
+        CurveAnchors a = ReferenceAnchors;
+        double dust = ColorMath.LstarOfGrayLevel(a.Dust * 255), black = ColorMath.PaperBlackLstar(2.4);
+
+        Assert.Null(CurveAdvisor.DustMoveProblem(CurvePurpose.Print, null, a, ReferenceHold, dust, black));
+        Assert.Contains("doar pentru print", CurveAdvisor.DustMoveProblem(CurvePurpose.Screen, null, a, ReferenceHold, dust, black));
+
+        // The dust's figure is the darkest sky: the sentence the run hands over, as it is, and before any other reason but the screen's.
+        const string noZone = "nu pe imaginea asta: are prea putin praf";
+        Assert.Equal(noZone, CurveAdvisor.DustMoveProblem(CurvePurpose.Print, noZone, a with { Dust = 0 }, a.Dust, 0, 14.5));
+        Assert.Contains("doar pentru print", CurveAdvisor.DustMoveProblem(CurvePurpose.Screen, noZone, a, ReferenceHold, dust, black));
+
+        // The dust at black, or not under the sky's dark end.
+        Assert.Contains("praful e deja la negru complet", CurveAdvisor.DustMoveProblem(CurvePurpose.Print, null, a with { Dust = 0 }, ReferenceHold, 0, black));
+        Assert.Contains("praful nu e mai inchis decat partea inchisa a cerului", CurveAdvisor.DustMoveProblem(CurvePurpose.Print, null, a, a.Dust, dust, black));
+
+        // Paper black at or over the sky's dark end (L* 14.0): no room, with the two levels.
+        string noRoom = CurveAdvisor.DustMoveProblem(CurvePurpose.Print, null, a, ReferenceHold, dust, 14.5);
+        Assert.Contains("cerul insusi e prea aproape de negrul hartiei (partea lui inchisa la L* 14.0, negrul hartiei la L* 14.5)", noRoom);
+        Assert.Contains("ridica fundalul cand refaci stretch-ul, cum spune tabul Tonuri", noRoom);
+
+        // Within the tolerance of paper black: already there.
+        Assert.Contains("praful e deja pe negrul hartiei (L* 3.6)", CurveAdvisor.DustMoveProblem(CurvePurpose.Print, null, a, ReferenceHold, black + 0.8 * Thresholds.CurveDustAimTolerance, black));
+        Assert.Contains("praful e deja pe negrul hartiei (L* 3.6)", CurveAdvisor.DustMoveProblem(CurvePurpose.Print, null, a, ReferenceHold, black - 0.8 * Thresholds.CurveDustAimTolerance, black));
+        Assert.Null(CurveAdvisor.DustMoveProblem(CurvePurpose.Print, null, a, ReferenceHold, black + 2 * Thresholds.CurveDustAimTolerance, black));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R184_AnImageWithoutADustZoneIsToldWhyInASentenceOfItsOwn(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        // A hundred patches, of which so many are dust; the darkest sky gives the dust's figure, or the dust zone does.
+        SimulationResult With(int dustPatches, DustSource source) => new()
+        {
+            Map = new DustMap { Cols = 10, Rows = 10, Side = 8, Stride = 4, Classes = new PatchClass[100], Clouds = Array.Empty<DustCloud>(), NoiseThreshold = 1, DustSource = source },
+            AsIsDust = new DustStats { DustPatchCount = dustPatches },
+        };
+
+        // The dust zone decides: nothing to say.
+        Assert.Null(CurveTexts.DustMoveNoDustZone(With(10, DustSource.DustClass)));
+
+        // No dust at all; too little of it, with its share and the share needed; and enough of it,
+        // but with a part of the sky darker than the dust.
+        Assert.Equal(
+            Tr.Pick("not on this image: no dust was found in it, so there is nothing to set apart from the sky",
+                    "nu pe imaginea asta: nu s-a gasit praf in ea, deci nu e nimic de desprins de cer"),
+            CurveTexts.DustMoveNoDustZone(With(0, DustSource.DarkestSky)));
+        Assert.Equal(
+            Tr.Pick("not on this image: it has too little dust (3.0 % of the image, and at least 5 % is needed), so the darkest part of the sky is taken in its place",
+                    "nu pe imaginea asta: are prea putin praf (3.0 % din imagine, si e nevoie de cel putin 5 %), asa ca in locul lui e luata partea cea mai inchisa a cerului"),
+            CurveTexts.DustMoveNoDustZone(With(3, DustSource.DarkestSky)));
+        Assert.Equal(
+            Tr.Pick("not on this image: the darkest part of the sky is darker than the dust, so it is taken in the dust's place",
+                    "nu pe imaginea asta: partea cea mai inchisa a cerului e mai inchisa decat praful, asa ca ea e luata in locul lui"),
+            CurveTexts.DustMoveNoDustZone(With(10, DustSource.DarkestSky)));
+
+        // The report's own reasons did not change with the sentences.
+        Assert.Equal(Tr.Pick("no dust found", "nu s-a gasit praf"), With(0, DustSource.DarkestSky).DarkestSkyReason);
+        Assert.StartsWith(Tr.Pick("too little dust: 3.0 % of the frame", "prea putin praf: 3.0 % din cadru"), With(3, DustSource.DarkestSky).DarkestSkyReason);
+        Assert.StartsWith(Tr.Pick("darker than the 25 % threshold", "mai intunecat decat pragul de 25 %"), With(10, DustSource.DarkestSky).DarkestSkyReason);
+        Assert.Null(With(10, DustSource.DustClass).DarkestSkyReason);
+    }
+
+    [Fact]
+    public void R184_TheRunMovesTheDustForPrintWhenAskedAndOnlyThen()
+    {
+        AnalysisResult a = DustStripes(2.4);
+        Assert.Equal(DustSource.DustClass, a.Simulation.Map.DustSource);
+        double black = a.Simulation.PaperBlackLstar, dust = a.Simulation.AsIs.LstarDust;
+        Assert.Equal(3.60, black, 2);
+        Assert.Equal(7.7, dust, 1);
+
+        // Not asked: today's curves, and the run still says the move can be had.
+        CurveSet plain = Suggest(a);
+        Assert.False(plain.DustOnPaperBlack);
+        Assert.Null(plain.DustMoveRefusal);
+        Assert.All(plain.Suggestions, s => Assert.Null(s.Evidence.Dust));
+        Assert.All(plain.Suggestions, s => Assert.DoesNotContain(s.Curve.Points, p => p.Extra));
+        Assert.Contains("Curbele nu muta praful si cerul", plain.Footnote);
+
+        // Asked, for print: the dust lowered onto paper black, the sky where it was, the rest as before.
+        CurveSet moved = Moved(a);
+        Assert.Null(moved.Problem);
+        Assert.True(moved.DustOnPaperBlack);
+        Assert.Null(moved.DustMoveRefusal);
+        Assert.Equal(plain.Suggestions.Select(s => s.Name).ToArray(), moved.Suggestions.Select(s => s.Name).ToArray());
+        Assert.Contains("Praful e pus pe negrul hartiei", moved.Footnote);
+        Assert.Contains("Curbele nu muta cerul", moved.Footnote);
+        for (int i = 0; i < moved.Suggestions.Count; i++)
+        {
+            CurveSuggestion s = moved.Suggestions[i];
+            CurvePoint point = Assert.Single(s.Curve.Points, p => p.Label == "praf");
+            Assert.Equal(moved.Anchors.Dust, point.X, 12);
+            Assert.True(point.Y < point.X);
+            Assert.Equal(moved.Suggestions[0].Curve.Points.Single(p => p.Label == "praf"), point);   // the same at every strength
+            Assert.True(s.Curve.IsSuggestible);
+
+            DustMoveFigures f = s.Evidence.Dust;
+            Assert.NotNull(f);
+            Assert.Equal(dust, f.LstarBefore, 6);
+            Assert.Equal(s.Evidence.LstarAfter[0], f.LstarAfter, 9);
+            Assert.Equal(black, f.PaperBlackLstar, 9);
+            Assert.Equal(2.4, f.Dmax, 9);
+            Assert.False(f.StoppedShort);
+            Assert.InRange(f.LstarAfter, black, black + 0.05);
+            Assert.InRange(s.Evidence.LstarAfter[1] - s.Evidence.LstarBefore[1], -0.2, 0.2);
+
+            // On paper the dust was above black before, so the difference grows by what the dust fell.
+            double before = s.Evidence.LstarBefore[1] - dust, after = s.Evidence.LstarAfter[1] - Math.Max(f.LstarAfter, black);
+            Assert.Equal(100 * (after / before - 1), f.PaperContrastChangePct, 6);
+            Assert.True(f.PaperContrastChangePct > 20);
+            Assert.True(f.DustNoiseChangePct > 0);
+            // The sky's noise of a moved curve is the larger of the slope at the sky and the mean
+            // slope over the sky's wide range, never the slope alone when the range says more.
+            LstarRange wide = a.Simulation.AsIsDust.SkyWide;
+            Assert.Equal(CurveAdvisor.MovedSkyNoiseGain(s.Curve, moved.Anchors.Sky, wide), s.Evidence.NoiseGain, 12);
+            Assert.True(s.Evidence.NoiseGain >= s.Curve.Slope(moved.Anchors.Sky));
+            Assert.Equal(a.Simulation.AsIs.PctPatchesBelowPaperBlack, f.PctUnderBlackBefore, 9);
+
+            string evidence = string.Join("\n", CurveTexts.EvidenceLines(s));
+            Assert.Contains($"praful pe negrul hartiei: de la L* 7.7 la {f.LstarAfter:0.0} (negrul hartiei e L* 3.6 la Dmax 2.4)", evidence);
+            Assert.Contains($"pe hartie, diferenta dintre praf si cer creste cu {f.PaperContrastChangePct:0} %", evidence);
+            Assert.Contains($"zgomotul din praf creste cu {f.DustNoiseChangePct:0} %", evidence);
+            Assert.Contains("negru plin pe hartie (sub negrul hartiei): ", evidence);
+            Assert.DoesNotContain("niveluri", string.Join("\n", CurveTexts.EvidenceLines(s).Where(l => !l.StartsWith("!"))));
+        }
+
+        // The screen has no paper black: asked or not, the plain curves, and the reason.
+        CurveSet screen = Moved(a, CurvePurpose.Screen);
+        Assert.False(screen.DustOnPaperBlack);
+        Assert.Contains("doar pentru print", screen.DustMoveRefusal);
+        for (int i = 0; i < plain.Suggestions.Count; i++)
+            Assert.Equal(plain.Suggestions[i].Curve.Points, screen.Suggestions[i].Curve.Points);
+        Assert.Contains("doar pentru print", CurveRun.ForScreen(plain).DustMoveRefusal);
+
+        // Paper black above the dust (Dmax 2.0): lifted, and the history of a saved curve says what was done.
+        CurveSet lifted = Moved(DustStripes(2.0));
+        Assert.True(lifted.DustOnPaperBlack);
+        CurveSuggestion up = lifted.Suggestions[0];
+        Assert.True(up.Curve.Points.Single(p => p.Label == "praf").Y > lifted.Anchors.Dust);
+        Assert.InRange(up.Evidence.Dust.LstarAfter, 8.99, 9.05);
+        Assert.True(up.Evidence.Dust.PctUnderBlackBefore > 5);    // the dust column, 6 % of the patches, was under paper black
+        Assert.Equal(0, up.Evidence.Dust.PctUnderBlackAfter, 9);  // and is on it now
+        Assert.Contains(CurveTexts.History(up.Name, up.Curve, up.Evidence.Dust), l => l.Contains("praful pus pe negrul hartiei (L* 9.0, Dmax 2.0)"));
+        Assert.All(CurveTexts.History(up.Name, up.Curve, up.Evidence.Dust), l => Assert.True(l.Length <= 72, l));
+        Assert.DoesNotContain(CurveTexts.History(up.Name, up.Curve), l => l.Contains("negrul hartiei"));
+
+        // A paper whose black is above the sky itself: refused, the plain curves, the reason for the box.
+        AnalysisResult weak = DustStripes(1.2);
+        CurveSet refused = Moved(weak);
+        Assert.False(refused.DustOnPaperBlack);
+        Assert.Contains("cerul insusi e prea aproape de negrul hartiei", refused.DustMoveRefusal);
+        Assert.All(refused.Suggestions, s => Assert.DoesNotContain(s.Curve.Points, p => p.Extra));
+        Assert.Equal(refused.DustMoveRefusal, Suggest(weak).DustMoveRefusal);
+    }
+
+    [Fact]
+    public void R184_TheSkysNoiseOfAMovedCurveIsNotReadAtTheBendOfTheSkysPoint()
+    {
+        // The reference FITS at Dmax 2.4 (V-017): the dust's point at 0.0322 with the helper, the sky's wide range 14.01 to 19.99.
+        CurveAnchors a = ReferenceAnchors;
+        var wide = new LstarRange(14.01, 19.99);
+        double lo = ColorMath.GrayLevelOfLstar(wide.Low) / 255, hi = ColorMath.GrayLevelOfLstar(wide.High) / 255;
+        ToneCurve lowered = CurveAdvisor.Curves(a, BandLabels, new DustMove { DustOutput = 0.0322, Hold = ReferenceHold, Helper = true })[2].Curve;
+        ToneCurve plain = CurveAdvisor.Curves(a, BandLabels)[2].Curve;
+
+        // The lowered dust bends the curve at the sky's anchor: the slope there says the sky is
+        // flattened by a fifth, while across the sky's range the curve rises about one for one.
+        double mean = (lowered.Map(hi) - lowered.Map(lo)) / (hi - lo);
+        Assert.InRange(lowered.Slope(a.Sky), 0.7, 0.9);
+        Assert.InRange(mean, 0.95, 1.1);
+        Assert.Equal(mean, CurveAdvisor.MovedSkyNoiseGain(lowered, a.Sky, wide), 12);
+
+        // Where the slope at the anchor is the larger, it stays the figure; and a range without width has only it.
+        Assert.True(plain.Slope(a.Sky) > (plain.Map(hi) - plain.Map(lo)) / (hi - lo));
+        Assert.Equal(plain.Slope(a.Sky), CurveAdvisor.MovedSkyNoiseGain(plain, a.Sky, wide), 12);
+        Assert.Equal(lowered.Slope(a.Sky), CurveAdvisor.MovedSkyNoiseGain(lowered, a.Sky, new LstarRange(17.58, 17.58)), 12);
+    }
+
+    [Fact]
+    public void R143_AMovedCurveIsCheckedOnTheSkyAloneUnlessItsDustIsStillUnderPaperBlack()
+    {
+        // The stripes on a paper whose black (L* 9.0) is above the dust (7.7): as it is, the dust is under paper black.
+        AnalysisResult a = DustStripes(2.0);
+        SimulationResult sim = a.Simulation;
+        double black = sim.PaperBlackLstar;
+        Assert.True(sim.DustBelowPaperBlack);
+        bool skyLow = sim.SkyBelowVisibility;
+        CurveEvidence With(DustMoveFigures? dust) => new() { NoiseGain = 1, NoiseAfterLsb = double.NaN, Dust = dust };
+        var reached = new DustMoveFigures { LstarBefore = 7.7, LstarAfter = black, PaperBlackLstar = black, Dmax = 2.0 };
+        DustMoveFigures stopped = reached with { LstarAfter = black - 2, StoppedShort = true };
+
+        // Without the move: the check that sends to the stretch, for the dust.
+        Recommendation plain = Assert.Single(CurveTexts.PaperChecks(sim, a.Noise, With(null)), r => r.Topic == Topic.Background);
+        Assert.EndsWith("Curba nu muta cerul si praful.", plain.Text);
+
+        // The dust put on paper black: nothing left to say about it; the sky alone decides.
+        IReadOnlyList<Recommendation> moved = CurveTexts.PaperChecks(sim, a.Noise, With(reached));
+        Assert.Equal(skyLow, moved.Any(r => r.Topic == Topic.Background));
+        Assert.All(moved, r => Assert.DoesNotContain("praful la L*", r.Because));
+
+        // A move that stopped with the dust still under paper black: the check stays, with where the dust got.
+        Recommendation left = Assert.Single(CurveTexts.PaperChecks(sim, a.Noise, With(stopped)), r => r.Topic == Topic.Background);
+        Assert.EndsWith("Curba nu muta cerul.", left.Text);
+        Assert.Contains($"praful la L* {black - 2:0.0} dupa curba", left.Because);
+        // This sky is not too dark (L* 15.0): the because names the dust alone, not a sky that is fine.
+        Assert.False(skyLow);
+        Assert.StartsWith("praful la L*", left.Because);
+        Assert.DoesNotContain("cerul la L*", left.Because);
+        Assert.Contains($"negrul hartiei e L* {black:0.0} la Dmax 2.0", left.Because);
+
+        // What decides is where the dust measures, to the tolerance, not the flag.
+        DustMoveFigures hair = reached with { LstarAfter = black - 0.8 * Thresholds.CurveDustAimTolerance, StoppedShort = true };
+        DustMoveFigures under = reached with { LstarAfter = black - 2 * Thresholds.CurveDustAimTolerance };
+        Assert.Equal(skyLow, CurveTexts.PaperChecks(sim, a.Noise, With(hair)).Any(r => r.Topic == Topic.Background));
+        Assert.Contains("dupa curba", Assert.Single(CurveTexts.PaperChecks(sim, a.Noise, With(under)), r => r.Topic == Topic.Background).Because);
+
+        // And neither the saved file nor the sentence under the evidence says the dust is there.
+        CurveSuggestion s = Moved(a).Suggestions[0];
+        Assert.Contains(CurveTexts.History(s.Name, s.Curve, reached), l => l.StartsWith("praful pus pe negrul hartiei (L* 9.0, Dmax 2.0)"));
+        Assert.Contains(CurveTexts.History(s.Name, s.Curve, stopped), l => l.StartsWith("praful mutat spre negrul hartiei (L* 9.0, Dmax 2.0)"));
+        Assert.Contains("Praful e pus pe negrul hartiei", CurveTexts.Footnote(true));
+        Assert.Contains("Praful e mutat spre negrul hartiei, cat poate curba", CurveTexts.Footnote(true, stoppedShort: true));
+        CurveSuggestion shortOne = s with { Evidence = s.Evidence with { Dust = stopped } };
+        Assert.Contains(CurveTexts.EvidenceLines(shortOne), l => l.EndsWith("; mai departe de atat curba n-ar mai urca lin"));
+
+        // The lifted dust reads as the lowered one does.
+        Assert.False(s.Evidence.Dust.StoppedShort);
+        Assert.Contains("praful pe negrul hartiei: de la L* 7.7 la 9.0 (negrul hartiei e L* 9.0 la Dmax 2.0)", CurveTexts.EvidenceLines(s));
+        Assert.Contains(CurveTexts.EvidenceLines(s), l => l.StartsWith("zgomotul din praf scade cu "));
+    }
+
+    [Fact]
+    public void R143_TheNoiseCheckIsSilentWhenTheImageWasOverTheTargetBeforeTheCurve()
+    {
+        // The reference FITS: 2.04 levels as it is, over the print target's 1.5 before any curve.
+        AnalysisResult a = Band();
+        var over = new NoiseResult { SmoothTiles = Thresholds.NoiseMinTiles, SigmaMedianLsb = 2.04 };
+        CurveEvidence With(NoiseResult n, double gain) => new() { NoiseGain = gain, NoiseAfterLsb = n.SigmaMedianLsb * gain };
+
+        // A curve that lowers the sky's noise, and one that raises it: neither is why it is over.
+        Assert.DoesNotContain(CurveTexts.PaperChecks(a.Simulation, over, With(over, 0.95)), r => r.Topic == Topic.Denoise);
+        Assert.DoesNotContain(CurveTexts.PaperChecks(a.Simulation, over, With(over, 1.26)), r => r.Topic == Topic.Denoise);
+
+        // At the target's upper bound before, over it after: the curve is the cause, and a gentler one helps.
+        var edge = new NoiseResult { SmoothTiles = Thresholds.NoiseMinTiles, SigmaMedianLsb = Thresholds.NoisePrintHiLsb };
+        Recommendation check = Assert.Single(CurveTexts.PaperChecks(a.Simulation, edge, With(edge, 1.1)), r => r.Topic == Topic.Denoise);
+        Assert.Contains("alege o varianta mai blanda", check.Text);
+        Assert.DoesNotContain(CurveTexts.PaperChecks(a.Simulation, edge, With(edge, 1.0)), r => r.Topic == Topic.Denoise);
+    }
+
+    [Fact]
+    public void R184_ADustThatEndsWithinTheToleranceOfPaperBlackHasArrived()
+    {
+        CurveAnchors a = ReferenceAnchors;
+        double dust = ColorMath.LstarOfGrayLevel(a.Dust * 255);
+
+        // Paper blacks ever lower, until the aimed move is no longer whole: the first one cut is
+        // cut by a hair, and a dust that close to paper black is on it.
+        DustMove? cut = null;
+        double black = 0, after = 0;
+        for (double b = 2.6; b > 0.5 && cut == null; b -= 0.01)
+        {
+            DustMove m = CurveAdvisor.AimDust(a, BandLabels, ReferenceHold, dust, b, GreyDust(a));
+            double landed = ColorMath.LstarOfGrayLevel(m.DustOutput * 255);
+            if (landed > b + 0.005) { cut = m; black = b; after = landed; }
+        }
+        Assert.NotNull(cut);
+        Assert.InRange(after - black, 0.005, Thresholds.CurveDustAimTolerance);
+        Assert.False(cut!.StoppedShort);
+
+        // Further than the tolerance from paper black, it stopped short.
+        DustMove far = CurveAdvisor.AimDust(a, BandLabels, ReferenceHold, dust, black - 1, GreyDust(a));
+        Assert.True(ColorMath.LstarOfGrayLevel(far.DustOutput * 255) - (black - 1) > Thresholds.CurveDustAimTolerance);
+        Assert.True(far.StoppedShort);
+    }
+
+    [Fact]
+    public void R184_OnASkyWithItsOwnSpreadTheRunHoldsItsDarkEndAndAddsTheHelperWhenItIsNeeded()
+    {
+        // Paper black at L* 3.6: the dust lowered, the sky's dark end a point of its own.
+        AnalysisResult a = AnalysisRun.Execute(DustStripeSceneWithASpreadSky(), "memorie", new Parameters { DmaxOverride = 2.4 });
+        Assert.Equal(DustSource.DustClass, a.Simulation.Map.DustSource);
+        LstarRange wide = a.Simulation.AsIsDust.SkyWide;
+        Assert.True(wide.High - wide.Low > 1, "the sky has no spread");
+        CurveSet moved = Moved(a);
+        Assert.True(moved.DustOnPaperBlack, moved.DustMoveRefusal);
+        double hold = ColorMath.GrayLevelOfLstar(wide.Low) / 255;
+        Assert.InRange(hold, moved.Anchors.Dust + 0.01, moved.Anchors.Sky - 0.001);
+        foreach (CurveSuggestion s in moved.Suggestions)
+        {
+            CurvePoint held = Assert.Single(s.Curve.Points, q => q.Extra && q.Label == "cer inchis");
+            Assert.Equal(hold, held.X, 9);
+            Assert.Equal(held.X, held.Y);
+            CurvePoint dust = s.Curve.Points.Single(q => q.Label == "praf");
+            // The dust's noise is the stretch from the dust's point to the held one, not to the sky's.
+            Assert.Equal(100 * ((hold - dust.Y) / (hold - dust.X) - 1), s.Evidence.Dust.DustNoiseChangePct, 6);
+            // And the sky's noise takes the mean slope over the sky's range when that is the larger.
+            double lo = ColorMath.GrayLevelOfLstar(wide.Low) / 255, hi = ColorMath.GrayLevelOfLstar(wide.High) / 255;
+            double mean = (s.Curve.Map(hi) - s.Curve.Map(lo)) / (hi - lo);
+            Assert.Equal(Math.Max(s.Curve.Slope(moved.Anchors.Sky), mean), s.Evidence.NoiseGain, 9);
+            Assert.InRange(s.Evidence.Dust.LstarAfter, a.Simulation.PaperBlackLstar, a.Simulation.PaperBlackLstar + 0.05);
+            Assert.InRange(s.Evidence.LstarAfter[1] - s.Evidence.LstarBefore[1], -0.3, 0.3);
+        }
+
+        // A blacker paper (L* 2.3): the spline needs the point under the dust, and gets it.
+        AnalysisResult deep = AnalysisRun.Execute(DustStripeSceneWithASpreadSky(), "memorie", new Parameters { DmaxOverride = 2.6 });
+        CurveSet helped = Moved(deep);
+        Assert.True(helped.DustOnPaperBlack, helped.DustMoveRefusal);
+        foreach (CurveSuggestion s in helped.Suggestions)
+        {
+            Assert.True(s.Curve.IsSuggestible);
+            CurvePoint dust = s.Curve.Points.Single(q => q.Label == "praf");
+            CurvePoint helper = Assert.Single(s.Curve.Points, q => q.Extra && q.Label == "sub praf");
+            Assert.Equal(dust.X * Thresholds.CurveDustHelperFraction, helper.X, 12);
+            Assert.Equal(dust.Y * Thresholds.CurveDustHelperFraction, helper.Y, 12);
+            Assert.Single(s.Curve.Points, q => q.Extra && q.Label == "cer inchis");
+            Assert.Equal(5, s.Evidence.LstarAfter.Count);
+        }
+    }
+
+    [Fact]
+    public void R143_TheNoiseInTheSkyIsWrittenAsAPercentage()
+    {
+        CurveSuggestion s = Suggest(Band()).Suggestions[2];
+        CurveSuggestion With(double gain) => s with { Evidence = s.Evidence with { NoiseGain = gain } };
+        Assert.Contains("zgomotul din cer creste cu 26 %", CurveTexts.EvidenceLines(With(1.26)));
+        Assert.Contains("zgomotul din cer scade cu 14 %", CurveTexts.EvidenceLines(With(0.86)));
+        Assert.Contains("zgomotul din cer creste cu 0 %", CurveTexts.EvidenceLines(With(1.0)));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R185_TheDustMovesTextsAreInPlainWords(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        CurveAnchors a = ReferenceAnchors;
+        var texts = new List<string>();
+        CurveSet moved = Moved(DustStripes(2.4));
+        texts.Add(moved.Footnote);
+        texts.Add(Suggest(DustStripes(2.4)).Footnote);
+        foreach (CurveSuggestion s in moved.Suggestions)
+        {
+            texts.AddRange(CurveTexts.EvidenceLines(s));
+            texts.AddRange(CurveTexts.History(s.Name, s.Curve, s.Evidence.Dust));
+            texts.AddRange(s.Curve.Points.Select(p => p.Label));
+        }
+        texts.Add(CurveAdvisor.DustMoveProblem(CurvePurpose.Screen, null, a, ReferenceHold, 7.7, 3.6));
+        foreach (int dustPatches in new[] { 0, 3, 10 })
+            texts.Add(CurveTexts.DustMoveNoDustZone(new SimulationResult
+            {
+                Map = new DustMap { Cols = 10, Rows = 10, Side = 8, Stride = 4, Classes = new PatchClass[100], Clouds = Array.Empty<DustCloud>(), NoiseThreshold = 1, DustSource = DustSource.DarkestSky },
+                AsIsDust = new DustStats { DustPatchCount = dustPatches },
+            }));
+        texts.Add(CurveAdvisor.DustMoveProblem(CurvePurpose.Print, null, a with { Dust = 0 }, ReferenceHold, 0, 3.6));
+        texts.Add(CurveAdvisor.DustMoveProblem(CurvePurpose.Print, null, a, a.Dust, 7.7, 3.6));
+        texts.Add(CurveAdvisor.DustMoveProblem(CurvePurpose.Print, null, a, ReferenceHold, 7.7, 14.5));
+        texts.Add(CurveAdvisor.DustMoveProblem(CurvePurpose.Print, null, a, ReferenceHold, 3.62, 3.6));
+        texts.Add(CurveTexts.DustMoveNotSmooth);
+        var stopped = new DustMoveFigures { LstarBefore = 3.0, LstarAfter = 7.0, PaperBlackLstar = 9.0, Dmax = 2.0, StoppedShort = true };
+        CurveSuggestion shortOne = moved.Suggestions[0] with { Evidence = moved.Suggestions[0].Evidence with { Dust = stopped } };
+        IReadOnlyList<string> shortHistory = CurveTexts.History(shortOne.Name, shortOne.Curve, stopped);
+        Assert.All(shortHistory, l => Assert.True(l.Length <= 72, l));
+        var shortTexts = new List<string> { CurveTexts.Footnote(true, stoppedShort: true) };
+        shortTexts.AddRange(CurveTexts.EvidenceLines(shortOne));
+        shortTexts.AddRange(shortHistory);
+        shortTexts.AddRange(CurveTexts.PaperChecks(DustStripes(2.0).Simulation, null, shortOne.Evidence).Select(r => r.Text + " " + r.Because));
+        Assert.Contains(shortTexts, t => t.Contains(english ? "after the curve" : "dupa curba"));
+        Assert.Contains(shortTexts, t => t.Contains(english ? "moved towards" : "mutat spre"));
+        foreach (DustMethod method in new[] { DustMethod.Band, DustMethod.Sky })
+            texts.Add(CurveTexts.PointsNote(method, true, heldRow: true, helperRow: true));
+        texts.AddRange(shortTexts);
+
+        // The curve window's note explains a row only on a curve that has it.
+        string heldWord = english ? "held in place" : "tinuta pe loc", helperWord = english ? "smooth towards black" : "lina spre negru";
+        Assert.DoesNotContain(heldWord, CurveTexts.PointsNote(DustMethod.Band, true));
+        Assert.DoesNotContain(helperWord, CurveTexts.PointsNote(DustMethod.Band, true));
+        Assert.Contains(heldWord, CurveTexts.PointsNote(DustMethod.Band, true, heldRow: true));
+        Assert.DoesNotContain(helperWord, CurveTexts.PointsNote(DustMethod.Band, true, heldRow: true));
+        Assert.Contains(helperWord, CurveTexts.PointsNote(DustMethod.Band, true, helperRow: true));
+        Assert.DoesNotContain(heldWord, CurveTexts.PointsNote(DustMethod.Band, true, helperRow: true));
+        // Every refusal and both footnotes are there to be read: none came back empty.
+        Assert.Equal(2, texts.Take(2).Count(t => !string.IsNullOrWhiteSpace(t)));
+        Assert.All(texts.Skip(texts.Count - shortTexts.Count - 11), t => Assert.False(string.IsNullOrWhiteSpace(t)));
+
+        var methodWords = new System.Text.RegularExpressions.Regex(
+            @"\b(ancor\w*|anchors?|percentil\w*|median\w*|LSB|panta|slope|clas[ae]|clasele|class|classes|modelat|modelled|vizibilitate|visibility|plafon|ceiling|crescatoare|increasing|codarea|encoding|gamutul hartiei|paper gamut|control points|puncte de control)\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        Assert.All(texts.Where(t => t != null), t => Assert.False(methodWords.IsMatch(t), t));
+    }
 }

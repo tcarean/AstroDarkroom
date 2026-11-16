@@ -65,8 +65,15 @@ the owner's earlier curve, the anchors and the recipe on the band scene of `WcsF
 striped frame without a WCS, and the saved FITS against hand-built FITS and PNG files.
 `CurvesTabTests` drives the tab's view-model through `Compute(w, h)`, the synchronous body of
 the computation, and the automatic recompute through `SetGallerySize` and `Computation`. `ValidationTests` has a third kind of case, `curves`: an analysis, a curve run
-for print (with the parameter `icc`, a profile beside the image, for the gamut figure) and a
+for print (with the parameter `icc`, a profile beside the image, for the gamut figure; with
+`dustOnPaperBlack`, the dust move, whose figures are added only then, V-017) and a
 save of the last suggestion into a temporary folder, with the input hashed before and after.
+The dust move (R-184) is tested at three levels: `CurveAdvisor.AimDust` and `DustMoveProblem`
+on the reference FITS's anchors with a grey dust passed as the measurement (the aim, the helper,
+the move that stops short, each refusal), `CurveRun.Execute` on a striped frame whose dust column
+is 6 % of the patches at L\* 7.7 (lowered at Dmax 2.4, lifted at 2.0, refused at 1.2), and the
+box of R-185 on the same frame in `CurvesTabTests`. The tests of the plain gallery there untick
+the box first: on the band scene the move can be had, and the box is ticked at start.
 
 ## The paper fit in the tests (ADR 0083)
 

@@ -8,6 +8,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- **Put dust on paper black**, a box on the Curves Editing tab, ticked at start (R-184, R-185,
+  ADR 0101): for print, every suggested curve also puts the dust on the black of the paper,
+  lowered from a bright stretch or lifted from under it, with the dark part of the sky held in
+  place, so the dust stands out from the sky as much as the paper allows; the same move in
+  every strength. The evidence says where the dust went and, in percent, what it gains on paper
+  and what it costs in the dust. The box is unticked and greyed, with the reason beside it, for
+  the screen, on an image without enough dust and when the sky itself is too close to the
+  paper's black.
+
 - A ninth tab, **Crop with aspect ratio** (`Decupare cu raport de aspect`), for a frame you
   already have: type its width and height and a rectangle of those proportions appears over
   the image, moved by dragging inside it and resized from its corners; **Save as...** writes
@@ -25,6 +34,20 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- Under a suggested curve, the noise of the sky is given in percent (`the noise in the sky grows
+  by 26 %`) instead of a factor and a figure on the level scale (R-143, ADR 0101).
+- The warning under a suggested curve that the noise passes the print target appears only when
+  the curve is what takes it past: an image whose noise is over the target before any curve no
+  longer gets it on every curve, against what the report says of the same noise (R-143, ADR 0101).
+- In the curve window, chart labels that would run over each other start one under the other
+  (R-147).
+
+### Internal
+
+- The validation records were made exact: 191 of the 1448 recorded figures, on eleven cases, had
+  drifted by up to 0.0097 inside the tolerance of 0.01 through earlier changes and are recorded
+  again as measured, so that a case sees a change under the tolerance too
+  (`docs/validation.md`, History, 2026-11-16).
 - A patch lighter than the average sky is no longer counted as dust, however bright its
   surroundings (R-044, ADR 0099): the faint edge of a nebula, or a lane of the Milky Way band
   lighter than the sky outside it, goes back to nebula, band or sky. The Dust / sky map, the
@@ -250,6 +273,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   them; the report keeps its table (R-113, R-130; ADR 0052).
 
 ### Fixed
+
+- A disabled check box is dimmed, as the disabled buttons are: it used to keep the brightness of
+  its text and read as one that can be ticked (CR-022 of the code review of 2026-11-13; the
+  labels box of the Dust / sky map of an image without a WCS, the map's boxes of the single
+  clouds while the clouds are hidden, and the new box of the Curves Editing tab).
+- The red sentence of the Curves Editing and Colours for paper tabs, and the reason beside the
+  box, wrap inside the tab instead of running past its right edge (R-146, R-178; CR-031).
+- **Save as...** on the Curves Editing tab writes the curve that was on screen when it was
+  pressed. A recompute landing under the dialog used to send the gallery back to the original,
+  and the save then wrote nothing and showed an internal error (R-146; CR-050).
 
 - The Colours for paper tab asks the Soft proof tab's own judge about every pixel, not only
   about the ones it moved (R-175, ADR 0093; CR-001 of the code review of 2026-11-13). A few

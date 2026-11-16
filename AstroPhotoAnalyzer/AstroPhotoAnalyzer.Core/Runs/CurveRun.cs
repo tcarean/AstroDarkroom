@@ -22,8 +22,8 @@
 // analysis, started by the window once the other tabs are filled (ADR 0051), and again when
 // the Editare Curbe tab's area allows a finer preview (ADR 0084), on the analysis's result (the
 // raster, the patch map, the noise, the parameters). The console does not call it. The purpose
-// (print or screen)
-// changes no curve: it adds the paper checks and the gamut figure to the evidence.
+// (print or screen) adds the paper checks and the gamut figure to the evidence; the curves are
+// the same for both, except that the dust move (R-184), asked for apart, exists for print alone.
 
 using System;
 using System.Collections.Generic;
@@ -68,6 +68,22 @@ namespace AstroPhotoAnalyzer
         /// Thresholds.CurvePreviewMaxPixels, so the view must enlarge them (ADR 0084).
         /// </summary>
         internal bool PreviewCapped { get; init; }
+
+        /// <summary>
+        /// The curves of the set carry the dust move (R-184): it was asked for and it applies.
+        /// </summary>
+        internal bool DustOnPaperBlack { get; init; }
+
+        /// <summary>
+        /// Why the dust move cannot be had on this image or for this purpose, for the user,
+        /// whether it was asked for or not; null when it can.
+        /// </summary>
+        internal string DustMoveRefusal { get; init; }
+
+        /// <summary>
+        /// The sentence under the evidence: what the curves of the set move and what they hold.
+        /// </summary>
+        internal string Footnote { get; init; }
     }
 
     /// <summary>
@@ -139,6 +155,11 @@ namespace AstroPhotoAnalyzer
         /// </param>
         /// <param name="maxWidth">The gallery area's width, in screen pixels.</param>
         /// <param name="maxHeight">The gallery area's height, in screen pixels.</param>
+        /// <param name="dustOnPaperBlack">
+        /// Asks for the dust move of R-184. Where it cannot be had (the screen, an image it does
+        /// not apply to) the curves are the plain ones and <see cref="CurveSet.DustMoveRefusal"/>
+        /// says why.
+        /// </param>
         /// <param name="progress">
         /// Told each stage as it starts: "ancore", "gamut" (when the table is built), then each
         /// suggestion's name; null for none.
@@ -146,7 +167,7 @@ namespace AstroPhotoAnalyzer
         /// <returns>
         /// The set: with the suggestions, or with <see cref="CurveSet.Problem"/> set and none.
         /// </returns>
-        internal static CurveSet Execute(AnalysisResult a, CurvePurpose purpose, int maxWidth, int maxHeight, IProgress<string> progress = null)
+        internal static CurveSet Execute(AnalysisResult a, CurvePurpose purpose, int maxWidth, int maxHeight, bool dustOnPaperBlack = false, IProgress<string> progress = null)
         {
             using RunClock clock = RunClock.Start(Log, "curves", "path=" + LogText.Str(a.Path) + " purpose=" + purpose
                 + " preview=" + LogText.Int(maxWidth) + "x" + LogText.Int(maxHeight));
@@ -158,7 +179,7 @@ namespace AstroPhotoAnalyzer
             progress?.Report(Tr.Pick("anchors", "ancore"));
             Raster sub = RasterOps.Subsample(r, Thresholds.TonalStride);
             IReadOnlyList<string> labels = map.ClassNames;
-            double[] before = CurveAdvisor.ClassLevels(sub, map, black);
+            double[] before = CurveAdvisor.ClassLevels(sub, map, black, out DustStats asIs);
             CurveAnchors anchors = CurveAdvisor.Anchors(before);
             Raster original = RasterOps.Subsample(r, PreviewStride(r, maxWidth, maxHeight));
             var set = new CurveSet
@@ -170,6 +191,7 @@ namespace AstroPhotoAnalyzer
                 OriginalPreview = original,
                 SourceSentence = CurveTexts.AnchorSource(map, sim.MethodNote),
                 PreviewCapped = PreviewCapped(r, maxWidth, maxHeight),
+                Footnote = CurveTexts.Footnote(false),
             };
             clock.Lap("anchors");
             if (Log.IsDebugEnabled)
@@ -182,7 +204,29 @@ namespace AstroPhotoAnalyzer
                 clock.Done("refused: " + problem);
                 return set with { Problem = problem };
             }
-            IReadOnlyList<(string Name, ToneCurve Curve)> curves = CurveAdvisor.Curves(anchors, labels);
+            // The dust move (R-184): whether it can be had is told always, so that the window knows
+            // what its box may offer; it is aimed only when asked for. The sky's dark end is the
+            // low end of the sky's wide range (Thresholds.CurveSkyHoldCut).
+            double hold = CurveAdvisor.Gray(asIs.SkyWide.Low);
+            string refusal = CurveAdvisor.DustMoveProblem(purpose, CurveTexts.DustMoveNoDustZone(sim), anchors, hold, asIs.LstarDust, black);
+            DustMove move = null;
+            if (dustOnPaperBlack && refusal == null)
+            {
+                move = CurveAdvisor.AimDust(anchors, labels, hold, asIs.LstarDust, black, c => CurveAdvisor.ClassLevels(c.Apply(sub), map, black)[0]);
+                clock.Lap("dust");
+            }
+            IReadOnlyList<(string Name, ToneCurve Curve)> curves = CurveAdvisor.Curves(anchors, labels, move);
+            if (dustOnPaperBlack && refusal == null && (move == null || curves.Count == 0))
+            {
+                // No part of the move leaves a curve to suggest: the plain curves, and the reason.
+                refusal = CurveTexts.DustMoveNotSmooth;
+                move = null;
+                curves = CurveAdvisor.Curves(anchors, labels);
+            }
+            if (Log.IsDebugEnabled)
+                Log.Debug("dust move: asked=" + LogText.Yes(dustOnPaperBlack) + " hold=" + LogText.Num(hold) + " paperBlack=" + LogText.Num(black)
+                    + (move == null ? " none" : " " + LogText.Figures(move)) + " refusal=" + LogText.Str(refusal));
+            set = set with { DustOnPaperBlack = move != null, DustMoveRefusal = refusal, Footnote = CurveTexts.Footnote(move != null, move != null && move.StoppedShort) };
             if (curves.Count == 0)
             {
                 clock.Done("refused: " + CurveTexts.NoMonotoneCurve);
@@ -216,7 +260,10 @@ namespace AstroPhotoAnalyzer
             {
                 progress?.Report(name);
                 Raster curvedSub = curve.Apply(sub);
-                CurveEvidence e = CurveAdvisor.Measure(curve, sub, curvedSub, map, before, clippedBefore, anchors.Sky, a.Noise, black);
+                CurveEvidence e = CurveAdvisor.Measure(curve, sub, curvedSub, map, before, clippedBefore, anchors.Sky, a.Noise, black, move == null ? null : asIs.SkyWide);
+                // The move's figures before the paper checks, which read them.
+                if (move != null)
+                    e = e with { Dust = CurveAdvisor.DustFigures(move, anchors, asIs, DustAnalyzer.Measure(DustAnalyzer.PatchLstars(curvedSub), map, black), black, sim.Dmax) };
                 if (purpose == CurvePurpose.Print)
                     e = e with
                     {
@@ -238,9 +285,11 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The screen set of a set computed for print: the same curves, the same previews, the
         /// evidence without the paper checks and without the gamut. The window computes once, for
-        /// print, and changes the purpose without computing anything more.
+        /// print, and changes the purpose without computing anything more. Meant for a set
+        /// without the dust move, which the screen never shows (R-185): the curves are kept as
+        /// they are, so a set with the move would stay one.
         /// </summary>
-        /// <param name="print">A set computed for print; it is not changed.</param>
+        /// <param name="print">A set computed for print, without the dust move; it is not changed.</param>
         /// <returns>A new set, its purpose Screen; its problem, if any, kept.</returns>
         internal static CurveSet ForScreen(CurveSet print)
         {
@@ -250,7 +299,7 @@ namespace AstroPhotoAnalyzer
                 {
                     Evidence = s.Evidence with { PaperChecks = Array.Empty<Recommendation>(), GamutBefore = null, Gamut = null, GamutNote = null },
                 });
-            return print with { Purpose = CurvePurpose.Screen, Suggestions = suggestions };
+            return print with { Purpose = CurvePurpose.Screen, Suggestions = suggestions, DustMoveRefusal = CurveTexts.DustMoveOnlyForPrint };
         }
     }
 
@@ -288,7 +337,7 @@ namespace AstroPhotoAnalyzer
         /// </param>
         internal static void Save(AnalysisResult a, CurveSuggestion s, string targetPath)
         {
-            IReadOnlyList<string> history = CurveTexts.History(s.Name, s.Curve);
+            IReadOnlyList<string> history = CurveTexts.History(s.Name, s.Curve, s.Evidence?.Dust);
             Guarded(a, targetPath, Log, (target, sourceFits) =>
             {
                 FitsWriter.Save(a.Raster, s.Curve, sourceFits, history, target);

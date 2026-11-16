@@ -67,19 +67,20 @@ stops on a drift instead of editing them.
 | V-001 | the PNG; `dmax` 2.0: the full frame, the baryta of before ADR 0028 (paper black L\* 9.0), the natural distance | every figure of the reference run on the full frame: tones, L\*, the simulation (the dust from the darkest sky, L\* 4.4 since ADR 0085 (4.2 under ADR 0033; the dust class is 4.2 % of the patches since ADR 0099, under the 5 % floor; 7.8 % before, its 25 % percentile, 6.1, lighter than the darkest sky), the sky's median 9.1 (9.0 before ADR 0099), over the paper black of 9.0, so the verdict is ATENTIE again (PROBLEMA under ADR 0033, when the sky was 8.9); the recommended row 0.16, the exact target, the Dmax figures), noise, plateau, rounding, stress test, JPEG and TIFF, stars (6274 at a median of 3.11 px since ADR 0054; 7163 at 3.13 before, the faint ones under 12 sigmas now left out), background colour, the bottom-right corner, the size table's reference row, the overall verdict |
 | V-002 | the PNG; `aspect` 50:35, `distanceM` 1.5 | the run of the acceptance record, the hallway scenario: the crop, the 70 cm row, the recommended width, the verdict |
 | V-003 | the PNG; `dmax` 2.35 | the figure measured on 2026-10-01 for a baryta paper that reaches Dmax 2.35 on a good printer: 1.3 % of pixels below paper black, and, since ADR 0025, the dust (L\* 4.1) above paper black (L\* 4.0), so the image is print-safe as it is; since ADR 0029 the sky is under the visibility threshold; since ADR 0033 the dust is L\* 4.2 and the sky 8.9, since ADR 0085 4.4 and 9.0, since ADR 0099 4.4 and 9.1, and the recommended row is 0.16 (sky L\* 16.1); a guard on the paper-black maths more than on the image |
-| V-004 | the plate-solved FITS; `dmax` 2.0 | the WCS, the classes and the catalogue (ADR 0026): 1941 dust patches of 21 840 since ADR 0099 (8.9 %: 4 sigmas of the sky's noise, 4.5 L\*, under the band's local level, and no lighter than the sky's median; 2252, 10.3 %, before it; 2062 with the fixed 5 L\* before ADR 0086), the dust at L\* 7.7 (the 25 % percentile of the dust class; 8.1 before ADR 0099, 7.9 before ADR 0086) and the sky at 17.6 (the median of the sky class); the band 22.5 % and the bright clouds 2.4 % of the patches (21.1 and 2.4 before ADR 0099, 22.3 and 2.0 before ADR 0086); 397 clouds in the frame, 114 cloud rows; the recommended row 0.19, the ranges of R-046 as the image is (the dust class 7.7 to 12.9 and 5.8 to 14.9, the sky 15.4 to 19.0 and 14.0 to 20.0); the exact target 0.184 (0.205 at Dmax 1.9, 0.163 at 2.1; 0.186 / 0.208 / 0.166 when re-measured on 2026-11-15, inside the tolerance, so the record keeps the old figures), the Dmax from which it passes as is 2.07 (2.05 before ADR 0099); the five darkest clouds by name (LDN 42 (B78) at 1.0, LDN 1769 (B275, B278) at 3.2, LDN 1793, LDN 572, LDN 559); since ADR 0054, 5 stars on this starless frame (6297 at 2.38 px before: the grain) and the size table on the dpi rule of R-074, the reference row 80 cm; and every other figure of the run |
-| V-005 | the PNG; none: the full frame on the default medium, baryta at Dmax 2.4 (ADR 0028) | what the owner's paper is told: paper black L\* 3.60, 0.81 % of pixels under it, the dust (L\* 4.40 since ADR 0085, 4.18 before: the darkest sky; the dust class is 4.2 % of the frame since ADR 0099, the darker parts of the Rift and the Pipe, under the 5 % floor, so it does not decide; 7.8 % before, with a 25 % percentile, 6.1, lighter than the darkest sky; under ADR 0033 the class was the Pipe's cores, 0.6 %) above it, so the dust is print-safe as it is; the dust class's ranges, 4.9 to 7.6 and 3.1 to 8.5, which the figure 4.4 lies under, and the sky's, 7.8 to 10.8 and 6.2 to 14.5 (R-046); the sky (L\* 9.1, the median of the sky class; 9.0 before ADR 0099) is under the visibility threshold L\* 15 (ADR 0029), which it reaches at 0.152, so the recommended row is 0.16 (dust L\* 9.4, sky L\* 16.1, 30.7 % of pixels still under L\* 15); the exact target 0.093 (0.108 at Dmax 2.3, 0.079 at 2.5; 0.090 / 0.104 / 0.076 when re-measured on 2026-11-06, inside the tolerance, so the record keeps the old figures), the Dmax from which it passes as is 2.31; the overall verdict ATENTIE. Only the tonal and simulation figures and the verdict: the rest are V-001's |
+| V-004 | the plate-solved FITS; `dmax` 2.0 | the WCS, the classes and the catalogue (ADR 0026): 1941 dust patches of 21 840 since ADR 0099 (8.9 %: 4 sigmas of the sky's noise, 4.5 L\*, under the band's local level, and no lighter than the sky's median; 2252, 10.3 %, before it; 2062 with the fixed 5 L\* before ADR 0086), the dust at L\* 7.7 (the 25 % percentile of the dust class; 8.1 before ADR 0099, 7.9 before ADR 0086) and the sky at 17.6 (the median of the sky class); the band 22.5 % and the bright clouds 2.4 % of the patches (21.1 and 2.4 before ADR 0099, 22.3 and 2.0 before ADR 0086); 397 clouds in the frame, 114 cloud rows; the recommended row 0.19, the ranges of R-046 as the image is (the dust class 7.7 to 12.9 and 5.8 to 14.9, the sky 15.4 to 19.0 and 14.0 to 20.0); the exact target 0.1863 (0.2075 at Dmax 1.9, 0.1660 at 2.1; 0.1836 / 0.2047 / 0.1633 in the record until 2026-11-16), the Dmax from which it passes as is 2.07 (2.05 before ADR 0099); the five darkest clouds by name (LDN 42 (B78) at 1.0, LDN 1769 (B275, B278) at 3.2, LDN 1793, LDN 572, LDN 559); since ADR 0054, 5 stars on this starless frame (6297 at 2.38 px before: the grain) and the size table on the dpi rule of R-074, the reference row 80 cm; and every other figure of the run |
+| V-005 | the PNG; none: the full frame on the default medium, baryta at Dmax 2.4 (ADR 0028) | what the owner's paper is told: paper black L\* 3.60, 0.81 % of pixels under it, the dust (L\* 4.41 since ADR 0085, 4.18 before: the darkest sky; the dust class is 4.2 % of the frame since ADR 0099, the darker parts of the Rift and the Pipe, under the 5 % floor, so it does not decide; 7.8 % before, with a 25 % percentile, 6.1, lighter than the darkest sky; under ADR 0033 the class was the Pipe's cores, 0.6 %) above it, so the dust is print-safe as it is; the dust class's ranges, 4.9 to 7.6 and 3.1 to 8.5, which the figure 4.4 lies under, and the sky's, 7.8 to 10.8 and 6.2 to 14.5 (R-046); the sky (L\* 9.1, the median of the sky class; 9.0 before ADR 0099) is under the visibility threshold L\* 15 (ADR 0029), which it reaches at 0.152, so the recommended row is 0.16 (dust L\* 9.4, sky L\* 16.1, 30.7 % of pixels still under L\* 15); the exact target 0.0896 (0.1045 at Dmax 2.3, 0.0755 at 2.5; 0.0928 / 0.1080 / 0.0785 in the record until 2026-11-16), the Dmax from which it passes as is 2.31; the overall verdict ATENTIE. Only the tonal and simulation figures and the verdict: the rest are V-001's |
 | V-006 | the lab's profile `Hahnemuhle PRBaryta.icm`; kind `icc` | the Dmax read from a real v2 `lut16` printer profile (R-028): black at L\* 3.49 relative to paper white, Dmax 2.41, the figure ADR 0028 took baryta's default from; the name from the `desc` tag |
 | V-007 | `HARMAN_Canvas.icc`; kind `icc` | a paper with a weak black: L\* 20.84, Dmax 1.49; through the perceptual table the same profile would answer 2.46 |
-| V-008 | the plate-solved FITS; kind `curves`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-10-05: the suggested curves with the classes (R-140 to R-145, ADR 0032): anchors 0.091, 0.169, 0.306, 0.543, 0.720 (the dust's reads 0.090 when re-measured on 2026-11-16, inside the tolerance, so the record keeps 0.091); three suggestions, no `Maxima`; `Puternica` with the points 0.401, 0.753, 0.919, the five L\* from 7.7, 17.6, 32.9, 57.1, 74.6 to 7.7, 17.8, 43.0, 76.0, 90.5 since ADR 0099 (from 8.1, 17.6, 33.0, 57.1, 74.6 to 8.1, 17.8, 43.1, 76.0, 90.6 since ADR 0086, and from 7.9, 17.6, 33.2, 57.7, 74.6 to 7.9, 17.8, 43.4, 77.0, 90.8 before: the dust and bright-cloud classes moved), a noise gain of 1.26 (2.04 LSB to 2.58; 2.57 before ADR 0099) and 0.03 % clipped; 1.94 % of the pixels the baryta cannot hold as is (the whole colour difference after the compensated round trip over 4, ADR 0081, re-measured 2026-11-05; per class dust 12.2 % since ADR 0099 (10.6 % since ADR 0086), sky 1.1 %, band 0.2 %, bright clouds 0.2 %), 2.00 % after `Puternica`, per class; the saved FITS: every card kept, `BITPIX` -32, the same 270 869 760 bytes, the WCS read back, the input's hash unchanged; the preview 1460 px wide (stride 4 at the presumed area since ADR 0084; 1168 at stride 5 before) |
-| V-009 | the PNG; kind `curves` | measured 2026-10-05, re-measured 2026-10-06 (ADR 0033): the same without a WCS: the anchors from the sky-relative classes (0.057, 0.099, 0.236, 0.412, 0.593 since ADR 0085; 0.216 and 0.395 for the nebula and the bright nebula before); four suggestions, `Maxima` with the peaks at 0.892, a gain of 1.25 (1.29 before) and 0.18 % clipped against 0.10 %; one paper check on each (the sky at L\* 9.1); the saved file a float FITS of 5938 px, no WCS, the PNG's hash unchanged; the preview 1485 px wide (stride 4 since ADR 0084; 1188 at stride 5 before) |
+| V-008 | the plate-solved FITS; kind `curves`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-10-05: the suggested curves with the classes (R-140 to R-145, ADR 0032): anchors 0.0897, 0.1690, 0.3035, 0.5374, 0.7199 (0.0914, 0.3057 and 0.5431 for the dust, the band and the bright clouds in the record until 2026-11-16); three suggestions, no `Maxima`; `Puternica` with the points 0.3977, 0.7439, 0.9154 (0.4014, 0.7527, 0.9189 in the record until 2026-11-16), the five L\* from 7.7, 17.6, 32.9, 57.1, 74.6 to 7.7, 17.8, 43.0, 76.0, 90.5 since ADR 0099 (from 8.1, 17.6, 33.0, 57.1, 74.6 to 8.1, 17.8, 43.1, 76.0, 90.6 since ADR 0086, and from 7.9, 17.6, 33.2, 57.7, 74.6 to 7.9, 17.8, 43.4, 77.0, 90.8 before: the dust and bright-cloud classes moved), a noise gain of 1.26 (2.04 LSB to 2.58; 2.57 before ADR 0099) and 0.03 % clipped; 1.94 % of the pixels the baryta cannot hold as is (the whole colour difference after the compensated round trip over 4, ADR 0081, re-measured 2026-11-05; per class dust 12.2 % since ADR 0099 (10.6 % since ADR 0086), sky 1.1 %, band 0.2 %, bright clouds 0.2 %), 2.00 % after `Puternica`, per class; the saved FITS: every card kept, `BITPIX` -32, the same 270 869 760 bytes, the WCS read back, the input's hash unchanged; the preview 1460 px wide (stride 4 at the presumed area since ADR 0084; 1168 at stride 5 before) |
+| V-009 | the PNG; kind `curves` | measured 2026-10-05, re-measured 2026-10-06 (ADR 0033): the same without a WCS: the anchors from the sky-relative classes (0.0598, 0.1006, 0.2309, 0.4118, 0.5932; 0.0574, 0.0989 and 0.2356 for the first three in the record until 2026-11-16, since ADR 0085; 0.216 and 0.395 for the nebula and the bright nebula before); four suggestions, `Maxima` with the peaks at 0.8912, a gain of 1.257 (0.8917 and 1.2482 in the record until 2026-11-16; 1.29 before) and 0.18 % clipped against 0.10 %; one paper check on each (the sky at L\* 9.1); the saved file a float FITS of 5938 px, no WCS, the PNG's hash unchanged; the preview 1485 px wide (stride 4 since ADR 0084; 1188 at stride 5 before) |
 | V-010 | the Rosetta FITS; none | measured 2026-10-06 (ADR 0033): the sky-relative classes on a deep-sky frame without a WCS: 8325 patches, no cloud; sky 83.3 %, nebula 11.7 % (over the model by 3.2 L\*, 3 times the sky's noise since ADR 0085), bright nebula 3.6 % (over 13.7); the dust class 105 patches (1.3 % since ADR 0099, under the 5 % floor; 554 patches, 6.7 %, since ADR 0085, with the sky at 80.9 % and the nebula at 8.8 %; 18 patches, 0.2 %, under ADR 0033), so the dust is the darkest sky, L\* 6.1, and the sky 8.2 (8.1 before ADR 0099); the ranges of R-046: the dust class 7.1 to 7.8 and 6.6 to 8.0, the sky 7.4 to 9.8 and 6.8 to 14.3; the top-left corner flagged since ADR 0099, its red 3.0 levels under the sky's; paper black 3.6 on baryta; the recommended row 0.16 (the sky reaches L\* 15 at 0.154), the exact target 0.067 (0.079 at Dmax 2.3, 0.055 at 2.5), passes as is from Dmax 2.17; the overall verdict ATENTIE; since ADR 0054, 1 star on this starless frame (2858 at 2.62 px before: the grain) and the size table on the dpi rule; and every other figure of the run |
-| V-011 | the Rosetta FITS; kind `curves` | measured 2026-10-06: the curves anchored on the sky-relative classes: anchors 0.077, 0.093, 0.310, 0.445, 0.603 since ADR 0099 (0.321 for the nebula since ADR 0085; 0.272 and 0.419 for the nebula and the bright nebula under ADR 0033); four suggestions, `Puternica` with the points 0.461, 0.663, 0.812 and the five L\* from 6.1, 8.2, 33.6, 47.8, 63.5 to 6.2, 8.4, 47.7, 63.6, 78.6, a gain of 1.07 (the first point 0.480 and the nebula from 34.8 to 49.6 before ADR 0099; the sky's anchor and the other two points read 0.094, 0.661 and 0.809 when re-measured on 2026-11-15, inside the tolerance, so the record keeps the old figures); `Maxima` to 0.899 with 0.39 % clipped against 0.17 %; one paper check on each (the sky at L\* 8.2); the noise figure n/a (too little flat sky); the preview 1776 px wide (stride 2 on the 3551 px frame since ADR 0084; 1184 at stride 3 before) |
-| V-012 | the Orion FITS; kind `curves` | measured 2026-10-06: a frame at the ceiling: anchors 0.114, 0.137, 0.441, 0.755, 0.971 (0.365 and 0.738 for the nebula and the bright nebula under ADR 0033); the peaks over `CurvePeakTarget`, so no suggestion and the problem sentence naming the peaks' point, 0.971 and the target 0.92 (worded as of 2026-11-02, ADR 0076); the preview 782 px wide (stride 2 on the 1564 px frame since ADR 0084; 522 at stride 3 before) |
-| V-013 | the Veil FITS; none | measured 2026-10-11 (ADR 0037): the sky path on a frame inside the band but narrower than it: method `Sky` for the reason `NarrowField`, the patch centres spanning 10.9 degrees of latitude; sky 95.8 %, nebula 2.8 % (over the model by 2.5 L\*), bright nebula 0.5 %, peaks 0.1 % (since ADR 0085; 96.4 / 2.9 / 0.5 / 0.1 under ADR 0033); 20 125 patches, 6 clouds named (LDN 873 first, 68 patches, L\* 7.6), the dust class 167 patches (0.8 %, under the 5 % floor; 1 patch under ADR 0033), so the dust is the darkest sky, L\* 6.4 (6.3 before), and the sky 9.3; the ranges of R-046: the dust class 5.8 to 7.0 and 5.5 to 7.4, the sky 8.6 to 10.1 and 7.8 to 10.9; the recommended row 0.16 (the sky reaches L\* 15 at 0.155), the exact target 0.074 (0.072 when re-measured on 2026-11-06, inside the tolerance), passes as is from Dmax 2.15; no smooth tile for the noise; 1 star since ADR 0054 (22 485 at FWHM 2.18 px before: the grain of a starless frame) and the size table on the dpi rule, the reference row 70 cm; and every other figure of the run |
-| V-014 | the Veil FITS; kind `curves` | measured 2026-10-11: the curves anchored on the nebula's own classes: anchors 0.078, 0.102, 0.166, 0.359, 0.498; four suggestions, `Puternica` taking the five L\* from 6.4, 9.3, 17.9, 38.9, 53.2 to 6.6, 10.0, 23.9, 49.6, 63.7 with a noise gain of 1.18 (since ADR 0085; from 6.3, 9.3, 17.2, 38.8, 53.2 to 6.3, 10.0, 23.1, 49.4, 63.6 at 1.20 before), `Maxima` the peaks to 0.83 with a gain of 1.35; one paper check (the sky under L\* 15); the save keeps all 93 cards and the WCS; the preview 1401 px wide (stride 4 on the 5601 px frame since ADR 0084; 1121 at stride 5 before) |
+| V-011 | the Rosetta FITS; kind `curves` | measured 2026-10-06: the curves anchored on the sky-relative classes: anchors 0.077, 0.094, 0.310, 0.445, 0.603 since ADR 0099 (0.321 for the nebula since ADR 0085; 0.272 and 0.419 for the nebula and the bright nebula under ADR 0033); four suggestions, `Puternica` with the points 0.461, 0.661, 0.809 and the five L\* from 6.1, 8.2, 33.6, 47.8, 63.5 to 6.2, 8.4, 47.7, 63.6, 78.6, a gain of 1.06 (the first point 0.480 and the nebula from 34.8 to 49.6 before ADR 0099; the sky's anchor 0.0929, the other two points 0.6634 and 0.8117 and the gain 1.0663 in the record until 2026-11-16); `Maxima` to 0.8997 with 0.39 % clipped against 0.17 %; one paper check on each (the sky at L\* 8.2); the noise figure n/a (too little flat sky); the preview 1776 px wide (stride 2 on the 3551 px frame since ADR 0084; 1184 at stride 3 before) |
+| V-012 | the Orion FITS; kind `curves` | measured 2026-10-06: a frame at the ceiling: anchors 0.1147, 0.1392, 0.4406, 0.755, 0.971 (0.1143, 0.1371 and 0.4408 for the first three in the record until 2026-11-16; 0.365 and 0.738 for the nebula and the bright nebula under ADR 0033); the peaks over `CurvePeakTarget`, so no suggestion and the problem sentence naming the peaks' point, 0.971 and the target 0.92 (worded as of 2026-11-02, ADR 0076); the preview 782 px wide (stride 2 on the 1564 px frame since ADR 0084; 522 at stride 3 before) |
+| V-013 | the Veil FITS; none | measured 2026-10-11 (ADR 0037): the sky path on a frame inside the band but narrower than it: method `Sky` for the reason `NarrowField`, the patch centres spanning 10.9 degrees of latitude; sky 95.8 %, nebula 2.8 % (over the model by 2.5 L\*), bright nebula 0.5 %, peaks 0.1 % (since ADR 0085; 96.4 / 2.9 / 0.5 / 0.1 under ADR 0033); 20 125 patches, 6 clouds named (LDN 873 first, 68 patches, L\* 7.6), the dust class 167 patches (0.8 %, under the 5 % floor; 1 patch under ADR 0033), so the dust is the darkest sky, L\* 6.4 (6.3 before), and the sky 9.3; the ranges of R-046: the dust class 5.8 to 7.0 and 5.5 to 7.4, the sky 8.6 to 10.1 and 7.8 to 10.9; the recommended row 0.16 (the sky reaches L\* 15 at 0.155), the exact target 0.0721 (0.0736 in the record until 2026-11-16), passes as is from Dmax 2.15; no smooth tile for the noise; 1 star since ADR 0054 (22 485 at FWHM 2.18 px before: the grain of a starless frame) and the size table on the dpi rule, the reference row 70 cm; and every other figure of the run |
+| V-014 | the Veil FITS; kind `curves` | measured 2026-10-11: the curves anchored on the nebula's own classes: anchors 0.0794, 0.1025, 0.1715, 0.3592, 0.498 (0.0779, 0.1023, 0.1662 and 0.3585 for the first four in the record until 2026-11-16); four suggestions, `Puternica` taking the five L\* from 6.4, 9.3, 17.9, 38.9, 53.2 to 6.6, 10.0, 23.9, 49.6, 63.7 with a noise gain of 1.18 (since ADR 0085; from 6.3, 9.3, 17.2, 38.8, 53.2 to 6.3, 10.0, 23.1, 49.4, 63.6 at 1.20 before), `Maxima` the peaks to 0.83 with a gain of 1.35; one paper check (the sky under L\* 15); the save keeps all 93 cards and the WCS; the preview 1401 px wide (stride 4 on the 5601 px frame since ADR 0084; 1121 at stride 5 before) |
 | V-015 | the plate-solved FITS; kind `proof`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-10-30: the soft proof through the lab's baryta profile (R-160 to R-162, ADR 0066): the paper white of the `wtpt` tag L\* 97.19, a\* -0.01, b\* +1.11, shown as sRGB 248, 247, 245 under the simulation; the paper black L\* 3.49 at Dmax 2.41 (V-006); the proof 1946 px wide (stride 3); 1.90 % of its pixels outside the paper's gamut (ADR 0081, re-measured 2026-11-05; V-008 reads 1.94 % on the tonal subsample); the mean L\* of the proof 17.0 on `Perceptual`, 19.7 on `Relative`, 18.2 on `RelativeNoBpc` (18.0, 20.4 and 19.1 simulated): the three intents differ, and the compensated one keeps the most of the shadows |
 | V-016 | the plate-solved FITS; kind `gamutfit`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-11-14 (first 2026-11-06; re-recorded with ADR 0093): the paper fit through the lab's baryta profile (R-175 to R-177, ADR 0083): 1.94 % of the pixels outside as is, the Soft proof judge's own share (V-008's `curves.before.gamut.all`); `Exacta` touches 1.94 % and leaves 0.001 %, the chroma given up 0.63 at the median and 4.2 at the 99 % mark, 99.6 % of the pixels outside under L\* 15, none out of reach; `Lina` touches 3.81 % (0.43 at the median), `Foarte lina` 6.22 % (0.58); the recipe: a mask under L\* 12 (10.0 % of the pixels) at 70 % saturation leaves 5.0 % of them; the saved FITS 270869760 bytes, the saved TIFF 135437610 bytes, 16-bit, profile `sRGB`, the two within 0.5 16-bit levels of each other |
+| V-017 | the plate-solved FITS; kind `curves`, `dmax` 2.4, `dustOnPaperBlack` | measured 2026-11-16: the suggested curves with the dust move (R-184, ADR 0101) on a paper whose black is L\* 3.60: the move applied to `Blanda`, `Medie` and `Puternica` alike, nine control points each, the dust's point 0.090 > 0.032 with the helper under it (0.067 > 0.024) and the sky's dark end held at 0.140; the dust from L\* 7.67 to 3.60, 3.60 and 3.60 (3.5961, 3.5996, 3.6030: aimed on `Blanda`, none under paper black), the sky from 17.58 to 17.53, 17.59 and 17.65; on paper the difference between the dust and the sky +40.6, +41.2 and +41.7 %; the noise in the dust +115 %; the patches under paper black 0.19 % before, 2.22 % after; the sky's noise gain 0.960, 0.987 and 1.015, the larger of the slope at the sky and the mean slope over its wide range (the slope alone reads 0.76 to 0.82); above the sky the points V-008 has without the move (`Puternica` 0.3977, 0.7439, 0.9154); the saved FITS keeps every card and reads back as the curve applied. |
 
 The figures recorded for each case are in `validation.json`; the table below, from the reference
 run of 2026-09-21, gives the same measurements made by hand in the originating conversation.
@@ -216,6 +217,168 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
+- 2026-11-16 (the records made exact, at the owner's word of that day): 191 of the 1448 recorded
+  figures differed from what the build measures, each by at most 0.0097, inside the tolerance of
+  0.01, so every case passed while its record was a few thousandths off: figures that earlier
+  changes (ADR 0085, 0086, 0099 and the fixes of the review list among them) had moved without
+  taking them over the tolerance, and which were therefore never recorded again. The review of
+  the dust move's branch met them in V-008, whose plain curve reads 0.398, 0.744, 0.915 where the
+  record said 0.401, 0.753, 0.919: a case in that state cannot see a change under 0.01. All 191
+  are recorded as measured on the branch of ADR 0101 (two runs of the 17 cases, 1950 figures
+  printed, the same in both but one), `measuredOn` set to this day on the eleven cases they
+  belong to. None of them comes from that branch: `main` (f8641aa9), measured the same day in
+  a worktree of its own, prints the same 1857 figures for its 16 cases as the branch does,
+  but the three `paperChecks` counts of V-008 the branch changed on purpose and one figure of
+  V-016. V-016 is left as recorded: `gamutfit.Lina.lostP99` read 3.6885 in one run and
+  3.6887 in the next, and `gamutfit.Exacta.after` 0.0005 against the recorded 0.0006, so its
+  figures are not the same from run to run to the fourth decimal (CR-074 of the review list).
+  V-002, V-006, V-007, V-015 and V-017 had nothing to change. The figures, old -> new:
+  - V-001 (18): `simulation.asIs.lstarDust` 4.4005 -> 4.4052;
+    `simulation.exactTarget` 0.16 -> 0.1556; `simulation.exactTargetDmaxLower` 0.1799 -> 0.175;
+    `simulation.exactTargetDmaxHigher` 0.1415 -> 0.1373;
+    `simulation.dmaxDustOnPaperBlackAsIs` 2.3123 -> 2.3119;
+    `simulation.primary.lstarDust` 9.4346 -> 9.4443; `background.greenExcess` 0.8794 -> 0.8891;
+    `background.region.colt-dreapta-sus.levels.r` 24.7432 -> 24.7354;
+    `background.region.colt-dreapta-sus.levels.g` 26.6693 -> 26.6615;
+    `background.region.colt-dreapta-sus.levels.b` 26.1518 -> 26.1479;
+    `background.region.latura-dreapta.levels.r` 23.0506 -> 23.0545;
+    `background.region.latura-dreapta.levels.b` 25.0078 -> 25.0039;
+    `jpeg.q100.pctOverThreshold` 1.2291 -> 1.2288;
+    `jpeg.q100.meanLevelOverThreshold` 31.3602 -> 31.3623;
+    `jpeg.q95.pctOverThreshold` 3.3898 -> 3.3892;
+    `jpeg.q95.meanLevelOverThreshold` 42.2199 -> 42.2232;
+    `jpeg.q90.pctOverThreshold` 5.0288 -> 5.028;
+    `jpeg.q90.meanLevelOverThreshold` 40.8236 -> 40.826.
+  - V-003 (6): `simulation.asIs.lstarDust` 4.4005 -> 4.4052;
+    `simulation.exactTarget` 0.1004 -> 0.0969; `simulation.exactTargetDmaxLower` 0.116 -> 0.1123;
+    `simulation.exactTargetDmaxHigher` 0.0855 -> 0.0824;
+    `simulation.dmaxDustOnPaperBlackAsIs` 2.3123 -> 2.3119;
+    `simulation.primary.lstarDust` 9.4346 -> 9.4443.
+  - V-004 (18): `simulation.asIs.lstarSky` 17.5767 -> 17.5818;
+    `simulation.exactTarget` 0.1836 -> 0.1863; `simulation.exactTargetDmaxLower` 0.2047 -> 0.2075;
+    `simulation.exactTargetDmaxHigher` 0.1633 -> 0.166;
+    `simulation.primary.lstarSky` 19.7143 -> 19.7189; `background.levels.r` 40.9349 -> 40.9371;
+    `background.levels.g` 43.4004 -> 43.403; `background.levels.b` 41.0771 -> 41.081;
+    `background.greenExcess` 2.3944 -> 2.3939; `background.redMinusBlue` -0.1422 -> -0.1439;
+    `background.lab.l` 17.403 -> 17.4043; `background.lab.a` -1.6597 -> -1.6595;
+    `background.lab.b` 1.1294 -> 1.1285; `background.chroma` 2.0075 -> 2.0069;
+    `jpeg.q100.pctOverThreshold` 1.6723 -> 1.672;
+    `jpeg.q100.meanLevelOverThreshold` 45.5518 -> 45.5526;
+    `jpeg.q95.pctOverThreshold` 43.7759 -> 43.7737; `jpeg.q90.pctOverThreshold` 51.9465 -> 51.9445.
+  - V-005 (7): `simulation.asIs.lstarDust` 4.4005 -> 4.4052;
+    `simulation.exactTarget` 0.0928 -> 0.0896; `simulation.exactTargetDmaxLower` 0.108 -> 0.1045;
+    `simulation.exactTargetDmaxHigher` 0.0785 -> 0.0755;
+    `simulation.dmaxDustOnPaperBlackAsIs` 2.3123 -> 2.3119;
+    `simulation.primary.lstarDust` 9.4346 -> 9.4443; `simulation.visibilityTarget` 0.1526 -> 0.1505.
+  - V-008 (37): `curves.anchor.dust` 0.0914 -> 0.0897; `curves.anchor.band` 0.3057 -> 0.3035;
+    `curves.anchor.clouds` 0.5431 -> 0.5374; `curves.before.lstar.sky` 17.5767 -> 17.5818;
+    `curves.Blanda.lstar.sky` 17.6939 -> 17.6968; `curves.Blanda.point.band` 0.3536 -> 0.3506;
+    `curves.Blanda.lstar.clouds` 66.5982 -> 66.5911; `curves.Blanda.point.clouds` 0.6479 -> 0.6407;
+    `curves.Blanda.lstar.peaks` 82.4531 -> 82.447; `curves.Blanda.point.peaks` 0.8194 -> 0.8177;
+    `curves.Blanda.noiseGain` 1.1289 -> 1.132; `curves.Blanda.noiseAfterLsb` 2.3053 -> 2.3116;
+    `curves.Blanda.gamut.all` 1.9727 -> 1.9723; `curves.Blanda.gamut.sky` 1.1386 -> 1.1389;
+    `curves.before.gamut.band` 0.229 -> 0.2317; `curves.Blanda.gamut.band` 0.2321 -> 0.2355;
+    `curves.Medie.lstar.sky` 17.7547 -> 17.7638; `curves.Medie.point.band` 0.3775 -> 0.3741;
+    `curves.Medie.point.clouds` 0.7003 -> 0.6923; `curves.Medie.lstar.peaks` 86.5332 -> 86.5243;
+    `curves.Medie.point.peaks` 0.8692 -> 0.8665; `curves.Medie.noiseGain` 1.1934 -> 1.198;
+    `curves.Medie.noiseAfterLsb` 2.4369 -> 2.4464; `curves.Medie.pctClipped` 0.0212 -> 0.0208;
+    `curves.Medie.gamut.all` 1.9842 -> 1.984; `curves.Medie.gamut.sky` 1.1446 -> 1.1427;
+    `curves.Medie.gamut.band` 0.2355 -> 0.2377; `curves.Puternica.lstar.sky` 17.8226 -> 17.828;
+    `curves.Puternica.point.band` 0.4014 -> 0.3977;
+    `curves.Puternica.point.clouds` 0.7527 -> 0.7439;
+    `curves.Puternica.point.peaks` 0.9189 -> 0.9154; `curves.Puternica.noiseGain` 1.2578 -> 1.264;
+    `curves.Puternica.pctClipped` 0.0336 -> 0.0303; `curves.Puternica.gamut.all` 1.9983 -> 1.9969;
+    `curves.Puternica.gamut.sky` 1.1496 -> 1.1473; `curves.Puternica.gamut.band` 0.2368 -> 0.2387;
+    `curves.Puternica.gamut.clouds` 0.1897 -> 0.1927.
+  - V-009 (31): `curves.anchor.dust` 0.0574 -> 0.0598; `curves.anchor.sky` 0.0989 -> 0.1006;
+    `curves.anchor.band` 0.2356 -> 0.2309; `curves.before.lstar.dust` 4.4005 -> 4.4052;
+    `curves.Blanda.lstar.dust` 4.3982 -> 4.4023; `curves.Blanda.point.band` 0.283 -> 0.2766;
+    `curves.Blanda.point.clouds` 0.5015 -> 0.5008; `curves.Blanda.point.peaks` 0.671 -> 0.6768;
+    `curves.Blanda.noiseGain` 1.0842 -> 1.0869; `curves.Blanda.noiseAfterLsb` 0.4946 -> 0.4911;
+    `curves.Blanda.pctClipped` 0.0959 -> 0.0961; `curves.Medie.lstar.dust` 4.3971 -> 4.4001;
+    `curves.Medie.point.band` 0.3067 -> 0.2994; `curves.Medie.point.clouds` 0.5463 -> 0.5453;
+    `curves.Medie.point.peaks` 0.71 -> 0.7186; `curves.Medie.noiseGain` 1.1263 -> 1.1303;
+    `curves.Medie.noiseAfterLsb` 0.516 -> 0.5107; `curves.Medie.pctClipped` 0.0962 -> 0.0964;
+    `curves.Puternica.lstar.dust` 4.3964 -> 4.4045; `curves.Puternica.point.band` 0.3304 -> 0.3222;
+    `curves.Puternica.point.clouds` 0.5912 -> 0.5898;
+    `curves.Puternica.point.peaks` 0.7617 -> 0.7603; `curves.Puternica.noiseGain` 1.1684 -> 1.1738;
+    `curves.Puternica.noiseAfterLsb` 0.5374 -> 0.5303;
+    `curves.Puternica.pctClipped` 0.0969 -> 0.0973; `curves.Maxima.point.band` 0.3756 -> 0.3661;
+    `curves.Maxima.point.clouds` 0.6876 -> 0.6869; `curves.Maxima.point.peaks` 0.8917 -> 0.8912;
+    `curves.Maxima.noiseGain` 1.2482 -> 1.257; `curves.Maxima.noiseAfterLsb` 0.564 -> 0.5679;
+    `curves.Maxima.pctClipped` 0.1767 -> 0.1765.
+  - V-010 (12): `simulation.asIs.lstarDust` 6.1458 -> 6.148;
+    `simulation.visibilityTarget` 0.1547 -> 0.1536;
+    `simulation.dmaxDustOnPaperBlackAsIs` 2.1673 -> 2.1671;
+    `background.region.latura-de-sus.levels.r` 30.6549 -> 30.6537;
+    `background.region.latura-de-sus.levels.b` 23.1373 -> 23.1375;
+    `background.region.latura-de-jos.levels.b` 22.9347 -> 22.9408;
+    `jpeg.q100.pctOverThreshold` 1.7807 -> 1.7804;
+    `jpeg.q100.meanLevelOverThreshold` 31.376 -> 31.3768;
+    `jpeg.q95.pctOverThreshold` 33.1261 -> 33.1237;
+    `jpeg.q95.meanLevelOverThreshold` 36.0507 -> 36.0509;
+    `jpeg.q90.pctOverThreshold` 44.0498 -> 44.0477;
+    `jpeg.q90.meanLevelOverThreshold` 35.2123 -> 35.2124.
+  - V-011 (22): `curves.anchor.sky` 0.0929 -> 0.0937; `curves.before.lstar.dust` 6.1458 -> 6.148;
+    `curves.Blanda.lstar.dust` 6.1631 -> 6.1689; `curves.Blanda.point.clouds` 0.554 -> 0.5527;
+    `curves.Blanda.point.peaks` 0.7071 -> 0.7057; `curves.Blanda.noiseGain` 1.0331 -> 1.0298;
+    `curves.Blanda.pctClipped` 0.173 -> 0.1736; `curves.Medie.lstar.dust` 6.1721 -> 6.1761;
+    `curves.Medie.point.clouds` 0.6087 -> 0.6067; `curves.Medie.point.peaks` 0.7594 -> 0.7574;
+    `curves.Medie.noiseGain` 1.0497 -> 1.0447; `curves.Medie.pctClipped` 0.1747 -> 0.1756;
+    `curves.Puternica.lstar.dust` 6.1809 -> 6.1807;
+    `curves.Puternica.point.clouds` 0.6634 -> 0.6607;
+    `curves.Puternica.point.peaks` 0.8117 -> 0.809; `curves.Puternica.noiseGain` 1.0663 -> 1.0596;
+    `curves.Puternica.pctClipped` 0.1767 -> 0.1788; `curves.Maxima.lstar.dust` 6.1831 -> 6.186;
+    `curves.Maxima.point.clouds` 0.7339 -> 0.7326; `curves.Maxima.point.peaks` 0.8992 -> 0.8997;
+    `curves.Maxima.noiseGain` 1.0731 -> 1.0777; `curves.Maxima.pctClipped` 0.3917 -> 0.3925.
+  - V-012 (3): `curves.anchor.dust` 0.1143 -> 0.1147; `curves.anchor.sky` 0.1371 -> 0.1392;
+    `curves.anchor.band` 0.4408 -> 0.4406.
+  - V-013 (18): `simulation.visibilityTarget` 0.1548 -> 0.1546;
+    `simulation.exactTarget` 0.0736 -> 0.0721; `simulation.exactTargetDmaxLower` 0.0868 -> 0.0851;
+    `simulation.exactTargetDmaxHigher` 0.0616 -> 0.0604;
+    `background.redMinusBlue` -4.5509 -> -4.5563;
+    `background.region.colt-stanga-jos.levels.g` 29.6263 -> 29.6243;
+    `background.region.colt-stanga-jos.levels.b` 25.6011 -> 25.594;
+    `background.region.latura-de-sus.levels.r` 20.3245 -> 20.3275;
+    `background.region.latura-de-sus.levels.g` 27.3293 -> 27.3336;
+    `background.region.latura-de-sus.levels.b` 22.9327 -> 22.9416;
+    `background.region.latura-stanga.levels.r` 21.8566 -> 21.8615;
+    `background.region.latura-stanga.levels.g` 28.389 -> 28.3944;
+    `background.region.latura-stanga.levels.b` 25.3442 -> 25.35;
+    `jpeg.q100.pctOverThreshold` 1.7135 -> 1.7132;
+    `jpeg.q100.meanLevelOverThreshold` 23.8058 -> 23.8056;
+    `jpeg.q95.pctOverThreshold` 47.2881 -> 47.286;
+    `jpeg.q95.meanLevelOverThreshold` 23.7817 -> 23.7816;
+    `jpeg.q90.pctOverThreshold` 57.2798 -> 57.278.
+  - V-014 (19): `curves.anchor.dust` 0.0779 -> 0.0794; `curves.anchor.sky` 0.1023 -> 0.1025;
+    `curves.anchor.band` 0.1662 -> 0.1715; `curves.anchor.clouds` 0.3585 -> 0.3592;
+    `curves.Blanda.lstar.sky` 9.663 -> 9.6639; `curves.Blanda.point.band` 0.1886 -> 0.1957;
+    `curves.Blanda.point.clouds` 0.427 -> 0.4284; `curves.Blanda.point.peaks` 0.5624 -> 0.5631;
+    `curves.Blanda.noiseGain` 1.0989 -> 1.0903; `curves.Medie.lstar.sky` 9.8456 -> 9.8375;
+    `curves.Medie.point.band` 0.1998 -> 0.2077; `curves.Medie.point.clouds` 0.4613 -> 0.463;
+    `curves.Medie.point.peaks` 0.5945 -> 0.5956; `curves.Puternica.point.band` 0.211 -> 0.2198;
+    `curves.Puternica.point.clouds` 0.4956 -> 0.4976;
+    `curves.Puternica.point.peaks` 0.6267 -> 0.6281; `curves.Maxima.point.clouds` 0.6463 -> 0.6479;
+    `curves.Maxima.lstar.peaks` 77.9226 -> 77.927; `curves.Maxima.point.peaks` 0.8277 -> 0.8281.
+- 2026-11-16 (ADR 0101, decision 11: the curve's paper check on the noise fires only when the
+  curve is the cause): `CurveTexts.PaperChecks` no longer adds the check to an image whose noise
+  is over the print target's upper bound (1.5 levels) before any curve. The plate-solved FITS has
+  2.04 levels as it is, so six figures moved, at the owner's word of that day:
+  `curves.Blanda.paperChecks`, `curves.Medie.paperChecks` and `curves.Puternica.paperChecks` 1 -> 0
+  on V-008 (the plain curves) and on V-017 (the curves with the dust move). The run that showed
+  it: 26 of the 28 passed, the two cases failing on these six figures alone; no other figure
+  of any case moved.
+- 2026-11-16 (ADR 0101, the dust move of the suggested curves,
+  `docs/plans/2026-11-16-put-the-dust-on-paper-black.md`): `CurveRun.Execute` takes
+  `dustOnPaperBlack`, off unless given, and with it `CurveAdvisor.AimDust` puts the dust's point so
+  that the dust measures the paper's black, the sky's dark end held. V-017 added, kind `curves`,
+  on the plate-solved FITS at Dmax 2.4 with the parameter, first with `expected` null, then its
+  93 figures recorded from the run on the task's branch. The same run, the twelve files read
+  where they are (`check-testdata.ps1` with `APA_TESTDATA_LARGE`: twelve `ok`): the sixteen
+  earlier cases and the eleven `StarPairTests` cases pass with no recorded figure moved (28
+  passed, none failed), V-008, V-009, V-011, V-012 and V-014 among them, which do not ask for the
+  move. `ValidationTests.CurveFigures` reads the new parameter and takes the class points past
+  the two the move adds; a case without the parameter prints what it always did.
 - 2026-11-16 (ADR 0100, the ranges of the dust and the sky,
   `docs/plans/2026-11-15-show-the-dust-and-the-sky-as-ranges.md`): `DustAnalyzer.Measure` now
   returns, with the two figures, the middle half and the wide range of each zone's patches; no

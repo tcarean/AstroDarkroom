@@ -167,9 +167,32 @@ original and the suggestions are therefore drawn at the same size in the same pl
 reports the gallery area's size in screen pixels (`GallerySizeChanged`, `SetGallerySize`) and
 the previews are computed to cover it (the stride above). A result without a gallery (a
 problem) is never recomputed for a larger area: its reason does not depend on the size. The run
-is always for print; the tab keeps that set and the screen set derived from it
-(`CurveRun.ForScreen`), makes the bitmaps once and then drops the preview rasters, so changing
-the purpose only rebuilds the rows over the same bitmaps and keeps the position. Each run has
+is always for print, and there are two galleries (`Gallery`: the print set, the screen set
+derived from it by `CurveRun.ForScreen`, the bitmaps, the reduction step its previews were made with): the
+curves with the dust move (`_moved`, R-184, no screen set) and the plain ones (`_plain`). `Show`
+files a set under one or the other by `CurveSet.DustOnPaperBlack`, makes its bitmaps once and
+drops the preview rasters; `ShowWanted` then shows the one the purpose and the box ask for
+(`WantMoved`: print, the choice on, the move available), at the position kept, and starts
+`ComputeAsync` for it when it is not made yet or the area allows a finer step than it was made
+with (never for a size alone: the area's height changes with the evidence under the image),
+unless the running computation is already that one (`_runMoved`). A refusal that the core gives
+only when asked (`_askedRefusal`) stays for the image. So with the box off, or the move refused, changing
+the purpose only rebuilds the rows over the same bitmaps; with it on, the first change to
+`Ecran` or the first untick computes the plain gallery, and after that nothing. The box of R-185
+is three properties: `DustOnPaperBlack` (the owner's choice `_dustChoice` and `DustBoxEnabled`,
+so a box that would do nothing never shows ticked; setting it sets the choice, which `Reset`
+keeps), `DustBoxEnabled` (print, something computed, no refusal) and `DustBoxReason` (the
+screen's sentence, or `CurveSet.DustMoveRefusal`); `Footnote` is the shown set's sentence. The
+first computation of an image asks the core for the move whenever the choice is on (`AskMoved`),
+and the set that comes back says whether it could. `CurveWindowViewModel.From` gives an L\* only
+to the five classes' rows (`CurvePoint.Extra` marks the two a dust move adds). `SaveAs` keeps
+the suggestion on screen in `_saving` before it raises `SaveRequested`, and `Save` writes that
+one, since another gallery may land under the dialog; without a dialog before it `Save` writes
+the curve shown. In the view the top row is a grid: the choices at their own width, then the
+box's reason and the tab's message one under the other in the room left, so that each wraps
+inside the tab (`GamutFitView` docks its message the same way; a horizontal panel offered them
+unlimited width). A disabled check box is dimmed by the theme (`Dark.xaml`, the `CheckBox`
+style: the system template, 40 % when disabled, as the buttons). Each run has
 a number (`_run`): `Reset`, on another image or a clear, advances it and frees `IsBusy`, and a
 computation that ends with an old number touches nothing, on success or on failure. The Left and
 Right keys are caught on the window (`MainWindow.GalleryKeys`, `PreviewKeyDown`), before the
@@ -203,6 +226,10 @@ the next, `Clear` leaving them: the frame does not change with the image.
 control points (label, input, output at three decimals, the class's L\* before and after) and
 two `CurveCanvas` charts, the whole curve and the shadows up to `CurveShadowChartFactor`
 times the band's input, where the dust and the sky sit and the whole chart shows nothing.
+Both charts get every labelled point (the five classes and the rows of a dust move); on the
+whole curve those of a dust move sit within a few pixels of each other, so
+`CurveCanvas.LabelStarts` starts a label under the ones it would run over (nearer across the
+chart than a text is thick), or back at the top when it would leave the plot.
 `Presentation/Emphasis.cs` holds the attached properties `Emphasis.Label` and `Emphasis.Text`
 of the Raport tab's "fiindca" block (`Theme/Dark.xaml`, `RecommendationRowTemplate`): the
 block's inlines are rebuilt from both, the label semi-bold and then the `Because`, the parts

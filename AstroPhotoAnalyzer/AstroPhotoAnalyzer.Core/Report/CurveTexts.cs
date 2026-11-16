@@ -22,6 +22,7 @@
 // mandatory "because", like any recommendation of the report (ADR 0011). The texts that were
 // constants are properties, so that they are in the interface language in use (ADR 0048).
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -96,14 +97,122 @@ namespace AstroPhotoAnalyzer
         /// <param name="colour">
         /// <c>true</c> for a colour image, which adds that the values are the same on R, G and B.
         /// </param>
+        /// <param name="heldRow">
+        /// <c>true</c> for a curve of the dust move (R-184) that has the row of the sky's dark
+        /// end, which the note then explains.
+        /// </param>
+        /// <param name="helperRow">
+        /// <c>true</c> when the curve has the row under the dust, which the note then explains too.
+        /// </param>
         /// <returns>The note under the table.</returns>
-        internal static string PointsNote(DustMethod method, bool colour)
+        internal static string PointsNote(DustMethod method, bool colour, bool heldRow = false, bool helperRow = false)
             => Tr.Pick("The input and the output are the pixel's values, on the 0..1 scale" + (colour ? ", the same on R, G and B" : "") + ". The first and the last row are the ends of the curve. "
                        + "L* is the lightness of each kind of patch (dust, sky...), measured before and after the curve"
-                       + (method == DustMethod.Band ? " (the kinds of patches of the Milky Way band)." : " (the patches sorted by comparison with the sky)."),
+                       + (method == DustMethod.Band ? " (the kinds of patches of the Milky Way band)." : " (the patches sorted by comparison with the sky).")
+                       + (heldRow ? $" \"{CurveAdvisor.DarkSkyLabel}\" is the dark part of the sky, held in place while the dust is moved onto the paper's black." : "")
+                       + (helperRow ? $" \"{CurveAdvisor.UnderDustLabel}\" keeps the curve smooth towards black." : ""),
                        "Intrarea si iesirea sunt valorile pixelului, pe scara 0..1" + (colour ? ", aceleasi pe R, G si B" : "") + ". Primul si ultimul rand sunt capetele curbei. "
                        + "L* e luminozitatea dalelor de fiecare fel (praf, cer...), masurata inainte si dupa curba"
-                       + (method == DustMethod.Band ? " (felurile de dale ale benzii Caii Lactee)." : " (dalele impartite prin comparatie cu cerul)."));
+                       + (method == DustMethod.Band ? " (felurile de dale ale benzii Caii Lactee)." : " (dalele impartite prin comparatie cu cerul).")
+                       + (heldRow ? $" \"{CurveAdvisor.DarkSkyLabel}\" e partea inchisa a cerului, tinuta pe loc cat timp praful e mutat pe negrul hartiei." : "")
+                       + (helperRow ? $" \"{CurveAdvisor.UnderDustLabel}\" tine curba lina spre negru." : ""));
+
+        // ---- The dust move (R-184, R-185; ADR 0101) ----
+
+        /// <summary>Why the box of R-185 is off with the screen chosen.</summary>
+        internal static string DustMoveOnlyForPrint => Tr.Pick("only for print: a screen has no paper black", "doar pentru print: ecranul nu are negrul hartiei");
+
+        /// <summary>The dust is the origin itself: there is nowhere to move it from.</summary>
+        internal static string DustMoveDustAtBlack => Tr.Pick("not on this image: the dust is already at full black", "nu pe imaginea asta: praful e deja la negru complet");
+
+        /// <summary>The sky's dark end is not above the dust: nothing lies between them to hold.</summary>
+        internal static string DustMoveDustNotUnderSky => Tr.Pick("not on this image: the dust is not darker than the dark part of the sky", "nu pe imaginea asta: praful nu e mai inchis decat partea inchisa a cerului");
+
+        /// <summary>No part of the move leaves a curve that can be suggested (R-140).</summary>
+        internal static string DustMoveNotSmooth => Tr.Pick("not on this image: with the dust moved the curve would no longer rise smoothly", "nu pe imaginea asta: cu praful mutat curba n-ar mai urca lin");
+
+        /// <summary>
+        /// The dust's figure is the darkest sky, not a dust zone: there is no dust to move. One
+        /// sentence per cause, each whole by itself (the report's bracketed reasons do not read
+        /// as sentences here).
+        /// </summary>
+        /// <param name="sim">The simulation, for the cause and the dust's share of the frame.</param>
+        /// <returns>The refusal; null when the dust zone gives the dust's figure.</returns>
+        internal static string DustMoveNoDustZone(SimulationResult sim) => sim.DarkestSkyCause switch
+        {
+            DarkestSkyCause.None => null,
+            DarkestSkyCause.NoDust => Tr.Pick("not on this image: no dust was found in it, so there is nothing to set apart from the sky",
+                                              "nu pe imaginea asta: nu s-a gasit praf in ea, deci nu e nimic de desprins de cer"),
+            DarkestSkyCause.TooLittleDust => Tr.Pick($"not on this image: it has too little dust ({Fmt.Pct(sim.DustPatchPct)} of the image, and at least {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % is needed), so the darkest part of the sky is taken in its place",
+                                                     $"nu pe imaginea asta: are prea putin praf ({Fmt.Pct(sim.DustPatchPct)} din imagine, si e nevoie de cel putin {Fmt.F0(Thresholds.DustClassMinFraction * 100)} %), asa ca in locul lui e luata partea cea mai inchisa a cerului"),
+            _ => Tr.Pick("not on this image: the darkest part of the sky is darker than the dust, so it is taken in the dust's place",
+                         "nu pe imaginea asta: partea cea mai inchisa a cerului e mai inchisa decat praful, asa ca ea e luata in locul lui"),
+        };
+
+        /// <summary>The paper's black is not under the sky's dark end: the sky itself is too low.</summary>
+        /// <param name="skyDarkLstar">The sky's dark end, in L*.</param>
+        /// <param name="paperBlackLstar">The paper's black, in L*.</param>
+        /// <returns>The refusal, with the two levels and where the background is lifted.</returns>
+        internal static string DustMoveNoRoom(double skyDarkLstar, double paperBlackLstar)
+            => Tr.Pick($"not on this image: the sky itself is too close to the paper's black (its dark part at L* {Fmt.F1(skyDarkLstar)}, paper black at L* {Fmt.F1(paperBlackLstar)}); "
+                       + "lift the background when you redo the stretch, as the Tones tab says",
+                       $"nu pe imaginea asta: cerul insusi e prea aproape de negrul hartiei (partea lui inchisa la L* {Fmt.F1(skyDarkLstar)}, negrul hartiei la L* {Fmt.F1(paperBlackLstar)}); "
+                       + "ridica fundalul cand refaci stretch-ul, cum spune tabul Tonuri");
+
+        /// <summary>The dust is within CurveDustAimTolerance of the paper's black.</summary>
+        /// <param name="paperBlackLstar">The paper's black, in L*.</param>
+        /// <returns>The refusal.</returns>
+        internal static string DustMoveAlreadyThere(double paperBlackLstar)
+            => Tr.Pick($"the dust is already on the paper's black (L* {Fmt.F1(paperBlackLstar)})", $"praful e deja pe negrul hartiei (L* {Fmt.F1(paperBlackLstar)})");
+
+        /// <summary>
+        /// The sentence under the evidence (R-146, R-185): what the curves of the set move and
+        /// what they hold, then what the image shown is.
+        /// </summary>
+        /// <param name="dustMoved"><c>true</c> for a set with the dust move.</param>
+        /// <param name="stoppedShort">
+        /// <c>true</c> when that move stopped before paper black (DustMove.StoppedShort): the
+        /// sentence then says the dust was moved towards it, not put on it.
+        /// </param>
+        /// <returns>The sentence.</returns>
+        internal static string Footnote(bool dustMoved, bool stoppedShort = false)
+            => (dustMoved && stoppedShort
+                    ? Tr.Pick("The curves do not move the sky. The dust is moved towards the paper's black, as far as the curve can go, and the dark part of the sky is held in place. A sky too dark for paper is lifted when you redo the stretch (see the Tones tab).",
+                              "Curbele nu muta cerul. Praful e mutat spre negrul hartiei, cat poate curba, iar partea inchisa a cerului e tinuta pe loc. Un cer prea intunecat pentru hartie se ridica atunci cand refaci stretch-ul (vezi tabul Tonuri).")
+                    : dustMoved
+                    ? Tr.Pick("The curves do not move the sky. The dust is put on the paper's black, and the dark part of the sky is held in place. A sky too dark for paper is lifted when you redo the stretch (see the Tones tab).",
+                              "Curbele nu muta cerul. Praful e pus pe negrul hartiei, iar partea inchisa a cerului e tinuta pe loc. Un cer prea intunecat pentru hartie se ridica atunci cand refaci stretch-ul (vezi tabul Tonuri).")
+                    : Tr.Pick("The curves do not move the dust and the sky: a background too dark for paper is lifted when you redo the stretch (see the Tones tab).",
+                              "Curbele nu muta praful si cerul: un fundal prea intunecat pentru hartie se ridica atunci cand refaci stretch-ul (vezi tabul Tonuri)."))
+               + " " + Tr.Pick("The image here is a reduced copy; the program assumes the pixels are sRGB.", "Imaginea de aici e o copie micsorata; programul presupune ca pixelii sunt sRGB.");
+
+        /// <summary>A change in percent as words: "grows by 26 %" or "drops by 14 %".</summary>
+        /// <param name="pct">The change, in percent; under half a percent either way reads as a growth of 0.</param>
+        /// <returns>The words, with the figure at no decimals.</returns>
+        static string GrowsOrDrops(double pct)
+            => pct > -0.5
+                ? Tr.Pick($"grows by {Fmt.F0(Math.Abs(pct))} %", $"creste cu {Fmt.F0(Math.Abs(pct))} %")
+                : Tr.Pick($"drops by {Fmt.F0(-pct)} %", $"scade cu {Fmt.F0(-pct)} %");
+
+        /// <summary>The evidence lines of the dust move (R-184), in plain words and in percent.</summary>
+        /// <param name="d">The move's figures.</param>
+        /// <returns>
+        /// Where the dust went, the change of its difference from the sky on paper (left out
+        /// when there was none to compare with), the change of its noise, and the share of the
+        /// image under paper black before and after.
+        /// </returns>
+        static IEnumerable<string> DustLines(DustMoveFigures d)
+        {
+            yield return Tr.Pick($"the dust on the paper's black: from L* {Fmt.F1(d.LstarBefore)} to {Fmt.F1(d.LstarAfter)} (paper black is L* {Fmt.F1(d.PaperBlackLstar)} at Dmax {Fmt.Dmax(d.Dmax)})"
+                                 + (d.StoppedShort ? "; further than that the curve would no longer rise smoothly" : ""),
+                                 $"praful pe negrul hartiei: de la L* {Fmt.F1(d.LstarBefore)} la {Fmt.F1(d.LstarAfter)} (negrul hartiei e L* {Fmt.F1(d.PaperBlackLstar)} la Dmax {Fmt.Dmax(d.Dmax)})"
+                                 + (d.StoppedShort ? "; mai departe de atat curba n-ar mai urca lin" : ""));
+            if (!double.IsNaN(d.PaperContrastChangePct))
+                yield return Tr.Pick("on paper, the difference between the dust and the sky ", "pe hartie, diferenta dintre praf si cer ") + GrowsOrDrops(d.PaperContrastChangePct);
+            yield return Tr.Pick("the noise in the dust ", "zgomotul din praf ") + GrowsOrDrops(d.DustNoiseChangePct);
+            yield return Tr.Pick($"solid black on paper (under the paper's black): {Fmt.F1(d.PctUnderBlackBefore)} % of the image before, {Fmt.F1(d.PctUnderBlackAfter)} % after",
+                                 $"negru plin pe hartie (sub negrul hartiei): {Fmt.F1(d.PctUnderBlackBefore)} % din imagine inainte, {Fmt.F1(d.PctUnderBlackAfter)} % dupa");
+        }
 
         /// <summary>The heading of the curve window's shadow chart (R-147).</summary>
         /// <param name="limit">
@@ -190,8 +299,11 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// A curve's paper checks, for print (R-143): an Attention when the sky as it is is under
-        /// the visibility threshold or the dust under paper black, and one when the noise after
-        /// the curve passes <see cref="Thresholds.NoisePrintHiLsb"/>.
+        /// the visibility threshold or the dust under paper black, and one when the curve takes
+        /// the noise from at or under <see cref="Thresholds.NoisePrintHiLsb"/> to over it (an
+        /// image over it before the curve gets none). A curve with the dust move
+        /// (R-184) is checked on the sky alone, the dust being the curve's business, unless the
+        /// move stopped with the dust still under paper black, which the check then says.
         /// </summary>
         /// <param name="sim">
         /// The analysis's simulation: the "as is" sky and dust, the paper black.
@@ -206,14 +318,33 @@ namespace AstroPhotoAnalyzer
         internal static IReadOnlyList<Recommendation> PaperChecks(SimulationResult sim, NoiseResult noise, CurveEvidence e)
         {
             var o = new List<Recommendation>();
-            if (sim.SkyBelowVisibility || sim.DustBelowPaperBlack)
+            // A curve with the dust move (R-184) has dealt with the dust: its check is on the sky
+            // alone, unless the move stopped with the dust still under paper black.
+            if (e.Dust != null)
+            {
+                bool dustLeft = e.Dust.LstarAfter < e.Dust.PaperBlackLstar - Thresholds.CurveDustAimTolerance;
+                if (sim.SkyBelowVisibility || dustLeft)
+                    o.Add(new Recommendation(Topic.Background, Verdict.Attention,
+                        Tr.Pick("The background is too dark for paper: lift it when you redo the stretch, as the Tones tab says, then come back here. The curve does not move the sky.", "Fundalul e prea intunecat pentru hartie: ridica-l cand refaci stretch-ul, cum spune tabul Tonuri, apoi revino aici. Curba nu muta cerul."),
+                        // Each cause only when it is one: a sky that is fine is not named beside a dust left under.
+                        Tr.Pick((sim.SkyBelowVisibility ? $"the sky at L* {Fmt.F1(sim.AsIs.LstarSky)} (under L* {Fmt.F0(Thresholds.LowSeparationLstar)} the eye barely tells the tones apart), " : "")
+                                + (dustLeft ? $"the dust at L* {Fmt.F1(e.Dust.LstarAfter)} after the curve, " : "")
+                                + $"paper black is L* {Fmt.F1(sim.PaperBlackLstar)} at Dmax {Fmt.Dmax(sim.Dmax)}",
+                                (sim.SkyBelowVisibility ? $"cerul la L* {Fmt.F1(sim.AsIs.LstarSky)} (sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} ochiul abia mai deosebeste tonurile), " : "")
+                                + (dustLeft ? $"praful la L* {Fmt.F1(e.Dust.LstarAfter)} dupa curba, " : "")
+                                + $"negrul hartiei e L* {Fmt.F1(sim.PaperBlackLstar)} la Dmax {Fmt.Dmax(sim.Dmax)}")));
+            }
+            else if (sim.SkyBelowVisibility || sim.DustBelowPaperBlack)
                 o.Add(new Recommendation(Topic.Background, Verdict.Attention,
                     Tr.Pick("The background is too dark for paper: lift it when you redo the stretch, as the Tones tab says, then come back here. The curve does not move the sky and the dust.", "Fundalul e prea intunecat pentru hartie: ridica-l cand refaci stretch-ul, cum spune tabul Tonuri, apoi revino aici. Curba nu muta cerul si praful."),
                     Tr.Pick($"the sky at L* {Fmt.F1(sim.AsIs.LstarSky)} (under L* {Fmt.F0(Thresholds.LowSeparationLstar)} the eye barely tells the tones apart), the dust at L* {Fmt.F1(sim.AsIs.LstarDust)}, "
                             + $"paper black is L* {Fmt.F1(sim.PaperBlackLstar)} at Dmax {Fmt.Dmax(sim.Dmax)}",
                             $"cerul la L* {Fmt.F1(sim.AsIs.LstarSky)} (sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} ochiul abia mai deosebeste tonurile), praful la L* {Fmt.F1(sim.AsIs.LstarDust)}, "
                             + $"negrul hartiei e L* {Fmt.F1(sim.PaperBlackLstar)} la Dmax {Fmt.Dmax(sim.Dmax)}")));
-            if (!double.IsNaN(e.NoiseAfterLsb) && e.NoiseAfterLsb > Thresholds.NoisePrintHiLsb)
+            // Only when the curve is the cause: an image already over the target before it gets
+            // no check here, whatever the curve does to its noise (the report has its own sentence
+            // about that noise, and a gentler variant would not bring it under; ADR 0101).
+            if (!double.IsNaN(e.NoiseAfterLsb) && e.NoiseAfterLsb > Thresholds.NoisePrintHiLsb && noise.SigmaMedianLsb <= Thresholds.NoisePrintHiLsb)
                 o.Add(new Recommendation(Topic.Denoise, Verdict.Attention,
                     Tr.Pick("After the curve, the noise in the sky passes the print target: denoise before, or choose a gentler variant.", "Dupa curba, zgomotul din cer trece de tinta pentru print: fa denoise inainte, sau alege o varianta mai blanda."),
                     Tr.Pick($"the noise {Fmt.F2(noise.SigmaMedianLsb)} levels (sigma) x {Fmt.F2(e.NoiseGain)} (how steeply the curve climbs at the sky) = {Fmt.F2(e.NoiseAfterLsb)} levels; "
@@ -282,23 +413,23 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         /// <param name="s">The suggestion.</param>
         /// <returns>
-        /// Five lines: the labelled points (input &gt; output), the L* before, the L* after, the
-        /// noise gain (with the noise after when it is known) and the clipped share before and
-        /// after.
+        /// The labelled points (input &gt; output), the L* before, the L* after, on a curve with
+        /// the dust move its lines (<see cref="DustLines"/>), the change of the noise in the sky
+        /// in percent (ADR 0101: not on the level scale) and the clipped share before and after.
         /// </returns>
         static IReadOnlyList<string> Plain(CurveSuggestion s)
         {
             CurveEvidence e = s.Evidence;
-            return new List<string>
+            var o = new List<string>
             {
                 Tr.Pick("the curve's points (the input value > the output value): ", "punctele curbei (valoarea de intrare > valoarea de iesire): ") + string.Join(", ", s.Curve.Points.Where(p => p.Label != null).Select(p => $"{p.Label} {Fmt.F3(p.X)} > {Fmt.F3(p.Y)}")),
                 Tr.Pick("L* before: ", "L* inainte: ") + Levels(e.Labels, e.LstarBefore),
                 Tr.Pick("L* after: ", "L* dupa: ") + Levels(e.Labels, e.LstarAfter),
-                double.IsNaN(e.NoiseAfterLsb)
-                    ? Tr.Pick($"the noise in the sky grows by {Fmt.F2(e.NoiseGain)} times (how steeply the curve climbs at the sky)", $"zgomotul din cer creste de {Fmt.F2(e.NoiseGain)} ori (cat de tare urca curba in dreptul cerului)")
-                    : Tr.Pick($"the noise in the sky grows by {Fmt.F2(e.NoiseGain)} times (how steeply the curve climbs at the sky), to {Fmt.F2(e.NoiseAfterLsb)} levels", $"zgomotul din cer creste de {Fmt.F2(e.NoiseGain)} ori (cat de tare urca curba in dreptul cerului), la {Fmt.F2(e.NoiseAfterLsb)} niveluri"),
-                Tr.Pick($"burnt-out pixels (at least one channel at {Fmt.F3(Thresholds.CurveClipLevel)} or over): {Fmt.F2(e.PctClippedBefore)} % before, {Fmt.F2(e.PctClippedAfter)} % after", $"pixeli arsi (cel putin un canal la {Fmt.F3(Thresholds.CurveClipLevel)} sau peste): {Fmt.F2(e.PctClippedBefore)} % inainte, {Fmt.F2(e.PctClippedAfter)} % dupa"),
             };
+            if (e.Dust != null) o.AddRange(DustLines(e.Dust));
+            o.Add(Tr.Pick("the noise in the sky ", "zgomotul din cer ") + GrowsOrDrops((e.NoiseGain - 1) * 100));
+            o.Add(Tr.Pick($"burnt-out pixels (at least one channel at {Fmt.F3(Thresholds.CurveClipLevel)} or over): {Fmt.F2(e.PctClippedBefore)} % before, {Fmt.F2(e.PctClippedAfter)} % after", $"pixeli arsi (cel putin un canal la {Fmt.F3(Thresholds.CurveClipLevel)} sau peste): {Fmt.F2(e.PctClippedBefore)} % inainte, {Fmt.F2(e.PctClippedAfter)} % dupa"));
+            return o;
         }
 
         /// <summary>
@@ -322,16 +453,25 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         /// <param name="suggestion">The suggestion's name.</param>
         /// <param name="curve">The suggestion's curve, whose points are listed.</param>
+        /// <param name="dust">
+        /// The figures of the dust move, for a curve that has it (R-184): one more piece says the
+        /// dust was put on paper black, or moved towards it when the move stopped short, with the
+        /// paper's black and its Dmax; null for none.
+        /// </param>
         /// <returns>The pieces, in order, ASCII.</returns>
-        internal static IReadOnlyList<string> History(string suggestion, ToneCurve curve)
+        internal static IReadOnlyList<string> History(string suggestion, ToneCurve curve, DustMoveFigures dust = null)
         {
             var o = new List<string>
             {
                 Tr.Pick($"{VersionInfo.Banner}: curve {suggestion}, on every channel", $"{VersionInfo.Banner}: curba {suggestion}, pe fiecare canal"),
                 Tr.Pick("a smooth curve (a natural cubic spline)", "o curba lina (spline cubic natural)"),
                 Tr.Pick("Siril: Curves Transformation, the cubic spline mode", "Siril: Curves Transformation, modul cubic spline"),
-                Tr.Pick("the curve's points, input output:", "punctele curbei, intrare iesire:"),
             };
+            if (dust != null)
+                o.Add(dust.StoppedShort
+                    ? Tr.Pick($"dust moved towards paper black (L* {Fmt.F1(dust.PaperBlackLstar)}, Dmax {Fmt.Dmax(dust.Dmax)})", $"praful mutat spre negrul hartiei (L* {Fmt.F1(dust.PaperBlackLstar)}, Dmax {Fmt.Dmax(dust.Dmax)})")
+                    : Tr.Pick($"dust put on paper black (L* {Fmt.F1(dust.PaperBlackLstar)}, Dmax {Fmt.Dmax(dust.Dmax)})", $"praful pus pe negrul hartiei (L* {Fmt.F1(dust.PaperBlackLstar)}, Dmax {Fmt.Dmax(dust.Dmax)})"));
+            o.Add(Tr.Pick("the curve's points, input output:", "punctele curbei, intrare iesire:"));
             string line = "";
             foreach (CurvePoint p in curve.Points)
             {

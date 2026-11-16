@@ -109,7 +109,10 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>What the table's columns mean, under it.</summary>
         public string PointsNote { get; init; }
 
-        /// <summary>The control points, and the positions of the five classes.</summary>
+        /// <summary>
+        /// The control points, and the positions of the labelled ones: the five classes, and the
+        /// rows a dust move adds.
+        /// </summary>
         public IReadOnlyList<Point> ControlPoints { get; init; }
         public IReadOnlyList<CurveMarker> Markers { get; init; }
 
@@ -130,9 +133,14 @@ namespace AstroPhotoAnalyzer.Wpf
             CurveEvidence e = s.Evidence;
             var rows = new List<CurvePointRow>();
             int k = 0;
+            // Of the two points a dust move adds, the helper is the one before the first class's
+            // and the sky's dark end the one after it; a curve may have either, both or neither.
+            bool helper = c.Points.TakeWhile(p => p.Label == null || p.Extra).Any(p => p.Extra);
+            bool held = c.Points.SkipWhile(p => p.Label == null || p.Extra).Any(p => p.Extra);
             foreach (CurvePoint p in c.Points)
             {
-                bool labelled = p.Label != null;
+                // The L* columns are the five classes': the two points a dust move adds have none.
+                bool labelled = p.Label != null && !p.Extra;
                 rows.Add(new CurvePointRow
                 {
                     Label = p.Label ?? "",
@@ -148,7 +156,7 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 Title = Tr.Pick($"Curve {s.Name} - {imageName}", $"Curba {s.Name} - {imageName}"),
                 Caption = CurveTexts.CurveCaption(colour),
-                PointsNote = CurveTexts.PointsNote(method, colour),
+                PointsNote = CurveTexts.PointsNote(method, colour, held, helper),
                 Rows = rows,
                 Chart = c.Sample(1, Thresholds.CurveChartSamples).Select(p => new Point(p.X, p.Y)).ToArray(),
                 ShadowChart = c.Sample(shadow, Thresholds.CurveChartSamples).Select(p => new Point(p.X, p.Y)).ToArray(),
@@ -176,11 +184,43 @@ namespace AstroPhotoAnalyzer.Wpf
 
         AnalysisResult _result;
 
-        // The curves are computed once, for print; the set for the screen is the same without
-        // the paper checks (CurveRun.ForScreen). Changing the purpose computes nothing more and
-        // remakes no image: it chooses between the two sets of rows.
-        CurveSet _print, _screen;
-        IReadOnlyList<BitmapSource> _images = Array.Empty<BitmapSource>();
+        /// <summary>
+        /// One computed gallery: the core's set for print, the same without the paper checks for
+        /// the screen (CurveRun.ForScreen; null for the curves with the dust move, which the
+        /// screen never shows), the bitmaps, the reduction step its previews were made with
+        /// (CurveRun.PreviewStride of the area it was computed for) and whether the core held
+        /// them under its cap.
+        /// </summary>
+        sealed class Gallery
+        {
+            internal CurveSet Print, Screen;
+            internal IReadOnlyList<BitmapSource> Images;
+            internal int Stride;
+
+            // Its previews were held under the core's cap: the view may enlarge them (ADR 0084).
+            internal bool Capped;
+        }
+
+        // Two galleries (R-185): the curves with the dust move and the plain ones, each computed
+        // for print the first time it is wanted and kept. Changing the purpose or the box chooses
+        // between them and between the two sets of rows; it computes only a gallery not yet made.
+        Gallery _moved, _plain, _shown;
+
+        // The owner's choice for the box; it survives another image. Whether the move can be had
+        // on this image is known once a set was computed (_moveKnown), with the core's reason when
+        // it cannot (_dustRefusal).
+        bool _dustChoice = true, _moveKnown;
+        string _dustRefusal;
+
+        // A refusal the core gives only when the move is asked for (no curve is left with it):
+        // kept for the image, since a computation that does not ask would not repeat it.
+        string _askedRefusal;
+
+        // Which gallery the computation running was asked for.
+        bool _runMoved;
+
+        // The suggestion Save as... was pressed on, until Save writes it; null without a dialog.
+        CurveSuggestion _saving;
         IReadOnlyList<CurveGalleryItem> _items = Array.Empty<CurveGalleryItem>();
         int _index, _width = Thresholds.CurvePreviewDefaultWidth, _height = Thresholds.CurvePreviewDefaultHeight;
 
@@ -199,8 +239,14 @@ namespace AstroPhotoAnalyzer.Wpf
             Next = new RelayCommand(() => Move(1), () => _index < _items.Count - 1);
             Previous = new RelayCommand(() => Move(-1), () => _index > 0);
             OpenCurve = new RelayCommand(() => CurveRequested?.Invoke(
-                CurveWindowViewModel.From(Current.Suggestion, Path.GetFileName(_result.Path), _print.Method, _result.Raster.IsColor)), HasCurve);
-            SaveAs = new RelayCommand(() => SaveRequested?.Invoke(CurveTexts.ProposedFileName(_result.Path, Current.Name)), HasCurve);
+                CurveWindowViewModel.From(Current.Suggestion, Path.GetFileName(_result.Path), _shown.Print.Method, _result.Raster.IsColor)), HasCurve);
+            SaveAs = new RelayCommand(() =>
+            {
+                // The curve on screen now is the one the dialog is opened for: another gallery may
+                // land under the dialog (a finer preview, the box, the purpose) before it returns.
+                _saving = Current.Suggestion;
+                SaveRequested?.Invoke(CurveTexts.ProposedFileName(_result.Path, Current.Name));
+            }, HasCurve);
         }
 
         public ICommand Next { get; }
@@ -223,12 +269,61 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 if (!Set(ref _isPrint, value)) return;
                 Raise(nameof(IsScreen));
-                // The purpose changes only the evidence: the same curves, images and position.
-                if (HasGallery) ShowItems(_index);
+                RaiseDust();
+                // The purpose changes the evidence, and with the box ticked the gallery too: the
+                // screen has the plain curves (R-185). The position is kept.
+                if (_moveKnown) ShowWanted();
             }
         }
 
         public bool IsScreen { get => !_isPrint; set => IsPrint = !value; }
+
+        /// <summary>
+        /// The box "Put dust on paper black" (R-185) as the view shows it: ticked only when the
+        /// owner's choice is on and the move can be had, so a box that would do nothing is never
+        /// shown ticked. Setting it sets the choice, which another image does not change.
+        /// </summary>
+        public bool DustOnPaperBlack
+        {
+            get => _dustChoice && DustBoxEnabled;
+            set
+            {
+                _dustChoice = value;
+                RaiseDust();
+                if (_moveKnown) ShowWanted();
+            }
+        }
+
+        /// <summary>Whether the box can be changed: for print, on an image the move can be had on.</summary>
+        public bool DustBoxEnabled => _isPrint && _moveKnown && _dustRefusal == null;
+
+        /// <summary>
+        /// Why the box is off, beside it: the screen has no paper black, or the core's reason for
+        /// this image; null when it is enabled or nothing is computed yet.
+        /// </summary>
+        public string DustBoxReason => !_moveKnown ? null : !_isPrint ? CurveTexts.DustMoveOnlyForPrint : _dustRefusal;
+
+        /// <summary>
+        /// The sentence under the evidence, the core's: what the curves shown move and what they
+        /// hold; null without a gallery. While the screen's gallery is still being computed, the
+        /// one on screen is the print's with the dust move, and the sentence is that one's.
+        /// </summary>
+        public string Footnote => _shown == null ? null : (_isPrint || _shown.Screen == null ? _shown.Print : _shown.Screen).Footnote;
+
+        /// <summary>Whether the gallery wanted now is the one with the dust move.</summary>
+        bool WantMoved => _isPrint && _dustChoice && _moveKnown && _dustRefusal == null;
+
+        /// <summary>
+        /// Whether the next computation asks the core for the dust move: as <see cref="WantMoved"/>,
+        /// and also before anything is known about the image, when the core answers whether it can.
+        /// </summary>
+        bool AskMoved => _isPrint && _dustChoice && (!_moveKnown || _dustRefusal == null);
+
+        /// <summary>Raises the box's three properties and the footnote.</summary>
+        void RaiseDust()
+        {
+            Raise(nameof(DustOnPaperBlack)); Raise(nameof(DustBoxEnabled)); Raise(nameof(DustBoxReason)); Raise(nameof(Footnote));
+        }
 
         public bool IsBusy { get => _busy; private set => Set(ref _busy, value); }
 
@@ -273,9 +368,10 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// The size of the gallery area, in pixels: the view sets it at every layout pass. When
-        /// it allows a finer preview than the gallery shown, or than the computation running, was
-        /// made with, the gallery is computed again by itself (ADR 0084); a size that allows no
-        /// finer one starts nothing, so the layout passes of a steady window cost nothing.
+        /// it allows a finer preview than the gallery shown was made with, or, while a
+        /// computation runs, than that one was asked for, the gallery is computed again by itself
+        /// (ADR 0084); a size that allows no finer one starts nothing, so the layout passes of a
+        /// steady window cost nothing.
         /// </summary>
         /// <param name="width">
         /// The width in device pixels; 0 or less leaves the size as it was.
@@ -288,7 +384,10 @@ namespace AstroPhotoAnalyzer.Wpf
             if (width <= 0 || height <= 0) return;
             _width = width; _height = height;
             if (_result == null || _askedWidth == 0) return;
-            if (CurveRun.PreviewStride(_result.Raster, width, height) < CurveRun.PreviewStride(_result.Raster, _askedWidth, _askedHeight))
+            // Finer than what: the computation running, or else the gallery on screen, which may
+            // have been kept from a smaller area while the other one was refined (R-185).
+            int had = IsBusy || _shown == null ? CurveRun.PreviewStride(_result.Raster, _askedWidth, _askedHeight) : _shown.Stride;
+            if (CurveRun.PreviewStride(_result.Raster, width, height) < had)
             {
                 Log.Debug("the gallery area " + LogText.Int(width) + "x" + LogText.Int(height) + " allows a finer preview than " + LogText.Int(_askedWidth) + "x" + LogText.Int(_askedHeight) + ": computing again");
                 ComputeAsync();
@@ -332,13 +431,16 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             _run++;
             _askedWidth = _askedHeight = 0;
-            _print = _screen = null;
-            _images = Array.Empty<BitmapSource>();
+            _moved = _plain = _shown = null;
+            // What the box may offer is the image's; the owner's choice is not, and stays.
+            _moveKnown = false; _dustRefusal = null; _askedRefusal = null;
+            _saving = null;
             _index = 0;
             Items = Array.Empty<CurveGalleryItem>();
             Message = null; IsProblem = false; AnchorSource = null; SaveMessage = null; SaveError = null; PreviewCapped = false;
             IsBusy = false;
             RaiseGallery();
+            RaiseDust();
         }
 
         /// <summary>
@@ -356,7 +458,8 @@ namespace AstroPhotoAnalyzer.Wpf
             if (width > 0 && height > 0) { _width = width; _height = height; }
             _run++;
             _askedWidth = _width; _askedHeight = _height;
-            Show(CurveRun.Execute(_result, CurvePurpose.Print, _width, _height));
+            bool moved = _runMoved = AskMoved;
+            Show(CurveRun.Execute(_result, CurvePurpose.Print, _width, _height, moved), _width, _height, moved);
         }
 
         /// <summary>
@@ -371,14 +474,15 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             AnalysisResult result = _result;
             int w = _width, h = _height, run = ++_run;
+            bool moved = _runMoved = AskMoved;
             _askedWidth = w; _askedHeight = h;
             IsBusy = true;
             IsProblem = false;
             Message = CurveTexts.Computing;
             try
             {
-                CurveSet set = await Task.Run(() => CurveRun.Execute(result, CurvePurpose.Print, w, h));
-                if (run == _run) Show(set);
+                CurveSet set = await Task.Run(() => CurveRun.Execute(result, CurvePurpose.Print, w, h, moved));
+                if (run == _run) Show(set, w, h, moved);
                 else Log.Debug("computation " + LogText.Int(run) + " ended after a newer one started; nothing is shown");
             }
             catch (Exception e)
@@ -398,39 +502,80 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Takes a set computed for print: the images are made once, the rows for both purposes;
-        /// a set with a problem empties the gallery and shows the problem in red.
+        /// Takes a set computed for print: the images are made once, the rows for both purposes,
+        /// and the set becomes the gallery with the dust move or the plain one, by what the core
+        /// applied; then the gallery wanted now is shown, which starts the other's computation
+        /// when it is that one and not made yet. A set with a problem empties the tab and shows
+        /// the problem in red.
         /// </summary>
         /// <param name="print">The core's set for print; not null.</param>
-        void Show(CurveSet print)
+        /// <param name="width">The area's width the set was computed for, in pixels.</param>
+        /// <param name="height">The area's height the set was computed for, in pixels.</param>
+        /// <param name="asked">Whether the computation asked the core for the dust move.</param>
+        void Show(CurveSet print, int width, int height, bool asked)
         {
             SaveMessage = null; SaveError = null;
             AnchorSource = print.SourceSentence;
-            PreviewCapped = print.Problem == null && print.PreviewCapped;
-            _print = print;
-            _screen = CurveRun.ForScreen(print);
-            _index = 0;
             if (print.Problem != null)
             {
+                PreviewCapped = false;
                 // No gallery to refine: a larger area must not run this again (the reason does
                 // not depend on the size), so the asked size goes back to "nothing to redo".
                 _askedWidth = _askedHeight = 0;
-                _images = Array.Empty<BitmapSource>();
+                _moved = _plain = _shown = null;
+                _moveKnown = false; _dustRefusal = null; _askedRefusal = null;
+                _index = 0;
                 Items = Array.Empty<CurveGalleryItem>();
                 Message = print.Problem;
                 IsProblem = true;
                 RaiseGallery();
+                RaiseDust();
                 return;
             }
             var images = new List<BitmapSource> { Bitmap(print.OriginalPreview) };
             foreach (CurveSuggestion s in print.Suggestions) images.Add(Bitmap(s.Preview));
-            _images = images;
             // The previews' rasters are no longer needed: the bitmaps take their place. The
             // curves and the evidence stay, for the curve window and for saving.
-            _print = Slim(_print);
-            _screen = Slim(_screen);
+            var gallery = new Gallery
+            {
+                Print = Slim(print),
+                Screen = print.DustOnPaperBlack ? null : Slim(CurveRun.ForScreen(print)),
+                Images = images,
+                Stride = CurveRun.PreviewStride(_result.Raster, width, height),
+                Capped = print.PreviewCapped,
+            };
+            if (print.DustOnPaperBlack) _moved = gallery; else _plain = gallery;
+            _moveKnown = true;
+            // Asked for and refused: the reason stays for this image, also when a later
+            // computation, which no longer asks, comes back without it.
+            if (asked && !print.DustOnPaperBlack && print.DustMoveRefusal != null) _askedRefusal = print.DustMoveRefusal;
+            _dustRefusal = print.DustMoveRefusal ?? _askedRefusal;
             Message = null;
-            ShowItems(0);
+            RaiseDust();
+            ShowWanted();
+        }
+
+        /// <summary>
+        /// Shows the gallery the purpose and the box ask for, at the position kept; when that
+        /// gallery is not made yet, or the area allows finer previews than it was made with,
+        /// starts its computation and leaves the one on screen until it is there (R-185). The
+        /// area's size itself does not count: it changes with the evidence under the image, and
+        /// only a finer reduction step makes a better gallery, as in SetGallerySize.
+        /// </summary>
+        void ShowWanted()
+        {
+            Gallery wanted = WantMoved ? _moved : _plain;
+            if (wanted != null)
+            {
+                // Made with a coarser step, it is still the right gallery to look at meanwhile.
+                _shown = wanted;
+                PreviewCapped = wanted.Capped;
+                ShowItems(_index);
+                Raise(nameof(Footnote));
+            }
+            if (wanted != null && wanted.Stride <= CurveRun.PreviewStride(_result.Raster, _width, _height)) return;
+            // The computation running may already be this gallery's, at this size.
+            if (!(IsBusy && _runMoved == WantMoved)) ComputeAsync();
         }
 
         /// <summary>A preview raster as a frozen bitmap, pixel for pixel.</summary>
@@ -453,9 +598,10 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <param name="index">The item to show; clamped into the gallery.</param>
         void ShowItems(int index)
         {
-            CurveSet set = _isPrint ? _print : _screen;
-            var items = new List<CurveGalleryItem> { Item(CurveTexts.Original, _images[0], null) };
-            for (int i = 0; i < set.Suggestions.Count; i++) items.Add(Item(set.Suggestions[i].Name, _images[i + 1], set.Suggestions[i]));
+            CurveSet set = _isPrint ? _shown.Print : _shown.Screen;
+            IReadOnlyList<BitmapSource> images = _shown.Images;
+            var items = new List<CurveGalleryItem> { Item(CurveTexts.Original, images[0], null) };
+            for (int i = 0; i < set.Suggestions.Count; i++) items.Add(Item(set.Suggestions[i].Name, images[i + 1], set.Suggestions[i]));
             _index = Math.Clamp(index, 0, items.Count - 1);
             Items = items;
             RaiseGallery();
@@ -497,14 +643,18 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Saves the curve shown into a new FITS (R-145); an error is told, not thrown.
+        /// Saves into a new FITS (R-145) the curve Save as... was pressed on, whatever gallery
+        /// is on screen by now; without a dialog before it, the curve shown. An error is told,
+        /// not thrown.
         /// </summary>
         /// <param name="path">The file to write, as the save dialog gave it.</param>
         internal void Save(string path)
         {
+            CurveSuggestion suggestion = _saving ?? Current?.Suggestion;
+            _saving = null;
             try
             {
-                CurveExport.Save(_result, Current.Suggestion, path);
+                CurveExport.Save(_result, suggestion, path);
                 SaveError = null;
                 SaveMessage = CurveTexts.Saved(path);
             }

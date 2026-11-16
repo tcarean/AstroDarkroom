@@ -158,6 +158,17 @@
   shoulder that would make room by compressing the highlights is not built. A frame whose five
   anchors do not increase, or with an empty class, gets none either; a dust at black is not a
   refusal, its point is the origin.
+- The dust move (ADR 0101) puts the dust's figure on paper black, and that figure is the dark
+  part of the dust zone (the level under which a quarter of its patches lie): the patches
+  darker than it end under paper black, as solid black (0.2 % of the frame before, 2.2 % after
+  on the plate-solved FITS at Dmax 2.4). The stretch it costs falls in the lighter part of the
+  dust, up to 2.5 times at its steepest on that image; the evidence gives its mean, as a
+  percentage, and nothing caps it but the spline staying monotone. The noise there was measured
+  on two smooth tiles only. Whether the move can be had is told for every image, but that a
+  move leaves no monotone curve is found only when it is asked for: the box then goes off after
+  the computation. With the box on, Print and Screen show different curves, so the first change
+  of purpose computes the other gallery. An image whose dust figure is the darkest sky
+  (`de_printat.png`, Rosetta, the Veil) is not offered the move at all.
 - A saved FITS holds the raster's values: what the reader clipped to 0..1 (and a NaN, to 0) is
   saved clipped. The ICC profile of a PNG or TIFF source is not carried, and a borrowed WCS
   (`--wcs`) is not written. SIP cards are copied with the rest and still ignored by the classes.

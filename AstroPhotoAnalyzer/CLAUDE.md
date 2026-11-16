@@ -176,9 +176,9 @@ edit:
 - `SoftProof`, `ProofRun`: `docs/design/soft-proof.md` and ADR 0066 (the table holds the paper's
   colour, the display step is a scaling, the third intent is the Tonuri tab's model, no screen
   warning and no simulation box: both were measured useless).
-- `ToneCurve`, `CurveAdvisor`, `GamutAnalyzer`, `FitsWriter`: ADR 0032 (the curve never moves
-  the dust or the sky; the anchors are the upper part of the classes; the spline is Siril's; the
-  gamut is a figure; the writer copies a FITS and never opens the input for writing).
+- `ToneCurve`, `CurveAdvisor`, `GamutAnalyzer`, `FitsWriter`: ADR 0032 (the curve never moves the sky; the anchors are
+  the upper part of the classes; the spline is Siril's; the gamut is a figure; the writer copies a FITS and never opens
+  the input for writing) and ADR 0101 (the dust moves only onto paper black, for print, aimed by measuring).
 - `GamutFit`, `GamutFitRun`, `TiffWriter`, `IccProfiles`: `docs/design/paper-fit.md` and ADR 0083
   (chroma only, never a tone; the Soft proof judge decides the edge; the TIFF is 16-bit on purpose).
 - Any text in a view-model: `docs/design/window.md` and ADR 0020.

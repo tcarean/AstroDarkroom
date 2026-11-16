@@ -111,7 +111,19 @@ share, the paper checks, the gamut figure or the note that explains its absence)
 paper checks as `Recommendation`s with a `Because` (`PaperChecks`: the background too low for
 paper, which sends to the stretch; the noise after the gain over `NoisePrintHiLsb`), where the
 anchors came from, why nothing is suggested, the proposed file name and the `HISTORY` text of
-the saved FITS (one piece per card, at most 70 characters, the points as `x y` pairs).
+the saved FITS (one piece per card, at most 70 characters, the points as `x y` pairs). For the
+dust move (R-184, R-185, ADR 0101) it also holds the refusals the box shows beside it
+(`DustMove...`), the four lines a moved curve adds (`DustLines`: where the dust went, then
+three figures in percent through `GrowsOrDrops`), the sentence under the evidence in its three
+forms (`Footnote`: no move, the dust put on paper black, the dust moved towards it when the move
+stopped short), the note of the curve window's extra rows, each explained only on a curve that
+has it, and the `HISTORY` piece that says the dust was put on paper black, or moved towards it.
+The first paper check of a moved curve is on the sky alone, unless the dust ended more than
+`CurveDustAimTolerance` under paper black, when it stays and names where the dust got. The
+second, on the noise, fires only when the curve is the cause: the noise as it is at or under
+`NoisePrintHiLsb`, and over it after the gain (ADR 0101). The noise of the sky is a percentage on every curve
+(`GrowsOrDrops` on the gain); only the paper check on the noise keeps the level scale, its
+threshold being the Denoise tab's.
 
 ### The Culori pentru hartie tab's sentences (`Report/GamutFitTexts.cs`, ADR 0083)
 

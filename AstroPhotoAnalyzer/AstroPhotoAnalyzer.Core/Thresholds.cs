@@ -733,6 +733,39 @@ namespace AstroPhotoAnalyzer
         internal const double CurveMaximaMinGain = 0.02;
 
         /// <summary>
+        /// The dust move (R-184, ADR 0101): the sky's dark end, which the curve holds in place
+        /// while the dust's point goes to paper black, is the level under which this share of the
+        /// sky patches lies. The same 10 % as the wide range of R-046, and by the same figure:
+        /// the run reads the held level as that range's low end (DustStats.SkyWide.Low), so the
+        /// two cannot differ until the move gets a percentile of its own. Measured on 2026-11-16 on starless_rbf0.5_stretch0.17.fit
+        /// at Dmax 2.4, on the 41 noise tiles of the image as it is: held there, the sky's noise
+        /// under Blanda is 2.08 levels against today's 2.29; held at 25 % it is 2.25; not held at
+        /// all 3.11, with the sky's dark end fallen from L* 14.0 to 12.0.
+        /// </summary>
+        internal const double CurveSkyHoldCut = RangeWideCut;
+
+        /// <summary>
+        /// The dust move's helper point, added only when the spline would not stay monotone
+        /// without it: at this share of the dust's input, with the same share of its output, so
+        /// the curve runs straight from black to the dust. Measured on 2026-11-16 on the same FITS
+        /// at Dmax 2.4: without it the spline stops being monotone near black at 77 % of the move
+        /// (the dust at L* 4.35 against a paper black of 3.60); with it at 0.25, 0.33, 0.5 and 0.6
+        /// of the dust's input, at 98 to 99 % (3.67 to 3.63); at 0.67, 0.75 and 0.85 the whole move
+        /// is monotone (3.60), the curve's lowest slope under the sky being 0.01, 0.05 and 0.13 and
+        /// its highest in the dust 2.52, 2.55 and 2.60. 0.75: the whole move with some margin,
+        /// before the dust's stretch grows further.
+        /// </summary>
+        internal const double CurveDustHelperFraction = 0.75;
+
+        /// <summary>
+        /// A dust within this many L* of paper black is already on it: nothing is moved, and a
+        /// moved dust that ends within it under paper black is not flagged by the curve's paper
+        /// check. A choice, not a measurement: half a tenth of an L* is under what the report
+        /// prints (one decimal).
+        /// </summary>
+        internal const double CurveDustAimTolerance = 0.05;
+
+        /// <summary>
         /// A pixel is "clipped" when one of its channels is at or over this level; the threshold
         /// of the study of 2026-10-05.
         /// </summary>

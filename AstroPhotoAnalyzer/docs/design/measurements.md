@@ -434,7 +434,8 @@ that do not increase strictly give a `Problem` and no curve, in that order. A du
 origin itself: the dust point takes the place of the (0, 0) end, with its label, since the
 curve never moves it anyway.
 
-**The recipe** (`CurveAdvisor.Curves`). The dust and the sky map to themselves. The three
+**The recipe** (`CurveAdvisor.Curves`). The dust and the sky map to themselves (the dust moves
+only by the dust move below). The three
 segments above the sky get the increments slope x width with `CurveSlopeSkyBand`,
 `CurveSlopeBandCloud`, `CurveSlopeCloudPeak` (1.70, 1.48, 0.94), all multiplied by one factor
 `min(1, (CurvePeakTarget - sky) / sum)` so the peaks do not pass 0.92: the full curve. A point
@@ -447,17 +448,55 @@ the full curve needs no cap and Maxima's spline overshoots 1 on three of them (1
 only when its capped peaks gain more than `CurveMaximaMinGain` over `Puternica`'s. A curve that
 is still not suggestible is dropped.
 
+**The dust move** (`CurveAdvisor.DustMoveProblem`, `AimDust`, `Points`, `DustFigures`; R-184,
+ADR 0101). Asked for apart, for print only, it adds up to three points under the sky to every
+curve of the set, the same at every strength: the dust's point with a moved output, the sky's
+dark end mapped to itself (the grey of `DustStats.SkyWide.Low` as the image is,
+`CurveSkyHoldCut`; left out when it is the sky's own anchor, a sky of one level) and, only when
+needed, a helper at `CurveDustHelperFraction` of the dust's input and output. The two added
+points carry a label and `CurvePoint.Extra`, so nothing takes them for classes
+(`ShadowChartLimit`, the curve window's L\* columns). `DustMoveProblem` refuses, in this order:
+the screen; a dust figure that is the darkest sky (the run hands over `CurveTexts.DustMoveNoDustZone`,
+one sentence per `SimulationResult.DarkestSkyCause`: no dust, too little of it, a sky darker than it); a dust
+anchor at 0; a held level not above the dust; a paper black not under the held level; a dust
+within `CurveDustAimTolerance` of paper black. `AimDust` works on the strongest plain curve's
+outputs above the sky: a bisection of `AimSteps` on the dust point's output, each probe the
+dust's L\* measured on the curved subsample through the delegate the run passes (the tests pass
+a grey dust), on the gentlest of `CurveStrengths`, where the dust lands lowest, so that no
+strength leaves it under paper black, keeping the end at or above paper black; from 0 to the dust's input when the dust
+is lowered, from there to just under the held point when it is lifted. A move is valid when the
+spline of each of `CurveStrengths` is suggestible with it. First without the helper, then with
+it; when neither aimed move is valid, each is cut to the largest part of its way that is (forty
+halvings, as the caps of ADR 0039), and the one that leaves the dust nearer paper black is kept,
+with `StoppedShort` when the dust ends more than `CurveDustAimTolerance` from it; a move that changes the dust by less than the tolerance is none (null, and
+the run says `CurveTexts.DustMoveNotSmooth`). `Curves` then builds the set with the move in
+`Points`, so its two caps judge the splines with the move's points in place. `DustFigures`
+gives the evidence its four figures from the dust and the sky measured before and after: on
+paper the dust is never darker than paper black, so the difference is `sky - max(dust, paper
+black)`; the dust's noise is the mean stretch from the dust's point to the held one. The noise
+gain of a moved curve is `MovedSkyNoiseGain`, the larger of the slope at the sky's anchor and
+the mean slope over the sky's wide range: a lowered dust bends the curve at the anchor, where
+the slope alone reads 0.76 to 0.82 on the reference FITS while the sky's tiles measure 0.95 to
+1.04 (ADR 0101); a curve without the move keeps the slope at the anchor.
+
+On the plate-solved FITS at Dmax 2.4 (V-017): the dust at L\* 7.7 against a paper black of 3.60,
+the held level 14.0 (grey 0.140); the plain aim (0.036) is not monotone near black, the aim with
+the helper is (0.032, the helper at 0.067 > 0.024), and the dust lands on 3.60 at the three strengths with the sky at 17.5 to 17.7.
+
 **The evidence** (`CurveAdvisor.Measure`). The five class levels again, with the same
 statistics, on the tonal subsample with the curve applied: measured, not predicted, since a
 per-channel curve does not take a coloured patch where it takes its grey. The noise gain is
-the spline's slope at the sky's input, and the noise after is `NoiseResult.SigmaMedianLsb`
-times it. The clipped share counts pixels with a channel at or over `CurveClipLevel`.
+the spline's slope at the sky's input (for a curve with the dust move, `MovedSkyNoiseGain`,
+above), and the noise after is `NoiseResult.SigmaMedianLsb` times it. The clipped share counts pixels with a channel at or over `CurveClipLevel`.
 
-On the plate-solved FITS (V-008): anchors 0.091, 0.169, 0.306, 0.543, 0.720; `Puternica` has
-the points 0.401, 0.753, 0.919 and takes the five levels from 7.9, 17.6, 33.2, 57.7, 74.6 to
-7.9, 17.8, 43.4, 77.0, 90.8 with a gain of 1.26. The study's Python port gave the same anchors
-and points; its class levels for the band and the bright clouds were medians (28.2 and 64.4),
-the build's are the upper parts of the classes, like the anchors.
+On the plate-solved FITS (V-008, its record made exact on 2026-11-16): anchors 0.090, 0.169,
+0.304, 0.537, 0.720; `Puternica` has the points 0.398, 0.744, 0.915 and takes the five levels
+from 7.7, 17.6, 32.9, 57.1, 74.6 to 7.7, 17.8, 43.0, 76.0, 90.5 with a gain of 1.26. Before the
+classes moved (ADR 0086, ADR 0099) the anchors were 0.091, 0.169, 0.306, 0.543, 0.720, the
+points 0.401, 0.753, 0.919 and the levels 7.9, 17.6, 33.2, 57.7, 74.6 to 7.9, 17.8, 43.4, 77.0,
+90.8; the study's Python port gave those anchors and points, and its class levels for the band
+and the bright clouds were medians (28.2 and 64.4), where the build's are the upper parts of
+the classes, like the anchors.
 
 ### F2 - `GamutAnalyzer` - how much of the image leaves the paper's gamut (R-144)
 
