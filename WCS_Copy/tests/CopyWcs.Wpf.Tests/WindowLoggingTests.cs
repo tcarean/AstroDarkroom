@@ -70,6 +70,42 @@ public class WindowLoggingTests
             Assert.IsType<InvalidOperationException>(line.Exception);
         });
 
+    /// <summary>
+    /// Each press of F1 or Help is an Info line with the address it opens (R-039), whether the
+    /// browser starts or not; here the window's opener is replaced, so none does.
+    /// </summary>
+    [Fact]
+    public void R043_HelpWritesTheAddressItOpens()
+        => _sta.Invoke(() =>
+        {
+            MainWindow w = new() { OpenAddress = _ => { } };
+            using LogCapture capture = LogCapture.Start();
+
+            Assert.True(HelpTests.PressF1(w));
+
+            LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == "Window");
+            Assert.Equal(LogLevel.Info, line.Level);
+            Assert.Equal("Help opened: https://github.com/tcarean/AstroDarkroom/wiki/CopyWcs#the-window", line.Message);
+        });
+
+    /// <summary>
+    /// A click of About is an Info line, whether the window opens or not; here the window is
+    /// replaced, so no modal window blocks the test (R-035).
+    /// </summary>
+    [Fact]
+    public void R043_AboutWritesItsLine()
+        => _sta.Invoke(() =>
+        {
+            MainWindow w = new() { OpenAbout = _ => { } };
+            using LogCapture capture = LogCapture.Start();
+
+            HelpTests.Click(w.AboutButton);
+
+            LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == "Window");
+            Assert.Equal(LogLevel.Info, line.Level);
+            Assert.Equal("About opened", line.Message);
+        });
+
     [Fact]
     public void R043_TheStartLineNamesTheLanguageAndTheFilesFromTheCommandLine()
     {

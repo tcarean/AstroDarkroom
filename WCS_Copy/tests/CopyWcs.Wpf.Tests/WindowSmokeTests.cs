@@ -19,9 +19,9 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CopyWcs.Tests;
@@ -47,7 +47,7 @@ public partial class WindowSmokeTests
     // Words that only the Romanian texts hold, the console's (LanguageTests) and the window's
     // own (R-036); the paths of the fixture are temp folders named CopyWcsTests_ plus random
     // letters, so none of these can come from them.
-    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Chei vechi|Copiate|Eliminate|Eliminata|destinatiei|oglinda|oglindita|Intoarce|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un|Versiune|licenta|rezolvat|aceeasi|pixelii|COMPONENTE|TERTE|componente|Unealta|jurnalului|leaga)\b", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Chei vechi|Copiate|Eliminate|Eliminata|destinatiei|oglinda|oglindita|Intoarce|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Ajutor|Manualul|sectiunea|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un|Versiune|licenta|rezolvat|aceeasi|pixelii|COMPONENTE|TERTE|componente|Unealta|jurnalului|leaga)\b", RegexOptions.CultureInvariant)]
     private static partial Regex RomanianWord();
 
     /// <summary>Every text a rendered tree shows: the text blocks (the buttons' and the check boxes' labels become ones), and the hints as strings.</summary>
@@ -136,6 +136,8 @@ public partial class WindowSmokeTests
 
             Assert.Contains("Preview", english);
             Assert.Contains("Copy", english);
+            Assert.Contains("Help", english);
+            Assert.Contains("The manual, at the section about what is on screen (F1)", english);
             Assert.Contains("About", english);
             Assert.Contains("Refused", english);
             Assert.Contains("Source: 100 x 80, plate-solved", english);
@@ -151,6 +153,7 @@ public partial class WindowSmokeTests
             List<string> texts = TextsOf(roWindow).ToList();
             Assert.Contains("Previzualizare", texts);
             Assert.Contains("Copiaza", texts);
+            Assert.Contains("Ajutor", texts);
             Assert.Contains("Despre", texts);
             Assert.Contains("Sursa: 100 x 80, plate-solved", texts);
             Assert.Contains("Continua chiar daca dimensiunile difera sau imaginea e oglindita", texts);
@@ -241,14 +244,21 @@ public partial class WindowSmokeTests
     }
 
     /// <summary>
-    /// The band at the top (R-038): edge to edge on the panel colour with a line under it, the
-    /// console's first two lines on the left, the explanation in the middle, and on the right
-    /// the window's one About button, which runs Help as F1 does, in each language.
+    /// What a window's <c>Width</c> and <c>MinWidth</c> count beyond its content: the resizable
+    /// frame, 8 px a side at 96 dpi on Windows 10, so a window of 820 px lays out 804 px inside.
+    /// </summary>
+    private const double WindowFrame = 16;
+
+    /// <summary>
+    /// The band at the top (R-038, R-039): edge to edge on the panel colour with a line under it,
+    /// the console's first two lines on the left, the explanation in the middle, and on the right
+    /// Help (the drawn icon, then the word) and the window's one About button, in each language.
+    /// Neither runs a command: F1 is the window's own key for Help, and About has its click.
     /// </summary>
     [Theory]
-    [InlineData(false, "Copies the plate solve (WCS) from a FITS solved in Siril into the same image processed elsewhere, card by card, without touching its pixels.", "About", "Version, licence, components (F1)")]
-    [InlineData(true, "Copiaza plate solve-ul (WCS) dintr-un FITS rezolvat in Siril in aceeasi imagine procesata in alta parte, card cu card, fara sa-i atinga pixelii.", "Despre", "Versiune, licenta, componente (F1)")]
-    public void R038_TheBandShowsTheConsolesFirstTwoLinesTheExplanationAndTheOnlyAboutButton(bool romanian, string explanation, string about, string tip)
+    [InlineData(false, "Copies the plate solve (WCS) from a FITS solved in Siril into the same image processed elsewhere, card by card, without touching its pixels.", "Help", "The manual, at the section about what is on screen (F1)", "About", "Version, licence, components")]
+    [InlineData(true, "Copiaza plate solve-ul (WCS) dintr-un FITS rezolvat in Siril in aceeasi imagine procesata in alta parte, card cu card, fara sa-i atinga pixelii.", "Ajutor", "Manualul, la sectiunea despre ce e pe ecran (F1)", "Despre", "Versiune, licenta, componente")]
+    public void R038_TheBandShowsTheConsolesFirstTwoLinesTheExplanationHelpAndTheOnlyAboutButton(bool romanian, string explanation, string help, string helpTip, string about, string aboutTip)
         => _sta.Invoke(() =>
         {
             using IDisposable _ = Ui.Use(romanian ? UiLanguage.Romanian : UiLanguage.English);
@@ -273,28 +283,54 @@ public partial class WindowSmokeTests
             Assert.Equal(Color.FromRgb(0x3A, 0x3A, 0x40), Assert.IsType<SolidColorBrush>(band.BorderBrush).Color);
             Assert.Equal(FontWeights.SemiBold, banner.FontWeight);
 
-            // the copyright under the banner, the explanation, and the one About button, all in it
+            // the copyright under the banner, the explanation, Help and the one About button, all in it
             TextBlock copyright = TextBlockWith(window, console[1]);
             TextBlock line = TextBlockWith(window, explanation);
+            Button helpButton = w.HelpButton;
             Button button = Assert.Single(Descendants(window).OfType<Button>(), b => Equals(b.Content, about));
-            foreach (FrameworkElement e in new FrameworkElement[] { copyright, line, button })
+            Assert.Same(w.AboutButton, button);
+            foreach (FrameworkElement e in new FrameworkElement[] { copyright, line, helpButton, button })
             {
                 Assert.Contains(band, Ancestors(e));
             }
 
-            // the banner over the copyright on the left, the explanation in the middle, About on
-            // the right and inside the window: a column swapped, or a line too wide to wrap, fails
+            // Help: the theme's drawn icon, then the word; its name for a screen reader is the word
+            Image icon = Assert.Single(Descendants(helpButton).OfType<Image>());
+            Assert.Same(Application.Current.FindResource("HelpIcon"), icon.Source);
+            TextBlock word = Assert.Single(Descendants(helpButton).OfType<TextBlock>(), t => t.Text == help);
+            Assert.True(Box(icon, window).Right <= Box(word, window).Left);
+            Assert.Equal(help, AutomationProperties.GetName(helpButton));
+            Assert.Equal(helpTip, helpButton.ToolTip as string);
+
+            // the banner over the copyright on the left, the explanation in the middle, Help then
+            // About on the right and inside the window: a column swapped, or a line too wide to
+            // wrap, fails
             Assert.True(Box(banner, window).Top < Box(copyright, window).Top);
             Assert.True(Math.Max(Box(banner, window).Right, Box(copyright, window).Right) < Box(line, window).Left);
-            Assert.True(Box(line, window).Right < Box(button, window).Left);
+            Assert.True(Box(line, window).Right < Box(helpButton, window).Left);
+            Assert.True(Box(helpButton, window).Right < Box(button, window).Left);
             Assert.True(Box(button, window).Right <= window.ActualWidth);
             Assert.Equal(TextWrapping.Wrap, line.TextWrapping);
 
-            // About runs the Help command, as F1 does, and the window's binding lets it run
-            Assert.Same(ApplicationCommands.Help, button.Command);
-            Assert.Contains(w.CommandBindings.Cast<CommandBinding>(), b => b.Command == ApplicationCommands.Help);
-            Assert.True(ApplicationCommands.Help.CanExecute(null, button));
-            Assert.Equal(tip, button.ToolTip as string);
+            // neither button runs a command, and the window binds none for F1's gesture
+            Assert.Null(button.Command);
+            Assert.Null(helpButton.Command);
+            Assert.Empty(w.CommandBindings);
+            Assert.Equal(aboutTip, button.ToolTip as string);
+
+            // at the width the window opens with, less its frame, the explanation takes two
+            // lines: the band is as tall as on a window wide enough for one, where the banner and
+            // the copyright set its height (57 px on 2026-11-16; three lines made it 70)
+            double BandAt(double width)
+            {
+                window.Measure(new Size(width, 560));
+                window.Arrange(new Rect(0, 0, width, 560));
+                window.UpdateLayout();
+                return band.ActualHeight;
+            }
+
+            Assert.Equal(820, w.Width);
+            Assert.Equal(BandAt(2000), BandAt(w.Width - WindowFrame));
         });
 
     /// <summary>The window before any file: the empty state, the dark palette as its background (R-037).</summary>

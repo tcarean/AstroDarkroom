@@ -1,7 +1,7 @@
 # 0009. A diagnostic log with NLog, as FlatCheck's, written at the copy's seams, and NLog's notice in the About window
 
 Date: 2026-10-30
-Status: accepted 2026-10-30
+Status: accepted 2026-10-30; F1 in the About tooltip superseded by 0016
 Supersedes: 0007 in part (the About window without the third-party card); 0008 in part (the About tooltip without the components)
 
 ## Context

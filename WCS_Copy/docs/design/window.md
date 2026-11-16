@@ -2,25 +2,30 @@
 
 **Covers:** `src/CopyWcs.Wpf/`, `tests/CopyWcs.Wpf.Tests/`, `Icon/make_icon.py`.
 
-The behaviour is R-030 to R-038; the reasons are ADR 0007, ADR 0008 and, for the About window's
-third-party card and the window's log lines, ADR 0009. The pieces copied from
-the siblings (`Presentation/DarkTitleBar.cs`, `Presentation/TExtension.cs`,
+The behaviour is R-030 to R-039; the reasons are ADR 0007, ADR 0008, for the About window's
+third-party card and the window's log lines ADR 0009, and for Help and F1 ADR 0016. The pieces
+copied from the siblings (`Presentation/DarkTitleBar.cs`, `Presentation/TExtension.cs`,
 `Presentation/Mvvm.cs`, `Presentation/AppIcon.cs`, `Theme/Dark.xaml`, `Views/AboutWindow.*`,
 the band at the top of `MainWindow.xaml`, the test fixture `StaFixture`) are marked as such in
 their headers and are the siblings' to improve first; `App`, `MainViewModel`, the rest of
-`MainWindow` and `AboutViewModel` are this project's own.
+`MainWindow`, `AboutViewModel`, `Presentation/Manual.cs` and `Presentation/ExternalLink.cs`
+(after ImageVisualCompare's) are this project's own.
 
 ## The shape
 
 `MainWindow.xaml` is a grid of two rows. The first is the band, FlatCheck's top bar markup: a
 `Border` on `PanelBg` with a `BorderBr` line under it (`BorderThickness="0,0,0,1"`, padding
 `20,12`) over three columns, `Banner` in semi-bold over `Copyright` in `Faint`, the explanation
-of the tool in `Muted` (wrapped, the window's own pair), and the About button, whose
-`MinWidth` of 88 is the Browse buttons', so the two right-hand columns line up. The band is 57
-px high in both languages, the explanation in two lines (measured on 2026-10-28 in the tests'
-renders, 720 px wide, and in screenshots of the running window at its minimum size), so the
-window opens 700 px high instead of 640, with a minimum height of 620 instead of 560 (the
-widths stay 800 and 720): the outcome card keeps its room.
+of the tool in `Muted` (wrapped, the window's own pair), and a horizontal `StackPanel` with
+Help (`HelpButton`: the theme's `HelpIcon` at 16 px, then the word 7 px after it; its
+automation name is the word, since its content is not a string) and, 8 px after it, About
+(`AboutButton`), whose `MinWidth` of 88 is the Browse buttons', so the right edges line up.
+The band is 57 px high in both languages while the explanation takes two lines; beside Help
+and About that needs 787 px inside the window, 803 px with its 16 px frame, so the window opens
+820 px wide; below 803 px, down to its minimum of 720, the explanation takes three lines and the
+band 70 px (measured on 2026-11-16 in both languages, ADR 0016). The band made the window open
+700 px high instead of 640, with a minimum height of 620 instead of 560 (2026-10-28): the
+outcome card keeps its room.
 
 The second row is the form, one column with the margin `20,16`: the three file rows (a label,
 a `TextBox` bound to the path with `UpdateSourceTrigger=PropertyChanged`, a Browse button, and
@@ -34,13 +39,20 @@ flag: the refusal (the heading `RefusedHeading` in the `BadBr` colour over the c
 and the closing notes. The built-in `BooleanToVisibilityConverter` does every visibility;
 there is no converter of the project's own. Every label is `{l:T En='...', Ro='...'}`,
 resolved by `TExtension` when the element is made (its header says why a binding and not a
-string). The band's About button runs `ApplicationCommands.Help`, the command F1 runs, and the
-window's one `CommandBinding` for it opens `AboutWindow` modally, made anew at every open.
+string). About's click opens `AboutWindow` modally, made anew at every open. Help's click and F1
+open the manual: the window reads F1 without a modifier (`IsHelpKey`) in its `PreviewKeyDown`,
+before any control sees it, and takes it, a repeat of a held key included, which then does
+nothing; the window binds no command, so `ApplicationCommands.Help`, whose gesture F1 is,
+reaches nothing.
 
 `MainWindow.xaml.cs` owns what needs a window: the two `OpenFileDialog`s and the
 `SaveFileDialog` (the FITS filter first, every file second, the folder of the current path
-proposed), the About window (`ShowAbout`, the Help command's handler), and
-`Start(source, dest)`, which `App` calls with the files from the command line. The handlers of
+proposed), the About window (`ShowAbout`, About's click, through `OpenAbout`, which a test
+replaces), the manual (`ShowHelp`, behind
+`HelpClick` and `OnPreviewKeyDown`: `Manual.SectionFor` over the view-model's `HasOutcome`,
+`HasError` and `HasWarnings`, `Manual.Url`, the log line, then `OpenAddress`, which is
+`ExternalLink.Open` unless a test replaced it), and `Start(source, dest)`, which `App` calls
+with the files from the command line. The handlers of
 `Preview` and `Copy` call the view-model and nothing else.
 
 ## One view-model, three things
@@ -102,22 +114,35 @@ read as the console's), shows the window, and fills the boxes with the two files
 Before all of it the constructor opens the diagnostic log and hooks the dispatcher's unhandled
 exceptions, and `OnExit` closes the log (`logging.md`); `OnStartup` logs `StartLine(StartArgs)`
 and a refused `--lang`. The window's classes take their logger names from `Loggers` (`App`,
-`Window`): `MainWindow` logs the file picked in each dialog and About, `MainViewModel.Facts` a
-header it could not read, `AboutWindow.OpenLink` a link that would not open; none of them logs a
+`Window`): `MainWindow` logs the file picked in each dialog, About and the manual's address,
+`MainViewModel.Facts` a header it could not read, `AboutWindow.OpenLink` a link that would not
+open, `ExternalLink` an address it refused or the shell could not open; none of them logs a
 run, which the core logs itself.
 
 ## The theme and the pieces
 
 `Theme/Dark.xaml` is merged once in `App.xaml`: the palette (the siblings' colours, `WarnBr`
 amber and `BadBr` red for the two outcome colours), the text styles, the card, the tooltip,
-the button, the text field, the check box, the radio button (this project's, drawn after the
+the Help icon (`HelpIcon`, FlatCheck's drawing as AstroDarkroom's `App.xaml` holds it: a disc
+of `AccentBr` and a question mark stroked and dotted in `WindowBg`, on 16 units), the button,
+the text field, the check box, the radio button (this project's, drawn after the
 check box), the list and the scroll bar, and DarksCheck's `ComponentRowTemplate` (a component's
 name and role, its licence and copyright under them in the wrapping `Faint` style, its link),
 which the About window's third-party card lists `AboutViewModel.Components` with; the link's
 routed `RequestNavigate` reaches the window's `OpenLink`. The About button's tooltip reads
-`Version, licence, components (F1)`, the siblings' words. `DarkTitleBar.Apply` is called on
-`SourceInitialized` of each window. `AppIcon.Largest` decodes the 256 px frame of `Icon/copywcs.ico` for the About
-window's logo; both windows take the same resource through `Icon=`, both executables through
+`Version, licence, components`, the siblings' words without F1; Help's reads `The manual, at
+the section about what is on screen (F1)`, ImageVisualCompare's.
+`Presentation/Manual.cs` holds the manual's page and the three anchors GitHub makes from its
+headings (`the-window`, `the-result`, `when-something-goes-wrong`): a heading renamed in the
+wiki is renamed there, or the browser lands at the top of the page. `SectionFor` gives the
+problems' section when the card shows a refusal or a warning, the result's when it shows an
+outcome, the window's otherwise; the card keeps the last outcome during a run, and so does the
+section. `Presentation/ExternalLink.cs` hands the shell (`UseShellExecute`) only an absolute
+http or https address (`IsWebAddress`), disposes the process it may get back, and logs at Debug
+an address it refused or could not open; the About window keeps its own `OpenLink`, a copied
+piece. `DarkTitleBar.Apply` is called on `SourceInitialized` of each window.
+`AppIcon.Largest` decodes the 256 px frame of `Icon/copywcs.ico` for the About window's logo;
+both windows take the same resource through `Icon=`, both executables through
 `ApplicationIcon`.
 
 `Icon/make_icon.py` draws every size on its own (the siblings' reason) on a grid of 110 units:
@@ -142,16 +167,30 @@ fail on any data-binding trace error, and in the English pass walk every `TextBl
 visual tree against a list of Romanian words; `COPYWCS_DUMP_SCREENS=<folder>` saves each
 render as a PNG. The R-038 theory finds the band upward from the banner's text block (the
 nearest `Border` on `PanelBg`), checks that it starts at the top, spans the width and has the
-line under it, and that the copyright, the explanation and the window's single About button
-(run by Help, with its tooltip) sit inside it, left to right in that order with About inside
-the window, and that Help can run from the button; the two lines are the first two the console
-prints at `--help`, in each language. `AboutTests` bind the About view-model to `VersionInfo`
-and `LicenseInfo`, check the console prints the same five warranty lines and that the card lists
-`ThirdParty.Components`, in both languages; `WindowLoggingTests`, in the `window` collection on
-the `StaFixture` thread, check the start line, the facts' Debug line, that a copy from the window
-logs what the console's copy logs, that a link the About window cannot open (a relative one) is a
-Debug line and leaves the window open, and that two writers through the window's build of
-`NLog.Targets.AtomicFile` keep every line (R-045); `AppTests` cover
+line under it, and that the copyright, the explanation, Help (the `HelpIcon` image before the
+word, its automation name and tooltip) and the window's single About button (with its tooltip)
+sit inside it, left to right in that order with About inside the window, that neither button
+runs a command and the window binds none, and that laid out at the width the window opens with
+less its frame (`WindowFrame`, 16 px) the band is as tall as at 2000 px, where the explanation
+takes one line; the two lines are the first two the console prints at `--help`, in each
+language. `HelpTests` pin the three addresses and `SectionFor`, press F1 through the window's
+`PreviewKeyDown` (a `KeyEventArgs` with a `PresentationSource` of its own, a repeat marked
+through WPF's internal `SetRepeat`, as ImageVisualCompare's test does) on the window and on a
+box inside it, and click Help, over a card with nothing, a result, a refusal and a warning,
+with `OpenAddress` replaced so no browser starts; a held F1 opens once, F1 with a modifier is
+not the Help key, About's click opens About once while F1 does not open it, and
+`ExternalLink` refuses a relative, `file:` or `mailto:` address with a Debug line.
+`IsHelpKey` is tested on its own; that the key handler hands it the keyboard's modifiers is
+not, since a test's key event reads the real keyboard's state.
+`AboutTests` bind the About view-model to `VersionInfo` and `LicenseInfo`, check the console
+prints the same five warranty lines and that the card lists `ThirdParty.Components`, in both
+languages;
+`WindowLoggingTests`, in the `window` collection on the `StaFixture` thread, check the start
+line, the facts' Debug line, that a copy from the window logs what the console's copy logs,
+that a link the About window cannot open (a relative one) is a Debug line and leaves the window
+open, that About's click writes `About opened` and F1 `Help opened: <address>` at Info, and
+that two writers through the window's build of `NLog.Targets.AtomicFile` keep every line
+(R-045); `AppTests` cover
 `Parse`, `--lang` and the files from the arguments; `IconTests` tie the sizes of the `.ico`,
 the script's `SIZES` line and the two `ApplicationIcon` paths together. The tests that run the
 core await `Preview()` or `Copy()`; the smoke tests that do so run through

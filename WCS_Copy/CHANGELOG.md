@@ -7,6 +7,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A **Help** button with a question-mark icon in the window's band, and F1, open the wiki
+  manual at the section about what the window shows: the window, the result, or the section
+  on problems after a refusal or a warning; About opens from its own button. The window opens
+  820 px wide, so the band's sentence keeps two lines (ADR 0016).
 - A copy is refused when the destination's own plate solve is the mirror image of the
   source's, as in the SyQon CLI's top-down output: the image was flipped after the source was
   solved, so the copy would point the wrong way. `--force`, and the window's renamed option
