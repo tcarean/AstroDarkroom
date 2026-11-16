@@ -539,6 +539,11 @@ Reads the metadata without decoding the pixels: under three seconds for a sessio
   gaps over 5 s between the end of one exposure and the start of the next. Darks taken frame
   after frame have none; a gap means Live View, a menu or the camera left alone, so the sensor
   cooled.
+- `WARNING` under an interval: the file names are not in the order the frames were taken (the
+  camera's counter passed 9999, or the names have no leading zeros). The frames are read in
+  the order of their names, so the pauses, the warming of check 4 with its frames to discard,
+  and "the first" and "the last" light of check 2 may be wrong; the line names the first two
+  files out of order. Rename the files so that their names sort in the order of the night.
 - `match`: `OK` when the darks have the lights' exposure (within 2 %) and ISO, `WARNING` with
   both settings when they do not, `UNMEASURED` without lights. A setting both groups give and
   that differs is a `WARNING` even when the files do not state the other one; `UNMEASURED` is

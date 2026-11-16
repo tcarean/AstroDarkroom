@@ -361,6 +361,27 @@ public class AcceptanceTests
     }
 
     [Fact]
+    public void R125_TheConsoleWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken_Exit0()
+    {
+        // CR-013: six darks, the last two by name taken first; the line follows the darks' interval and the run exits 0
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i });
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_9998.fit"), new SyntheticDark { Seed = 198 }.Build(SessionFixture.FirstStart.AddSeconds(-240), 120, 400));
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_9999.fit"), new SyntheticDark { Seed = 199 }.Build(SessionFixture.FirstStart.AddSeconds(-120), 120, 400));
+        (int code, string stdout, _) = Cli.Run(s.Root, "--threads", "2");
+        Assert.Equal(0, code);
+        Assert.Contains(
+            "    ATENTIE            : numele fisierelor din darks nu sunt in ordinea in care au fost facute cadrele: DSC_0004.fit e trecut inaintea lui DSC_9998.fit, dar a fost facut dupa el. Pauzele,",
+            stdout, StringComparison.Ordinal);
+        Assert.Contains("=== DARK-URI: cadre citite 6 din 6", stdout, StringComparison.Ordinal);
+
+        // the same darks named in the order they were taken: no such line
+        using SessionFixture ok = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i });
+        (int okCode, string okOut, _) = Cli.Run(ok.Root, "--threads", "2");
+        Assert.Equal(0, okCode);
+        Assert.DoesNotContain("numele fisierelor", okOut, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void R041_UnusableBiasesPrintTheirAttentionLine_Exit1()
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i }, biases: 2, bias: i => new SyntheticDark { Seed = 500 + i, Width = 128, Height = 96 });

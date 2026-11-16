@@ -1545,6 +1545,23 @@ public partial class DarkSeriesTests
         Assert.Equal([1, 2, 3], rt.Darks.Frames.Where(f => f.Error is null).Select(f => f.Info.Index));
     }
 
+    /// <summary>CR-013: the partner's darks stand in for the session's and take check 4, so their names against their times are said too.</summary>
+    [Fact]
+    public void R125_ThePartnersDarksOfALightsOnlySessionGetTheLineToo()
+    {
+        // the partner's darks take checks 3 to 9 of a session without darks (R-054), check 4 with them
+        using SessionFixture partner = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);
+        File.WriteAllBytes(Path.Combine(partner.Root, "DSC_9999.fit"), new SyntheticDark { Seed = 199, Hot = SyntheticLight.Lattice }.Build(SessionFixture.FirstStart.AddSeconds(-120), 120, 400));
+        using SessionFixture s = new SessionFixture().WithLights(3, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice });
+        DarkSeriesResult r = DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2, Against: partner.Root));
+        ReportRow row = Assert.Single(InventoryReport.HeaderRows(r.Inventory), x => x.Label == "ATENTIE");
+        Assert.StartsWith("numele fisierelor din dark-urile partenerului nu sunt in ordinea in care au fost facute cadrele: DSC_0004.fit e trecut inaintea lui DSC_9999.fit, dar a fost facut dupa el. Pauzele,", row.Value, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.StartsWith("the partner's darks' file names are not in the order the frames were taken: DSC_0004.fit is listed before DSC_9999.fit and was taken after it. The pauses,", InventoryReport.HeaderRows(r.Inventory).Single(x => x.Label == "WARNING").Value, StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void R027_AFrameWithOtherSettingsIsLeftOutWithItsError()
     {

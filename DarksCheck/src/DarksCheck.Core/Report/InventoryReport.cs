@@ -59,8 +59,9 @@ internal static class InventoryReport
     }
 
     /// <summary>
-    /// The session rows (ADR 0009): folders, camera, the settings of each group, the cadences, the
-    /// two verdicts, the unreadable frames.
+    /// The session rows (ADR 0009): folders, camera, the settings of each group, the cadences, a
+    /// warning under a cadence whose frames are not listed in the order they were taken (R-125),
+    /// the two verdicts, the unreadable frames.
     /// </summary>
     /// <param name="inv">The inventory; not null.</param>
     /// <returns>The rows, in the console's order.</returns>
@@ -98,9 +99,32 @@ internal static class InventoryReport
         }
 
         rows.Add(new(T("darks interval", "interval darks"), noDarks ? None : Interval(inv.DarksCadence)));
+
+        // The frames are read in the order of their names; when that is not the order they were
+        // taken in, said here and not put right (R-125, ADR 0062). The darks are the ones analysed:
+        // the partner's when they stand in for the session's (R-054).
+        IReadOnlyList<FrameInfo> analysed = noDarks ? inv.PartnerDarks ?? [] : inv.Darks;
+        if (OutOfOrder(analysed, noDarks ? CadenceAnalyzer.FirstBackwards(analysed) : inv.DarksCadence.Backwards) is (string darkBefore, string darkAfter))
+        {
+            string whose = noDarks ? T("the partner's darks'", "dark-urile partenerului") : T("the darks'", "darks");
+            rows.Add(new(T("WARNING", "ATENTIE"), T(
+                $"{whose} file names are not in the order the frames were taken: {darkBefore} is listed before {darkAfter} and was taken after it. "
+                + "The pauses, the camera's warming during the series (check 4) and the frames to discard follow the names, so they may be wrong",
+                $"numele fisierelor din {whose} nu sunt in ordinea in care au fost facute cadrele: {darkBefore} e trecut inaintea lui {darkAfter}, dar a fost facut dupa el. "
+                + "Pauzele, incalzirea aparatului in timpul seriei (verificarea 4) si cadrele de aruncat urmeaza numele, asa ca pot fi gresite")));
+        }
+
         if (m.Lights is not null)
         {
             rows.Add(new(T("lights interval", "interval lights"), Interval(inv.LightsCadence)));
+            if (OutOfOrder(inv.Lights, inv.LightsCadence.Backwards) is (string lightBefore, string lightAfter))
+            {
+                rows.Add(new(T("WARNING", "ATENTIE"), T(
+                    $"the lights' file names are not in the order the frames were taken: {lightBefore} is listed before {lightAfter} and was taken after it. "
+                    + "The pauses and \"the first\" and \"the last\" light of check 2 follow the names, so they may be wrong",
+                    $"numele fisierelor din lights nu sunt in ordinea in care au fost facute cadrele: {lightBefore} e trecut inaintea lui {lightAfter}, dar a fost facut dupa el. "
+                    + "Pauzele si \"primul\" si \"ultimul\" light din verificarea 2 urmeaza numele, asa ca pot fi gresite")));
+            }
         }
 
         // darks that do not have the lights' settings stand out in the window (R-124, ADR 0055)
@@ -116,6 +140,18 @@ internal static class InventoryReport
 
         return rows;
     }
+
+    /// <summary>
+    /// The file names of the first two frames of a group whose times go back against the list's
+    /// order (R-125).
+    /// </summary>
+    /// <param name="frames">The group's frames, in the list's order; not null.</param>
+    /// <param name="backwards">The pair's positions in the list, from 0, or null when the times
+    /// never go back.</param>
+    /// <returns>The name of the frame listed before and of the one listed after it and taken
+    /// before it; null without such a pair.</returns>
+    private static (string ListedBefore, string ListedAfter)? OutOfOrder(IReadOnlyList<FrameInfo> frames, (int ListedBefore, int ListedAfter)? backwards) =>
+        backwards is (int before, int after) && before < frames.Count && after < frames.Count ? (frames[before].FileName, frames[after].FileName) : null;
 
     /// <summary>
     /// One row per frame of a group: the metadata and the pause before it; nothing for an empty

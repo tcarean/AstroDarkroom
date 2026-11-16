@@ -342,6 +342,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The session lines say when the file names are not in the order the frames were taken: a
+  `WARNING` under the darks' interval, and one under the lights', names the first two files out
+  of order. The frames are read in the order of their names, so on a series whose counter
+  passed from `DSC_9999` to `DSC_0001`, or whose names have no leading zeros, the pauses, the
+  warming of check 4 and its frames to discard were read on a scrambled series with no sign of
+  it. The order itself is not changed (R-125, ADR 0062; CR-013 of the code review).
+
 - A stray frame listed first no longer leaves the whole series out: with one test frame of 1 s
   before twenty darks of 120 s, check 1 read `OK` on the twenty while the analysis kept the one
   and dropped the twenty as `settings differ from the first frame`. The analysis now takes the

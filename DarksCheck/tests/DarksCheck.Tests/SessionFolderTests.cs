@@ -221,6 +221,81 @@ public class SessionFolderTests
         Assert.Equal([new LongPause(2, 30)], c.LongPauses);
     }
 
+    /// <summary>
+    /// CR-013: the frames are read in the order of their names as if it were the order they were taken in; the
+    /// first place where the times go back is found, so the session lines can say it.
+    /// </summary>
+    [Fact]
+    public void R125_AFrameTakenBeforeTheOneListedBeforeItIsFound()
+    {
+        DateTime t = SessionFixture.FirstStart;
+        // the counter passed 9999 during the series: by name the two frames taken last come first
+        FrameInfo[] wrapped = [Frame(1, t.AddSeconds(240), 120), Frame(2, t.AddSeconds(360), 120), Frame(3, t, 120), Frame(4, t.AddSeconds(120), 120)];
+        Assert.Equal((1, 2), CadenceAnalyzer.Analyze(wrapped).Backwards);
+        Assert.Equal((1, 2), CadenceAnalyzer.FirstBackwards(wrapped));
+
+        // names in the order of the times: nothing; equal times are no disagreement (a raw's time is in whole seconds)
+        Assert.Null(CadenceAnalyzer.Analyze([Frame(1, t, 120), Frame(2, t.AddSeconds(120), 120), Frame(3, t.AddSeconds(240), 120)]).Backwards);
+        Assert.Null(CadenceAnalyzer.Analyze([Frame(1, t, 0.0002), Frame(2, t, 0.0002), Frame(3, t.AddSeconds(1), 0.0002)]).Backwards);
+        Assert.Null(CadenceAnalyzer.Analyze([]).Backwards);
+        Assert.Null(CadenceAnalyzer.Analyze([Frame(1, t, 120)]).Backwards);
+
+        // frames without a time between the two do not count: the pair is the two with a time
+        FrameInfo untimed = new(2, "x", null, null, null, null, null, null, null, null, null, null, null, null, null, "stricat");
+        Assert.Equal((0, 2), CadenceAnalyzer.Analyze([Frame(1, t.AddSeconds(240), 120), untimed, Frame(3, t, 120)]).Backwards);
+        Assert.Null(CadenceAnalyzer.Analyze([Frame(1, t, 120), untimed, Frame(3, t.AddSeconds(240), 120)]).Backwards);
+
+        // a frame without an exposure still has its time
+        FrameInfo noExposure = Frame(2, t, 120) with { ExposureSeconds = null };
+        Assert.Equal((0, 1), CadenceAnalyzer.Analyze([Frame(1, t.AddSeconds(240), 120), noExposure]).Backwards);
+    }
+
+    [Fact]
+    public void R125_TheSessionLinesSayWhenTheNamesAreNotInTheOrderTheFramesWereTaken()
+    {
+        // four darks whose names are in the order they were taken, and three lights: no line
+        using SessionFixture ok = new SessionFixture().WithDarks(4, lights: 3);
+        Assert.DoesNotContain(InventoryReport.HeaderRows(InventoryRun.Run(ok.Root)), r => r.Label == "ATENTIE");
+
+        // DSC_9998 and DSC_9999 were taken before DSC_0001 .. DSC_0004 and are listed after them
+        using SessionFixture s = new SessionFixture().WithDarks(4, lights: 3);
+        DateTime first = SessionFixture.FirstStart;
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_9998.fit"), SessionFixture.Frame(first.AddSeconds(-240), 119.2, 400));
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_9999.fit"), SessionFixture.Frame(first.AddSeconds(-120), 119.2, 400));
+        // and one light named without leading zeros, taken last and listed second
+        File.WriteAllBytes(Path.Combine(s.LightsDir, "light_00011.fit"), SessionFixture.Frame(first.AddSeconds(-3000), 119.2, 400));
+        Inventory inv = InventoryRun.Run(s.Root);
+        Assert.Equal((3, 4), inv.DarksCadence.Backwards);
+        Assert.Equal((1, 2), inv.LightsCadence.Backwards);
+        IReadOnlyList<ReportRow> rows = InventoryReport.HeaderRows(inv);
+        int darksInterval = rows.ToList().FindIndex(r => r.Label == "interval darks"), lightsInterval = rows.ToList().FindIndex(r => r.Label == "interval lights");
+        Assert.Equal("ATENTIE", rows[darksInterval + 1].Label);
+        Assert.Equal(
+            "numele fisierelor din darks nu sunt in ordinea in care au fost facute cadrele: DSC_0004.fit e trecut inaintea lui DSC_9998.fit, dar a fost facut dupa el. "
+            + "Pauzele, incalzirea aparatului in timpul seriei (verificarea 4) si cadrele de aruncat urmeaza numele, asa ca pot fi gresite",
+            rows[darksInterval + 1].Value);
+        Assert.Equal("ATENTIE", rows[lightsInterval + 1].Label);
+        Assert.Equal(
+            "numele fisierelor din lights nu sunt in ordinea in care au fost facute cadrele: light_00011.fit e trecut inaintea lui light_0002.fit, dar a fost facut dupa el. "
+            + "Pauzele si \"primul\" si \"ultimul\" light din verificarea 2 urmeaza numele, asa ca pot fi gresite",
+            rows[lightsInterval + 1].Value);
+        // the order of the frames, their numbers and the errors are as before
+        Assert.Equal(["DSC_0001.fit", "DSC_0002.fit", "DSC_0003.fit", "DSC_0004.fit", "DSC_9998.fit", "DSC_9999.fit"], inv.Darks.Select(f => f.FileName));
+        Assert.False(inv.HasErrors);
+        using (Ui.Use(UiLanguage.English))
+        {
+            IReadOnlyList<ReportRow> en = InventoryReport.HeaderRows(inv);
+            Assert.Equal(
+                "the darks' file names are not in the order the frames were taken: DSC_0004.fit is listed before DSC_9998.fit and was taken after it. "
+                + "The pauses, the camera's warming during the series (check 4) and the frames to discard follow the names, so they may be wrong",
+                en.Single(r => r.Label == "WARNING" && r.Value.StartsWith("the darks'", StringComparison.Ordinal)).Value);
+            Assert.Equal(
+                "the lights' file names are not in the order the frames were taken: light_00011.fit is listed before light_0002.fit and was taken after it. "
+                + "The pauses and \"the first\" and \"the last\" light of check 2 follow the names, so they may be wrong",
+                en.Single(r => r.Label == "WARNING" && r.Value.StartsWith("the lights'", StringComparison.Ordinal)).Value);
+        }
+    }
+
     [Fact]
     public void R006_NoTimedFrameMeansNoIntervalAndZeroDuty()
     {
