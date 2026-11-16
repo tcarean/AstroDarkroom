@@ -97,7 +97,7 @@ entry gives. Paths are relative to the project folder.
 | CR-019 | 3 | common | owner | "Real detail across the width" shows a count of stars with the unit px | open |
 | CR-020 | 3 | common | confirmed | A section heading reads "1 .  Title", an About component "Name  -  role" | open |
 | CR-021 | 3 | common | confirmed | In the tab, the tooltip of `Original` promises a key only the full screen has | open |
-| CR-022 | 3 | common | confirmed | A disabled check box looks enabled | fixed dc3657ef |
+| CR-022 | 3 | common | confirmed | A disabled check box looks enabled | fixed 24933a57 |
 | CR-023 | 3 | common | owner | Every FITS gets the "no colour profile" caution, and its profile is never looked for | open |
 | CR-024 | 3 | some setups | confirmed | The description of "Under L* 15" is false on canvas | open |
 | CR-025 | 3 | some setups | confirmed | Parameters typed with decimals are reported rounded | open |
@@ -106,7 +106,7 @@ entry gives. Paths are relative to the project folder.
 | CR-028 | 3 | some setups | confirmed | On a mono image five texts still speak of colour and of three channels | open |
 | CR-029 | 3 | some setups | confirmed | A neutral edge darker than the sky is explained as "the Milky Way entering a corner" | open |
 | CR-030 | 3 | some setups | confirmed | Three tables lose their columns | open |
-| CR-031 | 3 | some setups | confirmed | The red sentence of two tabs is cut at the right edge | fixed dc3657ef |
+| CR-031 | 3 | some setups | confirmed | The red sentence of two tabs is cut at the right edge | fixed 24933a57 |
 | CR-032 | 3 | some setups | to measure | The map, the preview and the full screen open on the primary screen | open |
 | CR-033 | 3 | some setups | to measure | A cloud's name on the map is cut to the width of its circle | open |
 | CR-034 | 3 | some setups | to measure | The map window's cloud list has no room on a low screen | open |
@@ -125,7 +125,7 @@ entry gives. Paths are relative to the project folder.
 | CR-047 | 3 | rare | confirmed | A failed write onto a file of the input's length is told as a save over the input | open |
 | CR-048 | 3 | rare | owner | With the dust at black the shadow chart runs to the bright clouds, not the band | open |
 | CR-049 | 3 | rare | confirmed | With no sky patch the map's dust line still says "the darkest 1 % of the sky" | open |
-| CR-050 | 3 | rare | confirmed | A curve save confirmed after a recompute landed writes nothing | fixed dc3657ef |
+| CR-050 | 3 | rare | confirmed | A curve save confirmed after a recompute landed writes nothing | fixed 24933a57 |
 | CR-051 | 3 | rare | to measure | A soft-proof intent the core refuses is shown with " (Parameter 't')" and can take the controls away | open |
 | CR-052 | 3 | rare | to measure | The hand recipe can read "saturation at 100 %; it would leave 100.0 %" | open |
 | CR-053 | 4 | common | to measure | Four theme defects: tab headers, the report's corner, the progress bar, the focus | open |
@@ -564,7 +564,7 @@ bit. The 16-bit reference image is not touched.
   ..." is disabled and reads exactly like the five enabled boxes above it; a click does nothing.
 - Should: a disabled box dimmed as the disabled buttons beside it.
 - Evidence: confirmed (the template was probed off screen; a look at the map confirms it).
-- Status: fixed dc3657ef
+- Status: fixed 24933a57
 
 ### CR-023 Every FITS gets the "no colour profile" caution, and its profile is never looked for
 
@@ -696,7 +696,7 @@ bit. The 16-bit reference image is not touched.
 - Should: the sentence wrapped inside the tab.
 - Test: none asserts it (`WindowSmokeTests` renders at 1400 x 860, where the PNG would show it).
 - Evidence: confirmed.
-- Status: fixed dc3657ef
+- Status: fixed 24933a57
 
 ### CR-032 The map, the preview and the full screen open on the primary screen
 
@@ -971,7 +971,7 @@ figure as printed). The other comparisons are still made on the exact value and 
   as the paper fit does (`GamutFitTab.cs:346`), removes the jump too.
 - Test: none saves across a recompute.
 - Evidence: confirmed (the path; the timing, one to three seconds, needs a run).
-- Status: fixed dc3657ef
+- Status: fixed 24933a57
 
 ### CR-051 A soft-proof intent the core refuses is shown with " (Parameter 't')" and can take the controls away
 
