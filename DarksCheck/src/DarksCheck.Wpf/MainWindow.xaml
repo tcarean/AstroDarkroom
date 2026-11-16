@@ -19,9 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 <!-- MainWindow: the top bar (banner, folder, settings, buttons), then the tabs; the same
      layout as LightsCheck's and FlatCheck's windows. Without a usable folder the tabs stay
-     hidden and the explanation takes their place. 1160 px is the narrowest at which the whole
-     top bar shows in both languages with the folder's heading on at most two lines (R-125,
-     ADR 0061). -->
+     hidden and the explanation takes their place. MinWidth counts the window's 16 px frame:
+     1180 px leaves 1164 inside, enough for the whole top bar in both languages with the
+     folder's heading on at most two lines, 8 px to spare (R-125, ADR 0061). -->
 
 <Window x:Class="DarksCheck.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         xmlns:local="clr-namespace:DarksCheck.Wpf"
         Title="DarksCheck" Height="820" Width="1360" WindowState="Maximized"
         Icon="/DarksCheck.Wpf;component/Icon/darkscheck.ico"
-        MinHeight="560" MinWidth="1160"
+        MinHeight="560" MinWidth="1180"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource WindowBg}"
         TextOptions.TextFormattingMode="Display">

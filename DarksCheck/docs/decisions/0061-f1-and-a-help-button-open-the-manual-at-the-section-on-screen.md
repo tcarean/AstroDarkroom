@@ -13,15 +13,19 @@ through `ApplicationCommands.Help`, whose default gesture it is. On 2026-11-16 t
 a Help button with an icon, also on F1, opening the manual at the section of the current tab,
 the way FlatCheck does it (FlatCheck's R-141 and ADR 0112), and answered two questions in chat.
 
-Measured (temporary tests, the window's text mode): at the window's minimum width, 960 px, the
-top bar was already full, About ending exactly at the bar's right padding in both languages, and
-the folder's column had 33 px (43 in Romanian), in which its heading, `SIRIL SESSION FOLDER OR
+Measured (temporary tests, the window's text mode). A window's `MinWidth` counts its frame, 8 px
+a side on Windows 10 and 11: a real `MainWindow` shown off-screen at a `MinWidth` of 1160 px had
+1144 px of content. The widths below are those inside the frame. With 960 px inside, the top bar
+was already full, About ending exactly at the bar's right padding in both languages, and the
+folder's column had 33 px (43 in Romanian), in which its heading, `SIRIL SESSION FOLDER OR
 LIBRARY OF DARKS`, wrapped into nine lines and made the bar 190 px tall (162 in Romanian) instead
-of 66. The Help button is 80 px wide in English and 88 px in Romanian; with it, About would end
-57 px past the bar's edge at 960 px. The Frames tab needs 1020 px (20 + 620 + 360 + 20) to show
-without being cut. With Help, the bar's height against the window's width, English / Romanian:
-743 / 836 px at 1020, 257 / 242 at 1040, 162 / 162 at 1060, 95 / 95 at 1100, 69 / 69 at 1160,
-66 / 66 at 1300 (the heading on one line).
+of 66; at the old minimum, 960 px with the frame, About was already cut by 16 px. The Help button
+is 80 px wide in English and 88 px in Romanian. The Frames tab needs 1020 px inside (20 + 620 +
+360 + 20) to show without being cut. With Help, the bar's height against the width inside,
+English / Romanian: 743 / 836 px at 1020, 257 / 242 at 1040, 162 / 162 at 1060, 95 / 95 at
+1100, 69 / 82 at 1144 (the real window at 1160), 69 / 69 at 1160, 66 / 66 at 1300 (the heading
+on one line). The real window, shown off-screen, has a 69 px bar in both languages from a
+`MinWidth` of 1172 px; in Romanian 82 px up to 1168.
 
 ## Decision
 
@@ -36,10 +40,12 @@ without being cut. With Help, the bar's height against the window's width, Engli
   each message of the card and what to do, where "Opening a folder" only mentions the card. The
   wait screen, the empty window before a folder and the empty content after a stopped run open
   "Opening a folder", which explains all three.
-- The window's minimum width goes from 960 to 1160 px (the owner's answer 2, given again): the
-  whole bar shows with Help in both languages, the folder's heading on two lines as at any wider
-  width, and the Frames tab is not cut. The owner first chose 1020 px, on the fit of the buttons
-  alone; the bar's height measured after it went back to the owner as a new question.
+- The window's minimum width goes from 960 to 1180 px, 1164 inside the frame (the owner's answer
+  2, given a third time): the whole bar shows with Help in both languages, the folder's heading
+  on two lines as at any wider width, with 8 px to spare, and the Frames tab is not cut. The
+  owner first chose 1020 px, on the fit of the buttons alone, then 1160 px on the bar's heights,
+  measured inside the frame but read as the window's; each new fact went back to the owner as a
+  new question, the second one found by the branch's review.
 - Help sits just before About, the last of the bar's actions, as in FlatCheck.
 - The theme (`Theme/Dark.xaml`) and the About window are LightsCheck's copies, improved there
   first (ADR 0009), so neither changes here: the icon is a resource of the main window, and Help
@@ -52,7 +58,9 @@ without being cut. With Help, the bar's height against the window's width, Engli
   the card). Here the card's reasons are in "When something goes wrong"; the person would have
   to follow one more link.
 - **Keeping 960 px.** At the minimum width About would be cut by 57 px; it fits only from
-  1020 px up. The cost of 1160 px: the window no longer fits half of a 1920 px screen.
+  1020 px up. The cost of 1180 px: the window no longer fits half of a 1920 px screen.
+- **1160 px**, the owner's second answer. Inside the frame it leaves 1144 px, at which the
+  Romanian heading takes three lines and the bar 82 px.
 - **1020 px**, the owner's first answer. The buttons fit, but the folder's column keeps 3 to
   5 px, its heading wraps one letter a line and the bar grows to 743 px (836 in Romanian).
 - **1020 px with the folder's heading on one line, cut with "..."**. The bar keeps its height at
@@ -71,4 +79,5 @@ without being cut. With Help, the bar's height against the window's width, Engli
   top of the page (GitHub ignores an anchor it does not know). The wiki is outside the
   repository, so no gate test can check the anchors.
 - `HelpTests` pins the ten addresses, the tabs' tags, F1 pressed in the window, the button's
-  icon, word and place in both languages, and the bar's fit and height at 1160 px.
+  icon, word and place in both languages, the bar's fit and height at 1180 px less the frame,
+  and the Debug line of an address that cannot be opened.

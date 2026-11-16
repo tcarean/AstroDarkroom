@@ -47,7 +47,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
-- F1 no longer opens About, which opens from its button alone; the window is at least 1160 px
+- F1 no longer opens About, which opens from its button alone; the window is at least 1180 px
   wide instead of 960, so the whole top bar shows with Help in both languages (R-125, ADR 0061).
 
 - Check 9 says what fewer or more darks would give, and with lights judges the darks against

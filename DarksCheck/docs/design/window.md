@@ -7,7 +7,7 @@ About, ADR 0027, for Help, ADR 0061. The pieces copied from LightsCheck (`Theme/
 `Presentation/*.cs` but five,
 `Views/AboutWindow.*`, `ViewModels/AboutViewModel.cs`, the test fixture `StaFixture`) are marked
 as such in their headers and are LightsCheck's to improve first; `Presentation/ScreenArea.cs` and
-About's fit to its screen came with LightsCheck's ADR 0031 (here ADR 0027). Of the three,
+About's fit to its screen came with LightsCheck's ADR 0031 (here ADR 0027). Of the five,
 `Presentation/AccessibleTabControl.cs` was taken from AstroPhotoAnalyzer with the theme's tab
 style it reads, as LightsCheck took both (ADR 0024), `Presentation/TExtension.cs` from FlatCheck
 (ADR 0021), and `Presentation/Emphasis.cs` is DarksCheck's own, as are `Presentation/Manual.cs`
@@ -83,9 +83,9 @@ repository, so no gate test can read its headings: a heading renamed there must 
 The icon is a `DrawingImage` in the main window's own resources, FlatCheck's drawing, since the
 theme is LightsCheck's copy; `ExternalLink` fails as About's link handler does, a Debug line and
 nothing more, while About keeps that handler as LightsCheck wrote it. The window's `MinWidth`,
-1160 px, is the narrowest at which the top bar's folder heading stays on two lines with Help in
-the bar (the heights per width are in ADR 0061): that column takes what the others leave, and
-its heading wraps.
+1180 px, counts the window's 16 px frame; the 1164 px left inside keep the top bar's folder
+heading on two lines with Help in the bar, 8 px over the narrowest that does (the heights per
+width are in ADR 0061): that column takes what the others leave, and its heading wraps.
 
 ## One view-model, fed by the core
 
@@ -295,6 +295,8 @@ presentation source, call the window's `OnContentRendered` for the fit, and test
 `ToDips` at 125 % and 150 % and Windows' answer apart. `HelpTests` (R-125) hold the ten
 addresses to the states and tabs, the tabs' tags, F1 raised as a key event on elements of a
 window never shown (a stand-in presentation source, `OpenAddress` replaced so no browser
-starts), and the top bar, moved into a `Border` host since an unshown window renders white,
-laid out at the minimum width in the window's text mode: the button's icon, word, tooltip and
-place, About without F1, the bar's fit and its height.
+starts), the Debug line of an address the shell refuses, and the top bar, moved into a `Border`
+host since an unshown window renders white, laid out in the window's text mode at what the
+minimum width leaves inside the frame (`Frame`, 16 px, measured on a real window shown
+off-screen): the button's icon, word, tooltip and place, About without F1, the bar's fit and its
+height.

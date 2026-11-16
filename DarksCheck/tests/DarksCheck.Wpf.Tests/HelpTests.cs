@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -33,6 +34,13 @@ namespace DarksCheck.Wpf.Tests;
 public class HelpTests
 {
     private const string Page = "https://github.com/tcarean/AstroDarkroom/wiki/DarksCheck";
+
+    /// <summary>
+    /// The frame of a resizable window, 8 px a side on Windows 10 and 11, which MinWidth counts:
+    /// a real MainWindow shown off-screen at a MinWidth of 1160 px had 1144 px of content
+    /// (measured 2026-11-16, ADR 0061).
+    /// </summary>
+    private const int Frame = 16;
 
     private readonly StaFixture _sta;
 
@@ -125,10 +133,30 @@ public class HelpTests
     }
 
     /// <summary>
+    /// An address the shell cannot open, as on a computer without a browser, is a Debug line with
+    /// the reason, and nothing leaves the call: the window stays. The name cannot exist, so the
+    /// shell refuses it without a dialog and nothing starts.
+    /// </summary>
+    [Fact]
+    public void R125_AnAddressThatCannotBeOpenedIsADebugLine()
+    {
+        using LogCapture capture = LogCapture.Start();
+        string address = "no-such-darkscheck-page-" + Guid.NewGuid().ToString("N") + ".html";
+
+        Exception? escaped = Record.Exception(() => ExternalLink.Open(address));
+
+        Assert.Null(escaped);
+        LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == "Window");
+        Assert.Equal(NLog.LogLevel.Debug, line.Level);
+        Assert.Equal("the link " + address + " could not be opened in a browser", line.Message);
+        Assert.IsType<Win32Exception>(line.Exception);
+    }
+
+    /// <summary>
     /// The top bar's Help button runs the Help command and shows a drawn icon and the word, with
     /// its tooltip, just before About; About opens from its own click and its tooltip names no
-    /// key; and the whole bar fits the window's minimum width, 1160 px, in the window's text mode,
-    /// no taller than at a wider width.
+    /// key; and the whole bar fits what the window's minimum width leaves inside its frame, in the
+    /// window's text mode, no taller than at a wider width.
     /// </summary>
     /// <param name="romanian">Whether the window speaks Romanian.</param>
     /// <param name="word">The button's word.</param>
@@ -145,10 +173,10 @@ public class HelpTests
             using IDisposable lang = Ui.Use(romanian ? UiLanguage.Romanian : UiLanguage.English);
 
             // a window never shown renders white, its template unapplied: its content is moved
-            // into a plain host with the window's data, commands and text mode, at the window's
-            // minimum width
+            // into a plain host with the window's data, commands and text mode, laid out at the
+            // width the window's minimum leaves inside its frame
             MainWindow w = new();
-            Assert.Equal(1160, w.MinWidth);
+            Assert.Equal(1180, w.MinWidth);
             UIElement content = (UIElement)w.Content;
             w.Content = null;
             Border host = new() { Child = content, DataContext = w.DataContext, Background = Brushes.Black };
@@ -158,7 +186,8 @@ public class HelpTests
                 host.CommandBindings.Add(b);
             }
 
-            WindowSmokeTests.Render(host, (int)w.MinWidth, 560, romanian ? "ro-help-top-bar" : "en-help-top-bar");
+            int inside = (int)w.MinWidth - Frame;
+            WindowSmokeTests.Render(host, inside, 560, romanian ? "ro-help-top-bar" : "en-help-top-bar");
 
             List<Button> buttons = Descendants(host).OfType<Button>().ToList();
             Button help = Assert.Single(buttons, b => b.Command == ApplicationCommands.Help);
@@ -175,11 +204,11 @@ public class HelpTests
 
             // the bar fits the window's minimum width: About, the rightmost, ends at the bar's
             // 20 px right padding, not past it
-            Assert.True(aboutButton.TranslatePoint(new Point(aboutButton.ActualWidth, 0), host).X < w.MinWidth - 20 + 0.5);
+            Assert.True(aboutButton.TranslatePoint(new Point(aboutButton.ActualWidth, 0), host).X < inside - 20 + 0.5);
 
             // and the folder's heading, which wraps in what the other columns leave, stays on at
-            // most two lines: at 1100 px it took four and the bar 95 px, at 1020 px one letter a
-            // line and the bar 743 px (measured 2026-11-16, ADR 0061)
+            // most two lines (69 px): with 1144 px inside it took three in Romanian (82 px), with
+            // 1100 four, with 1020 one letter a line (measured 2026-11-16, ADR 0061)
             Border bar = (Border)((Grid)content).Children[0];
             Assert.True(bar.ActualHeight < 80, "the top bar is " + bar.ActualHeight + " px tall");
 
