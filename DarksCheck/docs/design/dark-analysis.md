@@ -37,7 +37,9 @@ those rasters pile up (14 GB of working set measured before the collection and t
 the frame that carries the group's setting: the first readable frame of the dominant setting
 `MatchAnalyzer.Settings` finds, the one check 1 names (ADR 0061). The files are then decoded
 one at a time, in order, until one decodes with that setting (`SameSettings`: the ISO and the
-exposure each on its own, within `Th.ExposureTolerance`) and sets the geometry and the scale;
+exposure each on its own, within `Th.ExposureTolerance`; the frame's settings are those its
+metadata read gave, the reading the group's setting came from, and the decoder's only when
+that read failed) and sets the geometry and the scale;
 the others decode in parallel and must match that setting and that size. A frame at another
 setting sets nothing and is left out wherever it stands; when no file's metadata can be read
 the first decoded frame's settings decide. A float FITS on 0 .. 1 is brought to 0 ..

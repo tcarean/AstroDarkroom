@@ -218,14 +218,19 @@ internal sealed class FrameStack
                 LoadedFrame f = ImageLoader.Load(path);
                 FrameInfo info = FrameInfo.From(i + 1, path, f);
                 (ushort[] px, double black, double white, string source) = ToUshort(f);
+                // The frame's settings as the metadata read gave them, the reading the group's
+                // setting came from and check 1 judged, so like is compared with like (the two
+                // readers of a FITS header can part on an odd card); the decoder's when that
+                // read failed.
+                FrameInfo own = infos[i].Error is null ? infos[i] : info;
                 bool sameSettings;
                 FrameInfo against;
                 lock (gate)
                 {
                     // no file's metadata could be read: the first decoded frame's settings decide
-                    settings ??= info;
+                    settings ??= own;
                     against = settings;
-                    sameSettings = SameSettings(info, against);
+                    sameSettings = SameSettings(own, against);
                     if (sameSettings)
                     {
                         // a frame at another setting sets nothing: neither the size nor the scale
@@ -237,7 +242,7 @@ internal sealed class FrameStack
                 int fw = f.Image.W, fh = f.Image.H;
                 (int w, int h) = sameSettings ? (geometry!.Value.W, geometry.Value.H) : (fw, fh);
                 frames[i] = !sameSettings
-                    ? new StackFrame(info, null, T($"other settings than most frames: ISO {Fmt(info.Iso)}, {Fmt(info.ExposureSeconds)} s", $"alte setari decat majoritatea cadrelor: ISO {Fmt(info.Iso)}, {Fmt(info.ExposureSeconds)} s"))
+                    ? new StackFrame(info, null, T($"other settings than most frames: ISO {Fmt(own.Iso)}, {Fmt(own.ExposureSeconds)} s", $"alte setari decat majoritatea cadrelor: ISO {Fmt(own.Iso)}, {Fmt(own.ExposureSeconds)} s"))
                     : fw != w || fh != h
                         ? new StackFrame(info, null, T($"different size: {fw} x {fh} instead of {w} x {h}", $"dimensiune diferita: {fw} x {fh} fata de {w} x {h}"))
                         : new StackFrame(info, px, null);
