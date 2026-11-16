@@ -24,8 +24,9 @@ namespace LightsCheck.Core;
 /// <summary>
 /// The files a series run writes on request (R-028): the report as the console prints it,
 /// a CSV with every figure per frame, and the plain list of the file names to leave out of
-/// the stack. Never inside lights/ or biases/ (ADR 0002): the caller names the folder. The names
-/// are English in both languages; the contents follow the run's language (ADR 0022).
+/// the stack. Never in a folder that holds the session's frames (ADR 0002, ADR 0060): the caller
+/// names the folder and <see cref="WriteAll"/> refuses such a one. The names are English in both
+/// languages; the contents follow the run's language (ADR 0022).
 /// </summary>
 internal static class SeriesOutputs
 {
@@ -35,10 +36,15 @@ internal static class SeriesOutputs
 
     /// <summary>
     /// Writes the three files into <paramref name="dir"/>, UTF-8 without a BOM, replacing any
-    /// file of the same name, and returns their paths.
+    /// file of the same name, and returns their paths. A folder that holds the session's frames,
+    /// or lies inside one (<see cref="Refusal"/>), throws <see cref="InvalidOperationException"/>
+    /// with the sentence the user reads, before anything is created (R-028).
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
-    /// <param name="dir">The folder to write into, created when missing; not null or blank.</param>
+    /// <param name="dir">
+    /// The folder to write into, created when missing; not null or blank, and not among the
+    /// session's frames.
+    /// </param>
     /// <param name="written">
     /// Told each file's path as soon as that file is written, so a caller can say which files an
     /// export that fails part-way did write (the diagnostic log, R-071); null for none.
@@ -50,6 +56,11 @@ internal static class SeriesOutputs
     {
         ArgumentNullException.ThrowIfNull(r);
         ArgumentException.ThrowIfNullOrWhiteSpace(dir);
+        if (Refusal(r.Session, dir) is string refusal)
+        {
+            throw new InvalidOperationException(refusal);
+        }
+
         Directory.CreateDirectory(dir);
         string report = Path.Combine(dir, ReportName), csv = Path.Combine(dir, CsvName), rejected = Path.Combine(dir, RejectedName);
         using (StreamWriter w = new(report, false, new UTF8Encoding(false)))
@@ -65,6 +76,64 @@ internal static class SeriesOutputs
         written?.Invoke(rejected);
         return [report, csv, rejected];
     }
+
+    /// <summary>
+    /// Why the files may not be written into a folder (R-028, ADR 0060): it is the folder of the
+    /// session's lights, biases or darks, or lies inside one of them. When the lights sit in the
+    /// session folder itself, that folder is refused and a folder inside it is not. Two folders
+    /// are the same when their full paths are, without a trailing separator, whatever the case
+    /// of the letters on Windows.
+    /// </summary>
+    /// <param name="session">The session whose frames are kept clear; not null.</param>
+    /// <param name="dir">
+    /// The folder asked for, absolute or relative to the current directory; not null or blank.
+    /// </param>
+    /// <returns>
+    /// The sentence the user reads, in the run's language, naming the folder as a full path; null
+    /// when the files may be written there.
+    /// </returns>
+    internal static string? Refusal(SessionFolder session, string dir)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentException.ThrowIfNullOrWhiteSpace(dir);
+        StringComparison cmp = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        string full = FullPath(dir), root = FullPath(session.Root);
+        (string? Folder, string En, string Ro)[] kinds =
+        [
+            (session.LightsDir, "lights", "cadrele lights ale sesiunii"),
+            (session.BiasesDir, "biases", "bias-urile sesiunii"),
+            (session.DarksDir, "darks", "dark-urile sesiunii"),
+        ];
+        foreach ((string? folder, string en, string ro) in kinds)
+        {
+            if (folder is null)
+            {
+                continue;
+            }
+
+            // Everything beside frames that sit in the session folder itself is inside that
+            // folder, so only the folder itself is refused there.
+            string frames = FullPath(folder);
+            bool atRoot = string.Equals(frames, root, cmp), same = string.Equals(full, frames, cmp);
+            string prefix = Path.EndsInDirectorySeparator(frames) ? frames : frames + Path.DirectorySeparatorChar;
+            bool inside = !atRoot && full.StartsWith(prefix, cmp);
+            if (same || inside)
+            {
+                return T($"the files are not written into {full}: ", $"fisierele nu se scriu in {full}: ")
+                    + (inside ? T("it is inside the folder with the session's ", "e in folderul cu ") : T("it is the folder with the session's ", "e folderul cu "))
+                    + T(en, ro)
+                    + T(", and LightsCheck writes nothing among the frames. Choose another folder.", ", iar LightsCheck nu scrie nimic printre cadre. Alege alt folder.")
+                    + (atRoot ? T(" A new folder inside it is fine.", " Un folder nou in el e bun.") : "");
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>A folder's full path without a trailing separator, for comparing two folders.</summary>
+    /// <param name="path">The folder, absolute or relative to the current directory.</param>
+    /// <returns>The full path; a drive's root keeps its separator.</returns>
+    private static string FullPath(string path) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
 
     /// <summary>
     /// One line per frame, the file names of the bad and unreadable frames, in order.

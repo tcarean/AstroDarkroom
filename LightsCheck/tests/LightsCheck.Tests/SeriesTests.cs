@@ -752,6 +752,96 @@ public class SeriesTests
         Assert.All(csv.Where(l => l.Length > 0), l => Assert.Equal(head.Length, CsvCells(l).Length));
     }
 
+    /// <summary>
+    /// The three files are refused in the folder of the lights, of the biases and of the darks and
+    /// in a folder inside one of them, with a sentence that names the folder and says why, and
+    /// nothing is created (R-028, ADR 0060, CR-014). The folder is the same one with a trailing
+    /// separator or, on Windows, in another case.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R028_TheFilesAreRefusedInAnyFolderThatHoldsTheSessionsFrames(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2, darks: 2);
+        SeriesResult r = SeriesRun.Run(s.Root, new SeriesOptions(Threads: 2));
+        string biases = Path.Combine(s.Root, "biases"), darks = Path.Combine(s.Root, "darks"), inside = Path.Combine(s.LightsDir, "out", "today");
+        string[] before = Directory.GetFileSystemEntries(s.Root, "*", SearchOption.AllDirectories);
+        (string Dir, string En, string Ro)[] cases =
+        [
+            (s.LightsDir, "it is the folder with the session's lights", "e folderul cu cadrele lights ale sesiunii"),
+            (biases, "it is the folder with the session's biases", "e folderul cu bias-urile sesiunii"),
+            (darks, "it is the folder with the session's darks", "e folderul cu dark-urile sesiunii"),
+            (inside, "it is inside the folder with the session's lights", "e in folderul cu cadrele lights ale sesiunii"),
+        ];
+
+        foreach ((string dir, string en, string ro) in cases)
+        {
+            InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => SeriesOutputs.WriteAll(r, dir));
+            Assert.Equal(
+                english
+                    ? $"the files are not written into {dir}: {en}, and LightsCheck writes nothing among the frames. Choose another folder."
+                    : $"fisierele nu se scriu in {dir}: {ro}, iar LightsCheck nu scrie nimic printre cadre. Alege alt folder.",
+                e.Message);
+            PlainWords.AssertPlain(e.Message, "the refusal of an output folder");
+        }
+
+        Assert.Throws<InvalidOperationException>(() => SeriesOutputs.WriteAll(r, s.LightsDir + Path.DirectorySeparatorChar));
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Throws<InvalidOperationException>(() => SeriesOutputs.WriteAll(r, biases.ToUpperInvariant()));
+        }
+
+        Assert.Equal(before, Directory.GetFileSystemEntries(s.Root, "*", SearchOption.AllDirectories));
+    }
+
+    /// <summary>
+    /// Beside the frames the files are written: in the session folder that holds <c>lights\</c>,
+    /// in a new folder inside it, and in a folder whose name only begins like the lights' (R-028,
+    /// ADR 0060).
+    /// </summary>
+    [Fact]
+    public void R028_AFolderBesideTheFramesIsWritten()
+    {
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2);
+        SeriesResult r = SeriesRun.Run(s.Root, new SeriesOptions(Threads: 2));
+
+        foreach (string dir in new[] { s.Root, Path.Combine(s.Root, "report"), s.LightsDir + "-report" })
+        {
+            Assert.Null(SeriesOutputs.Refusal(r.Session, dir));
+            Assert.All(SeriesOutputs.WriteAll(r, dir), p => Assert.True(File.Exists(p)));
+        }
+    }
+
+    /// <summary>
+    /// When the lights sit in the session folder itself, that folder is refused, with one more
+    /// sentence, and a new folder inside it is not; its <c>biases\</c> is refused as anywhere
+    /// (R-028, ADR 0060, CR-014).
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R028_WhenTheLightsSitInTheSessionFolderThatFolderIsRefusedAndOneInsideItIsNot(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture s = new SessionFixture().WithLights(2, inSubfolder: false, biases: 2);
+        SessionFolder session = SessionFolder.Open(s.Root);
+        Assert.Equal(session.Root, session.LightsDir);
+
+        string? refusal = SeriesOutputs.Refusal(session, s.Root);
+
+        Assert.Equal(
+            english
+                ? $"the files are not written into {s.Root}: it is the folder with the session's lights, and LightsCheck writes nothing among the frames. Choose another folder. A new folder inside it is fine."
+                : $"fisierele nu se scriu in {s.Root}: e folderul cu cadrele lights ale sesiunii, iar LightsCheck nu scrie nimic printre cadre. Alege alt folder. Un folder nou in el e bun.",
+            refusal);
+        PlainWords.AssertPlain(refusal!, "the refusal of the session folder");
+        Assert.Null(SeriesOutputs.Refusal(session, Path.Combine(s.Root, "report")));
+        Assert.Contains(english ? "it is inside the folder with the session's biases" : "e in folderul cu bias-urile sesiunii",
+            SeriesOutputs.Refusal(session, Path.Combine(s.Root, "biases", "report")), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R028_TheOutputsAreWrittenWhereAskedAndNeverIntoLights()
     {

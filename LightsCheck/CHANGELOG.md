@@ -297,6 +297,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   trail in a fraction of a second: one trailed frame and one such shot were enough to name an
   axis. A frame too short to stack now casts no vote, trailed or not (R-085, R-025, ADR 0061;
   CR-012 of the review of 2026-11-13).
+- The report files could be written among the frames: `--out <session>\lights`, or in the
+  window a double click on `lights` in the folder dialog, left the three files beside the raws,
+  against the rule that nothing is written there. A folder that holds the session's frames
+  (`lights\`, `biases\`, `darks\`, a folder inside one of them, or the session folder itself
+  when the frames sit directly in it) is now refused, in the console before any frame is
+  measured and in the window on the line under the top bar: `ERROR: the files are not written
+  into <folder>: it is the folder with the session's lights, and LightsCheck writes nothing
+  among the frames. Choose another folder.` (R-028, R-032, ADR 0060; CR-014 of the review of
+  2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

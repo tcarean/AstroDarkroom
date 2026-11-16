@@ -35,7 +35,13 @@ namespace LightsCheck.Core;
 /// <param name="Arrows">
 /// Which SynScan arrows move east and north; null means <see cref="ArrowKeys.Default"/>.
 /// </param>
-internal sealed record SeriesOptions(double? PixelSizeUm = null, int Threads = 0, ArrowKeys? Arrows = null)
+/// <param name="OutputFolder">
+/// The folder the caller will write the report files into after the run, when it knows it
+/// beforehand (the console's <c>--out</c>): the run refuses a folder among the session's frames
+/// as soon as the session is open, before any frame is measured (R-028, ADR 0060). Null when
+/// none is known; nothing is written by the run either way.
+/// </param>
+internal sealed record SeriesOptions(double? PixelSizeUm = null, int Threads = 0, ArrowKeys? Arrows = null, string? OutputFolder = null)
 {
     /// <summary>
     /// The Nikon D3300's pixel pitch, 23.5 mm over 6000 pixels: the last fallback, when no file
@@ -168,8 +174,9 @@ internal static class SeriesRun
     /// <summary>
     /// Measures and analyses the whole series. A frame that cannot be decoded or measured keeps
     /// its metadata and error and is left out of the figures; the folder errors of
-    /// <see cref="SessionFolder.Open"/> propagate, and a cancel throws
-    /// <see cref="OperationCanceledException"/>.
+    /// <see cref="SessionFolder.Open"/> propagate, an <see cref="SeriesOptions.OutputFolder"/>
+    /// among the session's frames throws <see cref="InvalidOperationException"/> before any frame
+    /// is measured (R-028), and a cancel throws <see cref="OperationCanceledException"/>.
     /// </summary>
     /// <param name="folder">The session folder.</param>
     /// <param name="options">The pixel size, the parallelism and the arrow keys; not null.</param>
@@ -189,6 +196,13 @@ internal static class SeriesRun
             + " threads=" + LogText.Int(threads) + " east=" + arrows.East + " north=" + arrows.North);
         SessionFolder session = SessionFolder.Open(folder);
         clock.Lap("open");
+        // Refused here, not after the minutes of measuring, when the caller already knows where
+        // it will write (R-028, ADR 0060); SeriesOutputs.WriteAll checks again whoever calls it.
+        if (options.OutputFolder is string outputFolder && SeriesOutputs.Refusal(session, outputFolder) is string refusal)
+        {
+            throw new InvalidOperationException(refusal);
+        }
+
         int n = session.Lights.Count;
         AnalyzedFrame[] frames = new AnalyzedFrame[n];
         PatternCrop?[] crops = new PatternCrop?[n];

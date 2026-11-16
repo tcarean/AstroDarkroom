@@ -528,6 +528,8 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>
     /// Writes the report, the CSV and the rejected list into <paramref name="dir"/> (R-032), and
     /// shows the paths written, or the error, in <see cref="Status"/>; nothing without a result.
+    /// A folder among the session's frames is refused by the core, and its sentence is the error
+    /// shown (R-028, ADR 0060).
     /// </summary>
     /// <param name="dir">The folder to write into, as chosen in the dialog.</param>
     public void Export(string dir)
@@ -543,7 +545,7 @@ public sealed class MainViewModel : ObservableObject
             // still names what it wrote (R-071).
             Status = WindowTexts.Written(SeriesOutputs.WriteAll(_result, dir, p => Log.Info("wrote " + p + " (" + LogText.FileKiB(p) + ")")));
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
         {
             Log.Warn(e, "the export into " + dir + " failed; the status line shows the message");
             Status = RunReport.Error(e.Message);

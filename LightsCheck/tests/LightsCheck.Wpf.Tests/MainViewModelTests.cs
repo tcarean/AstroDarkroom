@@ -427,6 +427,25 @@ public class MainViewModelTests
         Assert.Equal(lightsBefore, Directory.GetFiles(f.LightsDir));
     }
 
+    /// <summary>
+    /// The folder dialog opens at the session root, one double click from <c>lights\</c>: an
+    /// export there is refused with the core's sentence under the top bar and writes nothing
+    /// (R-032, R-028, ADR 0060, CR-014).
+    /// </summary>
+    [Fact]
+    public async Task R032_AnExportIntoLightsIsRefusedWithALineAndNoFile()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        string[] before = Directory.GetFileSystemEntries(f.Root, "*", SearchOption.AllDirectories);
+
+        vm.Export(f.LightsDir);
+
+        Assert.Equal($"EROARE: fisierele nu se scriu in {f.LightsDir}: e folderul cu cadrele lights ale sesiunii, iar LightsCheck nu scrie nimic printre cadre. Alege alt folder.", vm.Status);
+        Assert.Equal(before, Directory.GetFileSystemEntries(f.Root, "*", SearchOption.AllDirectories));
+    }
+
     [Fact]
     public void R032_ExportWithoutAResultDoesNothing()
     {

@@ -111,7 +111,10 @@ alone (ADR 0020).
 
 `Report` is `RunReport.WriteBanner` plus `SeriesReport.Write` into a `StringWriter`: the
 console's text. `Export(dir)` calls `SeriesOutputs.WriteAll` and shows the paths in `Status`;
-`WriteAll` hands it each file as soon as the file is written, for the log's `wrote` line.
+`WriteAll` hands it each file as soon as the file is written, for the log's `wrote` line. A
+folder among the session's frames is refused by `WriteAll` itself (`session-and-console.md`,
+ADR 0060): `Export` catches that `InvalidOperationException` with the IO errors and shows its
+sentence through `RunReport.Error`.
 
 ## The star cut-outs (`StarCrops`)
 
