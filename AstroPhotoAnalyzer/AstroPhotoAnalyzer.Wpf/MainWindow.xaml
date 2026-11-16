@@ -97,7 +97,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <StackPanel Grid.Column="2" VerticalAlignment="Center">
           <StackPanel x:Name="TopButtons" Orientation="Horizontal">
-            <Button Content="{local:T En='Open image...', Ro='Deschide imagine...'}" Click="ChooseImage" IsEnabled="{Binding IsIdle}" />
+            <Button x:Name="OpenButton" Content="{local:T En='Open image...', Ro='Deschide imagine...'}" Click="ChooseImage" IsEnabled="{Binding IsIdle}" />
             <Button Content="{local:T En='Save the report...', Ro='Salveaza raportul...'}" Click="SaveReport" IsEnabled="{Binding CanSave}" Margin="10,0,0,0" />
             <Button Content="{local:T En='About', Ro='Despre'}" Command="Help" ToolTip="{local:T En='Version, licence, components (F1)', Ro='Versiune, licenta, componente (F1)'}" Margin="10,0,0,0" />
           </StackPanel>
@@ -209,7 +209,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Text="{local:T En='Open a finished image', Ro='Deschide o imagine finita'}" FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" />
           <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" TextAlignment="Center"
                      Text="{local:T En='An already stretched TIFF, PNG or FITS - what you would export from Siril for print. The tool measures and recommends; it writes no file to send to the lab.', Ro='TIFF, PNG sau FITS deja stretch-uit - ce ai exporta din Siril pentru print. Unealta masoara si recomanda; nu scrie niciun fisier de trimis la laborator.'}" />
-          <Button Content="{local:T En='Open image...', Ro='Deschide imagine...'}" Margin="0,22,0,0" HorizontalAlignment="Center" Click="ChooseImage" />
+          <!-- Disabled while a run lasts, as the top bar's: this panel is visible then, and the
+               busy overlay stops the mouse, not a key on the button that kept the focus (ADR 0105). -->
+          <Button x:Name="PlaceholderOpenButton" Content="{local:T En='Open image...', Ro='Deschide imagine...'}" Margin="0,22,0,0" HorizontalAlignment="Center" Click="ChooseImage"
+                  IsEnabled="{Binding IsIdle}" />
         </StackPanel>
 
         <Border MaxWidth="620" VerticalAlignment="Center" HorizontalAlignment="Center"

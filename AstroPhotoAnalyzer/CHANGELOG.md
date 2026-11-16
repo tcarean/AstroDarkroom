@@ -274,6 +274,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A second image can no longer be chosen while an analysis runs: the "Open image..." button of
+  the first screen stayed enabled then and answered Space or Enter, and the running image's
+  result came up under the second image's name, which was never analysed. Both buttons are
+  disabled until the run ends (CR-009 of the code review of 2026-11-13, ADR 0105).
 - An 8-bit image saved as 16 bits by moving each byte into the upper byte (the value = the level
   x 256) no longer passes as real 16 bits: a file in which no channel uses more than 256
   different levels gets the "only 8 bits of information" caution, whatever the conversion was,

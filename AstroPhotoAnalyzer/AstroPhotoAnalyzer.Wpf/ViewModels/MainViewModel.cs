@@ -203,8 +203,9 @@ namespace AstroPhotoAnalyzer.Wpf
         /// first (R-111, ADR 0097): the run that follows checks the fields before it clears anything, so a bad
         /// field would otherwise leave the old image's tabs under the new image's path, and its
         /// report to be saved beside the new image. The same image opened again keeps its result
-        /// until the run replaces it. While a run lasts nothing is dropped (there is no result
-        /// then; a second image chosen during a run is CR-009 of the code review of 2026-11-13).
+        /// until the run replaces it. While a run lasts no image is taken and nothing changes
+        /// (R-111, ADR 0105): the path replaced then, the run in progress filled its tabs under
+        /// the new image's name, and no run started for that image.
         /// </summary>
         /// <param name="path">
         /// The image's path; null or empty clears the path and runs nothing.
@@ -213,9 +214,15 @@ namespace AstroPhotoAnalyzer.Wpf
         internal Task OpenAsync(string path)
         {
             string chosen = path ?? "";
-            // Against the result's own image, not the bar: after a second image was chosen during
-            // a run (CR-009, open) the bar reads another path than the result's.
-            if (!IsBusy && _result != null && !string.Equals(chosen, _result.Path, StringComparison.OrdinalIgnoreCase))
+            // The two "Open image..." buttons are disabled while a run lasts; a caller that
+            // reaches here anyway changes nothing, as ChooseProfile and ClearProfile do.
+            if (IsBusy)
+            {
+                Log.Info("open refused: a run is on, path=" + chosen);
+                return Task.CompletedTask;
+            }
+            // Against the result's own image, not the bar's path.
+            if (_result != null && !string.Equals(chosen, _result.Path, StringComparison.OrdinalIgnoreCase))
                 DropResult(chosen);
             Path = chosen;
             return HasPath ? RunAsync() : Task.CompletedTask;

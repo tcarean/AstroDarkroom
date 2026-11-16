@@ -17,7 +17,7 @@ with its "Scoate" button (R-155: `ParameterFields.ProfileText`, red through a st
 "Deschide imagine...",
 "Salveaza raportul...", "Despre" = F1, and under the three buttons a fixed two-line place for
 `SaveMessage` / `SaveError`, as the Editare Curbe tab has for its own save); left column `ParameterFields` card with
-"Analizeaza" (the WCS field, R-027, under the target background); right: a placeholder when nothing is loaded, an error card when the run
+"Analizeaza" (the WCS field, R-027, under the target background); right: a placeholder when nothing is loaded (its "Open image..." button bound to `IsIdle` like the top bar's, since the panel is visible during a run; ADR 0105), an error card when the run
 failed, otherwise a `TabControl` with Raport, Tonuri, Export, Rezolutie, Culoare,
 Editare Curbe, Culori pentru hartie, Soft proof, Crop with aspect ratio (the Preview tab was removed on 2026-10-30, ADR 0067);
 `BusyOverlay` over the right side while running. "Fundal" names one thing, the
@@ -30,7 +30,7 @@ shown.
 **`MainViewModel`**: `Path`, `HasPath`, `IsBusy`/`IsIdle`, `CanRun`, `BusyMessage`
 (the progress stage), `Error`/`HasError`, `HasResult`, `CanSave`, `DefaultReportPath`
 (`Report.txt`, `Raport.txt` in Romanian, beside the image), `Banner`, `Copyright`; `OpenAsync(path)` sets the path
-and runs, and for another image than the one whose result is on screen it first drops that
+and runs, changing nothing while a run lasts (ADR 0105), and for another image than the one whose result is on screen it first drops that
 result (`DropResult`: no result, empty tabs, the soft proof's comparison ended), since the run
 checks the fields before it clears anything and a bad field would leave one image's tabs under
 another's path (ADR 0097); `RunAsync()` validates the fields (`ParameterFields.TryBuild`), clears the

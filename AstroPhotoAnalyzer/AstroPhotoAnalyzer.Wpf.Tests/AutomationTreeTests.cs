@@ -57,6 +57,51 @@ public class AutomationTreeTests
     }
 
     /// <summary>
+    /// CR-009: the placeholder's "Open image..." button, visible while a run lasts, had no
+    /// IsEnabled; the busy overlay stops the mouse and not the keyboard, so Space on the button
+    /// that kept the focus opened the dialog again during the run. Both buttons follow the run.
+    /// </summary>
+    [Fact]
+    public async Task R110_BothOpenButtonsAreDisabledWhileARunLasts()
+    {
+        using var ws = new TempWorkspace();
+        Raster r = Scenes.CleanSky();
+        string tif = ws.WriteFile("a.tif", TiffTestData.Build16Rgb(r.W, r.H, (x, y, c) => RasterOps.Level16(r.At(c, y, x)), IccTestData.V4("sRGB IEC61966-2.1")));
+        var vm = new MainViewModel();
+
+        await _sta.InvokeAsync(async () =>
+        {
+            var window = new MainWindow { DataContext = vm };
+            try
+            {
+                var content = (FrameworkElement)window.Content;
+                content.Measure(new Size(1400, 860)); content.Arrange(new Rect(0, 0, 1400, 860)); content.UpdateLayout();
+                var top = (Button)window.FindName("OpenButton");
+                var placeholder = (Button)window.FindName("PlaceholderOpenButton");
+                Assert.True(top.IsEnabled);
+                Assert.True(placeholder.IsEnabled);
+
+                Task run = vm.OpenAsync(tif);
+                Assert.True(vm.IsBusy);
+                content.UpdateLayout();
+                Assert.False(top.IsEnabled);
+                Assert.False(placeholder.IsEnabled);
+
+                await run;
+                Assert.True(vm.HasResult, vm.Error);
+                content.UpdateLayout();
+                Assert.True(top.IsEnabled);
+                Assert.True(placeholder.IsEnabled);
+                await vm.CurvesComputation;
+            }
+            finally
+            {
+                window.DataContext = null;
+            }
+        });
+    }
+
+    /// <summary>
     /// Every tab, selected in turn over a real result, has its view under its item in the tree,
     /// once, and under no other tab's item, and on Tonuri the simulation's Preview buttons are
     /// found there, as a client looks for them.
