@@ -287,6 +287,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   order stays the names', and the session lines now say it: `WARNING : the file names are not
   in the order the frames were taken: DSC_9999.NEF is listed after DSC_0002.NEF and was taken
   before it. ...` (R-089, ADR 0054; CR-010 of the review of 2026-11-13).
+- The `field rotation` row's `a star in the corner moves ... px over one exposure` used the
+  exposure of the first aligned frame: a 0.2 s test shot at the start of the session made the
+  figure 600 times too small, and frames without an exposure read `0.00 px`. It now uses the
+  session's exposure, as the drift over one exposure does, and is left out when no frame
+  carries an exposure (R-023; CR-011 of the review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

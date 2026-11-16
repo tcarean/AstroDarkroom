@@ -265,7 +265,9 @@ the clean drift of at least `Th.DriftMinPairs` pairs as the stars move on the sk
 `StarDrift` through the moves' mapping with the sign flipped (the stars are the negative of
 the pointing), signed with a solve, magnitudes with the axis from the trails, null for an
 approximate or a thin drift. Rotation is the last registered frame's minus the first's; the corner
-figure is that rate over one exposure at the half-diagonal. The RA axis comes from the WCS
+figure is that rate over one exposure at the half-diagonal, the exposure being the session's
+median one (`MedianExposureSeconds`, as for the drift over one exposure), so the figure is
+null when no frame carries an exposure. The RA axis comes from the WCS
 when a solved FITS sits at the root (Siril's result: `PC1_2` dominates `PC1_1`, so RA runs
 along Y on the D3300 frames), else from the vector mean of the trail angles of the bad
 frames, stated as an assumption. Once the axis is known, the trailing flag (bad or marginal)

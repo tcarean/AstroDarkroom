@@ -287,8 +287,9 @@ internal enum PolarAlignment
 /// times in order.
 /// </param>
 /// <param name="CornerShiftPerExposurePx">
-/// How far that rate moves a star at the half-diagonal over the first registered frame's exposure
-/// (0 when unknown), in pixels; null without the rate or that frame's measurement.
+/// How far that rate moves a star at the half-diagonal over the session's median exposure, in
+/// pixels; null without the rate, the first registered frame's measurement (its size gives the
+/// half-diagonal) or any frame that carries an exposure.
 /// </param>
 /// <param name="RaAxis">
 /// The image axis RA runs along, from the WCS or else from the trails; unknown otherwise.
@@ -671,9 +672,10 @@ internal static class SeriesAnalyzer
             if (firstReg.Info.Timestamp is DateTime t0 && lastReg.Info.Timestamp is DateTime t1 && t1 > t0)
             {
                 rotPerHour = rotTotal / (t1 - t0).TotalHours;
+                // Over the session's exposure, the median one the drift per exposure uses, not
+                // the first aligned frame's own, which may be a test shot or carry none (R-023).
                 FrameMeasurement? m0 = firstReg.Measurement;
-                double exposure = firstReg.Info.ExposureSeconds ?? 0;
-                if (m0 is not null)
+                if (m0 is not null && medianExposure is double exposure)
                 {
                     double halfDiag = Math.Sqrt(m0.Height * m0.Height / 4.0 + m0.Width * m0.Width / 4.0);
                     corner = Math.Abs(rotPerHour.Value) * exposure / 3600 * Math.PI / 180 * halfDiag;

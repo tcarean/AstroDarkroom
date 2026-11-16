@@ -650,6 +650,49 @@ public class SeriesAnalyzerTests
         Assert.Equal(Axis.Unknown, s.RaAxis);
     }
 
+    /// <summary>
+    /// The corner displacement is the rotation rate over the session's exposure, the median one,
+    /// whatever the first aligned frame's own (R-023, CR-011): a 0.2 s test shot first among 120 s
+    /// frames read 600 times too small. 0.1 degrees over 282 s is 1.2766 degrees an hour, which
+    /// over 120 s moves a star at the half-diagonal of 6016 x 4016 (3616.6 px) by 2.69 px.
+    /// </summary>
+    [Fact]
+    public void R023_TheCornerShiftUsesTheSessionsExposureNotTheFirstAlignedFramesOwn()
+    {
+        DateTime t = SessionFixture.FirstStart;
+        AnalyzedFrame first = Timed(1, t);
+        AnalyzedFrame[] frames =
+        [
+            first with { Info = first.Info with { ExposureSeconds = 0.2 } },
+            Timed(2, t.AddSeconds(141), 0.05),
+            Timed(3, t.AddSeconds(282), 0.1),
+        ];
+
+        SeriesAnalysis s = Analyze(frames);
+
+        Assert.Equal(120, s.MedianExposureSeconds);
+        Assert.Equal(0.1 / (282.0 / 3600), s.RotationPerHourDeg!.Value, 1e-9);
+        Assert.Equal(2.686, s.CornerShiftPerExposurePx!.Value, 0.005);
+    }
+
+    /// <summary>
+    /// Frames that carry a time and no exposure have a rotation rate and no corner displacement:
+    /// the row then reads the rate alone, where it read `0.00 px over one exposure` (R-023, CR-011).
+    /// </summary>
+    [Fact]
+    public void R023_WithoutAnExposureThereIsNoCornerShift()
+    {
+        DateTime t = SessionFixture.FirstStart;
+        AnalyzedFrame[] frames = new[] { Timed(1, t), Timed(2, t.AddSeconds(141), 0.05), Timed(3, t.AddSeconds(282), 0.1) }
+            .Select(f => f with { Info = f.Info with { ExposureSeconds = null } }).ToArray();
+
+        SeriesAnalysis s = Analyze(frames);
+
+        Assert.Null(s.MedianExposureSeconds);
+        Assert.NotNull(s.RotationPerHourDeg);
+        Assert.Null(s.CornerShiftPerExposurePx);
+    }
+
     /// <summary>A 120 s frame starting at <paramref name="start"/>, registered with the rotation given, its stars good or trailed as the measurement says.</summary>
     private static AnalyzedFrame Timed(int i, DateTime start, double rotationDeg = 0, FrameMeasurement? m = null)
         => new(new FrameInfo(i, $"DSC_{i:0000}.NEF", "cam", 135, 2.8, 120, 1600, start, null, null, null, null, null, null, null, null, null, null, null),
