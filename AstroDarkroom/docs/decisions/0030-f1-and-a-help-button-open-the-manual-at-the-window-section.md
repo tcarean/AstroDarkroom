@@ -8,8 +8,9 @@ Status: accepted 2026-11-16
 The launcher had no way to reach its manual, the Home page of the Astro Darkroom wiki
 (`https://github.com/tcarean/AstroDarkroom/wiki`), whose section `The window` describes the
 window's top band, rows, bottom bar and the About window. F1 opened About, through
-`ApplicationCommands.Help`, whose default gesture it is, and About's tooltip said so; the window
-showed no icon on any button. On 2026-11-16 the owner asked for a Help button with an icon, also
+`ApplicationCommands.Help`, whose default gesture it is, and About's tooltip said so; of the
+window's buttons only the language selector's carried a picture, the drawn flags (ADR 0007). On
+2026-11-16 the owner asked for a Help button with an icon, also
 on F1, opening the wiki at the section of the tab on screen, done as FlatCheck did it
 (FlatCheck's ADR 0112: an icon and the word, before About; F1 moved from About to Help; the
 section of what the window shows). The launcher has no tabs: it is one screen. The window has no
@@ -42,10 +43,16 @@ test project (ADR 0001); the tests reach the core and read the window's XAML.
 - **An icon font (Segoe Fluent Icons, Segoe MDL2 Assets).** Segoe Fluent Icons is missing on
   Windows 10, and a glyph cannot be checked the way a drawing can.
 - **A help window inside the program.** It would copy the wiki and drift from it.
+- **F1 in the About window opening `#the-about-window`.** FlatCheck's About binds no key and the
+  owner asked for FlatCheck's way; the plan the owner approved left it out. F1 did nothing there
+  before this change either. It would be a task of its own, for the suite's tools too.
 
 ## Consequences
 
 - F1 in the About window does nothing, as in FlatCheck: the binding is the main window's.
+- F1 held down past the keyboard's repeat delay opens the address once per repeat, so possibly
+  several browser tabs; About's modal window used to take the repeats. FlatCheck behaves the
+  same; a guard would be a change for both.
 - A wiki heading renamed moves its anchor: `Manual.Window` must follow, or the browser lands at
   the top of the page. The wiki is outside the repository, so no gate test can check the anchor.
 - `HelpTests` pins the address, the binding of F1, the button's place, icon and words, and

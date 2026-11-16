@@ -34,14 +34,15 @@ public class HelpTests
     private static string WindowFolder => Path.Combine(TestData.FindRepoRoot(), "src", "AstroDarkroom.Wpf");
 
     [Fact]
-    public void R021_TheManualOpensAtTheWindowsSection_TheSameInBothLanguages()
+    public void R021_TheManualOpensAtTheWindowsSection()
     {
-        const string expected = "https://github.com/tcarean/AstroDarkroom/wiki#the-window";
         Assert.Equal("https://github.com/tcarean/AstroDarkroom/wiki", Manual.Page);
-        Assert.Equal(expected, Manual.Window);   // the tests run in Romanian (R-006)
+        Assert.Equal("https://github.com/tcarean/AstroDarkroom/wiki#the-window", Manual.Window);
 
-        using IDisposable scope = Ui.Use(UiLanguage.English);
-        Assert.Equal(expected, Manual.Window);   // the wiki is English only
+        // What the Help command runs opens that address, the one constant whatever the language
+        // (the wiki is English only), through the path the runtime's link takes (R-018).
+        string code = File.ReadAllText(Path.Combine(WindowFolder, "MainWindow.xaml.cs"));
+        Assert.Contains("void ShowHelp(object sender, ExecutedRoutedEventArgs e) => OpenInBrowser(Manual.Window);", code, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -85,9 +86,11 @@ public class HelpTests
     {
         string code = File.ReadAllText(Path.Combine(WindowFolder, "MainWindow.xaml.cs"));
 
-        Assert.Contains("T(\"Help\", \"Ajutor\")", code, StringComparison.Ordinal);
-        Assert.Contains("T(\"The manual, at the section of this window (F1)\", \"Manualul, la sectiunea acestei ferestre (F1)\")", code, StringComparison.Ordinal);
-        Assert.Contains("T(\"Version, licence, components\", \"Versiune, licenta, componente\")", code, StringComparison.Ordinal);
+        // Each wording on its own element, so a tooltip given to the other button fails.
+        Assert.Contains("HelpLabel.Text = T(\"Help\", \"Ajutor\");", code, StringComparison.Ordinal);
+        Assert.Contains("HelpButton.ToolTip = T(\"The manual, at the section of this window (F1)\", \"Manualul, la sectiunea acestei ferestre (F1)\");", code, StringComparison.Ordinal);
+        Assert.Contains("AboutButton.Content = T(\"About\", \"Despre\");", code, StringComparison.Ordinal);
+        Assert.Contains("AboutButton.ToolTip = T(\"Version, licence, components\", \"Versiune, licenta, componente\");", code, StringComparison.Ordinal);
         Assert.DoesNotContain("components (F1)", code, StringComparison.Ordinal);
     }
 
