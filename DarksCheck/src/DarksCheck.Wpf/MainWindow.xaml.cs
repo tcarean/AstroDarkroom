@@ -23,8 +23,8 @@ namespace DarksCheck.Wpf;
 
 /// <summary>
 /// The main window: the top bar and the four states over one <see cref="MainViewModel"/>. It
-/// owns what needs a window (the folder dialogs, the clipboard, the About window) and
-/// computes nothing.
+/// owns what needs a window (the folder dialogs, the clipboard, the About window, the manual
+/// opened by Help and F1) and computes nothing.
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -124,14 +124,35 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Shows the About window, modal, over this one, fitted to the work area of this window's
-    /// screen (R-121).
+    /// screen (R-121). Its button alone opens it; F1 is Help's (R-125).
     /// </summary>
-    /// <param name="sender">The command's source.</param>
-    /// <param name="e">The executed command.</param>
-    private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
+    private void ShowAbout(object sender, RoutedEventArgs e)
     {
         Log.Info("About opened");
         new AboutWindow(ScreenArea.WorkAreaOf(this)) { Owner = this }.ShowDialog();
+    }
+
+    /// <summary>
+    /// What opens an address in the browser; the tests put a stand-in here that keeps the
+    /// address, so no browser starts.
+    /// </summary>
+    internal Action<string> OpenAddress { get; set; } = ExternalLink.Open;
+
+    /// <summary>
+    /// The Help button and F1, through ApplicationCommands.Help (MainWindow.xaml): the manual at
+    /// the section of what is on screen, the selected tab's read from its Tag (R-125, ADR 0061),
+    /// and an Info line with the address.
+    /// </summary>
+    /// <param name="sender">The window, on which the command is bound.</param>
+    /// <param name="e">The executed command.</param>
+    private void ShowHelp(object sender, ExecutedRoutedEventArgs e)
+    {
+        ManualSection? tab = (Tabs.SelectedItem as System.Windows.Controls.TabItem)?.Tag as ManualSection?;
+        string address = Manual.Url(Manual.SectionFor(_vm.HasProblem, _vm.HasResult, _vm.IsRunning, tab));
+        Log.Info("Help opened: " + address);
+        OpenAddress(address);
     }
 
     /// <summary>
