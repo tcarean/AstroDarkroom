@@ -133,6 +133,27 @@ public class ViewModelTests
     }
 
     /// <summary>
+    /// CR-075: since ADR 0103 a frame with too few stars has no width in any zone, however many
+    /// detections the zone holds, and the zones' description named the zone's own count as the
+    /// only reason for n/a. It names both, in both languages (the owner's yes of 2026-11-16).
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R115_TheZonesDescriptionNamesBothReasonsForNoWidth(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        var vm = new ResolutionTabViewModel(); vm.Populate(Result(Scenes.DarkSky()));
+
+        string description = Assert.Single(vm.Rows, r => r.Description != null
+            && r.Description.StartsWith(Tr.Pick("The stars' width (FWHM) in five zones", "Latimea stelelor (FWHM) in cinci zone"))).Description;
+
+        Assert.Contains(Tr.Pick(
+            $"A zone is shown only when it has at least {Thresholds.RegionMinStars} stars and the frame has enough stars to be measured, otherwise n/a.",
+            $"O zona se arata doar daca are cel putin {Thresholds.RegionMinStars} stele si cadrul are destule stele ca sa fie masurat, altfel n/a."), description);
+    }
+
+    /// <summary>
     /// R-115 (ADR 0071): the Rezolutie tab's texts are in plain words, in both languages. The
     /// rows' names, notes and descriptions, the size table's legend (with and without stars)
     /// and the dpi scale name the stars' width as "latimea stelelor (FWHM)" and use none of the
