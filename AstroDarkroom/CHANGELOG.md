@@ -6,7 +6,16 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 ## [Unreleased]
 
+### Added
+
+- A **Help** (**Ajutor**) button in the launcher's bottom bar, a question mark on a blue disc
+  before the word, opens the launcher's manual in the browser at its section on the window
+  (`https://github.com/tcarean/AstroDarkroom/wiki#the-window`); F1 does the same (R-021,
+  ADR 0030).
+
 ### Changed
+
+- F1 no longer opens "Despre": the about window opens from its button only (R-021, ADR 0030).
 
 - The launcher says that FlatCheck alone needs Siril (R-009, ADR 0024): the line under the
   subtitle reads "Three tools read a Siril session folder; only FlatCheck needs Siril 1.4.4 or

@@ -5,7 +5,8 @@
 `src/AstroDarkroom.Core/ReleaseManifest.cs`, `src/AstroDarkroom.Core/LicenseInfo.cs`,
 `src/AstroDarkroom.Core/Prerequisites.cs`, `src/AstroDarkroom.Core/Version.cs`,
 `src/AstroDarkroom.Core/ThirdParty.cs`, `src/AstroDarkroom.Core/WindowFit.cs`,
-`src/AstroDarkroom.Core/VcRuntime.cs`, `src/AstroDarkroom.Core/Language/Ui.cs`,
+`src/AstroDarkroom.Core/VcRuntime.cs`, `src/AstroDarkroom.Core/Manual.cs`,
+`src/AstroDarkroom.Core/Language/Ui.cs`,
 `src/AstroDarkroom.Core/Language/LanguageSetting.cs`, `src/AstroDarkroom.Wpf/App.xaml.cs`,
 `src/AstroDarkroom.Wpf/Icons.cs`, `src/AstroDarkroom.Wpf/AppRow.cs`,
 `src/AstroDarkroom.Wpf/MainWindow.xaml.cs`, `src/AstroDarkroom.Wpf/DarkTitleBar.cs`,
@@ -17,7 +18,7 @@ The launcher is two layers: a core that answers three questions about a folder (
 exist, which of them are there, how to start one), reads two files (`release.json`, the
 language setting) and words every answer in one of two languages, and a window that asks those
 questions at start-up and at every change of language and shows the answers. The requirements
-are R-001 to R-010 and R-015 to R-020 in `docs/requirements.md`; the choice of a compiled-in catalogue
+are R-001 to R-010 and R-015 to R-021 in `docs/requirements.md`; the choice of a compiled-in catalogue
 over a scan of the folder is ADR 0002, the split with no test project for the window is ADR
 0001, the two languages and the live switch are ADR 0006. What the launcher writes to its
 diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
@@ -98,6 +99,9 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   a loader refuses, asking each once, in order, and keeping that order; `Warning`, the main
   window's text before the link, a pair picked at each read. The core loads nothing: the window
   passes the loader, the tests a fake one. `LogText.VcRuntime` words the log's line.
+- `Manual` is the launcher's manual, two constants (R-021, ADR 0030): `Page`, the Home page of
+  the suite's wiki, and `Window`, its section on the main window, which the Help button and F1
+  open. The wiki is English only, so neither changes with the language.
 - `ThirdParty.Components` is the list of the components written by others that the launcher
   ships, for the about window (R-015, ADR 0013): today one, NLog, which two packages bring. A
   `ThirdPartyComponent` has a name, a role (a pair picked at each read of the list), a licence
@@ -144,10 +148,12 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
 - `MainWindow` reads `release.json` once. The XAML carries no user text: the constructor sets
   the banner, `VersionInfo.Banner`, and the copyright, `VersionInfo.Copyright`, at the left of
   the bottom bar (R-019, ADR 0018), neither of which changes with the language; the copyright is
-  a `Faint` line in the bar's first column, what the selector and the about button leave, and
-  trims with an ellipsis when wider. `Relabel()` assigns the other labels (the subtitle, the
-  prerequisites line under it from `Prerequisites.Summary`, the runtime's warning under that,
-  the selector's tooltip, the about button and its tooltip) through `T` and
+  a `Faint` line in the bar's first column, what the selector and the help and about buttons
+  leave, and trims with an ellipsis when wider (at 680 px the copyright's 167 px of text have
+  259 px in English and 244 in Romanian, measured 2026-11-16). `Relabel()` assigns the other
+  labels (the subtitle, the prerequisites line under it from `Prerequisites.Summary`, the
+  runtime's warning under that, the selector's tooltip, the help button's word, which is its
+  automation name too, and tooltip, the about button and its tooltip) through `T` and
   builds one `AppRow` per catalogue app: the app, its `AppLocation`, its `ComponentInfo` or
   null. The row's properties are the strings the XAML binds (`OpenLabel`, `VersionHint` as
   `version X` / `versiunea X` or `version unknown` / `versiune necunoscuta`, `ButtonHint` as
@@ -212,9 +218,9 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   prerequisites line, collapsed unless the list `App` passed holds a file: a `Run` that
   `Relabel()` fills from `VcRuntime.Warning`, then a `Hyperlink` in `AccentBr` whose `Run` shows
   `VcRuntime.DownloadUrl` and whose `NavigateUri` the constructor sets to it (the inlines touch
-  in the XAML, so no space slips in before the link). `OpenRuntimeLink` starts the URI's
-  `OriginalString` through the shell, which a web address needs (the tools are started
-  directly), and logs it; a
+  in the XAML, so no space slips in before the link). `OpenRuntimeLink` passes the URI's
+  `OriginalString` to `OpenInBrowser`, which starts it through the shell, which a web address
+  needs (the tools are started directly), and logs it; a
   `Win32Exception` or `InvalidOperationException` ends in a message box with the address and an
   Error line. `RecheckRuntime`, on each `Activated` while the list holds a file, asks
   `NativeProbe.MissingRuntime()` again: an answer that differs from the list replaces it, goes
@@ -222,6 +228,18 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   back from installing the runtime. Once the list is empty nothing is asked; the first
   activation, right after the start's check, asks again only when that check found a file
   missing.
+- Help (R-021, ADR 0030) is `ApplicationCommands.Help`, whose default gesture is F1: the
+  window's one `CommandBinding` runs `ShowHelp`, and `HelpButton`, in the bottom bar's third
+  column between the selector and `AboutButton`, carries the command, so the key and the
+  button are one path, live whatever the window shows. The button's content is a horizontal
+  panel: an `Image` of `HelpIcon`, a `DrawingImage` in `App.xaml` (a disc of `AccentBr` and a
+  question mark stroked in `WindowBg`, FlatCheck's drawing, 16 px), then `HelpLabel`. `ShowHelp`
+  passes `Manual.Window`, the core's address of the wiki's Home page at `#the-window`, to
+  `OpenInBrowser`, the runtime link's path, so it is logged and a refusal gives the same message
+  box. The anchor is the one GitHub makes from the heading `## The window`; the wiki is outside
+  the repository, so a heading renamed there is followed in `Manual` by hand. `AboutButton` opens
+  About through its `Click` (`ShowAbout`) and has no key; the About window binds no command, so F1
+  there does nothing.
 - `AboutWindow` takes the `ReleaseInfo` the main window read and words itself once, in its
   constructor, in the language of that moment (it is modal and made anew at every open): the
   title, the tagline, the headings, the banner, the copyright, the warranty, the third-party
