@@ -111,6 +111,64 @@ public class CliTests
         Assert.Equal(2, Directory.GetFiles(ws.Dir).Length);
     }
 
+    /// <summary>
+    /// CR-010: nothing compared -o with the files the run reads, and the report is moved over
+    /// its target: `AstroPhotoAnalyzer m31.tif -o m31.tif` left a text file of a few kilobytes
+    /// under the image's name. It is an error before the analysis starts, whichever of the
+    /// three inputs is named and however its path is written.
+    /// </summary>
+    [Fact]
+    public void R005_OutNamingAFileTheRunReadsIsRefusedBeforeTheAnalysis()
+    {
+        using var ws = new TempWorkspace();
+        string tif = DarkTiff(ws);
+        string fit = ws.WriteFile("plate.fit", new byte[] { 1, 2, 3 });
+        string icc = ws.WriteFile("paper.icc", new byte[] { 4, 5, 6 });
+        byte[] image = File.ReadAllBytes(tif);
+        const string tail = ". Raportul l-ar inlocui; da raportului alt nume.";
+
+        // The image, by a path that differs in case and has a "." in it.
+        string typed = Path.Combine(ws.Dir, ".", "DARK.TIF");
+        var (code, output, err) = Run(tif, "-o", typed);
+        Assert.Equal(1, code);
+        Assert.Equal("EROARE: -o numeste un fisier pe care analiza il citeste (imaginea): " + typed + tail + Environment.NewLine, err);
+        Assert.DoesNotContain("VERDICT", output);
+        Assert.Equal(image, File.ReadAllBytes(tif));
+
+        (code, _, err) = Run(tif, "--wcs", fit, "-o", fit);
+        Assert.Equal(1, code);
+        Assert.Equal("EROARE: -o numeste un fisier pe care analiza il citeste (fisierul de la --wcs): " + fit + tail + Environment.NewLine, err);
+        Assert.Equal(new byte[] { 1, 2, 3 }, File.ReadAllBytes(fit));
+
+        (code, _, err) = Run(tif, "--icc", icc, "-o", icc);
+        Assert.Equal(1, code);
+        Assert.Equal("EROARE: -o numeste un fisier pe care analiza il citeste (profilul de la --icc): " + icc + tail + Environment.NewLine, err);
+        Assert.Equal(new byte[] { 4, 5, 6 }, File.ReadAllBytes(icc));
+
+        Assert.Equal(3, Directory.GetFiles(ws.Dir).Length);
+    }
+
+    /// <summary>
+    /// CR-010: another spelling of the image's path (the long-path form) is not caught by
+    /// comparing paths; the image is held open while the report is saved, so the save is
+    /// refused by the system and the image keeps its bytes.
+    /// </summary>
+    [Fact]
+    public void R005_OutNamingTheImageByAnotherSpellingLeavesItUntouched()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var ws = new TempWorkspace();
+        string tif = DarkTiff(ws);
+        byte[] image = File.ReadAllBytes(tif);
+
+        var (code, _, err) = Run(tif, "-o", @"\\?\" + tif);
+
+        Assert.Equal(1, code);
+        Assert.StartsWith("EROARE: nu s-a putut scrie raportul: ", err);
+        Assert.Equal(image, File.ReadAllBytes(tif));
+        Assert.Single(Directory.GetFiles(ws.Dir));
+    }
+
     [Fact]
     public void R015_ALinearFitsIsRefusedWithExitOne()
     {

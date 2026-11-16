@@ -31,6 +31,7 @@
 // The verdicts are monotone, so "anything != 0" means "not clean, take a look".
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using NLog;
 
@@ -121,6 +122,14 @@ namespace AstroPhotoAnalyzer
             if (!File.Exists(o.Image))
                 return Refuse(stderr, error, Tr.Pick("the file does not exist: ", "fisierul nu exista: ") + o.Image);
 
+            // The report is moved over its target, so -o naming a file the run reads would leave
+            // the report under that file's name: refused before anything is read (R-005, ADR 0106).
+            string named = o.Out == null ? null : InputNamedByOut(o);
+            if (named != null)
+                return Refuse(stderr, error,
+                    Tr.Pick($"-o names a file the analysis reads ({named}): {o.Out}. The report would replace it; give the report another name.",
+                            $"-o numeste un fisier pe care analiza il citeste ({named}): {o.Out}. Raportul l-ar inlocui; da raportului alt nume."));
+
             Parameters p = ParametersFrom(o);
             if (o.Icc != null)
             {
@@ -156,7 +165,10 @@ namespace AstroPhotoAnalyzer
             {
                 try
                 {
-                    ReportWriter.SaveFull(result, o.Out);
+                    // Another spelling of an input's path passes the comparison above; held open,
+                    // the input cannot be replaced, and the save fails with the system's reason.
+                    using (HoldInputs(o))
+                        ReportWriter.SaveFull(result, o.Out);
                     Log.Info(LogText.Wrote(o.Out));
                     stdout.WriteLine(Tr.Pick("    -> report saved: ", "    -> raport salvat: ") + o.Out);
                 }
@@ -169,6 +181,81 @@ namespace AstroPhotoAnalyzer
             }
 
             return ExitFor(result.Overall);
+        }
+
+        /// <summary>
+        /// Which of the files the run reads the -o target is, compared by full path without
+        /// regard to case, as the exports' guard compares (<c>CurveExport.Guarded</c>).
+        /// </summary>
+        /// <param name="o">The options, with an Out and an Image; the WCS file and the profile may be null.</param>
+        /// <returns>
+        /// The input's name for the message, in the interface language ("the image", "the --wcs
+        /// file", "the --icc profile"); null when -o names none of them, or is a path the system
+        /// cannot resolve, which the save then reports.
+        /// </returns>
+        static string InputNamedByOut(Options o)
+        {
+            string target = FullPathOrNull(o.Out);
+            if (target == null) return null;
+            if (Same(target, o.Image)) return Tr.Pick("the image", "imaginea");
+            if (Same(target, o.Wcs)) return Tr.Pick("the --wcs file", "fisierul de la --wcs");
+            if (Same(target, o.Icc)) return Tr.Pick("the --icc profile", "profilul de la --icc");
+            return null;
+        }
+
+        /// <summary>Whether a path names the file of a full path, without regard to case.</summary>
+        /// <param name="fullTarget">A full path.</param>
+        /// <param name="path">A path, relative or full; null for no file.</param>
+        /// <returns><c>true</c> when the two resolve to the same full path.</returns>
+        static bool Same(string fullTarget, string path)
+            => path != null && string.Equals(fullTarget, FullPathOrNull(path), StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>A path's full form, without throwing on one the system cannot resolve.</summary>
+        /// <param name="path">A path, relative or full; not null.</param>
+        /// <returns>The full path; null for a malformed one.</returns>
+        static string FullPathOrNull(string path)
+        {
+            try { return Path.GetFullPath(path); }
+            catch (Exception e) when (e is ArgumentException or NotSupportedException or PathTooLongException) { return null; }
+        }
+
+        /// <summary>
+        /// Opens the files the run read (the image, the WCS file, the ICC profile) for reading,
+        /// sharing them for reading only, until the result is disposed: while they are held no
+        /// write can replace them, whatever path it reaches them by. A file that cannot be
+        /// opened is left out.
+        /// </summary>
+        /// <param name="o">The options; the WCS file and the profile may be null.</param>
+        /// <returns>The hold; disposing it closes the files.</returns>
+        static HeldFiles HoldInputs(Options o)
+        {
+            var held = new HeldFiles();
+            foreach (string path in new[] { o.Image, o.Wcs, o.Icc })
+            {
+                if (path == null) continue;
+                try { held.Add(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1)); }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+                {
+                    Log.Debug("not held while the report is saved: " + path + " (" + e.Message + ")");
+                }
+            }
+            return held;
+        }
+
+        /// <summary>Files kept open for a while, closed together.</summary>
+        sealed class HeldFiles : IDisposable
+        {
+            readonly List<FileStream> _files = new List<FileStream>();
+
+            /// <summary>Takes a file to keep open.</summary>
+            /// <param name="file">The open file; not null.</param>
+            internal void Add(FileStream file) => _files.Add(file);
+
+            /// <summary>Closes every file taken.</summary>
+            public void Dispose()
+            {
+                foreach (FileStream f in _files) f.Dispose();
+            }
         }
 
         /// <summary>

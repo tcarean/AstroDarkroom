@@ -274,6 +274,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The console no longer replaces a file it reads with the report: `-o` naming the image, the
+  `--wcs` file or the `--icc` profile (`AstroPhotoAnalyzer m31.tif -o m31.tif`) is an error
+  before the analysis starts, and the file is untouched (CR-010 of the code review of
+  2026-11-13, ADR 0106).
 - A second image can no longer be chosen while an analysis runs: the "Open image..." button of
   the first screen stayed enabled then and answered Space or Enter, and the running image's
   result came up under the second image's name, which was never analysed. Both buttons are
