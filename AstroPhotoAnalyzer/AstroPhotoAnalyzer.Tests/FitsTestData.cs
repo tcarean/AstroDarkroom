@@ -126,6 +126,24 @@ internal static class FitsTestData
         return HeaderBlocks(cards).Concat(PadToBlock(data)).ToArray();
     }
 
+    /// <summary>
+    /// The same file with the value of its first <paramref name="key"/> card written exactly as
+    /// given: for a value the generator's own formatting never writes (a D exponent, a comma).
+    /// </summary>
+    internal static byte[] WithCard(byte[] fits, string key, string value)
+    {
+        byte[] copy = (byte[])fits.Clone();
+        for (int at = 0; at + CardSize <= copy.Length; at += CardSize)
+        {
+            string name = Encoding.ASCII.GetString(copy, at, 8).Trim();
+            if (name == "END") break;
+            if (name != key) continue;
+            Encoding.ASCII.GetBytes(Card(key, value)).CopyTo(copy, at);
+            return copy;
+        }
+        throw new ArgumentException("the header has no card " + key);
+    }
+
     /// <summary>A 2D image, a convenience over <see cref="Build"/>.</summary>
     internal static byte[] Build2D(int width, int height, Func<int, int, double> pixel,
         int bitpix = 16, double? bzero = null, double bscale = 1, IEnumerable<string>? extraCards = null)

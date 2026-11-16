@@ -629,7 +629,11 @@ per doubling.
 **Write the files...** writes the files of `--out` into a folder you choose; the dialog opens in
 the session folder, which is refused, as are the partner's and the chosen lights' folder, so
 choose a folder outside them.
-**About** (F1) shows the version, the licence and the six third-party components the program
+**Help**, or the F1 key, opens the window's manual in the suite's wiki, in your browser, at the
+section of the tab on screen; before a folder is opened, and while it is read, at the section on
+opening a folder, and on the card of a folder that cannot be analysed, at "When something goes
+wrong". The manual is in English.
+**About** shows the version, the licence and the six third-party components the program
 ships, LibRaw's three libraries listed apart from it, with where their licence texts are. On a
 screen too low for it, its cards scroll and the Close button stays in view.
 

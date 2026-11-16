@@ -18,7 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- MainWindow: the suite's banner, one card per app of the catalogue with its open button,
-     and the bottom bar with the suite's copyright, the language selector and the about button.
+     and the bottom bar with the suite's copyright, the language selector, the help button and
+     the about button.
      Everything shown comes from AppRow, built from the core; the labels are assigned by the
      code behind, in the current language (Relabel), but for the banner and the copyright, the
      same in both, which the constructor sets once, so no user text is written here; the
@@ -38,8 +39,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         Background="{StaticResource WindowBg}"
         TextOptions.TextFormattingMode="Display">
 
+  <!-- "Help" goes through ApplicationCommands.Help, whose default gesture is F1: the button and
+       the key open the manual at the window's section (R-021, ADR 0030). "About" opens from its
+       own button only. -->
   <Window.CommandBindings>
-    <CommandBinding Command="Help" Executed="ShowAbout" />
+    <CommandBinding Command="Help" Executed="ShowHelp" />
   </Window.CommandBindings>
 
   <Grid>
@@ -139,6 +143,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <ColumnDefinition Width="*" />
           <ColumnDefinition Width="Auto" />
           <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <!-- The suite's copyright (R-019), the same words in both languages; the folder's path
              is in the log, the release's date in About (ADR 0018). -->
@@ -164,7 +169,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </StackPanel>
           </RadioButton>
         </StackPanel>
-        <Button x:Name="AboutButton" Grid.Column="2" Command="Help" />
+        <!-- Help (R-021): the theme's drawn HelpIcon, then the word, which Relabel sets with the
+             tooltip and the automation name. -->
+        <Button x:Name="HelpButton" Grid.Column="2" Command="Help">
+          <StackPanel Orientation="Horizontal">
+            <Image Source="{StaticResource HelpIcon}" Width="16" Height="16" VerticalAlignment="Center" />
+            <TextBlock x:Name="HelpLabel" Margin="7,0,0,0" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button x:Name="AboutButton" Grid.Column="3" Margin="8,0,0,0" Click="ShowAbout" />
       </Grid>
     </Border>
   </Grid>

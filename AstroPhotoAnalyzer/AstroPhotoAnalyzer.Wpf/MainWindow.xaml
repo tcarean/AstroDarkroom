@@ -32,8 +32,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         Background="{StaticResource WindowBg}"
         TextOptions.TextFormattingMode="Display">
 
+  <!-- "Help" goes through ApplicationCommands.Help, whose default gesture is F1: the button
+       and the key reach the same handler, which opens the manual at the section of what is on
+       screen (R-186, ADR 0102). "About" opens from its own button only. -->
   <Window.CommandBindings>
-    <CommandBinding Command="Help" Executed="ShowAbout" />
+    <CommandBinding Command="Help" Executed="ShowHelp" />
   </Window.CommandBindings>
 
   <Grid>
@@ -57,7 +60,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Style="{StaticResource Faint}" Text="{Binding Copyright}" Margin="0,2,0,0" />
         </StackPanel>
 
-        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+        <!-- 20 px short of the buttons, as the banner's column is: no line of this column runs
+             up to them -->
+        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,20,0">
           <TextBlock Style="{StaticResource Faint}" Text="{local:T En=IMAGE, Ro=IMAGINE}" />
           <TextBlock Margin="0,3,0,0" TextTrimming="CharacterEllipsis" Text="{Binding Path}"
                      Visibility="{Binding HasPath, Converter={StaticResource BoolToVis}}" />
@@ -68,10 +73,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                profile, and never during a run, as the choice that re-runs is. -->
           <TextBlock Style="{StaticResource Faint}" Margin="0,8,0,0" Text="{local:T En='ICC PROFILE', Ro='PROFIL ICC'}" />
           <!-- A grid, not a horizontal StackPanel: in a panel of infinite width a long reason
-               would push the button out of the column instead of being trimmed. -->
-          <Grid Margin="0,3,0,0" DataContext="{Binding Parameters}">
+               would push the button out of the column instead of being trimmed. The text's
+               column is a star one, measured against the room the column leaves, so a long
+               line is trimmed at any width of the window (an Auto one is measured unbounded and
+               ran on under the buttons); the grid is left-aligned, so a short line keeps the
+               button right after it (R-155, ADR 0102). -->
+          <Grid Margin="0,3,0,0" HorizontalAlignment="Left" DataContext="{Binding Parameters}">
             <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="Auto" MaxWidth="700" />
+              <ColumnDefinition Width="*" MaxWidth="700" />
               <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="ProfileText" Grid.Column="0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding ProfileText}" ToolTip="{Binding ProfileText}">
@@ -97,9 +106,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <StackPanel Grid.Column="2" VerticalAlignment="Center">
           <StackPanel x:Name="TopButtons" Orientation="Horizontal">
-            <Button Content="{local:T En='Open image...', Ro='Deschide imagine...'}" Click="ChooseImage" IsEnabled="{Binding IsIdle}" />
+            <Button x:Name="OpenButton" Content="{local:T En='Open image...', Ro='Deschide imagine...'}" Click="ChooseImage" IsEnabled="{Binding IsIdle}" />
             <Button Content="{local:T En='Save the report...', Ro='Salveaza raportul...'}" Click="SaveReport" IsEnabled="{Binding CanSave}" Margin="10,0,0,0" />
-            <Button Content="{local:T En='About', Ro='Despre'}" Command="Help" ToolTip="{local:T En='Version, licence, components (F1)', Ro='Versiune, licenta, componente (F1)'}" Margin="10,0,0,0" />
+            <!-- Help and About stay active during the analysis too, because they touch nothing of
+                 what runs. Help's icon is the theme's HelpIcon; the automation name is the word,
+                 since the content is not a plain string. -->
+            <Button Command="Help" Margin="10,0,0,0"
+                    AutomationProperties.Name="{local:T En='Help', Ro='Ajutor'}"
+                    ToolTip="{local:T En='The manual, at the section of this tab (F1)', Ro='Manualul, la sectiunea tabului curent (F1)'}">
+              <StackPanel Orientation="Horizontal">
+                <Image Source="{StaticResource HelpIcon}" Width="16" Height="16" VerticalAlignment="Center" />
+                <TextBlock Text="{local:T En='Help', Ro='Ajutor'}" Margin="7,0,0,0" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <Button Content="{local:T En='About', Ro='Despre'}" Click="ShowAbout" ToolTip="{local:T En='Version, licence, components', Ro='Versiune, licenta, componente'}" Margin="10,0,0,0" />
           </StackPanel>
           <!-- A fixed place, two lines high, for the save outcome: its appearance does not move
                the buttons. The width is the button row's: the column is Auto, and without a
@@ -209,7 +229,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Text="{local:T En='Open a finished image', Ro='Deschide o imagine finita'}" FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" />
           <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" TextAlignment="Center"
                      Text="{local:T En='An already stretched TIFF, PNG or FITS - what you would export from Siril for print. The tool measures and recommends; it writes no file to send to the lab.', Ro='TIFF, PNG sau FITS deja stretch-uit - ce ai exporta din Siril pentru print. Unealta masoara si recomanda; nu scrie niciun fisier de trimis la laborator.'}" />
-          <Button Content="{local:T En='Open image...', Ro='Deschide imagine...'}" Margin="0,22,0,0" HorizontalAlignment="Center" Click="ChooseImage" />
+          <!-- Disabled while a run lasts, as the top bar's: this panel is visible then, and the
+               busy overlay stops the mouse, not a key on the button that kept the focus (ADR 0106). -->
+          <Button x:Name="PlaceholderOpenButton" Content="{local:T En='Open image...', Ro='Deschide imagine...'}" Margin="0,22,0,0" HorizontalAlignment="Center" Click="ChooseImage"
+                  IsEnabled="{Binding IsIdle}" />
         </StackPanel>
 
         <Border MaxWidth="620" VerticalAlignment="Center" HorizontalAlignment="Center"
@@ -221,32 +244,33 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </StackPanel>
         </Border>
 
+        <!-- each tab's Tag is its section of the manual, which Help and F1 open (R-186) -->
         <local:AccessibleTabControl x:Name="Tabs" Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
-          <TabItem Header="{local:T En='Report', Ro='Raport'}">
+          <TabItem Header="{local:T En='Report', Ro='Raport'}" Tag="{x:Static local:ManualSection.Report}">
             <local:ReportView DataContext="{Binding Report}" />
           </TabItem>
-          <TabItem Header="{local:T En='Tones', Ro='Tonuri'}">
+          <TabItem Header="{local:T En='Tones', Ro='Tonuri'}" Tag="{x:Static local:ManualSection.Tones}">
             <local:TonesView DataContext="{Binding Tones}" />
           </TabItem>
-          <TabItem Header="Export">
+          <TabItem Header="Export" Tag="{x:Static local:ManualSection.Export}">
             <local:ExportView DataContext="{Binding Export}" />
           </TabItem>
-          <TabItem Header="{local:T En='Resolution', Ro='Rezolutie'}">
+          <TabItem Header="{local:T En='Resolution', Ro='Rezolutie'}" Tag="{x:Static local:ManualSection.Resolution}">
             <local:ResolutionView DataContext="{Binding Resolution}" />
           </TabItem>
-          <TabItem Header="{local:T En='Colour', Ro='Culoare'}">
+          <TabItem Header="{local:T En='Colour', Ro='Culoare'}" Tag="{x:Static local:ManualSection.Colour}">
             <local:BackgroundView DataContext="{Binding Background}" />
           </TabItem>
-          <TabItem x:Name="CurvesTabItem" Header="{local:T En='Curves Editing', Ro='Editare Curbe'}">
+          <TabItem x:Name="CurvesTabItem" Header="{local:T En='Curves Editing', Ro='Editare Curbe'}" Tag="{x:Static local:ManualSection.CurvesEditing}">
             <local:CurvesView DataContext="{Binding Curves}" />
           </TabItem>
-          <TabItem x:Name="GamutFitTabItem" Header="{local:T En='Colours for paper', Ro='Culori pentru hartie'}">
+          <TabItem x:Name="GamutFitTabItem" Header="{local:T En='Colours for paper', Ro='Culori pentru hartie'}" Tag="{x:Static local:ManualSection.ColoursForPaper}">
             <local:GamutFitView DataContext="{Binding GamutFit}" />
           </TabItem>
-          <TabItem Header="Soft proof">
+          <TabItem Header="Soft proof" Tag="{x:Static local:ManualSection.SoftProof}">
             <local:SoftProofView DataContext="{Binding SoftProof}" />
           </TabItem>
-          <TabItem Header="{local:T En='Crop with aspect ratio', Ro='Decupare cu raport de aspect'}">
+          <TabItem Header="{local:T En='Crop with aspect ratio', Ro='Decupare cu raport de aspect'}" Tag="{x:Static local:ManualSection.CropWithAspectRatio}">
             <local:CropView DataContext="{Binding Crop}" />
           </TabItem>
         </local:AccessibleTabControl>

@@ -88,7 +88,10 @@ encoder at hand cannot produce the real thing; **its row in `../requirements.md`
 
 **A new tab**: a `ResultTabViewModel` in `ResultTabs.cs`, a `UserControl` in `Views/`
 (partial class in `ResultViews.xaml.cs`), a `TabItem` in `MainWindow.xaml`, a `Render`
-line in `WindowSmokeTests.R110_EveryTabRenders...`; **its row in `../requirements.md` and `window.md`**.
+line in `WindowSmokeTests.R110_EveryTabRenders...`; **its row in `../requirements.md` and `window.md`**;
+its section of the manual (R-186): a `ManualSection` and its anchor in `Presentation/Manual.cs`,
+the `TabItem`'s `Tag`, the lists in `HelpTests`, and the wiki page's heading it points at. A new
+viewing window gets the same binding of F1 as the four in `Views/OverlayWindows.xaml.cs`.
 A tab whose content is a second run after the analysis, like Editare Curbe, also gets its own run in
 `Core/Runs/` beside `AnalysisRun` (**`pipeline.md`**), never a computation in the view-model.
 

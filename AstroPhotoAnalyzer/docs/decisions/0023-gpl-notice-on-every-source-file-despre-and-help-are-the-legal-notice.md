@@ -1,7 +1,7 @@
 # 0023. The GPL notice is on every source file; "Despre" and --help are the legal notice; a package is listed where it is shown
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; F1 opening "Despre" superseded by 0102
 
 ## Context
 

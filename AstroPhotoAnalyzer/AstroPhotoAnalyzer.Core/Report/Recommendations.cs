@@ -540,7 +540,11 @@ namespace AstroPhotoAnalyzer
             if (b.IsUpscaled)
                 o.Add(new Recommendation(Topic.Warnings, Verdict.Attention,
                     Tr.Pick("The file holds only 8 bits of information, saved as 16 bits: you lose nothing going to 8 bits, but you gain nothing from the 16 either.", "Fisierul are doar 8 biti de informatie, salvati ca 16 biti: nu pierzi nimic la trecerea pe 8 biti, dar nici nu castigi ceva din cei 16."),
-                    Tr.Pick($"{Fmt.Pct(b.UpscaledFraction * 100)} of the values are an 8-bit level copied into 16 bits (the value = the level x 257; threshold {Fmt.F0(Thresholds.UpscaledFraction * 100)} %); different levels used on each channel: {string.Join(" / ", b.DistinctLevels.Select(n => Fmt.Int(n)))}", $"{Fmt.Pct(b.UpscaledFraction * 100)} din valori sunt un nivel de 8 biti copiat in 16 biti (valoarea = nivelul x 257; prag {Fmt.F0(Thresholds.UpscaledFraction * 100)} %); niveluri diferite folosite pe fiecare canal: {string.Join(" / ", b.DistinctLevels.Select(n => Fmt.Int(n)))}")));
+                    // Two ways to be 8 bits (ADR 0105): by the x 257 form, with the levels as a
+                    // fact beside it, or, without that form, by the levels alone.
+                    b.UpscaledFraction > Thresholds.UpscaledFraction
+                        ? Tr.Pick($"{Fmt.Pct(b.UpscaledFraction * 100)} of the values are an 8-bit level copied into 16 bits (the value = the level x 257; threshold {Fmt.F0(Thresholds.UpscaledFraction * 100)} %); different levels used on each channel: {string.Join(" / ", b.DistinctLevels.Select(n => Fmt.Int(n)))}", $"{Fmt.Pct(b.UpscaledFraction * 100)} din valori sunt un nivel de 8 biti copiat in 16 biti (valoarea = nivelul x 257; prag {Fmt.F0(Thresholds.UpscaledFraction * 100)} %); niveluri diferite folosite pe fiecare canal: {string.Join(" / ", b.DistinctLevels.Select(n => Fmt.Int(n)))}")
+                        : Tr.Pick($"different levels used on each channel: {string.Join(" / ", b.DistinctLevels.Select(n => Fmt.Int(n)))}, at most the {Thresholds.EightBitLevels} that 8 bits can hold, of the {Thresholds.EightBitLevels * Thresholds.EightBitLevels} a 16-bit file has", $"niveluri diferite folosite pe fiecare canal: {string.Join(" / ", b.DistinctLevels.Select(n => Fmt.Int(n)))}, cel mult cele {Thresholds.EightBitLevels} pe care le pot tine 8 biti, din cele {Thresholds.EightBitLevels * Thresholds.EightBitLevels} ale unui fisier pe 16 biti")));
 
             if (!f.HasIcc)
                 o.Add(new Recommendation(Topic.Warnings, Verdict.Attention,

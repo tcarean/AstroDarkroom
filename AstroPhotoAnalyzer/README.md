@@ -116,10 +116,16 @@ each tab shows.
 **Save the report...** writes `Report.txt` beside the image by default (`Raport.txt` in
 Romanian), byte for byte what the console writes with `-o`, and says under the buttons where it
 wrote it, or, in red, why it could not (a file another program holds open, a folder that refuses
-writing). **About**, or F1, shows the version, the licence and the components the tool uses.
+writing). **Help**, or the F1 key, opens the manual,
+<https://github.com/tcarean/AstroDarkroom/wiki/AstroPhotoAnalyzer>, in your browser at the
+section of the tab you are on: before an image is analysed and while it is being analysed, at
+the section on opening an image; on the red "The analysis failed" card, at the table of what to
+do. The manual is in English. **About**, beside it, shows the version, the licence and the
+components the tool uses.
 
 Two windows open from the **Tones** tab, both maximized and both for looking only: they compute
-nothing and show what the analysis decided. Esc closes them.
+nothing and show what the analysis decided. Esc closes them; F1 opens their section of the
+manual.
 
 - **Dust / sky map** paints the five classes of 32 px patches over the whole image, each in its
   colour, with its share of the patches and its definition in the legend, the image's own
@@ -184,7 +190,7 @@ Two buttons under the image:
 - **Curve...** opens the table of the points (input and output, to three decimals) and two
   charts: the whole curve, and the shadows enlarged, where the dust and the sky sit. The table is
   made for redoing the curve by hand in Siril: *Curves Transformation*, *cubic spline* mode, the
-  same points on R, G and B.
+  same points on R, G and B. F1 there opens the manual at that window's section.
 - **Save as...** writes a new `.fit` file with the curve applied to the whole image, whatever the
   input's format. From a FITS it keeps every card of the header (WCS, exposure, instrument) and the
   data's encoding, and adds `HISTORY` lines with the suggestion and its points; from a PNG, TIFF or
@@ -267,7 +273,8 @@ nothing is edited, nothing is written. The proof is computed right after the ana
 - **Full screen** opens the same proof over the whole screen, a comparison included, nothing else: no title bar, the
   margin filling the screen. The controls, with a **Close** button, appear while the mouse is
   over the band they occupy at the top of the screen and hide when it leaves; the keys G and O
-  toggle the two boxes, I moves to the next intent, Esc or **Close** leaves the full screen.
+  toggle the two boxes, I moves to the next intent, Esc or **Close** leaves the full screen, F1
+  opens the manual at the Soft proof section.
 
 Under the image: the profile's name, its paper white in L\*a\*b\* (what the image's white
 becomes), its paper black in L\* and Dmax, and the warning's share.
@@ -337,14 +344,14 @@ after the image; `--help` lists them with their defaults, which are the window's
 | `--frame <cm>` | the width of the frame | 3 |
 | `--wcs <file.fit>` | a plate-solved FITS of the same size, whose WCS is used to find the dark nebulae | a FITS image's own |
 | `--lang en`, `--lang ro` | the language of every text | `en` |
-| `-o <file>`, `--out <file>` | also writes the report to this file | none |
+| `-o <file>`, `--out <file>` | also writes the report to this file, which may not be the image, the `--wcs` file or the `--icc` profile | none |
 | `-h`, `--help` | the help | |
 
 The exit code follows the overall verdict, the most severe one in the report: `0` OK, `2`
 caution, `3` problem, so any code but `0` means "look". `1` is an error: a bad argument or a
 bad combination (a passepartout under twice the frame), a missing or unreadable file, an ICC
 profile or a WCS file it cannot use, a linear image, a FITS whose values are not between 0 and
-1, a report `-o` cannot write. An error prints
+1, a report `-o` cannot write or aims at a file the analysis reads. An error prints
 `ERROR: ` and its reason; the codes are the same in both languages.
 
 The report starts with the file and its facts (format, bit depth, pixels, compression, file

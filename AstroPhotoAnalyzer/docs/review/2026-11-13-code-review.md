@@ -81,11 +81,11 @@ entry gives. Paths are relative to the project folder.
 | CR-003 | 1 | some setups | to measure | On an 8-bit source three thresholds on a whole level are decided by float rounding | fixed ae70ca1d |
 | CR-004 | 1 | some setups | owner | A float FITS that is not on a 0..1 scale is analysed as a white frame | fixed 4e0f4da4 |
 | CR-005 | 1 | slip | confirmed | Opening another image while a field is wrong leaves the old result under the new name | fixed 5c0cf426 |
-| CR-006 | 1 | rare | confirmed | Soft corners are reported on a frame whose stars are declared too few | open |
-| CR-007 | 1 | rare | confirmed | A FITS number that does not parse is read as its default: BZERO, BSCALE, the WCS | open |
-| CR-008 | 1 | rare | confirmed | An 8-bit image saved as 16 bits by a shift passes as real 16 bits | open |
-| CR-009 | 1 | rare | confirmed | A second image chosen from the keyboard during a run gets the running image's result | open |
-| CR-010 | 2 | slip | confirmed | `-o` naming the analysed image replaces the image with the report | open |
+| CR-006 | 1 | rare | confirmed | Soft corners are reported on a frame whose stars are declared too few | fixed 19f667e9 |
+| CR-007 | 1 | rare | confirmed | A FITS number that does not parse is read as its default: BZERO, BSCALE, the WCS | fixed 5a1707b4 |
+| CR-008 | 1 | rare | confirmed | An 8-bit image saved as 16 bits by a shift passes as real 16 bits | fixed 5d00aa35 |
+| CR-009 | 1 | rare | confirmed | A second image chosen from the keyboard during a run gets the running image's result | fixed c075e9ae |
+| CR-010 | 2 | slip | confirmed | `-o` naming the analysed image replaces the image with the report | fixed de089c54 |
 | CR-011 | 2 | rare | to measure | An image over 65 535 px on a side ends the whole analysis in the JPEG stage | open |
 | CR-012 | 2 | crafted | confirmed | A FITS header with a negative axis length hangs the reader | open |
 | CR-013 | 2 | crafted | confirmed | A settings file with a broken escape stops the window at every start | open |
@@ -150,10 +150,14 @@ entry gives. Paths are relative to the project folder.
 | CR-072 | 4 | rare | confirmed | A failed computation of one gallery of the curves tab takes both away, and the box cannot be unticked to go round it | open |
 | CR-073 | 3 | rare | to measure | A curve can be missing from the gallery with the dust move: its strengths are judged with other points than the ones it gets | open |
 | CR-074 | 4 | common | confirmed | Two figures of the paper fit are not the same from one run to the next | open |
+| CR-075 | 3 | rare | owner | On a frame with too few stars a zone reads n/a under a description that promises its width from 5 stars | open |
+| CR-076 | 3 | rare | owner | "You lose nothing going to 8 bits" is also said of a file caught by its levels alone | open |
+| CR-077 | 4 | crafted | confirmed | The crop and the reader take a reference pixel with broken quoting apart differently | open |
 
 9 entries of severity 1, 4 of severity 2, 39 of severity 3, 15 of severity 4; 45 confirmed, 14
 to measure, 8 for the owner. (As counted on 2026-11-13; CR-068 and CR-069 were added on 2026-11-14, CR-070 to
-CR-074 on 2026-11-16 with the dust move of the suggested curves (ADR 0101), and the
+CR-074 on 2026-11-16 with the dust move of the suggested curves (ADR 0101), CR-075 to CR-077
+on 2026-11-16 by the reviews of the fixes of CR-006 to CR-010, and the
 Status column says what has been closed since.) After the entries: what the owner may want to
 look at though no rule is broken, then the cleanup list (dead code, duplicates, work done twice).
 
@@ -295,7 +299,7 @@ bit. The 16-bit reference image is not touched.
   stars (ADR 0062).
 - Test: none; `SaturatedAndFaintStarsAreNotMeasured` asserts it with zero stars only.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed 19f667e9 (ADR 0103; the zones read n/a too, the owner's answer of 2026-11-16)
 
 ### CR-007 A FITS number that does not parse is read as its default: BZERO, BSCALE, the WCS
 
@@ -318,7 +322,7 @@ bit. The 16-bit reference image is not touched.
 - Test: none; `FitsReaderTests` and `WcsTests` have no `D` exponent and no unreadable value.
 - Evidence: confirmed (cfitsio, so Siril, writes `E`; that a given writer emits `D` was not
   checked on a file).
-- Status: open
+- Status: fixed 5a1707b4 (ADR 0104; a size, BZERO or BSCALE refuses the file, a WCS number means no WCS)
 
 ### CR-008 An 8-bit image saved as 16 bits by a shift passes as real 16 bits
 
@@ -333,7 +337,7 @@ bit. The 16-bit reference image is not touched.
 - Should: the distinct levels (or the low byte being constant) decide too.
 - Test: none; `AnEightBitUpscaleIsCaught` builds the x 257 form only.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed 5d00aa35 (ADR 0105; at most 256 levels a plane, the owner's answer of 2026-11-16)
 
 ### CR-009 A second image chosen from the keyboard during a run gets the running image's result
 
@@ -354,7 +358,7 @@ bit. The 16-bit reference image is not touched.
   profile actions.
 - Evidence: confirmed (the enabled button and the missing guard; that the focus returns to the
   button after the file dialog is WPF's usual behaviour, to see once in the window).
-- Status: open
+- Status: fixed c075e9ae (ADR 0106; the test that needed this defect was replaced, the owner's answer of 2026-11-16)
 
 ## Severity 2: a crash, a hang, or a file overwritten or lost
 
@@ -377,7 +381,7 @@ bit. The 16-bit reference image is not touched.
 - Test: none; `CliTests.R005_*` save to a fresh name, `CurveTests.R145_SavingOverTheInputIs...`
   covers the FITS export.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed de089c54 (ADR 0107; refused before the analysis, the inputs held open during the save)
 
 ### CR-011 An image over 65 535 px on a side ends the whole analysis in the JPEG stage
 
@@ -1051,6 +1055,40 @@ Added on 2026-11-16, by the review of the whole branch of the dust move (R-184, 
 - Evidence: to measure (by reading; an image with a capped full curve would show it).
 - Status: open
 
+### CR-075 On a frame with too few stars a zone reads n/a under a description that promises its width from 5 stars
+
+Added on 2026-11-16, from the fix of CR-006 (ADR 0103) and the review of its branch.
+
+- Where: `AstroPhotoAnalyzer.Wpf/ViewModels/ResultTabs.cs`, the description of the centre's row
+  of the Rezolutie tab ("A zone is shown only when it has at least 5 stars, otherwise n/a").
+- What happens: since ADR 0103 a frame whose stars are too few has no width in any zone, however
+  many detections the zone holds; the description names the zone's own count as the only reason.
+- Case: the scene of `Golden/mono-png8.txt` (16 detections, 6 in the centre): the row reads
+  `n/a` beside "6 stars", under that sentence. The row "Stars measured" above it does say the
+  stars are too few.
+- Should: the sentence names both reasons. A text of the window changes only on the owner's yes
+  (the rule "Plain words"); a wording was put to the owner on 2026-11-16.
+- Evidence: owner.
+- Status: open
+
+### CR-076 "You lose nothing going to 8 bits" is also said of a file caught by its levels alone
+
+Added on 2026-11-16, by the review of the fix of CR-008 (ADR 0105).
+
+- Where: `Report/Recommendations.cs` (`Warnings`), the sentence of the 8-bit upscale.
+- What happens: the sentence was written for the form level x 257, which an 8-bit copy holds
+  exactly. Since ADR 0105 it is also given when no plane uses more than 256 levels, where the
+  levels need not sit on the 8-bit steps.
+- Case (arithmetic, not run): a file saved by a shift, level x 256, rounded to 8 bits
+  (`RasterOps.Level8`): level 128 gives 127.502 and level 129 gives 128.498, both 128, so one pair
+  of neighbouring levels merges. A file whose 256 levels are packed closely (20000 to 20255 of
+  65535) keeps one or two levels in an 8-bit copy.
+- Should: "only 8 bits of information" stays true in both; the half about losing nothing holds
+  for the first form only, so the levels' case needs a sentence of its own, or one that holds
+  for both. The owner's call on the wording.
+- Evidence: owner.
+- Status: open
+
 ## Severity 4: robustness and cleanliness
 
 ### CR-053 Four theme defects: tab headers, the report's corner, the progress bar, the focus
@@ -1363,6 +1401,26 @@ History). Not from the dust move: the paper fit is not touched by that branch.
   exact, and it keeps the figures of 2026-11-14.
 - Test: V-016 passes inside its tolerance of 0.01 either way.
 - Evidence: confirmed (two runs; the cause was not looked for).
+- Status: open
+
+### CR-077 The crop and the reader take a reference pixel with broken quoting apart differently
+
+Added on 2026-11-16, by the second review of the fixes of CR-006 to CR-010. Older than that
+branch, which only added a letter to what `Moved` takes as an exponent.
+
+- Where: `Input/FitsWriter.cs` (`Moved`, the value of a `CRPIX` card) against
+  `Input/FitsReader.cs` (`ReadHeader`, the value of any card).
+- What happens: the reader takes what lies between the first two quotes and ignores a `/`
+  inside them; `Moved` cuts the card at the first `/` from column 10 and then strips quotes
+  from both ends. For a well-formed card the two agree.
+- Case (read, not run): `CRPIX1  = '1.5' x` is 1.5 for the reader and no number for `Moved`, so
+  the crop keeps the card and its plate solution is off by the pixels cut. `CRPIX1  = '1.5/2'`
+  is no number for the reader (no WCS) and 1.5 for `Moved`, which writes a readable reference
+  pixel the source did not have (`-8.5 /2'` for a cut of 10); a stray closing quote and an
+  unclosed one behave the same way.
+- Should: one way to take a card's value apart, the reader's, used by both.
+- Test: none; `R181_AReferencePixelIsMovedExactlyHoweverItIsWritten` has well-formed cards.
+- Evidence: confirmed (by reading; each of these cards is invalid FITS).
 - Status: open
 
 ## For the owner's look

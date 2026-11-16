@@ -583,6 +583,29 @@ public class FrameCropTests
         Assert.Contains(FitsTestData.Card("CRPIX1A", "5."), after);
     }
 
+    /// <summary>
+    /// The review of the branch that fixed CR-007 (2026-11-16): the reader now takes an exponent
+    /// after a lower-case d for a number, so a plate solution written that way is read; the
+    /// crop moved a reference pixel only when its exponent letter was E, e or D, and left
+    /// "1.5d1" where it was, a plate solution off by the pixels cut. The card with a lower-case
+    /// e was moved before too and stays as the guard beside it.
+    /// </summary>
+    [Fact]
+    public void R181_AReferencePixelIsMovedWhateverTheCaseOfItsExponent()
+    {
+        using var ws = new TempWorkspace();
+        string[] extra = { FitsTestData.Card("CRPIX1", "1.5d1"), FitsTestData.Card("CRPIX2", "3.25e1") };
+        byte[] source = FitsTestData.Build(64, 64, 1, (x, y, _) => 0.2 + 0.0001 * (x + 64 * y), bitpix: -32, extraCards: extra);
+        string input = ws.WriteFile("in.fit", source);
+        AnalysisResult a = AnalysisRun.Execute(input, Scenes.OnBuiltForPaper());
+        string target = ws.PathTo("out.fit");
+        CropExport.Save(a, new CropRect(10, 6, 40, 30), FrameW, FrameH, target);
+
+        string[] after = Cards(File.ReadAllBytes(target));
+        Assert.Contains(FitsTestData.Card("CRPIX1", "5."), after);
+        Assert.Contains(FitsTestData.Card("CRPIX2", "4.5"), after);   // 64 - (6 + 30) = 28 file rows cut before
+    }
+
     [Fact]
     public void R181_AHeaderThatGrowsPastItsBlockAndASourceThatChangedSinceTheAnalysis()
     {

@@ -74,8 +74,9 @@ namespace AstroPhotoAnalyzer
         /// ROWORDER says; a TOP-DOWN keyword is noted as ignored), and the WCS attached when the
         /// header has one.
         /// Throws, with a message for the user, on a file with no image, cut short, with a
-        /// BITPIX it does not know, or with more than 3 axes or planes other than 1 or 3; a file
-        /// that does not open throws the platform's exception.
+        /// BITPIX it does not know, with more than 3 axes or planes other than 1 or 3, or with
+        /// a size, a BZERO or a BSCALE that cannot be read as a number; a file that does not
+        /// open throws the platform's exception.
         /// </summary>
         /// <param name="path">The FITS file.</param>
         /// <returns>The raster, with its <see cref="SourceInfo"/>.</returns>
@@ -104,7 +105,8 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Only the header of the first HDU with an image, without its data: for a FITS whose WCS
         /// is lent to another file (R-027). Also returns the width and the height, so that the
-        /// geometry can be checked. Throws on a file with no image or cut short.
+        /// geometry can be checked. Throws on a file with no image, cut short, or with a size
+        /// that cannot be read as a number.
         /// </summary>
         /// <param name="path">The FITS file.</param>
         /// <returns>The header (keyword -> value) and the width and height in pixels.</returns>
@@ -424,27 +426,77 @@ namespace AstroPhotoAnalyzer
             return true;
         }
 
-        /// <summary>A header value as an integer, read in the invariant culture.</summary>
-        /// <param name="h">The header, keyword -> value.</param>
-        /// <param name="k">The keyword.</param>
-        /// <param name="def">
-        /// The value when the keyword is absent or does not parse as an integer with
-        /// NumberStyles.Any, which also accepts forms FITS does not ("1,024", "16.0").
-        /// </param>
-        /// <returns>The integer, or <paramref name="def"/>.</returns>
-        internal static int HInt(IReadOnlyDictionary<string, string> h, string k, int def)
-            => h.TryGetValue(k, out var v) && int.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
+        /// <summary>
+        /// A header number as FITS writes one: an optional sign, digits with an optional point,
+        /// and an optional exponent after E or D ("3.2768D+04"), which .NET does not read by
+        /// itself; the letter is taken in either case. Nothing else is a number: no thousands
+        /// separator, no brackets, no currency sign (NumberStyles.Any read "0,5" as 5 and "(5)"
+        /// as -5), and no NaN or infinity.
+        /// </summary>
+        /// <param name="text">The card's value, as <see cref="ReadHeader"/> gives it; not null.</param>
+        /// <param name="value">The number; 0 when the text is not one.</param>
+        /// <returns><c>true</c> when the text is a finite number.</returns>
+        internal static bool TryNumber(string text, out double value)
+        {
+            string t = text.Trim().Replace('D', 'E').Replace('d', 'e');
+            if (double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out value) && !double.IsNaN(value) && !double.IsInfinity(value))
+                return true;
+            value = 0;
+            return false;
+        }
 
-        /// <summary>A header value as a real number, read in the invariant culture.</summary>
+        /// <summary>
+        /// A header value as an integer: digits with an optional sign, or a real whose value is
+        /// whole, as some writers put one ("16.0"). Throws, with a message for the user, when
+        /// the keyword is present and its value is not a whole number: a size read as its
+        /// default would have the reader measure another image (ADR 0104).
+        /// </summary>
         /// <param name="h">The header, keyword -> value.</param>
         /// <param name="k">The keyword.</param>
-        /// <param name="def">
-        /// The value when the keyword is absent or does not parse with NumberStyles.Any: also a
-        /// FITS real with a D exponent ("1.5D-3"), while "0,5" parses as 5.
-        /// </param>
-        /// <returns>The number, or <paramref name="def"/>.</returns>
+        /// <param name="def">The value when the keyword is absent.</param>
+        /// <returns>The integer, or <paramref name="def"/> when the keyword is absent.</returns>
+        internal static int HInt(IReadOnlyDictionary<string, string> h, string k, int def)
+        {
+            if (!h.TryGetValue(k, out var v)) return def;
+            if (int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out int r)) return r;
+            if (TryNumber(v, out double d) && d == Math.Floor(d) && d >= int.MinValue && d <= int.MaxValue) return (int)d;
+            throw new Exception(Tr.Pick($"FITS: the header's {k} cannot be read as a whole number: '{LogText.Printable(v)}'.",
+                                        $"FITS: {k} din header nu se poate citi ca numar intreg: '{LogText.Printable(v)}'."));
+        }
+
+        /// <summary>
+        /// A header value as a real number (<see cref="TryNumber"/>). Throws, with a message for
+        /// the user, when the keyword is present and its value is not a number: a BZERO or a
+        /// BSCALE read as its default would have the reader measure another image (ADR 0104).
+        /// </summary>
+        /// <param name="h">The header, keyword -> value.</param>
+        /// <param name="k">The keyword.</param>
+        /// <param name="def">The value when the keyword is absent.</param>
+        /// <returns>The number, or <paramref name="def"/> when the keyword is absent.</returns>
         internal static double HDbl(IReadOnlyDictionary<string, string> h, string k, double def)
-            => h.TryGetValue(k, out var v) && double.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
+        {
+            if (TryHDbl(h, k, def, out double value)) return value;
+            throw new Exception(Tr.Pick($"FITS: the header's {k} cannot be read as a number: '{LogText.Printable(h[k])}'.",
+                                        $"FITS: {k} din header nu se poate citi ca numar: '{LogText.Printable(h[k])}'."));
+        }
+
+        /// <summary>
+        /// A header value as a real number, for a caller that takes an unreadable one as an
+        /// answer of its own (the WCS: no WCS) rather than as an error.
+        /// </summary>
+        /// <param name="h">The header, keyword -> value.</param>
+        /// <param name="k">The keyword.</param>
+        /// <param name="def">The value when the keyword is absent.</param>
+        /// <param name="value">
+        /// The number; <paramref name="def"/> when the keyword is absent, 0 when it is present
+        /// and not a number.
+        /// </param>
+        /// <returns><c>false</c> when the keyword is present and its value is not a number.</returns>
+        internal static bool TryHDbl(IReadOnlyDictionary<string, string> h, string k, double def, out double value)
+        {
+            if (!h.TryGetValue(k, out var v)) { value = def; return true; }
+            return TryNumber(v, out value);
+        }
 
         /// <summary>A header value as it was read: a string without its quotes.</summary>
         /// <param name="h">The header, keyword -> value.</param>

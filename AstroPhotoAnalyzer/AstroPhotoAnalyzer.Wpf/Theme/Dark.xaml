@@ -223,6 +223,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Setter>
   </Style>
 
+  <!-- The Help button's icon (R-186, ADR 0102), FlatCheck's: a question mark on a disc of the
+       accent colour. Drawn, not a glyph: the icon fonts differ between Windows 10 and 11.
+       16 x 16 units. -->
+  <DrawingImage x:Key="HelpIcon">
+    <DrawingImage.Drawing>
+      <DrawingGroup>
+        <GeometryDrawing Brush="{StaticResource AccentBr}">
+          <GeometryDrawing.Geometry>
+            <EllipseGeometry Center="8,8" RadiusX="7.5" RadiusY="7.5" />
+          </GeometryDrawing.Geometry>
+        </GeometryDrawing>
+        <GeometryDrawing Geometry="M 5.5,6.1 C 5.5,4.6 6.6,3.6 8,3.6 C 9.5,3.6 10.5,4.6 10.5,5.9 C 10.5,7.4 8.6,7.7 8.1,8.9 L 8.05,9.7">
+          <GeometryDrawing.Pen>
+            <Pen Brush="{StaticResource WindowBg}" Thickness="1.7" StartLineCap="Round" EndLineCap="Round" LineJoin="Round" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+        <GeometryDrawing Brush="{StaticResource WindowBg}">
+          <GeometryDrawing.Geometry>
+            <EllipseGeometry Center="8.05,12.2" RadiusX="1.05" RadiusY="1.05" />
+          </GeometryDrawing.Geometry>
+        </GeometryDrawing>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+
   <!-- ============================================================ tabs -->
 
   <!-- The window's tabs are an AccessibleTabControl, whose automation peer finds the presenter

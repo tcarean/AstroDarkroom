@@ -8,6 +8,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A **Help** (`Ajutor`) button, with an icon, between `Save the report...` and `About`; it and
+  the F1 key open the manual in the browser at the section of the tab on screen, of the opening
+  of an image when no tab shows, or of the table of what to do on the card "The analysis
+  failed". F1 in the Dust / sky map, Preview, Curve and full-screen Soft proof windows opens
+  their own section (R-186, ADR 0102).
+
 - **Put dust on paper black**, a box on the Curves Editing tab, ticked at start (R-184, R-185,
   ADR 0101): for print, every suggested curve also puts the dust on the black of the paper,
   lowered from a bright stretch or lifted from under it, with the dark part of the sky held in
@@ -34,6 +40,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- F1 opens the manual instead of `About`, which now opens from its button alone (R-119, R-186,
+  ADR 0102).
 - Under a suggested curve, the noise of the sky is given in percent (`the noise in the sky grows
   by 26 %`) instead of a factor and a figure on the level scale (R-143, ADR 0101).
 - The warning under a suggested curve that the noise passes the print target appears only when
@@ -274,6 +282,30 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The console no longer replaces a file it reads with the report: `-o` naming the image, the
+  `--wcs` file or the `--icc` profile (`AstroPhotoAnalyzer m31.tif -o m31.tif`) is an error
+  before the analysis starts, and the file is untouched (CR-010 of the code review of
+  2026-11-13, ADR 0107).
+- A second image can no longer be chosen while an analysis runs: the "Open image..." button of
+  the first screen stayed enabled then and answered Space or Enter, and the running image's
+  result came up under the second image's name, which was never analysed. Both buttons are
+  disabled until the run ends (CR-009 of the code review of 2026-11-13, ADR 0106).
+- An 8-bit image saved as 16 bits by moving each byte into the upper byte (the value = the level
+  x 256) no longer passes as real 16 bits: a file in which no channel uses more than 256
+  different levels gets the "only 8 bits of information" caution, whatever the conversion was,
+  with the levels it uses as the evidence (CR-008 of the code review of 2026-11-13, ADR 0105).
+- A FITS whose header writes a number with a `D` exponent (`BZERO = 3.2768D+04`), as the standard
+  allows, is read right: the number used to be taken as its default, so a 16-bit image was read
+  with half of its tones cut, and a complete plate solution as none. A size, a `BZERO` or a
+  `BSCALE` that is not a number at all now refuses the file with the keyword and its value, and
+  such a number in the plate solution means no plate solution, never one somewhere else in the
+  sky (CR-007 of the code review of 2026-11-13, ADR 0104).
+- A frame with too few stars to measure is no longer told that its corners are soft, and shows
+  no star width for a zone either: the zones read `n/a`, as the width over the whole frame
+  already did, and the corner / centre figure is left out (CR-006 of the code review of
+  2026-11-13, ADR 0103).
+- The ICC profile's line in the top bar ends in `...` when the window is too narrow for it,
+  with **Clear** right after it, instead of running on under the buttons (R-155, ADR 0102).
 - A disabled check box is dimmed, as the disabled buttons are: it used to keep the brightness of
   its text and read as one that can be ticked (CR-022 of the code review of 2026-11-13; the
   labels box of the Dust / sky map of an image without a WCS, the map's boxes of the single

@@ -263,6 +263,58 @@
         </Style.Triggers>
     </Style>
 
+    <!-- WPF's own tooltip is the light system one, a bright patch over the chrome (ADR 0018):
+         FlatCheck's tooltip in this palette, the About card's colour. Help's is the only one
+         (R-066). -->
+    <Style TargetType="ToolTip">
+        <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ChromeBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="8,5" />
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="HasDropShadow" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToolTip">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="4"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}" MaxWidth="360" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- The Help button's icon (R-066, ADR 0056), FlatCheck's: a question mark on a disc of the
+         accent colour, the mark in the chrome's colour. Drawn, not a glyph, so it has the accent
+         and reads the same on Windows 10 and 11. 16 x 16 units. -->
+    <DrawingImage x:Key="HelpIcon">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="{StaticResource AccentBrush}">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="8,8" RadiusX="7.5" RadiusY="7.5" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Geometry="M 5.5,6.1 C 5.5,4.6 6.6,3.6 8,3.6 C 9.5,3.6 10.5,4.6 10.5,5.9 C 10.5,7.4 8.6,7.7 8.1,8.9 L 8.05,9.7">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="{StaticResource ChromeBrush}" Thickness="1.7" StartLineCap="Round" EndLineCap="Round" LineJoin="Round" />
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="{StaticResource ChromeBrush}">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="8.05,12.2" RadiusX="1.05" RadiusY="1.05" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
     <!-- A component written by others in the About window's card (R-075): the name and the role on
          the first line, the licence and the copyright under it, the link to its project last. -->
     <DataTemplate x:Key="ComponentRowTemplate">

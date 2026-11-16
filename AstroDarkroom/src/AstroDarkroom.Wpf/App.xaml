@@ -225,6 +225,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Setter Property="RenderOptions.EdgeMode" Value="Aliased" />
     </Style>
 
+    <!-- The Help button's icon (R-021, ADR 0030): a question mark on a disc of the accent colour,
+         FlatCheck's drawing (its ADR 0112). Drawn, not a glyph: the icon fonts differ between
+         Windows 10 and 11. 16 x 16 units. -->
+    <DrawingImage x:Key="HelpIcon">
+      <DrawingImage.Drawing>
+        <DrawingGroup>
+          <GeometryDrawing Brush="{StaticResource AccentBr}">
+            <GeometryDrawing.Geometry>
+              <EllipseGeometry Center="8,8" RadiusX="7.5" RadiusY="7.5" />
+            </GeometryDrawing.Geometry>
+          </GeometryDrawing>
+          <GeometryDrawing Geometry="M 5.5,6.1 C 5.5,4.6 6.6,3.6 8,3.6 C 9.5,3.6 10.5,4.6 10.5,5.9 C 10.5,7.4 8.6,7.7 8.1,8.9 L 8.05,9.7">
+            <GeometryDrawing.Pen>
+              <Pen Brush="{StaticResource WindowBg}" Thickness="1.7" StartLineCap="Round" EndLineCap="Round" LineJoin="Round" />
+            </GeometryDrawing.Pen>
+          </GeometryDrawing>
+          <GeometryDrawing Brush="{StaticResource WindowBg}">
+            <GeometryDrawing.Geometry>
+              <EllipseGeometry Center="8.05,12.2" RadiusX="1.05" RadiusY="1.05" />
+            </GeometryDrawing.Geometry>
+          </GeometryDrawing>
+        </DrawingGroup>
+      </DrawingImage.Drawing>
+    </DrawingImage>
+
     <!-- The scroll bars, first that of "Despre" on a screen too small for it (R-016): WPF draws
          them light, so LightsCheck's dark style, whole, a thin thumb and invisible page buttons,
          its horizontal form included, since an implicit style applies to every scroll bar. -->

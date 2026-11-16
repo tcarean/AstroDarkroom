@@ -198,6 +198,13 @@
   Windows file sharing; elsewhere only the path compare stands (the window, the only caller, is
   Windows-only). The file a WCS was borrowed from and the ICC profile are not guarded: the save
   dialog asks before replacing any existing file.
+- The console's `-o` is refused over the image, the `--wcs` file and the `--icc` profile by
+  comparing full paths (R-005, ADR 0107); another spelling of one of them is stopped by Windows
+  file sharing alone, the three held open while the report is saved, and is told with the
+  system's reason. The console compares the paths without regard to case, as the exports' guard
+  does, so on a file system that tells `IMAGE.TIF` from `image.tif` an `-o` that differs from
+  an input only in case is refused too. The window's "Save the report..." has no such guard: its
+  dialog asks before replacing a file.
 - `Salveaza ca...` writes on the UI thread, with a wait cursor: about a second for a 24 MP float
   FITS on an SSD.
 - On a gallery area over 8 MP (a 5K screen; a 4K screen's gallery area stays under it, the

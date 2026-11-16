@@ -59,6 +59,8 @@ exports.
   `docs/validation.md` + `.json` - the figures on the real header. `docs/design/` - the
   design notes, read on demand. `docs/plans/` - approved plans. `README.md` - the user
   documentation, English (ADR 0006).
+- `docs/review/` - the whole-code review of 2026-11-16: one list of defects, `CR-NNN`, taken
+  one entry per task in the table's order and closed there as `fixed` or `rejected` (ADR 0017).
 - `kit.json` - what the kit's scripts, skills and agent need to know about CopyWcs.
   `docs/skills.md` - CopyWcs's additions to the kit's skills. `scripts/`, `.claude/skills/`,
   `.claude/agents/`, `.claude/rules/kit/` and the process keys of `.claude/settings.json` are
