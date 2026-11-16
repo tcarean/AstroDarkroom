@@ -89,7 +89,7 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 - The launcher, `AstroDarkroom.exe` (R-001..R-004): one row per tool of the suite, in workflow
   order, with its Romanian title and description, its version from `release.json` and a
   "Deschide" button, disabled with the missing file's name when the tool's window is not in
-  the folder; "Despre" with the suite's version, the licence and every component's
+  the folder; "Despre" (F1) with the suite's version, the licence and every component's
   version. Both windows have a dark title bar, like the tools' (ADR 0004).
 - The suite's release (ADR 0002): `kit.json` publishes the launcher and the windows of the five
   tools (DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare, AstroPhotoAnalyzer)

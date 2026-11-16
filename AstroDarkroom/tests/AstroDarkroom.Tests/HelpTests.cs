@@ -24,7 +24,7 @@ namespace AstroDarkroom.Tests;
 /// R-021: the Help button and F1 open the launcher's manual at the section of the window
 /// (ADR 0030). The address is the core's; the window has no test project (ADR 0001), so of the
 /// window its XAML is read as XML, as <see cref="WindowFitTests"/> reads it, and its code-behind
-/// as text for the wordings <c>Relabel</c> gives the two buttons.
+/// as text for what <c>ShowHelp</c> opens and the wordings <c>Relabel</c> gives the two buttons.
 /// </summary>
 public class HelpTests
 {

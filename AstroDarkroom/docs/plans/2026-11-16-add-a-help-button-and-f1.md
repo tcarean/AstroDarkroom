@@ -130,7 +130,11 @@ Worktree first (nothing built in the main checkout):
 - The real press of F1 in a published suite folder (`docs/skills.md`, `/wrap-up`) waits for the
   owner's go, when the PC is free.
 - A subagent review of the branch found no bug in the window code; applied: the CHANGELOG entry
-  moved into the existing `### Added` and `"Despre" (F1)` dropped there, ADR 0030's context
-  corrected (the flags are pictures on buttons), F1 in About and held-down F1 recorded in the
-  ADR, the R-021 tests made to check what `ShowHelp` opens and which button each wording is on,
-  and the wiki's quote of the grey line brought up to the program's.
+  moved into the existing `### Added`, ADR 0030's context corrected (the flags are pictures on
+  buttons), F1 in About and held-down F1 recorded in the ADR, the R-021 tests made to check what
+  `ShowHelp` opens and which button each wording is on (About's word included), and the wiki's
+  quote of the grey line brought up to the program's. Step 2's check "the same in English and in
+  Romanian" was dropped: `Manual.Window` is a constant, so it could not fail; the first test reads
+  instead that `ShowHelp` opens that constant. A second review, of that fix commit, kept the older
+  CHANGELOG entry's `"Despre" (F1)` (the file keeps an entry's first wording and records a later
+  change under Changed) and completed this note and the tests' class comment.
