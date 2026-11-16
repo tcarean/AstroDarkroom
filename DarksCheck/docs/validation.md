@@ -300,8 +300,8 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   80 at 5 %.
 - 2026-11-16: two formulas of check 3 changed (CR-014 and CR-015 of the code review): the
   per-frame fit runs a second time from a sturdier line and that result is taken only for a
-  block of lit frames (ADR 0063, three new constants in `Thresholds.cs`), and the error of a
-  side's constant light is read from the line's own pairwise slopes (ADR 0064). All eleven
+  block of lit frames (ADR 0064, three new constants in `Thresholds.cs`), and the error of a
+  side's constant light is read from the line's own pairwise slopes (ADR 0065). All eleven
   cases run with `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 11, Passed:
   11, Total time: 9.6576 Minutes`; every session was present, and no recorded figure was
   changed. Read from the logs of two console copies, `main`'s and the branch's, on the six dark

@@ -1,4 +1,4 @@
-# 0061. A stack takes the setting most of its frames have, not the first file's
+# 0062. A stack takes the setting most of its frames have, not the first file's
 
 Date: 2026-11-16
 Status: accepted 2026-11-16

@@ -1,4 +1,4 @@
-# 0062. File names against the times of the frames: a warning, not another order
+# 0063. File names against the times of the frames: a warning, not another order
 
 Date: 2026-11-16
 Status: accepted 2026-11-16
@@ -24,7 +24,7 @@ The order stays the names'. When a frame with a time was taken before the frame 
 listed before it, the session lines carry a `WARNING` row under the group's `interval` row, in
 the console and in the window's session card, naming the first such pair and saying what
 follows the names and may be wrong: for the darks the pauses, the warming of check 4 and the
-frames to discard; for the lights the pauses and the first and last light of check 2 (R-125).
+frames to discard; for the lights the pauses and the first and last light of check 2 (R-126).
 The darks are the ones analysed, the partner's when they stand in for the session's (R-054).
 No figure, no frame number and no exit code changes.
 
@@ -49,8 +49,8 @@ count, since a raw's time is in whole seconds, so biases shot several a second w
 trip it; the biases get no line in any case, nothing of theirs is read from one frame to the
 next in time. The line does not make the run exit 1, which stays the sign of a frame or a
 group that could not be used. `Cadence.Backwards` holds the pair and the log's cadence line
-has it. Guarded by `R125_AFrameTakenBeforeTheOneListedBeforeItIsFound`,
-`R125_TheSessionLinesSayWhenTheNamesAreNotInTheOrderTheFramesWereTaken`,
-`R125_TheConsoleWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken_Exit0`,
-`R125_ThePartnersDarksOfALightsOnlySessionGetTheLineToo` and, in the window,
-`R125_TheSessionCardWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken`.
+has it. Guarded by `R126_AFrameTakenBeforeTheOneListedBeforeItIsFound`,
+`R126_TheSessionLinesSayWhenTheNamesAreNotInTheOrderTheFramesWereTaken`,
+`R126_TheConsoleWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken_Exit0`,
+`R126_ThePartnersDarksOfALightsOnlySessionGetTheLineToo` and, in the window,
+`R126_TheSessionCardWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken`.

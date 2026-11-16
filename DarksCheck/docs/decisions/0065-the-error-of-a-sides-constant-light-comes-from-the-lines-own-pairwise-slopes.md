@@ -1,4 +1,4 @@
-# 0064. The error of a side's constant light comes from the line's own pairwise slopes
+# 0065. The error of a side's constant light comes from the line's own pairwise slopes
 
 Date: 2026-11-16
 Status: accepted 2026-11-16

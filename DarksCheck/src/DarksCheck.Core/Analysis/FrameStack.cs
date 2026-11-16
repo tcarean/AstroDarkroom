@@ -186,7 +186,7 @@ internal sealed class FrameStack
 
         // The setting the group's frames must have is the one most of them have, read from every
         // file's metadata before a pixel is decoded, the files the cap skips included: the one
-        // check 1 names (R-007, ADR 0061). The first file's own would let a stray test frame listed
+        // check 1 names (R-007, ADR 0062). The first file's own would let a stray test frame listed
         // first leave the whole series out.
         FrameInfo[] infos = new FrameInfo[n];
         for (int i = 0; i < n; i++)

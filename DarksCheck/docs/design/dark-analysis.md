@@ -35,7 +35,7 @@ those rasters pile up (14 GB of working set measured before the collection and t
 `System.GC.ConserveMemory=9` knob of the console's runtime config). Before a pixel is decoded
 `Load` reads the metadata of every file, the ones the cap skips included, and `Reference` picks
 the frame that carries the group's setting: the first readable frame of the dominant setting
-`MatchAnalyzer.Settings` finds, the one check 1 names (ADR 0061). The files are then decoded
+`MatchAnalyzer.Settings` finds, the one check 1 names (ADR 0062). The files are then decoded
 one at a time, in order, until one decodes with that setting (`SameSettings`: the ISO and the
 exposure each on its own, within `Th.ExposureTolerance`; the frame's settings are those its
 metadata read gave, the reading the group's setting came from, and the decoder's only when
@@ -179,7 +179,7 @@ nothing for the first run and brings the second run's figures to the same estima
 second result replaces the first only when it names more lit frames, more than
 `Th.LeakBlockMinFraction` and fewer than `Th.LeakBlockMaxFraction` of the fitted frames, with
 a smaller scale: a line read from half of a short clean series misreads the other half often
-enough that, taken always, it would name clean frames (ADR 0063 has the measurement). `EdgeSplitsOf` then takes the frames that are not lit and, for each of the
+enough that, taken always, it would name clean frames (ADR 0064 has the measurement). `EdgeSplitsOf` then takes the frames that are not lit and, for each of the
 eight regions, fits the frame's offset to the centre on the ratio without clipping: the slope
 is the glow part (the value at ratio 1, the master's temperature), the intercept the constant
 part; with biases, the bias mean map's offset of the same region (the bias's own regions, raw
@@ -197,7 +197,7 @@ offset is the mean of its three regions (`SideOffset`), fitted on the ratio; the
 the constant, with the error `sqrt(scale^2 / n + (mean(x) x slope error)^2)` of a line read at
 x = 0: the line's level at the mean ratio is known to the scale over sqrt(n), and carrying it
 to ratio 0 adds the slope's error times that distance. The slope error is `SlopeError`, half
-the range the line's own pairwise slopes give at one sigma (Sen's interval, ADR 0064), so it
+the range the line's own pairwise slopes give at one sigma (Sen's interval, ADR 0065), so it
 says how well this estimator holds the slope: least squares' formula, used before, shrinks
 with one far frame, which the median of the pairwise slopes does not use that way. With biases
 the bias master's side offset is taken out. The sides need `Th.LeakSidesMinFrames` frames left after the lit ones, the split three;

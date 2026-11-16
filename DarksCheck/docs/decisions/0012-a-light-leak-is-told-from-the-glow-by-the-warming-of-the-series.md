@@ -1,7 +1,7 @@
 # 0012. A light leak is told from the glow by the warming of the series
 
 Date: 2026-10-20
-Status: accepted 2026-10-20; the per-frame fit by Theil-Sen alone superseded by 0063
+Status: accepted 2026-10-20; the per-frame fit by Theil-Sen alone superseded by 0064
 
 ## Context
 

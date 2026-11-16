@@ -31,7 +31,7 @@ internal sealed record LongPause(int FrameIndex, double Seconds);
 /// frame (the seconds between the end of the previous exposure and the start of this one, one
 /// entry per position of the list given), and the pauses long enough to be gaps. Frames
 /// without a time or an exposure stay out of the figures and get no pause. It also carries the
-/// first place where the list's order is not the order of the times (R-125).
+/// first place where the list's order is not the order of the times (R-126).
 /// </summary>
 /// <param name="Start">The start of the first timed frame; null when no frame is timed.</param>
 /// <param name="End">The latest end (start plus exposure) of a timed frame; null when no frame
@@ -61,7 +61,7 @@ internal sealed record Cadence(
     internal double DutyPct => SpanSeconds > 0 ? 100.0 * IntegrationSeconds / SpanSeconds : 0;
 
     /// <summary>
-    /// The first place where the list's order is not the order of the times (R-125): the
+    /// The first place where the list's order is not the order of the times (R-126): the
     /// positions in the list, from 0, of two frames with a time, the second listed after the first
     /// with no other frame with a time between them, and taken before it. Null when every frame
     /// with a time was taken no earlier than the one listed before it.
@@ -71,7 +71,7 @@ internal sealed record Cadence(
 
 /// <summary>
 /// Reads the cadence of check 1 from the frames' times and exposures, and whether the list's
-/// order is the order of the times (R-125).
+/// order is the order of the times (R-126).
 /// </summary>
 internal static class CadenceAnalyzer
 {
@@ -138,7 +138,7 @@ internal static class CadenceAnalyzer
 
     /// <summary>
     /// The first frame with a time that was taken before the frame with a time listed before it
-    /// (R-125, ADR 0062). The list is in the order of the file names, which a camera's counter
+    /// (R-126, ADR 0063). The list is in the order of the file names, which a camera's counter
     /// passing 9999, or numbers without leading zeros, set apart from the order the frames were
     /// taken in. A frame without an exposure still has its time; equal times are no disagreement,
     /// since a raw's time is in whole seconds.

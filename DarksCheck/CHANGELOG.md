@@ -346,7 +346,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   itself comes from. When the warming of the series rested on one cold frame the error shown
   was several times too small (about 0.04 where the value really scattered by 0.28), and a
   side without light passed for light in about one series in six. The values of the sides do
-  not change; on an ordinary series the error grows a little (R-029, ADR 0064; CR-015 of the
+  not change; on an ordinary series the error grows a little (R-029, ADR 0065; CR-015 of the
   code review).
 
 - Check 3 names a block of lit frames that takes up to nearly half of the series: when about a
@@ -354,20 +354,20 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   eleven of thirty), the fit tilted through them, no frame was named and the check could read
   `OK`. A second fit, from a line that holds while fewer than half of the frames are lit, is
   now taken when it finds such a block; on every other series the figures are the same as
-  before (R-028, ADR 0063; CR-014 of the code review).
+  before (R-028, ADR 0064; CR-014 of the code review).
 
 - The session lines say when the file names are not in the order the frames were taken: a
   `WARNING` under the darks' interval, and one under the lights', names the first two files out
   of order. The frames are read in the order of their names, so on a series whose counter
   passed from `DSC_9999` to `DSC_0001`, or whose names have no leading zeros, the pauses, the
   warming of check 4 and its frames to discard were read on a scrambled series with no sign of
-  it. The order itself is not changed (R-125, ADR 0062; CR-013 of the code review).
+  it. The order itself is not changed (R-126, ADR 0063; CR-013 of the code review).
 
 - A stray frame listed first no longer leaves the whole series out: with one test frame of 1 s
   before twenty darks of 120 s, check 1 read `OK` on the twenty while the analysis kept the one
   and dropped the twenty as `settings differ from the first frame`. The analysis now takes the
   setting most frames have, the one check 1 names, for the darks, the biases and a partner; the
-  frame left out reads `other settings than most frames: ISO 400, 1 s` (R-020, ADR 0061;
+  frame left out reads `other settings than most frames: ISO 400, 1 s` (R-020, ADR 0062;
   CR-012 of the code review).
 
 - FITS darks beside biases of another size (another camera or crop) are no longer measured

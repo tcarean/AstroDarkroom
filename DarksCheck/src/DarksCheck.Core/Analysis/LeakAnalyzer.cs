@@ -86,7 +86,7 @@ internal enum MapSide
 /// <param name="ConstantAdu">The intercept, in ADU equivalent.</param>
 /// <param name="ErrorAdu">The intercept's error at one sigma, in ADU equivalent, from the scatter of
 /// the frames around the line and from how well the line's own pairwise slopes hold its slope
-/// (ADR 0064); NaN when every ratio is the same.</param>
+/// (ADR 0065); NaN when every ratio is the same.</param>
 /// <param name="RemainderAdu">The intercept minus the bias master's offset of the side, in ADU
 /// equivalent; null without biases.</param>
 internal sealed record SideLight(MapSide Side, double ConstantAdu, double ErrorAdu, double? RemainderAdu)
@@ -128,7 +128,7 @@ internal sealed record EdgeSplit(MapRegion Where, double GlowAdu, double Constan
 /// ADR 0012). Both fits read a per-frame figure against the hot pixels' amplitude ratio of
 /// R-023: dark current, glow included, follows it; light from outside does not. The fit is
 /// Theil-Sen, so a few lit frames do not tilt it; a block of lit frames, over a quarter of the
-/// series, is found by a second fit that starts from a sturdier line (ADR 0063).
+/// series, is found by a second fit that starts from a sturdier line (ADR 0064).
 /// </summary>
 internal static class LeakAnalyzer
 {
@@ -168,7 +168,7 @@ internal static class LeakAnalyzer
         // over the limit. So the passes are run again from a line that holds up to nearly half of
         // the frames being lit, and that result stands only when it shows what the first cannot: a
         // block of lit frames, more of them than the first names, with a tighter fit of the rest.
-        // On any other series every figure is the first fit's (ADR 0063).
+        // On any other series every figure is the first fit's (ADR 0064).
         (double slope, double intercept, double scale, int lit) block = Passes(x, y, floor, BlockStart(x, y));
         if (block.lit > fit.lit && block.lit > Th.LeakBlockMinFraction * x.Length && block.lit < Th.LeakBlockMaxFraction * x.Length && block.scale < fit.scale)
         {
@@ -257,7 +257,7 @@ internal static class LeakAnalyzer
     }
 
     /// <summary>
-    /// The first line of R-028's second fit (ADR 0063): among the lines through two of the points,
+    /// The first line of R-028's second fit (ADR 0064): among the lines through two of the points,
     /// each with the median of the residuals as its intercept, the one whose median absolute
     /// residual is smallest (it needs only half of the points to lie close, so up to nearly half
     /// may carry light), then Theil-Sen over the points within
@@ -373,7 +373,7 @@ internal static class LeakAnalyzer
     /// regions; the constant part comes with the error of the intercept,
     /// sqrt(scale^2 / n + (mean(x) x <see cref="SlopeError"/>)^2): the line's level at the mean
     /// ratio is known to the scale over sqrt(n), and carrying it to ratio 0 adds the slope's error
-    /// times that distance (ADR 0064). With biases the bias master's offset of the side is taken
+    /// times that distance (ADR 0065). With biases the bias master's offset of the side is taken
     /// out of the constant. Empty when the split is unmeasured.
     /// </summary>
     /// <param name="frames">The series' frames; not null.</param>
@@ -502,7 +502,7 @@ internal static class LeakAnalyzer
 
     /// <summary>
     /// The error of a Theil-Sen slope at one sigma, from its own pairwise slopes (Sen's interval,
-    /// ADR 0064): with N pairwise slopes sorted and C = sqrt(n (n - 1) (2n + 5) / 18), the standard
+    /// ADR 0065): with N pairwise slopes sorted and C = sqrt(n (n - 1) (2n + 5) / 18), the standard
     /// deviation of Kendall's statistic for n points, half the distance from slope
     /// floor((N - C) / 2) to slope ceil((N + C) / 2), counted from 0 and held inside the list.
     /// </summary>

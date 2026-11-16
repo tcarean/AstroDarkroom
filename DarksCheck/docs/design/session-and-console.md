@@ -78,7 +78,7 @@ are no disagreement). `Analyze` keeps the pair in `Cadence.Backwards`, and
 (`OutOfOrder` gives the two file names). For a session without darks the darks analysed are
 the partner's, whose metadata the run keeps in `Inventory.PartnerDarks` and which have no
 `Cadence` of their own: the row is then read by calling `FirstBackwards` on them. Nothing is
-reordered (ADR 0062).
+reordered (ADR 0063).
 
 ## The match (check 1)
 

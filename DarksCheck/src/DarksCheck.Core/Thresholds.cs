@@ -180,7 +180,7 @@ internal static class Th
 
     /// <summary>
     /// ... and above this many times its own error (the side's per-frame scatter around its
-    /// line and the error of the line's slope, carried to ratio 0; ADR 0064), so a short or noisy
+    /// line and the error of the line's slope, carried to ratio 0; ADR 0065), so a short or noisy
     /// series, or one whose warming rests on one frame, cannot name a leak it cannot resolve.
     /// </summary>
     internal const double LeakConstantSigmas = 3.0;
@@ -203,7 +203,7 @@ internal static class Th
     /// fitted frames as lit (and more frames than the first, with a smaller scale): up to about a
     /// quarter of the frames the median of the pairwise slopes holds on its own, and under it the
     /// second fit's line, read from half of the frames, would only add false alarms on short clean
-    /// series (ADR 0063: 6.5 % against 5.8 % at eight frames with this bound, 14.9 % without it).
+    /// series (ADR 0064: 6.5 % against 5.8 % at eight frames with this bound, 14.9 % without it).
     /// </summary>
     internal const double LeakBlockMinFraction = 0.25;
 

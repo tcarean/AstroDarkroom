@@ -226,7 +226,7 @@ public class SessionFolderTests
     /// first place where the times go back is found, so the session lines can say it.
     /// </summary>
     [Fact]
-    public void R125_AFrameTakenBeforeTheOneListedBeforeItIsFound()
+    public void R126_AFrameTakenBeforeTheOneListedBeforeItIsFound()
     {
         DateTime t = SessionFixture.FirstStart;
         // the counter passed 9999 during the series: by name the two frames taken last come first
@@ -251,7 +251,7 @@ public class SessionFolderTests
     }
 
     [Fact]
-    public void R125_TheSessionLinesSayWhenTheNamesAreNotInTheOrderTheFramesWereTaken()
+    public void R126_TheSessionLinesSayWhenTheNamesAreNotInTheOrderTheFramesWereTaken()
     {
         // four darks whose names are in the order they were taken, and three lights: no line
         using SessionFixture ok = new SessionFixture().WithDarks(4, lights: 3);

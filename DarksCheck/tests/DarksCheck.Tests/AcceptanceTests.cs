@@ -361,7 +361,7 @@ public class AcceptanceTests
     }
 
     [Fact]
-    public void R125_TheConsoleWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken_Exit0()
+    public void R126_TheConsoleWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken_Exit0()
     {
         // CR-013: six darks, the last two by name taken first; the line follows the darks' interval and the run exits 0
         using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i });

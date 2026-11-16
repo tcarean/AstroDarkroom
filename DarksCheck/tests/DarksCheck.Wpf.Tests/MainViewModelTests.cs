@@ -301,7 +301,7 @@ public class MainViewModelTests
     }
 
     [Fact]
-    public async Task R125_TheSessionCardWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken()
+    public async Task R126_TheSessionCardWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken()
     {
         // CR-013: the card is fed by the console's session rows, the line about the names with them
         using SessionFixture f = WindowFixture.Session();

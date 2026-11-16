@@ -868,7 +868,7 @@ public partial class DarkSeriesTests
         Assert.Contains(" ADU e ", text, StringComparison.Ordinal);
         Assert.Contains(" din zgomotul pe pixel al masterului dark (", text, StringComparison.Ordinal);
         // the band of 2 passes three times its error while the error is under 0.67 (the bound was 0.4 for the error of
-        // before ADR 0064, which was too small for a line read from eight frames; it reads 0.59 here)
+        // before ADR 0065, which was too small for a line read from eight frames; it reads 0.59 here)
         Assert.True(top.ErrorAdu > 0 && top.ErrorAdu < 0.67, $"error {top.ErrorAdu}");
         // the row and the verdict mark the light and the master's noise bold (ADR 0016); check 9's master row marks its noise
         IReadOnlyList<ReportSection> sections = DarkReport.Sections(r);
@@ -1669,7 +1669,7 @@ public partial class DarkSeriesTests
 
     /// <summary>CR-013: the partner's darks stand in for the session's and take check 4, so their names against their times are said too.</summary>
     [Fact]
-    public void R125_ThePartnersDarksOfALightsOnlySessionGetTheLineToo()
+    public void R126_ThePartnersDarksOfALightsOnlySessionGetTheLineToo()
     {
         // the partner's darks take checks 3 to 9 of a session without darks (R-054), check 4 with them
         using SessionFixture partner = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);

@@ -60,7 +60,7 @@ internal static class InventoryReport
 
     /// <summary>
     /// The session rows (ADR 0009): folders, camera, the settings of each group, the cadences, a
-    /// warning under a cadence whose frames are not listed in the order they were taken (R-125),
+    /// warning under a cadence whose frames are not listed in the order they were taken (R-126),
     /// the two verdicts, the unreadable frames.
     /// </summary>
     /// <param name="inv">The inventory; not null.</param>
@@ -101,7 +101,7 @@ internal static class InventoryReport
         rows.Add(new(T("darks interval", "interval darks"), noDarks ? None : Interval(inv.DarksCadence)));
 
         // The frames are read in the order of their names; when that is not the order they were
-        // taken in, said here and not put right (R-125, ADR 0062). The darks are the ones analysed:
+        // taken in, said here and not put right (R-126, ADR 0063). The darks are the ones analysed:
         // the partner's when they stand in for the session's (R-054).
         IReadOnlyList<FrameInfo> analysed = noDarks ? inv.PartnerDarks ?? [] : inv.Darks;
         if (OutOfOrder(analysed, noDarks ? CadenceAnalyzer.FirstBackwards(analysed) : inv.DarksCadence.Backwards) is (string darkBefore, string darkAfter))
@@ -143,7 +143,7 @@ internal static class InventoryReport
 
     /// <summary>
     /// The file names of the first two frames of a group whose times go back against the list's
-    /// order (R-125).
+    /// order (R-126).
     /// </summary>
     /// <param name="frames">The group's frames, in the list's order; not null.</param>
     /// <param name="backwards">The pair's positions in the list, from 0, or null when the times

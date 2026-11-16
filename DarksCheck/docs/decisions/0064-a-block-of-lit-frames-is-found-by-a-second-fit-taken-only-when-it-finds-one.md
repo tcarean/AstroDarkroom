@@ -1,4 +1,4 @@
-# 0063. A block of lit frames is found by a second fit, taken only when it finds one
+# 0064. A block of lit frames is found by a second fit, taken only when it finds one
 
 Date: 2026-11-16
 Status: accepted 2026-11-16

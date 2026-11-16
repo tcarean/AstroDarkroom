@@ -394,7 +394,7 @@ five of them are of severity 1.
   they contradict on this input.
 - Test: `R007_TheOddFrameFirstDoesNotNameTheGroup` covers the inventory only.
 - Evidence: owner.
-- Status: fixed 91022f20 (the owner chose the setting most frames have, for the stack as for check 1; ADR 0061; a follow-up in ac03cb68)
+- Status: fixed 91022f20 (the owner chose the setting most frames have, for the stack as for check 1; ADR 0062; a follow-up in ac03cb68)
 
 ### CR-013 Frames are taken in file-name order as if it were shooting order
 
@@ -423,7 +423,7 @@ five of them are of severity 1.
   against times.
 - Evidence: owner (the order and the cadence were read; the verdict of check 4 on such a set
   needs a run). Same as LightsCheck's CR-010.
-- Status: fixed edb0fd48 (the owner chose a WARNING in the session lines, the names' order kept, as in LightsCheck; ADR 0062, R-125; taking the frames in the order of their times is a feature of its own)
+- Status: fixed edb0fd48 (the owner chose a WARNING in the session lines, the names' order kept, as in LightsCheck; ADR 0063, R-126; taking the frames in the order of their times is a feature of its own)
 
 ### CR-014 When about a third of the frames at one end carry light, no frame is named and check 3 can read OK
 
@@ -445,7 +445,7 @@ five of them are of severity 1.
 - Test: `R028_TheFitIsNotTiltedByLitFramesAtTheWarmEnd` uses 4 lit of 12, the last proportion
   that works. The same test with 3 of 8.
 - Evidence: to measure (the mechanism was read; the table is the reviewer's replica).
-- Status: fixed 256afe32 (measured on a copy of the fit; the owner chose a second fit, taken only when it finds a block of lit frames between a quarter and half of the series; ADR 0063)
+- Status: fixed 256afe32 (measured on a copy of the fit; the owner chose a second fit, taken only when it finds a block of lit frames between a quarter and half of the series; ADR 0064)
 
 ### CR-015 A warming that rests on one cold frame gives the constant light an error several times too small
 
@@ -465,7 +465,7 @@ five of them are of severity 1.
   one frame makes.
 - Test: `R029_ASeriesThatDidNotWarmLeavesTheSplitUnmeasured` covers a flat series only.
 - Evidence: to measure (the real per-frame scatter of a side decides how often).
-- Status: fixed 457500f5 (measured on a copy of the fit; the owner chose the error read from the line's own pairwise slopes, the value kept; ADR 0064)
+- Status: fixed 457500f5 (measured on a copy of the fit; the owner chose the error read from the line's own pairwise slopes, the value kept; ADR 0065)
 
 ### CR-016 A frame is checked against the first frame's size, ISO and exposure, never against its black and white
 
@@ -1652,7 +1652,7 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
 - Should: a limit that allows for the number of frames the scale was read from, or a lit frame
   asked to stand out from its neighbours too.
 - Deliberate: no. ADR 0012 set five scales on three series of 20 and 30 frames, whose clean
-  residuals stay under 2.2 scales. ADR 0063 measured these figures and left them: its second
+  residuals stay under 2.2 scales. ADR 0064 measured these figures and left them: its second
   fit adds under a point to them from eight frames up, and five points at six (13.9 %).
 - Test: none on a series without light at a scatter over the floor;
   `R028_FramesWithLightOverTheWarmingAreNamedAndTheTableShowsEachFramesExcess` has a clean
