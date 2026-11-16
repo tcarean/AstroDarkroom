@@ -13,19 +13,22 @@ through `ApplicationCommands.Help`, whose default gesture it is. On 2026-11-16 t
 a Help button with an icon, also on F1, opening the manual at the section of the current tab,
 the way FlatCheck does it (FlatCheck's R-141 and ADR 0112), and answered two questions in chat.
 
-Measured (temporary tests, the window's text mode). A window's `MinWidth` counts its frame, 8 px
-a side on Windows 10 and 11: a real `MainWindow` shown off-screen at a `MinWidth` of 1160 px had
-1144 px of content. The widths below are those inside the frame. With 960 px inside, the top bar
-was already full, About ending exactly at the bar's right padding in both languages, and the
-folder's column had 33 px (43 in Romanian), in which its heading, `SIRIL SESSION FOLDER OR
-LIBRARY OF DARKS`, wrapped into nine lines and made the bar 190 px tall (162 in Romanian) instead
-of 66; at the old minimum, 960 px with the frame, About was already cut by 16 px. The Help button
-is 80 px wide in English and 88 px in Romanian. The Frames tab needs 1020 px inside (20 + 620 +
+Measured (temporary tests in the window's text mode, and the real `MainWindow` shown off-screen).
+A window's `MinWidth` counts its frame, 8 px a side on this Windows 10 at 100 % scaling: the
+real window at a `MinWidth` of 1160 px had 1144 px of content. (The branch's review read 6.5 to
+7.3 px a side at 125 to 200 %, so a test that takes 16 px off never lays out wider than the real
+window; Windows 11 was not measured.) The folder's column takes what the others leave, and its
+heading, `SIRIL SESSION FOLDER OR LIBRARY OF DARKS`, wraps there; the buttons are cut only once
+that column is down to nothing. With 960 px inside, the column had 33 px (43 in Romanian), the
+heading nine lines and the bar 190 px (162 in Romanian) instead of 66; the real window at the
+old minimum, 960 px, has 16 px less in that column and About still fits. The Help button is
+80 px wide in English and 88 px in Romanian. The Frames tab needs 1020 px inside (20 + 620 +
 360 + 20) to show without being cut. With Help, the bar's height against the width inside,
 English / Romanian: 743 / 836 px at 1020, 257 / 242 at 1040, 162 / 162 at 1060, 95 / 95 at
-1100, 69 / 82 at 1144 (the real window at 1160), 69 / 69 at 1160, 66 / 66 at 1300 (the heading
-on one line). The real window, shown off-screen, has a 69 px bar in both languages from a
-`MinWidth` of 1172 px; in Romanian 82 px up to 1168.
+1100, 69 / 82 at 1144, 69 / 69 at 1160, 66 / 66 at 1300 (the heading on one line). The real
+window, at 1 px steps: a 69 px bar in both languages from a `MinWidth` of 1169 px (1153 inside),
+82 px in Romanian up to 1168; with Help, About cut by 73 / 71 px at 960 and 13 / 11 px at 1020,
+fitting from 1036 px (1020 inside).
 
 ## Decision
 
@@ -42,7 +45,7 @@ on one line). The real window, shown off-screen, has a 69 px bar in both languag
   "Opening a folder", which explains all three.
 - The window's minimum width goes from 960 to 1180 px, 1164 inside the frame (the owner's answer
   2, given a third time): the whole bar shows with Help in both languages, the folder's heading
-  on two lines as at any wider width, with 8 px to spare, and the Frames tab is not cut. The
+  on at most two lines as at any wider width, with 11 px to spare, and the Frames tab is not cut. The
   owner first chose 1020 px, on the fit of the buttons alone, then 1160 px on the bar's heights,
   measured inside the frame but read as the window's; each new fact went back to the owner as a
   new question, the second one found by the branch's review.
@@ -57,17 +60,19 @@ on one line). The real window, shown off-screen, has a 69 px bar in both languag
 - **"Opening a folder" for the problem card** (FlatCheck's choice, where that section explains
   the card). Here the card's reasons are in "When something goes wrong"; the person would have
   to follow one more link.
-- **Keeping 960 px.** At the minimum width About would be cut by 57 px; it fits only from
-  1020 px up. The cost of 1180 px: the window no longer fits half of a 1920 px screen.
+- **Keeping 960 px.** At the minimum width About would be cut by 73 px (71 in Romanian); it fits
+  only from 1036 px up. The cost of 1180 px: the window no longer fits half of a 1920 px screen.
 - **1160 px**, the owner's second answer. Inside the frame it leaves 1144 px, at which the
   Romanian heading takes three lines and the bar 82 px.
-- **1020 px**, the owner's first answer. The buttons fit, but the folder's column keeps 3 to
-  5 px, its heading wraps one letter a line and the bar grows to 743 px (836 in Romanian).
+- **1020 px**, the owner's first answer, chosen on widths measured inside the frame. With
+  1020 px inside, the buttons fit but the folder's column keeps 3 to 5 px, its heading wraps one
+  letter a line and the bar grows to 743 px (836 in Romanian); the real window at 1020 px also
+  cuts About by 13 px (11 in Romanian), its bar 743 px (864 in Romanian).
 - **1020 px with the folder's heading on one line, cut with "..."**. The bar keeps its height at
   any width, but at the minimum width neither the heading nor the folder's name shows at all.
-- **The icon alone, without the word.** Still about 20 px too wide at 960 px, it would be the
-  window's only button without text, and what it does would show only in the tooltip
-  (FlatCheck's reason too).
+- **The icon alone, without the word.** It saves the word and its gap, 36 px (44 in Romanian),
+  of the 73 (71) by which About would be cut at 960 px; it would also be the window's only button
+  without text, and what it does would show only in the tooltip (FlatCheck's reason too).
 - **An icon font (Segoe Fluent Icons, Segoe MDL2 Assets).** Segoe Fluent Icons is missing on
   Windows 10, the owner's system, and a glyph cannot be checked in a test the way a drawing can.
 - **A help window inside the program.** It would copy the wiki and drift from it; the wiki is

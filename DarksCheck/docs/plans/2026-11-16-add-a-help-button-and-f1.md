@@ -155,5 +155,6 @@ checkout.
   window's 16 px frame, which the layout tests and the height table had not: a real window shown
   off-screen at 1160 px had 1144 px inside, and in Romanian the heading took three lines (82 px).
   Measured on the real window at six widths, put to the owner a third time: 1180 px (two lines
-  from 1172). `HelpTests` now lays out at the minimum less the frame, and tests the Debug line of
+  from 1169, measured at 1 px steps after the second review, which also corrected figures of
+  ADR 0061 that mixed widths inside the frame with the window's). `HelpTests` now lays out at the minimum less the frame, and tests the Debug line of
   an address the shell refuses, which the review found untested.

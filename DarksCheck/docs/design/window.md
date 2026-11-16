@@ -84,7 +84,7 @@ The icon is a `DrawingImage` in the main window's own resources, FlatCheck's dra
 theme is LightsCheck's copy; `ExternalLink` fails as About's link handler does, a Debug line and
 nothing more, while About keeps that handler as LightsCheck wrote it. The window's `MinWidth`,
 1180 px, counts the window's 16 px frame; the 1164 px left inside keep the top bar's folder
-heading on two lines with Help in the bar, 8 px over the narrowest that does (the heights per
+heading on two lines with Help in the bar, 11 px over the narrowest that does (the heights per
 width are in ADR 0061): that column takes what the others leave, and its heading wraps.
 
 ## One view-model, fed by the core

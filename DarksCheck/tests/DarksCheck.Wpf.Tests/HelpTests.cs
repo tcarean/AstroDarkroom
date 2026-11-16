@@ -36,9 +36,10 @@ public class HelpTests
     private const string Page = "https://github.com/tcarean/AstroDarkroom/wiki/DarksCheck";
 
     /// <summary>
-    /// The frame of a resizable window, 8 px a side on Windows 10 and 11, which MinWidth counts:
-    /// a real MainWindow shown off-screen at a MinWidth of 1160 px had 1144 px of content
-    /// (measured 2026-11-16, ADR 0061).
+    /// The frame of a resizable window, which MinWidth counts: 8 px a side on Windows 10 at 100 %
+    /// scaling, where a real MainWindow shown off-screen at a MinWidth of 1160 px had 1144 px of
+    /// content (measured 2026-11-16, ADR 0061); less at higher scaling, so the layout here is never
+    /// wider than the real window's.
     /// </summary>
     private const int Frame = 16;
 
@@ -202,8 +203,8 @@ public class HelpTests
             Assert.Null(aboutButton.Command);
             Assert.Equal(aboutTip, aboutButton.ToolTip);
 
-            // the bar fits the window's minimum width: About, the rightmost, ends at the bar's
-            // 20 px right padding, not past it
+            // the bar fits what the minimum width leaves inside the frame: About, the rightmost,
+            // ends at the bar's 20 px right padding, not past it
             Assert.True(aboutButton.TranslatePoint(new Point(aboutButton.ActualWidth, 0), host).X < inside - 20 + 0.5);
 
             // and the folder's heading, which wraps in what the other columns leave, stays on at
