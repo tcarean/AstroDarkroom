@@ -66,7 +66,7 @@ namespace AstroPhotoAnalyzer.Wpf
             // The Soft proof tab (R-163): its full-screen window (R-164), over the tab's own view-model.
             _vm.SoftProof.ProofRequested += p => Open("the soft proof full screen", new SoftProofWindow { Owner = this, DataContext = p });
             PreviewKeyDown += GalleryKeys;
-            PreviewKeyDown += Manual.IgnoreHeldKey;
+            Manual.IgnoreHeldF1(this);
         }
 
         /// <summary>Shows a secondary window, non-modal, and writes it to the diagnostic log.</summary>

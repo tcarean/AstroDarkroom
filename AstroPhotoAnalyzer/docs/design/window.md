@@ -132,9 +132,12 @@ in the XAML) and the view-model's `IsBusy`, `HasResult` and `HasError`, and asks
 overlay over all of it, the tabs (drawn over the error card when a refused field leaves both,
 CR-040), the error card, the invitation. Each viewing window (`Views/OverlayWindows.xaml.cs`) binds
 the same command to its own section; the soft proof's full screen to the Soft proof section, which
-explains it. Each of these windows also hands its PreviewKeyDown to `Manual.IgnoreHeldKey`,
-which takes F1's repeats before WPF turns each into the command, so F1 held down opens one
-browser tab. `Manual.Open` writes `Help opened: <address>` and hands the address to the window's
+explains it. Each of these windows also calls `Manual.IgnoreHeldF1`, which keeps a flag of its
+own for F1 being down, set at its key-down, cleared at its key-up and when the window is
+deactivated, and takes the key-downs in between in the preview pass, before WPF turns each into
+the command, so F1 held down opens one browser tab. WPF's `KeyEventArgs.IsRepeat` would do
+the same until the browser takes a key-up: WPF only forgets the last key on a key-up it receives,
+and would then call the next press a repeat. `Manual.Open` writes `Help opened: <address>` and hands the address to the window's
 `OpenAddress`, `ExternalLink.Open(string)` outside the tests; `Presentation/ExternalLink.cs` also
 opens the "Despre" window's links, a relative one failing on its absolute form before the shell
 sees it. `Manual.Url` makes the address from the anchors GitHub derives from the wiki page's

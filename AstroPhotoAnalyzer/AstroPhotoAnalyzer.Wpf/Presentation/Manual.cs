@@ -20,6 +20,7 @@
 // ones GitHub makes from the page's headings; a heading renamed in the wiki is renamed here too.
 
 using System;
+using System.Windows;
 using System.Windows.Input;
 using NLog;
 
@@ -130,16 +131,27 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Takes F1's repeats, the key-downs Windows sends while the key is held, before WPF
-        /// turns each of them into the Help command and opens one browser tab per repeat: F1
-        /// held down opens the manual once (R-186). Every window that has the Help command
-        /// attaches it to its PreviewKeyDown.
+        /// Makes F1 held down open the manual once in <paramref name="window"/> (R-186): the
+        /// key-downs Windows repeats while the key is held are taken in the preview pass, before
+        /// WPF turns each of them into the Help command and opens one browser tab per repeat.
+        /// The window remembers that F1 is down from its first key-down until its key-up, or
+        /// until the window loses the focus, since the browser coming to the front can take the
+        /// key-up. WPF's own IsRepeat is not used: it calls a key-down a repeat whenever the last
+        /// key-down it saw was the same key, so after a key-up the browser took, it would swallow
+        /// the next press. Every window that has the Help command calls this once.
         /// </summary>
-        /// <param name="sender">The window; not read.</param>
-        /// <param name="e">The key; marked handled when it is a repeat of F1.</param>
-        internal static void IgnoreHeldKey(object sender, KeyEventArgs e)
+        /// <param name="window">The window; not null.</param>
+        internal static void IgnoreHeldF1(Window window)
         {
-            if (e.Key == Key.F1 && e.IsRepeat) e.Handled = true;
+            bool down = false;
+            window.PreviewKeyDown += (_, e) =>
+            {
+                if (e.Key != Key.F1) return;
+                if (down) e.Handled = true;
+                down = true;
+            };
+            window.PreviewKeyUp += (_, e) => { if (e.Key == Key.F1) down = false; };
+            window.Deactivated += (_, _) => down = false;
         }
 
         /// <summary>

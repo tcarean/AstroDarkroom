@@ -48,9 +48,13 @@ with the button).
   only in the core" does not reach it. Each tab carries its section in its `Tag`; one method writes
   the log line and opens the address for all five windows, through `Presentation/ExternalLink.cs`,
   where the "Despre" window's link opening moves so that the two share one catch.
-- F1 held down opens the manual once: each window that has the Help command takes F1's repeats
-  in its PreviewKeyDown (`Manual.IgnoreHeldKey`), before WPF turns them into the command.
-  FlatCheck keeps the behaviour until it is changed there.
+- F1 held down opens the manual once: each window that has the Help command remembers that F1
+  is down from its key-down until its key-up or until the window loses the focus, and takes the
+  key-downs in between in its preview pass, before WPF turns them into the command
+  (`Manual.IgnoreHeldF1`). WPF's own `IsRepeat` is not used: it calls a key-down a repeat
+  whenever the last key-down it saw was the same key, so when the browser, come to the front,
+  took the key-up, it swallowed the next press (the second review of the branch). FlatCheck
+  keeps one tab per repeat until it is changed there.
 - The profile's line is trimmed at any width of the window: its text column is a star column,
   measured against the room left, in a left-aligned grid, so a short line keeps `Scoate` right
   after it; the bar's middle column stops 20 px short of the buttons (R-155).

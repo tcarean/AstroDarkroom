@@ -41,7 +41,7 @@ public class HelpTests
 
     /// <summary>
     /// Each state of the main window and each tab has its section of the manual. The busy
-    /// overlay is over everything; the tabs are drawn over the error card when both show (a
+    /// overlay covers the right side; the tabs are drawn over the error card when both show (a
     /// field refused while a result is on screen, CR-040); the card alone opens the table of its
     /// messages; everything else is the opening of an image.
     /// </summary>
@@ -179,7 +179,11 @@ public class HelpTests
     /// <summary>
     /// F1 held down opens the manual once, in the main window and in each viewing window: the
     /// key's repeats are taken before WPF turns them into the Help command, which would open one
-    /// browser tab per repeat (the branch's review, 2026-11-16).
+    /// browser tab per repeat (the branch's first review, 2026-11-16). The next press opens it
+    /// again once the key was let go, or once the window lost the focus: the browser coming to
+    /// the front can take the key's release, and WPF, which calls a key-down a repeat when the
+    /// last key-down it saw was the same key, then calls that next press a repeat (the second
+    /// review, 2026-11-16, read in WPF's KeyboardDevice and run through its input manager).
     /// </summary>
     [Fact]
     public void R186_HoldingF1OpensTheManualOnce()
@@ -193,13 +197,27 @@ public class HelpTests
             var curve = new CurveWindow { OpenAddress = opened.Add };
             var proof = new SoftProofWindow { OpenAddress = opened.Add, DataContext = new SoftProofTabViewModel() };
 
-            foreach (UIElement target in new[] { main.Tabs, (UIElement)map.Content, (UIElement)preview.Content,
-                                                 (UIElement)curve.Content, (UIElement)proof.Content })
+            foreach ((Window window, UIElement target) in new (Window, UIElement)[]
+                     {
+                         (main, main.Tabs), (map, (UIElement)map.Content), (preview, (UIElement)preview.Content),
+                         (curve, (UIElement)curve.Content), (proof, (UIElement)proof.Content),
+                     })
             {
                 int before = opened.Count;
-                Assert.True(PressF1(target));
-                for (int i = 0; i < 3; i++) Assert.True(PressF1(target, repeat: true));
+                Assert.True(PressF1(target, hold: true));
+                for (int i = 0; i < 3; i++) Assert.True(PressF1(target, repeat: true, hold: true));
                 Assert.Equal(before + 1, opened.Count);
+
+                ReleaseF1(target);
+                Assert.True(PressF1(target, hold: true));
+                Assert.True(PressF1(target, repeat: true, hold: true));
+                Assert.Equal(before + 2, opened.Count);
+
+                // the browser came to the front and took the key's release: the next press,
+                // which WPF calls a repeat, still opens the manual
+                typeof(Window).GetMethod("OnDeactivated", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, [EventArgs.Empty]);
+                Assert.True(PressF1(target, repeat: true));
+                Assert.Equal(before + 3, opened.Count);
             }
             foreach (Window window in new Window[] { main, map, preview, curve, proof }) window.Close();
         });
@@ -243,7 +261,9 @@ public class HelpTests
             Assert.True(clearRight <= buttonsLeft - 20 + 0.5, $"Scoate ends at {clearRight:F1}, the buttons start at {buttonsLeft:F1}");
             Assert.Equal(textLeft + text.ActualWidth + 10, clearLeft, 0.5);
             text.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            Assert.Equal(shortened, text.DesiredSize.Width > text.ActualWidth + 0.5);
+            double whole = text.DesiredSize.Width;
+            if (shortened) Assert.True(whole > text.ActualWidth + 0.5, $"the line is {text.ActualWidth:F1} px, whole {whole:F1}");
+            else Assert.Equal(whole, text.ActualWidth, 0.5);   // no wider than its text: Scoate right after it
             w.Close();
         });
 
@@ -304,12 +324,22 @@ public class HelpTests
     /// <summary>
     /// Presses F1 on <paramref name="target"/> as the keyboard would with the focus there: the
     /// preview pass from the window down, then, unless a handler took it, the key-down that WPF
-    /// translates into the Help command. With <paramref name="repeat"/> it is one of the repeats
-    /// Windows sends while the key is held (KeyEventArgs.IsRepeat, set through its internal
-    /// setter, which the input system uses).
+    /// translates into the Help command, then the key let go. With <paramref name="hold"/> the key
+    /// stays down; with <paramref name="repeat"/> the key-down is one WPF calls a repeat
+    /// (KeyEventArgs.IsRepeat, set through its internal setter, which the input system uses).
     /// </summary>
-    /// <returns>Whether something handled the key.</returns>
-    static bool PressF1(UIElement target, bool repeat = false)
+    /// <returns>Whether something handled the key-down.</returns>
+    static bool PressF1(UIElement target, bool repeat = false, bool hold = false)
+    {
+        bool handled = KeyDownF1(target, repeat);
+        if (!hold) ReleaseF1(target);
+        return handled;
+    }
+
+    /// <summary>The key-down of F1 on <paramref name="target"/>, as <see cref="PressF1"/>
+    /// describes it, the key left down.</summary>
+    /// <returns>Whether something handled it.</returns>
+    static bool KeyDownF1(UIElement target, bool repeat)
     {
         var e = new KeyEventArgs(Keyboard.PrimaryDevice, new KeySource(), 0, Key.F1) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
         if (repeat) typeof(KeyEventArgs).GetMethod("SetRepeat", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(e, [true]);
@@ -319,6 +349,17 @@ public class HelpTests
         e.RoutedEvent = Keyboard.KeyDownEvent;
         target.RaiseEvent(e);
         return e.Handled;
+    }
+
+    /// <summary>Lets F1 go on <paramref name="target"/>: the preview key-up and the key-up, as
+    /// the keyboard sends them.</summary>
+    static void ReleaseF1(UIElement target)
+    {
+        var e = new KeyEventArgs(Keyboard.PrimaryDevice, new KeySource(), 0, Key.F1) { RoutedEvent = Keyboard.PreviewKeyUpEvent };
+        target.RaiseEvent(e);
+        if (e.Handled) return;
+        e.RoutedEvent = Keyboard.KeyUpEvent;
+        target.RaiseEvent(e);
     }
 
     /// <summary>

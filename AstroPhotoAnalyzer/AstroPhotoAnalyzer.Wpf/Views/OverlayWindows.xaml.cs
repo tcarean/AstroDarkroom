@@ -41,7 +41,7 @@ namespace AstroPhotoAnalyzer.Wpf
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
             KeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
             CommandBindings.Add(new CommandBinding(ApplicationCommands.Help, (_, _) => Manual.Open(ManualSection.DustSkyMapWindow, OpenAddress)));
-            PreviewKeyDown += Manual.IgnoreHeldKey;
+            Manual.IgnoreHeldF1(this);
         }
 
         /// <summary>What opens an address in the browser: <see cref="ExternalLink.Open(string)"/>,
@@ -64,7 +64,7 @@ namespace AstroPhotoAnalyzer.Wpf
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
             KeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
             CommandBindings.Add(new CommandBinding(ApplicationCommands.Help, (_, _) => Manual.Open(ManualSection.CurveWindow, OpenAddress)));
-            PreviewKeyDown += Manual.IgnoreHeldKey;
+            Manual.IgnoreHeldF1(this);
         }
 
         /// <summary>What opens an address in the browser: <see cref="ExternalLink.Open(string)"/>,
@@ -129,7 +129,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 if (DataContext is SoftProofTabViewModel vm && vm.HandleKey(e.Key)) e.Handled = true;
             };
             CommandBindings.Add(new CommandBinding(ApplicationCommands.Help, (_, _) => Manual.Open(ManualSection.SoftProof, OpenAddress)));
-            PreviewKeyDown += Manual.IgnoreHeldKey;
+            Manual.IgnoreHeldF1(this);
         }
 
         /// <summary>What opens an address in the browser: <see cref="ExternalLink.Open(string)"/>,
@@ -189,7 +189,7 @@ namespace AstroPhotoAnalyzer.Wpf
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
             KeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
             CommandBindings.Add(new CommandBinding(ApplicationCommands.Help, (_, _) => Manual.Open(ManualSection.PreviewWindow, OpenAddress)));
-            PreviewKeyDown += Manual.IgnoreHeldKey;
+            Manual.IgnoreHeldF1(this);
         }
 
         /// <summary>What opens an address in the browser: <see cref="ExternalLink.Open(string)"/>,
