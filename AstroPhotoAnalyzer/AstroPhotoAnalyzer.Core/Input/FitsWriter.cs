@@ -244,8 +244,11 @@ namespace AstroPhotoAnalyzer
             int slash = text.IndexOf('/', 10);
             // The reader takes a quoted number for the number (ReadHeader strips the quotes), so
             // the plate solution it reads from the crop must have moved too. A FITS real may
-            // write its exponent with a D.
-            string value = (slash < 0 ? text.Substring(10) : text.Substring(10, slash - 10)).Trim().Trim('\'').Trim().Replace('D', 'E');
+            // write its exponent with a D, and the reader takes a lower-case d as well
+            // (FitsReader.TryNumber): what it reads as a number in a well-formed card is moved
+            // as one. A card with broken quoting is taken apart differently here and there
+            // (CR-077 of the code review of 2026-11-13).
+            string value = (slash < 0 ? text.Substring(10) : text.Substring(10, slash - 10)).Trim().Trim('\'').Trim().Replace('D', 'E').Replace('d', 'e');
             string now;
             // Within the cut of the decimal's own end the difference does not fit one: such a
             // value goes the way of those a decimal cannot hold at all, through a double.

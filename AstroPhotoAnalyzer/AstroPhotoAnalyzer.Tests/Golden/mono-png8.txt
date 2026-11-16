@@ -73,7 +73,7 @@ Anexa C. Export
 
 Anexa D. Rezolutie si marime
   stele: 16 masurate, 177.8 pe megapixel - prea putine ca sa masuram latimea stelelor (FWHM)
-  latimea stelelor pe zone: centru 3.09 px (6 stele); colt stanga-sus n/a (1 stea); colt dreapta-sus n/a (1 stea); colt stanga-jos n/a (0 stele); colt dreapta-jos n/a (0 stele)
+  latimea stelelor pe zone: centru n/a (6 stele); colt stanga-sus n/a (1 stea); colt dreapta-sus n/a (1 stea); colt stanga-jos n/a (0 stele); colt dreapta-jos n/a (0 stele)
   marimi pentru 300 x 300 px:
   latime cm   inaltime   dpi   stea mm   punct de la   dist. folosita   rama ext. cm
       50          50.0    15       n/a         n/a m           1.06 m   70 x 70

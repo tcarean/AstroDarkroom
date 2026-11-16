@@ -164,6 +164,37 @@ public class WcsTests
         Assert.Null(Wcs.TryFrom(noCrval, 10, 10, true));
     }
 
+    /// <summary>
+    /// CR-007: a WCS number with the D exponent FITS allows did not parse and read as 0, so a
+    /// complete plate solution was "no WCS"; one that is present and unreadable read as 0 too, or
+    /// as another number, and the WCS was accepted somewhere else in the sky.
+    /// </summary>
+    [Fact]
+    public void R018_ADExponentIsReadAndAnUnreadableNumberMeansNoWcs()
+    {
+        Wcs plain = Plate();
+
+        var withD = PlateSolvedHeader();
+        withD["CDELT1"] = "-1.15791302748302D-02";
+        withD["CRVAL1"] = "2.7159218667d+02";
+        Wcs read = Wcs.TryFrom(withD, PlateW, PlateH, true)!;
+        Assert.NotNull(read);
+        Assert.Equal(plain.Cd11, read.Cd11, 15);
+        Assert.Equal(plain.Cd12, read.Cd12, 15);
+        Assert.Equal(plain.Crval1, read.Crval1, 9);
+
+        foreach ((string key, string value) in new[]
+                 {
+                     ("CRVAL1", "18:06:22"), ("CRVAL1", "271,5922"), ("CRPIX2", "(1934)"),
+                     ("CDELT2", "abc"), ("PC1_2", "0,138"),
+                 })
+        {
+            var bad = PlateSolvedHeader();
+            bad[key] = value;
+            Assert.True(Wcs.TryFrom(bad, PlateW, PlateH, true) == null, key + " = " + value + " was read as a number");
+        }
+    }
+
     [Fact]
     public void R018_TheFitsReaderCarriesTheWcsOnTheSource()
     {

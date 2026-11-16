@@ -381,32 +381,39 @@ public class ViewModelTests
     }
 
     /// <summary>
-    /// The review of the branch (2026-11-14): the result is dropped for another image than the
-    /// one it was measured on, whatever the bar reads. A second image chosen while a run lasts
-    /// leaves the first image's result under the second's path (CR-009 of the code review of
-    /// 2026-11-13, still open); opening that second image again with a bad field must drop it.
+    /// CR-009: a second image chosen while a run lasted (a key on the placeholder's button,
+    /// which the busy overlay does not stop) replaced the path and started nothing, so the first
+    /// image's result came up under the second's path. While a run lasts no image is taken
+    /// (ADR 0106). This test replaces the one of 2026-11-14 that reached "A's result under B's
+    /// path" through this defect, at the owner's word of 2026-11-16.
     /// </summary>
     [Fact]
-    public async Task R111_AResultIsDroppedForAnotherImageThanItsOwnWhateverTheBarReads()
+    public async Task R111_ASecondImageChosenDuringARunChangesNothing()
     {
         using var ws = new TempWorkspace();
         Raster r = Scenes.CleanSky();
         byte[] bytes = TiffTestData.Build16Rgb(r.W, r.H, (x, y, c) => RasterOps.Level16(r.At(c, y, x)), IccTestData.V4("sRGB IEC61966-2.1"));
-        string a = ws.WriteFile("a.tif", bytes), b = ws.WriteFile("b.tif", bytes);
+        string a = ws.WriteFile("a.tif", bytes);
+        Directory.CreateDirectory(Path.Combine(ws.Dir, "alta"));
+        string b = ws.WriteFile(Path.Combine("alta", "b.tif"), bytes);
         var vm = new MainViewModel();
         Task first = vm.OpenAsync(a);
         Assert.True(vm.IsBusy);
-        await vm.OpenAsync(b);          // during A's run: the path changes, nothing runs
+
+        Task second = vm.OpenAsync(b);  // during A's run
+        Assert.True(second.IsCompleted);
+        Assert.Equal(a, vm.Path);
+
         await first;
         Assert.True(vm.HasResult, vm.Error);
-        Assert.Equal(b, vm.Path);       // A's result under B's path
+        Assert.Equal(a, vm.Path);
+        Assert.Equal(Path.Combine(ws.Dir, "Raport.txt"), vm.DefaultReportPath);
 
-        vm.Parameters.Distance = "1,5";
+        // The run over, B is taken and analysed.
         await vm.OpenAsync(b);
-
-        Assert.True(vm.HasError);
-        Assert.False(vm.HasResult);
-        Assert.Empty(vm.Report.Sections);
+        Assert.Equal(b, vm.Path);
+        Assert.True(vm.HasResult, vm.Error);
+        Assert.Equal(Path.Combine(ws.Dir, "alta", "Raport.txt"), vm.DefaultReportPath);
     }
 
     /// <summary>

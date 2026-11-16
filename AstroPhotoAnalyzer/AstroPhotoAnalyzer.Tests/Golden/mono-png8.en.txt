@@ -73,7 +73,7 @@ Appendix C. Export
 
 Appendix D. Resolution and size
   stars: 16 measured, 177.8 per megapixel - too few to measure the stars' width (FWHM)
-  the stars' width by zone: centre 3.09 px (6 stars); upper-left corner n/a (1 star); upper-right corner n/a (1 star); lower-left corner n/a (0 stars); lower-right corner n/a (0 stars)
+  the stars' width by zone: centre n/a (6 stars); upper-left corner n/a (1 star); upper-right corner n/a (1 star); lower-left corner n/a (0 stars); lower-right corner n/a (0 stars)
   sizes for 300 x 300 px:
    width cm     height   dpi   star mm    point from       dist. used   outer frame cm
       50          50.0    15       n/a         n/a m           1.06 m   70 x 70

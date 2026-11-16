@@ -111,7 +111,7 @@ an `Error` printed as `ERROR: ...` (`EROARE: ...` with `--lang ro`). Every run p
 Exit codes: **0** no recommendation above Ok, **1** error (bad argument, invalid
 parameter combination, missing file, a folder, unreadable format, refused linear image, a
 FITS whose values are not on a 0 to 1 scale (R-013),
-cannot write `-o`), **2** at least one Attention, **3** at least one Problem. `-o` writes `WriteFull` through
+cannot write `-o`, `-o` naming the image, the `--wcs` file or the `--icc` profile: `InputNamedByOut`, before the run, ADR 0107), **2** at least one Attention, **3** at least one Problem. `-o` writes `WriteFull`, the three inputs held open meanwhile (`HoldInputs`), through
 `ReportWriter.SaveFull` (whole or not at all, `recommendations-and-report.md`) and prints
 `    -> report saved: <file>` (`    -> raport salvat: <file>` with `--lang ro`). `--lang` and its
 value are read first and stripped before the options are parsed (`language.md`).

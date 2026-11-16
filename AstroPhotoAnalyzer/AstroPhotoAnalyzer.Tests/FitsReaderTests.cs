@@ -90,6 +90,49 @@ public class FitsReaderTests
         Assert.False(r.Source.IsFloat);
     }
 
+    /// <summary>
+    /// CR-007: .NET does not parse the D exponent the FITS standard allows, and an unparsed
+    /// BZERO was read as its default, 0: the samples were taken as signed, everything from
+    /// mid-scale up was clipped, and the report was about another image.
+    /// </summary>
+    [Fact]
+    public void R011_ARealWithADExponentIsReadAsFitsWritesIt()
+    {
+        byte[] plain = FitsTestData.Build2D(3, 1, (x, y) => x == 0 ? 0 : x == 1 ? 32768 : 65535);
+        byte[] withD = FitsTestData.WithCard(plain, "BZERO", "3.2768D+04");
+        byte[] wholeReal = FitsTestData.WithCard(plain, "BITPIX", "16.0");
+
+        Raster r = Load(withD);
+
+        Assert.Equal(0f, r.At(0, 0, 0));
+        Assert.Equal(32768f / 65535f, r.At(0, 0, 1), 6);
+        Assert.Equal(1f, r.At(0, 0, 2));
+        Assert.Null(r.Source.Note);
+        // A whole number some writers put as a real stays readable.
+        Assert.Equal(1f, Load(wholeReal).At(0, 0, 2));
+    }
+
+    /// <summary>
+    /// CR-007: a number that is present and cannot be read refuses the file; before, it was read
+    /// as its default or, through NumberStyles.Any, as another number ("0,5" as 5, "1,024" as
+    /// 1024, "(5)" as -5).
+    /// </summary>
+    [Theory]
+    [InlineData("BZERO", "3.2768X+04", "BZERO din header nu se poate citi ca numar: '3.2768X+04'")]
+    [InlineData("BZERO", "(5)", "BZERO din header nu se poate citi ca numar: '(5)'")]
+    [InlineData("BSCALE", "0,5", "BSCALE din header nu se poate citi ca numar: '0,5'")]
+    [InlineData("NAXIS1", "1,024", "NAXIS1 din header nu se poate citi ca numar intreg: '1,024'")]
+    [InlineData("BITPIX", "16.5", "BITPIX din header nu se poate citi ca numar intreg: '16.5'")]
+    public void R011_AHeaderNumberThatCannotBeReadRefusesTheFile(string key, string value, string expected)
+    {
+        byte[] sound = FitsTestData.Build2D(3, 1, (x, y) => 20000 * x, bscale: 2);
+        byte[] fits = FitsTestData.WithCard(sound, key, value);
+
+        var e = Assert.ThrowsAny<Exception>(() => FitsReader.LoadFrom(new MemoryStream(fits)));
+
+        Assert.Equal("FITS: " + expected + ".", e.Message);
+    }
+
     [Fact]
     public void Float32CubeKeepsItsThreePlanes()
     {

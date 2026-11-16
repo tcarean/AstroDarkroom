@@ -344,14 +344,14 @@ after the image; `--help` lists them with their defaults, which are the window's
 | `--frame <cm>` | the width of the frame | 3 |
 | `--wcs <file.fit>` | a plate-solved FITS of the same size, whose WCS is used to find the dark nebulae | a FITS image's own |
 | `--lang en`, `--lang ro` | the language of every text | `en` |
-| `-o <file>`, `--out <file>` | also writes the report to this file | none |
+| `-o <file>`, `--out <file>` | also writes the report to this file, which may not be the image, the `--wcs` file or the `--icc` profile | none |
 | `-h`, `--help` | the help | |
 
 The exit code follows the overall verdict, the most severe one in the report: `0` OK, `2`
 caution, `3` problem, so any code but `0` means "look". `1` is an error: a bad argument or a
 bad combination (a passepartout under twice the frame), a missing or unreadable file, an ICC
 profile or a WCS file it cannot use, a linear image, a FITS whose values are not between 0 and
-1, a report `-o` cannot write. An error prints
+1, a report `-o` cannot write or aims at a file the analysis reads. An error prints
 `ERROR: ` and its reason; the codes are the same in both languages.
 
 The report starts with the file and its facts (format, bit depth, pixels, compression, file

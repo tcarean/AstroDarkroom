@@ -67,6 +67,25 @@ public class RecommendationsTests
         Assert.Throws<ArgumentException>(() => new Recommendation(Topic.Format, Verdict.Ok, "x", ""));
     }
 
+    /// <summary>
+    /// CR-008: an 8-bit image shifted into 16 bits gets the warning, and its evidence is the
+    /// levels it uses, not the x 257 form it does not have.
+    /// </summary>
+    [Fact]
+    public void R096_AShiftedEightBitFileIsWarnedOfByItsLevels()
+    {
+        Raster src = Scenes.CleanSky();
+        Raster r = SyntheticRasters.From(src.H, src.W, src.Planes.Length, (x, y, p) => (RasterOps.Level8(src.At(p, y, x)) << 8) / 65535f);
+        r.Source = new SourceInfo { Format = "memorie", BitDepth = 16, IsFloat = false, PlanesInFile = 3 };
+
+        var a = Run(r);
+
+        Recommendation w = Assert.Single(Of(a, Topic.Warnings), x => x.Text.Contains("8 biti de informatie, salvati ca 16 biti"));
+        Assert.Contains("cel mult cele 256 pe care le pot tine 8 biti, din cele 65536 ale unui fisier pe 16 biti", w.Because);
+        Assert.StartsWith("niveluri diferite folosite pe fiecare canal: ", w.Because);
+        Assert.DoesNotContain("257", w.Because);
+    }
+
     [Fact]
     public void R096_AnUpscaledFileAndAMissingProfileAreWarnings()
     {
