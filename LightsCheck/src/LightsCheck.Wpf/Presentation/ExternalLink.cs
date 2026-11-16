@@ -42,7 +42,9 @@ internal static class ExternalLink
     {
         try
         {
-            Process.Start(new ProcessStartInfo(link.AbsoluteUri) { UseShellExecute = true });
+            // the shell hands the address to the browser; the process object it may return is
+            // not needed, so its handle is released at once
+            Process.Start(new ProcessStartInfo(link.AbsoluteUri) { UseShellExecute = true })?.Dispose();
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
         {

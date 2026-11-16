@@ -64,15 +64,23 @@ from the headings of `LightsCheck.md` in the wiki, which is outside the reposito
 a renamed heading, so a heading and `Manual.cs` change together. `OpenAddress`,
 `ExternalLink.Open` by default, is the seam `HelpTests` replaces.
 
+WPF turns every key-down that matches a command's gesture into that command, the repeats of a
+held key included. The window's `PreviewKeyDown`, `IgnoreHeldF1`, marks a repeat of F1 handled,
+so the KeyDown that follows with the same arguments no longer becomes the command: F1 held down
+opens the manual once.
+
 `ExternalLink.Open` is the one place that starts the browser, for the manual and for the About
 window's links. A failure, a relative link included (asking for its absolute address throws
-before anything starts), is a Debug line that names the link as written.
+before anything starts), is a Debug line that names the link as written. The process object the
+shell may return is disposed at once.
 
 The icon is the theme's `HelpIcon`, a `DrawingImage` (FlatCheck's drawing). The folder's column
 is the top bar's one `*` column, so it gives way when the window narrows. Its texts never wrap,
-so the bar keeps its height: at the minimum width, 1040 px, during a run in Romanian, the column
-keeps about 39 px. `HelpTests` renders the bar there with Stop forced visible and checks that
-About ends inside the bar and that the bar is as tall as when idle.
+so the bar keeps its height. The minimum width, 1040 px, counts Windows 10's frame, 8 px on each
+side, so the content is 1024 px wide; during a run in Romanian the folder's column keeps about
+23 px of it. `HelpTests` renders the bar at that content width, idle and during a real run, and
+checks that About ends inside the bar, that Help stays enabled and that the bar keeps its
+height.
 
 ## One view-model, fed by the core
 
@@ -201,6 +209,8 @@ need; the assembly disables test parallelization. `MainViewModelTests` cover R-0
 without a window. `AutomationTreeTests` ask the automation peers in process, the same ones a
 client in another process is answered by: every tab's content under its item, once, and under
 no other tab's item; and nothing in the tabs' applied template by the stock name, a lookup,
-since keyboard focus needs a window on screen. `HelpTests` raise F1 as a key-down through a
-stand-in presentation source, as `AboutWindowFitTests` do with the About window's keys, so the
-key goes through WPF's own translation of a gesture into a command.
+since keyboard focus needs a window on screen. `HelpTests` raise F1 as the input manager does,
+a PreviewKeyDown and then a KeyDown with the same arguments, through a stand-in presentation
+source, as `AboutWindowFitTests` do with the About window's keys, so the key goes through WPF's
+own translation of a gesture into a command; a repeat is marked through `KeyEventArgs`'s own
+`SetRepeat`, by reflection.

@@ -41,7 +41,8 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// The window over a given view-model (the tests pass their own): binds it, asks for the dark
-    /// title bar once the window has a handle, and stops the run in flight when the window closes.
+    /// title bar once the window has a handle, keeps F1 held down from opening the manual again
+    /// and again, and stops the run in flight when the window closes.
     /// </summary>
     /// <param name="vm">The view-model the window binds.</param>
     internal MainWindow(MainViewModel vm)
@@ -50,7 +51,24 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = _vm;
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+        PreviewKeyDown += IgnoreHeldF1;
         Closed += (_, _) => _vm.CancelPending();
+    }
+
+    /// <summary>
+    /// Takes the repeats of F1 held down (R-091): a held key repeats some thirty times a second,
+    /// and WPF turns each repeat into the Help command, which would open the browser again each
+    /// time. Marked handled here, before the key reaches the command, a repeat does nothing; the
+    /// first press goes on to the command.
+    /// </summary>
+    /// <param name="sender">The window; not used.</param>
+    /// <param name="e">The key pressed; marked handled when it is a repeat of F1.</param>
+    private static void IgnoreHeldF1(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.F1 && e.IsRepeat)
+        {
+            e.Handled = true;
+        }
     }
 
     /// <summary>Starts on the folder from the command line, or asks for one at once.</summary>

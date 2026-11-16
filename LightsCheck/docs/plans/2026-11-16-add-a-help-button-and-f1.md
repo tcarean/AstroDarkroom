@@ -164,3 +164,24 @@ Worktree (already made, from `main` at dec039cf):
   which failed before the change) say so.
 - `ExternalLink.Open` takes a `Uri`, and the window's seam is `Action<Uri>`, so that the About
   window's catch of a relative link stays as it was.
+- A subagent reviewed the branch after the first commit (the owner's "Yes, review first"). Its
+  six findings were checked in the code and all applied:
+  - F1 held down opened one browser tab per key repeat: the window now takes the repeats of F1
+    in `PreviewKeyDown` (`IgnoreHeldF1`), as ImageVisualCompare's R-066 says; R-091 and ADR 0060
+    say so, and `R091_F1HeldDownOpensTheManualOnce` failed without it (6 addresses for 1).
+  - The F1 test pressed every screen without the tabs with no tab selected (a window never shown
+    has none), so it could not see `ShowHelp` ignore the view-model; it now presses a run, a
+    stopped run and the problem card with the Report tab still selected.
+  - A window's minimum width includes Windows 10's frame, 8 px a side, measured: a window of
+    1040 px holds 1024 px of content. The first measurements, the question put to the owner
+    included, left it out (920 px inside the bar at 960, About cut by 11 and 41 px, 39 px left
+    for the folder); the right figures are 904, 27 and 57, and about 23 px. The answers stand:
+    the bar fits at 1040. The test renders at the content width; ADR 0060 and the design note
+    carry the corrected figures.
+  - "The button works during an analysis" had no test: the bar is now rendered during a real
+    run, not with Stop forced visible, and the test checks that Help stays enabled.
+  - `ExternalLink.Open` disposes the process object the shell returns. Only http and https
+    addresses reaching the shell, which ImageVisualCompare added too, was not taken: every
+    address here is a constant.
+  - The CHANGELOG entry said the folder's name stays on one line; it is the label and
+    `(none chosen)`, as the name already did.

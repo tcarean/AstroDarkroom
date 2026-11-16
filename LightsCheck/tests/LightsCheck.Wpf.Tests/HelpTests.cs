@@ -123,31 +123,80 @@ public class HelpTests
             w.Tabs.SelectedIndex = 5;
             Assert.True(PressF1(w.Tabs));
             Assert.Equal(Page + "#report", opened[^1]);
-            Assert.Equal(6, opened.Count);
+
+            // a tab stays selected while the tabs give way to another screen: the screen decides,
+            // not the tab (a window never shown has no tab selected before this point)
+            Task again = vm.OpenAsync(f.Root);
+            Assert.True(vm.IsRunning && w.Tabs.SelectedIndex == 5);
+            Assert.True(PressF1(w.Tabs));
+            Assert.Equal(Page + "#opening-a-session", opened[^1]);
+            vm.CancelPending();
+            await again;
+            Assert.True(!vm.HasResult && w.Tabs.SelectedIndex == 5);
+            Assert.True(PressF1(w.Tabs));
+            Assert.Equal(Page + "#opening-a-session", opened[^1]);
+
+            await vm.OpenAsync(Path.Combine(ws.Dir, "missing"));
+            Assert.True(vm.HasProblem && w.Tabs.SelectedIndex == 5);
+            Assert.True(PressF1(w.Tabs));
+            Assert.Equal(Page + "#opening-a-session", opened[^1]);
+            Assert.Equal(9, opened.Count);
         });
 
         Assert.Contains(capture.Events, e => e.Logger == "Window" && e.Level == LogLevel.Info && e.Message == "Help opened: " + Page + "#dithering");
     }
 
     /// <summary>
+    /// F1 held down opens the manual once: its repeats, some thirty a second, would each open the
+    /// browser again, and write a line each (the review of the branch, 2026-11-16).
+    /// </summary>
+    [Fact]
+    public void R091_F1HeldDownOpensTheManualOnce()
+    {
+        using LogCapture capture = LogCapture.Start();
+
+        _sta.Invoke(() =>
+        {
+            List<string> opened = [];
+            MainWindow w = new() { OpenAddress = u => opened.Add(u.AbsoluteUri) };
+
+            Assert.True(PressF1(w.Tabs));
+            for (int i = 0; i < 5; i++)
+            {
+                PressF1(w.Tabs, isRepeat: true);
+            }
+
+            Assert.Equal([Page + "#opening-a-session"], opened);
+        });
+
+        Assert.Single(capture.Events, e => e.Message.StartsWith("Help opened: ", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// The top bar's Help button runs the Help command and shows a drawn icon and the word, with
     /// its tooltip, just left of About; About opens from its own click, and its tooltip names no
-    /// key. At the window's minimum width the bar fits, with Stop shown too, its widest, and keeps
-    /// its height.
+    /// key. At the window's minimum width the bar fits, idle and during a run, its widest with
+    /// Stop shown, where the button still works; and it keeps its height.
     /// </summary>
     [Theory]
     [InlineData(false, "Help", "The manual, at the section of this tab (F1)", "About", "Version, licence, components")]
     [InlineData(true, "Ajutor", "Manualul, la sectiunea tabului curent (F1)", "Despre", "Versiune, licenta, componente")]
-    public void R091_TheHelpButtonShowsAnIconAndTheWord(bool romanian, string word, string tip, string about, string aboutTip)
-        => _sta.Invoke(() =>
+    public async Task R091_TheHelpButtonShowsAnIconAndTheWord(bool romanian, string word, string tip, string about, string aboutTip)
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+
+        await _sta.InvokeAsync(async () =>
         {
             using IDisposable scope = Ui.Use(romanian ? UiLanguage.Romanian : UiLanguage.English);
 
             // a window never shown renders white, its template unapplied: its content is moved
-            // into a plain host with the window's data and commands, at the window's minimum width
-            MainWindow w = new();
+            // into a plain host with the window's data and commands, as wide as the content of a
+            // window at its minimum width: Windows 10 draws a frame of 8 px on each side
+            // (measured on 2026-11-16: a window 1040 px wide holds content 1024 px wide)
+            MainViewModel vm = new();
+            MainWindow w = new(vm);
             Assert.Equal(1040, w.MinWidth);
-            int width = (int)w.MinWidth;
+            int width = (int)w.MinWidth - 16;
             UIElement content = (UIElement)w.Content;
             w.Content = null;
             Border host = new() { Child = content, DataContext = w.DataContext, Background = Brushes.Black };
@@ -179,23 +228,45 @@ public class HelpTests
             Assert.Same(aboutButton, row.Children[at + 1]);
             Assert.Equal(Ui.T("Write the files...", "Scrie fisierele..."), ((Button)row.Children[at - 1]).Content);
 
-            // the widest bar, during a run: Stop shows; About, the rightmost, still ends at the
-            // bar's 20 px right padding, not past it, and the folder's column, left with a few
-            // pixels, cuts its texts on one line instead of making the bar taller (the owner's
-            // answer of 2026-11-16)
+            // About, the rightmost, ends at the bar's 20 px right padding, not past it
+            Assert.True(aboutButton.TranslatePoint(new Point(aboutButton.ActualWidth, 0), host).X < width - 20 + 0.5);
+
+            // the widest bar, during a run: Stop shows and Help still works; About still ends
+            // inside the bar, and the folder's column, left with a few pixels, cuts its texts on
+            // one line instead of making the bar taller (the owner's answer of 2026-11-16)
             Button stop = row.Children.OfType<Button>().Single(b => b.Content as string == Ui.T("Stop", "Opreste"));
-            stop.Visibility = Visibility.Visible;
+            Task run = vm.OpenAsync(f.Root);
+            Assert.True(vm.IsRunning);
             WindowSmokeTests.Render(host, width, 560, romanian ? "ro-help-top-bar" : "en-help-top-bar");
             Assert.True(stop.ActualWidth > 0);
+            Assert.True(help.IsEnabled);
             Assert.True(aboutButton.TranslatePoint(new Point(aboutButton.ActualWidth, 0), host).X < width - 20 + 0.5);
             Assert.Equal(idleHeight, bar.ActualHeight);
-        });
 
-    /// <summary>Raises a key-down of F1 on <paramref name="target"/>, as the keyboard would with
-    /// the focus there; returns whether something handled it.</summary>
-    private static bool PressF1(UIElement target)
+            vm.CancelPending();
+            await run;
+        });
+    }
+
+    /// <summary>
+    /// Presses F1 on <paramref name="target"/> as the keyboard would with the focus there: a
+    /// PreviewKeyDown, then a KeyDown with the same arguments, as WPF's input manager raises them,
+    /// a repeat of a held key when asked; returns whether something handled it.
+    /// </summary>
+    private static bool PressF1(UIElement target, bool isRepeat = false)
     {
-        KeyEventArgs e = new(Keyboard.PrimaryDevice, new KeySource(), 0, Key.F1) { RoutedEvent = Keyboard.KeyDownEvent };
+        KeyEventArgs e = new(Keyboard.PrimaryDevice, new KeySource(), 0, Key.F1) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+        if (isRepeat)
+        {
+            // WPF marks a repeat from the keyboard's state, through a member of its own; the test
+            // marks it the same way (as ImageVisualCompare's tests do)
+            typeof(KeyEventArgs)
+                .GetMethod("SetRepeat", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .Invoke(e, [true]);
+        }
+
+        target.RaiseEvent(e);
+        e.RoutedEvent = Keyboard.KeyDownEvent;
         target.RaiseEvent(e);
         return e.Handled;
     }

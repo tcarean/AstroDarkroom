@@ -10,9 +10,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - F1 opens the manual, no longer About, which opens from its button (R-091, ADR 0060). The
   window is at least 1040 px wide, up from 960, so that the top bar fits with Help during an
-  analysis; the folder's name and label in the bar stay on one line, cut with `…` when the
-  window is narrow, instead of making the bar taller.
-
+  analysis; the folder's label and `(none chosen)` in the bar stay on one line, cut with `…` as
+  the folder's name already was, instead of making the bar taller.
 - The stars' width (FWHM), elongation and angle are measured in a way that follows the star, so
   they hold at any focal length and pixel size (R-014, ADR 0056, which supersedes ADR 0052 in
   part). The width is that of the star's core, read by adaptive moments; the elongation and the
