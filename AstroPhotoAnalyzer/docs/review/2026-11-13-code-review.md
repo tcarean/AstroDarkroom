@@ -81,11 +81,11 @@ entry gives. Paths are relative to the project folder.
 | CR-003 | 1 | some setups | to measure | On an 8-bit source three thresholds on a whole level are decided by float rounding | fixed ae70ca1d |
 | CR-004 | 1 | some setups | owner | A float FITS that is not on a 0..1 scale is analysed as a white frame | fixed 4e0f4da4 |
 | CR-005 | 1 | slip | confirmed | Opening another image while a field is wrong leaves the old result under the new name | fixed 5c0cf426 |
-| CR-006 | 1 | rare | confirmed | Soft corners are reported on a frame whose stars are declared too few | open |
-| CR-007 | 1 | rare | confirmed | A FITS number that does not parse is read as its default: BZERO, BSCALE, the WCS | open |
-| CR-008 | 1 | rare | confirmed | An 8-bit image saved as 16 bits by a shift passes as real 16 bits | open |
-| CR-009 | 1 | rare | confirmed | A second image chosen from the keyboard during a run gets the running image's result | open |
-| CR-010 | 2 | slip | confirmed | `-o` naming the analysed image replaces the image with the report | open |
+| CR-006 | 1 | rare | confirmed | Soft corners are reported on a frame whose stars are declared too few | fixed 19f667e9 |
+| CR-007 | 1 | rare | confirmed | A FITS number that does not parse is read as its default: BZERO, BSCALE, the WCS | fixed 5a1707b4 |
+| CR-008 | 1 | rare | confirmed | An 8-bit image saved as 16 bits by a shift passes as real 16 bits | fixed 5d00aa35 |
+| CR-009 | 1 | rare | confirmed | A second image chosen from the keyboard during a run gets the running image's result | fixed c075e9ae |
+| CR-010 | 2 | slip | confirmed | `-o` naming the analysed image replaces the image with the report | fixed de089c54 |
 | CR-011 | 2 | rare | to measure | An image over 65 535 px on a side ends the whole analysis in the JPEG stage | open |
 | CR-012 | 2 | crafted | confirmed | A FITS header with a negative axis length hangs the reader | open |
 | CR-013 | 2 | crafted | confirmed | A settings file with a broken escape stops the window at every start | open |
@@ -295,7 +295,7 @@ bit. The 16-bit reference image is not touched.
   stars (ADR 0062).
 - Test: none; `SaturatedAndFaintStarsAreNotMeasured` asserts it with zero stars only.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed 19f667e9 (ADR 0102; the zones read n/a too, the owner's answer of 2026-11-16)
 
 ### CR-007 A FITS number that does not parse is read as its default: BZERO, BSCALE, the WCS
 
@@ -318,7 +318,7 @@ bit. The 16-bit reference image is not touched.
 - Test: none; `FitsReaderTests` and `WcsTests` have no `D` exponent and no unreadable value.
 - Evidence: confirmed (cfitsio, so Siril, writes `E`; that a given writer emits `D` was not
   checked on a file).
-- Status: open
+- Status: fixed 5a1707b4 (ADR 0103; a size, BZERO or BSCALE refuses the file, a WCS number means no WCS)
 
 ### CR-008 An 8-bit image saved as 16 bits by a shift passes as real 16 bits
 
@@ -333,7 +333,7 @@ bit. The 16-bit reference image is not touched.
 - Should: the distinct levels (or the low byte being constant) decide too.
 - Test: none; `AnEightBitUpscaleIsCaught` builds the x 257 form only.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed 5d00aa35 (ADR 0104; at most 256 levels a plane, the owner's answer of 2026-11-16)
 
 ### CR-009 A second image chosen from the keyboard during a run gets the running image's result
 
@@ -354,7 +354,7 @@ bit. The 16-bit reference image is not touched.
   profile actions.
 - Evidence: confirmed (the enabled button and the missing guard; that the focus returns to the
   button after the file dialog is WPF's usual behaviour, to see once in the window).
-- Status: open
+- Status: fixed c075e9ae (ADR 0105; the test that needed this defect was replaced, the owner's answer of 2026-11-16)
 
 ## Severity 2: a crash, a hang, or a file overwritten or lost
 
@@ -377,7 +377,7 @@ bit. The 16-bit reference image is not touched.
 - Test: none; `CliTests.R005_*` save to a fresh name, `CurveTests.R145_SavingOverTheInputIs...`
   covers the FITS export.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed de089c54 (ADR 0106; refused before the analysis, the inputs held open during the save)
 
 ### CR-011 An image over 65 535 px on a side ends the whole analysis in the JPEG stage
 
