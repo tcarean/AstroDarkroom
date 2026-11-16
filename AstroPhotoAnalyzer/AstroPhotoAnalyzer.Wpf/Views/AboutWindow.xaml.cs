@@ -19,9 +19,6 @@
 // show its notice. Only the dark title bar, the opening of links and the window's fit to its
 // screen remain here (R-158, ADR 0070).
 
-using System;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Navigation;
@@ -59,29 +56,19 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// The diagnostic log: a link that could not be opened, the window's size and place once
-        /// shown (R-171, ADR 0069).
+        /// The diagnostic log: the window's size and place once shown (R-171, ADR 0069); a link
+        /// that could not be opened is <see cref="ExternalLink"/>'s line.
         /// </summary>
         static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
         /// <summary>
-        /// Opens a hyperlink in the system's browser, through the shell; a refusal by the shell
-        /// or a missing handler is swallowed, and written to the diagnostic log at Debug.
+        /// Opens a link of the window, the licence's or a component's, in the system's browser,
+        /// through <see cref="ExternalLink.Open(RequestNavigateEventArgs)"/>, which logs a link
+        /// that cannot be opened instead of throwing.
         /// </summary>
-        /// <param name="sender">The hyperlink; not read.</param>
+        /// <param name="sender">The window, where the link's event arrives; not read.</param>
         /// <param name="e">The navigation; its URI is opened and it is marked handled.</param>
-        void OpenLink(object sender, RequestNavigateEventArgs e)
-        {
-            e.Handled = true;
-            try { Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true }); }
-            catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
-            {
-                // OriginalString, not AbsoluteUri: a relative link throws there, which is what this
-                // catch took, and would throw again out of the handler and close the window (ADR
-                // 0069, after DarksCheck's review).
-                Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened in a browser");
-            }
-        }
+        void OpenLink(object sender, RequestNavigateEventArgs e) => ExternalLink.Open(e);
 
         /// <summary>
         /// Keeps the shown window inside its screen's work area (R-158), and writes its size and

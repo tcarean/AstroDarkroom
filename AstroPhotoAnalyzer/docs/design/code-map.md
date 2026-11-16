@@ -77,7 +77,9 @@ AstroPhotoAnalyzer.Wpf/
                ZoomPanViewer.cs (the soft proof's viewer: wheel zoom, drag pan, double-click fit, R-163),
                BeforeAfterViewer.xaml(.cs) (two images compared across a dragged line, over that viewer, R-179),
                SplitDivider.cs (the line: its place, its handle, what a press grabs, R-179),
-               CropViewer.cs (the image with the crop rectangle over it and the drags that move it, R-183)
+               CropViewer.cs (the image with the crop rectangle over it and the drags that move it, R-183),
+               Manual.cs (the wiki manual's sections and addresses, which Help and F1 open, R-186),
+               ExternalLink.cs (an address opened in the browser: a link of "Despre", the manual)
   ViewModels/MainViewModel.cs, ParameterFields.cs, ResultTabs.cs, Rows.cs, AboutViewModel.cs,
              MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131),
              IccPickerViewModel.cs (the profile window, R-132),
