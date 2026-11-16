@@ -272,7 +272,10 @@ them, so for a file use `--out`, whose files are UTF-8.
 
 ### The files of `--out`
 
-`--out DIR` writes three files into DIR, creating it when needed:
+`--out DIR` writes three files into DIR, creating it when needed. DIR cannot be a folder that
+holds the session's frames (`lights\`, `biases\`, `darks\`, a folder inside one of them, or
+the session folder itself when the frames sit directly in it): LightsCheck writes nothing among
+the frames and stops with an error that says so. The three files:
 
 - `lightscheck-report.txt`: the report, as printed;
 - `lightscheck-frames.csv`: every figure of every frame, among them the trail's axis
@@ -395,7 +398,7 @@ default), remembered between starts in `%LOCALAPPDATA%\LightsCheck\settings.json
 setting the program keeps there (its log goes there too when the folder beside the program cannot
 be written, see [Logs](#logs)).
 **Write the files...** writes the three files of `--out` into a folder you choose; the session
-folder is proposed. **About** (F1) shows the version, the licence and the third-party components.
+folder is proposed, and a folder that holds the session's frames is refused, as for `--out`. **About** (F1) shows the version, the licence and the third-party components.
 
 ## Logs
 

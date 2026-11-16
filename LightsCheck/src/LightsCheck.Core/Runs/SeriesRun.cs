@@ -35,7 +35,13 @@ namespace LightsCheck.Core;
 /// <param name="Arrows">
 /// Which SynScan arrows move east and north; null means <see cref="ArrowKeys.Default"/>.
 /// </param>
-internal sealed record SeriesOptions(double? PixelSizeUm = null, int Threads = 0, ArrowKeys? Arrows = null)
+/// <param name="OutputFolder">
+/// The folder the caller will write the report files into after the run, when it knows it
+/// beforehand (the console's <c>--out</c>): the run refuses a folder among the session's frames
+/// as soon as the session is open, before any frame is measured (R-028, ADR 0060). Null when
+/// none is known; nothing is written by the run either way.
+/// </param>
+internal sealed record SeriesOptions(double? PixelSizeUm = null, int Threads = 0, ArrowKeys? Arrows = null, string? OutputFolder = null)
 {
     /// <summary>
     /// The Nikon D3300's pixel pitch, 23.5 mm over 6000 pixels: the last fallback, when no file
@@ -168,11 +174,15 @@ internal static class SeriesRun
     /// <summary>
     /// Measures and analyses the whole series. A frame that cannot be decoded or measured keeps
     /// its metadata and error and is left out of the figures; the folder errors of
-    /// <see cref="SessionFolder.Open"/> propagate, and a cancel throws
-    /// <see cref="OperationCanceledException"/>.
+    /// <see cref="SessionFolder.Open"/> propagate, an <see cref="SeriesOptions.OutputFolder"/>
+    /// among the session's frames throws <see cref="InvalidOperationException"/> before any frame
+    /// is measured (R-028), and a cancel throws <see cref="OperationCanceledException"/>.
     /// </summary>
     /// <param name="folder">The session folder.</param>
-    /// <param name="options">The pixel size, the parallelism and the arrow keys; not null.</param>
+    /// <param name="options">
+    /// The pixel size, the parallelism, the arrow keys and the folder the caller will write
+    /// into, if it knows it; not null.
+    /// </param>
     /// <param name="progress">
     /// Told (frames done, frames in all) after each frame, from the worker threads; null for none.
     /// </param>
@@ -189,6 +199,13 @@ internal static class SeriesRun
             + " threads=" + LogText.Int(threads) + " east=" + arrows.East + " north=" + arrows.North);
         SessionFolder session = SessionFolder.Open(folder);
         clock.Lap("open");
+        // Refused here, not after the minutes of measuring, when the caller already knows where
+        // it will write (R-028, ADR 0060); SeriesOutputs.WriteAll checks again whoever calls it.
+        if (options.OutputFolder is string outputFolder && SeriesOutputs.Refusal(session, outputFolder) is string refusal)
+        {
+            throw new InvalidOperationException(refusal);
+        }
+
         int n = session.Lights.Count;
         AnalyzedFrame[] frames = new AnalyzedFrame[n];
         PatternCrop?[] crops = new PatternCrop?[n];
@@ -229,7 +246,10 @@ internal static class SeriesRun
             {
                 if (frames[i].Measurement is FrameMeasurement m)
                 {
-                    frames[i] = frames[i] with { Registration = Registration.Register(reference, m.RegistrationStars, w, h) };
+                    frames[i] = frames[i] with
+                    {
+                        Registration = RegisterGuarded(() => Registration.Register(reference, m.RegistrationStars, w, h), i + 1, n, session.Lights[i]),
+                    };
                 }
             });
         }
@@ -353,6 +373,34 @@ internal static class SeriesRun
         }
     }
 
+    /// <summary>
+    /// One frame's registration, with whatever it throws turned into a failed result: after the
+    /// minutes of measuring, a failure while aligning costs that frame its position, not the run
+    /// its report (R-026, ADR 0062). The exception goes to the log at Warn; a cancel is not caught.
+    /// </summary>
+    /// <param name="register">The registration of the frame; not null.</param>
+    /// <param name="index">The frame's 1-based position in the session, for the log.</param>
+    /// <param name="count">The session's number of lights, for the log.</param>
+    /// <param name="path">The frame's file, for the log.</param>
+    /// <returns>
+    /// What <paramref name="register"/> returns, or a failed result when it throws: the frame's
+    /// row then says it could not be aligned.
+    /// </returns>
+    internal static RegistrationResult RegisterGuarded(Func<RegistrationResult> register, int index, int count, string path)
+    {
+        ArgumentNullException.ThrowIfNull(register);
+        try
+        {
+            return register();
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            Log.Warn(e, "frame " + LogText.Int(index) + "/" + LogText.Int(count) + " " + path
+                + " could not be aligned: its registration failed with the exception; its row says it could not be aligned");
+            return RegistrationResult.Failed(0);
+        }
+    }
+
     /// <summary>The diagnostic log: the run's lines, each frame's, the figures behind the verdicts (R-071).</summary>
     private static readonly Logger Log = LogManager.GetLogger(nameof(SeriesRun));
 
@@ -402,13 +450,30 @@ internal static class SeriesRun
     /// The WCS of the first plate-solved FITS at the session root (Siril's stacked result, by
     /// name): the scale and the PC matrix, or the CD matrix when the file carries that form
     /// (then the scale is 1 and the matrix holds it), with the declination of CRVAL2 when the
-    /// header has it (R-050). Null without such a file (R-025, R-038).
+    /// header has it (R-050). Null without such a file (R-025, R-038). A file that cannot be
+    /// read, whatever the reason, is skipped with a line in the log and the next one is tried, and
+    /// a folder that cannot be listed gives none: the plate solve is optional, and the frames are
+    /// already measured (ADR 0062).
     /// </summary>
     /// <param name="root">The session folder.</param>
     /// <returns>The WCS of the first solved FITS by name, or null.</returns>
     internal static Wcs? ReadWcs(string root)
     {
-        foreach (string f in Directory.GetFiles(root).Where(FitsReader.IsFitsPath).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+        string[] files;
+        try
+        {
+            files = Directory.GetFiles(root);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            // With a lights\ subfolder the session folder itself is listed here for the first
+            // time: it may refuse to be listed, or the drive went away or the folder was renamed
+            // during the measuring.
+            Log.Warn(e, root + " could not be listed; no plate solve is read");
+            return null;
+        }
+
+        foreach (string f in files.Where(FitsReader.IsFitsPath).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
         {
             try
             {
@@ -438,6 +503,13 @@ internal static class SeriesRun
             catch (Exception e) when (e is IOException or InvalidDataException)
             {
                 Log.Debug(e, f + " could not be read; skipped as a WCS source");
+                continue;
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                // Not a broken or missing file: an access refused, or anything the reader did not
+                // foresee. Skipped all the same, and said louder.
+                Log.Warn(e, f + " could not be read; skipped as a WCS source");
                 continue;
             }
         }

@@ -473,6 +473,30 @@ public partial class LoggingTests
     }
 
     /// <summary>
+    /// Whatever a frame's registration throws becomes a failed registration, so the frame reads
+    /// `could not be aligned` and the run goes on, and the exception is in the log at Warn with
+    /// the frame's file; a result comes back as it is, and a cancel is not swallowed (R-026,
+    /// ADR 0062, CR-015).
+    /// </summary>
+    [Fact]
+    public void R026_ARegistrationThatThrowsIsAFrameThatCouldNotBeAligned()
+    {
+        using LogCapture capture = LogCapture.Start();
+        RegistrationResult good = new(true, 300, 200, 1.5, -2.5, 0.01, 1, 0.3);
+        const string file = "DSC_0003.fit";
+
+        RegistrationResult failed = SeriesRun.RegisterGuarded(() => throw new InvalidOperationException("no solution"), 3, 8, file);
+
+        Assert.False(failed.Ok);
+        Assert.False(failed.Flipped);
+        LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == "SeriesRun" && e.Level == LogLevel.Warn);
+        Assert.StartsWith("frame 3/8 DSC_0003.fit could not be aligned", line.Message, StringComparison.Ordinal);
+        Assert.IsType<InvalidOperationException>(line.Exception);
+        Assert.Same(good, SeriesRun.RegisterGuarded(() => good, 1, 8, file));
+        Assert.Throws<OperationCanceledException>(() => SeriesRun.RegisterGuarded(() => throw new OperationCanceledException(), 1, 8, file));
+    }
+
+    /// <summary>
     /// The plate-solve candidates at the session root each leave a line: a file skipped and why,
     /// the one read; and the run's own line holds the flip of the lights the analysis uses, here
     /// none, since FITS lights are stored as the solve is (ADR 0023). Before, a skipped file left

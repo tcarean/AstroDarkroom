@@ -122,9 +122,18 @@ page outliving the process otherwise; a process without a console reads the code
 nothing to put back) and by the tests with `StringWriter`s: it writes the banner, takes
 `--lang` out and runs the rest in its language (`language.md`), parses, and dispatches to `FrameRun` + `FrameReport` for `--frame`, to `InventoryRun` +
 `InventoryReport` for `--inventory`, and otherwise to `SeriesRun.Run(folder,
-SeriesOptions(pixel, threads, arrows), progress)` + `SeriesReport.Write`, then
+SeriesOptions(pixel, threads, arrows, out), progress)` + `SeriesReport.Write`, then
 `SeriesOutputs.WriteAll` when `--out` was given,
-printing `-> written: <path>` (`-> scris:`) per file. The series progress goes to stderr as one line
+printing `-> written: <path>` (`-> scris:`) per file. The `--out` folder travels in the
+options so that the run can refuse it right after `SessionFolder.Open`, before a frame is
+measured: `SeriesOutputs.Refusal(session, dir)` gives the sentence when the folder is that of
+the lights, the biases or the darks or lies inside one (full paths, the trailing separator
+dropped, the case ignored on Windows; where the lights sit in the session folder itself,
+that folder is refused and a folder inside it is not, its `biases\` and `darks\` as anywhere),
+and the run throws it as an `InvalidOperationException`, one of the types
+below. `WriteAll` asks `Refusal` again before it creates anything, so no caller can write
+among the frames; the window, which gives the run no folder, asks `Refusal` itself before it
+calls `WriteAll` (`window.md`; R-028, ADR 0060). The series progress goes to stderr as one line
 rewritten in place (`\r    frame 12 / 87`, `cadrul` in Romanian), written synchronously on the reporting thread
 under a lock, because a `Progress<T>` would post to the thread pool and could print after
 the report; stdout stays the report alone, which is what the goldens compare. Exit codes:

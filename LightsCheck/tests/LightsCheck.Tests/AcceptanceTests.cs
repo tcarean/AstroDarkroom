@@ -235,6 +235,25 @@ public class AcceptanceTests
         Assert.True(File.Exists(Path.Combine(outDir.Dir, "lightscheck-frames.csv")));
     }
 
+    /// <summary>
+    /// <c>--out</c> into the session's <c>lights\</c> is an error at once, before any frame is
+    /// measured: no progress line, no report, nothing written (R-028, ADR 0060, CR-014).
+    /// </summary>
+    [Fact]
+    public void R028_OutIntoLightsIsRefusedBeforeAnyFrameIsMeasured()
+    {
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        string[] before = Directory.GetFileSystemEntries(s.Root, "*", SearchOption.AllDirectories);
+
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2", "--out", s.LightsDir);
+
+        Assert.Equal(1, code);
+        Assert.Equal($"EROARE: fisierele nu se scriu in {s.LightsDir}: e folderul cu cadrele lights ale sesiunii, iar LightsCheck nu scrie nimic printre cadre. Alege alt folder.", stderr.Trim());
+        Assert.DoesNotContain("cadrul", stderr, StringComparison.Ordinal);
+        Assert.DoesNotContain("SESIUNE", stdout, StringComparison.Ordinal);
+        Assert.Equal(before, Directory.GetFileSystemEntries(s.Root, "*", SearchOption.AllDirectories));
+    }
+
     [Theory]
     [InlineData("--threads", "0")]
     [InlineData("--pixel", "abc")]
