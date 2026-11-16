@@ -22,14 +22,11 @@
 // ask for their notices beside ours (R-075). All its text comes through AboutViewModel; here
 // remain the window's own things: the logo, the dark caption, the links, and Close.
 
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using ImageVisualCompare.Wpf.Interop;
-using ImageVisualCompare.Wpf.Logging;
-using NLog;
+using ImageVisualCompare.Wpf.Services;
 
 namespace ImageVisualCompare.Wpf;
 
@@ -39,9 +36,6 @@ namespace ImageVisualCompare.Wpf;
 /// </summary>
 public partial class AboutWindow : Window
 {
-    /// <summary>The window's one log line: a link the system would not open.</summary>
-    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
-
     /// <summary>The executable's icon, the same file, as the application's WPF resource.</summary>
     private static readonly Uri IconSource = new("pack://application:,,,/ImageVisualCompare.Wpf;component/Assets/ImageVisualCompare.ico");
 
@@ -74,28 +68,13 @@ public partial class AboutWindow : Window
     }
 
     /// <summary>
-    /// Opens a link of the window, the licence's or a component's, in the system's browser.
-    /// Outside a navigation window a <c>Hyperlink</c> only raises this routed event, caught on the
-    /// window's root. <c>UseShellExecute</c> is what opens a URL on .NET; a system with no
-    /// browser for it throws, which only writes a line in the log. The process the shell may
-    /// return is not watched, so it is disposed at once.
+    /// Opens a link of the window, the licence's or a component's, in the system's browser,
+    /// through <see cref="ExternalLink.Open(RequestNavigateEventArgs)"/>, which only logs a
+    /// system with no browser for it.
     /// </summary>
     /// <param name="sender">The window, where the link's event arrives.</param>
     /// <param name="e">The navigation; marked handled.</param>
-    private void OpenLink(object sender, RequestNavigateEventArgs e)
-    {
-        e.Handled = true;
-        try
-        {
-            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true })?.Dispose();
-        }
-        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
-        {
-            // The address as written: AbsoluteUri throws again for a relative one, the very case
-            // that lands here with an InvalidOperationException.
-            Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened");
-        }
-    }
+    private void OpenLink(object sender, RequestNavigateEventArgs e) => ExternalLink.Open(e);
 
     /// <summary>Close's handler, also what Enter and Esc press: closes the window.</summary>
     /// <param name="sender">The button.</param>

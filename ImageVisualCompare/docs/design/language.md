@@ -45,8 +45,8 @@ Every place that writes a text reads `UiText.Current` when it writes it, not bef
   whose messages the user reads in the dialog of R-005.
 - The imaging layer: `ImagePairLoader`'s first line of a failure, `Bitmaps.TooLarge` (the FITS
   wording or the general one, chosen by `fits`), `MemorySnapshot.Describe`.
-- The shell: `MainWindow`'s constructor assigns the toolbar's words and the hint, which the XAML
-  no longer carries; its titles, overlay lines and the padded canvas; `MessageDialog`'s buttons;
+- The shell: `MainWindow`'s constructor assigns the toolbar's words, Help's tooltip and
+  automation name, and the hint, which the XAML no longer carries; its titles, overlay lines and the padded canvas; `MessageDialog`'s buttons;
   `FileDialogService`'s titles and filter; `AboutViewModel`, which reads the About window's
   words when the window is built, and `ThirdParty.Components`, a computed property for that
   reason.

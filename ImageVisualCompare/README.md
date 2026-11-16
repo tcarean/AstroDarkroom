@@ -21,7 +21,8 @@ ImageVisualCompare is one of the tools of Astro Darkroom. The repository's front
 [`README.md`](../README.md) at its root, describes the suite and how to build it, and the
 suite's launcher opens this tool in the launcher's language.
 [The window's manual](https://github.com/tcarean/AstroDarkroom/wiki/ImageVisualCompare) is in
-the suite's wiki.
+the suite's wiki. The window opens it for you: `Help` (`Ajutor`) in the toolbar, or the `F1` key,
+opens it in your browser at the section of what you are looking at. The manual is in English.
 
 ---
 
@@ -198,12 +199,13 @@ the one the Romanian interface shows.
 | histogram (FITS, float TIFF) | `H`, or the `Histogram` button (`Histogramă`); once more goes back to linear; held down, the key switches once |
 | false colours (FITS, float TIFF) | `F`, or the `False colours` button (`Culori false`); once more goes back to linear; held down, the key switches once |
 | open another pair | `Ctrl+O`, or the `Open…` button (`Deschide…`); not while a pair is opening |
+| open the manual | `F1`, or the `Help` button (`Ajutor`), at the section of the view on screen: the window, Histogram or False colours, or opening a pair while one loads; held down, the key opens it once |
 | change one image, keep the other | the `Change A…` button (`Schimbă A…`) after image A's name, or `Change B…` (`Schimbă B…`) after image B's; the view stays where it was when the size does not change; not while a pair is opening |
 
 The keyboard shortcuts work while the comparison area has the keyboard focus. It takes the focus
 when a pair loads and at any click in it, and gets it back after a click on a toolbar button, so
-the keys work right after `Fit`, `100%`, `+` or `−`. `Ctrl+O`, `H` and `F` work wherever the
-focus is.
+the keys work right after `Fit`, `100%`, `+` or `−`. `Ctrl+O`, `H`, `F` and `F1` work wherever
+the focus is.
 The arrows move the line in device-independent pixels, like everything about the line: at 100 %
 Windows scaling that is one screen pixel, at 150 % the line moves 1.5 screen pixels, or 15 with
 `Shift`.
@@ -231,7 +233,8 @@ The toolbar names the pair, the two file names around `vs`, each followed by the
 changes that image alone, `Change A…` and `Change B…` (`Schimbă A…`, `Schimbă B…`), disabled
 until a pair is on screen. On its right, after the label `Navigation` (`Navigare`), come the
 buttons `−` and `+` around the zoom in percent, then `Fit`, `100%`, `Histogram`, `False colours`,
-`Open…` and `About` (`Despre`). The title bar names the pair too, followed by the
+`Open…`, `Help` (`Ajutor`, a question mark in a turquoise circle before the word) and `About`
+(`Despre`). The title bar names the pair too, followed by the
 program's name and version. The zoom is also shown in a badge at the top right of the comparison
 area.
 
@@ -269,7 +272,7 @@ canvas alone would be half the truth, since one of the images does not have that
 
 `managed` is the memory .NET manages and `process` the process's private memory, in megabytes,
 read every 2 seconds. After them comes a hint,
-`wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open`, cut short
+`wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open · H histogram · F false colours · F1 help`, cut short
 when the window narrows; on the right, always, the version and the copyright (there is no
 `--version` option). `About` opens a window with the version, the licence notice and the
 components written by others.

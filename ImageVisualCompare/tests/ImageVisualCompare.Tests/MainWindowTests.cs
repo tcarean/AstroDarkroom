@@ -34,7 +34,8 @@ namespace ImageVisualCompare.Tests;
 /// </summary>
 public class MainWindowTests
 {
-    // About is left out: its click opens a modal dialog, which a never-shown window cannot.
+    // About is left out: its click opens a modal dialog, which a never-shown window cannot. Help's
+    // click goes to an address the test keeps, never to a browser.
     [Theory]
     [InlineData("ZoomOutButton")]
     [InlineData("ZoomInButton")]
@@ -43,6 +44,7 @@ public class MainWindowTests
     [InlineData("HistogramButton")]
     [InlineData("FalseColoursButton")]
     [InlineData("OpenButton")]
+    [InlineData("HelpButton")]
     [InlineData("ChangeBeforeButton")]
     [InlineData("ChangeAfterButton")]
     public async Task R063_AToolbarClick_HandsTheFocusBackToTheComparisonSurface(string buttonName)
@@ -52,7 +54,7 @@ public class MainWindowTests
 
         await WpfThread.RunAsync(() =>
         {
-            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
+            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader())) { OpenAddress = _ => { } };
             var button = (ButtonBase)window.FindName(buttonName)!;
 
             button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
@@ -356,8 +358,8 @@ public class MainWindowTests
 
     /// <summary>
     /// A held H switches once: its repeats, which come about thirty times a second, would each
-    /// decode the pair again once the switch before them has ended (R-114, ADR 0044). A test cannot
-    /// make a <c>KeyEventArgs</c> a repeat, so it calls what the key handler hands the repeat to.
+    /// decode the pair again once the switch before them has ended (R-114, ADR 0044). The test
+    /// calls what the key handler hands the repeat to; the F1 test presses a real repeat.
     /// </summary>
     [Fact]
     public async Task R114_AHeldModeKeySwitchesOnce_ItsRepeatsDoNothing()
@@ -560,6 +562,175 @@ public class MainWindowTests
             bitmap.Freeze();
             return Task.FromResult(new LoadedImage(Probe(path), bitmap, mode));
         }
+    }
+
+    private const string ManualPage = "https://github.com/tcarean/AstroDarkroom/wiki/ImageVisualCompare";
+
+    /// <summary>
+    /// F1, pressed wherever the focus is, and the Help button open the manual at the section of
+    /// what is on screen (R-066, ADR 0056): "Opening a pair" while no pair is shown, then the
+    /// section of the display mode the pair is shown in. The key goes through the window's own
+    /// key handler, as the keyboard's would. The browser never starts: the address is kept.
+    /// </summary>
+    [Fact]
+    public async Task R066_F1AndHelp_OpenTheManualAtTheSectionOfTheViewOnScreen()
+    {
+        var opened = new List<string>();
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new ModeLoader(shownAsStored: true)))
+            {
+                OpenAddress = opened.Add,
+            };
+            Assert.True(PressF1(window.Compare));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+        await WpfThread.RunAsync(() => Assert.True(PressF1(window.Compare)));
+
+        Task switched = null!;
+        await WpfThread.RunAsync(() => switched = window.ToggleModeAsync(DisplayMode.Histogram));
+        await switched;
+        await WpfThread.RunAsync(() => Assert.True(PressF1(window.OpenButton)));
+
+        await WpfThread.RunAsync(() => switched = window.ToggleModeAsync(DisplayMode.FalseColours));
+        await switched;
+        await WpfThread.RunAsync(() => window.HelpButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)));
+
+        Assert.Equal(
+            [ManualPage + "#opening-a-pair", ManualPage + "#the-window", ManualPage + "#histogram", ManualPage + "#false-colours"],
+            opened);
+    }
+
+    /// <summary>
+    /// While the loading veil is on screen, here over a pair in Linear whose switch to Histogram
+    /// is still decoding, F1 opens the section that explains the veil, not the mode's (R-066).
+    /// </summary>
+    [Fact]
+    public async Task R066_F1UnderTheLoadingVeil_OpensOpeningAPair()
+    {
+        var opened = new List<string>();
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new FirstPairOnlyLoader())) { OpenAddress = opened.Add };
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.True(PressF1(window.Compare));
+
+            // Never finishes: the second pair's decode stalls.
+            _ = window.ToggleModeAsync(DisplayMode.Histogram);
+        });
+        await WpfThread.RunAsync(() => Assert.True(PressF1(window.Compare)));
+
+        Assert.Equal([ManualPage + "#the-window", ManualPage + "#opening-a-pair"], opened);
+    }
+
+    /// <summary>
+    /// A held F1 opens the manual once: its repeats, some thirty a second, would each open the
+    /// browser again. The repeats go through the window's key handler, as the keyboard's would,
+    /// so a handler that dropped the key's repeat flag would fail here.
+    /// </summary>
+    [Fact]
+    public async Task R066_AHeldF1_OpensTheManualOnce()
+    {
+        var opened = new List<string>();
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader())) { OpenAddress = opened.Add };
+            Assert.True(PressF1(window.Compare));
+            Assert.True(PressF1(window.Compare, isRepeat: true));
+            Assert.True(PressF1(window.Compare, isRepeat: true));
+        });
+
+        Assert.Equal([ManualPage + "#opening-a-pair"], opened);
+    }
+
+    /// <summary>
+    /// The Help button is the drawn icon, a disc of the accent colour, then the word, with its
+    /// tooltip and its automation name, between Open… and About; the tooltip is dark, the
+    /// theme's own style, not WPF's light one (ADR 0018).
+    /// </summary>
+    [Fact]
+    public async Task R066_TheHelpButton_ShowsTheDrawnIconAndTheWord_BetweenOpenAndAbout()
+    {
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
+
+            var content = Assert.IsType<StackPanel>(window.HelpButton.Content);
+            Image icon = Assert.IsType<Image>(content.Children[0]);
+            Assert.Same(window.HelpText, content.Children[1]);
+            Assert.Equal("Help", window.HelpText.Text);
+            Assert.Equal((16.0, 16.0), (icon.Width, icon.Height));
+            var drawing = Assert.IsType<DrawingGroup>(Assert.IsType<DrawingImage>(icon.Source).Drawing);
+            var disc = Assert.IsType<GeometryDrawing>(drawing.Children[0]);
+            Assert.IsType<EllipseGeometry>(disc.Geometry);
+            Assert.Equal(Color.FromRgb(0x3F, 0xE0, 0xC8), Assert.IsType<SolidColorBrush>(disc.Brush).Color);
+
+            Assert.Equal("The manual, at the section about what is on screen (F1)", window.HelpButton.ToolTip);
+            Assert.Equal("Help", System.Windows.Automation.AutomationProperties.GetName(window.HelpButton));
+            int at = window.Toolbar.Children.IndexOf(window.HelpButton);
+            Assert.Same(window.OpenButton, window.Toolbar.Children[at - 1]);
+            Assert.Same(window.AboutButton, window.Toolbar.Children[at + 1]);
+
+            var tip = Assert.IsType<Style>(window.TryFindResource(typeof(ToolTip)));
+            Setter background = tip.Setters.OfType<Setter>().Single(s => s.Property == Control.BackgroundProperty);
+            Assert.Equal(Color.FromRgb(0x23, 0x27, 0x2E), Assert.IsType<SolidColorBrush>(background.Value).Color);
+        });
+    }
+
+    /// <summary>Raises a key-down of F1, without a modifier, on <paramref name="target"/>, as the
+    /// keyboard would with the focus there, a repeat of a held key when asked; returns whether
+    /// something handled it.</summary>
+    private static bool PressF1(UIElement target, bool isRepeat = false)
+    {
+        var e = new KeyEventArgs(Keyboard.PrimaryDevice, new KeySource(), 0, Key.F1) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+        if (isRepeat)
+        {
+            // WPF marks a repeat from the keyboard's state, through a member of its own; the test
+            // marks it the same way.
+            typeof(KeyEventArgs)
+                .GetMethod("SetRepeat", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .Invoke(e, [true]);
+        }
+
+        target.RaiseEvent(e);
+        return e.Handled;
+    }
+
+    /// <summary>The presentation source a key event names: a window never shown has none, and
+    /// nothing is drawn through this one.</summary>
+    private sealed class KeySource : PresentationSource
+    {
+        public override Visual RootVisual { get; set; } = null!;
+
+        public override bool IsDisposed => false;
+
+        protected override CompositionTarget GetCompositionTargetCore() => null!;
+    }
+
+    /// <summary>
+    /// Decodes the first pair at once, as <see cref="ModeLoader"/> does, and never finishes a
+    /// later decode, so the load after the first stays behind the loading veil.
+    /// </summary>
+    private sealed class FirstPairOnlyLoader : IImageLoader
+    {
+        private readonly ModeLoader _first = new(shownAsStored: true);
+        private int _loads;
+
+        public ImageInfo Probe(string path) => _first.Probe(path);
+
+        public Task<LoadedImage> LoadAsync(
+            string path, DisplayMode mode = DisplayMode.Linear, CancellationToken cancellationToken = default) =>
+            Interlocked.Increment(ref _loads) <= 2
+                ? _first.LoadAsync(path, mode, cancellationToken)
+                : new TaskCompletionSource<LoadedImage>().Task;
     }
 
     [Fact]

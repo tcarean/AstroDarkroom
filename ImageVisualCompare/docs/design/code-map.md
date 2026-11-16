@@ -46,6 +46,8 @@
   - `PairLabelLayout.cs` — the widths of the two file names in the toolbar's pair label, so the
     names are trimmed before a change button is lost. See `shell.md`.
   - `StartupArguments.cs` — the command line: `--lang` and the candidates for the pair.
+  - `Manual.cs` — where Help and F1 send the browser: the window's page of the wiki and the
+    section of what is on screen (R-066). See `shell.md`, ADR 0056.
   - `PointD.cs`, `Geometry.cs` — `PointD`, `SizeD`, `RectD` and `AspectFit`, declared here
     so Core needs no `WindowsBase` reference. See ADR 0009.
   - `RenderPlan.cs` — `RenderPlanner.For(viewport, deviceScale)` turns viewport state into
@@ -88,6 +90,8 @@
     keeps the other as decoded. See ADR 0015, ADR 0047, `imaging.md`.
   - `Imaging/MemoryHousekeeping.cs` — the release path when a pair is replaced, and the
     process memory readout.
+  - `Services/ExternalLink.cs` — opens an address in the system's browser, for About's links and
+    Help's manual; a refusal is only logged. See `shell.md`.
   - `Services/FileDialogService.cs` — the two open dialogs of a pair, the one dialog of a
     change (`PickImage`, titled for its side) and the file filter. These are the Windows common
     dialogs and follow the *system* theme, which is the one place the palette is not ours to
@@ -99,7 +103,8 @@
   - `Controls/MinimapView.xaml(.cs)` — thumbnail plus viewport rectangle, and click-to-jump.
   - `Controls/PairLabelPanel.cs` — the row of the toolbar's pair label, whose two names take the
     widths `PairLabelLayout` gives them. See `shell.md`.
-  - `MainWindow.xaml(.cs)` — shell: toolbar, status bar, open/error/retry flow, pixel readout.
+  - `MainWindow.xaml(.cs)` — shell: toolbar, status bar, open/error/retry flow, pixel readout,
+    Help and F1.
   - `MessageDialog.xaml(.cs)` — the application's own message box: `Show` to say something,
     `Confirm` to ask yes or no.
   - `AboutWindow.xaml(.cs)` and `AboutViewModel.cs` — the About window, FlatCheck's in this
