@@ -306,6 +306,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   into <folder>: it is the folder with the session's lights, and LightsCheck writes nothing
   among the frames. Choose another folder.` (R-028, R-032, ADR 0060; CR-014 of the review of
   2026-11-13).
+- One failure after every frame had been measured could lose the whole run: a FITS file in the
+  session folder that Windows refused to open, tried as the plate solve, ended the run with
+  `ERROR:` and no report, and so would a frame whose alignment met a fit without a solution.
+  Such a file is now skipped as the plate solve, such a frame reads `could not be aligned`, each
+  with a line in the log, and the report is written from what was measured (R-018, R-025,
+  R-026, ADR 0062; CR-015 of the review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

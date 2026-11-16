@@ -116,8 +116,8 @@ internal static class Registration
     /// <param name="height">The frame's height, in pixels, for its centre.</param>
     /// <returns>
     /// The shift of the centre, the rotation, the scale and the fit; a failed result when either
-    /// list or any round holds fewer than <see cref="Th.MinMatches"/> stars, or the last round
-    /// too small a share of the shorter list.
+    /// list or any round holds fewer than <see cref="Th.MinMatches"/> stars, when a round's fit
+    /// has no solution, or when the last round holds too small a share of the shorter list.
     /// </returns>
     private static RegistrationResult Align(IReadOnlyList<RegistrationStar> reference, IReadOnlyList<RegistrationStar> frame, int width, int height)
     {
@@ -151,7 +151,14 @@ internal static class Registration
                 return RegistrationResult.Failed(votes);
             }
 
-            sol = FitSimilarity(pairs, out rms);
+            // Pairs that all sit at one point give the fit nothing to solve: a frame that could
+            // not be aligned, not an exception that ends the run (ADR 0062).
+            if (FitSimilarity(pairs, out rms) is not double[] fit)
+            {
+                return RegistrationResult.Failed(votes);
+            }
+
+            sol = fit;
             matched = pairs.Count;
         }
 
@@ -216,12 +223,14 @@ internal static class Registration
     /// <param name="pairs">
     /// The matched pairs: (x, y) in the reference, (u, v) in the frame, in pixels. Not null.
     /// </param>
-    /// <param name="rms">The root mean square of the residual distances, in pixels.</param>
+    /// <param name="rms">
+    /// The root mean square of the residual distances, in pixels; NaN without a solution.
+    /// </param>
     /// <returns>
-    /// (a, b, tx, ty). The pairs must not make the normal equations singular (all at one point):
-    /// <see cref="Stats.Solve"/> then gives null and the residual loop throws.
+    /// (a, b, tx, ty); null when the pairs make the normal equations singular (all at one point),
+    /// for which <see cref="Stats.Solve"/> has no solution.
     /// </returns>
-    internal static double[] FitSimilarity(IReadOnlyList<(double X, double Y, double U, double V)> pairs, out double rms)
+    internal static double[]? FitSimilarity(IReadOnlyList<(double X, double Y, double U, double V)> pairs, out double rms)
     {
         ArgumentNullException.ThrowIfNull(pairs);
         double[,] ata = new double[4, 4];
@@ -239,7 +248,14 @@ internal static class Registration
             }
         }
 
-        double[] sol = Stats.Solve(ata, atb, 4);
+        // Stats.cs is compiled without nullable annotations: Solve gives null for a singular system.
+        double[]? sol = Stats.Solve(ata, atb, 4);
+        if (sol is null)
+        {
+            rms = double.NaN;
+            return null;
+        }
+
         double sum = 0;
         foreach ((double x, double y, double u, double v) in pairs)
         {

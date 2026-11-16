@@ -16,6 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text.RegularExpressions;
 using LightsCheck.Cli;
 using LightsCheck.Core;
@@ -864,6 +866,51 @@ public class SeriesTests
         Assert.Contains("SLAB", csv[3], StringComparison.Ordinal);
         Assert.Contains("=== SESIUNE:", File.ReadAllText(Path.Combine(outDir.Dir, SeriesOutputs.ReportName)), StringComparison.Ordinal);
         Assert.Equal(8, Directory.GetFiles(s.LightsDir).Length);
+    }
+
+    /// <summary>
+    /// A FITS at the session root that Windows refuses to open is skipped as the plate solve and
+    /// the next one is read; the series gives its report, where the refusal used to end the run
+    /// after every frame was measured (R-025, R-026, ADR 0062, CR-015). Windows only: the test
+    /// sets a rule on the file that denies reading it.
+    /// </summary>
+    [Fact]
+    public void R025_AFitsAtTheRootThatCannotBeOpenedIsSkippedAsThePlateSolve()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        string[] wcs =
+        [
+            FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"),
+            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "-0.99999"),
+        ];
+        FileInfo denied = new(Path.Combine(s.Root, "a-denied.fit"));
+        File.WriteAllBytes(denied.FullName, FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
+        File.WriteAllBytes(Path.Combine(s.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
+        FileSecurity acl = denied.GetAccessControl();
+        FileSystemAccessRule deny = new(WindowsIdentity.GetCurrent().User!, FileSystemRights.ReadData, AccessControlType.Deny);
+        acl.AddAccessRule(deny);
+        denied.SetAccessControl(acl);
+        try
+        {
+            Assert.Throws<UnauthorizedAccessException>(() => File.OpenRead(denied.FullName).Dispose());   // the rule holds on this machine
+
+            Assert.Equal(Axis.Y, SeriesRun.WcsRaAxis(s.Root));
+            (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
+
+            Assert.Equal(0, code);
+            Assert.DoesNotContain("EROARE", stderr, StringComparison.Ordinal);
+            Assert.Contains("(aflat din plate solve (WCS))", stdout, StringComparison.Ordinal);
+        }
+        finally
+        {
+            acl.RemoveAccessRule(deny);
+            denied.SetAccessControl(acl);
+        }
     }
 
     [Fact]

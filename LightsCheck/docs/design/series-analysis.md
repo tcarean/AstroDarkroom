@@ -26,7 +26,10 @@ points (`frame-analysis.md`, `session-and-console.md`).
    `FrameRun.Measure` also hands back the frame's `PatternCrop` (1 MB), kept in an array
    beside the frames until the pattern is read.
 2. The reference is the first measured frame; every measured frame is registered to its
-   600-star list, in parallel.
+   600-star list, in parallel. Each registration runs inside `SeriesRun.RegisterGuarded`, which
+   turns whatever it throws (a cancel aside) into `RegistrationResult.Failed`, with a Warn line
+   that carries the exception: the frame then has no position, as one with too few stars in
+   common, and the run goes on (ADR 0062).
 3. `CadenceAnalyzer` (pauses), `DitherAnalyzer` (positions and pauses), `PatternAnalyzer` on
    the crops (then the crops are dropped), the read noise from the first two biases, the RA
    axis from a plate-solved FITS at the root, then `SeriesAnalyzer`.
@@ -77,7 +80,9 @@ when its last round matched under `Th.MinMatchFraction` of the shorter list: the
 shift, so a field turned by 0.7 degrees or more smears it (at 1 degree the offset at a corner
 of a D3300 frame is 63 px from the one at the centre, eight bins), the rounds then start from a
 wrong shift, and a fit can settle on some
-ten stars that happen to pair up, with a shift and a rotation of its own. And `Register` calls
+ten stars that happen to pair up, with a shift and a rotation of its own. A round whose pairs
+all sit at one point has no fit at all: `FitSimilarity` returns null for it (`Stats.Solve`
+gives none for a singular system) and `Align` fails (ADR 0062). And `Register` calls
 `Align` a second time for a frame that failed, with the frame's stars turned by 180 degrees
 about (width, height) / 2: a frame taken after a meridian flip is the same field upside down,
 which no shift maps, and turned back it aligns like any other. Such a frame comes back failed
@@ -279,6 +284,10 @@ its own word (`TrailOn`); the flag keeps the angle as its `Detail`, so a frame w
 still reads its angle (R-033, ADR 0011). The per-frame axis is derived, not measured again: a
 change of the axis rule moves every frame's word with it.
 
+`SeriesRun.ReadWcs` tries the FITS files of the root in the order of their names and skips one
+it cannot read, whatever it throws: at Debug for a broken or vanished file (`IOException`,
+`InvalidDataException`), at Warn for anything else, such as an access Windows refuses; the
+plate solve is optional and the frames are measured by then (ADR 0062).
 The solved FITS is read whole by `SeriesRun.ReadWcs` into a `Wcs` (`CDELT` and the `PC`
 matrix, or the `CD` matrix with unit scales, the matrix then holding the scale); `RaAxis` is
 the old rule on the matrix, `RaScaleDeg` and `DecScaleDeg` are each scale times the length of

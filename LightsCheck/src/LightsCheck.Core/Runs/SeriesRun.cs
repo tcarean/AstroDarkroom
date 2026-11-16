@@ -243,7 +243,10 @@ internal static class SeriesRun
             {
                 if (frames[i].Measurement is FrameMeasurement m)
                 {
-                    frames[i] = frames[i] with { Registration = Registration.Register(reference, m.RegistrationStars, w, h) };
+                    frames[i] = frames[i] with
+                    {
+                        Registration = RegisterGuarded(() => Registration.Register(reference, m.RegistrationStars, w, h), i + 1, n, session.Lights[i]),
+                    };
                 }
             });
         }
@@ -367,6 +370,34 @@ internal static class SeriesRun
         }
     }
 
+    /// <summary>
+    /// One frame's registration, with whatever it throws turned into a failed result: after the
+    /// minutes of measuring, a failure while aligning costs that frame its position, not the run
+    /// its report (R-026, ADR 0062). The exception goes to the log at Warn; a cancel is not caught.
+    /// </summary>
+    /// <param name="register">The registration of the frame; not null.</param>
+    /// <param name="index">The frame's 1-based position in the session, for the log.</param>
+    /// <param name="count">The session's number of lights, for the log.</param>
+    /// <param name="path">The frame's file, for the log.</param>
+    /// <returns>
+    /// What <paramref name="register"/> returns, or a failed result when it throws: the frame's
+    /// row then says it could not be aligned.
+    /// </returns>
+    internal static RegistrationResult RegisterGuarded(Func<RegistrationResult> register, int index, int count, string path)
+    {
+        ArgumentNullException.ThrowIfNull(register);
+        try
+        {
+            return register();
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            Log.Warn(e, "frame " + LogText.Int(index) + "/" + LogText.Int(count) + " " + path
+                + " could not be aligned: its registration failed with the exception; its row says it could not be aligned");
+            return RegistrationResult.Failed(0);
+        }
+    }
+
     /// <summary>The diagnostic log: the run's lines, each frame's, the figures behind the verdicts (R-071).</summary>
     private static readonly Logger Log = LogManager.GetLogger(nameof(SeriesRun));
 
@@ -416,7 +447,9 @@ internal static class SeriesRun
     /// The WCS of the first plate-solved FITS at the session root (Siril's stacked result, by
     /// name): the scale and the PC matrix, or the CD matrix when the file carries that form
     /// (then the scale is 1 and the matrix holds it), with the declination of CRVAL2 when the
-    /// header has it (R-050). Null without such a file (R-025, R-038).
+    /// header has it (R-050). Null without such a file (R-025, R-038). A file that cannot be
+    /// read, whatever the reason, is skipped with a line in the log and the next one is tried: the
+    /// plate solve is optional, and the frames are already measured (ADR 0062).
     /// </summary>
     /// <param name="root">The session folder.</param>
     /// <returns>The WCS of the first solved FITS by name, or null.</returns>
@@ -452,6 +485,13 @@ internal static class SeriesRun
             catch (Exception e) when (e is IOException or InvalidDataException)
             {
                 Log.Debug(e, f + " could not be read; skipped as a WCS source");
+                continue;
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                // Not a broken or missing file: an access refused, or anything the reader did not
+                // foresee. Skipped all the same, and said louder.
+                Log.Warn(e, f + " could not be read; skipped as a WCS source");
                 continue;
             }
         }

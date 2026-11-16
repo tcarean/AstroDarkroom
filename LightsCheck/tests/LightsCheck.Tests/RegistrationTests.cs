@@ -95,6 +95,22 @@ public class RegistrationTests
     }
 
     /// <summary>
+    /// Star lists whose matched pairs all sit at one point leave the fit's equations without a
+    /// solution: the frame is one that could not be aligned, where the fit used to end the whole
+    /// run with a <see cref="NullReferenceException"/> (R-018, ADR 0062, CR-015).
+    /// </summary>
+    [Fact]
+    public void R018_AFitWithoutASolutionIsAFailedRegistration()
+    {
+        List<RegistrationStar> onePoint = Enumerable.Range(0, 12).Select(i => new RegistrationStar(100, 100, 1000 - i)).ToList();
+
+        RegistrationResult r = Registration.Register(onePoint, onePoint, W, H);
+
+        Assert.False(r.Ok);
+        Assert.False(r.Flipped);
+    }
+
+    /// <summary>
     /// A field turned by more than the vote for one shift can follow is aligned right or not at
     /// all: before the share of matched stars was judged, a fit on some ten stars of 600 came
     /// back as good, with a wrong shift and rotation (R-018, CR-004 of the review of 2026-11-13).
@@ -185,6 +201,16 @@ public class RegistrationTests
         Assert.False(Registration.Register(reference, Moved(reference, 50, -30, 0.1, 0.2, 2), W, H).Flipped);
     }
 
+    /// <summary>The fit itself says it has no solution, with no residual, when every pair is the same point (R-018, ADR 0062).</summary>
+    [Fact]
+    public void R018_TheSimilarityFitHasNoSolutionWhenEveryPairIsOnePoint()
+    {
+        List<(double, double, double, double)> pairs = Enumerable.Repeat((100.0, 100.0, 104.0, 104.0), 12).ToList();
+
+        Assert.Null(Registration.FitSimilarity(pairs, out double rms));
+        Assert.True(double.IsNaN(rms));
+    }
+
     [Fact]
     public void R018_TheSimilarityFitIsExactOnAnExactTransform()
     {
@@ -196,7 +222,7 @@ public class RegistrationTests
             pairs.Add((x, y, a * x - b * y + 12.5, b * x + a * y - 7.25));
         }
 
-        double[] sol = Registration.FitSimilarity(pairs, out double rms);
+        double[] sol = Assert.IsType<double[]>(Registration.FitSimilarity(pairs, out double rms));
         Assert.Equal(a, sol[0], 1e-9);
         Assert.Equal(b, sol[1], 1e-9);
         Assert.Equal(12.5, sol[2], 1e-9);
