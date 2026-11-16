@@ -170,6 +170,50 @@ public class SeriesAnalyzerTests
         return (frames, DitherAnalyzer.Analyze(zeros, zeros, c.PauseSeconds), c);
     }
 
+    /// <summary>
+    /// A frame too short to stack casts no vote for the RA axis, trailed or not (R-085, R-025,
+    /// ADR 0061, CR-012): the fixture's one trailed 120 s frame is a single voter, under the two
+    /// the axis needs, where the trailed 0.2 s frame used to be the second. The short frame keeps
+    /// its Trailed flag.
+    /// </summary>
+    [Fact]
+    public void R085_ATrailedShortFrameCastsNoVoteForTheRaAxis()
+    {
+        (AnalyzedFrame[] frames, DitherAnalysis d, Cadence c) = ShortAndTrailed();
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+
+        Assert.Contains(s.Flags[2], f => f.Kind == FlagKind.Trailed);
+        Assert.Null(s.TrailAngleDeg);
+        Assert.Equal(Axis.Unknown, s.RaAxis);
+        Assert.Equal(TrailAxis.Unknown, s.TrailOn);
+    }
+
+    /// <summary>
+    /// Two trailed 120 s frames at 88 degrees decide the axis alone: a trailed 0.2 s frame at 0
+    /// degrees beside them does not pull the trails' direction, which read 86 degrees with its
+    /// vote (R-085, R-025, CR-012).
+    /// </summary>
+    [Fact]
+    public void R085_TheTrailsDirectionIsThatOfTheFramesLongEnoughToStack()
+    {
+        AnalyzedFrame shortFrame = Frame(4, Measurement(3.0, 1.8, 100, 1), exposure: 0.2);
+        AnalyzedFrame[] frames =
+        [
+            Frame(1, Measurement(3.0, 1.1, 10000, 120)),
+            Frame(2, Measurement(3.0, 1.8, 10000, 120)),
+            Frame(3, Measurement(3.0, 1.8, 10000, 120)),
+            shortFrame with { Measurement = shortFrame.Measurement! with { AngleDeg = 0 } },
+        ];
+
+        SeriesAnalysis s = Analyze(frames);
+
+        Assert.Contains(s.Flags[3], f => f.Kind == FlagKind.ShortExposure);
+        Assert.Contains(s.Flags[3], f => f.Kind == FlagKind.Trailed);
+        Assert.Equal(88, s.TrailAngleDeg!.Value, 0.001);
+        Assert.Equal(Axis.Y, s.RaAxis);
+    }
+
     /// <summary>20 frames 141 s apart: the first <paramref name="run"/> at one spot drifting 2 px along Y per frame, the rest 20 px apart along X.</summary>
     internal static (AnalyzedFrame[] Frames, DitherAnalysis Dither, Cadence Cadence) RunThenDither(int run)
     {

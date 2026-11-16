@@ -292,6 +292,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   figure 600 times too small, and frames without an exposure read `0.00 px`. It now uses the
   session's exposure, as the drift over one exposure does, and is left out when no frame
   carries an exposure (R-023; CR-011 of the review of 2026-11-13).
+- Without a plate solve, a trailed frame too short to stack (a 0.2 s test shot) voted for the
+  direction of the trails, from which the RA axis is read, though the tracking cannot draw a
+  trail in a fraction of a second: one trailed frame and one such shot were enough to name an
+  axis. A frame too short to stack now casts no vote, trailed or not (R-085, R-025, ADR 0061;
+  CR-012 of the review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

@@ -269,8 +269,9 @@ figure is that rate over one exposure at the half-diagonal, the exposure being t
 median one (`MedianExposureSeconds`, as for the drift over one exposure), so the figure is
 null when no frame carries an exposure. The RA axis comes from the WCS
 when a solved FITS sits at the root (Siril's result: `PC1_2` dominates `PC1_1`, so RA runs
-along Y on the D3300 frames), else from the vector mean of the trail angles of the bad
-frames, stated as an assumption. Once the axis is known, the trailing flag (bad or marginal)
+along Y on the D3300 frames), else from the vector mean of the trail angles of the trailed
+frames, stated as an assumption; a frame flagged `ShortExposure` is not among them, though it
+keeps its `Trailed` flag (ADR 0061). Once the axis is known, the trailing flag (bad or marginal)
 of every frame whose coherence clears the same `Th.TrailAxisCoherence` is rewritten with the
 axis its trail runs along (`TrailAxisOf`: RA within `Th.TrailAxisTolerance` of the image axis
 that is RA, DEC within it of the other, oblique otherwise), and the series' mean angle gets

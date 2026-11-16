@@ -684,12 +684,13 @@ internal static class SeriesAnalyzer
         }
 
         // The RA axis: from a plate solve when one is at hand, else from the trails of the bad
-        // frames.
+        // frames. A frame too short to stack casts no vote, trailed or not: the tracking cannot
+        // draw a trail in a fraction of a second (R-085, ADR 0061).
         Axis ra = wcs?.RaAxis ?? Axis.Unknown;
         string source = wcs is null ? T("unknown", "necunoscut") : "plate solve (WCS)";
         double? trailAngle = null;
         List<double> angles = Enumerable.Range(0, n)
-            .Where(i => flags[i].Any(fl => fl.Kind == FlagKind.Trailed) && frames[i].Measurement?.AngleDeg is not null && frames[i].Measurement!.AngleCoherence is double c && c > Th.TrailAxisCoherence)
+            .Where(i => !shortExposure[i] && flags[i].Any(fl => fl.Kind == FlagKind.Trailed) && frames[i].Measurement?.AngleDeg is not null && frames[i].Measurement!.AngleCoherence is double c && c > Th.TrailAxisCoherence)
             .Select(i => frames[i].Measurement!.AngleDeg!.Value).ToList();
         if (angles.Count >= Th.TrailAxisMinFrames)
         {
