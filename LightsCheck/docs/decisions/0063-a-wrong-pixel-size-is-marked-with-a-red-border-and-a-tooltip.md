@@ -16,12 +16,23 @@ that says what is wrong and what happens (its `SettingField` style).
 
 ## Decision
 
-While the pixel field holds a wrong value its border takes the theme's bad colour (`BadBr`) and
-the field gets a tooltip of its own, `Not a positive number (with a dot as the separator): the
+While the pixel field holds a wrong value a border in the theme's bad colour (`BadBr`) is drawn
+over its own and the field gets a tooltip of its own, `Not a positive number (with a dot as the separator): the
 pixel size is taken as if the field were empty` (`Nu e un numar pozitiv (cu punct): marimea
 pixelului se ia ca si cum campul ar fi gol`), the owner's approval of the plan of 2026-11-16.
-A blank field and a right value look as before. The style, `SettingField`, is DarksCheck's: a
-trigger on the field's `Tag`, which the window binds to `PixelIsValid`.
+A blank field and a right value look as before. The style, `SettingField`, takes DarksCheck's
+idea, a trigger on the field's `Tag`, which the window binds to `PixelIsValid`, and draws the
+mark another way: the red border is an element of its own in the field's template, shown by
+that trigger and touched by no other. Measured on 2026-11-16, after the review of the branch:
+Windows' stock template of a text box has three triggers, `IsEnabled=False -> border.Opacity
+0.56`, `IsMouseOver=True -> border.BorderBrush #FF7EB4EA` and `IsKeyboardFocused=True ->
+border.BorderBrush #FF569DE5`, which set the drawn border directly, over the field's
+`BorderBrush`. A red `BorderBrush` on the field, the first form of this fix and what DarksCheck
+does, therefore shows only while the field has neither the keyboard nor the pointer: not while
+the wrong value is being typed, and never together with the tooltip. The template is the stock
+one, its three triggers and two blues copied so the field looks like the thread field beside
+it, plus the mark. The field's tooltip shows while a run disables the field as well
+(`ToolTipService.ShowOnDisabled`).
 
 ## Alternatives rejected
 
@@ -35,6 +46,8 @@ trigger on the field's `Tag`, which the window binds to `PixelIsValid`.
 ## Consequences
 
 Over the marked field the pointer shows the field's own tooltip in place of the longer one of
-the `PIXEL (um)` input, which stays on the label above it. The thread count field is not
+the `PIXEL (um)` input, which stays on the label above it. The stock template's two blues are
+now written in the theme; a Windows that changed them would leave this one field with the old
+ones. DarksCheck's settings fields have the gap this one had. The thread count field is not
 marked: R-029 gives it no invalid state, a wrong count meaning the default. Guarded by
 `R029_AWrongPixelSizeIsMarkedAndABlankOrRightOneIsNot`.

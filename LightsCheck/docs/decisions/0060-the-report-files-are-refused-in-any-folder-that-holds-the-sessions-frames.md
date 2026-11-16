@@ -49,7 +49,13 @@ on Windows.
 
 A user who kept the report files among the frames is told to choose another folder; nothing is
 moved or deleted for them. A folder reached through a link or a mapped drive under another
-name is not recognised as the same: the comparison is of the paths as typed, made full.
+name is not recognised as the same: the comparison is of the paths as typed, made full. The
+same holds for a short 8.3 name in a segment (`PHOTOG~1`), for the `\\?\` prefix and for the
+machine's own share (`\\localhost\E$\...`), none of which the full path resolves (the review
+of 2026-11-16): telling such a folder would take the files' identity on the disk, a call to
+Windows the check does without. The window calls `SeriesOutputs.Refusal` itself before
+`WriteAll`, so that it shows the refusal without catching every `InvalidOperationException`
+of the writers.
 `biases\` or `darks\` without a frame in it is not a folder of the session (`SessionFolder`
 keeps none for it) and is not refused. Guarded by
 `R028_TheFilesAreRefusedInAnyFolderThatHoldsTheSessionsFrames`,

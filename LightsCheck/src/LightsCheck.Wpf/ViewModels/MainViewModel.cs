@@ -531,8 +531,8 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>
     /// Writes the report, the CSV and the rejected list into <paramref name="dir"/> (R-032), and
     /// shows the paths written, or the error, in <see cref="Status"/>; nothing without a result.
-    /// A folder among the session's frames is refused by the core, and its sentence is the error
-    /// shown (R-028, ADR 0060).
+    /// A folder among the session's frames is refused: the core is asked first
+    /// (<see cref="SeriesOutputs.Refusal"/>) and its sentence is the error shown (R-028, ADR 0060).
     /// </summary>
     /// <param name="dir">The folder to write into, as chosen in the dialog.</param>
     public void Export(string dir)
@@ -544,11 +544,20 @@ public sealed class MainViewModel : ObservableObject
 
         try
         {
+            // Asked here, though WriteAll refuses too, so that the refusal alone becomes a status
+            // line: any other InvalidOperationException of the writers is a defect to see.
+            if (SeriesOutputs.Refusal(_result.Session, dir) is string refusal)
+            {
+                Log.Warn("the export into " + dir + " was refused: the folder holds the session's frames; the status line says so");
+                Status = RunReport.Error(refusal);
+                return;
+            }
+
             // Each file's line as soon as the file is written, so an export that fails part-way
             // still names what it wrote (R-071).
             Status = WindowTexts.Written(SeriesOutputs.WriteAll(_result, dir, p => Log.Info("wrote " + p + " (" + LogText.FileKiB(p) + ")")));
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
         {
             Log.Warn(e, "the export into " + dir + " failed; the status line shows the message");
             Status = RunReport.Error(e.Message);

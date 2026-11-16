@@ -24,7 +24,9 @@ What fails after the frames are measured costs only what it was reading:
   loop catches whatever a frame's registration throws (`SeriesRun.RegisterGuarded`): the frame
   is `could not be aligned`, with a Warn line and the exception in the log.
 - A FITS at the session root that cannot be read, for any reason, is skipped as a plate-solve
-  source, with its line in the log, and the next one is tried (`SeriesRun.ReadWcs`).
+  source, with its line in the log, and the next one is tried (`SeriesRun.ReadWcs`). A session
+  folder that can no longer be listed by then (the drive unplugged, the folder renamed during
+  the measuring) gives no plate solve, with a Warn line (added after the review of 2026-11-16).
 
 The report is written from what was measured. A cancel is never caught.
 
@@ -47,8 +49,11 @@ where every frame fails that way would show it at once. Such a frame's reason st
 few stars in common with the reference frame`, the one reason a frame without a position has;
 the log has the true one. `FitSimilarity` returns null where it used to throw, so its callers
 check. The test of the plate solve sets a rule on a file that denies reading it, which only
-Windows has; elsewhere it passes without checking anything. Guarded by
+Windows has; elsewhere it passes without checking anything. No test checks that the alignment
+loop goes through `RegisterGuarded`: the guard is tested alone, and the loop's one call is read.
+Guarded by
 `R018_AFitWithoutASolutionIsAFailedRegistration`,
 `R018_TheSimilarityFitHasNoSolutionWhenEveryPairIsOnePoint`,
-`R026_ARegistrationThatThrowsIsAFrameThatCouldNotBeAligned` and
-`R025_AFitsAtTheRootThatCannotBeOpenedIsSkippedAsThePlateSolve`.
+`R026_ARegistrationThatThrowsIsAFrameThatCouldNotBeAligned`,
+`R025_AFitsAtTheRootThatCannotBeOpenedIsSkippedAsThePlateSolve` and
+`R025_ASessionFolderThatCannotBeListedGivesNoPlateSolve`.

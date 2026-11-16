@@ -128,8 +128,9 @@ printing `-> written: <path>` (`-> scris:`) per file. The `--out` folder travels
 options so that the run can refuse it right after `SessionFolder.Open`, before a frame is
 measured: `SeriesOutputs.Refusal(session, dir)` gives the sentence when the folder is that of
 the lights, the biases or the darks or lies inside one (full paths, the trailing separator
-dropped, the case ignored on Windows; a session whose lights sit in its own folder refuses
-that folder alone), and the run throws it as an `InvalidOperationException`, one of the types
+dropped, the case ignored on Windows; where the lights sit in the session folder itself,
+that folder is refused and a folder inside it is not, its `biases\` and `darks\` as anywhere),
+and the run throws it as an `InvalidOperationException`, one of the types
 below. `WriteAll` asks `Refusal` again before it creates anything, so a caller that gave the
 run no folder, the window, is refused there (R-028, ADR 0060). The series progress goes to stderr as one line
 rewritten in place (`\r    frame 12 / 87`, `cadrul` in Romanian), written synchronously on the reporting thread

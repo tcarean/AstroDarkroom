@@ -790,6 +790,7 @@ public class SeriesTests
         }
 
         Assert.Throws<InvalidOperationException>(() => SeriesOutputs.WriteAll(r, s.LightsDir + Path.DirectorySeparatorChar));
+        Assert.Throws<InvalidOperationException>(() => SeriesOutputs.WriteAll(r, Path.Combine(s.Root, "report", "..", "lights")));
         if (OperatingSystem.IsWindows())
         {
             Assert.Throws<InvalidOperationException>(() => SeriesOutputs.WriteAll(r, biases.ToUpperInvariant()));
@@ -842,6 +843,14 @@ public class SeriesTests
         Assert.Null(SeriesOutputs.Refusal(session, Path.Combine(s.Root, "report")));
         Assert.Contains(english ? "it is inside the folder with the session's biases" : "e in folderul cu bias-urile sesiunii",
             SeriesOutputs.Refusal(session, Path.Combine(s.Root, "biases", "report")), StringComparison.Ordinal);
+
+        // Through the console: refused before any frame is measured, nothing written.
+        string[] before = Directory.GetFileSystemEntries(s.Root, "*", SearchOption.AllDirectories);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--out", s.Root);
+        Assert.Equal(1, code);
+        Assert.Equal(RunReport.Error(refusal!), stderr.Trim());
+        Assert.DoesNotContain(english ? "=== SESSION" : "=== SESIUNE", stdout, StringComparison.Ordinal);
+        Assert.Equal(before, Directory.GetFileSystemEntries(s.Root, "*", SearchOption.AllDirectories));
     }
 
     [Fact]
@@ -899,7 +908,14 @@ public class SeriesTests
         {
             Assert.Throws<UnauthorizedAccessException>(() => File.OpenRead(denied.FullName).Dispose());   // the rule holds on this machine
 
-            Assert.Equal(Axis.Y, SeriesRun.WcsRaAxis(s.Root));
+            using (LogCapture capture = LogCapture.Start())
+            {
+                Assert.Equal(Axis.Y, SeriesRun.WcsRaAxis(s.Root));
+                LogCapture.Captured line = Assert.Single(capture.Events, e => e.Level == NLog.LogLevel.Warn);
+                Assert.Equal(denied.FullName + " could not be read; skipped as a WCS source", line.Message);
+                Assert.IsType<UnauthorizedAccessException>(line.Exception);
+            }
+
             (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
 
             Assert.Equal(0, code);
@@ -911,6 +927,44 @@ public class SeriesTests
             acl.RemoveAccessRule(deny);
             denied.SetAccessControl(acl);
         }
+    }
+
+    /// <summary>
+    /// A session folder that can no longer be listed when the plate solve is looked for (the
+    /// drive unplugged, the folder renamed during the minutes of measuring) gives no plate
+    /// solve and a line in the log, not an error that ends the run (R-025, ADR 0062; the review
+    /// of 2026-11-16).
+    /// </summary>
+    [Fact]
+    public void R025_ASessionFolderThatCannotBeListedGivesNoPlateSolve()
+    {
+        using TempWorkspace ws = new();
+        string gone = ws.PathTo("gone");
+        using LogCapture capture = LogCapture.Start();
+
+        Assert.Null(SeriesRun.ReadWcs(gone));
+
+        LogCapture.Captured line = Assert.Single(capture.Events, e => e.Level == NLog.LogLevel.Warn);
+        Assert.Equal(gone + " could not be listed; no plate solve is read", line.Message);
+        Assert.IsAssignableFrom<IOException>(line.Exception);
+    }
+
+    /// <summary>
+    /// The `field rotation` row without a corner displacement, as when no frame carries an
+    /// exposure, is the total and the rate alone; with one, it ends with the corner (R-023,
+    /// CR-011).
+    /// </summary>
+    [Fact]
+    public void R023_TheRotationRowHasNoCornerPartWithoutACornerDisplacement()
+    {
+        SeriesResult pattern = RunPattern();
+        SeriesAnalysis turned = pattern.Series with { RotationTotalDeg = 0.1, RotationPerHourDeg = 1.2, CornerShiftPerExposurePx = null };
+
+        string without = Assert.Single(SeriesReport.DriftRows(pattern with { Series = turned }), x => x.Label == "rotatie de camp").Value;
+        string with = Assert.Single(SeriesReport.DriftRows(pattern with { Series = turned with { CornerShiftPerExposurePx = 2.686 } }), x => x.Label == "rotatie de camp").Value;
+
+        Assert.Equal("imaginea s-a rotit cu 6.0' in total, 72.0' pe ora", without);
+        Assert.Equal(without + "; din cauza asta, o stea din colt se misca 2.69 px intr-o expunere", with);
     }
 
     [Fact]

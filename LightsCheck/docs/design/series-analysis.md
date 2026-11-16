@@ -284,8 +284,9 @@ its own word (`TrailOn`); the flag keeps the angle as its `Detail`, so a frame w
 still reads its angle (R-033, ADR 0011). The per-frame axis is derived, not measured again: a
 change of the axis rule moves every frame's word with it.
 
-`SeriesRun.ReadWcs` tries the FITS files of the root in the order of their names and skips one
-it cannot read, whatever it throws: at Debug for a broken or vanished file (`IOException`,
+`SeriesRun.ReadWcs` lists the root (a root it can no longer list gives no solve, with a Warn
+line), tries its FITS files in the order of their names and skips one it cannot read, whatever
+it throws: at Debug for a broken or vanished file (`IOException`,
 `InvalidDataException`), at Warn for anything else, such as an access Windows refuses; the
 plate solve is optional and the frames are measured by then (ADR 0062).
 The solved FITS is read whole by `SeriesRun.ReadWcs` into a `Wcs` (`CDELT` and the `PC`

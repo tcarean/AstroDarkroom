@@ -22,10 +22,14 @@ Each of the four inputs is a group (`PixelInput`, `ThreadsInput`, `EastInput`, `
 label and its field) whose tooltip is an `x:Static` of `MainViewModel`'s static tip properties
 (R-083). They are read once, when the window is built, after the start-up has set the language;
 `ToolTipService.ShowOnDisabled` keeps them while a run disables the fields. The pixel field has
-the theme's `SettingField` style and its `Tag` bound to `PixelIsValid`: while that is false a
-trigger of the style gives the field the bad colour's border and a tooltip of its own, which
-then shows over the field in place of the group's (R-029, ADR 0063). The thread field keeps the
-plain `Field` style: it has no wrong state.
+the theme's `SettingField` style and its `Tag` bound to `PixelIsValid`. The style brings a
+template of its own, Windows' stock one for a text box plus a second border named `wrong`, in
+the bad colour, collapsed: while `Tag` is false the template's last trigger shows it, and a
+trigger of the style gives the field a tooltip of its own, which then shows over the field in
+place of the group's, during a run too (R-029, ADR 0063). The mark is a separate element
+because the stock template's triggers paint the field's own border blue while the field has
+the keyboard or the pointer, whatever its `BorderBrush`. The thread field keeps the plain
+`Field` style: it has no wrong state.
 
 `AboutWindow` fits its screen (R-076, ADR 0031), as AstroPhotoAnalyzer's does. `MainWindow`
 passes the work area of its own screen, `ScreenArea.WorkAreaOf`. That asks Windows for the screen
@@ -117,8 +121,9 @@ alone (ADR 0020).
 console's text. `Export(dir)` calls `SeriesOutputs.WriteAll` and shows the paths in `Status`;
 `WriteAll` hands it each file as soon as the file is written, for the log's `wrote` line. A
 folder among the session's frames is refused by `WriteAll` itself (`session-and-console.md`,
-ADR 0060): `Export` catches that `InvalidOperationException` with the IO errors and shows its
-sentence through `RunReport.Error`.
+ADR 0060); `Export` asks `SeriesOutputs.Refusal` first and shows the sentence through
+`RunReport.Error`, so that it need not catch `InvalidOperationException`, which from the
+writers would be a defect to see.
 
 ## The star cut-outs (`StarCrops`)
 

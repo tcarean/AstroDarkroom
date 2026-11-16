@@ -234,10 +234,14 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// A wrong pixel size is marked in the window: the field's border takes the theme's bad
-    /// colour and the field gets a tooltip that says what is wrong and what the run does; a blank
-    /// field and a right value look as always (R-029, ADR 0063, CR-016). `4,5` is the case of a
-    /// Romanian keyboard's decimal comma.
+    /// A wrong pixel size is marked in the window: a border in the theme's bad colour is drawn
+    /// over the field's own and the field gets a tooltip that says what is wrong and what the
+    /// run does; a blank field and a right value look as always (R-029, ADR 0063, CR-016). `4,5`
+    /// is the case of a Romanian keyboard's decimal comma. The red border is an element of its
+    /// own in the field's template, which no other trigger touches: Windows' stock template
+    /// paints the field's border blue while the field has the keyboard or the pointer, so a red
+    /// `BorderBrush` alone showed only once the user had left the field (the review of
+    /// 2026-11-16). The tooltip shows while a run disables the field too.
     /// </summary>
     [Fact]
     public void R029_AWrongPixelSizeIsMarkedAndABlankOrRightOneIsNot()
@@ -249,15 +253,29 @@ public class WindowSmokeTests
             FrameworkElement content = (FrameworkElement)w.Content;
             Render(content);
             TextBox field = Assert.Single(((StackPanel)w.FindName("PixelInput")).Children.OfType<TextBox>());
-            object bad = w.FindResource("BadBr"), ordinary = w.FindResource("BorderBr");
-            Assert.NotSame(bad, ordinary);
+            static IEnumerable<Setter> Setters(TriggerBase t) => t switch
+            {
+                Trigger x => x.Setters.OfType<Setter>(),
+                DataTrigger x => x.Setters.OfType<Setter>(),
+                MultiTrigger x => x.Setters.OfType<Setter>(),
+                MultiDataTrigger x => x.Setters.OfType<Setter>(),
+                _ => [],
+            };
+            string triggers = string.Join("; ", field.Template.Triggers.Select(t => (t is Trigger p ? $"{p.Property.Name}={p.Value}" : t.GetType().Name) + " -> "
+                + string.Join(", ", Setters(t).Select(s => $"{s.TargetName}.{s.Property.Name}={s.Value}"))));
+            Assert.True(field.Template.FindName("wrong", field) is Border, "the field's template has no mark of its own for a wrong value; its triggers: " + triggers);
+            Border mark = (Border)field.Template.FindName("wrong", field);
+            Assert.Same(w.FindResource("BadBr"), mark.BorderBrush);
+            Assert.False(mark.IsHitTestVisible);
+            Assert.Single(field.Template.Triggers.SelectMany(Setters), s => s.TargetName == "wrong");
+            Assert.True(ToolTipService.GetShowOnDisabled(field));
 
             foreach ((string typed, bool wrong) in new[] { ("", false), ("4,5", true), ("4.5", false), ("abc", true), ("  ", false) })
             {
                 vm.PixelText = typed;
                 Render(content, name: typed == "4,5" ? "window-pixel-wrong" : null);
 
-                Assert.Same(wrong ? bad : ordinary, field.BorderBrush);
+                Assert.Equal(wrong ? Visibility.Visible : Visibility.Collapsed, mark.Visibility);
                 Assert.Equal(wrong ? "Nu e un numar pozitiv (cu punct): marimea pixelului se ia ca si cum campul ar fi gol" : null, field.ToolTip);
             }
 

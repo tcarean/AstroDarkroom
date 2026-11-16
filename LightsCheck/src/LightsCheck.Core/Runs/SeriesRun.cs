@@ -179,7 +179,10 @@ internal static class SeriesRun
     /// is measured (R-028), and a cancel throws <see cref="OperationCanceledException"/>.
     /// </summary>
     /// <param name="folder">The session folder.</param>
-    /// <param name="options">The pixel size, the parallelism and the arrow keys; not null.</param>
+    /// <param name="options">
+    /// The pixel size, the parallelism, the arrow keys and the folder the caller will write
+    /// into, if it knows it; not null.
+    /// </param>
     /// <param name="progress">
     /// Told (frames done, frames in all) after each frame, from the worker threads; null for none.
     /// </param>
@@ -448,14 +451,28 @@ internal static class SeriesRun
     /// name): the scale and the PC matrix, or the CD matrix when the file carries that form
     /// (then the scale is 1 and the matrix holds it), with the declination of CRVAL2 when the
     /// header has it (R-050). Null without such a file (R-025, R-038). A file that cannot be
-    /// read, whatever the reason, is skipped with a line in the log and the next one is tried: the
-    /// plate solve is optional, and the frames are already measured (ADR 0062).
+    /// read, whatever the reason, is skipped with a line in the log and the next one is tried, and
+    /// a folder that cannot be listed gives none: the plate solve is optional, and the frames are
+    /// already measured (ADR 0062).
     /// </summary>
     /// <param name="root">The session folder.</param>
     /// <returns>The WCS of the first solved FITS by name, or null.</returns>
     internal static Wcs? ReadWcs(string root)
     {
-        foreach (string f in Directory.GetFiles(root).Where(FitsReader.IsFitsPath).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+        string[] files;
+        try
+        {
+            files = Directory.GetFiles(root);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            // The folder was listed when the run began: the drive went away or the folder was
+            // renamed during the measuring.
+            Log.Warn(e, root + " could not be listed; no plate solve is read");
+            return null;
+        }
+
+        foreach (string f in files.Where(FitsReader.IsFitsPath).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
         {
             try
             {

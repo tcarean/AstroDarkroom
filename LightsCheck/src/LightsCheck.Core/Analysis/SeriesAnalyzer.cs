@@ -298,9 +298,9 @@ internal enum PolarAlignment
 /// How <paramref name="RaAxis"/> was decided, as the report prints it, in the run's language.
 /// </param>
 /// <param name="TrailAngleDeg">
-/// The mean angle of the bad frames whose stars agree better than
-/// <see cref="Th.TrailAxisCoherence"/>, in degrees from the x axis; null under
-/// <see cref="Th.TrailAxisMinFrames"/> of them.
+/// The mean angle of the trailed frames whose stars agree better than
+/// <see cref="Th.TrailAxisCoherence"/>, a frame too short to stack not among them (R-085), in
+/// degrees from the x axis; null under <see cref="Th.TrailAxisMinFrames"/> of them.
 /// </param>
 /// <param name="TrailOn">
 /// The mount axis <paramref name="TrailAngleDeg"/> runs along; unknown without the angle or the RA
