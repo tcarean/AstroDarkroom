@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Navigation;
@@ -120,29 +119,18 @@ public partial class AboutWindow : Window
     }
 
     /// <summary>
-    /// Opens the link in the system browser; UseShellExecute is what makes a URL open on .NET Core.
-    /// A link that cannot be opened (no browser starts, or the link is relative and has no
-    /// absolute address) is a Debug line in the diagnostic log with the reason, and the window stays.
+    /// Opens a clicked link in the system browser through <see cref="ExternalLink.Open"/>: a link
+    /// that cannot be opened is a Debug line in the diagnostic log, and the window stays.
     /// </summary>
     /// <param name="sender">This window, on which the handler is set; not used.</param>
     /// <param name="e">The navigation request; marked handled, its URI opened when it can be.</param>
     private void OpenLink(object sender, RequestNavigateEventArgs e)
     {
         e.Handled = true;
-        try
-        {
-            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
-        }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
-        {
-            // OriginalString, not AbsoluteUri: a relative link throws there, which is what this
-            // catch took, and would throw again out of the handler; the log never stops the
-            // window (ADR 0029).
-            Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened in a browser");
-        }
+        ExternalLink.Open(e.Uri);
     }
 
-    /// <summary>The diagnostic log: a link that could not be opened, the window's size and place once shown (R-071).</summary>
+    /// <summary>The diagnostic log: the window's size and place once shown (R-071).</summary>
     private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     /// <summary>The "Close" button: closes the window.</summary>

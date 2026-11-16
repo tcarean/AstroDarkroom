@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using NLog;
 
@@ -23,7 +24,8 @@ namespace LightsCheck.Wpf;
 
 /// <summary>
 /// The main window: the top bar and the tabs over one <see cref="MainViewModel"/>; its code only
-/// opens the dialogs and hands the chosen folders to the view-model.
+/// opens the dialogs, hands the chosen folders to the view-model, and opens the manual in the
+/// browser (Help, F1).
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -84,12 +86,33 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// The Help command (the "About" button or F1): shows the About window, modal, fitted to the
-    /// work area of this window's screen (R-076).
+    /// Opens an address in the browser: <see cref="ExternalLink.Open"/>, replaced in the tests so
+    /// that no browser starts.
     /// </summary>
-    /// <param name="sender">The element the command was executed on.</param>
+    internal Action<Uri> OpenAddress { get; set; } = ExternalLink.Open;
+
+    /// <summary>
+    /// The Help command (the "Help" button or F1, see MainWindow.xaml): opens the manual at the
+    /// section of what is on screen, the selected tab's read from its Tag, and logs the address
+    /// (R-091, ADR 0060).
+    /// </summary>
+    /// <param name="sender">The window, where the command is bound.</param>
     /// <param name="e">The command's arguments, not used.</param>
-    private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
+    private void ShowHelp(object sender, ExecutedRoutedEventArgs e)
+    {
+        ManualSection? tab = (Tabs.SelectedItem as TabItem)?.Tag as ManualSection?;
+        string address = Manual.Url(Manual.SectionFor(_vm.HasResult, _vm.IsRunning, tab));
+        Log.Info("Help opened: " + address);
+        OpenAddress(new Uri(address));
+    }
+
+    /// <summary>
+    /// The "About" button: shows the About window, modal, fitted to the work area of this window's
+    /// screen (R-076).
+    /// </summary>
+    /// <param name="sender">The button clicked.</param>
+    /// <param name="e">The click's arguments, not used.</param>
+    private void ShowAbout(object sender, RoutedEventArgs e)
     {
         Log.Info("About opened");
         new AboutWindow(ScreenArea.WorkAreaOf(this)) { Owner = this }.ShowDialog();

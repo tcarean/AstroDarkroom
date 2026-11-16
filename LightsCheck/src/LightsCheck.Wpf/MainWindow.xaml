@@ -19,7 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 <!-- MainWindow: the top bar (banner, folder, inputs, buttons), then the tabs; the same layout
      as FlatCheck's window. Without a usable folder the tabs stay hidden and the explanation
-     takes their place. -->
+     takes their place. The minimum width is the top bar's in Romanian during a run, Stop and
+     Help shown, with some room left for the folder's name (ADR 0060). -->
 
 <Window x:Class="LightsCheck.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -27,13 +28,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         xmlns:local="clr-namespace:LightsCheck.Wpf"
         Title="LightsCheck" Height="820" Width="1360" WindowState="Maximized"
         Icon="/LightsCheck.Wpf;component/Icon/lightscheck.ico"
-        MinHeight="560" MinWidth="960"
+        MinHeight="560" MinWidth="1040"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource WindowBg}"
         TextOptions.TextFormattingMode="Display">
 
+  <!-- "Help" goes through ApplicationCommands.Help, whose default gesture is F1: the button and
+       the key reach the same handler, which opens the manual at the section of what is on
+       screen (R-091, ADR 0060). "About" opens from its own button only. -->
   <Window.CommandBindings>
-    <CommandBinding Command="Help" Executed="ShowAbout" />
+    <CommandBinding Command="Help" Executed="ShowHelp" />
   </Window.CommandBindings>
 
   <Grid>
@@ -59,11 +63,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Style="{StaticResource Faint}" Text="{Binding Copyright}" Margin="0,2,0,0" />
         </StackPanel>
 
+        <!-- the column that gives way: at the window's narrowest, during a run, it keeps a few
+             pixels, so each of its texts stays on one line, cut with an ellipsis, and the bar
+             keeps its height (ADR 0060) -->
         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-          <TextBlock Style="{StaticResource Faint}" Text="{local:T En='SIRIL SESSION FOLDER', Ro='FOLDER SESIUNE SIRIL'}" />
+          <TextBlock Style="{StaticResource Faint}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                     Text="{local:T En='SIRIL SESSION FOLDER', Ro='FOLDER SESIUNE SIRIL'}" />
           <TextBlock Margin="0,3,0,0" TextTrimming="CharacterEllipsis" Text="{Binding Folder}"
                      Visibility="{Binding HasFolder, Converter={StaticResource BoolToVis}}" />
-          <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0" Text="{local:T En='(none chosen)', Ro='(niciunul ales)'}"
+          <TextBlock Style="{StaticResource Muted}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"
+                     Text="{local:T En='(none chosen)', Ro='(niciunul ales)'}"
                      Visibility="{Binding HasFolder, Converter={StaticResource NotBoolToVis}}" />
         </StackPanel>
 
@@ -95,7 +104,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <Button Content="{local:T En='Write the files...', Ro='Scrie fisierele...'}" Click="ExportFiles" Margin="10,0,0,0"
                   ToolTip="{local:T En='The report, the CSV with every figure and the reject list, into a folder of your choice', Ro='Raportul, CSV-ul cu toate cifrele si lista de respins, intr-un folder la alegere'}"
                   IsEnabled="{Binding HasResult}" />
-          <Button Content="{local:T En='About', Ro='Despre'}" Command="Help" ToolTip="{local:T En='Version, licence, components (F1)', Ro='Versiune, licenta, componente (F1)'}" Margin="10,0,0,0" />
+
+          <!-- Help and About stay active during an analysis too, because they touch nothing of
+               what runs. Help's icon is the theme's HelpIcon; the automation name is the word,
+               since the content is not a plain string. -->
+          <Button Command="Help" Margin="10,0,0,0"
+                  AutomationProperties.Name="{local:T En='Help', Ro='Ajutor'}"
+                  ToolTip="{local:T En='The manual, at the section of this tab (F1)', Ro='Manualul, la sectiunea tabului curent (F1)'}">
+            <StackPanel Orientation="Horizontal">
+              <Image Source="{StaticResource HelpIcon}" Width="16" Height="16" VerticalAlignment="Center" />
+              <TextBlock Text="{local:T En='Help', Ro='Ajutor'}" Margin="7,0,0,0" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+
+          <!-- rightmost, at the edge of the bar -->
+          <Button Content="{local:T En='About', Ro='Despre'}" Click="ShowAbout" ToolTip="{local:T En='Version, licence, components', Ro='Versiune, licenta, componente'}" Margin="10,0,0,0" />
         </StackPanel>
       </Grid>
     </Border>
@@ -142,8 +165,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </Border>
 
       <!-- the tabs; their style is the theme's for AccessibleTabControl, an implicit style
-           applying to its exact type only (R-067, ADR 0028) -->
-      <local:AccessibleTabControl>
+           applying to its exact type only (R-067, ADR 0028). Each tab's Tag is its section of
+           the manual, which Help and F1 open (R-091). -->
+      <local:AccessibleTabControl x:Name="Tabs">
         <local:AccessibleTabControl.Style>
           <Style TargetType="local:AccessibleTabControl" BasedOn="{StaticResource {x:Type local:AccessibleTabControl}}">
             <Setter Property="Visibility" Value="Collapsed" />
@@ -154,22 +178,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </Style.Triggers>
           </Style>
         </local:AccessibleTabControl.Style>
-        <TabItem Header="{local:T En='Summary', Ro='Rezumat'}">
+        <TabItem Header="{local:T En='Summary', Ro='Rezumat'}" Tag="{x:Static local:ManualSection.Summary}">
           <local:SummaryView />
         </TabItem>
-        <TabItem Header="{local:T En='Frames', Ro='Cadre'}">
+        <TabItem Header="{local:T En='Frames', Ro='Cadre'}" Tag="{x:Static local:ManualSection.Frames}">
           <local:FramesView />
         </TabItem>
-        <TabItem Header="Dithering">
+        <TabItem Header="Dithering" Tag="{x:Static local:ManualSection.Dithering}">
           <local:DitherView />
         </TabItem>
-        <TabItem Header="{local:T En='Quality', Ro='Calitate'}">
+        <TabItem Header="{local:T En='Quality', Ro='Calitate'}" Tag="{x:Static local:ManualSection.Quality}">
           <local:QualityView />
         </TabItem>
-        <TabItem Header="{local:T En='Rejected', Ro='Respinse'}">
+        <TabItem Header="{local:T En='Rejected', Ro='Respinse'}" Tag="{x:Static local:ManualSection.Rejected}">
           <local:RejectedView />
         </TabItem>
-        <TabItem Header="{local:T En='Report', Ro='Raport'}">
+        <TabItem Header="{local:T En='Report', Ro='Raport'}" Tag="{x:Static local:ManualSection.Report}">
           <Border Style="{StaticResource Card}" Margin="20" Padding="0">
             <TextBox Text="{Binding Report, Mode=OneWay}" IsReadOnly="True"
                      FontFamily="{StaticResource MonoFont}" FontSize="12"

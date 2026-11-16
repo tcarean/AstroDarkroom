@@ -395,7 +395,9 @@ default), remembered between starts in `%LOCALAPPDATA%\LightsCheck\settings.json
 setting the program keeps there (its log goes there too when the folder beside the program cannot
 be written, see [Logs](#logs)).
 **Write the files...** writes the three files of `--out` into a folder you choose; the session
-folder is proposed. **About** (F1) shows the version, the licence and the third-party components.
+folder is proposed. **Help**, or the F1 key, opens the manual in the wiki, in your browser, at
+the section of the tab you are on (at "Opening a session" before the tabs show). **About** shows
+the version, the licence and the third-party components.
 
 ## Logs
 
