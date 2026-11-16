@@ -1577,6 +1577,31 @@ public partial class DarkSeriesTests
     }
 
     /// <summary>
+    /// CR-011: FITS darks took their black from the biases before the biases were refused for their size, so darks at
+    /// pedestal 200 beside biases of another crop at pedestal 1000 were measured against black 1000: no hot pixel,
+    /// every pixel "dead", under a header that said the black came from the biases.
+    /// </summary>
+    [Fact]
+    public void R041_FitsDarksDoNotTakeTheirBlackFromBiasesOfAnotherSize()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, Plain, biases: 3, bias: i => new SyntheticDark { Seed = 500 + i, Noise = 2, Width = 128, Height = 96, Pedestal = 1000 });
+        DarkSeriesResult r = Run(s);
+        Assert.Null(r.Biases);
+        Assert.Contains("bias-urile au 128 x 96 px", r.BiasError, StringComparison.Ordinal);
+        DarkSeriesAnalysis d = r.Darks;
+        Assert.Equal(200, d.Black, 1.0);
+        Assert.Contains("negrul luat din valoarea medie a cadrului 1", d.ScaleSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("negrul luat din bias-uri", d.ScaleSource, StringComparison.Ordinal);
+        // the five hot pixels are counted and no pixel is under the black, as without biases
+        Assert.Equal([5, 4, 3, 2, 1], Enumerable.Range(0, 5).Select(k => d.Master.Sum(m => m.Above[k])).ToArray());
+        Assert.All(d.Frames, f => Assert.All(f.Planes, p => Assert.Equal(0, p.Low)));
+
+        // biases of the darks' size still give the black: theirs, not the darks' own
+        using SessionFixture same = new SessionFixture().WithDarkSeries(4, Plain, biases: 3);
+        Assert.Contains("negrul luat din bias-uri", Run(same).Darks.ScaleSource, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// CR-010: nothing compared the biases' ISO with the darks', so biases at ISO 400 gave the read noise, the
     /// bias map and, for FITS darks, the black of darks at ISO 1600. They are left out, as biases of another size.
     /// </summary>

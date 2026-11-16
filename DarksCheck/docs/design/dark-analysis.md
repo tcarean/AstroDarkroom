@@ -40,7 +40,9 @@ decodes); the others decode in parallel and must match its size, its ISO and its
 level, so the black of a FITS stack is the median of
 the first decoded frame's reference plane, or the black the biases' stack established when
 `DarkSeriesRun` read the biases first (a dark's median would overstate the pedestal by the
-dark current). Above `Th.MaxFramesInMemory` (or the cap given) exactly that many files are decoded: `FrameStack.Chosen` flags the first, the last and those at even distances between them, file `round(j x (count - 1) / (cap - 1))`, and `Load` lists the others as skipped without opening their pixels (ADR 0057). `Norm` is the
+dark current). That black is handed to `Load` as a `FitsBlack`, with the size of the biases it
+was read on, and a stack of another size does not take it: the biases are refused for their
+size only after the darks are measured, and must give them nothing. Above `Th.MaxFramesInMemory` (or the cap given) exactly that many files are decoded: `FrameStack.Chosen` flags the first, the last and those at even distances between them, file `round(j x (count - 1) / (cap - 1))`, and `Load` lists the others as skipped without opening their pixels (ADR 0057). `Norm` is the
 normalisation factor of ADR 0004, read from the first frame's ISO and exposure through the
 `Normalisation` the caller hands in (`Normalisation.Default` when none): the record of the
 two settings of ADR 0009, the gain per ISO stop (`NormOf`: `gain ^ log2(ISO / 400)`, the
@@ -112,7 +114,9 @@ decodes (`BiasAnalyzer.Analyze` throws), their size is not the darks' (`DarkMinu
 after both groups are measured), or their ISO is not the darks' (ADR 0059). The last is decided
 before a bias is read, on the inventory's dominant settings (`inv.Match.Biases` and
 `inv.Match.Darks`, the partner's darks in a lights-only run), both ISOs given: the biases'
-stack is then never loaded, so it gives the darks no black either.
+stack is then never loaded, so it gives the darks no black either. Biases of another size are
+loaded and measured, since the darks' size is not known before the darks are decoded; their
+black reaches the darks' `Load` and is dropped there by its size.
 
 ## The warming and the end of the series
 

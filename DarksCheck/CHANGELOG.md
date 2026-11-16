@@ -342,6 +342,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- FITS darks beside biases of another size (another camera or crop) are no longer measured
+  against those biases' black level: the biases were reported as left out, yet with darks at a
+  level of 200 and biases at 1000 no hot pixel was counted and every pixel read as dead, under
+  a header that said `the black taken from the biases`. The black is now the darks' own, as
+  without biases (R-020, R-041; CR-011 of the code review).
+
 - A file whose name starts with a dot, or that is hidden, is no longer taken for a frame: the
   `._DSC_0034.NEF` a Mac leaves beside each file of a card were listed as darks that could not
   be read and, over the frame cap, were read in the place of real darks (R-002; CR-001 of the

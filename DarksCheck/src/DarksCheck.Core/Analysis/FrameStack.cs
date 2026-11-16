@@ -35,6 +35,16 @@ namespace DarksCheck.Core;
 internal sealed record StackFrame(FrameInfo Info, ushort[]? Pixels, string? Error, bool Skipped = false);
 
 /// <summary>
+/// The black level a group read before (the biases) established for a FITS, with the size of the
+/// frames it was read on: a stack takes it only when its own frames have that size, since biases
+/// of another size are left out of every figure (R-041).
+/// </summary>
+/// <param name="Black">The black level, in ADU.</param>
+/// <param name="Width">The width of the frames it was read on, in pixels.</param>
+/// <param name="Height">The height of the frames it was read on, in pixels.</param>
+internal sealed record FitsBlack(double Black, int Width, int Height);
+
+/// <summary>
 /// A group of frames decoded into memory as 16-bit mosaics (24 MP = 48 MB each; ADR 0007),
 /// with the geometry and the scale they share: every frame must have the first decoded
 /// frame's size, or it is listed with an error and left out. The scale is the file's
@@ -144,7 +154,8 @@ internal sealed class FrameStack
     /// exactly that many files are decoded, from the first to the last at even distances
     /// (<see cref="Chosen"/>), so the memory stays bounded; the others are listed as skipped.
     /// <paramref name="fitsBlack"/> is the black level to use for a FITS, when a group
-    /// read before (the biases) already established it; null estimates it from the first frame.
+    /// read before (the biases) already established it on frames of this stack's size; null, or a
+    /// black read on another size, estimates it from the first frame.
     /// <paramref name="normalisation"/> is the settings the ADU-eq factor is read with
     /// (<see cref="Normalisation.Default"/> when null).
     /// </summary>
@@ -153,13 +164,14 @@ internal sealed class FrameStack
     /// <param name="maxFrames">The frame cap, at least 1: above it exactly that many files are
     /// decoded (R-027, ADR 0057).</param>
     /// <param name="progress">Told (done, total) after each file; null for none.</param>
-    /// <param name="fitsBlack">The black level for a FITS, in ADU; null to estimate it.</param>
+    /// <param name="fitsBlack">The black level for a FITS with the size it was read on; null to
+    /// estimate it. Taken only by a stack of that size.</param>
     /// <param name="normalisation">The normalisation settings; null for the defaults.</param>
     /// <param name="cancel">Stops the decoding; the cancellation is thrown, not recorded as a
     /// frame's error.</param>
     /// <returns>The stack: every file listed, the decoded ones with their mosaic; a stack of
     /// size 0 when no file decoded.</returns>
-    internal static FrameStack Load(IReadOnlyList<string> paths, int threads, int maxFrames, IProgress<(int Done, int Total)>? progress = null, double? fitsBlack = null, Normalisation? normalisation = null, CancellationToken cancel = default)
+    internal static FrameStack Load(IReadOnlyList<string> paths, int threads, int maxFrames, IProgress<(int Done, int Total)>? progress = null, FitsBlack? fitsBlack = null, Normalisation? normalisation = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(paths);
         Stopwatch total = Stopwatch.StartNew();
@@ -243,11 +255,15 @@ internal sealed class FrameStack
 
         (int gw, int gh, double gb, double gwhite, CfaPattern? gcfa, string gsource, double gnorm) = geometry.Value;
         FrameStack stack = new(frames, gw, gh, gb, gwhite, gcfa, gsource, gnorm, nz);
+
+        // A black read on frames of another size is not this stack's: such biases are left out of
+        // every figure, the black included (R-041).
+        FitsBlack? known = fitsBlack is not null && fitsBlack.Width == gw && fitsBlack.Height == gh ? fitsBlack : null;
         if (double.IsNaN(gb))
         {
-            if (fitsBlack is double known)
+            if (known is not null)
             {
-                stack = new FrameStack(frames, gw, gh, known, gwhite, gcfa, gsource + T(", the black taken from the biases", ", negrul luat din bias-uri"), gnorm, nz, blackEstimated: true);
+                stack = new FrameStack(frames, gw, gh, known.Black, gwhite, gcfa, gsource + T(", the black taken from the biases", ", negrul luat din bias-uri"), gnorm, nz, blackEstimated: true);
             }
             else
             {
@@ -261,7 +277,7 @@ internal sealed class FrameStack
 
         // The scale's origin in the log's own words: the report's source is in the run's language.
         string blackFrom = !double.IsNaN(gb) ? "the file's"
-            : fitsBlack is not null ? "the biases'"
+            : known is not null ? "the biases'"
             : "the median of frame " + LogText.Int(frames.First(f => f.Pixels is not null).Info.Index);
         Log.Info("stack of " + LogText.Int(n) + " files: " + Counts(frames) + "; " + LogText.Int(gw) + "x" + LogText.Int(gh)
             + " black=" + LogText.Num(stack.Black) + " (" + blackFrom + ") white=" + LogText.Num(gwhite) + (double.IsNaN(gb) ? " (from BITPIX)" : " (the file's)")
