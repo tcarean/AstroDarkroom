@@ -88,6 +88,24 @@ public class WindowLoggingTests
             Assert.Equal("Help opened: https://github.com/tcarean/AstroDarkroom/wiki/CopyWcs#the-window", line.Message);
         });
 
+    /// <summary>
+    /// A click of About is an Info line, whether the window opens or not; here the window is
+    /// replaced, so no modal window blocks the test (R-035).
+    /// </summary>
+    [Fact]
+    public void R043_AboutWritesItsLine()
+        => _sta.Invoke(() =>
+        {
+            MainWindow w = new() { OpenAbout = _ => { } };
+            using LogCapture capture = LogCapture.Start();
+
+            HelpTests.Click(w.AboutButton);
+
+            LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == "Window");
+            Assert.Equal(LogLevel.Info, line.Level);
+            Assert.Equal("About opened", line.Message);
+        });
+
     [Fact]
     public void R043_TheStartLineNamesTheLanguageAndTheFilesFromTheCommandLine()
     {

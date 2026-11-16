@@ -178,16 +178,19 @@ language. `HelpTests` pin the three addresses and `SectionFor`, press F1 through
 through WPF's internal `SetRepeat`, as ImageVisualCompare's test does) on the window and on a
 box inside it, and click Help, over a card with nothing, a result, a refusal and a warning,
 with `OpenAddress` replaced so no browser starts; a held F1 opens once, F1 with a modifier is
-not the Help key, About's click opens About once and logs it while F1 does not open it, and
+not the Help key, About's click opens About once while F1 does not open it, and
 `ExternalLink` refuses a relative, `file:` or `mailto:` address with a Debug line.
+`IsHelpKey` is tested on its own; that the key handler hands it the keyboard's modifiers is
+not, since a test's key event reads the real keyboard's state.
 `AboutTests` bind the About view-model to `VersionInfo` and `LicenseInfo`, check the console
 prints the same five warranty lines and that the card lists `ThirdParty.Components`, in both
 languages;
 `WindowLoggingTests`, in the `window` collection on the `StaFixture` thread, check the start
 line, the facts' Debug line, that a copy from the window logs what the console's copy logs,
 that a link the About window cannot open (a relative one) is a Debug line and leaves the window
-open, that F1 writes `Help opened: <address>` at Info, and that two writers through the
-window's build of `NLog.Targets.AtomicFile` keep every line (R-045); `AppTests` cover
+open, that About's click writes `About opened` and F1 `Help opened: <address>` at Info, and
+that two writers through the window's build of `NLog.Targets.AtomicFile` keep every line
+(R-045); `AppTests` cover
 `Parse`, `--lang` and the files from the arguments; `IconTests` tie the sizes of the `.ico`,
 the script's `SIZES` line and the two `ApplicationIcon` paths together. The tests that run the
 core await `Preview()` or `Copy()`; the smoke tests that do so run through

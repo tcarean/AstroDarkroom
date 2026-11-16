@@ -28,9 +28,11 @@ namespace CopyWcs.Wpf.Tests;
 /// <summary>
 /// The Help button and F1 (R-039, ADR 0016): the manual's three addresses, the section of what
 /// the outcome card shows, F1 pressed through the window's own key handler (a held key's repeats
-/// too) and the button clicked, and the guard that hands the shell only a web address. The
-/// browser never starts: the window's <c>OpenAddress</c> is replaced and the address kept.
-/// The button's place, icon and words are rendered in <see cref="WindowSmokeTests"/>.
+/// too) and the button clicked, which keys are Help's, About opened by its click and not by F1
+/// (R-035), and the guard that hands the shell only a web address. The browser never starts and
+/// no modal window opens: the window's <c>OpenAddress</c> and <c>OpenAbout</c> are replaced and
+/// what they were given kept. The button's place, icon and words are rendered in
+/// <see cref="WindowSmokeTests"/>, the log lines read in <see cref="WindowLoggingTests"/>.
 /// </summary>
 [Collection("window")]
 public class HelpTests
@@ -115,9 +117,9 @@ public class HelpTests
         });
 
     /// <summary>
-    /// About opens from its button, once a click, over the main window, and says so in the log;
-    /// F1 then opens the manual and not About (R-035, R-039, R-043). The About window is replaced
-    /// by a count, so no modal window blocks the test.
+    /// About opens from its button, once a click, over the main window; F1 then opens the manual
+    /// and not About (R-035, R-039). The About window is replaced by a list of its owners, so no
+    /// modal window blocks the test.
     /// </summary>
     [Fact]
     public void R035_AboutOpensFromItsButtonOnly()
@@ -126,14 +128,10 @@ public class HelpTests
             List<string> opened = [];
             List<Window> owners = [];
             MainWindow w = new() { OpenAddress = opened.Add, OpenAbout = owners.Add };
-            using LogCapture capture = LogCapture.Start();
 
             Click(w.AboutButton);
 
             Assert.Same(w, Assert.Single(owners));
-            LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == "Window");
-            Assert.Equal(LogLevel.Info, line.Level);
-            Assert.Equal("About opened", line.Message);
 
             Assert.True(PressF1(w));
             Assert.Single(owners);
@@ -206,7 +204,7 @@ public class HelpTests
     }
 
     /// <summary>A click of a button, as the mouse's would raise it.</summary>
-    private static void Click(ButtonBase button) => button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+    internal static void Click(ButtonBase button) => button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 
     /// <summary>
     /// F1 pressed on an element, through the preview event the keyboard raises first, so the

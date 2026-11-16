@@ -27,8 +27,9 @@ owner chose to open the window 820 px wide (the recommendation).
   AstroDarkroom's `App.xaml`, whose palette that file already copies) then the word, and the
   tooltip `The manual, at the section about what is on screen (F1)`, ImageVisualCompare's
   words. It and F1 open the manual at the section the card calls for. About keeps its button
-  and loses F1, as in FlatCheck, and its tooltip loses the `(F1)` ADR 0009 gave it back. The
-  manual is English in both languages: the wiki has no Romanian page.
+  and loses F1, as in FlatCheck, and its tooltip loses the `(F1)` of ADR 0009's `Version,
+  licence, components (F1)`. The manual is English in both languages: the wiki has no
+  Romanian page.
 - The card keeps the last outcome while a run goes, so the section follows the card, not the
   run.
 - The window opens 820 px wide instead of 800, so the band keeps two lines and 57 px at the

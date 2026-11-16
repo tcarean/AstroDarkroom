@@ -111,3 +111,6 @@ Merge; wiki push; a minor version bump (a new feature) is the owner's call.
   `OpenAbout` (the About window, replaceable as `OpenAddress` is) and `IsHelpKey` with their
   tests, ADR 0016 superseding 0009 in part, R-038's "below 803 px", the design index and the
   requirements' plan list.
+- The second review, of that fix commit alone, found no bug: ADR 0016 named the wrong ADR as
+  the source of About's `(F1)`, and the handler's call to `IsHelpKey` stays untested (now said
+  in `window.md`); the `About opened` check moved to `WindowLoggingTests` as R-043.

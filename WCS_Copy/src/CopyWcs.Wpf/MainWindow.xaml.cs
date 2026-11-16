@@ -181,7 +181,7 @@ public partial class MainWindow : Window
     /// Any other key, and F1 with a modifier, go on as before.
     /// </summary>
     /// <param name="sender">The window itself; not read.</param>
-    /// <param name="e">The key; marked handled when it is F1.</param>
+    /// <param name="e">The key; marked handled when it is F1 alone (<see cref="IsHelpKey"/>).</param>
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (IsHelpKey(e.Key, Keyboard.Modifiers))
