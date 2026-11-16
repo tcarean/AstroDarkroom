@@ -1,4 +1,4 @@
-# 0102. Too few stars give no zone width and no corner verdict
+# 0103. Too few stars give no zone width and no corner verdict
 
 Date: 2026-11-16
 Status: accepted 2026-11-16

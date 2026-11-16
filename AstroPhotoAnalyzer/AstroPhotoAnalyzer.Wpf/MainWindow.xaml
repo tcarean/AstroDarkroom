@@ -210,7 +210,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" TextAlignment="Center"
                      Text="{local:T En='An already stretched TIFF, PNG or FITS - what you would export from Siril for print. The tool measures and recommends; it writes no file to send to the lab.', Ro='TIFF, PNG sau FITS deja stretch-uit - ce ai exporta din Siril pentru print. Unealta masoara si recomanda; nu scrie niciun fisier de trimis la laborator.'}" />
           <!-- Disabled while a run lasts, as the top bar's: this panel is visible then, and the
-               busy overlay stops the mouse, not a key on the button that kept the focus (ADR 0105). -->
+               busy overlay stops the mouse, not a key on the button that kept the focus (ADR 0106). -->
           <Button x:Name="PlaceholderOpenButton" Content="{local:T En='Open image...', Ro='Deschide imagine...'}" Margin="0,22,0,0" HorizontalAlignment="Center" Click="ChooseImage"
                   IsEnabled="{Binding IsIdle}" />
         </StackPanel>

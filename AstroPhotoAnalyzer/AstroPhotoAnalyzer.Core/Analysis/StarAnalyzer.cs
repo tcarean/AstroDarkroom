@@ -214,7 +214,7 @@ namespace AstroPhotoAnalyzer
 
             // Too few detections are not stars (ADR 0062), so nothing is measured on them: no
             // width for the frame, none for a zone, and no corner / centre ratio, which would
-            // otherwise call the corners of a starless frame soft (ADR 0102).
+            // otherwise call the corners of a starless frame soft (ADR 0103).
             double megaPixels = W * (double)H / 1e6;
             if (stars.Count < Thresholds.StarMinCount || stars.Count / megaPixels < Thresholds.StarMinPerMegapixel)
                 return new StarResult { Stars = stars, MegaPixels = megaPixels, FwhmMedian = double.NaN, FwhmQ1 = double.NaN, FwhmQ3 = double.NaN, Regions = Regions(stars, W, H, measured: false), CornerToCenterRatio = double.NaN };

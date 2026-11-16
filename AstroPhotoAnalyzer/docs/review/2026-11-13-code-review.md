@@ -299,7 +299,7 @@ bit. The 16-bit reference image is not touched.
   stars (ADR 0062).
 - Test: none; `SaturatedAndFaintStarsAreNotMeasured` asserts it with zero stars only.
 - Evidence: confirmed.
-- Status: fixed 19f667e9 (ADR 0102; the zones read n/a too, the owner's answer of 2026-11-16)
+- Status: fixed 19f667e9 (ADR 0103; the zones read n/a too, the owner's answer of 2026-11-16)
 
 ### CR-007 A FITS number that does not parse is read as its default: BZERO, BSCALE, the WCS
 
@@ -322,7 +322,7 @@ bit. The 16-bit reference image is not touched.
 - Test: none; `FitsReaderTests` and `WcsTests` have no `D` exponent and no unreadable value.
 - Evidence: confirmed (cfitsio, so Siril, writes `E`; that a given writer emits `D` was not
   checked on a file).
-- Status: fixed 5a1707b4 (ADR 0103; a size, BZERO or BSCALE refuses the file, a WCS number means no WCS)
+- Status: fixed 5a1707b4 (ADR 0104; a size, BZERO or BSCALE refuses the file, a WCS number means no WCS)
 
 ### CR-008 An 8-bit image saved as 16 bits by a shift passes as real 16 bits
 
@@ -337,7 +337,7 @@ bit. The 16-bit reference image is not touched.
 - Should: the distinct levels (or the low byte being constant) decide too.
 - Test: none; `AnEightBitUpscaleIsCaught` builds the x 257 form only.
 - Evidence: confirmed.
-- Status: fixed 5d00aa35 (ADR 0104; at most 256 levels a plane, the owner's answer of 2026-11-16)
+- Status: fixed 5d00aa35 (ADR 0105; at most 256 levels a plane, the owner's answer of 2026-11-16)
 
 ### CR-009 A second image chosen from the keyboard during a run gets the running image's result
 
@@ -358,7 +358,7 @@ bit. The 16-bit reference image is not touched.
   profile actions.
 - Evidence: confirmed (the enabled button and the missing guard; that the focus returns to the
   button after the file dialog is WPF's usual behaviour, to see once in the window).
-- Status: fixed c075e9ae (ADR 0105; the test that needed this defect was replaced, the owner's answer of 2026-11-16)
+- Status: fixed c075e9ae (ADR 0106; the test that needed this defect was replaced, the owner's answer of 2026-11-16)
 
 ## Severity 2: a crash, a hang, or a file overwritten or lost
 
@@ -381,7 +381,7 @@ bit. The 16-bit reference image is not touched.
 - Test: none; `CliTests.R005_*` save to a fresh name, `CurveTests.R145_SavingOverTheInputIs...`
   covers the FITS export.
 - Evidence: confirmed.
-- Status: fixed de089c54 (ADR 0106; refused before the analysis, the inputs held open during the save)
+- Status: fixed de089c54 (ADR 0107; refused before the analysis, the inputs held open during the save)
 
 ### CR-011 An image over 65 535 px on a side ends the whole analysis in the JPEG stage
 
@@ -1057,11 +1057,11 @@ Added on 2026-11-16, by the review of the whole branch of the dust move (R-184, 
 
 ### CR-075 On a frame with too few stars a zone reads n/a under a description that promises its width from 5 stars
 
-Added on 2026-11-16, from the fix of CR-006 (ADR 0102) and the review of its branch.
+Added on 2026-11-16, from the fix of CR-006 (ADR 0103) and the review of its branch.
 
 - Where: `AstroPhotoAnalyzer.Wpf/ViewModels/ResultTabs.cs`, the description of the centre's row
   of the Rezolutie tab ("A zone is shown only when it has at least 5 stars, otherwise n/a").
-- What happens: since ADR 0102 a frame whose stars are too few has no width in any zone, however
+- What happens: since ADR 0103 a frame whose stars are too few has no width in any zone, however
   many detections the zone holds; the description names the zone's own count as the only reason.
 - Case: the scene of `Golden/mono-png8.txt` (16 detections, 6 in the centre): the row reads
   `n/a` beside "6 stars", under that sentence. The row "Stars measured" above it does say the
@@ -1073,11 +1073,11 @@ Added on 2026-11-16, from the fix of CR-006 (ADR 0102) and the review of its bra
 
 ### CR-076 "You lose nothing going to 8 bits" is also said of a file caught by its levels alone
 
-Added on 2026-11-16, by the review of the fix of CR-008 (ADR 0104).
+Added on 2026-11-16, by the review of the fix of CR-008 (ADR 0105).
 
 - Where: `Report/Recommendations.cs` (`Warnings`), the sentence of the 8-bit upscale.
 - What happens: the sentence was written for the form level x 257, which an 8-bit copy holds
-  exactly. Since ADR 0104 it is also given when no plane uses more than 256 levels, where the
+  exactly. Since ADR 0105 it is also given when no plane uses more than 256 levels, where the
   levels need not sit on the 8-bit steps.
 - Case (arithmetic, not run): a file saved by a shift, level x 256, rounded to 8 bits
   (`RasterOps.Level8`): level 128 gives 127.502 and level 129 gives 128.498, both 128, so one pair

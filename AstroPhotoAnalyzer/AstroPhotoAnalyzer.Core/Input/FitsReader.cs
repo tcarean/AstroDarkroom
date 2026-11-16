@@ -449,7 +449,7 @@ namespace AstroPhotoAnalyzer
         /// A header value as an integer: digits with an optional sign, or a real whose value is
         /// whole, as some writers put one ("16.0"). Throws, with a message for the user, when
         /// the keyword is present and its value is not a whole number: a size read as its
-        /// default would have the reader measure another image (ADR 0103).
+        /// default would have the reader measure another image (ADR 0104).
         /// </summary>
         /// <param name="h">The header, keyword -> value.</param>
         /// <param name="k">The keyword.</param>
@@ -467,7 +467,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// A header value as a real number (<see cref="TryNumber"/>). Throws, with a message for
         /// the user, when the keyword is present and its value is not a number: a BZERO or a
-        /// BSCALE read as its default would have the reader measure another image (ADR 0103).
+        /// BSCALE read as its default would have the reader measure another image (ADR 0104).
         /// </summary>
         /// <param name="h">The header, keyword -> value.</param>
         /// <param name="k">The keyword.</param>

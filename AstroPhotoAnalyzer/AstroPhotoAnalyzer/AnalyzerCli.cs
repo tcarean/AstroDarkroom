@@ -124,7 +124,7 @@ namespace AstroPhotoAnalyzer
                 return Refuse(stderr, error, Tr.Pick("the file does not exist: ", "fisierul nu exista: ") + o.Image);
 
             // The report is moved over its target, so -o naming a file the run reads would leave
-            // the report under that file's name: refused before anything is read (R-005, ADR 0106).
+            // the report under that file's name: refused before anything is read (R-005, ADR 0107).
             string named = o.Out == null ? null : InputNamedByOut(o);
             if (named != null)
                 return Refuse(stderr, error,

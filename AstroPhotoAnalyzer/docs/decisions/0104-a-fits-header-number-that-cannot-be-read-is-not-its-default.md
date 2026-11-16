@@ -1,4 +1,4 @@
-# 0103. A FITS header number that cannot be read is not its default
+# 0104. A FITS header number that cannot be read is not its default
 
 Date: 2026-11-16
 Status: accepted 2026-11-16

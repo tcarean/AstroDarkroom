@@ -76,7 +76,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The WCS from the header, or null when the header has no readable one: no CTYPE, a
         /// projection other than TAN, no CRPIX/CRVAL, no form of the linear part, or one of
-        /// those numbers present and not a number as FITS writes one (R-018, ADR 0103: read as
+        /// those numbers present and not a number as FITS writes one (R-018, ADR 0104: read as
         /// 0, it gave a WCS somewhere else in the sky, or none for a complete plate solution
         /// whose reals have a D exponent).
         /// </summary>

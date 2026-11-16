@@ -29,7 +29,7 @@ distinct 16-bit levels per plane (`DistinctLevels`), and the fraction of samples
 `v == (v >> 8) * 257` (`UpscaledFraction`) - an 8-bit file saved as 16 has every sample
 of that form; genuine data has ~0.4 % by coincidence. `IsUpscaled` when the fraction
 exceeds `UpscaledFraction` (0.5), or when no plane has more than `EightBitLevels` (256)
-distinct levels (`FewLevels`, ADR 0104): a file saved by a shift, `level x 256`, has none of the
+distinct levels (`FewLevels`, ADR 0105): a file saved by a shift, `level x 256`, has none of the
 first form. `Recommendations.Warnings` gives the evidence of whichever clause held.
 
 ### A3 - `CropAnalyzer` - what a target aspect cuts
@@ -287,7 +287,7 @@ Result: `Stars` (x, y, fwhm, peak), `FwhmMedian` / `Q1` / `Q3` (NaN below
 median per region when >= `RegionMinStars` = 5), `CornerToCenterRatio` = widest known
 corner / centre, `SoftCorners` when > `CornerSoftRatio` (1.4), `EffectiveDetailPx(w)` =
 w / FwhmMedian. The test for too few stars comes before the regions: on such a frame every
-region keeps its count and has no median, and the ratio is NaN (ADR 0102).
+region keeps its count and has no median, and the ratio is NaN (ADR 0103).
 
 Known: the estimator overestimates a sampled Gaussian by ~2.5 % (linear interpolation on
 a convex curve); the candidate threshold is `mean + minimum amplitude`, not the script's

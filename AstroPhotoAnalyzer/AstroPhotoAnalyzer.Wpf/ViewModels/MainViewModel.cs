@@ -204,7 +204,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// field would otherwise leave the old image's tabs under the new image's path, and its
         /// report to be saved beside the new image. The same image opened again keeps its result
         /// until the run replaces it. While a run lasts no image is taken and nothing changes
-        /// (R-111, ADR 0105): the path replaced then, the run in progress filled its tabs under
+        /// (R-111, ADR 0106): the path replaced then, the run in progress filled its tabs under
         /// the new image's name, and no run started for that image.
         /// </summary>
         /// <param name="path">

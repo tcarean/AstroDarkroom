@@ -1,4 +1,4 @@
-# 0105. No image is taken while a run lasts
+# 0106. No image is taken while a run lasts
 
 Date: 2026-11-16
 Status: accepted 2026-11-16

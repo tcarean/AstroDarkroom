@@ -21,7 +21,7 @@
 // (n * 65535 / 255). On real 16 bits this coincidence happens on ~1 in 256 samples (0.4 %); on an
 // upscale, on all of them. The distinct levels per channel are counted too - a disguised 8-bit
 // has no more than 256 - and decide beside the fraction: a file saved by a shift (n * 256) has
-// none of the first form and is 8 bits all the same (ADR 0104).
+// none of the first form and is 8 bits all the same (ADR 0105).
 //
 // It is measured on ALL the pixels, not on a subsample: it is a count, not a statistic, and it
 // costs one pass through memory.
@@ -58,7 +58,7 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The 16 bits hold 8 bits of information: over <see cref="Thresholds.UpscaledFraction"/>
-        /// of the samples are a level times 257, or <see cref="FewLevels"/> (R-031, ADR 0104).
+        /// of the samples are a level times 257, or <see cref="FewLevels"/> (R-031, ADR 0105).
         /// </summary>
         internal bool IsUpscaled => Applicable && (UpscaledFraction > Thresholds.UpscaledFraction || FewLevels);
     }

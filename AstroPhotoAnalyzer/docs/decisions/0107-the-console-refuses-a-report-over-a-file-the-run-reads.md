@@ -1,4 +1,4 @@
-# 0106. The console refuses a report over a file the run reads
+# 0107. The console refuses a report over a file the run reads
 
 Date: 2026-11-16
 Status: accepted 2026-11-16

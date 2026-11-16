@@ -384,7 +384,7 @@ public class ViewModelTests
     /// CR-009: a second image chosen while a run lasted (a key on the placeholder's button,
     /// which the busy overlay does not stop) replaced the path and started nothing, so the first
     /// image's result came up under the second's path. While a run lasts no image is taken
-    /// (ADR 0105). This test replaces the one of 2026-11-14 that reached "A's result under B's
+    /// (ADR 0106). This test replaces the one of 2026-11-14 that reached "A's result under B's
     /// path" through this defect, at the owner's word of 2026-11-16.
     /// </summary>
     [Fact]

@@ -199,7 +199,7 @@
   Windows-only). The file a WCS was borrowed from and the ICC profile are not guarded: the save
   dialog asks before replacing any existing file.
 - The console's `-o` is refused over the image, the `--wcs` file and the `--icc` profile by
-  comparing full paths (R-005, ADR 0106); another spelling of one of them is stopped by Windows
+  comparing full paths (R-005, ADR 0107); another spelling of one of them is stopped by Windows
   file sharing alone, the three held open while the report is saved, and is told with the
   system's reason. The console compares the paths without regard to case, as the exports' guard
   does, so on a file system that tells `IMAGE.TIF` from `image.tif` an `-o` that differs from

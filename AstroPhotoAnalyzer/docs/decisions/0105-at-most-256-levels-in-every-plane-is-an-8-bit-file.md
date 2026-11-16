@@ -1,4 +1,4 @@
-# 0104. At most 256 levels in every plane is an 8-bit file, whatever the conversion
+# 0105. At most 256 levels in every plane is an 8-bit file, whatever the conversion
 
 Date: 2026-11-16
 Status: accepted 2026-11-16
