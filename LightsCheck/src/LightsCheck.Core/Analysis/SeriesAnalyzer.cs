@@ -287,8 +287,9 @@ internal enum PolarAlignment
 /// times in order.
 /// </param>
 /// <param name="CornerShiftPerExposurePx">
-/// How far that rate moves a star at the half-diagonal over the first registered frame's exposure
-/// (0 when unknown), in pixels; null without the rate or that frame's measurement.
+/// How far that rate moves a star at the half-diagonal over the session's median exposure, in
+/// pixels; null without the rate, the first registered frame's measurement (its size gives the
+/// half-diagonal) or any frame that carries an exposure.
 /// </param>
 /// <param name="RaAxis">
 /// The image axis RA runs along, from the WCS or else from the trails; unknown otherwise.
@@ -297,9 +298,9 @@ internal enum PolarAlignment
 /// How <paramref name="RaAxis"/> was decided, as the report prints it, in the run's language.
 /// </param>
 /// <param name="TrailAngleDeg">
-/// The mean angle of the bad frames whose stars agree better than
-/// <see cref="Th.TrailAxisCoherence"/>, in degrees from the x axis; null under
-/// <see cref="Th.TrailAxisMinFrames"/> of them.
+/// The mean angle of the trailed frames whose stars agree better than
+/// <see cref="Th.TrailAxisCoherence"/>, a frame too short to stack not among them (R-085), in
+/// degrees from the x axis; null under <see cref="Th.TrailAxisMinFrames"/> of them.
 /// </param>
 /// <param name="TrailOn">
 /// The mount axis <paramref name="TrailAngleDeg"/> runs along; unknown without the angle or the RA
@@ -671,9 +672,10 @@ internal static class SeriesAnalyzer
             if (firstReg.Info.Timestamp is DateTime t0 && lastReg.Info.Timestamp is DateTime t1 && t1 > t0)
             {
                 rotPerHour = rotTotal / (t1 - t0).TotalHours;
+                // Over the session's exposure, the median one the drift per exposure uses, not
+                // the first aligned frame's own, which may be a test shot or carry none (R-023).
                 FrameMeasurement? m0 = firstReg.Measurement;
-                double exposure = firstReg.Info.ExposureSeconds ?? 0;
-                if (m0 is not null)
+                if (m0 is not null && medianExposure is double exposure)
                 {
                     double halfDiag = Math.Sqrt(m0.Height * m0.Height / 4.0 + m0.Width * m0.Width / 4.0);
                     corner = Math.Abs(rotPerHour.Value) * exposure / 3600 * Math.PI / 180 * halfDiag;
@@ -682,12 +684,13 @@ internal static class SeriesAnalyzer
         }
 
         // The RA axis: from a plate solve when one is at hand, else from the trails of the bad
-        // frames.
+        // frames. A frame too short to stack casts no vote, trailed or not: the tracking cannot
+        // draw a trail in a fraction of a second (R-085, ADR 0061).
         Axis ra = wcs?.RaAxis ?? Axis.Unknown;
         string source = wcs is null ? T("unknown", "necunoscut") : "plate solve (WCS)";
         double? trailAngle = null;
         List<double> angles = Enumerable.Range(0, n)
-            .Where(i => flags[i].Any(fl => fl.Kind == FlagKind.Trailed) && frames[i].Measurement?.AngleDeg is not null && frames[i].Measurement!.AngleCoherence is double c && c > Th.TrailAxisCoherence)
+            .Where(i => !shortExposure[i] && flags[i].Any(fl => fl.Kind == FlagKind.Trailed) && frames[i].Measurement?.AngleDeg is not null && frames[i].Measurement!.AngleCoherence is double c && c > Th.TrailAxisCoherence)
             .Select(i => frames[i].Measurement!.AngleDeg!.Value).ToList();
         if (angles.Count >= Th.TrailAxisMinFrames)
         {

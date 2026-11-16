@@ -67,8 +67,13 @@ names in room that holds them, and with the names set after the first layout, th
 bitmap at once and records the mode of every load: it clicks Open, waits between pumps of the
 dispatcher until the pair line of the status bar is filled, moves the divider, calls
 `ToggleModeAsync` and reads the buttons, the status bar and the divider back; the keys `H` and
-`F` themselves are checked by launching the application, since a `KeyEventArgs` needs a
-presentation source a window never shown does not have. `WindowLoggingTests` drives the main
+`F` themselves are checked by launching the application, though they could be pressed as `F1`
+is. A `KeyEventArgs` needs a presentation source, which a window never shown does not have, so
+`F1` (R-066) is pressed with one of the test's own (`KeySource`, as FlatCheck's tests press it),
+raised on the surface or a button so that it tunnels to the window's `PreviewKeyDown`, and its
+repeat is marked through `KeyEventArgs`'s internal `SetRepeat`, as WPF marks a held key's; the window's `OpenAddress` keeps the addresses instead of starting a browser,
+and a loader that decodes the first pair and stalls every later decode keeps the loading veil up
+for the section of a load. `WindowLoggingTests` drives the main
 window the same way and reads its lines, and the surface's, in the diagnostic log
 (`logging.md`).
 
@@ -122,8 +127,9 @@ that sets the language and keeps that value, `App.ApplyCommandLine`, has one. Of
 log, `Program.Main`, `LogSetup.Apply` and `LogSetup.Close` with their real file and their hooks,
 the lines a window writes around a modal dialog (a failed open, a declined padding, About), and the
 repeats of `Ctrl+O` and of the zoom keys are checked by launching (`logging.md`); a test cannot make
-a `KeyEventArgs` a repeat, so `MainWindowTests` gives a held `H` to `OnModeKeyAsync`, which takes
-the repeat as an argument (R-114, ADR 0044). `AboutWindowTests` reads the About window's view
+a `KeyEventArgs` a repeat but through WPF's internal `SetRepeat`, so `MainWindowTests` gives a held
+`H` to `OnModeKeyAsync`, which takes the repeat as an argument (R-114, ADR 0044), and presses a
+held `F1` through that member (R-066). `AboutWindowTests` reads the About window's view
 model against `VersionInfo`, `UiText` and `ThirdParty`, and builds the window on the WPF test
 thread, never shown, then lays its content out at the client width, which builds the card's rows
 from their template: the body that builds it returns before its bindings take their values, in

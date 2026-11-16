@@ -74,6 +74,14 @@
                     <ToggleButton x:Name="HistogramButton" Style="{StaticResource ToolToggleButton}" Margin="12,0,3,0" IsEnabled="False" />
                     <ToggleButton x:Name="FalseColoursButton" Style="{StaticResource ToolToggleButton}" IsEnabled="False" />
                     <Button x:Name="OpenButton" Style="{StaticResource ToolButton}" Margin="12,0,3,0" />
+                    <!-- The manual at the section of what is on screen, as F1 (R-066, ADR 0056):
+                         the theme's drawn icon, then the word, both set from UiText in code. -->
+                    <Button x:Name="HelpButton" Style="{StaticResource ToolButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{StaticResource HelpIcon}" Width="16" Height="16" VerticalAlignment="Center" />
+                            <TextBlock x:Name="HelpText" Margin="6,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="AboutButton" Style="{StaticResource ToolButton}" />
                 </StackPanel>
             </Grid>

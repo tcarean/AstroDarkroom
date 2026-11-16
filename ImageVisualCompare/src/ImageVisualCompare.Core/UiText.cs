@@ -57,6 +57,13 @@ public sealed class UiText
 
     public string About => Pick("About", "Despre");
 
+    // The button that opens the manual in the wiki, and its tooltip, which names its key (R-066).
+    public string Help => Pick("Help", "Ajutor");
+
+    public string HelpTip => Pick(
+        "The manual, at the section about what is on screen (F1)",
+        "Manualul, la secțiunea despre ce e pe ecran (F1)");
+
     // The two buttons beside the pair's names, each changing that image alone (R-065).
     public string ChangeA => Pick("Change A…", "Schimbă A…");
 
@@ -95,8 +102,8 @@ public sealed class UiText
 
     // The status bar's hint (R-054): what each gesture does, shortest first to go when trimmed.
     public string Hint => Pick(
-        "wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open · H histogram · F false colours",
-        "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide · H: histogramă · F: culori false");
+        "wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open · H histogram · F false colours · F1 help",
+        "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide · H: histogramă · F: culori false · F1: ajutor");
 
     // The dialog titles of a pair that failed to load (R-005) and of the padding question (R-003).
     public string CannotCompareTitle => Pick("Cannot compare these files", "Fișierele nu pot fi comparate");

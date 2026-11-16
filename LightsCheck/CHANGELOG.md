@@ -287,6 +287,36 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   order stays the names', and the session lines now say it: `WARNING : the file names are not
   in the order the frames were taken: DSC_9999.NEF is listed after DSC_0002.NEF and was taken
   before it. ...` (R-089, ADR 0054; CR-010 of the review of 2026-11-13).
+- The `field rotation` row's `a star in the corner moves ... px over one exposure` used the
+  exposure of the first aligned frame: a 0.2 s test shot at the start of the session made the
+  figure 600 times too small, and frames without an exposure read `0.00 px`. It now uses the
+  session's exposure, as the drift over one exposure does, and is left out when no frame
+  carries an exposure (R-023; CR-011 of the review of 2026-11-13).
+- Without a plate solve, a trailed frame too short to stack (a 0.2 s test shot) voted for the
+  direction of the trails, from which the RA axis is read, though the tracking cannot draw a
+  trail in a fraction of a second: one trailed frame and one such shot were enough to name an
+  axis. A frame too short to stack now casts no vote, trailed or not (R-085, R-025, ADR 0061;
+  CR-012 of the review of 2026-11-13).
+- The report files could be written among the frames: `--out <session>\lights`, or in the
+  window a double click on `lights` in the folder dialog, left the three files beside the raws,
+  against the rule that nothing is written there. A folder that holds the session's frames
+  (`lights\`, `biases\`, `darks\`, a folder inside one of them, or the session folder itself
+  when the frames sit directly in it) is now refused, in the console before any frame is
+  measured and in the window on the line under the top bar: `ERROR: the files are not written
+  into <folder>: it is the folder with the session's lights, and LightsCheck writes nothing
+  among the frames. Choose another folder.` (R-028, R-032, ADR 0060; CR-014 of the review of
+  2026-11-13).
+- One failure after every frame had been measured could lose the whole run: a FITS file in the
+  session folder that Windows refused to open, tried as the plate solve, ended the run with
+  `ERROR:` and no report, and so would a frame whose alignment met a fit without a solution.
+  Such a file is now skipped as the plate solve, such a frame reads `could not be aligned`, each
+  with a line in the log, and the report is written from what was measured (R-018, R-025,
+  R-026, ADR 0062; CR-015 of the review of 2026-11-13).
+- In the window, a pixel size that is not a number, such as `3,76` typed with a comma, looked
+  like any other and the run went on as if the field were empty, with nothing said. The field
+  now has a red border while its value is wrong, and a tooltip: `Not a positive number (with a
+  dot as the separator): the pixel size is taken as if the field were empty` (R-029, ADR 0063;
+  CR-016 of the review of 2026-11-13).
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).

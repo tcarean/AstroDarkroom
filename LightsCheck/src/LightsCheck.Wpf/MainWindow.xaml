@@ -72,7 +72,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     IsEnabled="{Binding IsIdle}">
           <StackPanel x:Name="PixelInput" Margin="0,0,12,0" ToolTip="{x:Static local:MainViewModel.PixelTip}" ToolTipService.ShowOnDisabled="True">
             <TextBlock Style="{StaticResource Faint}" Text="PIXEL (um)" />
-            <TextBox Style="{StaticResource Field}" Width="64" Margin="0,3,0,0" Text="{Binding PixelText, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Style="{StaticResource SettingField}" Tag="{Binding PixelIsValid}" Width="64" Margin="0,3,0,0" Text="{Binding PixelText, UpdateSourceTrigger=PropertyChanged}" />
           </StackPanel>
           <StackPanel x:Name="ThreadsInput" ToolTip="{x:Static local:MainViewModel.ThreadsTip}" ToolTipService.ShowOnDisabled="True">
             <TextBlock Style="{StaticResource Faint}" Text="{local:T En='THREADS', Ro='THREADURI'}" />

@@ -16,6 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text.RegularExpressions;
 using LightsCheck.Cli;
 using LightsCheck.Core;
@@ -752,6 +754,105 @@ public class SeriesTests
         Assert.All(csv.Where(l => l.Length > 0), l => Assert.Equal(head.Length, CsvCells(l).Length));
     }
 
+    /// <summary>
+    /// The three files are refused in the folder of the lights, of the biases and of the darks and
+    /// in a folder inside one of them, with a sentence that names the folder and says why, and
+    /// nothing is created (R-028, ADR 0060, CR-014). The folder is the same one with a trailing
+    /// separator or, on Windows, in another case.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R028_TheFilesAreRefusedInAnyFolderThatHoldsTheSessionsFrames(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2, darks: 2);
+        SeriesResult r = SeriesRun.Run(s.Root, new SeriesOptions(Threads: 2));
+        string biases = Path.Combine(s.Root, "biases"), darks = Path.Combine(s.Root, "darks"), inside = Path.Combine(s.LightsDir, "out", "today");
+        string[] before = Directory.GetFileSystemEntries(s.Root, "*", SearchOption.AllDirectories);
+        (string Dir, string En, string Ro)[] cases =
+        [
+            (s.LightsDir, "it is the folder with the session's lights", "e folderul cu cadrele lights ale sesiunii"),
+            (biases, "it is the folder with the session's biases", "e folderul cu bias-urile sesiunii"),
+            (darks, "it is the folder with the session's darks", "e folderul cu dark-urile sesiunii"),
+            (inside, "it is inside the folder with the session's lights", "e in folderul cu cadrele lights ale sesiunii"),
+        ];
+
+        foreach ((string dir, string en, string ro) in cases)
+        {
+            InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => SeriesOutputs.WriteAll(r, dir));
+            Assert.Equal(
+                english
+                    ? $"the files are not written into {dir}: {en}, and LightsCheck writes nothing among the frames. Choose another folder."
+                    : $"fisierele nu se scriu in {dir}: {ro}, iar LightsCheck nu scrie nimic printre cadre. Alege alt folder.",
+                e.Message);
+            PlainWords.AssertPlain(e.Message, "the refusal of an output folder");
+        }
+
+        Assert.Throws<InvalidOperationException>(() => SeriesOutputs.WriteAll(r, s.LightsDir + Path.DirectorySeparatorChar));
+        Assert.Throws<InvalidOperationException>(() => SeriesOutputs.WriteAll(r, Path.Combine(s.Root, "report", "..", "lights")));
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Throws<InvalidOperationException>(() => SeriesOutputs.WriteAll(r, biases.ToUpperInvariant()));
+        }
+
+        Assert.Equal(before, Directory.GetFileSystemEntries(s.Root, "*", SearchOption.AllDirectories));
+    }
+
+    /// <summary>
+    /// Beside the frames the files are written: in the session folder that holds <c>lights\</c>,
+    /// in a new folder inside it, and in a folder whose name only begins like the lights' (R-028,
+    /// ADR 0060).
+    /// </summary>
+    [Fact]
+    public void R028_AFolderBesideTheFramesIsWritten()
+    {
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2);
+        SeriesResult r = SeriesRun.Run(s.Root, new SeriesOptions(Threads: 2));
+
+        foreach (string dir in new[] { s.Root, Path.Combine(s.Root, "report"), s.LightsDir + "-report" })
+        {
+            Assert.Null(SeriesOutputs.Refusal(r.Session, dir));
+            Assert.All(SeriesOutputs.WriteAll(r, dir), p => Assert.True(File.Exists(p)));
+        }
+    }
+
+    /// <summary>
+    /// When the lights sit in the session folder itself, that folder is refused, with one more
+    /// sentence, and a new folder inside it is not; its <c>biases\</c> is refused as anywhere
+    /// (R-028, ADR 0060, CR-014).
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R028_WhenTheLightsSitInTheSessionFolderThatFolderIsRefusedAndOneInsideItIsNot(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture s = new SessionFixture().WithLights(2, inSubfolder: false, biases: 2);
+        SessionFolder session = SessionFolder.Open(s.Root);
+        Assert.Equal(session.Root, session.LightsDir);
+
+        string? refusal = SeriesOutputs.Refusal(session, s.Root);
+
+        Assert.Equal(
+            english
+                ? $"the files are not written into {s.Root}: it is the folder with the session's lights, and LightsCheck writes nothing among the frames. Choose another folder. A new folder inside it is fine."
+                : $"fisierele nu se scriu in {s.Root}: e folderul cu cadrele lights ale sesiunii, iar LightsCheck nu scrie nimic printre cadre. Alege alt folder. Un folder nou in el e bun.",
+            refusal);
+        PlainWords.AssertPlain(refusal!, "the refusal of the session folder");
+        Assert.Null(SeriesOutputs.Refusal(session, Path.Combine(s.Root, "report")));
+        Assert.Contains(english ? "it is inside the folder with the session's biases" : "e in folderul cu bias-urile sesiunii",
+            SeriesOutputs.Refusal(session, Path.Combine(s.Root, "biases", "report")), StringComparison.Ordinal);
+
+        // Through the console: refused before any frame is measured, nothing written.
+        string[] before = Directory.GetFileSystemEntries(s.Root, "*", SearchOption.AllDirectories);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--out", s.Root);
+        Assert.Equal(1, code);
+        Assert.Equal(RunReport.Error(refusal!), stderr.Trim());
+        Assert.DoesNotContain(english ? "=== SESSION" : "=== SESIUNE", stdout, StringComparison.Ordinal);
+        Assert.Equal(before, Directory.GetFileSystemEntries(s.Root, "*", SearchOption.AllDirectories));
+    }
+
     [Fact]
     public void R028_TheOutputsAreWrittenWhereAskedAndNeverIntoLights()
     {
@@ -774,6 +875,96 @@ public class SeriesTests
         Assert.Contains("SLAB", csv[3], StringComparison.Ordinal);
         Assert.Contains("=== SESIUNE:", File.ReadAllText(Path.Combine(outDir.Dir, SeriesOutputs.ReportName)), StringComparison.Ordinal);
         Assert.Equal(8, Directory.GetFiles(s.LightsDir).Length);
+    }
+
+    /// <summary>
+    /// A FITS at the session root that Windows refuses to open is skipped as the plate solve and
+    /// the next one is read; the series gives its report, where the refusal used to end the run
+    /// after every frame was measured (R-025, R-026, ADR 0062, CR-015). Windows only: the test
+    /// sets a rule on the file that denies reading it.
+    /// </summary>
+    [Fact]
+    public void R025_AFitsAtTheRootThatCannotBeOpenedIsSkippedAsThePlateSolve()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        string[] wcs =
+        [
+            FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"),
+            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "-0.99999"),
+        ];
+        FileInfo denied = new(Path.Combine(s.Root, "a-denied.fit"));
+        File.WriteAllBytes(denied.FullName, FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
+        File.WriteAllBytes(Path.Combine(s.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
+        FileSecurity acl = denied.GetAccessControl();
+        FileSystemAccessRule deny = new(WindowsIdentity.GetCurrent().User!, FileSystemRights.ReadData, AccessControlType.Deny);
+        acl.AddAccessRule(deny);
+        denied.SetAccessControl(acl);
+        try
+        {
+            Assert.Throws<UnauthorizedAccessException>(() => File.OpenRead(denied.FullName).Dispose());   // the rule holds on this machine
+
+            using (LogCapture capture = LogCapture.Start())
+            {
+                Assert.Equal(Axis.Y, SeriesRun.WcsRaAxis(s.Root));
+                LogCapture.Captured line = Assert.Single(capture.Events, e => e.Level == NLog.LogLevel.Warn);
+                Assert.Equal(denied.FullName + " could not be read; skipped as a WCS source", line.Message);
+                Assert.IsType<UnauthorizedAccessException>(line.Exception);
+            }
+
+            (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
+
+            Assert.Equal(0, code);
+            Assert.DoesNotContain("EROARE", stderr, StringComparison.Ordinal);
+            Assert.Contains("(aflat din plate solve (WCS))", stdout, StringComparison.Ordinal);
+        }
+        finally
+        {
+            acl.RemoveAccessRule(deny);
+            denied.SetAccessControl(acl);
+        }
+    }
+
+    /// <summary>
+    /// A session folder that can no longer be listed when the plate solve is looked for (the
+    /// drive unplugged, the folder renamed during the minutes of measuring) gives no plate
+    /// solve and a line in the log, not an error that ends the run (R-025, ADR 0062; the review
+    /// of 2026-11-16).
+    /// </summary>
+    [Fact]
+    public void R025_ASessionFolderThatCannotBeListedGivesNoPlateSolve()
+    {
+        using TempWorkspace ws = new();
+        string gone = ws.PathTo("gone");
+        using LogCapture capture = LogCapture.Start();
+
+        Assert.Null(SeriesRun.ReadWcs(gone));
+
+        LogCapture.Captured line = Assert.Single(capture.Events, e => e.Level == NLog.LogLevel.Warn);
+        Assert.Equal(gone + " could not be listed; no plate solve is read", line.Message);
+        Assert.IsAssignableFrom<IOException>(line.Exception);
+    }
+
+    /// <summary>
+    /// The `field rotation` row without a corner displacement, as when no frame carries an
+    /// exposure, is the total and the rate alone; with one, it ends with the corner (R-023,
+    /// CR-011).
+    /// </summary>
+    [Fact]
+    public void R023_TheRotationRowHasNoCornerPartWithoutACornerDisplacement()
+    {
+        SeriesResult pattern = RunPattern();
+        SeriesAnalysis turned = pattern.Series with { RotationTotalDeg = 0.1, RotationPerHourDeg = 1.2, CornerShiftPerExposurePx = null };
+
+        string without = Assert.Single(SeriesReport.DriftRows(pattern with { Series = turned }), x => x.Label == "rotatie de camp").Value;
+        string with = Assert.Single(SeriesReport.DriftRows(pattern with { Series = turned with { CornerShiftPerExposurePx = 2.686 } }), x => x.Label == "rotatie de camp").Value;
+
+        Assert.Equal("imaginea s-a rotit cu 6.0' in total, 72.0' pe ora", without);
+        Assert.Equal(without + "; din cauza asta, o stea din colt se misca 2.69 px intr-o expunere", with);
     }
 
     [Fact]

@@ -87,6 +87,11 @@ public partial class MainWindow : Window
         FalseColoursButton.Content = text.FalseColours;
         OpenButton.Content = text.Open;
         AboutButton.Content = text.About;
+        HelpText.Text = text.Help;
+        HelpButton.ToolTip = text.HelpTip;
+
+        // The button's content is a panel, not a string, so UI Automation is told its name.
+        System.Windows.Automation.AutomationProperties.SetName(HelpButton, text.Help);
         ChangeBeforeButton.Content = text.ChangeA;
         ChangeAfterButton.Content = text.ChangeB;
         HintText.Text = text.Hint;
@@ -103,6 +108,7 @@ public partial class MainWindow : Window
         OpenButton.Click += async (_, _) => await OpenPairAsync("the Open button");
         ChangeBeforeButton.Click += async (_, _) => await ChangeImageAsync(ImageSide.A, "the Change A button");
         ChangeAfterButton.Click += async (_, _) => await ChangeImageAsync(ImageSide.B, "the Change B button");
+        HelpButton.Click += (_, _) => ShowHelp();
         AboutButton.Click += (_, _) =>
         {
             Log.Info("About opened");
@@ -162,13 +168,14 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Opens another pair on Ctrl+O, and switches the display mode on H and F (R-114), wherever
-    /// the focus is; a held H or F switches once (<see cref="OnModeKeyAsync"/>), and while a pair
-    /// is being opened or switched the three do nothing (<see cref="OpenPairAsync"/>,
+    /// Opens another pair on Ctrl+O, switches the display mode on H and F (R-114), and opens the
+    /// manual on F1 (R-066), wherever the focus is; a held H, F or F1 acts once
+    /// (<see cref="OnModeKeyAsync"/>, <see cref="OnHelpKey"/>), and while a pair is being opened
+    /// or switched the first three do nothing (<see cref="OpenPairAsync"/>,
     /// <see cref="ToggleModeAsync"/>).
     /// </summary>
     /// <param name="sender">The window itself; not read.</param>
-    /// <param name="e">The key; marked handled when it is one of the three.</param>
+    /// <param name="e">The key; marked handled when it is one of the four.</param>
     private async void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.O && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
@@ -187,6 +194,44 @@ public partial class MainWindow : Window
             e.Handled = true;
             await OnModeKeyAsync(e.Key == Key.H ? DisplayMode.Histogram : DisplayMode.FalseColours, e.IsRepeat);
         }
+        else if (e.Key == Key.F1 && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            e.Handled = true;
+            OnHelpKey(e.IsRepeat);
+        }
+    }
+
+    /// <summary>
+    /// Opens an address in the system's browser: <see cref="ExternalLink.Open(string)"/>, which a
+    /// test replaces so that no browser starts.
+    /// </summary>
+    internal Action<string> OpenAddress { get; set; } = ExternalLink.Open;
+
+    /// <summary>
+    /// Takes a press of F1 (R-066): the first opens the manual, as the Help button does; a repeat
+    /// of the key held down does nothing and writes nothing, since a held key repeats some thirty
+    /// times a second and each would open the browser again.
+    /// </summary>
+    /// <param name="isRepeat">True for a repeat of a key held down.</param>
+    private void OnHelpKey(bool isRepeat)
+    {
+        if (!isRepeat)
+        {
+            ShowHelp();
+        }
+    }
+
+    /// <summary>
+    /// The Help button and F1 (R-066, ADR 0056): the manual in the browser, at the section of what
+    /// is on screen, which <see cref="Manual.SectionFor"/> picks from the window's state. While a
+    /// pair is being opened, changed or switched the loading veil is on screen, whatever pair
+    /// lies under it.
+    /// </summary>
+    private void ShowHelp()
+    {
+        string address = Manual.Url(Manual.SectionFor(_opening, _pair is not null, _mode));
+        Log.Info("Help opened: " + address);
+        OpenAddress(address);
     }
 
     /// <summary>

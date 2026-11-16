@@ -19,6 +19,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -31,7 +32,8 @@ namespace AstroDarkroom.Wpf;
 
 /// <summary>
 /// The launcher's window: a row per app of the catalogue, each with its open button, the
-/// suite's copyright (R-019), the language selector and the about button, and a warning when the
+/// suite's copyright (R-019), the language selector, the help button, which F1 presses too
+/// (R-021), and the about button, and a warning when the
 /// Visual C++ runtime the raw tools need is missing or too old, asked again at each activation
 /// while it shows (R-018). It shows what the core says about the suite folder and starts what the
 /// core plans (R-002, R-003); it decides nothing itself. Every label worded in two languages is
@@ -43,7 +45,7 @@ namespace AstroDarkroom.Wpf;
 /// </summary>
 public partial class MainWindow : Window
 {
-    /// <summary>The diagnostic log: the suite folder, the window, the language switches, the starts, About (R-012).</summary>
+    /// <summary>The diagnostic log: the suite folder, the window, the language switches, the starts, the links and the manual opened, About (R-012).</summary>
     private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     private readonly SuiteFolder _folder;
@@ -114,8 +116,11 @@ public partial class MainWindow : Window
         RuntimeWarningText.Text = VcRuntime.Warning;
         RuntimeLinkText.Text = VcRuntime.DownloadUrl;
         EnglishChoice.ToolTip = RomanianChoice.ToolTip = T("Interface language", "Limba interfetei");
+        HelpLabel.Text = T("Help", "Ajutor");
+        AutomationProperties.SetName(HelpButton, HelpLabel.Text);
+        HelpButton.ToolTip = T("The manual, at the section of this window (F1)", "Manualul, la sectiunea acestei ferestre (F1)");
         AboutButton.Content = T("About", "Despre");
-        AboutButton.ToolTip = T("Version, licence, components (F1)", "Versiune, licenta, componente (F1)");
+        AboutButton.ToolTip = T("Version, licence, components", "Versiune, licenta, componente");
         Rows.ItemsSource = AppCatalogue.Apps
             .Select(app => new AppRow(app, _folder.Locate(app), _release?.Find(app.Folder)))
             .ToList();
@@ -276,15 +281,32 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Opens Microsoft's download of the Visual C++ runtime, the warning line's link, in the
-    /// browser (R-018). The address opened goes to the log; when Windows will not open it, a
-    /// message box gives the address, so it can be typed in a browser, and the log the exception.
+    /// browser (R-018), through <see cref="OpenInBrowser"/>.
     /// </summary>
     /// <param name="sender">The link; not read.</param>
-    /// <param name="e">The navigation asked for; its URI, as written, is what opens.</param>
+    /// <param name="e">The navigation asked for, marked handled; its URI, as written, is what opens.</param>
     private void OpenRuntimeLink(object sender, RequestNavigateEventArgs e)
     {
         e.Handled = true;
-        string address = e.Uri.OriginalString;
+        OpenInBrowser(e.Uri.OriginalString);
+    }
+
+    /// <summary>
+    /// Opens the launcher's manual at the window's section, <see cref="Manual.Window"/>, in the
+    /// browser (the Help command: F1 or the button, R-021), through <see cref="OpenInBrowser"/>.
+    /// </summary>
+    /// <param name="sender">The window; not read.</param>
+    /// <param name="e">The command; not read.</param>
+    private void ShowHelp(object sender, ExecutedRoutedEventArgs e) => OpenInBrowser(Manual.Window);
+
+    /// <summary>
+    /// Opens an address in the system's browser, through the shell: the runtime's link (R-018) or
+    /// the manual (R-021). The address opened goes to the log; when Windows will not open it, a
+    /// message box gives the address, so it can be typed in a browser, and the log the exception.
+    /// </summary>
+    /// <param name="address">An absolute http or https address.</param>
+    private void OpenInBrowser(string address)
+    {
         try
         {
             using Process? browser = Process.Start(new ProcessStartInfo(address) { UseShellExecute = true });
@@ -298,10 +320,10 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Opens the about window (the Help command, F1 or the button).</summary>
-    /// <param name="sender">The window; not read.</param>
-    /// <param name="e">The command; not read.</param>
-    private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
+    /// <summary>Opens the about window, from its button only (F1 opens the manual, R-021).</summary>
+    /// <param name="sender">The button; not read.</param>
+    /// <param name="e">The click; not read.</param>
+    private void ShowAbout(object sender, RoutedEventArgs e)
     {
         Log.Info("About opened");
         AboutWindow about = new(_release, ScreenArea.WorkAreaOf(this)) { Owner = this };

@@ -8,6 +8,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- `Help` (`Ajutor`) in the toolbar, between `Open…` and `About`, and the `F1` key: they open the
+  window's manual in the wiki at the section of the view on screen, the window, Histogram or
+  False colours, or opening a pair while one loads. The status bar's key reminder ends with
+  `F1 help` (R-066, ADR 0056).
+
 - `Change A…` and `Change B…`, after each file name in the toolbar: one dialog, and the file
   chosen takes that image's place while the other image stays as it is, not read again; the
   zoom, the position and the line stay where they were when the canvas keeps its size, and the

@@ -204,7 +204,9 @@ internal static class Program
             // Progress on stderr, one line rewritten, so stdout stays the report alone. Written
             // synchronously on the reporting thread (Progress<T> would post to the thread pool and
             // could print after the report), under a lock since the frames finish in parallel.
-            SeriesResult r = SeriesRun.Run(o.Folder!, new SeriesOptions(o.PixelSizeUm, o.Threads, o.Arrows), new ConsoleProgress(stderr));
+            // The --out folder goes with the options, so that a folder among the session's
+            // frames is refused before any frame is measured (R-028, ADR 0060).
+            SeriesResult r = SeriesRun.Run(o.Folder!, new SeriesOptions(o.PixelSizeUm, o.Threads, o.Arrows, o.Out), new ConsoleProgress(stderr));
             stderr.Write("\r                        \r");
             SeriesReport.Write(r, stdout);
             if (o.Out is not null)

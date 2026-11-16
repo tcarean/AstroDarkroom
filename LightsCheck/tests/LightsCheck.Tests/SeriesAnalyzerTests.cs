@@ -170,6 +170,50 @@ public class SeriesAnalyzerTests
         return (frames, DitherAnalyzer.Analyze(zeros, zeros, c.PauseSeconds), c);
     }
 
+    /// <summary>
+    /// A frame too short to stack casts no vote for the RA axis, trailed or not (R-085, R-025,
+    /// ADR 0061, CR-012): the fixture's one trailed 120 s frame is a single voter, under the two
+    /// the axis needs, where the trailed 0.2 s frame used to be the second. The short frame keeps
+    /// its Trailed flag.
+    /// </summary>
+    [Fact]
+    public void R085_ATrailedShortFrameCastsNoVoteForTheRaAxis()
+    {
+        (AnalyzedFrame[] frames, DitherAnalysis d, Cadence c) = ShortAndTrailed();
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+
+        Assert.Contains(s.Flags[2], f => f.Kind == FlagKind.Trailed);
+        Assert.Null(s.TrailAngleDeg);
+        Assert.Equal(Axis.Unknown, s.RaAxis);
+        Assert.Equal(TrailAxis.Unknown, s.TrailOn);
+    }
+
+    /// <summary>
+    /// Two trailed 120 s frames at 88 degrees decide the axis alone: a trailed 0.2 s frame at 0
+    /// degrees beside them does not pull the trails' direction, which read 86 degrees with its
+    /// vote (R-085, R-025, CR-012).
+    /// </summary>
+    [Fact]
+    public void R085_TheTrailsDirectionIsThatOfTheFramesLongEnoughToStack()
+    {
+        AnalyzedFrame shortFrame = Frame(4, Measurement(3.0, 1.8, 100, 1), exposure: 0.2);
+        AnalyzedFrame[] frames =
+        [
+            Frame(1, Measurement(3.0, 1.1, 10000, 120)),
+            Frame(2, Measurement(3.0, 1.8, 10000, 120)),
+            Frame(3, Measurement(3.0, 1.8, 10000, 120)),
+            shortFrame with { Measurement = shortFrame.Measurement! with { AngleDeg = 0 } },
+        ];
+
+        SeriesAnalysis s = Analyze(frames);
+
+        Assert.Contains(s.Flags[3], f => f.Kind == FlagKind.ShortExposure);
+        Assert.Contains(s.Flags[3], f => f.Kind == FlagKind.Trailed);
+        Assert.Equal(88, s.TrailAngleDeg!.Value, 0.001);
+        Assert.Equal(Axis.Y, s.RaAxis);
+    }
+
     /// <summary>20 frames 141 s apart: the first <paramref name="run"/> at one spot drifting 2 px along Y per frame, the rest 20 px apart along X.</summary>
     internal static (AnalyzedFrame[] Frames, DitherAnalysis Dither, Cadence Cadence) RunThenDither(int run)
     {
@@ -648,6 +692,49 @@ public class SeriesAnalyzerTests
         Assert.False(s.DewSuspected);
         Assert.Null(s.RotationTotalDeg is double rt && rt != 0 ? rt : null);
         Assert.Equal(Axis.Unknown, s.RaAxis);
+    }
+
+    /// <summary>
+    /// The corner displacement is the rotation rate over the session's exposure, the median one,
+    /// whatever the first aligned frame's own (R-023, CR-011): a 0.2 s test shot first among 120 s
+    /// frames read 600 times too small. 0.1 degrees over 282 s is 1.2766 degrees an hour, which
+    /// over 120 s moves a star at the half-diagonal of 6016 x 4016 (3616.6 px) by 2.69 px.
+    /// </summary>
+    [Fact]
+    public void R023_TheCornerShiftUsesTheSessionsExposureNotTheFirstAlignedFramesOwn()
+    {
+        DateTime t = SessionFixture.FirstStart;
+        AnalyzedFrame first = Timed(1, t);
+        AnalyzedFrame[] frames =
+        [
+            first with { Info = first.Info with { ExposureSeconds = 0.2 } },
+            Timed(2, t.AddSeconds(141), 0.05),
+            Timed(3, t.AddSeconds(282), 0.1),
+        ];
+
+        SeriesAnalysis s = Analyze(frames);
+
+        Assert.Equal(120, s.MedianExposureSeconds);
+        Assert.Equal(0.1 / (282.0 / 3600), s.RotationPerHourDeg!.Value, 1e-9);
+        Assert.Equal(2.686, s.CornerShiftPerExposurePx!.Value, 0.005);
+    }
+
+    /// <summary>
+    /// Frames that carry a time and no exposure have a rotation rate and no corner displacement:
+    /// the row then reads the rate alone, where it read `0.00 px over one exposure` (R-023, CR-011).
+    /// </summary>
+    [Fact]
+    public void R023_WithoutAnExposureThereIsNoCornerShift()
+    {
+        DateTime t = SessionFixture.FirstStart;
+        AnalyzedFrame[] frames = new[] { Timed(1, t), Timed(2, t.AddSeconds(141), 0.05), Timed(3, t.AddSeconds(282), 0.1) }
+            .Select(f => f with { Info = f.Info with { ExposureSeconds = null } }).ToArray();
+
+        SeriesAnalysis s = Analyze(frames);
+
+        Assert.Null(s.MedianExposureSeconds);
+        Assert.NotNull(s.RotationPerHourDeg);
+        Assert.Null(s.CornerShiftPerExposurePx);
     }
 
     /// <summary>A 120 s frame starting at <paramref name="start"/>, registered with the rotation given, its stars good or trailed as the measurement says.</summary>
