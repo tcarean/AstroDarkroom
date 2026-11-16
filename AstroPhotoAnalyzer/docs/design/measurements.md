@@ -284,7 +284,8 @@ Result: `Stars` (x, y, fwhm, peak), `FwhmMedian` / `Q1` / `Q3` (NaN below
 `StarMinCount` = 20, or under `StarMinPerMegapixel` = 10 per megapixel, `DensityPerMp`; ADR 0062), `Regions` (centre = central 40 % x 40 %, four corners 20 % x 20 %;
 median per region when >= `RegionMinStars` = 5), `CornerToCenterRatio` = widest known
 corner / centre, `SoftCorners` when > `CornerSoftRatio` (1.4), `EffectiveDetailPx(w)` =
-w / FwhmMedian.
+w / FwhmMedian. The test for too few stars comes before the regions: on such a frame every
+region keeps its count and has no median, and the ratio is NaN (ADR 0102).
 
 Known: the estimator overestimates a sampled Gaussian by ~2.5 % (linear interpolation on
 a convex curve); the candidate threshold is `mean + minimum amplitude`, not the script's

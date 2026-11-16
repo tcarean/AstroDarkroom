@@ -61,7 +61,10 @@ namespace AstroPhotoAnalyzer
         internal int H { get; init; }
         internal int Count { get; init; }
 
-        /// <summary>NaN under Thresholds.RegionMinStars stars.</summary>
+        /// <summary>
+        /// NaN under Thresholds.RegionMinStars stars, and in every region of a frame whose stars
+        /// are too few (<see cref="StarResult.Insufficient"/>).
+        /// </summary>
         internal double FwhmMedian { get; init; }
         internal bool Known => !double.IsNaN(FwhmMedian);
     }
@@ -95,7 +98,8 @@ namespace AstroPhotoAnalyzer
         internal IReadOnlyList<StarRegion> Regions { get; init; }
 
         /// <summary>
-        /// The widest corner / the centre; NaN if the centre or all the corners are unknown.
+        /// The widest corner / the centre; NaN if the centre or all the corners are unknown, so
+        /// also on a frame whose stars are too few.
         /// </summary>
         internal double CornerToCenterRatio { get; init; }
         internal bool SoftCorners => !double.IsNaN(CornerToCenterRatio) && CornerToCenterRatio > Thresholds.CornerSoftRatio;
@@ -168,7 +172,7 @@ namespace AstroPhotoAnalyzer
         /// stars are too few, <see cref="StarResult.Insufficient"/>: under
         /// <see cref="Thresholds.StarMinCount"/>, or under
         /// <see cref="Thresholds.StarMinPerMegapixel"/> per megapixel), the regions and the
-        /// corner-to-centre ratio.
+        /// corner-to-centre ratio, which have no width either when the stars are too few.
         /// </returns>
         internal static StarResult Analyze(Raster r)
         {
@@ -208,14 +212,17 @@ namespace AstroPhotoAnalyzer
                 }
             }
 
-            var regions = Regions(stars, W, H);
+            // Too few detections are not stars (ADR 0062), so nothing is measured on them: no
+            // width for the frame, none for a zone, and no corner / centre ratio, which would
+            // otherwise call the corners of a starless frame soft (ADR 0102).
+            double megaPixels = W * (double)H / 1e6;
+            if (stars.Count < Thresholds.StarMinCount || stars.Count / megaPixels < Thresholds.StarMinPerMegapixel)
+                return new StarResult { Stars = stars, MegaPixels = megaPixels, FwhmMedian = double.NaN, FwhmQ1 = double.NaN, FwhmQ3 = double.NaN, Regions = Regions(stars, W, H, measured: false), CornerToCenterRatio = double.NaN };
+
+            var regions = Regions(stars, W, H, measured: true);
             double center = regions[0].FwhmMedian;
             double worstCorner = regions.Skip(1).Where(c => c.Known).Select(c => c.FwhmMedian).DefaultIfEmpty(double.NaN).Max();
             double ratio = double.IsNaN(center) || double.IsNaN(worstCorner) ? double.NaN : worstCorner / center;
-
-            double megaPixels = W * (double)H / 1e6;
-            if (stars.Count < Thresholds.StarMinCount || stars.Count / megaPixels < Thresholds.StarMinPerMegapixel)
-                return new StarResult { Stars = stars, MegaPixels = megaPixels, FwhmMedian = double.NaN, FwhmQ1 = double.NaN, FwhmQ3 = double.NaN, Regions = regions, CornerToCenterRatio = ratio };
 
             float[] sorted = Stats.Sorted(stars.Select(s => (float)s.Fwhm).ToArray());
             return new StarResult
@@ -347,15 +354,20 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The centre region (<see cref="Thresholds.CenterFraction"/> of each side) and the four
         /// corners (<see cref="Thresholds.RegionFraction"/> of each side), each with the median
-        /// FWHM of its stars when it holds at least <see cref="Thresholds.RegionMinStars"/>.
+        /// FWHM of its stars when it holds at least <see cref="Thresholds.RegionMinStars"/> and
+        /// the frame's stars are enough to be measured at all.
         /// </summary>
         /// <param name="stars">The stars kept.</param>
         /// <param name="W">The image's width, in pixels.</param>
         /// <param name="H">The image's height, in pixels.</param>
+        /// <param name="measured">
+        /// False when the frame's stars are too few (<see cref="StarResult.Insufficient"/>): every
+        /// region then keeps its count and has no width.
+        /// </param>
         /// <returns>
         /// The centre first, then the corners: top-left, top-right, bottom-left, bottom-right.
         /// </returns>
-        static IReadOnlyList<StarRegion> Regions(List<Star> stars, int W, int H)
+        static IReadOnlyList<StarRegion> Regions(List<Star> stars, int W, int H, bool measured)
         {
             int cw = (int)(W * Thresholds.RegionFraction), ch = (int)(H * Thresholds.RegionFraction);
             int mw = (int)(W * Thresholds.CenterFraction), mh = (int)(H * Thresholds.CenterFraction);
@@ -372,7 +384,7 @@ namespace AstroPhotoAnalyzer
             {
                 var inside = stars.Where(s => s.X >= d.X0 && s.X < d.X0 + d.W && s.Y >= d.Y0 && s.Y < d.Y0 + d.H)
                                   .Select(s => (float)s.Fwhm).ToArray();
-                double med = inside.Length >= Thresholds.RegionMinStars ? Stats.Median(inside) : double.NaN;
+                double med = measured && inside.Length >= Thresholds.RegionMinStars ? Stats.Median(inside) : double.NaN;
                 list.Add(new StarRegion { Name = d.Name, X0 = d.X0, Y0 = d.Y0, W = d.W, H = d.H, Count = inside.Length, FwhmMedian = med });
             }
             return list;

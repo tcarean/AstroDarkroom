@@ -221,6 +221,36 @@ public class StarAnalyzerTests
         Assert.True(s.SoftCorners);
     }
 
+    /// <summary>
+    /// CR-006: the corner / centre ratio was computed before the stars were found too few and
+    /// kept on the insufficient result, so a frame "without stars" was still told its corners are
+    /// soft, and Appendix D printed a zone's width under "too few to measure the stars' width".
+    /// Sixteen detections on 2.56 MP are under both floors (ADR 0062): ten of 3 px in the centre
+    /// and six of 4.8 px in a corner would read 1.6, over the 1.4 of soft corners.
+    /// </summary>
+    [Fact]
+    public void R071_TooFewStarsGiveNoZoneWidthNoRatioAndNoSoftCorners()
+    {
+        Raster r = SyntheticRasters.Flat(1600, 1600, Sky);
+        for (int i = 0; i < 10; i++)
+            r = SyntheticRasters.AddStar(r, 560 + (i % 5) * 110, 700 + (i / 5) * 200, 3.0, 0.3f);
+        for (int i = 0; i < 6; i++)
+            r = SyntheticRasters.AddStar(r, 60 + (i % 3) * 90, 80 + (i / 3) * 120, 4.8, 0.3f);
+
+        var s = StarAnalyzer.Analyze(r);
+
+        Assert.Equal(16, s.Count);
+        Assert.True(s.Insufficient);
+        Assert.Equal(new[] { 10, 6, 0, 0, 0 }, s.Regions.Select(z => z.Count).ToArray());
+        Assert.All(s.Regions, z => Assert.False(z.Known, z.Name + " has a width from stars declared too few"));
+        Assert.True(double.IsNaN(s.CornerToCenterRatio));
+        Assert.False(s.SoftCorners);
+
+        // The report follows: the one Size recommendation is the "without stars" one, with no word of corners.
+        var size = AnalysisRun.Execute(r, "memorie", new Parameters()).Recommendations.Where(x => x.Topic == Topic.Size).ToList();
+        Assert.DoesNotContain(size, x => x.Text.Contains("corners") || x.Text.Contains("colturi"));
+    }
+
     [Fact]
     public void SaturatedAndFaintStarsAreNotMeasured()
     {
