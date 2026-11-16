@@ -56,8 +56,8 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// The diagnostic log: a link that could not be opened, the window's size and place once
-        /// shown (R-171, ADR 0069).
+        /// The diagnostic log: the window's size and place once shown (R-171, ADR 0069); a link
+        /// that could not be opened is <see cref="ExternalLink"/>'s line.
         /// </summary>
         static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 

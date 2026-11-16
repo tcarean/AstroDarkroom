@@ -20,8 +20,10 @@
 // started: each window's OpenAddress is replaced by a stand-in that keeps the address. The
 // addresses are written out, as the wiki's headings make them.
 
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using AstroPhotoAnalyzer.Tests;
@@ -86,8 +88,9 @@ public class HelpTests
     /// F1, pressed on an element inside the main window, opens the manual at the section of what
     /// is on screen and logs the address: the opening's before an image and while the analysis
     /// runs, the table of the card's messages on the card, the selected tab's once the tabs
-    /// show. The key goes through the preview pass and WPF's own translation of a key into a
-    /// command, so a key handler or an input binding that took F1 away would fail here.
+    /// show, also with the focus in a field of the parameter card or on a button of the top bar.
+    /// The key goes through the preview pass and WPF's own translation of a key into a command,
+    /// so a key handler or an input binding that took F1 away would fail here.
     /// </summary>
     [Fact]
     public Task R186_HelpAndF1OpenTheManualAtTheSectionOnScreen()
@@ -99,8 +102,13 @@ public class HelpTests
             var opened = new List<string>();
             var w = new MainWindow { OpenAddress = opened.Add };
             var vm = (MainViewModel)w.DataContext;
+            TextBox field = LogicalDescendants(w).OfType<TextBox>().First();
+            Button openImage = LogicalDescendants((DependencyObject)w.FindName("TopButtons")).OfType<Button>().First();
 
             Assert.True(PressF1(w.Tabs));
+            Assert.Equal(Page + "#opening-an-image", opened.Last());
+            Assert.True(PressF1(field));
+            Assert.True(PressF1(openImage));
             Assert.Equal(Page + "#opening-an-image", opened.Last());
 
             await vm.OpenAsync(ws.PathTo("nu-exista.tif"));
@@ -119,11 +127,13 @@ public class HelpTests
             w.Tabs.SelectedIndex = 2;
             Assert.True(PressF1((UIElement)((TabItem)w.Tabs.SelectedItem).Content));
             Assert.Equal(Page + "#export", opened.Last());
+            Assert.True(PressF1(field));
+            Assert.Equal(Page + "#export", opened.Last());
 
             w.Tabs.SelectedIndex = 8;
             Assert.True(PressF1(w.Tabs));
             Assert.Equal(Page + "#crop-with-aspect-ratio", opened.Last());
-            Assert.Equal(5, opened.Count);
+            Assert.Equal(8, opened.Count);
 
             Assert.Contains(capture.Events, e => e.Logger == "Window" && e.Message == "Help opened: " + Page + "#export");
             await vm.CurvesComputation;
@@ -134,7 +144,7 @@ public class HelpTests
     /// <summary>
     /// F1 in each viewing window opens its own section: the map's, the preview's and the curve
     /// window's headings, and the soft proof's for its full screen, which the Soft proof section
-    /// explains. Each press writes its address to the log.
+    /// explains, its keys G, O and I passing F1 by. Each press writes its address to the log.
     /// </summary>
     [Fact]
     public void R186_F1InTheViewingWindowsOpensTheirSections()
@@ -156,7 +166,7 @@ public class HelpTests
             Assert.True(PressF1((UIElement)curve.Content));
             Assert.Equal(Page + "#the-curve-window", opened.Last());
 
-            var proof = new SoftProofWindow { OpenAddress = opened.Add };
+            var proof = new SoftProofWindow { OpenAddress = opened.Add, DataContext = new SoftProofTabViewModel() };
             Assert.True(PressF1((UIElement)proof.Content));
             Assert.Equal(Page + "#soft-proof", opened.Last());
 
@@ -167,9 +177,80 @@ public class HelpTests
     }
 
     /// <summary>
-    /// The top bar's Help button runs the Help command and shows a drawn icon and the word, with
-    /// its tooltip, between "Save the report..." and About; About opens from its own click, and
-    /// its tooltip names no key. The bar fits the window's minimum width.
+    /// F1 held down opens the manual once, in the main window and in each viewing window: the
+    /// key's repeats are taken before WPF turns them into the Help command, which would open one
+    /// browser tab per repeat (the branch's review, 2026-11-16).
+    /// </summary>
+    [Fact]
+    public void R186_HoldingF1OpensTheManualOnce()
+    {
+        _sta.Invoke(() =>
+        {
+            var opened = new List<string>();
+            var main = new MainWindow { OpenAddress = opened.Add };
+            var map = new MapWindow { OpenAddress = opened.Add };
+            var preview = new PreviewWindow { OpenAddress = opened.Add };
+            var curve = new CurveWindow { OpenAddress = opened.Add };
+            var proof = new SoftProofWindow { OpenAddress = opened.Add, DataContext = new SoftProofTabViewModel() };
+
+            foreach (UIElement target in new[] { main.Tabs, (UIElement)map.Content, (UIElement)preview.Content,
+                                                 (UIElement)curve.Content, (UIElement)proof.Content })
+            {
+                int before = opened.Count;
+                Assert.True(PressF1(target));
+                for (int i = 0; i < 3; i++) Assert.True(PressF1(target, repeat: true));
+                Assert.Equal(before + 1, opened.Count);
+            }
+            foreach (Window window in new Window[] { main, map, preview, curve, proof }) window.Close();
+        });
+    }
+
+    /// <summary>
+    /// The ICC profile's line in the top bar never runs under the buttons (R-155): a name too
+    /// long for the room left is shortened, "Scoate" right after it and 20 px short of the first
+    /// button, at the window's minimum width and wider; a name that fits keeps "Scoate" 10 px
+    /// after its end. The Help button made the room smaller, which brought the old overrun to
+    /// wider windows (measured 2026-11-16, ADR 0102).
+    /// </summary>
+    [Theory]
+    [InlineData("Canson Infinity Baryta Photographique II 310 - Epson SC-P9500 PK", 1000, true)]
+    [InlineData("Canson Infinity Baryta Photographique II 310 - Epson SC-P9500 PK", 1300, true)]
+    [InlineData("Zeta baryta", 1000, true)]
+    [InlineData("Zeta baryta", 1920, false)]
+    public Task R155_TheProfileLineIsShortenedBeforeTheButtonsAtAnyWidth(string name, int width, bool shortened)
+        => _sta.InvokeAsync(async () =>
+        {
+            using var ws = new TempWorkspace();
+            string file = ws.WriteFile("paper.icc", IccPrinterTestData.V2Lut16(name, 20));
+            var w = new MainWindow();
+            var vm = (MainViewModel)w.DataContext;
+            await vm.ChooseProfile(new IccProfileRow(IccPaperBlack.Read(file)));
+            var content = (UIElement)w.Content;
+            w.Content = null;
+            var host = new Border { Child = content, DataContext = w.DataContext, Background = Brushes.Black };
+            foreach (CommandBinding b in w.CommandBindings) host.CommandBindings.Add(b);
+            WindowSmokeTests.Render(host, width, 600, $"profile-line-{width}-{name.Length}");
+
+            var text = (TextBlock)w.FindName("ProfileText");
+            var clear = (Button)w.FindName("ClearProfileButton");
+            var buttons = (FrameworkElement)w.FindName("TopButtons");
+            double textLeft = text.TranslatePoint(new Point(0, 0), host).X;
+            double clearLeft = clear.TranslatePoint(new Point(0, 0), host).X;
+            double clearRight = clearLeft + clear.ActualWidth;
+            double buttonsLeft = buttons.TranslatePoint(new Point(0, 0), host).X;
+
+            Assert.True(clear.ActualWidth > 0 && text.ActualWidth > 0);
+            Assert.True(clearRight <= buttonsLeft - 20 + 0.5, $"Scoate ends at {clearRight:F1}, the buttons start at {buttonsLeft:F1}");
+            Assert.Equal(textLeft + text.ActualWidth + 10, clearLeft, 0.5);
+            text.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Assert.Equal(shortened, text.DesiredSize.Width > text.ActualWidth + 0.5);
+            w.Close();
+        });
+
+    /// <summary>
+    /// The top bar's Help button shows a drawn icon and the word, with its tooltip, between "Save
+    /// the report..." and About, and its click opens the manual; About opens from its own click,
+    /// and its tooltip names no key. The bar fits the window's minimum width.
     /// </summary>
     [Theory]
     [InlineData(true, "Help", "The manual, at the section of this tab (F1)", "About", "Version, licence, components", "Save the report...")]
@@ -182,7 +263,8 @@ public class HelpTests
 
             // a window never shown renders white, its template unapplied: its content is moved
             // into a plain host with the window's data and commands, at the window's minimum width
-            var w = new MainWindow();
+            var opened = new List<string>();
+            var w = new MainWindow { OpenAddress = opened.Add };
             var content = (UIElement)w.Content;
             w.Content = null;
             var host = new Border { Child = content, DataContext = w.DataContext, Background = Brushes.Black };
@@ -211,18 +293,27 @@ public class HelpTests
             int at = row.Children.IndexOf(help);
             Assert.Same(aboutButton, row.Children[at + 1]);
             Assert.Equal(save, ((Button)row.Children[at - 1]).Content);
+
+            // a click, through the button's own handler, opens the manual (no image yet: the
+            // opening's section)
+            typeof(ButtonBase).GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(help, null);
+            Assert.Equal(new[] { Page + "#opening-an-image" }, opened);
         });
     }
 
     /// <summary>
     /// Presses F1 on <paramref name="target"/> as the keyboard would with the focus there: the
     /// preview pass from the window down, then, unless a handler took it, the key-down that WPF
-    /// translates into the Help command.
+    /// translates into the Help command. With <paramref name="repeat"/> it is one of the repeats
+    /// Windows sends while the key is held (KeyEventArgs.IsRepeat, set through its internal
+    /// setter, which the input system uses).
     /// </summary>
     /// <returns>Whether something handled the key.</returns>
-    static bool PressF1(UIElement target)
+    static bool PressF1(UIElement target, bool repeat = false)
     {
         var e = new KeyEventArgs(Keyboard.PrimaryDevice, new KeySource(), 0, Key.F1) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+        if (repeat) typeof(KeyEventArgs).GetMethod("SetRepeat", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(e, [true]);
+        Assert.Equal(repeat, e.IsRepeat);
         target.RaiseEvent(e);
         if (e.Handled) return true;
         e.RoutedEvent = Keyboard.KeyDownEvent;
@@ -241,6 +332,18 @@ public class HelpTests
         public override bool IsDisposed => false;
 
         protected override CompositionTarget GetCompositionTargetCore() => null!;
+    }
+
+    /// <summary>Every element under <paramref name="node"/> in the logical tree, depth first: the
+    /// window's controls before it is laid out, when the visual tree is not built yet.</summary>
+    static IEnumerable<DependencyObject> LogicalDescendants(DependencyObject node)
+    {
+        foreach (object child in LogicalTreeHelper.GetChildren(node))
+        {
+            if (child is not DependencyObject d) continue;
+            yield return d;
+            foreach (var x in LogicalDescendants(d)) yield return x;
+        }
     }
 
     /// <summary>Every element under <paramref name="node"/> in the visual tree, depth first.</summary>

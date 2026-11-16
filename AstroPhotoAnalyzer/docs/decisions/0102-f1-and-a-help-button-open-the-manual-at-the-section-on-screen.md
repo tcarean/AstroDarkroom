@@ -17,17 +17,23 @@ knows whether a run lasts (`IsBusy`), whether there is a result and whether ther
 FlatCheck had just made the same change (its ADR 0112, 2026-11-13). On 2026-11-16 the owner asked
 for a Help button with a nice icon, also on F1, opening the manual at the section of the current
 tab, done the way FlatCheck did it, and answered two questions in chat: the error card opens the
-table of its messages, and F1 in the viewing windows opens their own sections.
+table of its messages, and F1 in the viewing windows opens their own sections. The branch's
+review then found two things FlatCheck shares or that the new button worsened, and the owner
+chose to fix both here: F1 held down opened one browser tab per key repeat, since WPF turns every
+repeat into the command; and the ICC profile's line in the top bar, in a column measured
+unbounded, ran on under the buttons in a narrowed window, which the new button made happen
+sooner (measured: with a 64-character profile name, below 1330 to 1370 px before, 1420 to 1460 px
+with the button).
 
 ## Decision
 
 - F1 and a new `Help` (`Ajutor`) button open the manual in the browser at the section of what is
   on screen, in the order the window stacks its right side: the opening of an image
-  (`#opening-an-image`) while a run lasts, its overlay being over everything; the selected tab's
-  section when the tabs show; `#when-something-goes-wrong` on the error card (the owner's answer,
-  where FlatCheck sends its card to its opening section, because that is where FlatCheck's manual
-  explains its card); `#opening-an-image` before any image. Where the tabs and the card both show
-  (CR-040, open), the tabs are on top and win.
+  (`#opening-an-image`) while a run lasts, its overlay covering the whole right side; the
+  selected tab's section when the tabs show; `#when-something-goes-wrong` on the error card (the
+  owner's answer, where FlatCheck sends its card to its opening section, because that is where
+  FlatCheck's manual explains its card); `#opening-an-image` before any image. Where the tabs and
+  the card both show (CR-040, open), the tabs are drawn over the card and win.
 - "Despre" keeps its button and loses F1, its tooltip losing the "(F1)", as in FlatCheck.
 - The button is an icon followed by the word, just left of `About`. The icon is FlatCheck's: a
   question mark on a disc of the theme's accent colour, drawn in XAML as a `DrawingImage` in the
@@ -42,6 +48,12 @@ table of its messages, and F1 in the viewing windows opens their own sections.
   only in the core" does not reach it. Each tab carries its section in its `Tag`; one method writes
   the log line and opens the address for all five windows, through `Presentation/ExternalLink.cs`,
   where the "Despre" window's link opening moves so that the two share one catch.
+- F1 held down opens the manual once: each window that has the Help command takes F1's repeats
+  in its PreviewKeyDown (`Manual.IgnoreHeldKey`), before WPF turns them into the command.
+  FlatCheck keeps the behaviour until it is changed there.
+- The profile's line is trimmed at any width of the window: its text column is a star column,
+  measured against the room left, in a left-aligned grid, so a short line keeps `Scoate` right
+  after it; the bar's middle column stops 20 px short of the buttons (R-155).
 - The manual is English in both languages: the wiki has no Romanian page.
 
 ## Alternatives rejected
@@ -60,7 +72,8 @@ table of its messages, and F1 in the viewing windows opens their own sections.
   top of the page (GitHub ignores an anchor it does not know). The wiki is outside the
   repository, so no gate test can check the anchors; `docs/design/window.md` says so.
 - `HelpTests` pins the addresses, the tabs' tags, F1 pressed in the main window in each of its
-  states and in the four viewing windows, and the button's icon, word, tooltip and place in both
-  languages at the window's minimum width.
+  states, from a tab, a field and a button, and in the four viewing windows, F1 held down, the
+  button's click, icon, word, tooltip and place in both languages at the window's minimum
+  width, and the profile's line shortened before the buttons.
 - The "From ICC profile..." and "Despre" windows get no F1: neither has a section of its own (the
   first is explained under "The parameters").

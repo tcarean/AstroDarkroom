@@ -20,6 +20,7 @@
 // ones GitHub makes from the page's headings; a heading renamed in the wiki is renamed here too.
 
 using System;
+using System.Windows.Input;
 using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
@@ -112,7 +113,7 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// The section of what the main window shows, in the order MainWindow.xaml stacks its
-        /// right side: the busy overlay over everything, then the tabs, then the error card,
+        /// right side: the busy overlay over all of it, then the tabs, then the error card,
         /// then the invitation to open an image. The tabs come before the card because they are
         /// drawn over it when both show (a field refused while a result is on screen, CR-040).
         /// </summary>
@@ -126,6 +127,19 @@ namespace AstroPhotoAnalyzer.Wpf
             if (isBusy) return ManualSection.OpeningAnImage;
             if (hasResult && tab.HasValue) return tab.Value;
             return hasError ? ManualSection.WhenSomethingGoesWrong : ManualSection.OpeningAnImage;
+        }
+
+        /// <summary>
+        /// Takes F1's repeats, the key-downs Windows sends while the key is held, before WPF
+        /// turns each of them into the Help command and opens one browser tab per repeat: F1
+        /// held down opens the manual once (R-186). Every window that has the Help command
+        /// attaches it to its PreviewKeyDown.
+        /// </summary>
+        /// <param name="sender">The window; not read.</param>
+        /// <param name="e">The key; marked handled when it is a repeat of F1.</param>
+        internal static void IgnoreHeldKey(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.F1 && e.IsRepeat) e.Handled = true;
         }
 
         /// <summary>

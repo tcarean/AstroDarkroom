@@ -282,6 +282,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The ICC profile's line in the top bar ends in `...` when the window is too narrow for it,
+  with **Clear** right after it, instead of running on under the buttons (R-155, ADR 0102).
 - A disabled check box is dimmed, as the disabled buttons are: it used to keep the brightness of
   its text and read as one that can be ticked (CR-022 of the code review of 2026-11-13; the
   labels box of the Dust / sky map of an image without a WCS, the map's boxes of the single

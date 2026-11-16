@@ -13,7 +13,9 @@
 **Layout** (`MainWindow.xaml`): top bar (banner, image path and under it the ICC profile in use
 with its "Scoate" button (R-155: `ParameterFields.ProfileText`, red through a style trigger on
 `ProfileIsProblem`, muted on none; the button visible on `HasProfile`, enabled on the window's
-`IsIdle`, in a two-column grid so a long reason is trimmed instead of pushing the button out),
+`IsIdle`, in a left-aligned two-column grid whose text column is a star one, so a long line is
+trimmed at any window width instead of running on under the buttons, and a short one keeps the
+button right after it; the bar's middle column stops 20 px short of the buttons; R-155, ADR 0102),
 "Deschide imagine...",
 "Salveaza raportul...", "Ajutor" (the manual, R-186), "Despre", and under the four buttons a fixed two-line place for
 `SaveMessage` / `SaveError`, as the Editare Curbe tab has for its own save); left column `ParameterFields` card with
@@ -127,10 +129,12 @@ top that keeps a window inside an area).
 plain click. The handler reads the selected tab's `Tag` (a `ManualSection`, set on each `TabItem`
 in the XAML) and the view-model's `IsBusy`, `HasResult` and `HasError`, and asks
 `Presentation/Manual.SectionFor` for the section in the order the right side stacks: the busy
-overlay over everything, the tabs (drawn over the error card when a refused field leaves both,
+overlay over all of it, the tabs (drawn over the error card when a refused field leaves both,
 CR-040), the error card, the invitation. Each viewing window (`Views/OverlayWindows.xaml.cs`) binds
 the same command to its own section; the soft proof's full screen to the Soft proof section, which
-explains it. `Manual.Open` writes `Help opened: <address>` and hands the address to the window's
+explains it. Each of these windows also hands its PreviewKeyDown to `Manual.IgnoreHeldKey`,
+which takes F1's repeats before WPF turns each into the command, so F1 held down opens one
+browser tab. `Manual.Open` writes `Help opened: <address>` and hands the address to the window's
 `OpenAddress`, `ExternalLink.Open(string)` outside the tests; `Presentation/ExternalLink.cs` also
 opens the "Despre" window's links, a relative one failing on its absolute form before the shell
 sees it. `Manual.Url` makes the address from the anchors GitHub derives from the wiki page's

@@ -60,7 +60,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Style="{StaticResource Faint}" Text="{Binding Copyright}" Margin="0,2,0,0" />
         </StackPanel>
 
-        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+        <!-- 20 px short of the buttons, as the banner's column is: no line of this column runs
+             up to them -->
+        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,20,0">
           <TextBlock Style="{StaticResource Faint}" Text="{local:T En=IMAGE, Ro=IMAGINE}" />
           <TextBlock Margin="0,3,0,0" TextTrimming="CharacterEllipsis" Text="{Binding Path}"
                      Visibility="{Binding HasPath, Converter={StaticResource BoolToVis}}" />
@@ -71,10 +73,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                profile, and never during a run, as the choice that re-runs is. -->
           <TextBlock Style="{StaticResource Faint}" Margin="0,8,0,0" Text="{local:T En='ICC PROFILE', Ro='PROFIL ICC'}" />
           <!-- A grid, not a horizontal StackPanel: in a panel of infinite width a long reason
-               would push the button out of the column instead of being trimmed. -->
-          <Grid Margin="0,3,0,0" DataContext="{Binding Parameters}">
+               would push the button out of the column instead of being trimmed. The text's
+               column is a star one, measured against the room the column leaves, so a long
+               line is trimmed at any width of the window (an Auto one is measured unbounded and
+               ran on under the buttons); the grid is left-aligned, so a short line keeps the
+               button right after it (R-155, ADR 0102). -->
+          <Grid Margin="0,3,0,0" HorizontalAlignment="Left" DataContext="{Binding Parameters}">
             <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="Auto" MaxWidth="700" />
+              <ColumnDefinition Width="*" MaxWidth="700" />
               <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="ProfileText" Grid.Column="0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding ProfileText}" ToolTip="{Binding ProfileText}">
