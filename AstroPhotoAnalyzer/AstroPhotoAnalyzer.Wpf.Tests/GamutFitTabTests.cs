@@ -240,6 +240,27 @@ public class GamutFitTabTests
     }
 
     [Fact]
+    public void R178_TheSentenceWithoutAProfileWrapsInsideTheTab()
+        => _sta.Invoke(() =>
+        {
+            using var ws = new TempWorkspace();
+            var tab = new GamutFitTabViewModel();
+            tab.Populate(Result(ws, withProfile: false));
+            tab.Compute(400, 300);
+            Assert.True(tab.IsProblem);
+
+            // The tab's width in the window at its default size: the sentence ends inside it.
+            var view = new GamutFitView { DataContext = tab };
+            view.Measure(new System.Windows.Size(1084, 600));
+            view.Arrange(new System.Windows.Rect(0, 0, 1084, 600));
+            view.UpdateLayout();
+            var block = (System.Windows.FrameworkElement)view.FindName("TabMessage");
+            System.Windows.Rect sentence = block.TransformToAncestor(view).TransformBounds(new System.Windows.Rect(block.RenderSize));
+            Assert.True(sentence.Width > 100);
+            Assert.True(sentence.Right <= 1084, $"the sentence ends at {sentence.Right:0}, past the tab's 1084");
+        });
+
+    [Fact]
     public void R178_TheTabRendersWithNoBindingErrors()
         => _sta.Invoke(() =>
         {

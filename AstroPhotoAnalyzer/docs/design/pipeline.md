@@ -72,19 +72,23 @@ reading ~3 s, JPEG ~5 s.
 
 ### The second run (`Runs/CurveRun.cs`, ADR 0032)
 
-`CurveRun.Execute(AnalysisResult, CurvePurpose, maxWidth, maxHeight)` is not a stage of the
+`CurveRun.Execute(AnalysisResult, CurvePurpose, maxWidth, maxHeight, dustOnPaperBlack)` is not a stage of the
 chain: the window runs it after the analysis, and again when the Editare Curbe tab's area allows a finer preview (ADR 0051, ADR 0084), on the result the chain
 already produced (the raster, the patch map of the simulation, the noise, the parameters), and
 the console never calls it. Order: the tonal subsample; the class names of the map's path
 (`CurveSet.Method`, `Labels`) and the five class levels as they are
 (`CurveAdvisor.ClassLevels`); the anchors; the preview of the original at the integer stride
 that fits the size asked; then, unless a class is empty, the peaks are at or over the target
-or the anchors do not increase (`CurveSet.Problem`), the curves (`CurveAdvisor.Curves`), the gamut table when the
+or the anchors do not increase (`CurveSet.Problem`), whether the dust move can be had
+(`CurveAdvisor.DustMoveProblem`, always, kept in `CurveSet.DustMoveRefusal`) and, when it was asked for and
+can, its aim (`CurveAdvisor.AimDust`, each probe the dust measured again on the curved subsample; R-184), the curves
+(`CurveAdvisor.Curves`, with the move or without; a move that leaves no curve falls back to the plain ones), the gamut table when the
 purpose is print and the Dmax came from a profile (`GamutAnalyzer.Build`, once), and for each
-curve its evidence on the curved subsample and its preview. The purpose changes the evidence
-only: the paper checks and the gamut figure are added for print, and `CurveRun.ForScreen`
-derives the screen set from a print set by dropping them, which is how the window changes the
-purpose without computing anything. `CurveExport.Save` writes the curve's image under
+curve its evidence on the curved subsample and its preview. For the curves without the dust
+move the purpose changes the evidence only: the paper checks and the gamut figure are added for
+print, and `CurveRun.ForScreen` derives the screen set from such a print set by dropping them,
+which is how the window changes the purpose without computing anything while the box of R-185
+is off. The dust move exists for print alone, so a set that carries it has no screen set. `CurveExport.Save` writes the curve's image under
 `CurveExport.Guarded`, the guards every export of the tool shares (the input gone, its own path
 refused, the input held open without sharing while the write lasts): it hands the raster, the
 curve and the `HISTORY` text to `FitsWriter` (`input.md`); the paper fit's export is the other

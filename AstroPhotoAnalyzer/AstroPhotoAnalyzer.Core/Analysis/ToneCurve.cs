@@ -49,7 +49,11 @@ namespace AstroPhotoAnalyzer
     /// <param name="Label">
     /// The name of the point's class, as the map's path names it; or null.
     /// </param>
-    internal readonly record struct CurvePoint(double X, double Y, string Label);
+    /// <param name="Extra">
+    /// <c>true</c> for a labelled point that is no class: the two the dust move adds, the sky's
+    /// dark end and the helper under the dust (R-184). Such a point has no L* of its own.
+    /// </param>
+    internal readonly record struct CurvePoint(double X, double Y, string Label, bool Extra = false);
 
     /// <summary>
     /// A tone curve: its control points, the natural cubic spline through them clamped to 0..1,

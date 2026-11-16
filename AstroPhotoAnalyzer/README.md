@@ -146,18 +146,35 @@ fits the window, filling the tab's area; when the area grows (a larger screen, a
 window) the gallery is computed again by itself. Choose **Print** or **Screen** for the evidence
 under them. Browse them with **< Back** and **Next >**, or with the Left and Right arrow keys.
 
-The curves are contrast curves: they do not move the dust or the sky, they spread the classes
-above them, taking the peaks towards 0.92 of the scale. Their points come from the classes of the
+The curves are contrast curves: they do not move the sky, they spread the classes above it,
+taking the peaks towards 0.92 of the scale. Their points come from the classes of the
 **Tones** tab: the dust and the sky, then the brighter classes above them; each point carries its
 class's name, the same as on the map. A sky too dark for paper is not lifted with a curve: lift it
-at the stretch, as the **Tones** tab recommends, then come back. When the peaks are already at or
+at the stretch, as the **Tones** tab recommends, then come back.
+
+**Put dust on paper black**, ticked when the window starts, also moves the dust, for **Print**:
+every curve puts the dust on the black of your paper (the Dmax field), lowering it when the
+stretch left it above, which is where a bright stretch gains contrast between the dust and the
+sky, or lifting it when it would have printed as solid black. The dark part of the sky is held
+in place, so the sky stays as it is, and the move is the same in **Gentle**, **Moderate** and
+**Strong**: those differ above the sky only. The curve then has one or two more points, **dark
+sky** and sometimes **under the dust**, listed with the others. Untick the box for the curves
+that leave the dust where it is. The box is unticked and greyed, with the reason beside it,
+where it can do nothing: with **Screen** chosen, on an image without enough dust (the darkest
+part of the sky then stands in for it), and when the sky itself is too close to the paper's
+black. The first time you untick it, or choose **Screen**, the other set of curves is computed;
+after that, going back and forth is immediate. When the peaks are already at or
 over 0.92 of the scale, no curve is suggested, since these curves lower no point and the image is
 already at the ceiling; the tab says so in red, as it does when a class the curves need is empty.
 
 Under the image, each suggestion shows its evidence: the curve's points, the L\* of the five
-classes before and after, how many times the noise of the sky grows, and how many pixels end up
-clipped. **Print** and **Screen** give the same curves; **Print** adds the paper's checks: a
-background too low, the noise over the print target and, when the Dmax came from an ICC profile,
+classes before and after, by how many percent the noise of the sky grows or drops, and how many
+pixels end up clipped. A curve that moved the dust adds where the dust went, by how many percent
+its difference from the sky changes on paper, by how many percent the noise in the dust grows
+(lowered) or drops (lifted), and how much of the image ends under the paper's black. Without the dust moved, **Print** and
+**Screen** give the same curves; **Print** adds the paper's checks: a
+background too low, the noise taken over the print target by the curve (an image whose noise is
+already over it before the curve gets no warning here) and, when the Dmax came from an ICC profile,
 how much of the image the paper cannot hold, in tone or in colour (a figure only: what
 the paper cannot hold is corrected locally, in the editor with the soft proof on, not with the
 curve).

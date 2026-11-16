@@ -177,6 +177,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="SelectionBrush" Value="{StaticResource AccentBr}" />
   </Style>
 
+  <!-- ============================================================ check boxes -->
+
+  <!-- The system's template stays; a disabled box is dimmed as the disabled buttons are, since
+       that template only changes the little square and the text would read as one that can be
+       ticked. -->
+  <Style TargetType="CheckBox">
+    <Style.Triggers>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Opacity" Value="0.4" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
   <!-- ============================================================ buttons -->
 
   <Style TargetType="Button">

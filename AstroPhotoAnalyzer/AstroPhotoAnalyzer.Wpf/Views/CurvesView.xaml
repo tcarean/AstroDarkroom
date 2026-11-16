@@ -34,25 +34,58 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-      <TextBlock Text="{local:T En='Contrast curves for:', Ro='Curbe de contrast pentru:'}" VerticalAlignment="Center" Margin="0,0,12,0" />
-      <RadioButton Content="Print" GroupName="CurvePurpose" IsChecked="{Binding IsPrint}" Foreground="{StaticResource TextBr}"
-                   VerticalAlignment="Center" Margin="0,0,14,0"
-                   ToolTip="{local:T En='The same curves; each one also gets the checks for paper: the background, the noise against the print target and the colours the paper cannot reproduce (the gamut)', Ro='Aceleasi curbe; la fiecare se adauga si verificarile pentru hartie: fundalul, zgomotul fata de tinta de print si culorile pe care hartia nu le poate reda (gamutul)'}" />
-      <RadioButton Content="{local:T En='Screen', Ro='Ecran'}" GroupName="CurvePurpose" IsChecked="{Binding IsScreen}" Foreground="{StaticResource TextBr}"
-                   VerticalAlignment="Center" Margin="0,0,20,0" ToolTip="{local:T En='The same curves, without the paper checks', Ro='Aceleasi curbe, fara verificarile de hartie'}" />
-      <TextBlock Text="{Binding Message}" VerticalAlignment="Center" Margin="16,0,0,0" TextWrapping="Wrap" MaxWidth="900">
-        <TextBlock.Style>
-          <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
-            <Style.Triggers>
-              <DataTrigger Binding="{Binding IsProblem}" Value="True">
-                <Setter Property="Foreground" Value="{StaticResource BadBr}" />
-              </DataTrigger>
-            </Style.Triggers>
-          </Style>
-        </TextBlock.Style>
-      </TextBlock>
-    </StackPanel>
+    <!-- The choices on the left, at their own width; the two sentences in the room left, one
+         under the other, so that each wraps inside the tab whatever its length (a horizontal
+         panel would offer them unlimited width and the tab's edge would cut them). -->
+    <Grid Grid.Row="0" Margin="0,0,0,8">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+        <TextBlock Text="{local:T En='Contrast curves for:', Ro='Curbe de contrast pentru:'}" VerticalAlignment="Center" Margin="0,0,12,0" />
+        <RadioButton Content="Print" GroupName="CurvePurpose" IsChecked="{Binding IsPrint}" Foreground="{StaticResource TextBr}"
+                     VerticalAlignment="Center" Margin="0,0,14,0"
+                     ToolTip="{local:T En='Each curve also gets the checks for paper: the background, the noise against the print target and the colours the paper cannot reproduce (the gamut)', Ro='La fiecare curba se adauga si verificarile pentru hartie: fundalul, zgomotul fata de tinta de print si culorile pe care hartia nu le poate reda (gamutul)'}" />
+        <RadioButton Content="{local:T En='Screen', Ro='Ecran'}" GroupName="CurvePurpose" IsChecked="{Binding IsScreen}" Foreground="{StaticResource TextBr}"
+                     VerticalAlignment="Center" Margin="0,0,20,0" ToolTip="{local:T En='The curves without the dust moved, and without the paper checks', Ro='Curbele fara praful mutat si fara verificarile de hartie'}" />
+        <!-- R-185: the box shows the choice only where the dust move can be had; otherwise it is
+             unticked and disabled (dimmed by the theme), with the reason beside it. Both come
+             from the view-model. -->
+        <CheckBox x:Name="DustBox" Content="{local:T En='Put dust on paper black', Ro='Pune praful pe negrul hartiei'}"
+                  IsChecked="{Binding DustOnPaperBlack}" IsEnabled="{Binding DustBoxEnabled}" VerticalAlignment="Center"
+                  ToolTipService.ShowOnDisabled="True"
+                  ToolTip="{local:T En='For print: the curve also moves the dust onto the black of the paper, so the dust stands out from the sky as much as the paper allows. The sky stays where it is.', Ro='Pentru print: curba muta si praful pe negrul hartiei, ca sa se desprinda de cer cat permite hartia. Cerul ramane pe loc.'}" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0,0,0">
+        <TextBlock x:Name="DustBoxReason" Text="{Binding DustBoxReason}" TextWrapping="Wrap">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+              <Style.Triggers>
+                <!-- Without a reason the line takes no room, so the other sentence stays centred. -->
+                <Trigger Property="Text" Value="">
+                  <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+        <TextBlock x:Name="TabMessage" Text="{Binding Message}" TextWrapping="Wrap">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IsProblem}" Value="True">
+                  <Setter Property="Foreground" Value="{StaticResource BadBr}" />
+                </DataTrigger>
+                <Trigger Property="Text" Value="">
+                  <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+      </StackPanel>
+    </Grid>
 
     <Border Grid.Row="1" x:Name="GalleryArea" Background="{StaticResource PanelBg2}" CornerRadius="4" SizeChanged="GallerySizeChanged">
       <!-- The preview is at least the size the view shows it at, so the Viewbox only shrinks it;
@@ -137,8 +170,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </ItemsControl.ItemTemplate>
       </ItemsControl>
       <TextBlock Style="{StaticResource Faint}" Text="{Binding AnchorSource}" TextWrapping="Wrap" Margin="0,6,0,0" />
-      <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,2,0,0"
-                 Text="{local:T En='The curves do not move the dust and the sky: a background too dark for paper is lifted when you redo the stretch (see the Tones tab). The image here is a reduced copy; the program assumes the pixels are sRGB.', Ro='Curbele nu muta praful si cerul: un fundal prea intunecat pentru hartie se ridica atunci cand refaci stretch-ul (vezi tabul Tonuri). Imaginea de aici e o copie micsorata; programul presupune ca pixelii sunt sRGB.'}" />
+      <!-- What the curves shown move and what they hold: the core's sentence (R-185). -->
+      <TextBlock x:Name="Footnote" Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,2,0,0" Text="{Binding Footnote}" />
       <!-- A fixed place, two lines high, for the save message: its appearance does not
            move the image. -->
       <Grid Height="34" Margin="0,4,0,0">

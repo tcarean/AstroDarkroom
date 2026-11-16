@@ -97,7 +97,7 @@ entry gives. Paths are relative to the project folder.
 | CR-019 | 3 | common | owner | "Real detail across the width" shows a count of stars with the unit px | open |
 | CR-020 | 3 | common | confirmed | A section heading reads "1 .  Title", an About component "Name  -  role" | open |
 | CR-021 | 3 | common | confirmed | In the tab, the tooltip of `Original` promises a key only the full screen has | open |
-| CR-022 | 3 | common | confirmed | A disabled check box looks enabled | open |
+| CR-022 | 3 | common | confirmed | A disabled check box looks enabled | fixed dc3657ef |
 | CR-023 | 3 | common | owner | Every FITS gets the "no colour profile" caution, and its profile is never looked for | open |
 | CR-024 | 3 | some setups | confirmed | The description of "Under L* 15" is false on canvas | open |
 | CR-025 | 3 | some setups | confirmed | Parameters typed with decimals are reported rounded | open |
@@ -106,7 +106,7 @@ entry gives. Paths are relative to the project folder.
 | CR-028 | 3 | some setups | confirmed | On a mono image five texts still speak of colour and of three channels | open |
 | CR-029 | 3 | some setups | confirmed | A neutral edge darker than the sky is explained as "the Milky Way entering a corner" | open |
 | CR-030 | 3 | some setups | confirmed | Three tables lose their columns | open |
-| CR-031 | 3 | some setups | confirmed | The red sentence of two tabs is cut at the right edge | open |
+| CR-031 | 3 | some setups | confirmed | The red sentence of two tabs is cut at the right edge | fixed dc3657ef |
 | CR-032 | 3 | some setups | to measure | The map, the preview and the full screen open on the primary screen | open |
 | CR-033 | 3 | some setups | to measure | A cloud's name on the map is cut to the width of its circle | open |
 | CR-034 | 3 | some setups | to measure | The map window's cloud list has no room on a low screen | open |
@@ -125,7 +125,7 @@ entry gives. Paths are relative to the project folder.
 | CR-047 | 3 | rare | confirmed | A failed write onto a file of the input's length is told as a save over the input | open |
 | CR-048 | 3 | rare | owner | With the dust at black the shadow chart runs to the bright clouds, not the band | open |
 | CR-049 | 3 | rare | confirmed | With no sky patch the map's dust line still says "the darkest 1 % of the sky" | open |
-| CR-050 | 3 | rare | confirmed | A curve save confirmed after a recompute landed writes nothing | open |
+| CR-050 | 3 | rare | confirmed | A curve save confirmed after a recompute landed writes nothing | fixed dc3657ef |
 | CR-051 | 3 | rare | to measure | A soft-proof intent the core refuses is shown with " (Parameter 't')" and can take the controls away | open |
 | CR-052 | 3 | rare | to measure | The hand recipe can read "saturation at 100 %; it would leave 100.0 %" | open |
 | CR-053 | 4 | common | to measure | Four theme defects: tab headers, the report's corner, the progress bar, the focus | open |
@@ -145,9 +145,15 @@ entry gives. Paths are relative to the project folder.
 | CR-067 | 4 | crafted | confirmed | Arguments and paths go into the log as typed | open |
 | CR-068 | 4 | rare | to measure | The noise tile's range of exactly 6000 steps is decided by float rounding | open |
 | CR-069 | 4 | rare | confirmed | Two more level figures of an 8-bit source fall by float rounding: an edge folded into its corner, a JPEG percentile | open |
+| CR-070 | 3 | rare | confirmed | Two texts of the dust move can print a figure equal to the one it is compared with | open |
+| CR-071 | 4 | common | to measure | The curves tab's second gallery is built as the first: its bitmaps on the window's thread, its gamut table again | open |
+| CR-072 | 4 | rare | confirmed | A failed computation of one gallery of the curves tab takes both away, and the box cannot be unticked to go round it | open |
+| CR-073 | 3 | rare | to measure | A curve can be missing from the gallery with the dust move: its strengths are judged with other points than the ones it gets | open |
+| CR-074 | 4 | common | confirmed | Two figures of the paper fit are not the same from one run to the next | open |
 
 9 entries of severity 1, 4 of severity 2, 39 of severity 3, 15 of severity 4; 45 confirmed, 14
-to measure, 8 for the owner. (As counted on 2026-11-13; CR-068 and CR-069 were added on 2026-11-14, and the
+to measure, 8 for the owner. (As counted on 2026-11-13; CR-068 and CR-069 were added on 2026-11-14, CR-070 to
+CR-074 on 2026-11-16 with the dust move of the suggested curves (ADR 0101), and the
 Status column says what has been closed since.) After the entries: what the owner may want to
 look at though no rule is broken, then the cleanup list (dead code, duplicates, work done twice).
 
@@ -558,7 +564,7 @@ bit. The 16-bit reference image is not touched.
   ..." is disabled and reads exactly like the five enabled boxes above it; a click does nothing.
 - Should: a disabled box dimmed as the disabled buttons beside it.
 - Evidence: confirmed (the template was probed off screen; a look at the map confirms it).
-- Status: open
+- Status: fixed dc3657ef
 
 ### CR-023 Every FITS gets the "no colour profile" caution, and its profile is never looked for
 
@@ -690,7 +696,7 @@ bit. The 16-bit reference image is not touched.
 - Should: the sentence wrapped inside the tab.
 - Test: none asserts it (`WindowSmokeTests` renders at 1400 x 860, where the PNG would show it).
 - Evidence: confirmed.
-- Status: open
+- Status: fixed dc3657ef
 
 ### CR-032 The map, the preview and the full screen open on the primary screen
 
@@ -965,7 +971,7 @@ figure as printed). The other comparisons are still made on the exact value and 
   as the paper fit does (`GamutFitTab.cs:346`), removes the jump too.
 - Test: none saves across a recompute.
 - Evidence: confirmed (the path; the timing, one to three seconds, needs a run).
-- Status: open
+- Status: fixed dc3657ef
 
 ### CR-051 A soft-proof intent the core refuses is shown with " (Parameter 't')" and can take the controls away
 
@@ -996,6 +1002,53 @@ figure as printed). The other comparisons are still made on the exact value and 
   black: the tab's last row gives a mask "with the saturation at 100 %; it would leave 100.0 %".
 - Should: the sentence that no mask helps.
 - Evidence: to measure (the code path is read; whether a real image reaches it needs a run).
+- Status: open
+
+### CR-070 Two texts of the dust move can print a figure equal to the one it is compared with
+
+Added on 2026-11-16, with the dust move of the suggested curves (R-184, ADR 0101). The same kind
+as CR-042, in texts that did not exist when that entry was written.
+
+- Where: `Report/CurveTexts.cs` (`PaperChecks`, the branch of a curve with the dust move;
+  `DustLines`); `Analysis/CurveAdvisor.cs` (`AimDust`, where `StoppedShort` is decided).
+- What happens: both are decided on the exact L\* against `CurveDustAimTolerance` (0.05) and
+  printed with one decimal.
+- Case: a move that stops with the dust 0.05 to 0.1 L\* from paper black. Under it (a lift that
+  stopped short): the check reads "the dust at L\* 9.0 after the curve, paper black is L\* 9.0".
+  Either way: the evidence reads "from L\* 7.7 to 3.4 (paper black is L\* 3.4 at Dmax 2.43);
+  further than that the curve would no longer rise smoothly".
+- Should: as CR-042: compare as printed, or print one more decimal when the figure rounds onto
+  the other.
+  `AimDust` also returns a move as stopped short, whatever its distance from paper black, when
+  the end of the bisection's range does not reach it (the two early returns): the tolerance of
+  ADR 0101, decision 12, is applied to the cut moves only, and the evidence would then give the
+  spline as the reason where the limit is the range. No valid move was found on that path.
+- Test: none on these edges.
+- Evidence: confirmed (by reading; no image has shown it: the owner's profile, Dmax 2.43, cuts
+  the move by less than the tolerance, which reads as arrived).
+- Status: open
+
+### CR-073 A curve can be missing from the gallery with the dust move: its strengths are judged with other points than the ones it gets
+
+Added on 2026-11-16, by the review of the whole branch of the dust move (R-184, ADR 0101).
+
+- Where: `Analysis/CurveAdvisor.cs` (`AimDust`: `Valid`, over `CurveStrengths`, on the outputs of
+  the plain set's strongest curve; `Curves` with a move: `Cap` through `Points`, then
+  `if (c.IsSuggestible)`); `Runs/CurveRun.cs` (the fallback to the plain set, only when no curve
+  is left).
+- What happens: the move is validated against the plain set's points above the sky, but the set
+  with the move computes its two caps again with the move's points in place. Where the full
+  curve needs a cap, the bisection can end on another factor, so the curves above the sky
+  differ from the ones the move was judged with, and a strength whose spline is then not
+  suggestible is left out silently. `Cap` also takes the factor 0 as suggestible, which holds
+  without the move and is not shown with it. `Maxima` is in neither judgement, so it can exist
+  in one gallery and not in the other.
+- Case: none found. On the four reference images the full curve needs no cap; it takes an image
+  whose plain `Puternica` is capped.
+- Should: the move judged on the set it ends in, or a set with the move that loses a curve
+  falling back to the plain one with the reason beside the box.
+- Test: none.
+- Evidence: to measure (by reading; an image with a capped full curve would show it).
 - Status: open
 
 ## Severity 4: robustness and cleanliness
@@ -1255,6 +1308,61 @@ today; each goes wrong the day its constant or its rule moves, and no test would
 - Evidence: confirmed by reading. Found by the review of the branch that fixed CR-001 to CR-005
   (2026-11-14), which also found the same tie in the second half of `EdgeRegion.Coloured`; that
   one was fixed on the branch, with CR-003.
+- Status: open
+
+### CR-071 The curves tab's second gallery is built as the first: its bitmaps on the window's thread, its gamut table again
+
+Added on 2026-11-16, with the two galleries of R-185 (ADR 0101). The same kind as CR-055, with
+one more occasion.
+
+- Where: `AstroPhotoAnalyzer.Wpf/ViewModels/CurvesTab.cs` (`Show`, which files a set as the
+  gallery with the dust move or the plain one); `Runs/CurveRun.cs` (`GamutAnalyzer.Build`, once
+  per run).
+- What happens: the stall of CR-055 now also comes at the first untick of the box and at the
+  first change to `Ecran`, when the other gallery lands and its four or five previews are
+  turned into bitmaps on the dispatcher. With a profile that run builds the gamut table again:
+  the cleanup list's "three times" per analysis is four once both galleries exist.
+- Should: with CR-055, the bitmaps made inside the `Task.Run`; the table kept for the image.
+- Evidence: to measure (as CR-055).
+- Status: open
+
+### CR-072 A failed computation of one gallery of the curves tab takes both away, and the box cannot be unticked to go round it
+
+Added on 2026-11-16, with the two galleries of R-185 (ADR 0101). The same kind as CR-061, with a
+new way in and a harder way out.
+
+- Where: `AstroPhotoAnalyzer.Wpf/ViewModels/CurvesTab.cs` (the catch of `ComputeCore`, `Reset`,
+  `DustBoxEnabled`, `AskMoved`).
+- What happens: as in CR-061 the catch resets the tab. Since R-185 a computation also starts
+  from the box and from the purpose, and `Reset` drops both galleries. After it nothing is known
+  of the move, so the box is disabled, while the owner's choice stays on: the next computation
+  asks for the move again.
+- Case: the gallery with the dust move fails (out of memory on a large image): the plain
+  gallery that was on screen is replaced by the exception's message. "Analyse" computes the
+  gallery with the move again, and fails again. The way round is to choose `Ecran` and analyse,
+  which computes the plain gallery.
+- Should: with CR-061, the gallery on screen kept; a gallery with the move that fails falls
+  back to the plain one, with the reason beside the box.
+- Evidence: confirmed (the path; that such a computation fails on a real image is not shown).
+- Status: open
+
+### CR-074 Two figures of the paper fit are not the same from one run to the next
+
+Added on 2026-11-16, when the validation records were made exact (`docs/validation.md`,
+History). Not from the dust move: the paper fit is not touched by that branch.
+
+- Where: `Runs/GamutFitRun.cs`, `Analysis/GamutFit.cs` (the figures of a variant: the chroma
+  given up at the 99 % mark, the share left after the fit), measured with the rows in parallel.
+- What happens: on the plate-solved FITS through the baryta profile (V-016), two runs of the
+  same build one after the other gave `gamutfit.Lina.lostP99` 3.6885 and 3.6887, every other of
+  the 1950 figures of the 17 cases being the same; `gamutfit.Exacta.after` read 0.0005 in both
+  against the 0.0006 recorded on 2026-11-14.
+- Case: run V-016 twice and compare the two `MEASURED` lines.
+- Should: the same figures from the same image; where the rows are measured in parallel, a
+  result that does not depend on which finishes first. Until then V-016's record cannot be made
+  exact, and it keeps the figures of 2026-11-14.
+- Test: V-016 passes inside its tolerance of 0.01 either way.
+- Evidence: confirmed (two runs; the cause was not looked for).
 - Status: open
 
 ## For the owner's look

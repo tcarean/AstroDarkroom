@@ -39,7 +39,7 @@ AstroPhotoAnalyzer.Core/
            DustAnalyzer.cs (the five classes of the patches, by the band or by the modelled sky, the one measurement of the dust and the sky, the catalogue's clouds),
            PrintStretchSimulator.cs (the grid, the ladder, the recommendation, the cloud rows),
            PrintPreview.cs (a row as an image, for the preview window),
-           ToneCurve.cs, CurveAdvisor.cs (the suggested curves: spline, anchors, recipe, evidence; R-140 to R-143),
+           ToneCurve.cs, CurveAdvisor.cs (the suggested curves: spline, anchors, recipe, the dust move, evidence; R-140 to R-143, R-184),
            GamutAnalyzer.cs (the share outside the paper's gamut, R-144),
            GamutFit.cs (the paper fit: the table of the largest chroma over L* and hue, the knee, the recipe; R-175, R-176),
            SoftProof.cs (the soft proof: the profile's tables per intent, the display step; R-160 to R-162),
@@ -82,7 +82,7 @@ AstroPhotoAnalyzer.Wpf/
              MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131),
              IccPickerViewModel.cs (the profile window, R-132),
              WindowSettings.cs (the remembered settings file, R-156),
-             CurvesTab.cs (the Editare Curbe tab and the curve window, R-146, R-147),
+             CurvesTab.cs (the Editare Curbe tab, its box for the dust move and the curve window, R-146, R-147, R-185),
              SoftProofTab.cs (the Soft proof tab and its window, R-163),
              GamutFitTab.cs (the Culori pentru hartie tab, R-178, R-179)
   Views/ReportView, TonesView, ExportView, ResolutionView, BackgroundView, CurvesView, GamutFitView, SoftProofView,

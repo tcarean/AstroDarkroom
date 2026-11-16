@@ -34,12 +34,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-      <TextBlock Text="{local:T En='Colours fitted to the paper:', Ro='Culori potrivite pentru hartie:'}" VerticalAlignment="Center" Margin="0,0,12,0" />
-      <CheckBox Content="{local:T En='show what does not fit', Ro='arata ce nu intra'}" IsChecked="{Binding ShowOutside}" Foreground="{StaticResource TextBr}"
+    <!-- The box on the left, at its own width; the sentence in the room left, so that it wraps
+         inside the tab (a horizontal panel would offer it unlimited width and cut it at the
+         tab's edge). -->
+    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+      <TextBlock DockPanel.Dock="Left" Text="{local:T En='Colours fitted to the paper:', Ro='Culori potrivite pentru hartie:'}" VerticalAlignment="Center" Margin="0,0,12,0" />
+      <CheckBox DockPanel.Dock="Left" Content="{local:T En='show what does not fit', Ro='arata ce nu intra'}" IsChecked="{Binding ShowOutside}" Foreground="{StaticResource TextBr}"
                 VerticalAlignment="Center" Margin="0,0,20,0"
                 ToolTip="{local:T En='Paints in red the pixels whose colour the paper cannot reproduce: on the Before side those of the original (the same warning as in the Soft proof tab), on the After side those still left after the fit', Ro='Coloreaza in rosu pixelii a caror culoare hartia nu o poate reda: in partea Inainte pe cei din original (acelasi avertisment ca in tabul Soft proof), in partea Dupa pe cei ramasi dupa potrivire'}" />
-      <TextBlock Text="{Binding Message}" VerticalAlignment="Center" Margin="16,0,0,0" TextWrapping="Wrap" MaxWidth="900">
+      <TextBlock x:Name="TabMessage" Text="{Binding Message}" VerticalAlignment="Center" Margin="16,0,0,0" TextWrapping="Wrap">
         <TextBlock.Style>
           <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
             <Style.Triggers>
@@ -50,7 +53,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </Style>
         </TextBlock.Style>
       </TextBlock>
-    </StackPanel>
+    </DockPanel>
 
     <Border Grid.Row="1" x:Name="GalleryArea" Background="{StaticResource PanelBg2}" CornerRadius="4" SizeChanged="GallerySizeChanged">
       <!-- The original left of the line and the variant shown right of it, each under its red

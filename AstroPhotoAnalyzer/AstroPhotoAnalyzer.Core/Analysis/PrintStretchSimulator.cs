@@ -159,6 +159,13 @@ namespace AstroPhotoAnalyzer
     }
 
     /// <summary>
+    /// Why the darkest sky, not the dust class, gives the dust's L* (ADR 0033): the frame has no
+    /// dust patch; its dust class is under Thresholds.DustClassMinFraction of the patches; or the
+    /// class is large enough and its dark part is lighter than the darkest sky.
+    /// </summary>
+    internal enum DarkestSkyCause { None, NoDust, TooLittleDust, SkyDarker }
+
+    /// <summary>
     /// The print-background simulation (B4): the rows of the grid and of the given target, the
     /// recommendation, the exact targets read on the ladder, the cloud rows and the map, with the
     /// sentences that name the method for the report and the window.
@@ -284,6 +291,19 @@ namespace AstroPhotoAnalyzer
                       $"dalele cu {Fmt.F1(Map.NoiseThreshold)} L* mai intunecate decat cerul din jurul lor (de {Fmt.F0(Thresholds.SkyNoiseK)} ori zgomotul lui), dar nu mai deschise decat cerul mediu");
 
         /// <summary>
+        /// Which of its three causes makes the darkest sky, not the dust class, give the dust's
+        /// L*; None when the dust class decides. One rule for every text that says why.
+        /// </summary>
+        internal DarkestSkyCause DarkestSkyCause
+            => Map.DustSource == DustSource.DustClass ? DarkestSkyCause.None
+                : DustPatchCount == 0 ? DarkestSkyCause.NoDust
+                : DustPatchCount < Thresholds.DustClassMinFraction * PatchCount ? DarkestSkyCause.TooLittleDust
+                : DarkestSkyCause.SkyDarker;
+
+        /// <summary>The dust class's share of the frame's patches, in percent.</summary>
+        internal double DustPatchPct => 100.0 * DustPatchCount / PatchCount;
+
+        /// <summary>
         /// Why the darkest sky gives the dust's L* and not the dust class, in the report's words:
         /// no dust found, too little of it, or the darkest sky darker than the class's threshold;
         /// null when the dust class decides.
@@ -292,15 +312,16 @@ namespace AstroPhotoAnalyzer
         {
             get
             {
-                if (Map.DustSource == DustSource.DustClass) return null;
-                string dustPct = Fmt.Pct(100.0 * DustPatchCount / PatchCount);
-                return DustPatchCount == 0
-                    ? Tr.Pick("no dust found", "nu s-a gasit praf")
-                    : DustPatchCount < Thresholds.DustClassMinFraction * PatchCount
-                        ? Tr.Pick($"too little dust: {dustPct} of the frame, under {Fmt.F0(Thresholds.DustClassMinFraction * 100)} %, so it does not decide",
-                                  $"prea putin praf: {dustPct} din cadru, sub {Fmt.F0(Thresholds.DustClassMinFraction * 100)} %, deci nu decide")
-                        : Tr.Pick($"darker than the {Fmt.F0(Thresholds.DustClassFraction * 100)} % threshold of the dust patches, {dustPct} of the frame",
-                                  $"mai intunecat decat pragul de {Fmt.F0(Thresholds.DustClassFraction * 100)} % al dalelor de praf, {dustPct} din cadru");
+                string dustPct = Fmt.Pct(DustPatchPct);
+                return DarkestSkyCause switch
+                {
+                    DarkestSkyCause.None => null,
+                    DarkestSkyCause.NoDust => Tr.Pick("no dust found", "nu s-a gasit praf"),
+                    DarkestSkyCause.TooLittleDust => Tr.Pick($"too little dust: {dustPct} of the frame, under {Fmt.F0(Thresholds.DustClassMinFraction * 100)} %, so it does not decide",
+                                                             $"prea putin praf: {dustPct} din cadru, sub {Fmt.F0(Thresholds.DustClassMinFraction * 100)} %, deci nu decide"),
+                    _ => Tr.Pick($"darker than the {Fmt.F0(Thresholds.DustClassFraction * 100)} % threshold of the dust patches, {dustPct} of the frame",
+                                 $"mai intunecat decat pragul de {Fmt.F0(Thresholds.DustClassFraction * 100)} % al dalelor de praf, {dustPct} din cadru"),
+                };
             }
         }
 

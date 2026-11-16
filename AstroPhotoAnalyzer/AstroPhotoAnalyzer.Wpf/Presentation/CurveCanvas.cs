@@ -19,13 +19,15 @@
 //
 // It receives the curve already sampled by the core, the control points and the positions of
 // the classes; it draws the frame, the grid, the "no change" diagonal, the curve, the points and
-// a vertical line with a label for each class. XMax chooses how much of the input axis is seen:
+// a vertical line with a label for each class and for each point a dust move adds; a label that
+// would run over its neighbour starts under it. XMax chooses how much of the input axis is seen:
 // 1 for the whole curve, less for the shadow chart. The output axis goes up to the largest
 // value drawn, so that the magnified shadows do not leave the frame.
 
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 
@@ -76,6 +78,48 @@ namespace AstroPhotoAnalyzer.Wpf
             new Typeface("Segoe UI"), size, TextBrush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
         /// <summary>
+        /// Where each marker's label starts, measured down from the top of the plot, so that no
+        /// two labels closer together than a text is thick run over each other: a label that
+        /// would run over another starts lower, under the ones in its way (R-147). A curve with the dust move has four
+        /// labels within a few pixels on the whole-curve chart.
+        /// </summary>
+        /// <param name="labels">
+        /// Each label's position across the chart and its length, in pixels, in drawing order.
+        /// </param>
+        /// <param name="thickness">How thick a label is across the chart: the text's height.</param>
+        /// <param name="room">
+        /// The plot's height: a label that would end past it goes back to the top, where it
+        /// overlaps but is whole.
+        /// </param>
+        /// <returns>One start per label, 0 for the top.</returns>
+        internal static IReadOnlyList<double> LabelStarts(IReadOnlyList<(double X, double Length)> labels, double thickness, double room)
+        {
+            var starts = new double[labels.Count];
+            for (int i = 0; i < labels.Count; i++)
+            {
+                // Pushed down under every earlier label it would run over, until none is in its way.
+                double start = 0;
+                for (bool moved = true; moved;)
+                {
+                    moved = false;
+                    for (int j = 0; j < i; j++)
+                    {
+                        if (Math.Abs(labels[i].X - labels[j].X) >= thickness + LabelClearance) continue;
+                        if (start >= starts[j] + labels[j].Length || starts[j] >= start + labels[i].Length) continue;
+                        start = starts[j] + labels[j].Length + LabelGap;
+                        moved = true;
+                    }
+                }
+                starts[i] = start + labels[i].Length > room ? 0 : start;
+            }
+            return starts;
+        }
+
+        // Two labels nearer than a text's thickness plus this would touch; one pushed down leaves
+        // this much under the label above it.
+        const double LabelClearance = 2, LabelGap = 6;
+
+        /// <summary>
         /// Draws the whole chart in one pass; draws nothing without a plot area, with fewer than
         /// two points, or with an <see cref="XMax"/> that is not positive. The output axis ends at
         /// <see cref="XMax"/> or at the largest output of a point within it, whichever is larger.
@@ -112,16 +156,23 @@ namespace AstroPhotoAnalyzer.Wpf
             dc.PushClip(new RectangleGeometry(new Rect(left, top, w, h)));
             IReadOnlyList<CurveMarker> markers = Markers;
             if (markers != null)
-                foreach (CurveMarker m in markers)
+            {
+                // Each label runs down from its start beside its dotted line; the ones that would
+                // run over a neighbour start under it (LabelStarts).
+                List<CurveMarker> shown = markers.Where(m => m.X <= xMax).ToList();
+                List<FormattedText> texts = shown.Select(m => Text(m.Label)).ToList();
+                IReadOnlyList<double> starts = LabelStarts(shown.Select((m, i) => (At(m.X, 0).X, texts[i].Width)).ToList(), texts.Count == 0 ? 0 : texts[0].Height, h - 8);
+                var dash = new Pen(GridBrush, 1) { DashStyle = DashStyles.Dot };
+                for (int i = 0; i < shown.Count; i++)
                 {
-                    if (m.X > xMax) continue;
-                    var dash = new Pen(GridBrush, 1) { DashStyle = DashStyles.Dot };
-                    dc.DrawLine(dash, At(m.X, 0), At(m.X, yMax));
-                    FormattedText t = Text(m.Label);
-                    dc.PushTransform(new RotateTransform(-90, At(m.X, 0).X + 3, top + 4 + t.Width));
-                    dc.DrawText(t, new Point(At(m.X, 0).X + 3, top + 4 + t.Width));
+                    double x = At(shown[i].X, 0).X;
+                    dc.DrawLine(dash, At(shown[i].X, 0), At(shown[i].X, yMax));
+                    double baseline = top + 4 + starts[i] + texts[i].Width;
+                    dc.PushTransform(new RotateTransform(-90, x + 3, baseline));
+                    dc.DrawText(texts[i], new Point(x + 3, baseline));
                     dc.Pop();
                 }
+            }
 
             var geometry = new StreamGeometry();
             using (StreamGeometryContext g = geometry.Open())

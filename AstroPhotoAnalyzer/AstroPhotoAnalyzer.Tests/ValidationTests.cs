@@ -147,7 +147,10 @@ public class ValidationTests
             p = p.WithDmaxFromProfile(profile, out string error) ?? throw new Exception(error);
         }
         AnalysisResult a = AnalysisRun.Execute(image, p);
-        CurveSet set = CurveRun.Execute(a, CurvePurpose.Print, 1600, 900);
+        // The parameter dustOnPaperBlack asks for the dust move of R-184; its figures are added
+        // only for a set that carries it, so the other curves cases print what they always did.
+        bool dustMove = parameters.TryGetProperty("dustOnPaperBlack", out JsonElement dm) && dm.GetBoolean();
+        CurveSet set = CurveRun.Execute(a, CurvePurpose.Print, 1600, 900, dustMove);
         string[] cls = { "dust", "sky", "band", "clouds", "peaks" };
         var f = new Dictionary<string, object>(StringComparer.Ordinal)
         {
@@ -159,15 +162,36 @@ public class ValidationTests
         };
         double[] anchors = set.Anchors.AsArray();
         for (int i = 0; i < 5; i++) f["curves.anchor." + cls[i]] = R(anchors[i]);
+        if (dustMove)
+        {
+            f["curves.dustOnPaperBlack"] = set.DustOnPaperBlack;
+            f["curves.dustMoveRefusal"] = set.DustMoveRefusal ?? "none";
+        }
         foreach (CurveSuggestion s in set.Suggestions)
         {
             string k = "curves." + s.Name + ".";
             CurveEvidence e = s.Evidence;
+            // The points of the five classes, without the two the dust move adds: the same
+            // indices as ever on a curve without it.
+            CurvePoint[] own = s.Curve.Points.Where(q => !q.Extra).ToArray();
             for (int i = 0; i < 5; i++)
             {
                 f["curves.before.lstar." + cls[i]] = R(e.LstarBefore[i]);
                 f[k + "lstar." + cls[i]] = R(e.LstarAfter[i]);
-                if (i >= 2) f[k + "point." + cls[i]] = R(s.Curve.Points[i + 1].Y);
+                if (i >= 2) f[k + "point." + cls[i]] = R(own[i + 1].Y);
+            }
+            if (e.Dust is DustMoveFigures d)
+            {
+                f[k + "dust.point"] = R(own[1].Y);
+                f[k + "dust.pointCount"] = s.Curve.Points.Count;
+                f[k + "dust.hold"] = s.Curve.Points.Where(q => q.Extra && q.X > own[1].X).Select(q => (object)R(q.X)).FirstOrDefault() ?? "none";
+                f[k + "dust.helper"] = s.Curve.Points.Any(q => q.Extra && q.X < own[1].X);
+                f[k + "dust.stoppedShort"] = d.StoppedShort;
+                f[k + "dust.lstarAfter"] = R(d.LstarAfter);
+                f[k + "dust.paperContrastChangePct"] = R(d.PaperContrastChangePct);
+                f[k + "dust.noiseChangePct"] = R(d.DustNoiseChangePct);
+                f["curves.before.dust.pctUnderBlack"] = R(d.PctUnderBlackBefore);
+                f[k + "dust.pctUnderBlack"] = R(d.PctUnderBlackAfter);
             }
             f["curves.before.pctClipped"] = R(e.PctClippedBefore);
             f[k + "noiseGain"] = R(e.NoiseGain);
