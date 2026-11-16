@@ -75,7 +75,10 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The WCS from the header, or null when the header has no readable one: no CTYPE, a
-        /// projection other than TAN, no CRPIX/CRVAL, or no form of the linear part.
+        /// projection other than TAN, no CRPIX/CRVAL, no form of the linear part, or one of
+        /// those numbers present and not a number as FITS writes one (R-018, ADR 0103: read as
+        /// 0, it gave a WCS somewhere else in the sky, or none for a complete plate solution
+        /// whose reals have a D exponent).
         /// </summary>
         /// <param name="h">The FITS header, keyword -> value.</param>
         /// <param name="w">The raster's width, in pixels.</param>
@@ -85,7 +88,8 @@ namespace AstroPhotoAnalyzer
         /// reader makes (ADR 0049).
         /// </param>
         /// <returns>
-        /// The WCS; null when there is none to read, or its linear part is singular.
+        /// The WCS; null when there is none to read, a number of it cannot be read, or its
+        /// linear part is singular.
         /// </returns>
         internal static Wcs TryFrom(IReadOnlyDictionary<string, string> h, int w, int h2, bool rowsFlipped)
         {
@@ -95,26 +99,35 @@ namespace AstroPhotoAnalyzer
             if (!h.ContainsKey("CRPIX1") || !h.ContainsKey("CRPIX2") || !h.ContainsKey("CRVAL1") || !h.ContainsKey("CRVAL2"))
                 return null;
 
+            // A number that is present and cannot be read is no number: the header then holds no
+            // WCS, whatever its other cards say.
+            bool readable = true;
+            double Num(string k, double def)
+            {
+                if (!FitsReader.TryHDbl(h, k, def, out double v)) readable = false;
+                return v;
+            }
+
             double cd11, cd12, cd21, cd22;
             if (h.ContainsKey("CD1_1") || h.ContainsKey("CD2_2"))
             {
-                cd11 = FitsReader.HDbl(h, "CD1_1", 0); cd12 = FitsReader.HDbl(h, "CD1_2", 0);
-                cd21 = FitsReader.HDbl(h, "CD2_1", 0); cd22 = FitsReader.HDbl(h, "CD2_2", 0);
+                cd11 = Num("CD1_1", 0); cd12 = Num("CD1_2", 0);
+                cd21 = Num("CD2_1", 0); cd22 = Num("CD2_2", 0);
             }
             else if (h.ContainsKey("CDELT1") && h.ContainsKey("CDELT2"))
             {
-                double d1 = FitsReader.HDbl(h, "CDELT1", 0), d2 = FitsReader.HDbl(h, "CDELT2", 0);
+                double d1 = Num("CDELT1", 0), d2 = Num("CDELT2", 0);
                 if (h.ContainsKey("PC1_1") || h.ContainsKey("PC2_2"))
                 {
                     // PC defaults to the identity on the diagonal and to 0 off it.
-                    cd11 = d1 * FitsReader.HDbl(h, "PC1_1", 1); cd12 = d1 * FitsReader.HDbl(h, "PC1_2", 0);
-                    cd21 = d2 * FitsReader.HDbl(h, "PC2_1", 0); cd22 = d2 * FitsReader.HDbl(h, "PC2_2", 1);
+                    cd11 = d1 * Num("PC1_1", 1); cd12 = d1 * Num("PC1_2", 0);
+                    cd21 = d2 * Num("PC2_1", 0); cd22 = d2 * Num("PC2_2", 1);
                 }
                 else
                 {
                     // CROTA2: the rotation of the axes, the AIPS convention (Paper II,
                     // section 6.1).
-                    double rot = FitsReader.HDbl(h, "CROTA2", 0) * Astrometry.Deg;
+                    double rot = Num("CROTA2", 0) * Astrometry.Deg;
                     double c = Math.Cos(rot), s = Math.Sin(rot);
                     cd11 = d1 * c; cd12 = -d2 * s;
                     cd21 = d1 * s; cd22 = d2 * c;
@@ -122,14 +135,17 @@ namespace AstroPhotoAnalyzer
             }
             else return null;
 
+            double crpix1 = Num("CRPIX1", 0), crpix2 = Num("CRPIX2", 0);
+            double crval1 = Num("CRVAL1", 0), crval2 = Num("CRVAL2", 0);
+            if (!readable) return null;
             if (cd11 * cd22 - cd12 * cd21 == 0) return null;
 
             return new Wcs
             {
-                Crpix1 = FitsReader.HDbl(h, "CRPIX1", 0),
-                Crpix2 = FitsReader.HDbl(h, "CRPIX2", 0),
-                Crval1 = FitsReader.HDbl(h, "CRVAL1", 0),
-                Crval2 = FitsReader.HDbl(h, "CRVAL2", 0),
+                Crpix1 = crpix1,
+                Crpix2 = crpix2,
+                Crval1 = crval1,
+                Crval2 = crval2,
                 Cd11 = cd11,
                 Cd12 = cd12,
                 Cd21 = cd21,

@@ -44,7 +44,7 @@ stack, before the user's exception, which carries no inner one, is thrown (`logg
 
 | reader | extensions | what it reads |
 |---|---|---|
-| `FitsReader` (hand-written, streaming) | `.fit .fits .fts` | first HDU with NAXIS 2 or 3; BITPIX 8/16/32 int (BZERO/BSCALE applied) and -32/-64 float; NAXIS3 = 1 or 3, anything else refused; rows always flipped, the file's first row last, as Siril shows every FITS whatever `ROWORDER` says (ADR 0049; a `TOP-DOWN` keyword is noted as ignored); empty primary HDUs skipped |
+| `FitsReader` (hand-written, streaming) | `.fit .fits .fts` | first HDU with NAXIS 2 or 3; BITPIX 8/16/32 int (BZERO/BSCALE applied) and -32/-64 float; a header number goes through `TryNumber` (E or D exponent, nothing .NET's wider styles accept), and one that is present and unreadable throws from `HInt` / `HDbl` (a size, BZERO, BSCALE) or, through `TryHDbl`, makes `Wcs.TryFrom` return null (ADR 0103); NAXIS3 = 1 or 3, anything else refused; rows always flipped, the file's first row last, as Siril shows every FITS whatever `ROWORDER` says (ADR 0049; a `TOP-DOWN` keyword is noted as ignored); empty primary HDUs skipped |
 | `ImageSharpReader` | `.tif .tiff .png .jpg .jpeg` | colour decoded as `Rgb48`, mono as `L16`; bit depth and channel count from the format's own metadata (PNG `BitDepth`/`ColorType`, TIFF `BitsPerSample`/`PhotometricInterpretation`, JPEG always 8); compression name; ICC profile from the **decoded** image (`Metadata.IccProfile` or `Frames[0].Metadata.IccProfile`) |
 
 ### The writer (`Input/FitsWriter.cs`, R-145, ADR 0032)

@@ -274,6 +274,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A FITS whose header writes a number with a `D` exponent (`BZERO = 3.2768D+04`), as the standard
+  allows, is read right: the number used to be taken as its default, so a 16-bit image was read
+  with half of its tones cut, and a complete plate solution as none. A size, a `BZERO` or a
+  `BSCALE` that is not a number at all now refuses the file with the keyword and its value, and
+  such a number in the plate solution means no plate solution, never one somewhere else in the
+  sky (CR-007 of the code review of 2026-11-13, ADR 0103).
 - A frame with too few stars to measure is no longer told that its corners are soft, and shows
   no star width for a zone either: the zones and the corner / centre figure read `n/a`, as the
   width over the whole frame already did (CR-006 of the code review of 2026-11-13, ADR 0102).
