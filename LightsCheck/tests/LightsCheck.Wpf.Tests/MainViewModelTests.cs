@@ -430,7 +430,8 @@ public class MainViewModelTests
     /// <summary>
     /// The folder dialog opens at the session root, one double click from <c>lights\</c>: an
     /// export there is refused with the core's sentence under the top bar and writes nothing
-    /// (R-032, R-028, ADR 0060, CR-014).
+    /// (R-032, R-028, ADR 0060, CR-014). The window asks the core before it writes, so the log
+    /// has one Warn line with the sentence and no exception: nothing was thrown and caught.
     /// </summary>
     [Fact]
     public async Task R032_AnExportIntoLightsIsRefusedWithALineAndNoFile()
@@ -439,11 +440,17 @@ public class MainViewModelTests
         MainViewModel vm = new();
         await vm.OpenAsync(f.Root);
         string[] before = Directory.GetFileSystemEntries(f.Root, "*", SearchOption.AllDirectories);
+        string sentence = $"fisierele nu se scriu in {f.LightsDir}: e folderul cu cadrele lights ale sesiunii, iar LightsCheck nu scrie nimic printre cadre. Alege alt folder.";
+        using LogCapture capture = LogCapture.Start();
 
         vm.Export(f.LightsDir);
 
-        Assert.Equal($"EROARE: fisierele nu se scriu in {f.LightsDir}: e folderul cu cadrele lights ale sesiunii, iar LightsCheck nu scrie nimic printre cadre. Alege alt folder.", vm.Status);
+        Assert.Equal("EROARE: " + sentence, vm.Status);
         Assert.Equal(before, Directory.GetFileSystemEntries(f.Root, "*", SearchOption.AllDirectories));
+        LogCapture.Captured line = Assert.Single(capture.Events);
+        Assert.Equal(NLog.LogLevel.Warn, line.Level);
+        Assert.Equal("the export into " + f.LightsDir + " was refused; the status line shows: " + sentence, line.Message);
+        Assert.Null(line.Exception);
     }
 
     [Fact]

@@ -548,7 +548,7 @@ public sealed class MainViewModel : ObservableObject
             // line: any other InvalidOperationException of the writers is a defect to see.
             if (SeriesOutputs.Refusal(_result.Session, dir) is string refusal)
             {
-                Log.Warn("the export into " + dir + " was refused: the folder holds the session's frames; the status line says so");
+                Log.Warn("the export into " + dir + " was refused; the status line shows: " + refusal);
                 Status = RunReport.Error(refusal);
                 return;
             }

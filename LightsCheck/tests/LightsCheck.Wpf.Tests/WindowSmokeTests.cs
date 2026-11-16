@@ -238,10 +238,14 @@ public class WindowSmokeTests
     /// over the field's own and the field gets a tooltip that says what is wrong and what the
     /// run does; a blank field and a right value look as always (R-029, ADR 0063, CR-016). `4,5`
     /// is the case of a Romanian keyboard's decimal comma. The red border is an element of its
-    /// own in the field's template, which no other trigger touches: Windows' stock template
+    /// own in the field's template, which no other trigger touches: WPF's stock template
     /// paints the field's border blue while the field has the keyboard or the pointer, so a red
     /// `BorderBrush` alone showed only once the user had left the field (the review of
-    /// 2026-11-16). The tooltip shows while a run disables the field too.
+    /// 2026-11-16). The tooltip shows while a run disables the field too. The field still
+    /// hosts its text and is as high as the thread field beside it, which keeps the stock
+    /// template, and the mark, when shown, lies exactly over the field, as thick as its border.
+    /// A test cannot give an unshown window the keyboard or the pointer: that the mark stays
+    /// under them rests on nothing else touching it.
     /// </summary>
     [Fact]
     public void R029_AWrongPixelSizeIsMarkedAndABlankOrRightOneIsNot()
@@ -269,6 +273,10 @@ public class WindowSmokeTests
             Assert.False(mark.IsHitTestVisible);
             Assert.Single(field.Template.Triggers.SelectMany(Setters), s => s.TargetName == "wrong");
             Assert.True(ToolTipService.GetShowOnDisabled(field));
+            Assert.IsType<ScrollViewer>(field.Template.FindName("PART_ContentHost", field));
+            TextBox threads = Assert.Single(((StackPanel)w.FindName("ThreadsInput")).Children.OfType<TextBox>());
+            Assert.True(field.ActualHeight > 0);
+            Assert.Equal(threads.ActualHeight, field.ActualHeight);
 
             foreach ((string typed, bool wrong) in new[] { ("", false), ("4,5", true), ("4.5", false), ("abc", true), ("  ", false) })
             {
@@ -276,6 +284,14 @@ public class WindowSmokeTests
                 Render(content, name: typed == "4,5" ? "window-pixel-wrong" : null);
 
                 Assert.Equal(wrong ? Visibility.Visible : Visibility.Collapsed, mark.Visibility);
+                if (wrong)
+                {
+                    Assert.Equal(field.BorderThickness, mark.BorderThickness);
+                    Assert.Equal(new Thickness(1), mark.BorderThickness);
+                    Assert.Equal(field.RenderSize, mark.RenderSize);
+                    Assert.Equal(new Point(0, 0), mark.TranslatePoint(new Point(0, 0), field));
+                }
+
                 Assert.Equal(wrong ? "Nu e un numar pozitiv (cu punct): marimea pixelului se ia ca si cum campul ar fi gol" : null, field.ToolTip);
             }
 

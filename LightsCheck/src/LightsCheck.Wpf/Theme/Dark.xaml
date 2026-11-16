@@ -165,7 +165,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
        to the view-model's "is valid" property, and while that is False a border in the bad
        colour is drawn over the field's own and the field gets a tooltip of its own, shown while
        a run disables the field too (ADR 0063). A blank field is valid.
-       The template is Windows' stock one for a text box (the border, its three triggers and
+       The template is WPF's stock one for a text box (the border, its three triggers and
        their two blues, so the field looks like the plain Field beside it) plus the "wrong"
        border. The mark is an element of its own because the stock triggers paint the field's
        border blue while the field has the keyboard or the pointer: a red BorderBrush on the

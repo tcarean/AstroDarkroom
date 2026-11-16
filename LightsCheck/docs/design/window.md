@@ -23,7 +23,7 @@ label and its field) whose tooltip is an `x:Static` of `MainViewModel`'s static 
 (R-083). They are read once, when the window is built, after the start-up has set the language;
 `ToolTipService.ShowOnDisabled` keeps them while a run disables the fields. The pixel field has
 the theme's `SettingField` style and its `Tag` bound to `PixelIsValid`. The style brings a
-template of its own, Windows' stock one for a text box plus a second border named `wrong`, in
+template of its own, WPF's stock one for a text box plus a second border named `wrong`, in
 the bad colour, collapsed: while `Tag` is false the template's last trigger shows it, and a
 trigger of the style gives the field a tooltip of its own, which then shows over the field in
 place of the group's, during a run too (R-029, ADR 0063). The mark is a separate element

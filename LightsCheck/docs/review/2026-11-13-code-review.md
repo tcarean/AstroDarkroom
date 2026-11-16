@@ -434,7 +434,7 @@ there first, and the cleanup list, which holds what is not a defect.
   aligned is `could not be aligned`; the report is written from what was measured.
 - Test: none. A FITS at the root that throws on open; the report expected.
 - Evidence: confirmed for `ReadWcs`. No input was found that makes the fit throw.
-- Status: fixed d57b73d2 (a fit without a solution is a failed registration, whatever a frame's registration throws makes it `could not be aligned`, and a FITS at the root that cannot be read for any reason is skipped as the plate solve: ADR 0062, R-018, R-025, R-026; which exceptions the console and the window catch around the whole run is as before)
+- Status: fixed d57b73d2 (a fit without a solution is a failed registration, whatever a frame's registration throws makes it `could not be aligned`, and a FITS at the root that cannot be read for any reason is skipped as the plate solve, as is, since 67938a96, a session folder that cannot be listed: ADR 0062, R-018, R-025, R-026; which exceptions the console and the window catch around the whole run is as before)
 
 ## Severity 3: a wrong text or a wrong display
 
@@ -452,7 +452,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: `R029_ThePixelInputIsParsedInvariantAndBlankMeansNoneTyped` asserts the property nobody
   binds. The window rendered with `PixelText = "4,5"`, asserting a visible difference.
 - Evidence: confirmed.
-- Status: fixed ffc7cd0b (the field has a red border and a tooltip of its own while its value is wrong, as DarksCheck marks its settings fields: ADR 0063, R-029)
+- Status: fixed ffc7cd0b (the field has a red border and a tooltip of its own while its value is wrong: ADR 0063, R-029; since 67938a96, after the review of the branch, the border is an element of its own in the field's template, because a red `BorderBrush`, DarksCheck's way, does not show while the field has the keyboard or the pointer)
 
 ### CR-017 The exposure verdict and the figure printed beside it disagree at the limit
 

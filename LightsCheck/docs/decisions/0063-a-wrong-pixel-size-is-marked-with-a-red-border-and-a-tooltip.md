@@ -24,7 +24,7 @@ A blank field and a right value look as before. The style, `SettingField`, takes
 idea, a trigger on the field's `Tag`, which the window binds to `PixelIsValid`, and draws the
 mark another way: the red border is an element of its own in the field's template, shown by
 that trigger and touched by no other. Measured on 2026-11-16, after the review of the branch:
-Windows' stock template of a text box has three triggers, `IsEnabled=False -> border.Opacity
+WPF's stock template of a text box (its Aero2 theme's) has three triggers, `IsEnabled=False -> border.Opacity
 0.56`, `IsMouseOver=True -> border.BorderBrush #FF7EB4EA` and `IsKeyboardFocused=True ->
 border.BorderBrush #FF569DE5`, which set the drawn border directly, over the field's
 `BorderBrush`. A red `BorderBrush` on the field, the first form of this fix and what DarksCheck
@@ -47,7 +47,11 @@ it, plus the mark. The field's tooltip shows while a run disables the field as w
 
 Over the marked field the pointer shows the field's own tooltip in place of the longer one of
 the `PIXEL (um)` input, which stays on the label above it. The stock template's two blues are
-now written in the theme; a Windows that changed them would leave this one field with the old
-ones. DarksCheck's settings fields have the gap this one had. The thread count field is not
+now written in the theme; the stock template comes with .NET's WPF, so a .NET that changed
+them, or a Windows theme for which WPF takes another stock template (high contrast), would
+leave this one field unlike the thread field beside it. That the mark stays in sight under
+the keyboard and the pointer is read from the template, where no other trigger touches it: a
+test cannot give an unshown window either. DarksCheck's settings fields have the gap this one
+had. The thread count field is not
 marked: R-029 gives it no invalid state, a wrong count meaning the default. Guarded by
 `R029_AWrongPixelSizeIsMarkedAndABlankOrRightOneIsNot`.

@@ -25,8 +25,10 @@ What fails after the frames are measured costs only what it was reading:
   is `could not be aligned`, with a Warn line and the exception in the log.
 - A FITS at the session root that cannot be read, for any reason, is skipped as a plate-solve
   source, with its line in the log, and the next one is tried (`SeriesRun.ReadWcs`). A session
-  folder that can no longer be listed by then (the drive unplugged, the folder renamed during
-  the measuring) gives no plate solve, with a Warn line (added after the review of 2026-11-16).
+  folder that cannot be listed then (the drive unplugged or the folder renamed during the
+  measuring; or a folder that refuses to be listed, which a session with a `lights\` subfolder
+  meets here for the first time) gives no plate solve, with a Warn line (added after the
+  review of 2026-11-16).
 
 The report is written from what was measured. A cancel is never caught.
 

@@ -466,8 +466,9 @@ internal static class SeriesRun
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
-            // The folder was listed when the run began: the drive went away or the folder was
-            // renamed during the measuring.
+            // With a lights\ subfolder the session folder itself is listed here for the first
+            // time: it may refuse to be listed, or the drive went away or the folder was renamed
+            // during the measuring.
             Log.Warn(e, root + " could not be listed; no plate solve is read");
             return null;
         }
