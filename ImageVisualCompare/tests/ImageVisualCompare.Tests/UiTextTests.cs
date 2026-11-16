@@ -245,8 +245,11 @@ ot-here.png"]);
             Assert.Equal("Schimbă A…", window.ChangeBeforeButton.Content);
             Assert.Equal("Schimbă B…", window.ChangeAfterButton.Content);
             Assert.Equal("Despre", window.AboutButton.Content);
+            Assert.Equal("Ajutor", window.HelpText.Text);
+            Assert.Equal("Ajutor", System.Windows.Automation.AutomationProperties.GetName(window.HelpButton));
+            Assert.Equal("Manualul, la secțiunea despre ce e pe ecran (F1)", window.HelpButton.ToolTip);
             Assert.Equal(
-                "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide · H: histogramă · F: culori false",
+                "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide · H: histogramă · F: culori false · F1: ajutor",
                 window.HintText.Text);
             Assert.Equal(VersionInfo.Banner, window.Title);
         });

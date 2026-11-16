@@ -45,16 +45,17 @@ has none. Everything on screen is dark, whatever the system theme (ADR 0018).
   records the controls assign without arithmetic of their own (`RenderPlan.cs`,
   `DividerLayout.cs`, `MinimapGeometry.cs`, `ScrollBarState.cs`, `PairLabelLayout.cs`,
   `Geometry.cs`, `PointD.cs`, `ImagePixel.cs`),
-  and every text the application shows, in English and Romanian, with the command line that
-  chooses between them (`UiText.cs`, `StartupArguments.cs`).
+  every text the application shows, in English and Romanian, with the command line that
+  chooses between them (`UiText.cs`, `StartupArguments.cs`), and the address of the wiki manual
+  Help and F1 open (`Manual.cs`).
   All of it unit tested.
 - `src/ImageVisualCompare.Wpf/` - `net8.0-windows`, the application: `Program.cs` (the entry
   point, which starts the log), `Logging/` (the diagnostic log), `Imaging/` (the decoder
   seam, WIC and the FITS loader behind it, the pair loader, memory housekeeping), `Controls/` (the comparison
   surface, the minimap), `MainWindow`, `MessageDialog`, `AboutWindow` (FlatCheck's, ADR 0045),
   `Interop/DarkTitleBar.cs`,
-  `Services/FileDialogService.cs`, `Theme.xaml`, `Version.cs` and `ThirdParty.cs` (what About
-  says), `Assets/` (the icon and the script that draws it). `THIRD-PARTY-NOTICES.md` holds the
+  `Services/FileDialogService.cs`, `Services/ExternalLink.cs` (the browser), `Theme.xaml`,
+  `Version.cs` and `ThirdParty.cs` (what About says), `Assets/` (the icon and the script that draws it). `THIRD-PARTY-NOTICES.md` holds the
   licences' text of the components About lists and stays beside the source; no build ships it
   (R-075).
 - `tests/ImageVisualCompare.Tests/` - `net8.0-windows` with `UseWPF`: Core, the imaging layer

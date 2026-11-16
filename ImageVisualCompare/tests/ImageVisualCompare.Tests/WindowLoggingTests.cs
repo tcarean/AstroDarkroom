@@ -162,6 +162,28 @@ public class WindowLoggingTests
         Assert.StartsWith("zoom out -> ", zooms[2]);
     }
 
+    [Fact]
+    public async Task R121_HelpLogsTheAddressItOpened()
+    {
+        var opened = new List<string>();
+        await WpfThread.RunAsync(StartOutsideTheCapture);
+        using LogCapture capture = LogCapture.Start();
+
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(new ScriptedDialogs(), new ImagePairLoader(new SizedLoader(2, 2, shownAsStored: false)))
+            {
+                OpenAddress = opened.Add,
+            };
+            window.HelpButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+
+        Assert.Equal(
+            ["Help opened: https://github.com/tcarean/AstroDarkroom/wiki/ImageVisualCompare#opening-a-pair"],
+            WithoutStateLines(capture.MessagesOf(Loggers.Window)));
+        Assert.Single(opened);
+    }
+
     /// <summary>
     /// The window's lines without those that report a state, not an action: how WPF renders,
     /// written when a window is built, and the memory, written when a pair is shown.

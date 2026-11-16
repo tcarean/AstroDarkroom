@@ -12,6 +12,8 @@
 > `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`,
 > `src/ImageVisualCompare.Wpf/Controls/PairLabelPanel.cs`,
 > `src/ImageVisualCompare.Core/PairLabelLayout.cs`,
+> `src/ImageVisualCompare.Core/Manual.cs`,
+> `src/ImageVisualCompare.Wpf/Services/ExternalLink.cs`,
 > `src/ImageVisualCompare.Wpf/Theme.xaml`,
 > `src/ImageVisualCompare.Wpf/Assets/make-icon.ps1`.
 > A change to the code this describes means this note is updated in the same task, or
@@ -128,7 +130,8 @@ bubbles, so the handler runs after the clicked button's own, and it calls `Compa
 `Open…`'s file dialogs have been answered; a load that follows, an open or a mode switch,
 focuses the surface once more when the pair is shown (`ShowPair`). The buttons stay focusable:
 `Tab` still reaches them, and the dialog buttons share the style (ADR 0042). `MainWindowTests`
-clicks each button but `About` on the WPF test thread and reads the window's logical focus, the
+clicks each button but `About` on the WPF test thread, `Help` with the window's `OpenAddress`
+replaced so that no browser starts, and reads the window's logical focus, the
 part of `Focus()` that works without a window handle (ADR 0032).
 
 ## In the diagnostic log
@@ -144,12 +147,33 @@ cancelled, and, after the load, that a message is shown or that the padding was 
 on screen staying.
 `OnPreviewKeyDown` hands `H` and `F` to `OnModeKeyAsync` with `KeyEventArgs.IsRepeat`, and a repeat
 does nothing there, so a held key switches once (R-114, ADR 0044); it does not pass on a repeat of
-`Ctrl+O` while a pair is being opened, which the open would ignore and log for each. `ShowPair`
+`Ctrl+O` while a pair is being opened, which the open would ignore and log for each. `F1` goes to
+`OnHelpKey` the same way, so a held F1 opens the manual once, and `ShowHelp` writes
+`Help opened: <address>`. `ShowPair`
 writes the pair on screen and the memory, reading the process's memory once more before the outgoing
 pair is released.
 `DarkTitleBar` writes the HRESULTs of the DWM calls it does not act on, for a report of a white
 caption. `MessageDialog` writes nothing: each caller says what it shows. The lines are listed in
 `logging.md` (ADR 0043).
+
+## Help and F1
+
+The `Help` button and `F1` open the window's manual in the wiki at the section of what is on screen
+(R-066, ADR 0056). `ShowHelp` hands `Manual.SectionFor` in Core three facts of the window, whether
+a pair is being opened, changed or switched (`_opening`, the time the loading veil is up), whether
+a pair is shown, and `_mode`, the mode of the pair on screen; `Manual.Url` makes the address from
+the page and the anchor GitHub gives the section's heading. The window opens it through its
+`OpenAddress` delegate, `ExternalLink.Open` outside the tests. `F1` is read in `OnPreviewKeyDown`,
+the window's handler for the keys that work wherever the focus is, without a modifier, and goes
+to `OnHelpKey` with `KeyEventArgs.IsRepeat`, which ignores a repeat. The veil covers the whole
+window, the toolbar included, so while it shows only `F1` reaches Help.
+
+The button's content is a `StackPanel`, the `HelpIcon` image of `Theme.xaml` (16 DIPs) and the
+`HelpText` block, so the code sets the button's automation name to the word. `HelpIcon` is
+FlatCheck's drawing, a disc of `AccentBrush` with the question mark stroked and dotted in
+`ChromeBrush`, on a 16-unit grid. Its tooltip is the window's only one; the implicit `ToolTip`
+style of `Theme.xaml` gives it the About card's `PanelBrush`, WPF's own being the light system
+tooltip.
 
 ## The About window
 
@@ -175,9 +199,9 @@ the banner, the copyright and the licence page from `VersionInfo`, when the wind
 logo is the 256-pixel frame of `Assets/ImageVisualCompare.ico`, which the csproj also makes a WPF
 `Resource` for that: an `Image` given the file takes its first frame, maybe the 16-pixel one.
 A `Hyperlink` outside a navigation window only raises `RequestNavigate`, so the window catches it
-on its root and opens the address with `UseShellExecute`, disposing the process the shell may
-return; a refusal writes one `Debug` line with the address as written, since `AbsoluteUri`
-throws on a relative one. The
+on its root and hands it to `ExternalLink.Open`, which the main window's Help shares: it opens the
+address with `UseShellExecute`, disposing the process the shell may return; a refusal writes one
+`Debug` line with the address, as written for a relative one, since `AbsoluteUri` throws on it. The
 constructor applies the dark caption, as every window does. `MainWindow` writes `About opened` and
 shows it modal over itself.
 
