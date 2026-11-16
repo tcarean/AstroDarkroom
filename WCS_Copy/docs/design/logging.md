@@ -158,9 +158,10 @@ a build that does not.
 | `WcsCopy.Run` | Info, Warn, Error, Debug | the start and done lines; `cannot read the source` / `the destination <path>` with the exception; the two warnings and the two refusals without one; `the write of <target> failed` with the exception; at Debug `selected <n> keys: <w> WCS, <s> SIP, <o> optical` and `card <KEY>: <card> \| dest: <none, same or card>` |
 | `CopyWcsCli` | Warn, Info | `refused (exit 1): <the --lang message>`, `usage error (exit 2): <the line on stderr>`, `help shown (exit 0)` |
 | `App` | Info, Warn | `language=<en or ro> source from the command line: <path or none> dest: <path or none>` (`StartLine`); a `--lang` refused, before its message box |
-| `MainWindow` | Info, Debug | the file picked in each of the three dialogs, or the dialog closed without one; `About opened` |
+| `MainWindow` | Info, Debug | the file picked in each of the three dialogs, or the dialog closed without one; `About opened`; `Help opened: <address>`, for the Help button and F1 alike (R-039) |
 | `MainViewModel.Facts` | Debug | no facts under a box: the header could not be read (with the exception), or has no `NAXIS1` or `NAXIS2` |
 | `AboutWindow.OpenLink` | Debug | a link that could not be opened, with the exception |
+| `ExternalLink.Open` | Debug | `the link <address> is not a web address, so it was not opened`; `the link <address> could not be opened`, with the exception |
 
 The window's Preview and Copy add no line of their own: the core's start line holds the request,
 its done line the outcome, and a copy from the window writes what the console's writes

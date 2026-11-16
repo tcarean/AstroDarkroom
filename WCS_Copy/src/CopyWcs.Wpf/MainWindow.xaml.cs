@@ -26,7 +26,8 @@ namespace CopyWcs.Wpf;
 /// <summary>
 /// The main window: the band at the top, the two files, the output choice, the options, the two
 /// commands and the core's outcome, over one <see cref="MainViewModel"/>. It owns what needs a
-/// window (the file dialogs, the About window) and computes nothing (ADR 0007, ADR 0008).
+/// window (the file dialogs, the About window, the manual opened by Help and F1) and computes
+/// nothing (ADR 0007, ADR 0008, ADR 0016).
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -34,10 +35,16 @@ public partial class MainWindow : Window
     // in both languages.
     private const string FitsPattern = "*.fit;*.fits;*.fts";
 
-    /// <summary>The window's lines in the diagnostic log: the files picked in the dialogs, the About window (R-043).</summary>
+    /// <summary>The window's lines in the diagnostic log: the files picked in the dialogs, the About window, the manual opened (R-043).</summary>
     private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     private readonly MainViewModel _vm;
+
+    /// <summary>
+    /// Opens an address in the system's browser: <see cref="ExternalLink.Open(string)"/>, which a
+    /// test replaces so that no browser starts.
+    /// </summary>
+    internal Action<string> OpenAddress { get; set; } = ExternalLink.Open;
 
     /// <summary>The window over a new view-model.</summary>
     public MainWindow() : this(new MainViewModel())
@@ -147,13 +154,50 @@ public partial class MainWindow : Window
     /// <param name="e">The click.</param>
     private async void CopyCards(object sender, RoutedEventArgs e) => await _vm.Copy().ConfigureAwait(true);
 
-    /// <summary>The Help command, run by the band's About button and by F1: the About window, modal, over this one (R-035, R-038).</summary>
-    /// <param name="sender">The window, whose command binding caught the command.</param>
-    /// <param name="e">The executed command.</param>
-    private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
+    /// <summary>The band's About button, and only it: the About window, modal, over this one (R-035, R-038).</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
+    private void ShowAbout(object sender, RoutedEventArgs e)
     {
         Log.Info("About opened");
         new AboutWindow { Owner = this }.ShowDialog();
+    }
+
+    /// <summary>The band's Help button: the manual at the section of what the card shows (R-039).</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
+    private void HelpClick(object sender, RoutedEventArgs e) => ShowHelp();
+
+    /// <summary>
+    /// Takes F1 wherever the focus is in the window, before any control sees it (R-039): the
+    /// first press opens the manual, as the Help button does; a repeat of the key held down,
+    /// some thirty a second, is taken and does nothing, since each would open the browser again.
+    /// Any other key, and F1 with a modifier, go on as before.
+    /// </summary>
+    /// <param name="sender">The window itself; not read.</param>
+    /// <param name="e">The key; marked handled when it is F1.</param>
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.F1 && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            e.Handled = true;
+            if (!e.IsRepeat)
+            {
+                ShowHelp();
+            }
+        }
+    }
+
+    /// <summary>
+    /// The Help button and F1 (R-039, ADR 0016): the manual in the browser, at the section that
+    /// <see cref="Manual.SectionFor"/> picks from what the outcome card shows, and the address in
+    /// the log.
+    /// </summary>
+    private void ShowHelp()
+    {
+        string address = Manual.Url(Manual.SectionFor(_vm.HasOutcome, _vm.HasError, _vm.HasWarnings));
+        Log.Info("Help opened: " + address);
+        OpenAddress(address);
     }
 
     /// <summary>An open-file dialog for FITS files, starting in the folder of a path when it has one.</summary>
