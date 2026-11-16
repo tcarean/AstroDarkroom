@@ -101,6 +101,12 @@ drift instead of editing the figures.
 
 ## History
 
+- 2026-11-16, after the fixes of CR-011, CR-012, CR-014, CR-015 and CR-016 of the review (ADRs
+  0060 to 0063): all 14 cases re-run (18.2 min) and passing, no recorded figure changed. Two
+  formulas changed: the corner figure of the field rotation uses the session's median exposure
+  (R-023), and a frame too short to stack casts no vote for the RA axis (R-085, ADR 0061). The
+  corner figure and the trails' angle are not recorded; `raAxis`, compared exactly, is `Y` on
+  the two Veil sessions and `Unknown` on the Smida one, as recorded.
 - 2026-11-15, later: the limits of what is a star and the halo's rings follow the stars' width,
   and a trail is no star (R-014, R-015, ADR 0059). All 14 cases run with
   `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 14, Passed: 11, Failed: 3,

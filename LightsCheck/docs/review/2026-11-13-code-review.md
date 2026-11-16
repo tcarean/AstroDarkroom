@@ -87,12 +87,12 @@ rule "Golden files").
 | CR-008 | 1 | some setups | confirmed | A Fujifilm X-Trans raw is measured as a monochrome frame | fixed 191549ab |
 | CR-009 | 1 | some setups | to measure | A DNG whose black level is a 2 x 2 pattern is read with black 0 | fixed 78033d84 |
 | CR-010 | 1 | rare | confirmed | Frames are read in file-name order as if it were time order | fixed 804e4a14 |
-| CR-011 | 1 | rare | confirmed | The corner shift uses the first aligned frame's exposure | open |
-| CR-012 | 1 | rare | owner | A trailed frame with a short exposure votes for the RA axis | open |
+| CR-011 | 1 | rare | confirmed | The corner shift uses the first aligned frame's exposure | fixed 54161e66 |
+| CR-012 | 1 | rare | owner | A trailed frame with a short exposure votes for the RA axis | fixed b9c4c30b |
 | CR-013 | 1 | rare | confirmed | A thin mark of 251 to 400 px is counted as a trail and as a star | fixed e0ec7248 |
-| CR-014 | 2 | slip | confirmed | The report files can be written into `lights/` or `biases/` | open |
-| CR-015 | 2 | rare | confirmed | One late failure loses the whole run, after every frame was measured | open |
-| CR-016 | 3 | common | confirmed | A wrong pixel size is not marked in the window | open |
+| CR-014 | 2 | slip | confirmed | The report files can be written into `lights/` or `biases/` | fixed 08b016ba |
+| CR-015 | 2 | rare | confirmed | One late failure loses the whole run, after every frame was measured | fixed d57b73d2 |
+| CR-016 | 3 | common | confirmed | A wrong pixel size is not marked in the window | fixed ffc7cd0b |
 | CR-017 | 3 | common | confirmed | The exposure verdict and the figure printed beside it disagree at the limit | open |
 | CR-018 | 3 | common | confirmed | The Romanian tables do not sit under their headers | open |
 | CR-019 | 3 | common | confirmed | A count of one gets a plural word | open |
@@ -354,7 +354,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Should: the median exposure, and no figure when none is known.
 - Test: `CornerShiftPerExposurePx` is asserted in no unit test.
 - Evidence: confirmed (the record's own comment says "0 when unknown"; R-023 does not).
-- Status: open
+- Status: fixed 54161e66 (the corner figure is the rotation rate over the session's median exposure, and is left out when no frame carries an exposure: R-023)
 
 ### CR-012 A trailed frame with a short exposure votes for the RA axis
 
@@ -370,7 +370,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: `R085_ATrailedShortFrameIsListedOnceAndAMarginallyTrailedShortOneInNeitherRow` uses the
   fixture and never asserts the axis.
 - Evidence: owner.
-- Status: open
+- Status: fixed b9c4c30b (a frame too short to stack casts no vote for the RA axis and its angle stays out of the trails' direction, trailed or not, the owner's answer of 2026-11-16: ADR 0061, R-085; it keeps its `Trailed` flag and its place in the `bad` row)
 
 ### CR-013 A thin mark of 251 to 400 px is counted as a trail and as a star
 
@@ -412,7 +412,7 @@ there first, and the cleanup list, which holds what is not a defect.
   `lights\` did not change, which cannot fail. `vm.Export(f.LightsDir)` and `--out` into
   `lights\`, expecting the error and no new file.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed 08b016ba (the files are refused in any folder that holds the session's frames, the lights', the biases' or the darks' or one inside them, and in the session folder itself when the frames sit in it, the owner's answer of 2026-11-16: ADR 0060, R-028, R-032; `SeriesOutputs.WriteAll` refuses whoever calls it and the console refuses before any frame is measured; the window still proposes the session folder)
 
 ### CR-015 One late failure loses the whole run, after every frame was measured
 
@@ -434,7 +434,7 @@ there first, and the cleanup list, which holds what is not a defect.
   aligned is `could not be aligned`; the report is written from what was measured.
 - Test: none. A FITS at the root that throws on open; the report expected.
 - Evidence: confirmed for `ReadWcs`. No input was found that makes the fit throw.
-- Status: open
+- Status: fixed d57b73d2 (a fit without a solution is a failed registration, whatever a frame's registration throws makes it `could not be aligned`, and a FITS at the root that cannot be read for any reason is skipped as the plate solve: ADR 0062, R-018, R-025, R-026; which exceptions the console and the window catch around the whole run is as before)
 
 ## Severity 3: a wrong text or a wrong display
 
@@ -452,7 +452,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: `R029_ThePixelInputIsParsedInvariantAndBlankMeansNoneTyped` asserts the property nobody
   binds. The window rendered with `PixelText = "4,5"`, asserting a visible difference.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed ffc7cd0b (the field has a red border and a tooltip of its own while its value is wrong, as DarksCheck marks its settings fields: ADR 0063, R-029)
 
 ### CR-017 The exposure verdict and the figure printed beside it disagree at the limit
 
