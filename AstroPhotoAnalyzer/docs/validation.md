@@ -217,6 +217,15 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
+- 2026-11-17 (ADR 0111, CR-078 of the code review of 2026-11-13: the share of samples of the
+  form level x 257 is counted without pure black and pure white), recorded at the owner's word
+  of that day: V-001 `bitDepth.upscaledFraction` 0.0042 -> 0.0039, the reference PNG's
+  samples at 0 or 65535, about 0.03 % of all by the two figures, no longer counted. The run: 28
+  tests, 28 passed; of the 1448 recorded figures no other moved, V-016
+  `gamutfit.Exacta.after` reading 0.0005 for its 0.0006, the figure that differs from run to
+  run (CR-074) and stays as recorded. Run again the same day on the code joined with ADR 0109's
+  (the entry below, which re-recorded V-016): 28 tests, 28 passed, every recorded figure
+  exact.
 - 2026-11-17 (ADR 0109, the paper fit aims at 3.5 under the warning's 4, R-187;
   `docs/plans/2026-11-17-aim-the-paper-fit-below-the-warning.md`): the seventeen cases and the
   eleven star-pair checks run on the branch, the twelve files of the manifest checked. Sixteen

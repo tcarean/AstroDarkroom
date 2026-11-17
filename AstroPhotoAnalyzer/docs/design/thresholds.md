@@ -15,7 +15,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `LinearMedianMax` | 0.02 | below: image is probably linear, refused |
 | `OffScaleShare` | 0.5 | over this share of a FITS's samples above 1 the file is on another scale and is refused, not clipped (R-013, ADR 0096): the reference FITS have at most 0.0006 %, a file on 0..65535 nearly all |
 | `LevelTie` | 0.0001 | how far past a threshold on a whole level a figure in levels must be to pass it (`RasterOps.LevelsOver`, `LevelsUnder`; ADR 0095): a sample of an 8-bit file is not exactly n / 255 as a float, so a figure on the threshold reads up to 3e-5 off it; one 16-bit level is 0.0039. In `EdgeRegion.Coloured` it also compares a spread with half the mean of three departures, two computed figures, where the finest real step is 0.00065 |
-| `UpscaledFraction` | 0.5 | above: 16-bit file is an 8-bit upscale |
+| `UpscaledFraction` | 0.5 | above: 16-bit file is an 8-bit upscale; the fraction of samples of the form level x 257 among those that are neither 0 nor 65535 (ADR 0111) |
 | `EightBitLevels` | 256 | no plane of a 16-bit file with more distinct levels than this: an 8-bit upscale too, whatever the conversion (R-031, ADR 0105); the reference image uses 63862 / 39918 / 42878 |
 | `DarkLevelA` / `DarkLevelB` | 32 / 64 | "dark pixel" levels for context |
 | `LowSeparationLstar` | 15 | the visibility threshold: below, the paper separates, the eye in room light barely; a sky under it is an Attention and the recommended row has the sky at or above it (ADR 0029); a grey of L\* 15 is the level 0.148, the same rule as `PrintBackgroundLo` |
