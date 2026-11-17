@@ -2,6 +2,7 @@
 
 Date: 2026-11-16
 Status: accepted 2026-11-16
+Supersedes: 0105 in part (the warning's sentence being the same for both clauses)
 
 ## Context
 
@@ -42,6 +43,11 @@ both wordings were shown beside the old ones and approved on 2026-11-16.
 
 ## Consequences
 
-- No rule, figure or verdict moves; the two sentences alone.
+- No rule, figure or verdict moves; the two sentences alone. ADR 0105 said the warning's
+  sentence is the same for both clauses; that part is superseded here.
+- The x 257 sentence is picked as its evidence is, by the share of such samples being over
+  half, and level 0 counts as such a sample: a file more than half pure black takes that
+  sentence whatever its other levels are (CR-078 of the code review of 2026-11-13, open, older
+  than this ADR).
 - Guards: `R115_TheZonesDescriptionNamesBothReasonsForNoWidth`,
   `R096_AFileCaughtByItsLevelsAloneIsNotToldItLosesNothingAtEightBits`.
