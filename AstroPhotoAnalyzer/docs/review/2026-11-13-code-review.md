@@ -154,12 +154,14 @@ entry gives. Paths are relative to the project folder.
 | CR-076 | 3 | rare | owner | "You lose nothing going to 8 bits" is also said of a file caught by its levels alone | fixed bf88b340 |
 | CR-077 | 4 | crafted | confirmed | The crop and the reader take a reference pixel with broken quoting apart differently | open |
 | CR-078 | 1 | rare | confirmed | A frame more than half pure black is called an 8-bit upscale | open |
+| CR-080 | 4 | some setups | to measure | At a tone the paper fit's target cannot reach, the landing is coarser and the soft knees step back | open |
 
 9 entries of severity 1, 4 of severity 2, 39 of severity 3, 15 of severity 4; 45 confirmed, 14
 to measure, 8 for the owner. (As counted on 2026-11-13; CR-068 and CR-069 were added on 2026-11-14, CR-070 to
 CR-074 on 2026-11-16 with the dust move of the suggested curves (ADR 0101), CR-075 to CR-077
 on 2026-11-16 by the reviews of the fixes of CR-006 to CR-010, CR-078 on 2026-11-17 by the
-review of the fixes of CR-075 and CR-076, and the
+review of the fixes of CR-075 and CR-076, CR-080 on 2026-11-17 by the reviews of the paper
+fit's target (ADR 0109), and the
 Status column says what has been closed since.) After the entries: what the owner may want to
 look at though no rule is broken, then the cleanup list (dead code, duplicates, work done twice).
 
@@ -1029,6 +1031,10 @@ figure as printed). The other comparisons are still made on the exact value and 
   "nothing to do".
 - Case: a canvas profile and a frame whose only pixels outside are dark tones under the paper's
   black: the tab's last row gives a mask "with the saturation at 100 %; it would leave 100.0 %".
+  (2026-11-17: since R-187 the sentence ends "... of the colours past the limit the fit stops
+  at", and the recipe counts the pixels past the fit's target of 3.5, not the warning's: the
+  tones no chroma brings within 3.5 are in what it would leave too, 0.056 % of the plate-solved
+  FITS on the canvas profile where none was out of reach at 4, so the case is nearer, not gone.)
 - Should: the sentence that no mask helps.
 - Evidence: to measure (the code path is read; whether a real image reaches it needs a run).
 - Status: open
@@ -1322,7 +1328,9 @@ today; each goes wrong the day its constant or its rule moves, and no test would
 - What happens: a pixel under `cmax - GamutFitEdgeMargin` is compressed towards the table's
   edge, one just over it towards the exact edge, so the output is not continuous there (the
   reviewer's probe, edges 10 and 9.5: a chroma of 9.39 comes out 9.323, one of 9.41 comes out
-  9.116). R-176: "a gradient of growing saturation keeps its steps".
+  9.116). R-176: "a gradient of growing saturation keeps its steps". (2026-11-17: since R-187
+  both edges stand at the fit's target, and the jump is as it was; CR-080 is a second place
+  where the soft knees are not continuous.)
 - Evidence: to measure (the code path is common; on the baryta profiles the two edges differ by
   a few hundredths and the jump with them; the canvas was not measured).
 - Status: open
@@ -1450,6 +1458,36 @@ branch, which only added a letter to what `Moved` takes as an exponent.
 - Evidence: confirmed (by reading; each of these cards is invalid FITS).
 - Status: open
 
+### CR-080 At a tone the paper fit's target cannot reach, the landing is coarser and the soft knees step back
+
+Added on 2026-11-17 by the two reviews of the paper fit's target (R-187, ADR 0109). From that
+change: before it such a pixel went through the search around the table's edge like any other.
+
+- Where: `Analysis/GamutFit.cs` (`Apply`, the branch for a pixel past the target whose edge
+  search answers that no chroma reaches it, with `ExactEdge` and `Knee`).
+- What happens: a pixel the warning marks at a tone whose grey is itself past the fit's target
+  is landed on the warning's own edge, found by a search that starts at the pixel. When that
+  edge lies more than twice `GamutFitEdgeMargin` under the pixel, the whole stretch down to zero
+  is halved `EdgeHalvings` (6) times, so the hard fit lands up to a sixty-fourth of the stretch
+  inside the edge, where the cached search around the table's edge ends within 0.02. And such a
+  tone has no table edge for the warning, so a pixel just inside the warning's edge keeps its
+  chroma under every knee while one just past it is compressed towards the edge.
+- Case (read, not run): from a chroma of 7 the hard fit can land 0.09 inside the edge. Under
+  `Lina` a chroma of 0.99 of the edge stays and one of 1.01 comes out about 0.967 of it, about
+  0.93 under `Foarte lina` (the reviewer's arithmetic), against R-176's "a gradient of growing
+  saturation keeps its steps".
+- How often: measured 2026-11-17 with the hard fit on the tonal subsamples, the tones no chroma
+  brings within the target hold none of the pixels on the three baryta profiles, 0.056 % of the
+  plate-solved FITS and 0.050 % of `de_printat.png` on the canvas profile; only those of them
+  the warning marks take this path (`docs/design/paper-fit.md`, "The target and the warning").
+- Should: the precision of the search around the table's edge (a second search around the
+  first answer), and the knees compressing from a share of the warning's edge on both sides of
+  it.
+- Test: `R187_AToneTheTargetCannotReachIsStillBroughtInsideTheWarning` accepts a hard landing
+  within 0.15 of the edge and a soft one anywhere under it.
+- Evidence: to measure (the landing's step follows from the lines; the knee's step was not run).
+- Status: open
+
 ## For the owner's look
 
 No rule is broken here; each is a behaviour a requirement or a note already carries, which a
@@ -1515,6 +1553,8 @@ Dead or unused:
 - `DustAnalyzer.cs:173`, `:178`, `:264`; `PrintStretchSimulator.cs:160`, `:243`;
   `StarAnalyzer.cs:108`; `PrintSizeAnalyzer.cs:124`; `NoiseAnalyzer.cs:40`, `:50`, and `:61`,
   `:123` (`PctTilesBelowOne`, which R-050 lists as reported and nothing shows).
+- `GamutFitTable.Limit` (added with R-187 on 2026-11-17: set by `Build`, read by tests only; the
+  run's log line takes the threshold itself).
 - `GamutFit.cs:61`, `:69`, `:108`, `:118` (`GreyOutOfReach`, `Rule`); `SoftProof.cs:131`, `:247`
   (`ProofProfile.Path`), `:367`; `CurveAdvisor.cs:376`, `:392` (the parameter `sub`);
   `CurveRun.cs:149`, `GamutFitRun.cs:124` (`progress`, which no caller passes: seven reports and
@@ -1537,6 +1577,8 @@ Duplicated:
   (`BackgroundAnalyzer.cs:308-311`, `StarAnalyzer.cs:365-368`); the acuity floor
   (`PrintSizeAnalyzer.cs:181`, `:262`, `Recommendations.cs:408`); "reduced pixel to its patch"
   (`PrintPreview.cs:136-141`, `MapViewModel.cs:142-146`, `BackgroundAnalyzer.ClassAt`).
+- The judge asked from a Lab colour (to sRGB, then `GamutAnalyzer.Outside`), written twice in
+  `GamutFitRun.Execute` since R-187: `Judge` on the target's table, `Warning` on the warning's.
 - "The profile the Dmax came from" (`CurveRun.cs:196`, `ProofRun.cs:94`, `GamutFitRun.cs:127`);
   "the profile cannot be read: " five times; the colorants and the D50 white typed twice
   (`IccProfiles.cs:49-51`, `SoftProof.cs:129`, `ColorMath.cs:162-170`); `Clouds` and `Stars`
@@ -1560,6 +1602,9 @@ Work done twice:
   `ProofRun.cs:110`, `GamutFitRun.cs:136`, about 0.9 s each) and reads and parses the profile
   file again (`SoftProof.cs:246-253`, `GamutFitRun.cs:144`); the fit computes every pixel's Lab
   and edge seven times per run (`GamutFitRun.cs:170-182`).
+- Since R-187 a colour near both limits of the paper fit takes the exact round trip twice, once
+  for each limit's cache: `GamutTable.WithLimit` shares the grid, and each table keeps its own
+  yes or no per 8-bit colour, not the trip's three displacements.
 - With `-o` the report's body is rendered twice (`AnalyzerCli.cs:158`, `ReportWriter.cs:63-68`).
 - `FitsWriter.cs:284-301`: a value that does not fit is counted, but the whole file is written
   before the save is refused. `GamutFitRun.cs:228-229`: the fit's FITS goes through an identity
