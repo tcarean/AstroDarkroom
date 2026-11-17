@@ -44,7 +44,7 @@ Copyright (C) 2026 Tudor Carean
     bad (elongation of at least 1.73): 7
     marginal (elongation between 1.45 and 1.73): 3, 4, 5
     tail or double     : 14 (the star's core is sharp; a stack with rejection repairs most of them)
-    trail direction    : not known (too few bad frames with trails in the same direction); it is not known which axis is RA
+    trail direction    : not known (too few bad frames, long enough to stack, with trails in the same direction); it is not known which axis is RA
 
   DRIFT AND ROTATION
     drift between frames in a row, without dithering: X +0.31 px/min, Y -0.00 px/min = +1.8 / -0.0 "/min (from 5 pairs of frames without a pause between them)

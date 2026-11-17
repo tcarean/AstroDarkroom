@@ -513,7 +513,8 @@ internal static class SeriesReport
     /// elongation; a frame bad for its exposure alone is not listed, R-085), the marginal frames
     /// (each row naming its elongation bounds, <see cref="Th.ElongationBad"/> and
     /// <see cref="Th.ElongationMarginal"/>), and the direction of the trails with the mount axis it
-    /// falls on.
+    /// falls on; without a direction the row says that only bad frames long enough to stack give
+    /// one (R-085, ADR 0064).
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
@@ -527,7 +528,9 @@ internal static class SeriesReport
         string bad = RunReport.F(Th.ElongationBad, 2), marginal = RunReport.F(Th.ElongationMarginal, 2);
         string direction = s.TrailAngleDeg is double ta
             ? T(RunReport.F(ta, 0) + " degrees from the horizontal, on the bad frames", RoCount(RunReport.F(ta, 0)) + "grade fata de orizontala, pe cadrele slabe") + (s.TrailOn == TrailAxis.Unknown ? "" : T(", that is ", ", adica ") + AxisWord(s.TrailOn))
-            : T("not known (too few bad frames with trails in the same direction)", "nu se stie (prea putine cadre slabe cu dare in aceeasi directie)");
+            // A frame too short to stack has no vote though the `bad` row lists it when trailed
+            // (ADR 0061), so the row names the frames that count (ADR 0064).
+            : T("not known (too few bad frames, long enough to stack, with trails in the same direction)", "nu se stie (prea putine cadre slabe, cu expunere destul de lunga, cu dare in aceeasi directie)");
         List<ReportRow> rows =
         [
             new(T($"bad (elongation of at least {bad})", $"slabe (alungire de cel putin {bad})"), List(r, FlagKind.Trailed)),

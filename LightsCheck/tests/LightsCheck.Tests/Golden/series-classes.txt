@@ -44,7 +44,7 @@ Copyright (C) 2026 Tudor Carean
     slabe (alungire de cel putin 1.73): 7
     la limita (alungire intre 1.45 si 1.73): 3, 4, 5
     dara sau dublura   : 14 (miezul stelei e bun; stiva cu respingere le repara pe cele mai multe)
-    directia darelor   : nu se stie (prea putine cadre slabe cu dare in aceeasi directie); nu se stie care axa e RA
+    directia darelor   : nu se stie (prea putine cadre slabe, cu expunere destul de lunga, cu dare in aceeasi directie); nu se stie care axa e RA
 
   DRIFT SI ROTATIE
     drift intre cadre la rand, fara dithering: X +0.31 px/min, Y -0.00 px/min = +1.8 / -0.0 "/min (din 5 perechi de cadre fara pauza intre ele)

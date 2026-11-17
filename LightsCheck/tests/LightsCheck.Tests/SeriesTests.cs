@@ -394,6 +394,35 @@ public class SeriesTests
         Assert.StartsWith("3 slabe, 0 la limita, 1 bune (din 4)", Assert.Single(SeriesReport.SummaryRows(r), x => x.Label == "cadre miscate").Value, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// When too few frames give the trails' direction, the row says which frames count (R-085,
+    /// ADR 0064): the fixture's `bad` row lists two frames trailed the same way, one of them too
+    /// short to stack and so without a vote (ADR 0061), and the row under it must not read as if
+    /// two bad frames trailed the same way were not enough.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R085_TheTrailDirectionRowSaysThatOnlyFramesLongEnoughToStackCount(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        SeriesResult pattern = RunPattern();
+        (AnalyzedFrame[] frames, DitherAnalysis d, Cadence c) = SeriesAnalyzerTests.ShortAndTrailed();
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+        SeriesResult r = pattern with { Frames = frames, Cadence = c, Dither = d, Series = s };
+
+        IReadOnlyList<ReportRow> rows = SeriesReport.TrailRows(r);
+
+        Assert.Equal("2, 3", rows[0].Value);
+        ReportRow direction = Assert.Single(rows, x => x.Label == (english ? "trail direction" : "directia darelor"));
+        Assert.Equal(
+            english
+                ? "not known (too few bad frames, long enough to stack, with trails in the same direction); it is not known which axis is RA"
+                : "nu se stie (prea putine cadre slabe, cu expunere destul de lunga, cu dare in aceeasi directie); nu se stie care axa e RA",
+            direction.Value);
+        PlainWords.AssertPlain(direction.Label + " " + direction.Value, "the trail direction row");
+    }
+
     /// <summary>The `scara` row of DITHERING words the move thresholds in arcseconds at the fixture's 5.99 "/px (R-044).</summary>
     [Fact]
     public void R044_TheScaleRowSaysWhatAMoveIsOnTheSky()
