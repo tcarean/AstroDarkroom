@@ -48,6 +48,7 @@ both wordings were shown beside the old ones and approved on 2026-11-16.
 - The x 257 sentence is picked as its evidence is, by the share of such samples being over
   half, and level 0 counts as such a sample: a file more than half pure black takes that
   sentence whatever its other levels are (CR-078 of the code review of 2026-11-13, open, older
-  than this ADR).
+  than this ADR). (Restated 2026-11-17: CR-078 was closed by ADR 0109; the share leaves out pure
+  black and pure white.)
 - Guards: `R115_TheZonesDescriptionNamesBothReasonsForNoWidth`,
   `R096_AFileCaughtByItsLevelsAloneIsNotToldItLosesNothingAtEightBits`.

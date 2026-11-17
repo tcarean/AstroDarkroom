@@ -16,7 +16,7 @@
         "file.bitDepth": 16,
         "file.fileBytes": 103387067,
         "bitDepth.applicable": true,
-        "bitDepth.upscaledFraction": 0.0042,
+        "bitDepth.upscaledFraction": 0.0039,
         "bitDepth.distinctLevels.r": 63862,
         "bitDepth.distinctLevels.g": 39918,
         "bitDepth.distinctLevels.b": 42878,

@@ -19,7 +19,9 @@
 //
 // An 8-bit file saved as 16 has every value equal to its high byte times 257
 // (n * 65535 / 255). On real 16 bits this coincidence happens on ~1 in 256 samples (0.4 %); on an
-// upscale, on all of them. The distinct levels per channel are counted too - a disguised 8-bit
+// upscale, on all of them. Pure black and pure white are left out of that count: 0 and 65535 are
+// of that form in a real 16-bit file too, and clipping gathers samples there (ADR 0109). The
+// distinct levels per channel are counted too - a disguised 8-bit
 // has no more than 256 - and decide beside the fraction: a file saved by a shift (n * 256) has
 // none of the first form and is 8 bits all the same (ADR 0105).
 //
@@ -46,7 +48,10 @@ namespace AstroPhotoAnalyzer
         internal IReadOnlyList<int> DistinctLevels { get; init; }
 
         /// <summary>
-        /// The fraction of the samples (all planes) with value == high_byte * 257.
+        /// The fraction of the samples (all planes) with value == high_byte * 257, among those
+        /// that are neither pure black (0) nor pure white (65535): the two ends have that form
+        /// in a real 16-bit file as well, so they say nothing of which file it is (ADR 0109).
+        /// 0 when every sample is at one of the two ends.
         /// </summary>
         internal double UpscaledFraction { get; init; }
 
@@ -67,8 +72,9 @@ namespace AstroPhotoAnalyzer
     internal static class BitDepthAnalyzer
     {
         /// <summary>
-        /// On a 16-bit integer source, counts on every sample the distinct levels per plane and
-        /// the samples equal to their high byte times 257.
+        /// On a 16-bit integer source, counts on every sample the distinct levels per plane and,
+        /// among the samples that are neither 0 nor 65535, those equal to their high byte times
+        /// 257.
         /// </summary>
         /// <param name="r">The image, 0..1; its Source says whether the question applies.</param>
         /// <returns>
@@ -93,16 +99,18 @@ namespace AstroPhotoAnalyzer
                 {
                     int v = RasterOps.Level16(plane[i]);
                     if (!seen[v]) { seen[v] = true; count++; }
+                    // A clipped sample is at 0 or at 65535 whatever the file is: not asked.
+                    if (v == 0 || v == 65535) continue;
+                    total++;
                     if (v == (v >> 8) * 257) coincidences++;
                 }
                 distinct[p] = count;
-                total += plane.Length;
             }
             return new BitDepthResult
             {
                 Applicable = true,
                 DistinctLevels = distinct,
-                UpscaledFraction = coincidences / (double)total,
+                UpscaledFraction = total == 0 ? 0 : coincidences / (double)total,
             };
         }
     }

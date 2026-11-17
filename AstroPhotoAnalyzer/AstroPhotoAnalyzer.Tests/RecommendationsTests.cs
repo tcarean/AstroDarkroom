@@ -112,6 +112,49 @@ public class RecommendationsTests
         Assert.Equal(eightBits + Tr.Pick("you lose nothing going to 8 bits, but you gain nothing from the 16 either.", "nu pierzi nimic la trecerea pe 8 biti, dar nici nu castigi ceva din cei 16."), byForm);
     }
 
+    /// <summary>
+    /// CR-078, through the whole run: a real 16-bit scene with 40 % of every plane clipped to
+    /// pure black and 15 % to pure white (under half black, so the image is not refused as
+    /// linear) gets no "only 8 bits of information" warning.
+    /// </summary>
+    [Fact]
+    public void R096_AClippedSixteenBitFrameIsNotWarnedOfAsEightBits()
+    {
+        Raster r = Scenes.CleanSky();
+        foreach (float[] plane in r.Planes)
+        {
+            int b = (int)(plane.Length * 0.40), w = (int)(plane.Length * 0.15);
+            for (int i = 0; i < b; i++) plane[i] = 0f;
+            for (int i = b; i < b + w; i++) plane[i] = 1f;
+        }
+        r.Source = new SourceInfo { Format = "memorie", BitDepth = 16, IsFloat = false, PlanesInFile = 3 };
+
+        var a = Run(r);
+
+        Assert.All(a.BitDepth.DistinctLevels, n => Assert.True(n > 256, "distinct levels: " + n));
+        Assert.DoesNotContain(Of(a, Topic.Warnings), x => x.Text.Contains("8 biti de informatie"));
+    }
+
+    /// <summary>
+    /// CR-078 (ADR 0109): the share of x 257 samples is counted without pure black and pure
+    /// white, and the evidence says so, in both languages (the owner's yes of 2026-11-17).
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R096_TheShareOfCopiedLevelsSaysWhatItLeavesOut(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        Raster r = SyntheticRasters.Upscaled8(Scenes.CleanSky());
+        r.Source = new SourceInfo { Format = "memorie", BitDepth = 16, IsFloat = false, PlanesInFile = 3 };
+
+        Recommendation w = Assert.Single(Of(Run(r), Topic.Warnings), x => x.Text.Contains(Tr.Pick("8 bits of information", "8 biti de informatie")));
+
+        Assert.StartsWith(Tr.Pick(
+            $"{Fmt.Pct(100)} of the values, pure black and pure white left out, are an 8-bit level copied into 16 bits (the value = the level x 257; threshold 50 %); different levels used on each channel: ",
+            $"{Fmt.Pct(100)} din valori, fara negrul pur si albul pur, sunt un nivel de 8 biti copiat in 16 biti (valoarea = nivelul x 257; prag 50 %); niveluri diferite folosite pe fiecare canal: "), w.Because);
+    }
+
     [Fact]
     public void R096_AnUpscaledFileAndAMissingProfileAreWarnings()
     {

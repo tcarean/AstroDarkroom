@@ -282,6 +282,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A real 16-bit image with large clipped areas is no longer called "only 8 bits of
+  information": pure black and pure white, which every file can hold and which clipping fills,
+  are left out of the share of values that look copied from 8 bits, and the caution's evidence
+  says so. On the reference image that share reads 0.39 % for 0.42 % (CR-078 of the code review
+  of 2026-11-13, ADR 0109).
 - Two texts say what the figures beside them show. On the Resolution tab, the zones' description
   now names both reasons a zone reads `n/a`: under 5 stars in the zone, or too few stars in the
   whole frame. And a 16-bit file caught as 8 bits by its 256 levels alone is told that the 16

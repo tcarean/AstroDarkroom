@@ -1,7 +1,7 @@
 # 0105. At most 256 levels in every plane is an 8-bit file, whatever the conversion
 
 Date: 2026-11-16
-Status: accepted 2026-11-16; the warning's sentence being the same for both clauses superseded by 0108
+Status: accepted 2026-11-16; the warning's sentence being the same for both clauses superseded by 0108; the x 257 share counted over every sample superseded by 0109
 
 ## Context
 
