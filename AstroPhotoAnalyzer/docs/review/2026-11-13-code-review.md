@@ -153,13 +153,14 @@ entry gives. Paths are relative to the project folder.
 | CR-075 | 3 | rare | owner | On a frame with too few stars a zone reads n/a under a description that promises its width from 5 stars | fixed bf88b340 |
 | CR-076 | 3 | rare | owner | "You lose nothing going to 8 bits" is also said of a file caught by its levels alone | fixed bf88b340 |
 | CR-077 | 4 | crafted | confirmed | The crop and the reader take a reference pixel with broken quoting apart differently | open |
-| CR-078 | 1 | rare | confirmed | A frame more than half pure black is called an 8-bit upscale | open |
+| CR-078 | 1 | rare | confirmed | A frame more than half pure black is called an 8-bit upscale | fixed 336c3970 |
+| CR-079 | 4 | rare | to measure | A test of the Help key fails on some runs | open |
 
 9 entries of severity 1, 4 of severity 2, 39 of severity 3, 15 of severity 4; 45 confirmed, 14
 to measure, 8 for the owner. (As counted on 2026-11-13; CR-068 and CR-069 were added on 2026-11-14, CR-070 to
 CR-074 on 2026-11-16 with the dust move of the suggested curves (ADR 0101), CR-075 to CR-077
 on 2026-11-16 by the reviews of the fixes of CR-006 to CR-010, CR-078 on 2026-11-17 by the
-review of the fixes of CR-075 and CR-076, and the
+review of the fixes of CR-075 and CR-076, CR-079 on 2026-11-17 by the fix of CR-078, and the
 Status column says what has been closed since.) After the entries: what the owner may want to
 look at though no rule is broken, then the cleanup list (dead code, duplicates, work done twice).
 
@@ -383,7 +384,12 @@ the rule is R-031's first clause, as it was before ADR 0105.
 - Test: none; `GenuineSixteenBitDataHasManyLevelsAndFewCoincidences` has uniform data, no
   clipped area.
 - Evidence: confirmed (by reading: the count's line and the threshold).
-- Status: open
+- Status: fixed 336c3970 (ADR 0109; the evidence's wording and the new V-001 figure at the owner's word of 2026-11-17)
+- Corrected 2026-11-17, by the fix: the first case above does not reach the warning. A frame
+  whose reference plane is more than half pure black has a median of 0 and is refused as a
+  linear image (R-015). What reaches it is black under half with pure white beside it, or the
+  other two planes clipped more than the green one: real 16-bit data with 40 % of every plane
+  at 0 and 15 % at 65535 read a share of 55.2 % and got the warning through the whole run.
 
 ## Severity 2: a crash, a hang, or a file overwritten or lost
 
@@ -1446,6 +1452,24 @@ branch, which only added a letter to what `Moved` takes as an exponent.
 - Should: one way to take a card's value apart, the reader's, used by both.
 - Test: none; `R181_AReferencePixelIsMovedExactlyHoweverItIsWritten` has well-formed cards.
 - Evidence: confirmed (by reading; each of these cards is invalid FITS).
+- Status: open
+
+### CR-079 A test of the Help key fails on some runs
+
+Added on 2026-11-17, met while CR-078 was fixed; not from that fix, which touches the bit depth
+alone.
+
+- Where: `AstroPhotoAnalyzer.Wpf.Tests/HelpTests.cs`
+  (`R186_HelpAndF1OpenTheManualAtTheSectionOnScreen`).
+- What happens: one of the test's `Assert.True` lines fails on some runs and passes on the
+  next, on the same build.
+- Case: on 2026-11-17 the gate of a commit failed on this test alone (223 of the window's 224
+  passed) and passed when run again with nothing changed; run by itself ten times on that
+  build, the test failed once and passed nine times.
+- Should: a test that passes or fails by the code, not by the run; a gate that fails now and
+  then is run again without being read.
+- Evidence: to measure. Which assertion fails was not established, nor the cause (the test
+  sends F1 to the window while an analysis runs and after it).
 - Status: open
 
 ## For the owner's look
