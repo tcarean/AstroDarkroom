@@ -7,9 +7,9 @@ Status: accepted 2026-11-17
 
 On 2026-11-17 the window refused a TIFF the owner had exported from Lightroom Classic 16.0, with
 ImageSharp's own sentence on the error card: `The number of samples in the TIFF BitsPerSample
-entry is not supported.` Nothing is wrong with the image's bits. The file, kept as
-`E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer\lightroom-content-credentials-2026-11-17\denoised_syqon_studio_in_max_0.75_stretch0.15_logd4.16_Gentle_lowdust_signed_Soft.tif`
-(ADR 0110), is a little-endian classic TIFF of 5837 x 3867, 16-bit RGB, uncompressed, one strip
+entry is not supported.` Nothing is wrong with the image's bits. The file (135 564 803
+bytes, SHA-256 `ada526e955f79e56c39b6e87fe1a1978d905331bc17224aac933c446bedf6353`; not kept,
+see Consequences) is a little-endian classic TIFF of 5837 x 3867, 16-bit RGB, uncompressed, one strip
 at offset 58, with an ICC profile of 3144 bytes. After that directory comes a second one with a
 single entry and no image: the tag 52545, 18 773 bytes that begin with the boxes `jumb`, `jumd`
 and `c2pa`. Those are the Content Credentials Lightroom adds on export.
@@ -67,7 +67,14 @@ same file without them, with no note.
 
 ## Consequences
 
-- On the kept export the console gives
+- The export is not kept, a deviation from ADR 0110 for this one file. A copy was made in
+  code-testdata for the measurements above and taken out the same day at the owner's word: no
+  test reads it, it is 135 MB, and any TIFF exported from Lightroom Classic with Content
+  Credentials on shows the case, so the measurement can be made again on a fresh export, though
+  not on the same bytes. The catalogue held a second export under the same name a quarter of an
+  hour later (the same size and the same two directories, other bytes), and the window built
+  from this branch opened and analysed that one too.
+- On the measured export the console gave
   `TIFF 16-bit RGB, 5837 x 3867 (22.6 MP), necomprimat, 129.3 MB, profil de culoare (ICC): sRGB IEC61966-2.1`
   and a full report, exit `2` (the verdict is `ATENTIE`), where it gave the error.
 - A TIFF with several real pages no longer has its later pages decoded. One whose pages differ
