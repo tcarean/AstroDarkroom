@@ -31,15 +31,24 @@
 //
 // 3.1.x never applies the ICC profile when decoding - the values are those in the file. Exactly
 // what we want: we measure what Siril wrote, not a colour conversion.
+//
+// ONLY THE FIRST PAGE IS DECODED (FirstPage, ADR 0112). Asked for every page, 3.1.11 refuses the
+// whole file when a later directory of a TIFF holds no image, and Lightroom Classic 16 writes
+// exactly that after the image on export: one directory with the Content Credentials in the tag
+// 52545. Identify of a TIFF ignores the limit and lists every directory, so the pages are
+// counted by ImagePages, not by the number of frames.
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using NLog;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Tiff;
 using SixLabors.ImageSharp.Formats.Tiff.Constants;
+using SixLabors.ImageSharp.Metadata;
+using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace AstroPhotoAnalyzer
@@ -55,6 +64,13 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         static readonly Logger Log = LogManager.GetLogger("ImageSharpReader");
 
+        /// <summary>
+        /// The decode's options: the first page only. The tool measures one image, and a later
+        /// directory that holds none (Lightroom's Content Credentials) makes ImageSharp 3.1.11
+        /// refuse the file when it is asked for every page (ADR 0112).
+        /// </summary>
+        static readonly DecoderOptions FirstPage = new DecoderOptions { MaxFrames = 1 };
+
         public IReadOnlyList<string> Extensions => Exts;
 
         /// <inheritdoc/>
@@ -68,6 +84,8 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Reads the file in two passes: what the file holds from its metadata (Identify), then
         /// the pixels as L16 (mono) or Rgb48 (colour), each sample / 65535, with the ICC profile.
+        /// Of a file with several pages only the first is decoded, and a TIFF's directory that
+        /// holds no image is left unread (R-012).
         /// Throws, with a message for the user, when Identify does not know the format or finds
         /// the content damaged. Other failures pass with ImageSharp's own exception and message
         /// (damage only the decode meets, a TIFF variant ImageSharp does not decode, a TIFF cut
@@ -184,8 +202,9 @@ namespace AstroPhotoAnalyzer
                     };
                     if (tf.PhotometricInterpretation == TiffPhotometricInterpretation.PaletteColor)
                         f.Note = Tr.Pick("a palette TIFF: the colours are indexed, not measured directly", "TIFF cu paleta: culorile sunt indexate, nu masurate direct");
-                    if (info.FrameMetadataCollection.Count > 1)
-                        f.Note = Tr.Pick($"a TIFF with {info.FrameMetadataCollection.Count} pages; the first was read", $"TIFF cu {info.FrameMetadataCollection.Count} pagini; s-a citit prima");
+                    int pages = ImagePages(info);
+                    if (pages > 1)
+                        f.Note = Tr.Pick($"a TIFF with {pages} pages; the first was read", $"TIFF cu {pages} pagini; s-a citit prima");
                 }
                 if (f.Bits != 8 && f.Bits != 16)
                     f.Note = Tr.Pick($"a TIFF with {f.Bits} bits per sample, read through ImageSharp's conversion", $"TIFF cu {f.Bits} biti pe esantion, citit prin conversia ImageSharp");
@@ -204,6 +223,22 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
+        /// How many of a TIFF's directories hold an image: those that state an image width, a
+        /// tag every image has and that has no default. A directory without one is not a page:
+        /// Lightroom Classic 16 writes one after the image, with only its Content Credentials
+        /// (the tag 52545), and Identify lists it as a frame like any other (ADR 0112).
+        /// </summary>
+        /// <param name="info">What Identify read from the file.</param>
+        /// <returns>The number of pages, 0 when no directory states a width.</returns>
+        static int ImagePages(ImageInfo info)
+        {
+            int pages = 0;
+            foreach (ImageFrameMetadata frame in info.FrameMetadataCollection)
+                if (frame.ExifProfile != null && frame.ExifProfile.TryGetValue(ExifTag.ImageWidth, out _)) pages++;
+            return pages;
+        }
+
+        /// <summary>
         /// The ICC profile, from the DECODED image - not from Identify. Measured on 3.1.11:
         /// Identify does not return a PNG's iCCP chunk, and on TIFF the
         /// decoder leaves the profile on the first frame, beside the IFD's tags, not on the
@@ -216,14 +251,14 @@ namespace AstroPhotoAnalyzer
             => img.Metadata.IccProfile?.ToByteArray() ?? img.Frames[0].Metadata.IccProfile?.ToByteArray();
 
         /// <summary>
-        /// Decodes the file as Rgb48 into a raster of 3 planes, each sample / 65535.
+        /// Decodes the file's first page as Rgb48 into a raster of 3 planes, each sample / 65535.
         /// </summary>
         /// <param name="path">The file.</param>
         /// <param name="icc">The embedded ICC profile, or null.</param>
         /// <returns>The raster, without its <see cref="Raster.Source"/>.</returns>
         static Raster LoadColor(string path, out byte[] icc)
         {
-            using Image<Rgb48> img = Image.Load<Rgb48>(path);
+            using Image<Rgb48> img = Image.Load<Rgb48>(FirstPage, path);
             icc = IccOf(img);
             var r = new Raster(img.Height, img.Width, 3);
             const float k = 1f / 65535f;
@@ -245,14 +280,14 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Decodes the file as L16 into a raster of 1 plane, each sample / 65535.
+        /// Decodes the file's first page as L16 into a raster of 1 plane, each sample / 65535.
         /// </summary>
         /// <param name="path">The file.</param>
         /// <param name="icc">The embedded ICC profile, or null.</param>
         /// <returns>The raster, without its <see cref="Raster.Source"/>.</returns>
         static Raster LoadMono(string path, out byte[] icc)
         {
-            using Image<L16> img = Image.Load<L16>(path);
+            using Image<L16> img = Image.Load<L16>(FirstPage, path);
             icc = IccOf(img);
             var r = new Raster(img.Height, img.Width, 1);
             const float k = 1f / 65535f;

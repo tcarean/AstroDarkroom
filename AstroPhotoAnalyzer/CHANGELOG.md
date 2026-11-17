@@ -288,6 +288,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A TIFF exported from Lightroom Classic with Content Credentials opens. Lightroom adds them
+  after the image as a second "page" that holds no image, and the tool refused the whole file
+  with `The number of samples in the TIFF BitsPerSample entry is not supported`. It now reads
+  the image and steps over the rest. Of any file with several pages only the first is decoded,
+  so a TIFF whose pages differ in size (an image with its preview), refused until now, opens
+  too, with the note that the first page was read (R-012, ADR 0112).
+
 - A real 16-bit image with large clipped areas is no longer called "only 8 bits of
   information": pure black and pure white, which every file can hold and which clipping fills,
   are left out of the share of values that look copied from 8 bits, and the caution's evidence

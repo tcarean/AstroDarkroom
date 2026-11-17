@@ -45,7 +45,7 @@ stack, before the user's exception, which carries no inner one, is thrown (`logg
 | reader | extensions | what it reads |
 |---|---|---|
 | `FitsReader` (hand-written, streaming) | `.fit .fits .fts` | first HDU with NAXIS 2 or 3; BITPIX 8/16/32 int (BZERO/BSCALE applied) and -32/-64 float; a header number goes through `TryNumber` (E or D exponent, nothing .NET's wider styles accept), and one that is present and unreadable throws from `HInt` / `HDbl` (a size, BZERO, BSCALE) or, through `TryHDbl`, makes `Wcs.TryFrom` return null (ADR 0104); NAXIS3 = 1 or 3, anything else refused; rows always flipped, the file's first row last, as Siril shows every FITS whatever `ROWORDER` says (ADR 0049; a `TOP-DOWN` keyword is noted as ignored); empty primary HDUs skipped |
-| `ImageSharpReader` | `.tif .tiff .png .jpg .jpeg` | colour decoded as `Rgb48`, mono as `L16`; bit depth and channel count from the format's own metadata (PNG `BitDepth`/`ColorType`, TIFF `BitsPerSample`/`PhotometricInterpretation`, JPEG always 8); compression name; ICC profile from the **decoded** image (`Metadata.IccProfile` or `Frames[0].Metadata.IccProfile`) |
+| `ImageSharpReader` | `.tif .tiff .png .jpg .jpeg` | colour decoded as `Rgb48`, mono as `L16`; bit depth and channel count from the format's own metadata (PNG `BitDepth`/`ColorType`, TIFF `BitsPerSample`/`PhotometricInterpretation`, JPEG always 8); compression name; ICC profile from the **decoded** image (`Metadata.IccProfile` or `Frames[0].Metadata.IccProfile`); only the first page is decoded, and a TIFF's directory that holds no image (Lightroom's Content Credentials) is neither read nor counted as a page (ADR 0112) |
 
 ### The writer (`Input/FitsWriter.cs`, R-145, ADR 0032)
 
@@ -247,3 +247,11 @@ Written down because each one cost a probe to find, and each one shapes code or 
   it, and `R181_APngIsWritten...` guards it. The PNG-with-profile fixture of the reader's
   tests stays hand-built (`PngTestData`, with its own CRC-32 and `ZLibStream`): a file made
   from a formula tests the decoder, not the package against itself.
+- **Asked for every page, the TIFF decoder refuses a file one of whose directories holds no
+  image** ("The number of samples in the TIFF BitsPerSample entry is not supported"), and
+  Lightroom Classic 16 writes such a directory after the image on export, with its Content
+  Credentials in the tag 52545. So both decodes pass `FirstPage` (`MaxFrames = 1`), which
+  reads the image alone. `Image.Identify` of a TIFF ignores that limit and lists every
+  directory as a frame, so `ImagePages` counts, for the multi-page note, the frames whose
+  tags state an image width (measured 2026-11-17, ADR 0112; `R012_...` in `ImageSharpReaderTests`, on files
+  `TiffTestData` builds with that directory and with a real second page).
