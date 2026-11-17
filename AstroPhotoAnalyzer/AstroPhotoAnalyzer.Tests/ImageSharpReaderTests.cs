@@ -192,8 +192,9 @@ public class ImageSharpReaderTests
     }
 
     /// <summary>
-    /// A stand-in for Lightroom's Content Credentials: the first bytes of the box its export of
-    /// 2026-11-17 carries in the tag 52545. The reader never looks inside it.
+    /// A stand-in for Lightroom's Content Credentials: shaped like the first bytes of the box its
+    /// export of 2026-11-17 carries in the tag 52545, with other lengths. The reader never looks
+    /// inside it.
     /// </summary>
     static readonly byte[] Credentials = System.Text.Encoding.ASCII.GetBytes("\0\0\0\x1ejumb\0\0\0\x16jumdc2pa\0\x11\0\x10");
 

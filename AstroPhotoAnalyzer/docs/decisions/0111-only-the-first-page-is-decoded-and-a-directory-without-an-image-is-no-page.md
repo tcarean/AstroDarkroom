@@ -35,8 +35,11 @@ So `Identify` lists the second directory as a frame like any other, and takes no
 `DecoderOptions.MaxFrames = 1` it decodes the image alone, every sample equal to the file's
 bytes, the profile on the first frame as before.
 
-The tool measures one image. Of a multi-page TIFF it has always read the first page and said so
-in the report's file line (R-012), after decoding all of them.
+The tool measures one image. Of a multi-page TIFF whose pages have one size it read the first
+page and said so in the report's file line (R-012), after decoding all of them. One whose pages
+differ in size (an image and its preview) it refused: on a hand-built file of two pages, 6 and
+4 rows high, `Load()` throws `Images with different sizes are not supported`, and with
+`MaxFrames = 1` it gives the first page, 8 x 6.
 
 ## Decision
 
@@ -66,10 +69,14 @@ same file without them, with no note.
 
 - On the kept export the console gives
   `TIFF 16-bit RGB, 5837 x 3867 (22.6 MP), necomprimat, 129.3 MB, profil de culoare (ICC): sRGB IEC61966-2.1`
-  and a full report, exit `0`, where it gave the error.
-- A TIFF with several real pages is read faster and in less memory, its later pages no longer
-  decoded, and one whose later page ImageSharp cannot decode is now read. An animated PNG is
-  read as its first frame, as before.
+  and a full report, exit `2` (the verdict is `ATENTIE`), where it gave the error.
+- A TIFF with several real pages no longer has its later pages decoded. One whose pages differ
+  in size, or whose later page ImageSharp cannot decode, was refused and is now read, with the
+  note. When the first directory of such a file is the small preview, the preview is what the
+  tool measures; the size on the file line and the note are the only signs.
+- What Identify refuses is refused as before, since the decode is never reached: an animated
+  PNG (`imagine stricata: Invalid PNG data`) and a TIFF whose first directory holds no image
+  (`imagine stricata: The TIFF image frame is missing the ImageWidth`).
 - The credentials are not read, and no file the tool writes carries them: the curve's, the
   paper fit's and the crop's writers take the pixels and the ICC profile only
   (`known-limitations.md`).

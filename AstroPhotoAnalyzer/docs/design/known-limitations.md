@@ -146,7 +146,11 @@
   level at q100.
 - Colour is measured as sRGB; other profiles are only named.
 - Palette PNG/TIFF and multi-page TIFF are read through ImageSharp's conversion and noted,
-  not measured natively; of a multi-page TIFF only the first page is read.
+  not measured natively; of a multi-page TIFF only the first page is read, so a file whose
+  first page is a small preview is measured as that preview, the size on the file line and
+  the note being the only signs.
+- An animated PNG is refused (`imagine stricata: Invalid PNG data`), and so is a TIFF whose
+  first directory holds no image (ADR 0111).
 - The Content Credentials Lightroom adds to an exported TIFF are stepped over, not read, and
   no file the tool writes carries them (ADR 0111).
 - The plateau needs flat sky; a frame full of structure may yield few or no tiles.

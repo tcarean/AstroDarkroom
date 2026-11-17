@@ -251,7 +251,7 @@ Written down because each one cost a probe to find, and each one shapes code or 
   image** ("The number of samples in the TIFF BitsPerSample entry is not supported"), and
   Lightroom Classic 16 writes such a directory after the image on export, with its Content
   Credentials in the tag 52545. So both decodes pass `FirstPage` (`MaxFrames = 1`), which
-  reads the image alone. `Image.Identify` takes no such limit and lists every directory as a
-  frame, so `ImagePages` counts, for the multi-page note, the frames whose tags state an image
-  width (measured 2026-11-17, ADR 0111; `R012_...` in `ImageSharpReaderTests`, on files
+  reads the image alone. `Image.Identify` of a TIFF ignores that limit and lists every
+  directory as a frame, so `ImagePages` counts, for the multi-page note, the frames whose
+  tags state an image width (measured 2026-11-17, ADR 0111; `R012_...` in `ImageSharpReaderTests`, on files
   `TiffTestData` builds with that directory and with a real second page).

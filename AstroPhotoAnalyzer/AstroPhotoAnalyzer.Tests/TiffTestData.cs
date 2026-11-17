@@ -97,7 +97,8 @@ internal static class TiffTestData
     /// The same file with one more directory after its last, holding no image: only the tag
     /// 52545 with <paramref name="payload"/>. That is what Lightroom Classic 16 writes after the
     /// image on export for its Content Credentials (measured on the export of 2026-11-17, ADR
-    /// 0111). The file must be a little-endian classic TIFF; the payload longer than 4 bytes,
+    /// 0111), except that Lightroom puts the directory before its payload and this puts it
+    /// after. The file must be a little-endian classic TIFF; the payload longer than 4 bytes,
     /// so that it sits outside its entry.
     /// </summary>
     internal static byte[] WithADirectoryWithoutAnImage(byte[] tiff, byte[] payload)

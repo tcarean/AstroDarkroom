@@ -35,8 +35,8 @@
 // ONLY THE FIRST PAGE IS DECODED (FirstPage, ADR 0111). Asked for every page, 3.1.11 refuses the
 // whole file when a later directory of a TIFF holds no image, and Lightroom Classic 16 writes
 // exactly that after the image on export: one directory with the Content Credentials in the tag
-// 52545. Identify does not take the limit and lists every directory, so the pages are counted
-// by ImagePages, not by the number of frames.
+// 52545. Identify of a TIFF ignores the limit and lists every directory, so the pages are
+// counted by ImagePages, not by the number of frames.
 
 using System;
 using System.Collections.Generic;
