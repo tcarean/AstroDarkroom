@@ -217,7 +217,7 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
-- 2026-11-17 (ADR 0110, CR-078 of the code review of 2026-11-13: the share of samples of the
+- 2026-11-17 (ADR 0111, CR-078 of the code review of 2026-11-13: the share of samples of the
   form level x 257 is counted without pure black and pure white), recorded at the owner's word
   of that day: V-001 `bitDepth.upscaledFraction` 0.0042 -> 0.0039, the reference PNG's
   samples at 0 or 65535, about 0.03 % of all by the two figures, no longer counted. The run: 28

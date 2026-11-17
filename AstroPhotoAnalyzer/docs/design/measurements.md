@@ -28,7 +28,7 @@ Applicable only when the source is 16-bit integer. Over **all** pixels of every 
 distinct 16-bit levels per plane (`DistinctLevels`), and the fraction of samples with
 `v == (v >> 8) * 257` (`UpscaledFraction`) - an 8-bit file saved as 16 has every sample
 of that form; genuine data has ~0.4 % by coincidence. The fraction is taken among the samples
-that are neither 0 nor 65535 (ADR 0110): both ends have that form in every file, and a clipped
+that are neither 0 nor 65535 (ADR 0111): both ends have that form in every file, and a clipped
 sky or a burnt-out star puts samples there. `IsUpscaled` when the fraction
 exceeds `UpscaledFraction` (0.5), or when no plane has more than `EightBitLevels` (256)
 distinct levels (`FewLevels`, ADR 0105): a file saved by a shift, `level x 256`, has none of the

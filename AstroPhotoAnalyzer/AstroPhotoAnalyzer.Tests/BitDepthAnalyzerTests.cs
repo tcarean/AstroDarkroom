@@ -126,7 +126,7 @@ public class BitDepthAnalyzerTests
     }
 
     /// <summary>
-    /// ADR 0110, from the review of its branch: of the levels a shift writes (level x 256) only
+    /// ADR 0111, from the review of its branch: of the levels a shift writes (level x 256) only
     /// 0 is also a level x 257, and 0 is left out, so a file saved by a shift has no sample of
     /// the copied form at all. It is 8 bits by its levels alone, with the levels' sentence.
     /// </summary>

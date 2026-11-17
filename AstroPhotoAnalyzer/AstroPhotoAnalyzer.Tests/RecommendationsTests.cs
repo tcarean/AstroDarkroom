@@ -136,7 +136,7 @@ public class RecommendationsTests
     }
 
     /// <summary>
-    /// CR-078 (ADR 0110): the share of x 257 samples is counted without pure black and pure
+    /// CR-078 (ADR 0111): the share of x 257 samples is counted without pure black and pure
     /// white, and the evidence says so, in both languages (the owner's yes of 2026-11-17).
     /// </summary>
     [Theory]

@@ -1,4 +1,4 @@
-# 0110. The x 257 share leaves out pure black and pure white
+# 0111. The x 257 share leaves out pure black and pure white
 
 Date: 2026-11-17
 Status: accepted 2026-11-17
