@@ -191,6 +191,68 @@ public class ImageSharpReaderTests
         Assert.Equal("necomprimat", r.Source.Compression);
     }
 
+    /// <summary>
+    /// A stand-in for Lightroom's Content Credentials: the first bytes of the box its export of
+    /// 2026-11-17 carries in the tag 52545. The reader never looks inside it.
+    /// </summary>
+    static readonly byte[] Credentials = System.Text.Encoding.ASCII.GetBytes("\0\0\0\x1ejumb\0\0\0\x16jumdc2pa\0\x11\0\x10");
+
+    /// <summary>
+    /// The file Lightroom Classic 16 exports with Content Credentials on: the image, then a
+    /// directory that holds no image. ImageSharp 3.1.11 refuses the whole file when asked for
+    /// every page ("The number of samples in the TIFF BitsPerSample entry is not supported").
+    /// </summary>
+    [Fact]
+    public void R012_ATiffWithContentCredentialsAfterTheImageIsReadAsWithoutThem()
+    {
+        using var ws = new TempWorkspace();
+        byte[] icc = IccTestData.V2("Test sRGB profile");
+        byte[] plain = TiffTestData.Build16Rgb(8, 6, (x, y, c) => Level(x, y, c), icc);
+        string path = ws.WriteFile("lr.tif", TiffTestData.WithADirectoryWithoutAnImage(plain, Credentials));
+
+        Raster r = new ImageSharpReader().Load(path);
+
+        AssertSamePixels(Pattern(), r);
+        Assert.Equal("TIFF", r.Source.Format);
+        Assert.Equal(16, r.Source.BitDepth);
+        Assert.Equal("necomprimat", r.Source.Compression);
+        Assert.Equal("Test sRGB profile", r.Source.IccDescription);
+        Assert.Null(r.Source.Note);   // not a page: nothing to say about it
+    }
+
+    [Fact]
+    public void R012_AGreyTiffWithContentCredentialsIsReadAsWithoutThem()
+    {
+        using var ws = new TempWorkspace();
+        Raster src = SyntheticRasters.Ramp(4, 16, 0f, 1f, planes: 1);
+        byte[] plain = File.ReadAllBytes(ImageFiles.SaveTiff16Gray(src, ws.PathTo("g.tif")));
+        string path = ws.WriteFile("lr-g.tif", TiffTestData.WithADirectoryWithoutAnImage(plain, Credentials));
+
+        Raster r = new ImageSharpReader().Load(path);
+
+        AssertSamePixels(src, r);
+        Assert.False(r.IsColor);
+        Assert.Equal(16, r.Source.BitDepth);
+        Assert.Null(r.Source.Note);
+    }
+
+    /// <summary>
+    /// Two pages and the credentials: three directories, two of them images. The note counts
+    /// the images, and the raster is the first page's (6 rows; the second has 4).
+    /// </summary>
+    [Fact]
+    public void R012_OnlyTheFirstPageIsReadAndTheNoteCountsThePagesThatHoldAnImage()
+    {
+        using var ws = new TempWorkspace();
+        byte[] twoPages = TiffTestData.WithASecondPage(TiffTestData.Build16Rgb(8, 6, (x, y, c) => Level(x, y, c)), rows: 4);
+        string path = ws.WriteFile("pages.tif", TiffTestData.WithADirectoryWithoutAnImage(twoPages, Credentials));
+
+        Raster r = new ImageSharpReader().Load(path);
+
+        AssertSamePixels(Pattern(), r);
+        Assert.Equal("TIFF cu 2 pagini; s-a citit prima", r.Source.Note);
+    }
+
     [Fact]
     public void AFileThatIsNotAnImageIsAnError()
     {

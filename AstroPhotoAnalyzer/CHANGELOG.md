@@ -288,6 +288,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A TIFF exported from Lightroom Classic with Content Credentials opens. Lightroom adds them
+  after the image as a second "page" that holds no image, and the tool refused the whole file
+  with `The number of samples in the TIFF BitsPerSample entry is not supported`. It now reads
+  the image and steps over the rest; of any file with several pages only the first is decoded
+  (R-012, ADR 0111).
+
 - Two texts say what the figures beside them show. On the Resolution tab, the zones' description
   now names both reasons a zone reads `n/a`: under 5 stars in the zone, or too few stars in the
   whole frame. And a 16-bit file caught as 8 bits by its 256 levels alone is told that the 16

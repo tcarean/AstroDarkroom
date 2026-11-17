@@ -146,7 +146,9 @@
   level at q100.
 - Colour is measured as sRGB; other profiles are only named.
 - Palette PNG/TIFF and multi-page TIFF are read through ImageSharp's conversion and noted,
-  not measured natively.
+  not measured natively; of a multi-page TIFF only the first page is read.
+- The Content Credentials Lightroom adds to an exported TIFF are stepped over, not read, and
+  no file the tool writes carries them (ADR 0111).
 - The plateau needs flat sky; a frame full of structure may yield few or no tiles.
 - The banding verdict counts tiles of 64 px: a flat patch smaller than a tile, or one that
   no whole tile falls inside, is not seen; and the share is estimated from 5000 random

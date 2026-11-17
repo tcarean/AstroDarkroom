@@ -92,4 +92,89 @@ internal static class TiffTestData
                 }
         return b;
     }
+
+    /// <summary>
+    /// The same file with one more directory after its last, holding no image: only the tag
+    /// 52545 with <paramref name="payload"/>. That is what Lightroom Classic 16 writes after the
+    /// image on export for its Content Credentials (measured on the export of 2026-11-17, ADR
+    /// 0111). The file must be a little-endian classic TIFF; the payload longer than 4 bytes,
+    /// so that it sits outside its entry.
+    /// </summary>
+    internal static byte[] WithADirectoryWithoutAnImage(byte[] tiff, byte[] payload)
+    {
+        if (payload.Length <= 4) throw new ArgumentException("the payload must be longer than 4 bytes", nameof(payload));
+        int payloadOffset = tiff.Length + tiff.Length % 2;
+        int ifd = payloadOffset + payload.Length + payload.Length % 2;
+        var b = new byte[ifd + 2 + 12 + 4];
+        tiff.CopyTo(b, 0);
+        payload.CopyTo(b, payloadOffset);
+
+        BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(ifd, 2), 1);
+        BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(ifd + 2, 2), 52545);
+        BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(ifd + 4, 2), Undefined);
+        BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(ifd + 6, 4), (uint)payload.Length);
+        BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(ifd + 10, 4), (uint)payloadOffset);
+        // The four bytes after the entry stay 0: no other IFD.
+        ChainAfterTheLast(b, ifd);
+        return b;
+    }
+
+    /// <summary>
+    /// The same file with a second page: a copy of the first directory, <paramref name="rows"/>
+    /// high, over the first rows of the first page's strip. For a file of
+    /// <see cref="Build16Rgb"/> (one strip, the sizes as LONG), with fewer rows than the first
+    /// page, so that the raster's height says which page was read.
+    /// </summary>
+    internal static byte[] WithASecondPage(byte[] tiff, int rows)
+    {
+        int first = (int)BinaryPrimitives.ReadUInt32LittleEndian(tiff.AsSpan(4, 4));
+        int count = BinaryPrimitives.ReadUInt16LittleEndian(tiff.AsSpan(first, 2));
+        int len = 2 + count * 12 + 4;
+        int ifd = tiff.Length + tiff.Length % 2;
+        var b = new byte[ifd + len];
+        tiff.CopyTo(b, 0);
+        Array.Copy(tiff, first, b, ifd, len);
+        BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(ifd + len - 4, 4), 0);
+
+        uint height = 0, stripBytes = 0;
+        for (int i = 0; i < count; i++)
+        {
+            int e = ifd + 2 + i * 12;
+            ushort tag = BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(e, 2));
+            if (tag == 257) height = BinaryPrimitives.ReadUInt32LittleEndian(b.AsSpan(e + 8, 4));
+            if (tag == 279) stripBytes = BinaryPrimitives.ReadUInt32LittleEndian(b.AsSpan(e + 8, 4));
+        }
+        if (rows < 1 || rows >= height) throw new ArgumentException("the second page must have fewer rows than the first", nameof(rows));
+        for (int i = 0; i < count; i++)
+        {
+            int e = ifd + 2 + i * 12;
+            ushort tag = BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(e, 2));
+            if (tag == 257 || tag == 278) BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(e + 8, 4), (uint)rows);
+            if (tag == 279) BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(e + 8, 4), stripBytes / height * (uint)rows);
+        }
+        ChainAfterTheLast(b, ifd);
+        return b;
+    }
+
+    /// <summary>
+    /// Makes the directory at <paramref name="ifd"/> the one after the file's last: follows the
+    /// "next" pointers from the header and writes the offset into the first that is 0.
+    /// </summary>
+    static void ChainAfterTheLast(byte[] b, int ifd)
+    {
+        if (b[0] != (byte)'I' || b[1] != (byte)'I' || BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(2, 2)) != 42)
+            throw new ArgumentException("a little-endian classic TIFF is expected");
+        int at = (int)BinaryPrimitives.ReadUInt32LittleEndian(b.AsSpan(4, 4));
+        while (true)
+        {
+            int next = at + 2 + BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(at, 2)) * 12;
+            int following = (int)BinaryPrimitives.ReadUInt32LittleEndian(b.AsSpan(next, 4));
+            if (following == 0)
+            {
+                BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(next, 4), (uint)ifd);
+                return;
+            }
+            at = following;
+        }
+    }
 }

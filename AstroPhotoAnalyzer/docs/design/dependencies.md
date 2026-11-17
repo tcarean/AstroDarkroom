@@ -23,7 +23,11 @@ displayed in "Despre" through `ThirdParty.Components`; bound to the csproj by
 `ThirdPartyTests`. Measured behaviours the code depends on: the TIFF encoder writes 8
 bits per sample for `Rgb48` even when asked for 48; `Image.Identify` does not read a
 PNG's `iCCP` (`Image.Load` does); the TIFF decoder puts the ICC profile on
-`Frames[0].Metadata`; the PNG encoder writes 16 bits per sample exactly and the `iCCP` chunk
+`Frames[0].Metadata`; asked for every page, the TIFF decoder refuses a file one of whose
+directories holds no image, and `Image.Identify` lists such a directory as a frame whatever
+`MaxFrames` says, so the reader decodes the first page only and counts the pages itself
+(measured 2026-11-17 on a Lightroom export with Content Credentials, ADR 0111); the PNG
+encoder writes 16 bits per sample exactly and the `iCCP` chunk
 from the image's profile (measured 2026-11-14, ADR 0098; the note of phase 1 said it did not
 write `iCCP`); LZW needs the horizontal
 predictor to be competitive. `Wacton.Unicolour` **8.0.0** (MIT, pure
