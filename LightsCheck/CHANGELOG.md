@@ -303,7 +303,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   direction of the trails, from which the RA axis is read, though the tracking cannot draw a
   trail in a fraction of a second: one trailed frame and one such shot were enough to name an
   axis. A frame too short to stack now casts no vote, trailed or not (R-085, R-025, ADR 0061;
-  CR-012 of the review of 2026-11-13).
+  CR-012 of the review of 2026-11-13). The `trail direction` row, when no direction is known,
+  says which frames count: `not known (too few bad frames, long enough to stack, with trails in
+  the same direction)` (ADR 0065).
 - The report files could be written among the frames: `--out <session>\lights`, or in the
   window a double click on `lights` in the folder dialog, left the three files beside the raws,
   against the rule that nothing is written there. A folder that holds the session's frames
