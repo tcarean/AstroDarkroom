@@ -150,8 +150,8 @@ entry gives. Paths are relative to the project folder.
 | CR-072 | 4 | rare | confirmed | A failed computation of one gallery of the curves tab takes both away, and the box cannot be unticked to go round it | open |
 | CR-073 | 3 | rare | to measure | A curve can be missing from the gallery with the dust move: its strengths are judged with other points than the ones it gets | open |
 | CR-074 | 4 | common | confirmed | Two figures of the paper fit are not the same from one run to the next | open |
-| CR-075 | 3 | rare | owner | On a frame with too few stars a zone reads n/a under a description that promises its width from 5 stars | open |
-| CR-076 | 3 | rare | owner | "You lose nothing going to 8 bits" is also said of a file caught by its levels alone | open |
+| CR-075 | 3 | rare | owner | On a frame with too few stars a zone reads n/a under a description that promises its width from 5 stars | fixed bf88b340 |
+| CR-076 | 3 | rare | owner | "You lose nothing going to 8 bits" is also said of a file caught by its levels alone | fixed bf88b340 |
 | CR-077 | 4 | crafted | confirmed | The crop and the reader take a reference pixel with broken quoting apart differently | open |
 
 9 entries of severity 1, 4 of severity 2, 39 of severity 3, 15 of severity 4; 45 confirmed, 14
@@ -1069,7 +1069,7 @@ Added on 2026-11-16, from the fix of CR-006 (ADR 0103) and the review of its bra
 - Should: the sentence names both reasons. A text of the window changes only on the owner's yes
   (the rule "Plain words"); a wording was put to the owner on 2026-11-16.
 - Evidence: owner.
-- Status: open
+- Status: fixed bf88b340 (ADR 0108; the wording the owner approved on 2026-11-16)
 
 ### CR-076 "You lose nothing going to 8 bits" is also said of a file caught by its levels alone
 
@@ -1087,7 +1087,7 @@ Added on 2026-11-16, by the review of the fix of CR-008 (ADR 0105).
   for the first form only, so the levels' case needs a sentence of its own, or one that holds
   for both. The owner's call on the wording.
 - Evidence: owner.
-- Status: open
+- Status: fixed bf88b340 (ADR 0108; the wording the owner approved on 2026-11-16)
 
 ## Severity 4: robustness and cleanliness
 
