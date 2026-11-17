@@ -126,6 +126,21 @@ public class BitDepthAnalyzerTests
     }
 
     /// <summary>
+    /// ADR 0109, from the review of its branch: of the levels a shift writes (level x 256) only
+    /// 0 is also a level x 257, and 0 is left out, so a file saved by a shift has no sample of
+    /// the copied form at all. It is 8 bits by its levels alone, with the levels' sentence.
+    /// </summary>
+    [Fact]
+    public void R031_AShiftedFileHasNoSampleOfTheCopiedForm()
+    {
+        var res = BitDepthAnalyzer.Analyze(Shifted8(Sixteen()));
+
+        Assert.Equal(0.0, res.UpscaledFraction);
+        Assert.True(res.FewLevels);
+        Assert.True(res.IsUpscaled);
+    }
+
+    /// <summary>
     /// R-031: the clipped samples left out, an upscale is still one. A x 257 file that is 60 %
     /// pure black keeps a share of 1 on the samples that can tell; a file of pure black and pure
     /// white alone has none that can, a share of 0, and is 8 bits by its two levels.

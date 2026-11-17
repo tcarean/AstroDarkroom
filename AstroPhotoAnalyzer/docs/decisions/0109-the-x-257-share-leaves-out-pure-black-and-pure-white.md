@@ -16,7 +16,10 @@ Measured on 2026-11-17, before the fix: real 16-bit data (uniform, three planes 
 analysis of such a scene gave the warning "the file holds only 8 bits of information ... you
 lose nothing going to 8 bits", with thousands of distinct levels printed in its evidence. The
 entry's first case, a frame more than half pure black, does not reach the warning: its median is
-0 and it is refused as a linear image (R-015); black under half and some white together do.
+0 and it is refused as a linear image (R-015). What reaches it is a green plane under half
+black with the rest of the share made up elsewhere: pure white beside the black, or the red and
+blue planes clipped more than the green one (90 % black on each and 40 % on the green read
+about 73 %).
 
 ## Decision
 
@@ -40,11 +43,13 @@ biti copiat in 16 biti", the wording the owner approved on 2026-11-17.
   clipped. A file of pure black and pure white alone has a share of 0 and is 8 bits by its two
   levels (ADR 0105).
 - The reference image's share reads 0.39 % for 0.42 % (V-001 `bitDepth.upscaledFraction`
-  0.0042 -> 0.0039, recorded at the owner's word of 2026-11-17): it has a few samples at the
-  ends. No other figure of the seventeen cases moved.
-- A file saved by a shift (level x 256) that is mostly black now reads a share near 0 and takes
-  the sentence of the levels' clause (ADR 0108), not "you lose nothing".
-- Guards: `R031_ClippedBlackAndWhiteDoNotMakeAFrameAnUpscale`,
+  0.0042 -> 0.0039, recorded at the owner's word of 2026-11-17): about 0.03 % of its samples
+  are at the ends, by the two figures. No other figure of the seventeen cases moved.
+- A file saved by a shift (level x 256) reads a share of exactly 0, whatever part of it is
+  black: of its levels only 0 is also a level x 257, and 0 is left out. It is 8 bits by its
+  levels and takes that clause's sentence (ADR 0108), never "you lose nothing".
+- Guards: `R031_AShiftedFileHasNoSampleOfTheCopiedForm`,
+  `R031_ClippedBlackAndWhiteDoNotMakeAFrameAnUpscale`,
   `R031_AnUpscaleWithClippedAreasIsStillCaught`,
   `R096_AClippedSixteenBitFrameIsNotWarnedOfAsEightBits`,
   `R096_TheShareOfCopiedLevelsSaysWhatItLeavesOut`.

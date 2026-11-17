@@ -62,8 +62,10 @@ namespace AstroPhotoAnalyzer
         internal bool FewLevels => Applicable && DistinctLevels.All(n => n <= Thresholds.EightBitLevels);
 
         /// <summary>
-        /// The 16 bits hold 8 bits of information: over <see cref="Thresholds.UpscaledFraction"/>
-        /// of the samples are a level times 257, or <see cref="FewLevels"/> (R-031, ADR 0105).
+        /// The 16 bits hold 8 bits of information: <see cref="UpscaledFraction"/>, the share of
+        /// a level times 257 among the samples off the two ends, is over
+        /// <see cref="Thresholds.UpscaledFraction"/>, or <see cref="FewLevels"/> (R-031, ADR 0105,
+        /// ADR 0109).
         /// </summary>
         internal bool IsUpscaled => Applicable && (UpscaledFraction > Thresholds.UpscaledFraction || FewLevels);
     }
