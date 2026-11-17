@@ -313,6 +313,216 @@ public class GamutFitTests
         Assert.InRange(recipe.PctLeft, 0, 1);
     }
 
+    /// <summary>
+    /// A paper whose whole difference grows with the chroma alone, 0.4 per unit: the warning's
+    /// limit (4) is passed at a chroma of 10, the fit's target (3.5) at 8.75.
+    /// </summary>
+    static double GradedRule(double l, double a, double b) => 0.4 * Math.Sqrt(a * a + b * b);
+
+    /// <summary>Sets on a table the warning a rule gives at the warning's own limit, as the run does.</summary>
+    static void WarnBy(GamutFitTable t, Func<double, double, double, double> rule)
+    {
+        t.Warning = (l, a, b) => rule(l, a, b) > Thresholds.CurveGamutDeltaE;
+        t.WarningOfPixel = (red, green, blue) =>
+        {
+            var (l, a, b) = ColorMath.LabD50OfSrgb(red, green, blue);
+            return rule(l, a, b) > Thresholds.CurveGamutDeltaE;
+        };
+    }
+
+    [Fact]
+    public void R187_TheFitLandsInsideItsTargetAndTheSharesStayTheWarnings()
+    {
+        Assert.True(Thresholds.GamutFitTargetDeltaE < Thresholds.CurveGamutDeltaE, "the target is a reserve under the warning's limit");
+        double targetEdge = Thresholds.GamutFitTargetDeltaE / 0.4, warningEdge = Thresholds.CurveGamutDeltaE / 0.4;
+        GamutFitTable t = GamutFitTable.Build(GradedRule);
+        Assert.Equal(Thresholds.GamutFitTargetDeltaE, t.Limit);
+        WarnBy(t, GradedRule);
+        // Well inside; under the target but past the soft knee's start; between the target and
+        // the warning; past the warning.
+        double between = (targetEdge + warningEdge) / 2;
+        Raster r = RasterOf((50, 5, 0), (50, targetEdge - 0.5, 0), (50, between, 0), (50, warningEdge + 2, 0));
+
+        GamutFitOutcome exact = GamutFit.Apply(r, t, Thresholds.GamutFitKneeExact, keepFacts: true);
+
+        // The shares and the masks are the warning's: only the last pixel is outside before.
+        Assert.Equal(new[] { false, false, false, true }, exact.OutsideBefore);
+        Assert.Equal(new[] { false, false, false, false }, exact.OutsideAfter);
+        Assert.Equal(25, exact.PctOutsideBefore, 3);
+        Assert.Equal(0, exact.PctOutsideAfter);
+        Assert.Equal(0, exact.PctUnreachable);
+        // The fit moves the two pixels over the target, the one the warning keeps too, and lands
+        // both on the target's edge (the search's last step is 0.02), tone and hue as they were.
+        Assert.Equal(50, exact.PctTouched, 3);
+        foreach (int i in new[] { 2, 3 })
+        {
+            var landed = LabAt(exact.Image, i);
+            Assert.InRange(ChromaOf(landed), targetEdge - 0.05, targetEdge + 0.01);
+            Assert.InRange(landed.L, 49.85, 50.15);
+            Assert.InRange(HueOf(landed), -1, 1);
+        }
+        foreach (int i in new[] { 0, 1 })
+            for (int p = 0; p < 3; p++) Assert.Equal(r.Planes[p][i], exact.Image.Planes[p][i]);
+
+        // The knees compress towards the target's edge, not the warning's: the pixel just under
+        // the target is eased by the soft knee, and nothing ends past the target.
+        GamutFitOutcome soft = GamutFit.Apply(r, t, Thresholds.GamutFitKneeSoft, keepFacts: true);
+        Assert.True(ChromaOf(LabAt(soft.Image, 1)) < targetEdge - 0.5 - 0.01, "the soft knee eases the pixel under the target: " + ChromaOf(LabAt(soft.Image, 1)));
+        for (int i = 0; i < r.W; i++) Assert.InRange(ChromaOf(LabAt(soft.Image, i)), 0, targetEdge + 0.01);
+        Assert.Equal(new[] { false, false, false, true }, soft.OutsideBefore);
+        Assert.Equal(75, soft.PctTouched, 3);
+
+        // The save of a whole image, without the facts, writes the same colours.
+        Raster saved = GamutFit.Apply(r, t, Thresholds.GamutFitKneeExact, keepFacts: false).Image;
+        for (int p = 0; p < 3; p++) Assert.Equal(exact.Image.Planes[p], saved.Planes[p]);
+    }
+
+    [Fact]
+    public void R187_AToneTheTargetCannotReachIsStillBroughtInsideTheWarning()
+    {
+        // Under L* 10 the grey itself is past the warning (4.5); from 10 to 20 it sits between
+        // the target and the warning (3.8); above, the paper holds every grey. The chroma adds
+        // 0.1 per unit everywhere.
+        static double Rule(double l, double a, double b) => (l < 10 ? 4.5 : l < 20 ? 3.8 : 0) + 0.1 * Math.Sqrt(a * a + b * b);
+        GamutFitTable t = GamutFitTable.Build(Rule);
+        WarnBy(t, Rule);
+        // At L* 15: 3.9, which the warning keeps, and 4.3, which it marks and a chroma of 2 would
+        // bring back to 4. At L* 5: nothing brings it in. At L* 50: inside.
+        Raster r = RasterOf((15, 1, 0), (15, 5, 0), (5, 5, 0), (50, 5, 0));
+
+        foreach (double knee in GamutFitRun.Knees)
+        {
+            GamutFitOutcome o = GamutFit.Apply(r, t, knee, keepFacts: true);
+
+            Assert.Equal(new[] { false, true, true, false }, o.OutsideBefore);
+            Assert.Equal(new[] { false, false, true, false }, o.OutsideAfter);
+            Assert.Equal(25, o.PctUnreachable, 3);
+            Assert.Equal(25, o.PctTouched, 3);
+            // The one the warning marks lands inside the warning's own edge, a chroma of 2 (the
+            // search from zero ends within 0.1 of it); the soft knees end under it.
+            var landed = LabAt(o.Image, 1);
+            Assert.InRange(ChromaOf(landed), knee >= 1 ? 1.85 : 1.0, 2.01);
+            Assert.InRange(landed.L, 14.85, 15.15);
+            // The others are the input's own samples: the one past the target alone is not moved
+            // toward a grey that is no better, and is counted nowhere.
+            foreach (int i in new[] { 0, 2, 3 })
+                for (int p = 0; p < 3; p++) Assert.Equal(r.Planes[p][i], o.Image.Planes[p][i]);
+        }
+    }
+
+    [Fact]
+    public void R187_AGamutTableAnswersAtItsOwnLimitWithACacheOfItsOwn()
+    {
+        // Every colour comes back 3.8 lighter: inside the warning's 4, past the target.
+        var warning = new GamutTable { N = 2, Dl = new float[8], Da = new float[8], Db = new float[8] };
+        Array.Fill(warning.Dl, 3.8f);
+        Assert.Equal(Thresholds.CurveGamutDeltaE, warning.Limit);
+        GamutTable target = warning.WithLimit(Thresholds.GamutFitTargetDeltaE);
+        Assert.Equal(Thresholds.GamutFitTargetDeltaE, target.Limit);
+        Assert.Same(warning.Dl, target.Dl);
+        Assert.NotSame(warning.Cache, target.Cache);
+
+        Assert.False(GamutAnalyzer.Outside(warning, 0.5f, 0.4f, 0.3f));
+        Assert.True(GamutAnalyzer.Outside(target, 0.5f, 0.4f, 0.3f));
+
+        // With a profile behind it the exact trip decides near each limit, once per 8-bit colour:
+        // the same colour is kept in one cache and rejected in the other.
+        int trips = 0;
+        warning.Exact = (red, green, blue) => { Interlocked.Increment(ref trips); return (3.8, 0, 0); };
+        target = warning.WithLimit(Thresholds.GamutFitTargetDeltaE);
+        Assert.False(GamutAnalyzer.Outside(warning, 0.5f, 0.4f, 0.3f));
+        Assert.True(GamutAnalyzer.Outside(target, 0.5f, 0.4f, 0.3f));
+        Assert.True(GamutAnalyzer.Outside(target, 0.5f, 0.4f, 0.3f));
+        Assert.Equal(2, trips);
+        Assert.False(Assert.Single(warning.Cache).Value);
+        Assert.True(Assert.Single(target.Cache).Value);
+    }
+
+    [Fact]
+    public void R187_TheRunFitsToTheTargetAndCountsByTheWarning()
+    {
+        using var ws = new TempWorkspace();
+        string icc = ws.WriteFile("hartie.icc", IccPrinterTestData.V2Lut16("Hartie de test", 20));
+        // The hand-built paper prints every colour as the grey of its tone, so the whole
+        // difference is about the chroma. A tint whose difference lies between the target and
+        // the warning, chosen among the 8-bit colours (the judge decides on those near a limit).
+        GamutTable gamut = GamutAnalyzer.Build(icc);
+        Assert.Null(gamut.Problem);
+        (double R, double G, double B)? tint = null;
+        for (int red = 120; red <= 140 && tint == null; red++)
+            for (int green = 110; green <= 119 && tint == null; green++)
+            {
+                var (l, a, b) = ColorMath.LabD50OfSrgb(red / 255.0, green / 255.0, 119 / 255.0);
+                double d = gamut.ExactLab(l, a, b);
+                if (d > Thresholds.GamutFitTargetDeltaE + 0.1 && d < Thresholds.CurveGamutDeltaE - 0.1) tint = (red / 255.0, green / 255.0, 119 / 255.0);
+            }
+        Assert.True(tint != null, "an 8-bit tint between the target and the warning exists on the test paper");
+        var (tr, tg, tb) = tint.Value;
+        // Three bands: saturated (past the warning), the tint, grey.
+        string input = ws.WriteFile("benzi.fit", FitsTestData.Build(96, 64, 3,
+            (x, y, c) => x < 32 ? (c == 0 ? 0.6 : 0.2) : x < 64 ? (c == 0 ? tr : c == 1 ? tg : tb) : 0.3, bitpix: -32));
+        Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(icc, out string error) ?? throw new Exception(error);
+        AnalysisResult analysis = AnalysisRun.Execute(input, p);
+
+        GamutFitSet set = GamutFitRun.Execute(analysis, 200, 150);
+
+        Assert.Null(set.Problem);
+        Assert.Equal(Thresholds.GamutFitTargetDeltaE, set.Table.Limit);
+        // The red layer of the original is the warning's: the saturated band, not the tint.
+        int w = set.OriginalPreview.W, mid = set.OriginalPreview.H / 2 * w;
+        Assert.True(set.OriginalOutside[mid + w / 6]);
+        Assert.False(set.OriginalOutside[mid + w / 2]);
+        Assert.False(set.OriginalOutside[mid + 5 * w / 6]);
+        // The share before is the Soft proof tab's own, a third; the hard fit changes two thirds.
+        GamutFitVariant exact = set.Variants[0];
+        Assert.Equal(ProofRun.Prepare(analysis).PctPaper, exact.Evidence.PctOutsideBefore, 1);
+        Assert.InRange(exact.Evidence.PctOutsideBefore, 32, 35);
+        Assert.InRange(exact.Evidence.PctTouched, 65, 68);
+        Assert.Equal(0, exact.Evidence.PctOutsideAfter);
+        Assert.Equal(0, exact.Evidence.PctUnreachable);
+
+        // The saved file: both coloured bands end within the target by the profile's own rule,
+        // the tint moved although the warning never marked it; the grey band is untouched.
+        string target = ws.PathTo("benzi_Exacta.fit");
+        GamutFitExport.Save(analysis, set, exact, target);
+        Raster saved = ImageLoader.Load(target);
+        foreach (int x in new[] { 16, 48 })
+        {
+            int i = 32 * saved.W + x;
+            var (l, a, b) = ColorMath.LabD50OfSrgb(saved.Planes[0][i], saved.Planes[1][i], saved.Planes[2][i]);
+            Assert.InRange(gamut.ExactLab(l, a, b), 0, Thresholds.GamutFitTargetDeltaE + 0.05);
+        }
+        int tinted = 32 * saved.W + 48;
+        Assert.True(Math.Abs(saved.Planes[0][tinted] - tr) > 1e-4 || Math.Abs(saved.Planes[1][tinted] - tg) > 1e-4, "the tint was moved");
+        Assert.Equal(0.3f, saved.Planes[0][32 * saved.W + 80], 3);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R187_TheEvidenceSaysTheFitStopsALittleInsideThePapersLimit(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        var evidence = new GamutFitEvidence { PctOutsideBefore = 3.04, PctOutsideAfter = 0, PctTouched = 5.52, ChromaLostMedian = 1.43, ChromaLostP99 = 13.2, PctOutsideUnderLowSeparation = 90 };
+        var variant = new GamutFitVariant { Name = GamutFitTexts.Name(Thresholds.GamutFitKneeExact), Knee = Thresholds.GamutFitKneeExact, Evidence = evidence };
+
+        IReadOnlyList<(string Text, bool Warning)> rows = GamutFitTexts.EvidenceRows(variant, new GamutFitRecipe { Factor = 1 });
+
+        // The hard fit's own line no longer says that only the colours outside are changed.
+        Assert.Contains(english ? "or holds just barely" : "sau le tine la limita", rows[0].Text);
+        Assert.Contains(english ? "a little inside the paper's limit" : "putin sub limita hartiei", rows[0].Text);
+        // The row after "pixels changed" says where the fit stops and where the warning starts,
+        // both numbers from the thresholds, and why more pixels change than the warning marks.
+        int changed = rows.ToList().FindIndex(row => row.Text.StartsWith(english ? "pixels changed" : "pixeli schimbati"));
+        Assert.True(changed >= 0);
+        (string Text, bool Warning) reserve = rows[changed + 1];
+        Assert.False(reserve.Warning);
+        Assert.Contains(english ? "the fit stops a little inside the paper's limit" : "potrivirea se opreste putin sub limita hartiei", reserve.Text);
+        Assert.Contains(Fmt.F1(Thresholds.GamutFitTargetDeltaE), reserve.Text);
+        Assert.Contains(Fmt.F0(Thresholds.CurveGamutDeltaE), reserve.Text);
+        Assert.Contains("Lightroom", reserve.Text);
+    }
+
     [Fact]
     public void R177_TheTiffWriterWritesSixteenBitsWithTheProfileAndReadsBackToTheSameSamples()
     {

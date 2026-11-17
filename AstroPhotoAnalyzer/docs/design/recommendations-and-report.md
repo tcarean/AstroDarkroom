@@ -129,7 +129,8 @@ threshold being the Denoise tab's.
 
 Not part of the report either. The names and the one-line helps of the three variants, the
 evidence rows of a variant (the shares before and after, the pixels changed and what they lose,
-the dark share, the tone out of reach as a warning, the recipe for a hand-made mask), the
+where the fit stops and where the warning starts, with both limits interpolated (R-187), the
+dark share, the tone out of reach as a warning, the recipe for a hand-made mask), the
 proposed file name (the input's kind), the `HISTORY` cards of the saved FITS and the
 description tag of the saved TIFF, the note under the gallery; the figures come from
 `paper-fit.md`'s records. The words median, percentile, chroma and knee never appear in them

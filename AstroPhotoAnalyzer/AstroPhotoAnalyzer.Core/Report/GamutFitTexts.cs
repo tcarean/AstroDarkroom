@@ -44,15 +44,16 @@ namespace AstroPhotoAnalyzer
         /// <returns>The sentence.</returns>
         internal static string Help(double knee)
             => knee >= 1
-                ? Tr.Pick("only the colours the paper cannot hold are changed: each loses just enough saturation to fit, its tone and its hue kept",
-                          "se schimba doar culorile pe care hartia nu le tine: fiecare pierde exact atata saturatie cat sa incapa, cu tonul si nuanta pastrate")
+                ? Tr.Pick("only the colours the paper cannot hold, or holds just barely, are changed: each loses just enough saturation to sit a little inside the paper's limit, its tone and its hue kept",
+                          "se schimba doar culorile pe care hartia nu le tine sau le tine la limita: fiecare pierde exact atata saturatie cat sa ajunga putin sub limita hartiei, cu tonul si nuanta pastrate")
                 : Tr.Pick($"the colours near the limit of the paper are eased too, from {Fmt.F0(100 * knee)} % of it, so that a run of growing saturation keeps its steps instead of ending flat; tone and hue kept",
                           $"se indulcesc si culorile de langa limita hartiei, de la {Fmt.F0(100 * knee)} % din ea, ca o trecere cu saturatie crescatoare sa-si pastreze treptele in loc sa se termine plat; tonul si nuanta raman");
 
         /// <summary>
         /// The evidence of a variant, line by line, the warnings marked (a tone out of reach):
-        /// the shares before and after, the pixels changed and how much they lose, the dark
-        /// share, the recipe for a hand-made mask.
+        /// the shares before and after, the pixels changed and how much they lose, where the fit
+        /// stops and where the warning starts (R-187), the dark share, the recipe for a
+        /// hand-made mask.
         /// </summary>
         /// <param name="v">The variant.</param>
         /// <param name="recipe">The recipe of the image, the same under every variant.</param>
@@ -67,6 +68,10 @@ namespace AstroPhotoAnalyzer
                 (Tr.Pick($"colours the paper cannot reproduce, after: {Fmt.Pct(e.PctOutsideAfter)}", $"culori pe care hartia nu le poate reda, dupa: {Fmt.Pct(e.PctOutsideAfter)}"), false),
                 (Tr.Pick($"pixels changed: {Fmt.Pct(e.PctTouched)}; half of them lose at most {Fmt.F1(e.ChromaLostMedian)} of saturation, 99 of 100 at most {Fmt.F1(e.ChromaLostP99)} (on a scale where 3 is just visible)",
                          $"pixeli schimbati: {Fmt.Pct(e.PctTouched)}; jumatate din ei pierd cel mult {Fmt.F1(e.ChromaLostMedian)} din saturatie, 99 din 100 cel mult {Fmt.F1(e.ChromaLostP99)} (pe o scara pe care 3 abia se vede)"), false),
+                // Why more pixels change than the warning marks (R-187): the fit's target sits
+                // under the warning's limit.
+                (Tr.Pick($"the fit stops a little inside the paper's limit (at {Fmt.F1(Thresholds.GamutFitTargetDeltaE)}, where the warning starts at {Fmt.F0(Thresholds.CurveGamutDeltaE)}), so more pixels are changed than the warning marks, and the gamut warning of other programs (Lightroom, for one) has almost nothing left to mark",
+                         $"potrivirea se opreste putin sub limita hartiei (la {Fmt.F1(Thresholds.GamutFitTargetDeltaE)}, pe cand avertizarea incepe la {Fmt.F0(Thresholds.CurveGamutDeltaE)}), asa ca se schimba mai multi pixeli decat marcheaza avertizarea, iar avertizarea de gamut din alte programe (de exemplu Lightroom) nu mai are aproape nimic de marcat"), false),
                 (Tr.Pick($"of the colours the paper cannot reproduce, {Fmt.Pct(e.PctOutsideUnderLowSeparation)} are dark tones, under L* {Fmt.F0(Thresholds.LowSeparationLstar)}",
                          $"din culorile pe care hartia nu le poate reda, {Fmt.Pct(e.PctOutsideUnderLowSeparation)} sunt tonuri inchise, sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}"), false),
             };

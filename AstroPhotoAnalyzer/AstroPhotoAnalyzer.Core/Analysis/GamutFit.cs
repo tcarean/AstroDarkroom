@@ -21,7 +21,10 @@
 // a table over L* and hue (GamutFitTable), built once per profile by the exact rule at every
 // node, with the exact rule deciding again for a pixel near the table's edge (the hybrid of
 // ADR 0042). Which pixels are outside is the Soft proof judge's word on each pixel as it is,
-// never the table's (ADR 0093). Three variants differ by their knee: a hard fit onto the edge,
+// never the table's (ADR 0093). The fit itself aims a little inside that: its table and its
+// judge stand at GamutFitTargetDeltaE, a reserve under the warning's CurveGamutDeltaE, so every
+// pixel past the target is moved and lands within it, while the shares and the masks stay the
+// warning's (R-187, ADR 0109). Three variants differ by their knee: a hard fit onto the edge,
 // or a smooth compression from a share of the edge, so that a gradient of growing saturation
 // keeps its steps. The recipe (GamutFit.Recipe) is what a person would do by hand instead: one tone band
 // and one saturation factor.
@@ -56,37 +59,61 @@ namespace AstroPhotoAnalyzer
         internal float[] Cmax;
 
         /// <summary>
-        /// Whether the grey of each L* node is itself out of the paper's reach: a tone no chroma
-        /// can bring in.
+        /// Whether the grey of each L* node is itself past <see cref="Limit"/>: a tone no chroma
+        /// can bring within it.
         /// </summary>
         internal bool[] GreyOutOfReach;
 
         /// <summary>
         /// The whole colour difference of a Lab colour after the trip to the paper and back (the
-        /// rule of ADR 0081): L*, a*, b* in, Delta E76 out; a colour is outside when it passes
-        /// Thresholds.CurveGamutDeltaE. Null on a table without a rule (then the table decides
-        /// alone).
+        /// rule of ADR 0081): L*, a*, b* in, Delta E76 out; a colour is past the table's edge
+        /// when it passes <see cref="Limit"/>. Null on a table without a rule (then the table
+        /// decides alone).
         /// </summary>
         internal Func<double, double, double, double> Rule;
 
         /// <summary>
-        /// Whether a Lab colour is outside, the way the tool's figures count it: by default the
-        /// rule against Thresholds.CurveGamutDeltaE; the run sets the Soft proof tab's own judge
+        /// The whole colour difference the table's edge stands at: what the fit aims at,
+        /// Thresholds.GamutFitTargetDeltaE unless <see cref="Build"/> was given another (R-187).
+        /// </summary>
+        internal double Limit;
+
+        /// <summary>
+        /// Whether a Lab colour is past what the fit aims at: by default the rule against
+        /// <see cref="Limit"/>; the run sets the Soft proof tab's own judge asked at that limit
         /// (GamutAnalyzer.Outside on the colour's sRGB, the hybrid of ADR 0042 on its 8-bit
-        /// colour), so that a pixel the fit lands on the edge is inside for that tab too. Every
-        /// pixel is asked of it as it is (through <see cref="JudgeOfPixel"/> when that is set),
-        /// the pixels near the edge are searched with it, and the share left after the fit is
-        /// counted with it. Null on a table without a rule.
+        /// colour, on a table made by GamutTable.WithLimit). Every pixel is asked of it as it is
+        /// (through <see cref="JudgeOfPixel"/> when that is set), to know whether it is moved,
+        /// and the pixels near the edge are searched with it. Without a <see cref="Warning"/>
+        /// it also counts the shares. Null on a table without a rule.
         /// </summary>
         internal Func<double, double, double, bool> Judge;
 
         /// <summary>
         /// The same judge asked about a pixel as it is: its encoded sRGB (red, green, blue, 0..1)
-        /// in, whether the colour is outside out. The run sets it to GamutAnalyzer.Outside, so a
-        /// pixel is judged on the very samples the Soft proof tab judges (R-175); null lets
-        /// <see cref="Judge"/> answer from the pixel's Lab, which the tests' tables do.
+        /// in, whether the colour is past the fit's target out. The run sets it to
+        /// GamutAnalyzer.Outside at the target, on the very samples of the pixel (R-175); null
+        /// lets <see cref="Judge"/> answer from the pixel's Lab, which the tests' tables do.
         /// </summary>
         internal Func<float, float, float, bool> JudgeOfPixel;
+
+        /// <summary>
+        /// Whether a Lab colour is outside the way the tool's warning counts it (R-161, at
+        /// Thresholds.CurveGamutDeltaE): L*, a*, b* in. The run sets the Soft proof tab's own
+        /// judge, so the shares before and after, the masks and the tones out of reach are that
+        /// tab's while the fit aims inside it (R-187). It also gives the edge for a pixel the
+        /// warning marks at a tone the target cannot reach. Null, with
+        /// <see cref="WarningOfPixel"/> null too, on a table whose own judge counts.
+        /// </summary>
+        internal Func<double, double, double, bool> Warning;
+
+        /// <summary>
+        /// The warning asked about a pixel as it is: its encoded sRGB (red, green, blue, 0..1)
+        /// in. The run sets GamutAnalyzer.Outside on the warning's table, so the share outside
+        /// as is is the Soft proof tab's own on the same samples; null lets
+        /// <see cref="Warning"/> answer from the pixel's Lab.
+        /// </summary>
+        internal Func<float, float, float, bool> WarningOfPixel;
 
         /// <summary>
         /// The exact largest chroma of the pixels that land near the edge, once per 16-bit
@@ -107,23 +134,28 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Builds the table: at every node of L* and hue a bisection of ten steps between 0 and
         /// <see cref="Unbounded"/> for the largest chroma whose colour the rule keeps within
-        /// Thresholds.CurveGamutDeltaE; the rows of L* in parallel.
+        /// <paramref name="limit"/>; the rows of L* in parallel.
         /// </summary>
         /// <param name="rule">The rule: L*, a*, b* in, the whole colour difference out.</param>
         /// <param name="lNodes">The nodes over L*, at least 2; by default Thresholds.GamutFitLstarNodes.</param>
         /// <param name="hNodes">The nodes over the hue, at least 2; by default Thresholds.GamutFitHueNodes.</param>
+        /// <param name="limit">
+        /// The whole colour difference the edge stands at, over 0; by default what the fit aims
+        /// at, Thresholds.GamutFitTargetDeltaE (R-187).
+        /// </param>
         /// <returns>The table; with only Problem set when the rule gives NaN anywhere.</returns>
-        internal static GamutFitTable Build(Func<double, double, double, double> rule, int lNodes = Thresholds.GamutFitLstarNodes, int hNodes = Thresholds.GamutFitHueNodes)
+        internal static GamutFitTable Build(Func<double, double, double, double> rule, int lNodes = Thresholds.GamutFitLstarNodes, int hNodes = Thresholds.GamutFitHueNodes,
+            double limit = Thresholds.GamutFitTargetDeltaE)
         {
-            var t = new GamutFitTable { LNodes = lNodes, HNodes = hNodes, Cmax = new float[lNodes * hNodes], GreyOutOfReach = new bool[lNodes], Rule = rule };
-            t.Judge = (l, a, b) => rule(l, a, b) > Thresholds.CurveGamutDeltaE;
+            var t = new GamutFitTable { LNodes = lNodes, HNodes = hNodes, Cmax = new float[lNodes * hNodes], GreyOutOfReach = new bool[lNodes], Rule = rule, Limit = limit };
+            t.Judge = (l, a, b) => rule(l, a, b) > limit;
             int failed = 0;
             Parallel.For(0, lNodes, li =>
             {
                 double l = 100.0 * li / (lNodes - 1);
                 double grey = rule(l, 0, 0);
                 if (double.IsNaN(grey)) { System.Threading.Interlocked.Exchange(ref failed, 1); return; }
-                if (grey > Thresholds.CurveGamutDeltaE)
+                if (grey > limit)
                 {
                     t.GreyOutOfReach[li] = true;
                     for (int hi = 0; hi < hNodes; hi++) t.Cmax[li * hNodes + hi] = 0;
@@ -135,11 +167,11 @@ namespace AstroPhotoAnalyzer
                     double lo = 0, up = Unbounded;
                     double top = rule(l, ca * up, sb * up);
                     if (double.IsNaN(top)) { System.Threading.Interlocked.Exchange(ref failed, 1); return; }
-                    if (top <= Thresholds.CurveGamutDeltaE) { t.Cmax[li * hNodes + hi] = Unbounded; continue; }
+                    if (top <= limit) { t.Cmax[li * hNodes + hi] = Unbounded; continue; }
                     for (int k = 0; k < 10; k++)
                     {
                         double c = (lo + up) / 2;
-                        if (rule(l, ca * c, sb * c) <= Thresholds.CurveGamutDeltaE) lo = c; else up = c;
+                        if (rule(l, ca * c, sb * c) <= limit) lo = c; else up = c;
                     }
                     t.Cmax[li * hNodes + hi] = (float)lo;
                 }
@@ -222,7 +254,10 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Fits <paramref name="r"/> to the paper: every pixel's chroma reduced to what the table
         /// holds at its L* and hue, with the knee's compression; the rows in parallel. A mono
-        /// raster is copied, nothing outside.
+        /// raster is copied, nothing outside. On a table with a warning (R-187) the table's edge
+        /// is the fit's target and the facts are the warning's: a pixel past the target is moved
+        /// whether the warning marks it or not, and one at a tone the target cannot reach is
+        /// landed on the warning's own edge when the warning marks it, left otherwise.
         /// </summary>
         /// <param name="r">The raster, encoded sRGB 0..1; not changed.</param>
         /// <param name="t">The table, without a Problem.</param>
@@ -248,6 +283,9 @@ namespace AstroPhotoAnalyzer
             float[] oR = image.Planes[0], oG = image.Planes[1], oB = image.Planes[2];
             bool[] before = keepFacts ? new bool[n] : null, after = keepFacts ? new bool[n] : null, unreachable = keepFacts ? new bool[n] : null;
             float[] lost = keepFacts ? new float[n] : null, lstar = keepFacts ? new float[n] : null;
+            // With a warning apart from the fit's own judge, the warning counts; without one the
+            // judge that moves the pixels counts them too, as before R-187.
+            bool hasWarning = t.Warning != null || t.WarningOfPixel != null;
             Parallel.For(0, r.H, y =>
             {
                 for (int x = 0; x < r.W; x++)
@@ -262,28 +300,41 @@ namespace AstroPhotoAnalyzer
                         // still be one the paper cannot make; then it is counted as every pixel
                         // out of reach is, by the judge's word on the pixel as it is (ADR 0094).
                         oR[i] = R[i]; oG[i] = G[i]; oB[i] = B[i];
-                        if (keepFacts && Rejects(t, l, a, b, R[i], G[i], B[i])) before[i] = after[i] = unreachable[i] = true;
+                        if (keepFacts && (hasWarning ? Warns(t, l, a, b, R[i], G[i], B[i]) : Rejects(t, l, a, b, R[i], G[i], B[i]))) before[i] = after[i] = unreachable[i] = true;
                         continue;
                     }
                     var (outside, cmax) = Decide(t, l, a, b, c, R[i], G[i], B[i]);
-                    if (keepFacts) before[i] = outside;
+                    // What the shares count: the warning's word on the pixel as it is, asked for
+                    // the facts and for a pixel the target cannot reach, which the next branch
+                    // treats by it. Without a warning, the word of the judge that moves it.
+                    bool marked = hasWarning ? (keepFacts || (outside && cmax < 0)) && Warns(t, l, a, b, R[i], G[i], B[i]) : outside;
+                    if (keepFacts) before[i] = marked;
                     if (outside && cmax < 0)
                     {
-                        // The tone itself is out of reach: the judge rejects even its grey (the
-                        // edge search answers a negative there), so no chroma brings it in. Left
-                        // as it is, and counted. The two reviews of 2026-11-06: the nearest node's
+                        // The tone itself is past the target: the judge rejects even its grey
+                        // (the edge search answers a negative there), so no chroma brings it
+                        // within the target. The two reviews of 2026-11-06: the nearest node's
                         // answer could disagree with the judge's within one L*, and a tiny edge
                         // (under the grey floor) with a grey the judge keeps is not out of reach.
-                        oR[i] = R[i]; oG[i] = G[i]; oB[i] = B[i];
-                        if (keepFacts) { after[i] = true; unreachable[i] = true; }
-                        continue;
+                        // A pixel the warning marks is still worth landing on the warning's own
+                        // edge, where a chroma can (R-187): the band searched ends at the pixel.
+                        double reach = marked && t.Warning != null ? ExactEdge(t.Warning, l, a / c, b / c, c - Thresholds.GamutFitEdgeMargin) : -1;
+                        if (reach < 0)
+                        {
+                            // Left as it is; counted, and as a tone out of reach, when it is
+                            // marked: without a warning always, as before.
+                            oR[i] = R[i]; oG[i] = G[i]; oB[i] = B[i];
+                            if (keepFacts) { after[i] = marked; unreachable[i] = marked; }
+                            continue;
+                        }
+                        cmax = reach;
                     }
                     double fitted = Knee(c, cmax, knee);
                     if (fitted >= c - 1e-9)
                     {
-                        // Not moved, so what the judge said of the pixel as it is still holds.
+                        // Not moved, so what was said of the pixel as it is still holds.
                         oR[i] = R[i]; oG[i] = G[i]; oB[i] = B[i];
-                        if (keepFacts) after[i] = outside;
+                        if (keepFacts) after[i] = marked;
                         continue;
                     }
                     double f = fitted / c;
@@ -292,7 +343,8 @@ namespace AstroPhotoAnalyzer
                     if (keepFacts)
                     {
                         lost[i] = (float)(c - fitted);
-                        after[i] = t.Judge != null && t.Judge(l, a * f, b * f);
+                        Func<double, double, double, bool> counts = t.Warning ?? t.Judge;
+                        after[i] = counts != null && counts(l, a * f, b * f);
                     }
                 }
             });
@@ -382,6 +434,22 @@ namespace AstroPhotoAnalyzer
         /// <returns><c>true</c> when the judge says the paper cannot hold the pixel's colour.</returns>
         static bool Rejects(GamutFitTable t, double l, double a, double b, float r, float g, float bl)
             => t.JudgeOfPixel != null ? t.JudgeOfPixel(r, g, bl) : t.Judge != null && t.Judge(l, a, b);
+
+        /// <summary>
+        /// The warning's word on one pixel as it is (R-187): <see cref="GamutFitTable.WarningOfPixel"/>
+        /// on its own samples when the table has it, else <see cref="GamutFitTable.Warning"/> on
+        /// its Lab. Asked only on a table that has one of the two.
+        /// </summary>
+        /// <param name="t">The table, with a warning.</param>
+        /// <param name="l">The pixel's L*.</param>
+        /// <param name="a">The pixel's a*.</param>
+        /// <param name="b">The pixel's b*.</param>
+        /// <param name="r">The pixel's encoded red, 0..1.</param>
+        /// <param name="g">The pixel's encoded green.</param>
+        /// <param name="bl">The pixel's encoded blue.</param>
+        /// <returns><c>true</c> when the warning marks the pixel's colour.</returns>
+        static bool Warns(GamutFitTable t, double l, double a, double b, float r, float g, float bl)
+            => t.WarningOfPixel != null ? t.WarningOfPixel(r, g, bl) : t.Warning(l, a, b);
 
         /// <summary>
         /// The largest chroma for one pixel: the table's, unless the pixel's chroma reaches

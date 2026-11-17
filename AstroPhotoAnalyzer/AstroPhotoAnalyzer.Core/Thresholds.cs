@@ -902,6 +902,23 @@ namespace AstroPhotoAnalyzer
         internal const double GamutFitEdgeMargin = 0.6;
 
         /// <summary>
+        /// The whole colour difference the paper fit aims at (R-187, ADR 0109): every pixel past
+        /// it is moved, and lands within it, a reserve under the warning's CurveGamutDeltaE, which
+        /// stays where it is. Measured 2026-11-17 on the Smida Milky Way TIFF against Lightroom
+        /// Classic's destination gamut warning, with trial files of the Lina variant: a fit to 4
+        /// left 0.31 % of the image marked through the WhiteWall Photo Rag Baryta profile and
+        /// 0.04 % through Hahnemuhle's P900 Photo Rag Baryta profile (the pixels landed just under
+        /// 4: 3.86 at the median under Lightroom's red), a fit to 3.5 at most 0.005 % and nothing
+        /// in the capture, a fit to 3 nothing; through the lab's baryta Lightroom marks nothing at
+        /// any limit. The cost on that TIFF's tonal subsample, pixels changed and chroma given up
+        /// at the median: WhiteWall 5.52 % and 1.43 against 4.33 % and 1.19 at 4, P900 7.85 % and
+        /// 1.97 against 6.79 % and 1.68, the lab's baryta 2.70 % and 0.29 against 1.49 % and 0.16.
+        /// One image, three profiles, one reference program; no limit could be read from the
+        /// profile itself (its own round-trip error does not predict where Lightroom stops).
+        /// </summary>
+        internal const double GamutFitTargetDeltaE = 3.5;
+
+        /// <summary>
         /// The knee of the Exacta variant (R-176): 1, a hard fit, only the pixels outside moved,
         /// onto the edge. Measured 2026-11-06 with the probe of ADR 0083 (a quarter reduction) on
         /// the plate-solved FITS through the lab's baryta: touches 1.88 % of the pixels, the chroma

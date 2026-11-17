@@ -205,7 +205,10 @@ The **Colours for paper** tab needs the ICC printer profile chosen for the Dmax 
 profile...**); without one it shows only a sentence saying so. It takes the pixels the **Soft
 proof** tab paints in red, the colours the paper cannot reproduce, and lowers their saturation,
 each along its own hue and at its own tone, to the most the paper holds there: the tone and the
-hue of every pixel stay what they were. It is computed right after the analysis, like the curves.
+hue of every pixel stay what they were. The fit stops a little inside the paper's limit, so the
+colours just under the limit are eased too: that way the gamut warning of other programs,
+Lightroom's for one, has almost nothing left to mark in the saved file. It is computed right
+after the analysis, like the curves.
 
 - The image is a comparison: left of a vertical line is the image as it is, labelled
   **Before**, right of it the fitted one, labelled **After**. Drag the line, or the handle in
@@ -215,8 +218,9 @@ hue of every pixel stay what they were. It is computed right after the analysis,
   left button and drag to move the image; a double click fits it again. The two sides zoom and
   move together, and the line stays where you put it. When the window grows enough for a finer
   copy, the gallery is made again and the image is shown whole once more.
-- There are three variants: **Exact** changes only the colours the paper cannot hold, each
-  losing just enough saturation to fit; **Soft** and **Softer** ease the colours near the
+- There are three variants: **Exact** changes only the colours the paper cannot hold, or holds
+  just barely, each losing just enough saturation to sit a little inside the paper's limit;
+  **Soft** and **Softer** ease the colours near the
   paper's limit too, from 90 % and 80 % of it, so that a run of growing saturation keeps its
   steps instead of ending flat. **Back**, **Next** and the arrow keys move between them: only
   the After side changes, Before is always the original.
@@ -224,7 +228,8 @@ hue of every pixel stay what they were. It is computed right after the analysis,
   cannot reproduce: on the Before side those of the original, the Soft proof tab's warning, and
   on the After side those still left after the fit.
 - Under each variant: the share of colours the paper cannot reproduce before and after, how many
-  pixels changed and how much saturation they lose, how many of the colours outside are dark
+  pixels changed and how much saturation they lose (more pixels than the warning marks, since
+  the fit stops a little inside the limit), how many of the colours outside are dark
   tones, and the recipe for doing it by hand in another program (a mask on the tones under a
   given L\* with the saturation at a given percentage, and what it would leave). A tone too dark
   for the paper, which no loss of saturation can bring in, stays as it is and is counted: lift

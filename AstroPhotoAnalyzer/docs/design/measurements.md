@@ -535,7 +535,11 @@ curve on the FITS on baryta, 29 000 to 40 500 on its canvas, 1 700 on the PNG. R
 tonal subsample's pixels, in all and per class of the patch each pixel lies in, the rows run in
 parallel (`Parallel.For`, each worker's counts over the rows it took merged under a lock; the package's configuration
 served eight threads in the probe with the single-threaded results); a table without an `Exact`
-trip, the hand-built ones of the tests, is judged by the interpolation alone. A table that
+trip, the hand-built ones of the tests, is judged by the interpolation alone. The threshold
+`Outside` compares with is the table's own `Limit`, `CurveGamutDeltaE` for every figure and
+warning; `GamutTable.WithLimit` gives the paper fit the same grid and exact trip judged at its
+target, with a cache of its own, since a cached answer depends on the limit (R-187,
+`paper-fit.md`). A table that
 cannot be built keeps the exception behind its `Problem` as `Cause`, for the diagnostic log,
 which the run that reads the table writes with its stack (ADR 0069); the analyzer holds no
 logger.

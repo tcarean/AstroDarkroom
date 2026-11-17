@@ -6,6 +6,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Changed
+
+- The fit of the **Colours for paper** tab stops a little inside the paper's limit (at 3.5,
+  where the warning starts at 4), so that the gamut warning of other programs has almost nothing
+  left to mark in the saved file: on two papers Lightroom Classic still marked the pixels a fit
+  to the limit had landed just under it (R-187, ADR 0109). More pixels change than the warning
+  marks, and each variant's evidence says so; the warning itself, in Soft proof and in Curves
+  Editing, is where it was.
+
 ### Added
 
 - A **Help** (`Ajutor`) button, with an icon, between `Save the report...` and `About`; it and
