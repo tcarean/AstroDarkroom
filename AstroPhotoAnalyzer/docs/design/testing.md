@@ -83,7 +83,14 @@ grows with the hue and the tone, for the table's reading between its nodes and t
 the edge), so that the largest chroma is known and the fit's answer is checked pixel by pixel:
 tone and hue kept, the chroma on the edge, the out-of-reach tone untouched and counted, the three
 knees touching more as they come down and keeping a run's steps just past the edge, the recipe's
-band and factor. The TIFF writer is checked by the tool's reader and by a hand-written tag reader
+band and factor. For the fit's own target (R-187) the rule is graded, 0.4 per unit of chroma, so
+the target's edge and the warning's are two known chromas, and `WarnBy` sets the warning a rule
+gives at 4, as the run does: the pixels between the two are moved and not counted, the recipe
+takes the target's factor and counts what it leaves among the pixels past the target; under a
+rule of its own (a step by tone plus 0.1 per unit of chroma) a tone whose grey sits between the
+two limits is landed on the warning's edge only when the warning marks the pixel, with and
+without the facts, and a grey pixel there is counted nowhere; the run is driven on the hand-built profile with a tint found
+among the 8-bit colours between the two limits. The TIFF writer is checked by the tool's reader and by a hand-written tag reader
 in the test, and the two exports on a FITS input through the hand-built printer profile. `GamutFitTabTests`
 drives the tab through `Compute(w, h)`, the synchronous body, on a frame with a saturated patch
 that the hand-built profile prints as grey: the gallery of three beside the original, the box

@@ -26,7 +26,8 @@
 // prints lighter, which Lightroom's warning marks and the owner expected to see (ADR 0081). The
 // compensation is what keeps the paper's black out of the figure: without it every tone under
 // the black would come back as the black and be counted here as well as in the Tonuri tab (on
-// canvas, half of the image).
+// canvas, half of the image). CurveGamutDeltaE is the warning's limit; the paper fit judges the
+// same table at its own, lower one (GamutTable.WithLimit, R-187, ADR 0109).
 //
 // The package (Wacton.Unicolour) makes the round trip in about 25 microseconds per colour
 // (single-threaded, warm; measured 2026-10-23 on the lab's baryta profile): a subsample of
@@ -94,6 +95,13 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal readonly ConcurrentDictionary<int, bool> Cache = new();
 
+        /// <summary>
+        /// The whole colour difference past which a colour is outside for this table: the
+        /// warning's Thresholds.CurveGamutDeltaE unless <see cref="WithLimit"/> made the table
+        /// for another (the paper fit's target, R-187).
+        /// </summary>
+        internal double Limit = Thresholds.CurveGamutDeltaE;
+
         /// <summary>Why it could not be built, for the user; null when it could.</summary>
         internal string Problem;
 
@@ -102,6 +110,16 @@ namespace AstroPhotoAnalyzer
         /// stack (ADR 0069); null when the problem had none or there is no problem.
         /// </summary>
         internal Exception Cause;
+
+        /// <summary>
+        /// The same table judged at another limit (R-187): the grid and the exact trips are
+        /// shared, the cache is its own, since it holds a yes or no per colour that depends on
+        /// the limit.
+        /// </summary>
+        /// <param name="limit">The whole colour difference past which a colour is outside, over 0.</param>
+        /// <returns>A table over the same arrays and trips, with that limit and an empty cache.</returns>
+        internal GamutTable WithLimit(double limit)
+            => new() { N = N, Dl = Dl, Da = Da, Db = Db, Exact = Exact, ExactLab = ExactLab, Problem = Problem, Cause = Cause, Limit = limit };
     }
 
     /// <summary>
@@ -227,10 +245,10 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The pixel (r, g, b) leaves the gamut: its displacement moves the colour by more than
-        /// CurveGamutDeltaE, lightness included. The interpolated displacement decides, unless it
-        /// lies within CurveGamutExactMargin of the threshold and the table has a profile behind
-        /// it: then the exact round trip of the pixel's 8-bit colour decides, once per colour
-        /// (ADR 0042).
+        /// the table's <see cref="GamutTable.Limit"/> (CurveGamutDeltaE for the warning),
+        /// lightness included. The interpolated displacement decides, unless it lies within
+        /// CurveGamutExactMargin of that limit and the table has a profile behind it: then the
+        /// exact round trip of the pixel's 8-bit colour decides, once per colour (ADR 0042).
         /// </summary>
         /// <param name="t">A table Build made, without a Problem.</param>
         /// <param name="r">The encoded sRGB red, 0..1; clamped to that range.</param>
@@ -241,9 +259,9 @@ namespace AstroPhotoAnalyzer
         {
             var (dl, da, db) = Interpolated(t, r, g, b);
             double d = Math.Sqrt((double)dl * dl + (double)da * da + (double)db * db);
-            if (t.Exact != null && Math.Abs(d - Thresholds.CurveGamutDeltaE) < Thresholds.CurveGamutExactMargin)
+            if (t.Exact != null && Math.Abs(d - t.Limit) < Thresholds.CurveGamutExactMargin)
                 return ExactOutside(t, r, g, b);
-            return d > Thresholds.CurveGamutDeltaE;
+            return d > t.Limit;
         }
 
         /// <summary>
@@ -255,7 +273,7 @@ namespace AstroPhotoAnalyzer
         /// <param name="r">The encoded sRGB red, 0..1.</param>
         /// <param name="g">The encoded sRGB green, 0..1.</param>
         /// <param name="b">The encoded sRGB blue, 0..1.</param>
-        /// <returns><c>true</c> when the 8-bit colour's exact displacement passes the threshold.</returns>
+        /// <returns><c>true</c> when the 8-bit colour's exact displacement passes the table's limit.</returns>
         static bool ExactOutside(GamutTable t, float r, float g, float b)
         {
             int r8 = RasterOps.Level8(r), g8 = RasterOps.Level8(g), b8 = RasterOps.Level8(b);
@@ -263,7 +281,7 @@ namespace AstroPhotoAnalyzer
             return t.Cache.GetOrAdd(key, _ =>
             {
                 var (dl, da, db) = t.Exact(r8 / 255.0, g8 / 255.0, b8 / 255.0);
-                return dl * dl + da * da + db * db > Thresholds.CurveGamutDeltaE * Thresholds.CurveGamutDeltaE;
+                return dl * dl + da * da + db * db > t.Limit * t.Limit;
             });
         }
 

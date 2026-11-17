@@ -1,7 +1,8 @@
 # The paper fit
 
 > Written 2026-11-06 with the feature (R-175 to R-178, ADR 0083); the comparison with the
-> original added 2026-11-13 (R-179, ADR 0090). **Covers:**
+> original added 2026-11-13 (R-179, ADR 0090); the fit's own target 2026-11-17 (R-187, ADR
+> 0109). **Covers:**
 > `AstroPhotoAnalyzer.Core/Analysis/GamutFit.cs`, `AstroPhotoAnalyzer.Core/Runs/GamutFitRun.cs`,
 > `AstroPhotoAnalyzer.Core/Report/GamutFitTexts.cs`, `AstroPhotoAnalyzer.Core/Input/TiffWriter.cs`,
 > `AstroPhotoAnalyzer.Core/Input/IccProfiles.cs`, `AstroPhotoAnalyzer.Wpf/ViewModels/GamutFitTab.cs`,
@@ -23,6 +24,15 @@ line the user drags, with a red layer on each side of what the paper cannot hold
 saves one as a new FITS or 16-bit TIFF. The owner's question behind it, the
 measurements and the alternatives are in ADR 0083.
 
+Since R-187 the fit aims a little inside what that tab marks. Two limits stand on the one rule:
+the warning's `CurveGamutDeltaE` (4), which counts everything this tab shows (the shares before
+and after, the two red layers, the dark share, the tones out of reach), and the fit's
+`GamutFitTargetDeltaE` (3.5), which says which pixels are moved and where they land. Wherever
+the sections below say "the judge" for moving a pixel or for its edge, it is the judge asked at
+the target; "outside as is" and "left" are the judge asked at the warning's limit. The figures
+of the tables below were measured before R-187, when the two were one limit of 4; V-016 holds
+the built code's figures.
+
 ## The table (`GamutFitTable`)
 
 The largest chroma is a smooth surface over L\* and hue, so it is tabulated there, not over
@@ -32,7 +42,7 @@ difference (`GamutTable.ExactLab`, which `GamutAnalyzer.Build` makes from the pr
 `DeltaEOfLab`, the trip of `RoundTrip` from a Lab colour; the tests inject a rule of their own)
 and, at every node (`GamutFitLstarNodes` x `GamutFitHueNodes`, 101 x 121, the rows of L\* in
 parallel), bisects ten times between 0 and `Unbounded` (150) for the largest chroma the rule
-keeps within the threshold; a node whose grey itself fails is 0 and its L\* marked
+keeps within the table's `Limit` (the fit's target unless `Build` is given another); a node whose grey itself fails is 0 and its L\* marked
 `GreyOutOfReach`; a node whose ceiling still fits is `Unbounded`. `CmaxAt(L, hue)` reads
 bilinearly. A rule that gives NaN makes a table with only `Problem`.
 
@@ -71,9 +81,11 @@ fitted pixels of the plate-solved FITS were still outside by the exact rule with
 since the pixels outside are dark, where one 8-bit step is a unit of L\* and tens of degrees of
 hue and the edge moves by more than the tolerance within a cell. The judge is a step function
 of the 8-bit colour, not monotone in chroma, so a pixel the knees move inward can land on a
-colour the judge calls outside: V-016 reads 0.006 % left after `Lina` against 0.001 % after
+colour the judge calls outside: V-016 read 0.006 % left after `Lina` against 0.001 % after
 `Exacta`, under the figure's precision (0.02 % before ADR 0093, when the pixels the judge
-rejected inside the edge were never moved).
+rejected inside the edge were never moved). Since R-187 that happens at the target, half a unit
+inside the warning, so the share left by the warning's count reads 0 on V-016 under all three
+knees.
 
 Whether a pixel is outside is not read off that edge (`Decide`, ADR 0093): the judge is asked
 about the pixel as it is, on its own samples (`GamutFitTable.JudgeOfPixel`, which the run sets
@@ -111,7 +123,9 @@ all of it tones out of reach (377 pixels, 334 of them grey).
 A pixel the judge rejects is outside; if `cmax` is negative (the judge rejects even the grey
 of that tone: the edge search's answer for it, apart from a tiny edge over a grey it keeps,
 which fits the pixel to that grey) it is copied and counted
-(`PctUnreachable`): no chroma brings it in, and the Tonuri tab's lift is the remedy. The table's
+(`PctUnreachable`): no chroma brings it in, and the Tonuri tab's lift is the remedy (on a table
+with a warning the tone is past the target and the warning has a word of its own: the section
+"The target and the warning" below says what then happens). The table's
 `GreyOutOfReach` marks the nodes where that happens, for the record; the decision is the
 judge's, since within one L\* of such a node the two can disagree. Otherwise the new chroma is `Knee(c, cmax, knee)`: unchanged up to
 `knee x cmax`, then `start + room x (1 - exp(-(c - start) / room))` with `room = cmax - start`,
@@ -127,9 +141,69 @@ its steps near the edge (where the eye compares neighbours) and ends flat far pa
 every variant must end at the edge anyway; the test `R176_...` measures the steps at 10.05
 and 11.05 against an edge of 10.
 
+## The target and the warning (R-187)
+
+`GamutFitTable` holds two pairs of judges. `Judge` and `JudgeOfPixel` stand at the table's
+`Limit`, the target: `Decide`, `Edge` and `ExactEdge` use them, so a pixel is moved when it is
+past the target and lands on the largest chroma within it. `Warning` and `WarningOfPixel` stand
+at the warning's limit and count: with either set (`hasWarning` in `Apply`), `before` is
+`Warns` on the pixel as it is, `after` is `Warning` on the fitted colour, or `before` again for
+a pixel left as it is, and a grey pixel is counted by `Warns`. A table with neither, which is
+every table of the tests but R-187's, counts by its own judge exactly as before.
+
+In the run both are `GamutAnalyzer.Outside` on the profile's one table of round trips:
+`GamutTable.WithLimit` gives a second `GamutTable` over the same grid and exact trip with the
+target as its `Limit` and a cache of its own, since the cache holds a yes or no per 8-bit colour
+and the answer depends on the limit.
+
+One case needs both. Where `Decide` answers that a pixel is past the target and the grey of its
+tone is too (`cmax < 0`), no chroma reaches the target. If the warning marks the pixel, the
+edge is searched again with `Warning` in a band ending at the pixel's own chroma, and the knee
+compresses towards that edge: the pixel ends inside the warning, as it did before R-187. If
+that search finds no edge either, the pixel is copied and counted as a tone out of reach. If
+the warning does not mark it, it is copied and counted nowhere: nothing nearer the grey is
+better. `Warns` is asked there even without facts, so the saved file is the preview's.
+
+Two things differ there from the landing before R-187, both small. The search starts from the
+pixel and, when the warning's edge is more than twice `GamutFitEdgeMargin` under it, halves the
+whole stretch down to zero six times, so the hard fit lands up to a sixty-fourth of that
+stretch inside the edge (0.09 at a chroma of 7) where the cached search around the table's edge
+ends within 0.02. And such a tone has no table edge for the warning, so a pixel just inside the
+warning's edge keeps its chroma under every knee while one just past it is compressed towards
+the edge: a run of growing saturation steps back there by a few percent of the edge under the
+soft knees.
+
+How often: measured 2026-11-17 with the hard fit on the tonal subsamples, the tones no chroma
+brings within 3.5 hold none of the pixels on the three baryta profiles (the plate-solved FITS
+and `de_printat.png` on the lab's, the Smida TIFF on all three), 0.056 % of the plate-solved
+FITS on the canvas profile, where none was out of reach at 4, and 0.050 % of `de_printat.png`
+on it, where 0.026 % were. The built code leaves no more outside than the fit to 4 did on
+either: 0.0000 % of the FITS (0.0001 % at 4), none of it out of reach, and 0.0261 % of the PNG,
+all of it tones out of reach, as at 4.
+
+The evidence's sentence on where the fit stops (`GamutFitTexts.EvidenceRows`) is added only when
+more pixels changed than the warning marks, by the two shares as the rows print them.
+
+Measured 2026-11-17 on the Smida TIFF of that day (`Lina`, the tonal subsample; the limit made
+settable in a scratchpad copy of the core, ADR 0109), pixels changed and chroma given up at the
+median:
+
+| profile | fit to 4 | fit to 3.5 | fit to 3 |
+| --- | --- | --- | --- |
+| WhiteWall Photo Rag Baryta | 4.33 %, 1.19 | 5.52 %, 1.43 | 6.91 %, 1.72 |
+| Hahnemuhle P900 Photo Rag Baryta | 6.79 %, 1.68 | 7.85 %, 1.97 | 8.98 %, 2.33 |
+| the lab's baryta | 1.49 %, 0.16 | 2.70 %, 0.29 | 4.09 %, 0.53 |
+
+The built code, run through `GamutFitRun` and `GamutFitExport` on that TIFF with the P900
+profile, wrote a file equal sample for sample to the trial file fitted to 3.5 (0 of 67 715 037
+samples differ), with the same 7.85 % and 1.97, 5.14 % outside before by the warning and none
+after; no tone was out of reach on any of the three.
+
 ## The recipe (`GamutFit.Recipe`)
 
-What a person would do by hand (a Lightroom luminance-range mask, the owner's first fix): the
+In this section "the pixels outside" are the recipe's own: those past the fit's target (R-187;
+the last sentences say what that changed). What a person would do by hand (a Lightroom
+luminance-range mask, the owner's first fix): the
 smallest whole L\* under which `GamutFitBandShare` of the pixels outside lie, and the largest
 saturation factor in steps of `GamutFitRecipeStep` whose uniform scaling of the chroma of every
 pixel under that L\* brings `GamutFitRecipeShare` of the pixels outside in (decided with the
@@ -138,21 +212,26 @@ whose tone is in reach (those above the band, and those whose tone is out of rea
 ones the judge rejects among them, are beyond the mask and are counted in what is left; before this,
 on the Smida TIFF, where 10 % of the pixels outside sit above the band, the factor ran down to
 5 %), with the share of all the pixels outside it leaves. Measured on the tonal subsample, where
-the evidence is measured too.
+the evidence is measured too. It reads `Decide`, so since R-187 it aims at the fit's target: its
+band and factor bring the pixels past 3.5 within 3.5, and the share it leaves is of those
+pixels, not of the warning's (on V-016 the factor went from 70 % to 65 % and the share left
+from 5.0 % to 8.0 %); its sentence says so ("of the colours past the limit the fit stops at"),
+where the rows above it count by the warning.
 
 ## The run (`Runs/GamutFitRun.cs`)
 
 The fourth run after `AnalysisRun`, started by the window beside the curves' and the proof's
 (ADR 0051), never by the console. `Execute(a, maxWidth, maxHeight)`: no profile behind the Dmax
 gives `ProofTexts.NoProfile` as the set's `Problem`; `GamutAnalyzer.Build` (the run's own table;
-its `Problem` is the set's); the fit's table from its `ExactLab`; the original reduced to the
+its `Problem` is the set's); the fit's table from its `ExactLab`, built at the target, with the
+two pairs of judges of the section above; the original reduced to the
 gallery's size (`CurveRun.PreviewStride`) and the tonal subsample (`TonalStride`); for each knee
 of `Knees` (`GamutFitKneeExact`, `GamutFitKneeSoft`, `GamutFitKneeSofter`) the fit of the
 preview with facts (its image and mask are the gallery's) and of the subsample with facts (its
 figures are the evidence, `GamutFitEvidence.Of`); the recipe on the subsample. Timed by a
 `RunClock` named `gamutfit` (`profile`, `table`, each variant's name, `recipe`),
-each variant's figures at Debug, the done line with the share outside, the recipe and the
-profile's name. The set keeps the table and the variants' knees for the save; the window drops
+each variant's figures at Debug, the done line with the share outside, the fit's target, the
+recipe and the profile's name. The set keeps the table and the variants' knees for the save; the window drops
 the previews once drawn.
 
 `GamutFitExport.Save(a, set, v, target)` runs under `CurveExport.Guarded`, the guards of R-145

@@ -1,7 +1,7 @@
 # 0093. The paper fit asks the Soft proof judge about every pixel, not about the moved ones alone
 
 Date: 2026-11-14
-Status: accepted 2026-11-14
+Status: accepted 2026-11-14; the Soft proof judge's word deciding which pixels are moved superseded by 0109
 
 ## Context
 

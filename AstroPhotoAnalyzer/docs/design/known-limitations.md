@@ -178,7 +178,13 @@
   profile the two agree on half of the pixels either one marks). Near the threshold it is
   decided on the pixel's 8-bit colour (ADR 0042), so on a 16-bit or float image it is within
   0.14 points of the exact per-pixel figure, not equal to it (measured 2026-11-05: the FITS's
-  dust on baryta 11.10 % against 10.96 %). `Maxima`
+  dust on baryta 11.10 % against 10.96 %). The paper fit therefore aims a little inside the
+  warning (R-187, ADR 0109): 3.5 was found on one image against two profiles and Lightroom
+  Classic alone, a few points can still be marked there after the fit (at most 0.005 % of the
+  Smida TIFF on the WhiteWall baryta), another paper may need more, and on a paper where
+  Lightroom marks nothing even before the fit (the lab's baryta) the reserve gives up some
+  colour for no visible gain (2.70 % of the pixels changed instead of 1.49 %). No limit could be
+  read from the profile: its own round-trip error does not predict where Lightroom stops. `Maxima`
   clips more pixels than the other suggestions (0.18 % against 0.10 % on the reference PNG).
 - A FITS on another scale than 0..1 is refused only when more than half of its samples are
   over 1 (ADR 0096). One with half or more at or under 1, such as a background-subtracted
