@@ -32,7 +32,7 @@
 // 3.1.x never applies the ICC profile when decoding - the values are those in the file. Exactly
 // what we want: we measure what Siril wrote, not a colour conversion.
 //
-// ONLY THE FIRST PAGE IS DECODED (FirstPage, ADR 0111). Asked for every page, 3.1.11 refuses the
+// ONLY THE FIRST PAGE IS DECODED (FirstPage, ADR 0112). Asked for every page, 3.1.11 refuses the
 // whole file when a later directory of a TIFF holds no image, and Lightroom Classic 16 writes
 // exactly that after the image on export: one directory with the Content Credentials in the tag
 // 52545. Identify of a TIFF ignores the limit and lists every directory, so the pages are
@@ -67,7 +67,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The decode's options: the first page only. The tool measures one image, and a later
         /// directory that holds none (Lightroom's Content Credentials) makes ImageSharp 3.1.11
-        /// refuse the file when it is asked for every page (ADR 0111).
+        /// refuse the file when it is asked for every page (ADR 0112).
         /// </summary>
         static readonly DecoderOptions FirstPage = new DecoderOptions { MaxFrames = 1 };
 
@@ -226,7 +226,7 @@ namespace AstroPhotoAnalyzer
         /// How many of a TIFF's directories hold an image: those that state an image width, a
         /// tag every image has and that has no default. A directory without one is not a page:
         /// Lightroom Classic 16 writes one after the image, with only its Content Credentials
-        /// (the tag 52545), and Identify lists it as a frame like any other (ADR 0111).
+        /// (the tag 52545), and Identify lists it as a frame like any other (ADR 0112).
         /// </summary>
         /// <param name="info">What Identify read from the file.</param>
         /// <returns>The number of pages, 0 when no directory states a width.</returns>

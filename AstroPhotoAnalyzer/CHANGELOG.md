@@ -293,7 +293,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   with `The number of samples in the TIFF BitsPerSample entry is not supported`. It now reads
   the image and steps over the rest. Of any file with several pages only the first is decoded,
   so a TIFF whose pages differ in size (an image with its preview), refused until now, opens
-  too, with the note that the first page was read (R-012, ADR 0111).
+  too, with the note that the first page was read (R-012, ADR 0112).
 
 - Two texts say what the figures beside them show. On the Resolution tab, the zones' description
   now names both reasons a zone reads `n/a`: under 5 stars in the zone, or too few stars in the

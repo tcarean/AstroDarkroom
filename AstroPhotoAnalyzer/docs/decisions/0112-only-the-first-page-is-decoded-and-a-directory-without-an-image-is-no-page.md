@@ -1,4 +1,4 @@
-# 0111. Only the first page of a file is decoded, and a TIFF's directory without an image is not a page
+# 0112. Only the first page of a file is decoded, and a TIFF's directory without an image is not a page
 
 Date: 2026-11-17
 Status: accepted 2026-11-17
