@@ -94,9 +94,9 @@ or varies a kit rule names it.
   3.1.11 (ADR 0009); the FITS reader stays hand-written.
 - **Measured on the reference image** (extends the kit's rule "Measured numbers"). The real data
   is `de_printat.png` (ADR 0004) and, for anything that reads a WCS or the catalogue, the
-  plate-solved FITS `starless_rbf0.5_stretch0.17.fit` (ADR 0025); a claim about a measurement
-  on a real image comes with the pasted output, and the synthetic scenes of `Scenes.cs` are no
-  substitute for it.
+  plate-solved FITS `starless_rbf0.5_stretch0.17.fit` (ADR 0025); a claim about a measurement on a
+  real image comes with the pasted output, and the scenes of `Scenes.cs` are no substitute for it.
+  A file a test or a measurement reads is first copied into code-testdata and cited from there (ADR 0110).
 - **Languages** (varies the kit's rule "Languages", ADRs 0005, 0047, 0048 and 0050). English in
   everything the model reads or writes about the process: docs, tests, scripts, commits,
   CHANGELOG, and every comment in every file, a comment added to any file included: C# (`//`,

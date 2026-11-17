@@ -7,9 +7,9 @@ Date: 2026-11-05. Branch `claude/Count-the-tone-loss-in-the-paper-gamut`, worktr
 
 On 2026-11-03 the owner compared the Soft proof tab's gamut warning with Lightroom Classic's
 (relative intent, black point compensation, simulate paper) on the Smida Milky Way TIFF
-(`E:\Photografie\Astro\Milkyway-Core\2026-08-12-Smida\Processed_1mmPTFE_Flats\finale\finalisti\starless_denoised_syqon_studio_in_max_0.75_stretch0.12-logd4_Gentle_sat0.25.tif`,
+(`E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer\starless_denoised_syqon_studio_in_max_0.75_stretch0.12-logd4_Gentle_sat0.25.tif`,
 sRGB) through the WhiteWall profile
-(`E:\Photografie\Print and ICC profiles\Whitewall\WhiteWall_ICC_Inkjet_Hahnemuehle_Photo_Rag_Baryta.icc`,
+(`E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer\WhiteWall_ICC_Inkjet_Hahnemuehle_Photo_Rag_Baryta.icc`,
 v4.3, paper black L* 3.38). Lightroom marks 0.93 % of the image, the tool 0.45 %, and only
 0.24 % is common. Measured with a scratchpad probe over a copy of the core, the Lightroom
 screenshot registered on the reduced image (scale 0.560):
