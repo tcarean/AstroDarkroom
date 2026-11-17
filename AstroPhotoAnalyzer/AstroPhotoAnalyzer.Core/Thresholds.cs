@@ -835,7 +835,8 @@ namespace AstroPhotoAnalyzer
         internal const int CurveGamutGrid = 33;
 
         /// <summary>
-        /// How close to CurveGamutDeltaE a pixel's interpolated displacement must be for the
+        /// How close to the table's limit (CurveGamutDeltaE for the warning, GamutFitTargetDeltaE
+        /// for the paper fit, R-187) a pixel's interpolated displacement must be for the
         /// exact trip through the profile to decide instead of the interpolation (R-144, ADR
         /// 0042). The grid alone rounds the gamut's edge inward and counts too few, by up to 2.4
         /// points on a class (the reference image's dust on baryta: 0.0 % against 2.4 % exact;
@@ -919,11 +920,12 @@ namespace AstroPhotoAnalyzer
         internal const double GamutFitTargetDeltaE = 3.5;
 
         /// <summary>
-        /// The knee of the Exacta variant (R-176): 1, a hard fit, only the pixels outside moved,
-        /// onto the edge. Measured 2026-11-06 with the probe of ADR 0083 (a quarter reduction) on
-        /// the plate-solved FITS through the lab's baryta: touches 1.88 % of the pixels, the chroma
-        /// given up 0.70 at the median, 4.2 at the 99 % mark; on the Smida TIFF through the
-        /// WhiteWall baryta 1.37 %, 1.85 and 14.1. V-016 holds the built code's figures.
+        /// The knee of the Exacta variant (R-176): 1, a hard fit, only the pixels past the fit's
+        /// target moved, onto its edge (R-187). Measured 2026-11-06 with the probe of ADR 0083 (a
+        /// quarter reduction), when the target was the warning's own limit, on the plate-solved
+        /// FITS through the lab's baryta: touches 1.88 % of the pixels, the chroma given up 0.70 at
+        /// the median, 4.2 at the 99 % mark; on the Smida TIFF through the WhiteWall baryta 1.37 %,
+        /// 1.85 and 14.1. V-016 holds the built code's figures.
         /// </summary>
         internal const double GamutFitKneeExact = 1.0;
 
@@ -932,14 +934,16 @@ namespace AstroPhotoAnalyzer
         /// of the edge, so that a gradient of growing saturation keeps its steps instead of
         /// flattening on the edge. Measured 2026-11-06 with the probe of ADR 0083: touches 4.06 %
         /// of the FITS's pixels (2.26 % of the TIFF's), the chroma given up 0.47 (0.74) at the
-        /// median; V-016 reads 3.81 % and 0.43 on the tonal subsample.
+        /// median; V-016 read 3.81 % and 0.43 on the tonal subsample then, and 5.05 % and 0.84
+        /// since the fit aims at its own target (R-187).
         /// </summary>
         internal const double GamutFitKneeSoft = 0.9;
 
         /// <summary>
         /// The knee of the Foarte lina variant (R-176): from this share of the edge. Measured
         /// 2026-11-06 with the probe of ADR 0083: touches 6.11 % of the FITS's pixels (3.50 % of
-        /// the TIFF's), the chroma given up 0.65 (0.53) at the median (V-016: 6.22 % and 0.58);
+        /// the TIFF's), the chroma given up 0.65 (0.53) at the median (V-016: 6.22 % and 0.58
+        /// then, 7.25 % and 0.89 since R-187);
         /// from 0.7 it would touch 8.54 % (5.34 %) for no further gain in the fit, which is why
         /// the gentlest variant stops here.
         /// </summary>

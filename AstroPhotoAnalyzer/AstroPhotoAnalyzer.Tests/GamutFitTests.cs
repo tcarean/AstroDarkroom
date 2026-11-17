@@ -375,6 +375,15 @@ public class GamutFitTests
         // The save of a whole image, without the facts, writes the same colours.
         Raster saved = GamutFit.Apply(r, t, Thresholds.GamutFitKneeExact, keepFacts: false).Image;
         for (int p = 0; p < 3; p++) Assert.Equal(exact.Image.Planes[p], saved.Planes[p]);
+
+        // The recipe for a hand-made mask aims at the target too: its factor brings the last
+        // pixel within the target's edge, a step or less under what that needs, where the
+        // warning's edge would be reached a step earlier.
+        GamutFitRecipe recipe = GamutFit.Recipe(r, t);
+        double needed = targetEdge / (warningEdge + 2);
+        Assert.InRange(recipe.Factor, needed - Thresholds.GamutFitRecipeStep, needed);
+        Assert.True(recipe.Factor < warningEdge / (warningEdge + 2) - Thresholds.GamutFitRecipeStep + 1e-9, "the warning's edge would take a larger factor: " + recipe.Factor);
+        Assert.InRange(recipe.LstarCeiling, 50, 52);
     }
 
     [Fact]
@@ -387,17 +396,20 @@ public class GamutFitTests
         GamutFitTable t = GamutFitTable.Build(Rule);
         WarnBy(t, Rule);
         // At L* 15: 3.9, which the warning keeps, and 4.3, which it marks and a chroma of 2 would
-        // bring back to 4. At L* 5: nothing brings it in. At L* 50: inside.
-        Raster r = RasterOf((15, 1, 0), (15, 5, 0), (5, 5, 0), (50, 5, 0));
+        // bring back to 4. At L* 5: nothing brings it in. At L* 50: inside. Then two greys: at
+        // L* 15, past the target alone, and at L* 5, past the warning.
+        Raster r = RasterOf((15, 1, 0), (15, 5, 0), (5, 5, 0), (50, 5, 0), (15, 0, 0), (5, 0, 0));
+        Assert.True(ChromaOf(LabAt(r, 4)) < Thresholds.GamutFitMinChroma && ChromaOf(LabAt(r, 5)) < Thresholds.GamutFitMinChroma, "the last two pixels are grey for the fit");
 
         foreach (double knee in GamutFitRun.Knees)
         {
             GamutFitOutcome o = GamutFit.Apply(r, t, knee, keepFacts: true);
 
-            Assert.Equal(new[] { false, true, true, false }, o.OutsideBefore);
-            Assert.Equal(new[] { false, false, true, false }, o.OutsideAfter);
-            Assert.Equal(25, o.PctUnreachable, 3);
-            Assert.Equal(25, o.PctTouched, 3);
+            // Counted by the warning: the grey past the target alone is counted nowhere.
+            Assert.Equal(new[] { false, true, true, false, false, true }, o.OutsideBefore);
+            Assert.Equal(new[] { false, false, true, false, false, true }, o.OutsideAfter);
+            Assert.Equal(100.0 * 2 / 6, o.PctUnreachable, 3);
+            Assert.Equal(100.0 / 6, o.PctTouched, 3);
             // The one the warning marks lands inside the warning's own edge, a chroma of 2 (the
             // search from zero ends within 0.1 of it); the soft knees end under it.
             var landed = LabAt(o.Image, 1);
@@ -405,8 +417,13 @@ public class GamutFitTests
             Assert.InRange(landed.L, 14.85, 15.15);
             // The others are the input's own samples: the one past the target alone is not moved
             // toward a grey that is no better, and is counted nowhere.
-            foreach (int i in new[] { 0, 2, 3 })
+            foreach (int i in new[] { 0, 2, 3, 4, 5 })
                 for (int p = 0; p < 3; p++) Assert.Equal(r.Planes[p][i], o.Image.Planes[p][i]);
+
+            // The save of a whole image, without the facts, asks the warning about these tones
+            // all the same: the file holds the preview's colours.
+            Raster saved = GamutFit.Apply(r, t, knee, keepFacts: false).Image;
+            for (int p = 0; p < 3; p++) Assert.Equal(o.Image.Planes[p], saved.Planes[p]);
         }
     }
 
@@ -518,9 +535,19 @@ public class GamutFitTests
         (string Text, bool Warning) reserve = rows[changed + 1];
         Assert.False(reserve.Warning);
         Assert.Contains(english ? "the fit stops a little inside the paper's limit" : "potrivirea se opreste putin sub limita hartiei", reserve.Text);
-        Assert.Contains(Fmt.F1(Thresholds.GamutFitTargetDeltaE), reserve.Text);
-        Assert.Contains(Fmt.F0(Thresholds.CurveGamutDeltaE), reserve.Text);
+        Assert.Contains((english ? "(at " : "(la ") + Fmt.F1(Thresholds.GamutFitTargetDeltaE) + ",", reserve.Text);
+        Assert.Contains((english ? "starts at " : "incepe la ") + Fmt.F0(Thresholds.CurveGamutDeltaE) + ")", reserve.Text);
         Assert.Contains("Lightroom", reserve.Text);
+
+        // The recipe's row says its share is of the colours past the fit's limit, not of the
+        // warning's count in the rows above.
+        string recipeRow = GamutFitTexts.RecipeLine(new GamutFitRecipe { LstarCeiling = 12, Factor = 0.65, PctLeft = 8, PctInBand = 10 });
+        Assert.EndsWith(english ? "it would leave 8.0 % of the colours past the limit the fit stops at" : "ar lasa 8.0 % din culorile aflate peste limita la care se opreste potrivirea", recipeRow);
+
+        // When no more pixels changed than the warning marks, the sentence would not be true
+        // and is not shown: nothing changed at all, say.
+        var still = new GamutFitVariant { Name = variant.Name, Knee = variant.Knee, Evidence = new GamutFitEvidence() };
+        Assert.DoesNotContain(GamutFitTexts.EvidenceRows(still, new GamutFitRecipe { Factor = 1 }), row => row.Text.Contains("Lightroom"));
     }
 
     [Fact]

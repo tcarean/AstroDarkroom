@@ -112,6 +112,12 @@ counted nowhere. R-187's row and ADR 0109 (decision 3) say this; the test
 6. Read the whole diff back; then a subagent code review of the branch before the merge is
    proposed, and a second one on the fix commit, as on earlier tasks.
 
+## Done differently
+
+- R-178 needed no amendment: it never said the fit moves only what the warning marks.
+- The evidence's new row is shown only when more pixels changed than the warning marks (the
+  review of the branch: under an image with nothing to change the sentence was not true).
+
 ## Not in this task
 
 - No control for the user to set the reserve (ADR 0109 keeps it as the next step if a paper

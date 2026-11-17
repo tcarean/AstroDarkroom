@@ -241,7 +241,10 @@ namespace AstroPhotoAnalyzer
         /// <summary>The saturation factor over the band, 0..1 in steps of Thresholds.GamutFitRecipeStep.</summary>
         internal double Factor { get; init; }
 
-        /// <summary>The share of the pixels outside the factor would leave outside, in percent of them.</summary>
+        /// <summary>
+        /// The share of the pixels past the fit's target the factor would leave past it, in percent
+        /// of them (R-187: the recipe aims where the fit does, not at the warning's limit).
+        /// </summary>
         internal double PctLeft { get; init; }
 
         /// <summary>The share of all the pixels the band holds, in percent.</summary>
@@ -547,9 +550,10 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The recipe for a hand-made mask (R-176): the tone band holding
-        /// Thresholds.GamutFitBandShare of the pixels outside, and the largest saturation factor,
-        /// in steps of Thresholds.GamutFitRecipeStep, that brings Thresholds.GamutFitRecipeShare of
-        /// them in when applied to every pixel of the band.
+        /// Thresholds.GamutFitBandShare of the pixels past the table's edge, the fit's target
+        /// (R-187), and the largest saturation factor, in steps of
+        /// Thresholds.GamutFitRecipeStep, that brings Thresholds.GamutFitRecipeShare of them
+        /// within it when applied to every pixel of the band.
         /// </summary>
         /// <param name="r">The raster, encoded sRGB 0..1.</param>
         /// <param name="t">The table, without a Problem.</param>

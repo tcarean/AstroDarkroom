@@ -81,9 +81,11 @@ fitted pixels of the plate-solved FITS were still outside by the exact rule with
 since the pixels outside are dark, where one 8-bit step is a unit of L\* and tens of degrees of
 hue and the edge moves by more than the tolerance within a cell. The judge is a step function
 of the 8-bit colour, not monotone in chroma, so a pixel the knees move inward can land on a
-colour the judge calls outside: V-016 reads 0.006 % left after `Lina` against 0.001 % after
+colour the judge calls outside: V-016 read 0.006 % left after `Lina` against 0.001 % after
 `Exacta`, under the figure's precision (0.02 % before ADR 0093, when the pixels the judge
-rejected inside the edge were never moved).
+rejected inside the edge were never moved). Since R-187 that happens at the target, half a unit
+inside the warning, so the share left by the warning's count reads 0 on V-016 under all three
+knees.
 
 Whether a pixel is outside is not read off that edge (`Decide`, ADR 0093): the judge is asked
 about the pixel as it is, on its own samples (`GamutFitTable.JudgeOfPixel`, which the run sets
@@ -121,7 +123,9 @@ all of it tones out of reach (377 pixels, 334 of them grey).
 A pixel the judge rejects is outside; if `cmax` is negative (the judge rejects even the grey
 of that tone: the edge search's answer for it, apart from a tiny edge over a grey it keeps,
 which fits the pixel to that grey) it is copied and counted
-(`PctUnreachable`): no chroma brings it in, and the Tonuri tab's lift is the remedy. The table's
+(`PctUnreachable`): no chroma brings it in, and the Tonuri tab's lift is the remedy (on a table
+with a warning the tone is past the target and the warning has a word of its own: the section
+"The target and the warning" below says what then happens). The table's
 `GreyOutOfReach` marks the nodes where that happens, for the record; the decision is the
 judge's, since within one L\* of such a node the two can disagree. Otherwise the new chroma is `Knee(c, cmax, knee)`: unchanged up to
 `knee x cmax`, then `start + room x (1 - exp(-(c - start) / room))` with `room = cmax - start`,
@@ -160,6 +164,22 @@ that search finds no edge either, the pixel is copied and counted as a tone out 
 the warning does not mark it, it is copied and counted nowhere: nothing nearer the grey is
 better. `Warns` is asked there even without facts, so the saved file is the preview's.
 
+Two things differ there from the landing before R-187, both small. The search starts from the
+pixel and, when the warning's edge is more than twice `GamutFitEdgeMargin` under it, halves the
+whole stretch down to zero six times, so the hard fit lands up to a sixty-fourth of that
+stretch inside the edge (0.09 at a chroma of 7) where the cached search around the table's edge
+ends within 0.02. And such a tone has no table edge for the warning, so a pixel just inside the
+warning's edge keeps its chroma under every knee while one just past it is compressed towards
+the edge: a run of growing saturation steps back there by a few percent of the edge under the
+soft knees.
+
+How often: measured 2026-11-17 with the hard fit on the tonal subsamples, the tones no chroma
+brings within 3.5 hold none of the pixels on the three baryta profiles (the plate-solved FITS
+and `de_printat.png` on the lab's, the Smida TIFF on all three), 0.056 % of the plate-solved
+FITS on the canvas profile, where none was out of reach at 4, and 0.050 % of `de_printat.png`
+on it, where 0.026 % were. The built code leaves the same share outside and out of reach as the
+fit to 4 did on both: 0.0000 % and 0.0261 %.
+
 Measured 2026-11-17 on the Smida TIFF of that day (`Lina`, the tonal subsample; the limit made
 settable in a scratchpad copy of the core, ADR 0109), pixels changed and chroma given up at the
 median:
@@ -189,7 +209,8 @@ on the Smida TIFF, where 10 % of the pixels outside sit above the band, the fact
 the evidence is measured too. It reads `Decide`, so since R-187 it aims at the fit's target: its
 band and factor bring the pixels past 3.5 within 3.5, and the share it leaves is of those
 pixels, not of the warning's (on V-016 the factor went from 70 % to 65 % and the share left
-from 5.0 % to 8.0 %).
+from 5.0 % to 8.0 %); its sentence says so ("of the colours past the limit the fit stops at"),
+where the rows above it count by the warning.
 
 ## The run (`Runs/GamutFitRun.cs`)
 

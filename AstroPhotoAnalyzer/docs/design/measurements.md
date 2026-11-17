@@ -561,8 +561,9 @@ the profile's tables, the table per intent, the display step and the two warning
 
 ### F3 - `GamutFit` - the paper fit (R-175, R-176, ADR 0083)
 
-The one analyzer that makes a new raster rather than a figure: the colours the F2 rule marks
-have their chroma lowered along their hue at their L\* to the largest the paper holds there,
+The one analyzer that makes a new raster rather than a figure: the colours past the fit's
+target, the F2 rule judged at `GamutFitTargetDeltaE`, a little inside the warning (R-187), have
+their chroma lowered along their hue at their L\* to the largest that stays within it,
 from a table over L\* and hue built by the same rule (`GamutAnalyzer.DeltaEOfLab`); the three
 knees, the recipe and the measurements behind them are in `paper-fit.md`, the figures on the
 reference image in V-016.
