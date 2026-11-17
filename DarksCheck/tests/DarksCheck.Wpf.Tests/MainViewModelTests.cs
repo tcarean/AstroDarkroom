@@ -301,6 +301,21 @@ public class MainViewModelTests
     }
 
     [Fact]
+    public async Task R126_TheSessionCardWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken()
+    {
+        // CR-013: the card is fed by the console's session rows, the line about the names with them
+        using SessionFixture f = WindowFixture.Session();
+        File.WriteAllBytes(Path.Combine(f.DarksDir, "DSC_9999.fit"), new SyntheticDark { Seed = 199 }.Build(SessionFixture.FirstStart.AddSeconds(-120), 120, 400));
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(f.Root);
+
+        RowVm row = Assert.Single(vm.SessionRows, r => r.Value.StartsWith("numele fisierelor din darks nu sunt in ordinea", StringComparison.Ordinal));
+        Assert.Equal("ATENTIE", row.Label);
+        Assert.Contains("DSC_9999.fit, dar a fost facut dupa el", row.Value, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task R071_TheTabsHoldTheSectionsTheTablesTheMapsAndTheCharts()
     {
         using SessionFixture f = WindowFixture.Session();

@@ -32,16 +32,25 @@ its options and leaves the two settings at their defaults; the window builds it 
 readers return a raster of doubles (194 MB at 24 MP); it is converted to `ushort` as soon as
 it lands and dropped, with a forced collection per frame, since the collector otherwise lets
 those rasters pile up (14 GB of working set measured before the collection and the
-`System.GC.ConserveMemory=9` knob of the console's runtime config). The first file in order
-is decoded alone and sets the geometry and the scale (the files are tried in order until one
-decodes); the others decode in parallel and must match its size, its ISO and its exposure
-(each on its own, within `Th.ExposureTolerance`). A float FITS on 0 .. 1 is brought to 0 ..
+`System.GC.ConserveMemory=9` knob of the console's runtime config). Before a pixel is decoded
+`Load` reads the metadata of every file, the ones the cap skips included, and `Reference` picks
+the frame that carries the group's setting: the first readable frame of the dominant setting
+`MatchAnalyzer.Settings` finds, the one check 1 names (ADR 0062). The files are then decoded
+one at a time, in order, until one decodes with that setting (`SameSettings`: the ISO and the
+exposure each on its own, within `Th.ExposureTolerance`; the frame's settings are those its
+metadata read gave, the reading the group's setting came from, and the decoder's only when
+that read failed) and sets the geometry and the scale;
+the others decode in parallel and must match that setting and that size. A frame at another
+setting sets nothing and is left out wherever it stands; when no file's metadata can be read
+the first decoded frame's settings decide. A float FITS on 0 .. 1 is brought to 0 ..
 65535, one already in ADU is kept with 65535 as the presumed white. A FITS carries no black
 level, so the black of a FITS stack is the median of
 the first decoded frame's reference plane, or the black the biases' stack established when
 `DarkSeriesRun` read the biases first (a dark's median would overstate the pedestal by the
-dark current). Above `Th.MaxFramesInMemory` (or the cap given) exactly that many files are decoded: `FrameStack.Chosen` flags the first, the last and those at even distances between them, file `round(j x (count - 1) / (cap - 1))`, and `Load` lists the others as skipped without opening their pixels (ADR 0057). `Norm` is the
-normalisation factor of ADR 0004, read from the first frame's ISO and exposure through the
+dark current). That black is handed to `Load` as a `FitsBlack`, with the size of the biases it
+was read on, and a stack of another size does not take it: the biases are refused for their
+size only after the darks are measured, and must give them nothing. Above `Th.MaxFramesInMemory` (or the cap given) exactly that many files are decoded: `FrameStack.Chosen` flags the first, the last and those at even distances between them, file `round(j x (count - 1) / (cap - 1))`, and `Load` lists the others as skipped without opening their pixels (ADR 0057). `Norm` is the
+normalisation factor of ADR 0004, read from the ISO and exposure of the frame that set the geometry, through the
 `Normalisation` the caller hands in (`Normalisation.Default` when none): the record of the
 two settings of ADR 0009, the gain per ISO stop (`NormOf`: `gain ^ log2(ISO / 400)`, the
 linear `ISO / 400` when the gain is 2, times `exposure / 120`) and the degrees per doubling
@@ -112,7 +121,9 @@ decodes (`BiasAnalyzer.Analyze` throws), their size is not the darks' (`DarkMinu
 after both groups are measured), or their ISO is not the darks' (ADR 0059). The last is decided
 before a bias is read, on the inventory's dominant settings (`inv.Match.Biases` and
 `inv.Match.Darks`, the partner's darks in a lights-only run), both ISOs given: the biases'
-stack is then never loaded, so it gives the darks no black either.
+stack is then never loaded, so it gives the darks no black either. Biases of another size are
+loaded and measured, since the darks' size is not known before the darks are decoded; their
+black reaches the darks' `Load` and is dropped there by its size.
 
 ## The warming and the end of the series
 
@@ -155,7 +166,20 @@ refits on the rest, stopping when the kept set no longer changes or would fall u
 frames. Every frame's final residual against the last fit, divided by the normalisation, is its
 excess light (`FrameLight.ExcessAdu`, aligned with the series' frames, NaN without figures);
 the frames over the limit on the positive side are lit (`LitFrames`, the file index, with their
-excess beside them). `EdgeSplitsOf` then takes the frames that are not lit and, for each of the
+excess beside them). Those passes are `Passes`, and `FrameLightOf` runs them twice. The median
+of the pairwise slopes holds while fewer than about three frames in ten carry light; beyond
+that most pairs join a lit frame to a clean one, the line tilts through the lit frames, the
+scale grows and nothing is over the limit. So the second run starts from `BlockStart`: among
+the lines through two frames, each given the median of the residuals as its intercept, the one
+with the smallest median absolute residual (it needs half of the frames to lie close, whatever
+the other half does), read again by Theil-Sen over the frames within
+`Th.LeakBlockInlierSigmas` scales of it, since a line through two frames is a poor reading of
+the many that fit. `Passes` ends by refitting Theil-Sen over the frames it kept, which changes
+nothing for the first run and brings the second run's figures to the same estimator. The
+second result replaces the first only when it names more lit frames, more than
+`Th.LeakBlockMinFraction` and fewer than `Th.LeakBlockMaxFraction` of the fitted frames, with
+a smaller scale: a line read from half of a short clean series misreads the other half often
+enough that, taken always, it would name clean frames (ADR 0064 has the measurement). `EdgeSplitsOf` then takes the frames that are not lit and, for each of the
 eight regions, fits the frame's offset to the centre on the ratio without clipping: the slope
 is the glow part (the value at ratio 1, the master's temperature), the intercept the constant
 part; with biases, the bias mean map's offset of the same region (the bias's own regions, raw
@@ -170,8 +194,13 @@ to its value for both the verdict and the split; `Planes.Median(IReadOnlyList<do
 the fits. `SidesOf` reads the four sides (`MapSide`, an edge with its two corners,
 `SideLight.RegionsOf`) the same way, on the same frames (`KeptForSplit`): the side's per-frame
 offset is the mean of its three regions (`SideOffset`), fitted on the ratio; the intercept is
-the constant with the standard error `scale x sqrt(1 / n + mean(x)^2 / Sxx)` of a line read at
-x = 0, and with biases the bias master's side offset is taken out. The sides need `Th.LeakSidesMinFrames` frames left after the lit ones, the split three;
+the constant, with the error `sqrt(scale^2 / n + (mean(x) x slope error)^2)` of a line read at
+x = 0: the line's level at the mean ratio is known to the scale over sqrt(n), and carrying it
+to ratio 0 adds the slope's error times that distance. The slope error is `SlopeError`, half
+the range the line's own pairwise slopes give at one sigma (Sen's interval, ADR 0065), so it
+says how well this estimator holds the slope: least squares' formula, used before, shrinks
+with one far frame, which the median of the pairwise slopes does not use that way. With biases
+the bias master's side offset is taken out. The sides need `Th.LeakSidesMinFrames` frames left after the lit ones, the split three;
 `DarkReport.SplitUnmeasured` turns the three reasons (too few frames with a ratio, too little
 warming, too few frames left) into the rows' `NEMASURAT` words. `LeakVerdict.ConstantLight`
 is the strongest side whose remainder passes `Th.LeakConstantAdu` and `Th.LeakConstantSigmas`

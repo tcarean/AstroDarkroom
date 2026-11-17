@@ -624,6 +624,73 @@ public partial class DarkSeriesTests
         Assert.InRange(fl.RatioSpan, 0.2, 0.35);
     }
 
+    /// <summary>
+    /// CR-014: the median of the pairwise slopes gives way once about a third of the frames, at one end of the
+    /// warming, carry light: the line tilts through them, the scale grows, and no frame is named. A second fit,
+    /// from a line that holds up to nearly half, finds such a block.
+    /// </summary>
+    [Fact]
+    public void R028_ABlockOfLitFramesOverAQuarterOfTheSeriesIsNamed()
+    {
+        // eight frames warming 0.8 -> 1.2, the last three carrying +0.6 ADU
+        using SessionFixture warm = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = i >= 5 ? (x, y) => 0.6 : null });
+        DarkSeriesResult r = Run(warm);
+        FrameLight fl = r.Verdicts.Leak.Frames!;
+        Assert.Equal([6, 7, 8], fl.LitFrames);
+        Assert.All(fl.LitExcessAdu, v => Assert.InRange(v, 0.4, 0.8));
+        Assert.All(Enumerable.Range(0, 5), k => Assert.InRange(fl.ExcessAdu[k], -0.1, 0.1));
+        Assert.InRange(fl.Slope, -0.5, 0.5);
+        Assert.InRange(fl.ScaleAdu, 0, 0.05);
+        Assert.Equal(Verdict.Warning, r.Verdicts.Leak.Verdict);
+        using StringWriter sw = new();
+        DarkReport.Write(r, sw);
+        Assert.Contains("    lumina pe cadre    : 3 cadre sunt mai luminoase decat ar explica incalzirea: 6: +0.", sw.ToString(), StringComparison.Ordinal);
+
+        // the same block at the cold end
+        using SessionFixture cold = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = i < 3 ? (x, y) => 0.6 : null });
+        Assert.Equal([1, 2, 3], Run(cold).Verdicts.Leak.Frames!.LitFrames);
+
+        // two of six, a third of the shortest series the fit reads
+        using SessionFixture six = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = 0.8 + 0.4 * i / 5, Extra = i >= 4 ? (x, y) => 0.6 : null });
+        Assert.Equal([5, 6], Run(six).Verdicts.Leak.Frames!.LitFrames);
+
+        // eleven of thirty, as on a long series whose last third had the lamp on
+        using SessionFixture thirty = new SessionFixture().WithDarkSeries(30, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = 0.8 + 0.4 * i / 29, Extra = i >= 19 ? (x, y) => 0.6 : null });
+        Assert.Equal(Enumerable.Range(20, 11), Run(thirty).Verdicts.Leak.Frames!.LitFrames);
+    }
+
+    /// <summary>
+    /// The two starts of R-028's fit on their own: Theil-Sen's line is tilted by a block of a third of the points,
+    /// the block start's is not, and on points without a block the two agree.
+    /// </summary>
+    [Fact]
+    public void R028_TheBlockStartHoldsWhereTheMedianOfThePairwiseSlopesTilts()
+    {
+        // twelve points on y = 1 + 2x with a small wobble, the last five lifted by 1: most pairs join a lifted point to a clean one
+        double[] x = Enumerable.Range(0, 12).Select(i => 0.8 + 0.4 * i / 11).ToArray();
+        double[] wobble = [0.004, -0.006, 0.002, -0.003, 0.005, -0.001, 0.003, -0.004, 0.001, -0.002, 0.006, -0.005];
+        double[] clean = x.Select((v, i) => 1 + 2 * v + wobble[i]).ToArray();
+        double[] lifted = clean.Select((v, i) => i >= 7 ? v + 1 : v).ToArray();
+        bool[] all = Enumerable.Repeat(true, 12).ToArray();
+
+        (double tiltedSlope, _) = LeakAnalyzer.TheilSen(x, lifted, all);
+        Assert.True(tiltedSlope > 3, $"the median of the pairwise slopes is tilted by the block: {tiltedSlope}");
+        (double slope, double intercept) = LeakAnalyzer.BlockStart(x, lifted);
+        Assert.InRange(slope, 1.9, 2.1);
+        Assert.InRange(intercept, 0.9, 1.1);
+
+        // without a block the start is the line the points lie on
+        (double cleanSlope, double cleanIntercept) = LeakAnalyzer.BlockStart(x, clean);
+        Assert.InRange(cleanSlope, 1.9, 2.1);
+        Assert.InRange(cleanIntercept, 0.9, 1.1);
+
+        // every abscissa the same: no line through two points, so the level alone
+        double[] flat = Enumerable.Repeat(1.0, 6).ToArray();
+        (double flatSlope, double flatIntercept) = LeakAnalyzer.BlockStart(flat, [5, 5.1, 4.9, 5, 5.2, 4.8]);
+        Assert.Equal(0, flatSlope);
+        Assert.Equal(5, flatIntercept, 6);
+    }
+
     [Fact]
     public void R029_AnEdgeIsSplitIntoGlowAndConstantAndTheBiasNamesTheReadoutOffset()
     {
@@ -694,6 +761,58 @@ public partial class DarkSeriesTests
         Assert.Equal(LeakCause.Leak, sd.Cause);
     }
 
+    /// <summary>
+    /// CR-015: a side's constant light is the value of its line at ratio 0, and the line is the median of the
+    /// pairwise slopes. One far frame gave the old error formula (least squares') a long lever and so a small
+    /// error, though a median of pairwise slopes gains nothing from one frame: the error printed was several
+    /// times too small, and a side without light could pass for light.
+    /// </summary>
+    [Fact]
+    public void R029_AWarmingThatRestsOnOneColdFrameGivesASideAnErrorThatFitsItsLine()
+    {
+        // thirty darks, no light anywhere: the first at half the master's warmth, the others within 0.03 of each other
+        using SessionFixture cold = new SessionFixture().WithDarkSeries(30, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = i == 0 ? 0.5 : 1.0 + 0.001 * i }, biases: 3);
+        DarkSeriesResult rc = Run(cold);
+        // the same darks warming evenly over the same range of the first frame's lever
+        using SessionFixture even = new SessionFixture().WithDarkSeries(30, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = 0.5 + 0.53 * i / 29 }, biases: 3);
+        DarkSeriesResult re = Run(even);
+        Assert.Equal(4, rc.Verdicts.Leak.Sides.Count);
+        Assert.Equal(4, re.Verdicts.Leak.Sides.Count);
+        // one frame opens the gate of the span (0.1), as before
+        Assert.InRange(rc.Verdicts.Leak.Frames!.RatioSpan, 0.4, 0.65);
+        foreach (MapSide side in Enum.GetValues<MapSide>())
+        {
+            SideLight one = rc.Verdicts.Leak.Sides.Single(s => s.Side == side), spread = re.Verdicts.Leak.Sides.Single(s => s.Side == side);
+            // with the warming spread over the frames the line is well held; resting on one frame it is not
+            Assert.True(one.ErrorAdu > 3 * spread.ErrorAdu, $"{side}: {one.ErrorAdu} against {spread.ErrorAdu}");
+            Assert.False(LeakVerdict.IsConstantLight(one), $"{side}: {one.LightAdu} +/- {one.ErrorAdu}");
+        }
+
+        Assert.Null(rc.Verdicts.Leak.ConstantLight);
+    }
+
+    /// <summary>The error of a Theil-Sen slope from its own pairwise slopes (Sen's interval at one sigma), on figures worked out by hand.</summary>
+    [Fact]
+    public void R029_TheSlopeErrorIsHalfTheRangeOfThePairwiseSlopesAtOneSigma()
+    {
+        // four points; the six pairwise slopes sorted: 0.7, 0.95, 0.95, 1.0333, 1.2, 1.2. C = sqrt(4 x 3 x 13 / 18) = 2.944,
+        // so from slope floor((6 - 2.944) / 2) = 1 to slope ceil((6 + 2.944) / 2) = 5: (1.2 - 0.95) / 2
+        double[] x = [0, 1, 2, 3], y = [0, 1.2, 1.9, 3.1];
+        bool[] all = [true, true, true, true];
+        Assert.Equal(0.125, LeakAnalyzer.SlopeError(x, y, all), 9);
+
+        // points on a line: every pairwise slope is the line's
+        Assert.Equal(0, LeakAnalyzer.SlopeError(x, [1, 3, 5, 7], all), 9);
+
+        // only the kept points count: without the last one, three slopes 1.2, 0.95, 0.7 and C = sqrt(3 x 2 x 11 / 18) = 1.915,
+        // from slope floor(0.54) = 0 to slope ceil(2.46) = 2 (the last): (1.2 - 0.7) / 2
+        Assert.Equal(0.25, LeakAnalyzer.SlopeError(x, y, [true, true, true, false]), 9);
+
+        // no two distinct abscissae: no slope, no error
+        Assert.True(double.IsNaN(LeakAnalyzer.SlopeError([1, 1, 1], [1, 2, 3], [true, true, true])));
+        Assert.True(double.IsNaN(LeakAnalyzer.SlopeError(x, y, [true, false, false, false])));
+    }
+
     [Fact]
     public void R029_ALeftOrRightSideIsNamedWithItsPreposition()
     {
@@ -724,7 +843,8 @@ public partial class DarkSeriesTests
     {
         // a band of +2 ADU over the top 64 rows (the top third) of every dark, the raised mirror's shadow of an eyepiece leak
         // (noise 1 ADU instead of the fixture's 3: a region of these 256 x 192 frames has 256 pixels, so at noise 3 the
-        // intercept error reaches 0.7 ADU and the band of 2 sits at the 3-sigma condition; the D3300's regions have 2.4 Mpx)
+        // intercept error is far over the 0.67 at which a band of 2 stops passing the 3-sigma condition; the D3300's
+        // regions have 2.4 Mpx)
         static double Band(int x, int y) => y < 64 ? 2 : 0;
 
         // flat biases: light the bias does not hold, in every frame
@@ -747,7 +867,9 @@ public partial class DarkSeriesTests
         Assert.Contains(" ADU; latura de sus trece de 0.15 si de 3 ori cat poate gresi masuratoarea; +", text, StringComparison.Ordinal);
         Assert.Contains(" ADU e ", text, StringComparison.Ordinal);
         Assert.Contains(" din zgomotul pe pixel al masterului dark (", text, StringComparison.Ordinal);
-        Assert.True(top.ErrorAdu > 0 && top.ErrorAdu < 0.4, $"error {top.ErrorAdu}");
+        // the band of 2 passes three times its error while the error is under 0.67 (the bound was 0.4 for the error of
+        // before ADR 0065, which was too small for a line read from eight frames; it reads 0.59 here)
+        Assert.True(top.ErrorAdu > 0 && top.ErrorAdu < 0.67, $"error {top.ErrorAdu}");
         // the row and the verdict mark the light and the master's noise bold (ADR 0016); check 9's master row marks its noise
         IReadOnlyList<ReportSection> sections = DarkReport.Sections(r);
         ReportRow constantRow = sections.Single(x => x.Check == ReportCheck.Leaks).Rows.Single(x => x.Label == "lumina constanta");
@@ -1493,17 +1615,86 @@ public partial class DarkSeriesTests
         Assert.Null(r.Darks.Frames[0].Error);
     }
 
+    /// <summary>
+    /// CR-012: check 1 named the setting most frames have while the stack kept the first file's, so one test frame
+    /// of 1 s listed before a series of 120 s left the whole series out under a match that read OK.
+    /// </summary>
+    [Fact]
+    public void R020_AStrayFirstFrameDoesNotSetTheGroupsSettings()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Plain);
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0000.fit"), new SyntheticDark { Seed = 9 }.Build(SessionFixture.FirstStart.AddSeconds(-60), 1, 400));
+        DarkSeriesResult r = Run(s);
+        Assert.Equal(6, r.Darks.Used);
+        Assert.Equal("alte setari decat majoritatea cadrelor: ISO 400, 1 s", r.Darks.Frames[0].Error);
+        Assert.All(r.Darks.Frames.Skip(1), f => Assert.Null(f.Error));
+        Assert.True(r.HasErrors);
+        // check 1 and the analysis read the same setting
+        Assert.Equal(120, r.Inventory.Match.Darks!.ExposureSeconds);
+        Assert.Equal(120, r.Darks.FirstStacked!.ExposureSeconds);
+        Assert.Equal(1.0, r.Darks.Norm, 1e-9);
+        Assert.Equal([5, 4, 3, 2, 1], Enumerable.Range(0, 5).Select(k => r.Darks.Master.Sum(m => m.Above[k])).ToArray());
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("other settings than most frames: ISO 400, 1 s", Run(s).Darks.Frames[0].Error);
+        }
+
+        // a stray first frame of another size as well: it is named for its settings and sets no size
+        using SessionFixture crop = new SessionFixture().WithDarkSeries(6, Plain);
+        File.WriteAllBytes(Path.Combine(crop.DarksDir, "DSC_0000.fit"), new SyntheticDark { Seed = 9, Width = 128, Height = 96 }.Build(SessionFixture.FirstStart.AddSeconds(-60), 1, 800));
+        DarkSeriesResult rc = Run(crop);
+        Assert.Equal(6, rc.Darks.Used);
+        Assert.Equal(256, rc.Darks.Width);
+        Assert.Equal("alte setari decat majoritatea cadrelor: ISO 800, 1 s", rc.Darks.Frames[0].Error);
+
+        // the same for the biases' stack: one bias at another ISO listed first does not take the others out
+        using SessionFixture b = new SessionFixture().WithDarkSeries(4, Plain, biases: 4);
+        File.WriteAllBytes(Path.Combine(b.BiasesDir, "bias_0000.fit"), new SyntheticDark { Seed = 499, Noise = 2 }.Build(SessionFixture.FirstStart.AddSeconds(-3700), 0.0002, 1600));
+        DarkSeriesResult rb = Run(b);
+        Assert.Null(rb.BiasError);
+        Assert.Equal(4, rb.Biases!.Used);
+        Assert.Equal("alte setari decat majoritatea cadrelor: ISO 1600, 0 s", rb.Biases.Frames[0].Error);
+
+        // a tie goes to the setting met first, as in check 1: three of 60 s, then three of 120 s
+        using SessionFixture tie = new SessionFixture().WithDarkSeries(3, Plain, exposure: 60);
+        for (int i = 0; i < 3; i++)
+        {
+            File.WriteAllBytes(Path.Combine(tie.DarksDir, $"DSC_{i + 4:0000}.fit"), Plain(i + 3).Build(SessionFixture.FirstStart.AddSeconds(360 + i * 120), 120, 400));
+        }
+
+        DarkSeriesResult rt = Run(tie);
+        Assert.Equal(60, rt.Inventory.Match.Darks!.ExposureSeconds);
+        Assert.Equal([1, 2, 3], rt.Darks.Frames.Where(f => f.Error is null).Select(f => f.Info.Index));
+    }
+
+    /// <summary>CR-013: the partner's darks stand in for the session's and take check 4, so their names against their times are said too.</summary>
+    [Fact]
+    public void R126_ThePartnersDarksOfALightsOnlySessionGetTheLineToo()
+    {
+        // the partner's darks take checks 3 to 9 of a session without darks (R-054), check 4 with them
+        using SessionFixture partner = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);
+        File.WriteAllBytes(Path.Combine(partner.Root, "DSC_9999.fit"), new SyntheticDark { Seed = 199, Hot = SyntheticLight.Lattice }.Build(SessionFixture.FirstStart.AddSeconds(-120), 120, 400));
+        using SessionFixture s = new SessionFixture().WithLights(3, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice });
+        DarkSeriesResult r = DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2, Against: partner.Root));
+        ReportRow row = Assert.Single(InventoryReport.HeaderRows(r.Inventory), x => x.Label == "ATENTIE");
+        Assert.StartsWith("numele fisierelor din dark-urile partenerului nu sunt in ordinea in care au fost facute cadrele: DSC_0004.fit e trecut inaintea lui DSC_9999.fit, dar a fost facut dupa el. Pauzele,", row.Value, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.StartsWith("the partner's darks' file names are not in the order the frames were taken: DSC_0004.fit is listed before DSC_9999.fit and was taken after it. The pauses,", InventoryReport.HeaderRows(r.Inventory).Single(x => x.Label == "WARNING").Value, StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void R027_AFrameWithOtherSettingsIsLeftOutWithItsError()
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(4, Plain);
         File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0005.fit"), new SyntheticDark { Seed = 9 }.Build(SessionFixture.FirstStart.AddSeconds(480), 60, 400));
-        // ISO 800 at 60 s has the first frame's ISO x exposure product: each setting is compared on its own
+        // ISO 800 at 60 s has the ISO x exposure product of the other four: each setting is compared on its own
         File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0006.fit"), new SyntheticDark { Seed = 10 }.Build(SessionFixture.FirstStart.AddSeconds(600), 60, 800));
         DarkSeriesResult r = Run(s);
         Assert.Equal(4, r.Darks.Used);
-        Assert.Contains("setari diferite de primul cadru: ISO 400, 60 s", r.Darks.Frames[4].Error, StringComparison.Ordinal);
-        Assert.Contains("setari diferite de primul cadru: ISO 800, 60 s", r.Darks.Frames[5].Error, StringComparison.Ordinal);
+        Assert.Contains("alte setari decat majoritatea cadrelor: ISO 400, 60 s", r.Darks.Frames[4].Error, StringComparison.Ordinal);
+        Assert.Contains("alte setari decat majoritatea cadrelor: ISO 800, 60 s", r.Darks.Frames[5].Error, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1574,6 +1765,31 @@ public partial class DarkSeriesTests
         Assert.Contains("bias-urile au 128 x 96 px", r.BiasError, StringComparison.Ordinal);
         Assert.True(r.HasErrors);
         Assert.False(r.Verdicts.Leak.FromDarkMinusBias);
+    }
+
+    /// <summary>
+    /// CR-011: FITS darks took their black from the biases before the biases were refused for their size, so darks at
+    /// pedestal 200 beside biases of another crop at pedestal 1000 were measured against black 1000: no hot pixel,
+    /// every pixel "dead", under a header that said the black came from the biases.
+    /// </summary>
+    [Fact]
+    public void R041_FitsDarksDoNotTakeTheirBlackFromBiasesOfAnotherSize()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, Plain, biases: 3, bias: i => new SyntheticDark { Seed = 500 + i, Noise = 2, Width = 128, Height = 96, Pedestal = 1000 });
+        DarkSeriesResult r = Run(s);
+        Assert.Null(r.Biases);
+        Assert.Contains("bias-urile au 128 x 96 px", r.BiasError, StringComparison.Ordinal);
+        DarkSeriesAnalysis d = r.Darks;
+        Assert.Equal(200, d.Black, 1.0);
+        Assert.Contains("negrul luat din valoarea medie a cadrului 1", d.ScaleSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("negrul luat din bias-uri", d.ScaleSource, StringComparison.Ordinal);
+        // the five hot pixels are counted and no pixel is under the black, as without biases
+        Assert.Equal([5, 4, 3, 2, 1], Enumerable.Range(0, 5).Select(k => d.Master.Sum(m => m.Above[k])).ToArray());
+        Assert.All(d.Frames, f => Assert.All(f.Planes, p => Assert.Equal(0, p.Low)));
+
+        // biases of the darks' size still give the black: theirs, not the darks' own
+        using SessionFixture same = new SessionFixture().WithDarkSeries(4, Plain, biases: 3);
+        Assert.Contains("negrul luat din bias-uri", Run(same).Darks.ScaleSource, StringComparison.Ordinal);
     }
 
     /// <summary>

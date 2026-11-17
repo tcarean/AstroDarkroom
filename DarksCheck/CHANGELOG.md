@@ -350,6 +350,40 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The `+/-` beside each side's constant light in check 3 is worked out from the line the value
+  itself comes from. When the warming of the series rested on one cold frame the error shown
+  was several times too small (about 0.04 where the value really scattered by 0.28), and a
+  side without light passed for light in about one series in six. The values of the sides do
+  not change; on an ordinary series the error grows a little (R-029, ADR 0065; CR-015 of the
+  code review).
+
+- Check 3 names a block of lit frames that takes up to nearly half of the series: when about a
+  third of the darks, at one end of the warming, carried light (the lamp came on for the last
+  eleven of thirty), the fit tilted through them, no frame was named and the check could read
+  `OK`. A second fit, from a line that holds while fewer than half of the frames are lit, is
+  now taken when it finds such a block; on every other series the figures are the same as
+  before (R-028, ADR 0064; CR-014 of the code review).
+
+- The session lines say when the file names are not in the order the frames were taken: a
+  `WARNING` under the darks' interval, and one under the lights', names the first two files out
+  of order. The frames are read in the order of their names, so on a series whose counter
+  passed from `DSC_9999` to `DSC_0001`, or whose names have no leading zeros, the pauses, the
+  warming of check 4 and its frames to discard were read on a scrambled series with no sign of
+  it. The order itself is not changed (R-126, ADR 0063; CR-013 of the code review).
+
+- A stray frame listed first no longer leaves the whole series out: with one test frame of 1 s
+  before twenty darks of 120 s, check 1 read `OK` on the twenty while the analysis kept the one
+  and dropped the twenty as `settings differ from the first frame`. The analysis now takes the
+  setting most frames have, the one check 1 names, for the darks, the biases and a partner; the
+  frame left out reads `other settings than most frames: ISO 400, 1 s` (R-020, ADR 0062;
+  CR-012 of the code review).
+
+- FITS darks beside biases of another size (another camera or crop) are no longer measured
+  against those biases' black level: the biases were reported as left out, yet with darks at a
+  level of 200 and biases at 1000 no hot pixel was counted and every pixel read as dead, under
+  a header that said `the black taken from the biases`. The black is now the darks' own, as
+  without biases (R-020, R-041; CR-011 of the code review).
+
 - A file whose name starts with a dot, or that is hidden, is no longer taken for a frame: the
   `._DSC_0034.NEF` a Mac leaves beside each file of a card were listed as darks that could not
   be read and, over the frame cap, were read in the place of real darks (R-002; CR-001 of the

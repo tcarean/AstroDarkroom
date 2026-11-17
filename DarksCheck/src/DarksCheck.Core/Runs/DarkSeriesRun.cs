@@ -195,7 +195,7 @@ internal static class DarkSeriesRun
         // pedestal, which the darks' median would overstate by the dark current (ADR 0007).
         BiasAnalysis? biases = null;
         string? biasError = null;
-        double? biasBlack = null;
+        FitsBlack? biasBlack = null;
         if (inv.Session.Biases.Count > 0)
         {
             // Biases at another ISO than the darks have another read noise and another readout
@@ -216,7 +216,8 @@ internal static class DarkSeriesRun
                 {
                     FrameStack bstack = FrameStack.Load(inv.Session.Biases, threads, options.MaxFrames, Phase(T("Reading the biases", "Se citesc bias-urile"), progress), normalisation: nz, cancel: cancel);
                     biases = BiasAnalyzer.Analyze(bstack, threads);
-                    biasBlack = bstack.BlackEstimated ? bstack.Black : null;
+                    // with the biases' size: darks of another size do not take it (R-041)
+                    biasBlack = bstack.BlackEstimated ? new FitsBlack(bstack.Black, bstack.Width, bstack.Height) : null;
                 }
                 catch (InvalidOperationException e)
                 {

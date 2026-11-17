@@ -69,6 +69,17 @@ interval is over consecutive timed starts; a long pause is one over `Th.PauseSec
 recorded with the index of the frame it precedes. The darks and the lights each get a
 `Cadence`; the biases do not, their bursts say nothing.
 
+The list is in the order of the file names, and the cadence, check 4 and the first and last
+light of check 2 read it as the order the frames were taken in. `FirstBackwards` finds the
+first place where the two part: the first frame with a time that was taken before the frame
+with a time listed before it (frames without a time between them are passed over, equal times
+are no disagreement). `Analyze` keeps the pair in `Cadence.Backwards`, and
+`InventoryReport.HeaderRows` writes a `WARNING` row under the group's `interval` row from it
+(`OutOfOrder` gives the two file names). For a session without darks the darks analysed are
+the partner's, whose metadata the run keeps in `Inventory.PartnerDarks` and which have no
+`Cadence` of their own: the row is then read by calling `FirstBackwards` on them. Nothing is
+reordered (ADR 0063).
+
 ## The match (check 1)
 
 `MatchAnalyzer.Settings` clusters the readable frames of a group by ISO and by exposure, two

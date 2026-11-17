@@ -1,7 +1,7 @@
 # 0014. The light in every frame is read per side, after the bias, and named
 
 Date: 2026-10-20
-Status: accepted 2026-10-20
+Status: accepted 2026-10-20; the error of a side's constant light by least squares' formula superseded by 0065
 
 ## Context
 

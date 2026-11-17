@@ -137,9 +137,9 @@ short series or a low ISO does not count noise as hot pixels; the dead-pixel thr
 black - 50 ADU) and the figures of the biases are in raw ADU, since they do not depend on the
 exposure.
 
-A frame whose size differs from the first frame's, or whose ISO or exposure does (the exposure
-by more than 2 %), is left out of the figures and listed as an error
-(`error: different size: ...`, `error: settings differ from the first frame: ...`), so the exit
+A frame whose size differs from the first frame's, or whose ISO or exposure is not the one most
+frames have (the exposure by more than 2 %), is left out of the figures and listed as an error
+(`error: different size: ...`, `error: other settings than most frames: ...`), so the exit
 code is `1`. A single dark is not a series: checks 4, 5 and 9 and the stability of check 6 stay
 `UNMEASURED`.
 
@@ -539,6 +539,11 @@ Reads the metadata without decoding the pixels: under three seconds for a sessio
   gaps over 5 s between the end of one exposure and the start of the next. Darks taken frame
   after frame have none; a gap means Live View, a menu or the camera left alone, so the sensor
   cooled.
+- `WARNING` under an interval: the file names are not in the order the frames were taken (the
+  camera's counter passed 9999, or the names have no leading zeros). The frames are read in
+  the order of their names, so the pauses, the warming of check 4 with its frames to discard,
+  and "the first" and "the last" light of check 2 may be wrong; the line names the first two
+  files out of order. Rename the files so that their names sort in the order of the night.
 - `match`: `OK` when the darks have the lights' exposure (within 2 %) and ISO, `WARNING` with
   both settings when they do not, `UNMEASURED` without lights. A setting both groups give and
   that differs is a `WARNING` even when the files do not state the other one; `UNMEASURED` is

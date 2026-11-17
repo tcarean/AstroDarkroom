@@ -35,9 +35,20 @@ namespace DarksCheck.Core;
 internal sealed record StackFrame(FrameInfo Info, ushort[]? Pixels, string? Error, bool Skipped = false);
 
 /// <summary>
+/// The black level a group read before (the biases) established for a FITS, with the size of the
+/// frames it was read on: a stack takes it only when its own frames have that size, since biases
+/// of another size are left out of every figure (R-041).
+/// </summary>
+/// <param name="Black">The black level, in ADU.</param>
+/// <param name="Width">The width of the frames it was read on, in pixels.</param>
+/// <param name="Height">The height of the frames it was read on, in pixels.</param>
+internal sealed record FitsBlack(double Black, int Width, int Height);
+
+/// <summary>
 /// A group of frames decoded into memory as 16-bit mosaics (24 MP = 48 MB each; ADR 0007),
-/// with the geometry and the scale they share: every frame must have the first decoded
-/// frame's size, or it is listed with an error and left out. The scale is the file's
+/// with the settings, the geometry and the scale they share: every frame must have the setting
+/// most of the group's frames have (the dominant one, which check 1 names) and the size of the
+/// first decoded frame that has it, or it is listed with an error and left out. The scale is the file's
 /// (libraw's exact black and white for a raw; BITPIX's range for an integer FITS; a float
 /// FITS on 0..1 is brought to 0..65535). A FITS carries no black level, and a FITS Siril
 /// converted from a raw keeps the camera's pedestal (150 on the D3300), so for a FITS the
@@ -139,12 +150,15 @@ internal sealed class FrameStack
     /// <summary>
     /// Decodes the files, <paramref name="threads"/> at a time, with the decoder's double raster
     /// converted to 16-bit as soon as it lands (a 24 MP raster of doubles is 194 MB,
-    /// <paramref name="threads"/> of them in flight at most). The first file in order sets the
-    /// geometry and the scale, the others must match it. Above <paramref name="maxFrames"/> frames
+    /// <paramref name="threads"/> of them in flight at most). The metadata of every file is read
+    /// first and gives the group's dominant setting (<see cref="Reference"/>); the first file in
+    /// order that decodes with that setting sets the geometry and the scale, the others must match
+    /// it, and a frame at another setting is left out wherever it stands. Above <paramref name="maxFrames"/> frames
     /// exactly that many files are decoded, from the first to the last at even distances
     /// (<see cref="Chosen"/>), so the memory stays bounded; the others are listed as skipped.
     /// <paramref name="fitsBlack"/> is the black level to use for a FITS, when a group
-    /// read before (the biases) already established it; null estimates it from the first frame.
+    /// read before (the biases) already established it on frames of this stack's size; null, or a
+    /// black read on another size, estimates it from the first frame.
     /// <paramref name="normalisation"/> is the settings the ADU-eq factor is read with
     /// (<see cref="Normalisation.Default"/> when null).
     /// </summary>
@@ -153,13 +167,14 @@ internal sealed class FrameStack
     /// <param name="maxFrames">The frame cap, at least 1: above it exactly that many files are
     /// decoded (R-027, ADR 0057).</param>
     /// <param name="progress">Told (done, total) after each file; null for none.</param>
-    /// <param name="fitsBlack">The black level for a FITS, in ADU; null to estimate it.</param>
+    /// <param name="fitsBlack">The black level for a FITS with the size it was read on; null to
+    /// estimate it. Taken only by a stack of that size.</param>
     /// <param name="normalisation">The normalisation settings; null for the defaults.</param>
     /// <param name="cancel">Stops the decoding; the cancellation is thrown, not recorded as a
     /// frame's error.</param>
     /// <returns>The stack: every file listed, the decoded ones with their mosaic; a stack of
     /// size 0 when no file decoded.</returns>
-    internal static FrameStack Load(IReadOnlyList<string> paths, int threads, int maxFrames, IProgress<(int Done, int Total)>? progress = null, double? fitsBlack = null, Normalisation? normalisation = null, CancellationToken cancel = default)
+    internal static FrameStack Load(IReadOnlyList<string> paths, int threads, int maxFrames, IProgress<(int Done, int Total)>? progress = null, FitsBlack? fitsBlack = null, Normalisation? normalisation = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(paths);
         Stopwatch total = Stopwatch.StartNew();
@@ -168,19 +183,31 @@ internal sealed class FrameStack
         bool[] chosen = Chosen(n, maxFrames);
         StackFrame[] frames = new StackFrame[n];
         (int W, int H, double Black, double White, CfaPattern? Cfa, string Source, double Norm)? geometry = null;
-        FrameInfo? firstInfo = null;
+
+        // The setting the group's frames must have is the one most of them have, read from every
+        // file's metadata before a pixel is decoded, the files the cap skips included: the one
+        // check 1 names (R-007, ADR 0062). The first file's own would let a stray test frame listed
+        // first leave the whole series out.
+        FrameInfo[] infos = new FrameInfo[n];
+        for (int i = 0; i < n; i++)
+        {
+            cancel.ThrowIfCancellationRequested();
+            infos[i] = FrameInfo.Read(i + 1, paths[i]);
+        }
+
+        FrameInfo? settings = Reference(infos);
         object gate = new();
         int done = 0;
         ParallelOptions po = new() { MaxDegreeOfParallelism = Math.Max(1, threads), CancellationToken = cancel };
 
-        // The first file alone, so the geometry is the first file's whatever the thread timing;
-        // then the rest in parallel.
+        // One file at a time until one sets the geometry, so the geometry does not depend on the
+        // thread timing; then the rest in parallel.
         void Decode(int i)
         {
             string path = paths[i];
             if (!chosen[i])
             {
-                frames[i] = new StackFrame(FrameInfo.Read(i + 1, path), null, SkippedReason(maxFrames), Skipped: true);
+                frames[i] = new StackFrame(infos[i], null, SkippedReason(maxFrames), Skipped: true);
                 progress?.Report((Interlocked.Increment(ref done), n));
                 return;
             }
@@ -191,19 +218,34 @@ internal sealed class FrameStack
                 LoadedFrame f = ImageLoader.Load(path);
                 FrameInfo info = FrameInfo.From(i + 1, path, f);
                 (ushort[] px, double black, double white, string source) = ToUshort(f);
+                // The frame's settings as the metadata read gave them, the reading the group's
+                // setting came from and check 1 judged, so like is compared with like (the two
+                // readers of a FITS header can part on an odd card); the decoder's when that
+                // read failed.
+                FrameInfo own = infos[i].Error is null ? infos[i] : info;
+                bool sameSettings;
+                FrameInfo against;
                 lock (gate)
                 {
-                    geometry ??= (f.Image.W, f.Image.H, black, white, f.Cfa, source, nz.NormOf(info));
-                    firstInfo ??= info;
+                    // no file's metadata could be read: the first decoded frame's settings decide
+                    settings ??= own;
+                    against = settings;
+                    sameSettings = SameSettings(own, against);
+                    if (sameSettings)
+                    {
+                        // a frame at another setting sets nothing: neither the size nor the scale
+                        geometry ??= (f.Image.W, f.Image.H, black, white, f.Cfa, source, nz.NormOf(info));
+                    }
                 }
 
-                (int w, int h, _, _, _, _, _) = geometry.Value;
-                frames[i] = f.Image.W != w || f.Image.H != h
-                    ? new StackFrame(info, null, T($"different size: {f.Image.W} x {f.Image.H} instead of {w} x {h}", $"dimensiune diferita: {f.Image.W} x {f.Image.H} fata de {w} x {h}"))
-                    : !SameSettings(info, firstInfo)
-                        ? new StackFrame(info, null, T($"settings differ from the first frame: ISO {Fmt(info.Iso)}, {Fmt(info.ExposureSeconds)} s", $"setari diferite de primul cadru: ISO {Fmt(info.Iso)}, {Fmt(info.ExposureSeconds)} s"))
-                        : new StackFrame(info, px, null);
+                // the stack's size, or the frame's own for a frame left out for its settings
                 int fw = f.Image.W, fh = f.Image.H;
+                (int w, int h) = sameSettings ? (geometry!.Value.W, geometry.Value.H) : (fw, fh);
+                frames[i] = !sameSettings
+                    ? new StackFrame(info, null, T($"other settings than most frames: ISO {Fmt(own.Iso)}, {Fmt(own.ExposureSeconds)} s", $"alte setari decat majoritatea cadrelor: ISO {Fmt(own.Iso)}, {Fmt(own.ExposureSeconds)} s"))
+                    : fw != w || fh != h
+                        ? new StackFrame(info, null, T($"different size: {fw} x {fh} instead of {w} x {h}", $"dimensiune diferita: {fw} x {fh} fata de {w} x {h}"))
+                        : new StackFrame(info, px, null);
                 f = null!;
 
                 // The decoder's raster (194 MB of doubles at 24 MP) is garbage now, but on a
@@ -212,7 +254,7 @@ internal sealed class FrameStack
                 // (ADR 0007). One collection per decoded frame costs milliseconds against a
                 // second of decoding and keeps the peak at the frames kept plus those in flight.
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: false);
-                LogDecoded(i + 1, n, frames[i], firstInfo!, fw, fh, w, h, black, white, nz, one.ElapsedMilliseconds);
+                LogDecoded(i + 1, n, frames[i], against, fw, fh, w, h, black, white, nz, one.ElapsedMilliseconds);
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
@@ -225,8 +267,8 @@ internal sealed class FrameStack
             progress?.Report((Interlocked.Increment(ref done), n));
         }
 
-        // One file at a time until one decodes and sets the geometry (the first file may be
-        // corrupt); the rest in parallel.
+        // One file at a time until one decodes with the group's setting and sets the geometry (the
+        // first file may be corrupt, or a stray frame at another setting); the rest in parallel.
         int next = 0;
         while (next < n && geometry is null)
         {
@@ -243,11 +285,15 @@ internal sealed class FrameStack
 
         (int gw, int gh, double gb, double gwhite, CfaPattern? gcfa, string gsource, double gnorm) = geometry.Value;
         FrameStack stack = new(frames, gw, gh, gb, gwhite, gcfa, gsource, gnorm, nz);
+
+        // A black read on frames of another size is not this stack's: such biases are left out of
+        // every figure, the black included (R-041).
+        FitsBlack? known = fitsBlack is not null && fitsBlack.Width == gw && fitsBlack.Height == gh ? fitsBlack : null;
         if (double.IsNaN(gb))
         {
-            if (fitsBlack is double known)
+            if (known is not null)
             {
-                stack = new FrameStack(frames, gw, gh, known, gwhite, gcfa, gsource + T(", the black taken from the biases", ", negrul luat din bias-uri"), gnorm, nz, blackEstimated: true);
+                stack = new FrameStack(frames, gw, gh, known.Black, gwhite, gcfa, gsource + T(", the black taken from the biases", ", negrul luat din bias-uri"), gnorm, nz, blackEstimated: true);
             }
             else
             {
@@ -261,7 +307,7 @@ internal sealed class FrameStack
 
         // The scale's origin in the log's own words: the report's source is in the run's language.
         string blackFrom = !double.IsNaN(gb) ? "the file's"
-            : fitsBlack is not null ? "the biases'"
+            : known is not null ? "the biases'"
             : "the median of frame " + LogText.Int(frames.First(f => f.Pixels is not null).Info.Index);
         Log.Info("stack of " + LogText.Int(n) + " files: " + Counts(frames) + "; " + LogText.Int(gw) + "x" + LogText.Int(gh)
             + " black=" + LogText.Num(stack.Black) + " (" + blackFrom + ") white=" + LogText.Num(gwhite) + (double.IsNaN(gb) ? " (from BITPIX)" : " (the file's)")
@@ -278,16 +324,16 @@ internal sealed class FrameStack
     /// <param name="index">The frame's 1-based position in its group.</param>
     /// <param name="count">The group's number of files.</param>
     /// <param name="frame">The frame as the stack keeps it; not null.</param>
-    /// <param name="first">The first decoded frame's metadata, whose settings the others must have; not null.</param>
+    /// <param name="settings">The frame whose settings the group's frames must have; not null.</param>
     /// <param name="fw">The frame's width, in pixels.</param>
     /// <param name="fh">The frame's height, in pixels.</param>
-    /// <param name="w">The stack's width, in pixels.</param>
-    /// <param name="h">The stack's height, in pixels.</param>
+    /// <param name="w">The stack's width, in pixels; the frame's own for a frame left out for its settings.</param>
+    /// <param name="h">The stack's height, in pixels; the frame's own for a frame left out for its settings.</param>
     /// <param name="black">The file's black level, in ADU; NaN for a FITS, which carries none.</param>
     /// <param name="white">The white level the frame was read with, in ADU.</param>
     /// <param name="nz">The normalisation settings.</param>
     /// <param name="ms">The milliseconds the frame took, its read, conversion and collection.</param>
-    private static void LogDecoded(int index, int count, StackFrame frame, FrameInfo first, int fw, int fh, int w, int h, double black, double white, Normalisation nz, long ms)
+    private static void LogDecoded(int index, int count, StackFrame frame, FrameInfo settings, int fw, int fh, int w, int h, double black, double white, Normalisation nz, long ms)
     {
         string what = "frame " + LogText.Int(index) + "/" + LogText.Int(count) + " " + frame.Info.Path;
         if (fw != w || fh != h)
@@ -296,8 +342,8 @@ internal sealed class FrameStack
         }
         else if (frame.Pixels is null)
         {
-            Log.Warn(what + " left out: ISO " + LogText.Num(frame.Info.Iso) + " and " + LogText.Num(frame.Info.ExposureSeconds) + " s, the first frame ISO "
-                + LogText.Num(first.Iso) + " and " + LogText.Num(first.ExposureSeconds) + " s; its row says so");
+            Log.Warn(what + " left out: ISO " + LogText.Num(frame.Info.Iso) + " and " + LogText.Num(frame.Info.ExposureSeconds) + " s, most frames ISO "
+                + LogText.Num(settings.Iso) + " and " + LogText.Num(settings.ExposureSeconds) + " s; its row says so");
         }
         else if (Log.IsDebugEnabled)
         {
@@ -373,6 +419,23 @@ internal sealed class FrameStack
         return (new StackFrame(info, null, T($"different size: {f.Image.W} x {f.Image.H} instead of {w} x {h}", $"dimensiune diferita: {f.Image.W} x {f.Image.H} fata de {w} x {h}")), black, white);
     }
 
+    /// <summary>
+    /// The frame whose settings a group's frames must have: the first readable frame of the
+    /// group's dominant setting, the one check 1 names (<see cref="MatchAnalyzer.Settings"/>: the
+    /// largest cluster by ISO and exposure within the tolerance, the first one on a tie).
+    /// </summary>
+    /// <param name="infos">The metadata of every file of the group, in order; not null.</param>
+    /// <returns>That frame's metadata; null when the group is empty or no file's metadata could be
+    /// read.</returns>
+    internal static FrameInfo? Reference(IReadOnlyList<FrameInfo> infos)
+    {
+        ArgumentNullException.ThrowIfNull(infos);
+        GroupSettings? dominant = MatchAnalyzer.Settings(infos);
+        return dominant is null || dominant.Readable == 0
+            ? null
+            : infos.FirstOrDefault(f => f.Error is null && f.Iso == dominant.Iso && f.ExposureSeconds == dominant.ExposureSeconds);
+    }
+
     /// <summary>A setting for an error message: up to three decimals, invariant culture.</summary>
     /// <param name="v">The value; null when unknown.</param>
     /// <returns>The value as text, or "?" when null.</returns>
@@ -380,11 +443,12 @@ internal sealed class FrameStack
 
     /// <summary>
     /// The same ISO (when both say it) and an exposure within <see cref="Th.ExposureTolerance"/> of
-    /// the first frame's (when both say it): each setting on its own, so ISO 800 at 60 s is not ISO
+    /// the other frame's (when both say it): each setting on its own, so ISO 800 at 60 s is not ISO
     /// 400 at 120 s.
     /// </summary>
     /// <param name="a">The frame to compare; not null.</param>
-    /// <param name="first">The first decoded frame of the group; not null.</param>
+    /// <param name="first">The frame it is compared with: the one that carries a group's setting,
+    /// or another set's first stacked frame; not null.</param>
     /// <returns>True when neither setting known on both sides differs.</returns>
     internal static bool SameSettings(FrameInfo a, FrameInfo first)
     {

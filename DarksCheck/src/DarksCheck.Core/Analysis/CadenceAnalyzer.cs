@@ -30,7 +30,8 @@ internal sealed record LongPause(int FrameIndex, double Seconds);
 /// the shutter was open, the typical interval between two starts, the pause before each
 /// frame (the seconds between the end of the previous exposure and the start of this one, one
 /// entry per position of the list given), and the pauses long enough to be gaps. Frames
-/// without a time or an exposure stay out of the figures and get no pause.
+/// without a time or an exposure stay out of the figures and get no pause. It also carries the
+/// first place where the list's order is not the order of the times (R-126).
 /// </summary>
 /// <param name="Start">The start of the first timed frame; null when no frame is timed.</param>
 /// <param name="End">The latest end (start plus exposure) of a timed frame; null when no frame
@@ -58,9 +59,20 @@ internal sealed record Cadence(
 {
     /// <summary>Integration over span, in percent; 0 when nothing is timed.</summary>
     internal double DutyPct => SpanSeconds > 0 ? 100.0 * IntegrationSeconds / SpanSeconds : 0;
+
+    /// <summary>
+    /// The first place where the list's order is not the order of the times (R-126): the
+    /// positions in the list, from 0, of two frames with a time, the second listed after the first
+    /// with no other frame with a time between them, and taken before it. Null when every frame
+    /// with a time was taken no earlier than the one listed before it.
+    /// </summary>
+    internal (int ListedBefore, int ListedAfter)? Backwards { get; init; }
 }
 
-/// <summary>Reads the cadence of check 1 from the frames' times and exposures.</summary>
+/// <summary>
+/// Reads the cadence of check 1 from the frames' times and exposures, and whether the list's
+/// order is the order of the times (R-126).
+/// </summary>
 internal static class CadenceAnalyzer
 {
     /// <summary>The rhythm of a group of frames, taken in the order given.</summary>
@@ -121,7 +133,39 @@ internal static class CadenceAnalyzer
         }
 
         double span = start is DateTime s && end is DateTime e ? (e - s).TotalSeconds : 0;
-        return new Cadence(start, end, span, integration, timed, Median(intervals), pauses, longPauses);
+        return new Cadence(start, end, span, integration, timed, Median(intervals), pauses, longPauses) { Backwards = FirstBackwards(frames) };
+    }
+
+    /// <summary>
+    /// The first frame with a time that was taken before the frame with a time listed before it
+    /// (R-126, ADR 0063). The list is in the order of the file names, which a camera's counter
+    /// passing 9999, or numbers without leading zeros, set apart from the order the frames were
+    /// taken in. A frame without an exposure still has its time; equal times are no disagreement,
+    /// since a raw's time is in whole seconds.
+    /// </summary>
+    /// <param name="frames">The frames, in the list's order; not null.</param>
+    /// <returns>The positions in the list, from 0, of the frame listed before and of the one
+    /// taken before it; null when the times never go back.</returns>
+    internal static (int ListedBefore, int ListedAfter)? FirstBackwards(IReadOnlyList<FrameInfo> frames)
+    {
+        ArgumentNullException.ThrowIfNull(frames);
+        int previous = -1;
+        for (int i = 0; i < frames.Count; i++)
+        {
+            if (frames[i].Timestamp is not DateTime t)
+            {
+                continue;
+            }
+
+            if (previous >= 0 && t < frames[previous].Timestamp)
+            {
+                return (previous, i);
+            }
+
+            previous = i;
+        }
+
+        return null;
     }
 
     /// <summary>

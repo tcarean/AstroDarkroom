@@ -179,9 +179,9 @@ internal static class Th
     internal const double LeakConstantAdu = 0.15;
 
     /// <summary>
-    /// ... and above this many times its own standard error (the side's per-frame scatter around
-    /// its line, carried to ratio 0), so a short or noisy series cannot name a leak it cannot
-    /// resolve; the leak set's top side is 0.19 ± 0.01.
+    /// ... and above this many times its own error (the side's per-frame scatter around its
+    /// line and the error of the line's slope, carried to ratio 0; ADR 0065), so a short or noisy
+    /// series, or one whose warming rests on one frame, cannot name a leak it cannot resolve.
     /// </summary>
     internal const double LeakConstantSigmas = 3.0;
 
@@ -197,6 +197,28 @@ internal static class Th
     /// refits on the rest (the clipped sigma's three passes).
     /// </summary>
     internal const int LeakFitPasses = 3;
+
+    /// <summary>
+    /// The second fit of R-028 replaces the first only when it names more than this share of the
+    /// fitted frames as lit (and more frames than the first, with a smaller scale): up to about a
+    /// quarter of the frames the median of the pairwise slopes holds on its own, and under it the
+    /// second fit's line, read from half of the frames, would only add false alarms on short clean
+    /// series (ADR 0064: 6.5 % against 5.8 % at eight frames with this bound, 14.9 % without it).
+    /// </summary>
+    internal const double LeakBlockMinFraction = 0.25;
+
+    /// <summary>
+    /// ... and fewer than this share: with half of the frames or more above the line, which half
+    /// carries the light cannot be told.
+    /// </summary>
+    internal const double LeakBlockMaxFraction = 0.5;
+
+    /// <summary>
+    /// The first line of R-028's second fit is read again, by Theil-Sen, over the frames within
+    /// this many scales of the line found through two frames: the cut of a reweighted fit, wide
+    /// enough to keep the frames without light (98.8 % of them for a Gaussian scatter).
+    /// </summary>
+    internal const double LeakBlockInlierSigmas = 2.5;
 
     /// <summary>
     /// A frame whose mean exceeds the warming fit by more than this many scales (1.4826 x the
