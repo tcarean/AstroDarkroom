@@ -15,9 +15,9 @@ the tones under the paper's black, the Tonuri tab's subject, were not counted tw
 On 2026-11-03 the owner compared the warning with Lightroom Classic's destination gamut warning
 (relative intent, black point compensation, simulate paper and ink, the settings WhiteWall asks
 for) on the Smida Milky Way TIFF
-(`E:\Photografie\Astro\Milkyway-Core\2026-08-12-Smida\Processed_1mmPTFE_Flats\finale\starless_denoised_syqon_studio_in_max_0.75_stretch0.12-logd4_Gentle_sat0.25.tif`,
+(`E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer\starless_denoised_syqon_studio_in_max_0.75_stretch0.12-logd4_Gentle_sat0.25.tif`,
 sRGB, 5837 x 3867) through the WhiteWall profile
-(`E:\Photografie\Print and ICC profiles\Whitewall\WhiteWall_ICC_Inkjet_Hahnemuehle_Photo_Rag_Baryta.icc`,
+(`E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer\WhiteWall_ICC_Inkjet_Hahnemuehle_Photo_Rag_Baryta.icc`,
 v4.3, Lab PCS, paper black L\* 3.38): Lightroom marked much larger zones. Measured the same day
 with a scratchpad probe over a copy of the core, the Lightroom screenshot registered on the
 tool's reduced image (scale 0.560, a checkerboard blend checked by eye):

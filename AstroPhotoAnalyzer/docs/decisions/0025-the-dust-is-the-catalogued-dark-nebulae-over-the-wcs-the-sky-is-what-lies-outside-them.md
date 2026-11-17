@@ -23,7 +23,7 @@ catalogue of dark nebulae, rather than ask for a rectangle.
 ### Measured on 2026-10-02
 
 On the owner's plate-solved, stretched FITS
-`E:\Photografie\Astro\Milkyway-Core\2026-08-12-Smida\Processed_With_1mmPTFE_Flats\CropAndPlateSolve\RBF0.5\preview\starless_rbf0.5_stretch0.17.fit`
+`E:\Photografie\Astro\code-testdata\AstroPhotoAnalyzer\starless_rbf0.5_stretch0.17.fit`
 (5837 x 3867, three float planes, starless, VeraLux stretch, background 0.1716, `ROWORDER
 BOTTOM-UP`), the only image used; an earlier pass over a linear stack of the same resolution was
 a different crop and is discarded. Its WCS is Siril 1.4.4's: `CTYPE RA---TAN-SIP` /
