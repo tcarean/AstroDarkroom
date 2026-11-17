@@ -177,8 +177,12 @@ How often: measured 2026-11-17 with the hard fit on the tonal subsamples, the to
 brings within 3.5 hold none of the pixels on the three baryta profiles (the plate-solved FITS
 and `de_printat.png` on the lab's, the Smida TIFF on all three), 0.056 % of the plate-solved
 FITS on the canvas profile, where none was out of reach at 4, and 0.050 % of `de_printat.png`
-on it, where 0.026 % were. The built code leaves the same share outside and out of reach as the
-fit to 4 did on both: 0.0000 % and 0.0261 %.
+on it, where 0.026 % were. The built code leaves no more outside than the fit to 4 did on
+either: 0.0000 % of the FITS (0.0001 % at 4), none of it out of reach, and 0.0261 % of the PNG,
+all of it tones out of reach, as at 4.
+
+The evidence's sentence on where the fit stops (`GamutFitTexts.EvidenceRows`) is added only when
+more pixels changed than the warning marks, by the two shares as the rows print them.
 
 Measured 2026-11-17 on the Smida TIFF of that day (`Lina`, the tonal subsample; the limit made
 settable in a scratchpad copy of the core, ADR 0109), pixels changed and chroma given up at the
@@ -197,7 +201,9 @@ after; no tone was out of reach on any of the three.
 
 ## The recipe (`GamutFit.Recipe`)
 
-What a person would do by hand (a Lightroom luminance-range mask, the owner's first fix): the
+In this section "the pixels outside" are the recipe's own: those past the fit's target (R-187;
+the last sentences say what that changed). What a person would do by hand (a Lightroom
+luminance-range mask, the owner's first fix): the
 smallest whole L\* under which `GamutFitBandShare` of the pixels outside lie, and the largest
 saturation factor in steps of `GamutFitRecipeStep` whose uniform scaling of the chroma of every
 pixel under that L\* brings `GamutFitRecipeShare` of the pixels outside in (decided with the

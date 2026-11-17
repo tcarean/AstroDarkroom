@@ -1423,7 +1423,9 @@ History). Not from the dust move: the paper fit is not touched by that branch.
 - Case: run V-016 twice and compare the two `MEASURED` lines.
 - Should: the same figures from the same image; where the rows are measured in parallel, a
   result that does not depend on which finishes first. Until then V-016's record cannot be made
-  exact, and it keeps the figures of 2026-11-14.
+  exact, and it keeps the figures of 2026-11-14. (2026-11-17: V-016 was re-recorded with the
+  fit's own target, ADR 0109, and three runs of that day gave the same figures; the cache this
+  finding names is unchanged, so the finding stays open.)
 - Test: V-016 passes inside its tolerance of 0.01 either way.
 - Evidence: confirmed (two runs; the cause was not looked for).
 - Status: open

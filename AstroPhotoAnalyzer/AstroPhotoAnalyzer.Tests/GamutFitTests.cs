@@ -378,12 +378,23 @@ public class GamutFitTests
 
         // The recipe for a hand-made mask aims at the target too: its factor brings the last
         // pixel within the target's edge, a step or less under what that needs, where the
-        // warning's edge would be reached a step earlier.
+        // warning's edge would be reached two steps earlier.
         GamutFitRecipe recipe = GamutFit.Recipe(r, t);
         double needed = targetEdge / (warningEdge + 2);
         Assert.InRange(recipe.Factor, needed - Thresholds.GamutFitRecipeStep, needed);
         Assert.True(recipe.Factor < warningEdge / (warningEdge + 2) - Thresholds.GamutFitRecipeStep + 1e-9, "the warning's edge would take a larger factor: " + recipe.Factor);
         Assert.InRange(recipe.LstarCeiling, 50, 52);
+
+        // What the recipe would leave is a share of the pixels past the target, not of those the
+        // warning marks: ten in the band (five between the two limits, five past the warning)
+        // and one bright pixel above it, which no mask on the band reaches. One of eleven is
+        // left; of the six the warning marks it would be one of six.
+        var many = new List<(double, double, double)>();
+        for (int i = 0; i < 5; i++) { many.Add((50, between, 0)); many.Add((50, warningEdge + 2, 0)); }
+        many.Add((90, warningEdge + 2, 0));
+        GamutFitRecipe banded = GamutFit.Recipe(RasterOf(many.ToArray()), t);
+        Assert.InRange(banded.LstarCeiling, 50, 52);
+        Assert.Equal(100.0 / 11, banded.PctLeft, 3);
     }
 
     [Fact]
@@ -548,6 +559,13 @@ public class GamutFitTests
         // and is not shown: nothing changed at all, say.
         var still = new GamutFitVariant { Name = variant.Name, Knee = variant.Knee, Evidence = new GamutFitEvidence() };
         Assert.DoesNotContain(GamutFitTexts.EvidenceRows(still, new GamutFitRecipe { Factor = 1 }), row => row.Text.Contains("Lightroom"));
+        // Fewer changed than the warning marks (an image of tones out of reach), and a difference
+        // the two printed shares do not show.
+        foreach (var (touched, before) in new[] { (1.0, 3.0), (1.93, 1.92) })
+        {
+            var fewer = new GamutFitVariant { Name = variant.Name, Knee = variant.Knee, Evidence = new GamutFitEvidence { PctTouched = touched, PctOutsideBefore = before } };
+            Assert.DoesNotContain(GamutFitTexts.EvidenceRows(fewer, new GamutFitRecipe { Factor = 1 }), row => row.Text.Contains("Lightroom"));
+        }
     }
 
     [Fact]

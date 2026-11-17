@@ -92,7 +92,7 @@ The owner asked for the recommended change on 2026-11-17, after the measurements
   without the facts, the table's own limit and cache, the run's wiring and the evidence's
   sentence, which is shown only when more pixels changed than the warning marks.
 - A tone the target cannot reach is rare and dark: none of the pixels on the three baryta
-  profiles measured, 0.05 % on the canvas profile (`paper-fit.md`).
+  profiles measured, 0.05 to 0.06 % on the canvas profile (`paper-fit.md`).
 - V-016's figures move with the target (pixels touched, chroma given up, the recipe); its
   share outside before stays V-008's. Every other validation figure stays.
 - On a paper where Lightroom marks nothing (the lab's baryta) the fit gives up some colour for

@@ -117,6 +117,10 @@ counted nowhere. R-187's row and ADR 0109 (decision 3) say this; the test
 - R-178 needed no amendment: it never said the fit moves only what the warning marks.
 - The evidence's new row is shown only when more pixels changed than the warning marks (the
   review of the branch: under an image with nothing to change the sentence was not true).
+- "About a fifth more pixels changed" in the Context is, by the figures of ADR 0109, 27 % and
+  16 % more on the two papers and 81 % more on the lab's baryta.
+- The recipe's sentence now says its share is of the colours past the limit the fit stops at
+  (the owner's yes of 2026-11-17), and V-016 was re-recorded at the owner's word of that day.
 
 ## Not in this task
 

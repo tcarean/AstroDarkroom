@@ -959,7 +959,8 @@ namespace AstroPhotoAnalyzer
         internal const double GamutFitMinChroma = 0.05;
 
         /// <summary>
-        /// The share of the pixels outside that the recipe's tone band must hold (R-176): the band
+        /// The share of the pixels outside that the recipe's tone band must hold (R-176; since
+        /// R-187 "outside" is, for the recipe, past the fit's target, as for the fit): the band
         /// is "under L* x" with x the smallest whole L* holding this share of them. 90 %: the
         /// outside pixels of the measured images are the dark dust, 97 to 99 % under L* 15, and
         /// a band that holds all of them would reach the few saturated bright ones.
@@ -967,9 +968,10 @@ namespace AstroPhotoAnalyzer
         internal const double GamutFitBandShare = 0.90;
 
         /// <summary>
-        /// The share of the band's pixels outside that the recipe's uniform saturation factor must
-        /// bring in (R-176); the pixels outside above the band are out of the mask's reach and are
-        /// counted in what is left. 99 %: the last pixels are the most saturated, whose factor would
+        /// The share of the band's pixels outside (past the fit's target, R-187) that the recipe's
+        /// uniform saturation factor must bring in (R-176); those above the band are out of the
+        /// mask's reach and are counted in what is left. 99 %: the last pixels are the most
+        /// saturated, whose factor would
         /// desaturate the whole band for nothing (measured 2026-11-06 on the Smida TIFF: a factor
         /// of 0.6 under L* 15 leaves 12 % of them, 0.75 everywhere 33 %).
         /// </summary>

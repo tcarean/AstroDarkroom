@@ -70,8 +70,9 @@ namespace AstroPhotoAnalyzer
                          $"pixeli schimbati: {Fmt.Pct(e.PctTouched)}; jumatate din ei pierd cel mult {Fmt.F1(e.ChromaLostMedian)} din saturatie, 99 din 100 cel mult {Fmt.F1(e.ChromaLostP99)} (pe o scara pe care 3 abia se vede)"), false),
             };
             // Why more pixels change than the warning marks (R-187): the fit's target sits under
-            // the warning's limit. Said only when more did change.
-            if (e.PctTouched > e.PctOutsideBefore)
+            // the warning's limit. Said only when more did change, by what the two rows above
+            // print: a difference under their one decimal would read as "the same, yet more".
+            if (e.PctTouched > e.PctOutsideBefore && Fmt.Pct(e.PctTouched) != Fmt.Pct(e.PctOutsideBefore))
                 o.Add((Tr.Pick($"the fit stops a little inside the paper's limit (at {Fmt.F1(Thresholds.GamutFitTargetDeltaE)}, where the warning starts at {Fmt.F0(Thresholds.CurveGamutDeltaE)}), so more pixels are changed than the warning marks, and the gamut warning of other programs (Lightroom, for one) has almost nothing left to mark",
                                $"potrivirea se opreste putin sub limita hartiei (la {Fmt.F1(Thresholds.GamutFitTargetDeltaE)}, pe cand avertizarea incepe la {Fmt.F0(Thresholds.CurveGamutDeltaE)}), asa ca se schimba mai multi pixeli decat marcheaza avertizarea, iar avertizarea de gamut din alte programe (de exemplu Lightroom) nu mai are aproape nimic de marcat"), false));
             o.Add((Tr.Pick($"of the colours the paper cannot reproduce, {Fmt.Pct(e.PctOutsideUnderLowSeparation)} are dark tones, under L* {Fmt.F0(Thresholds.LowSeparationLstar)}",

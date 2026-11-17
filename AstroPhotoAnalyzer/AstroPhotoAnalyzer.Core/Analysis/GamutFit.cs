@@ -235,7 +235,10 @@ namespace AstroPhotoAnalyzer
     /// </summary>
     internal sealed record GamutFitRecipe
     {
-        /// <summary>The band is "under this L*": the smallest whole L* holding Thresholds.GamutFitBandShare of the pixels outside.</summary>
+        /// <summary>
+        /// The band is "under this L*": the smallest whole L* holding Thresholds.GamutFitBandShare
+        /// of the pixels past the fit's target (R-187).
+        /// </summary>
         internal double LstarCeiling { get; init; }
 
         /// <summary>The saturation factor over the band, 0..1 in steps of Thresholds.GamutFitRecipeStep.</summary>
