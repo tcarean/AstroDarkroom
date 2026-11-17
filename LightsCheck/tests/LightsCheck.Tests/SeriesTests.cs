@@ -396,7 +396,7 @@ public class SeriesTests
 
     /// <summary>
     /// When too few frames give the trails' direction, the row says which frames count (R-085,
-    /// ADR 0064): the fixture's `bad` row lists two frames trailed the same way, one of them too
+    /// ADR 0065): the fixture's `bad` row lists two frames trailed the same way, one of them too
     /// short to stack and so without a vote (ADR 0061), and the row under it must not read as if
     /// two bad frames trailed the same way were not enough.
     /// </summary>

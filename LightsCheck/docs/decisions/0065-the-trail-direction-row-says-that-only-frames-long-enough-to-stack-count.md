@@ -1,4 +1,4 @@
-# 0064. The trail direction row says that only frames long enough to stack count
+# 0065. The trail direction row says that only frames long enough to stack count
 
 Date: 2026-11-17
 Status: accepted 2026-11-17
