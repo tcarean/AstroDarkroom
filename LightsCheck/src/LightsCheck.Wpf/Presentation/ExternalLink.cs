@@ -23,7 +23,7 @@ namespace LightsCheck.Wpf;
 
 /// <summary>
 /// Opens an address in the system's browser: a link clicked in the About window, or the manual's
-/// for the main window's Help button and F1 (R-091, ADR 0060).
+/// for the main window's Help button and F1 (R-091, ADR 0064).
 /// </summary>
 internal static class ExternalLink
 {

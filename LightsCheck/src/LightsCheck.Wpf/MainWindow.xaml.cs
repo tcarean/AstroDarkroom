@@ -132,7 +132,7 @@ public partial class MainWindow : Window
     /// <summary>
     /// The Help command (the "Help" button or F1, see MainWindow.xaml): opens the manual at the
     /// section of what is on screen, the selected tab's read from its Tag, and logs the address
-    /// (R-091, ADR 0060).
+    /// (R-091, ADR 0064).
     /// </summary>
     /// <param name="sender">The window, where the command is bound.</param>
     /// <param name="e">The command's arguments, not used.</param>

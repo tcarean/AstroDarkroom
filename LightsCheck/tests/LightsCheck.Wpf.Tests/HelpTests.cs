@@ -26,7 +26,7 @@ using NLog;
 namespace LightsCheck.Wpf.Tests;
 
 /// <summary>
-/// The Help button and F1 open the manual at the section of what is on screen (R-091, ADR 0060),
+/// The Help button and F1 open the manual at the section of what is on screen (R-091, ADR 0064),
 /// as FlatCheck's do (its R-141). The browser is never started: the window's OpenAddress is
 /// replaced by a stand-in that keeps the address.
 /// </summary>

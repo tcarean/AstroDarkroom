@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <!-- MainWindow: the top bar (banner, folder, inputs, buttons), then the tabs; the same layout
      as FlatCheck's window. Without a usable folder the tabs stay hidden and the explanation
      takes their place. The minimum width is the top bar's in Romanian during a run, Stop and
-     Help shown, with some room left for the folder's name (ADR 0060). -->
+     Help shown, with some room left for the folder's name (ADR 0064). -->
 
 <Window x:Class="LightsCheck.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -35,7 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
   <!-- "Help" goes through ApplicationCommands.Help, whose default gesture is F1: the button and
        the key reach the same handler, which opens the manual at the section of what is on
-       screen (R-091, ADR 0060). "About" opens from its own button only. -->
+       screen (R-091, ADR 0064). "About" opens from its own button only. -->
   <Window.CommandBindings>
     <CommandBinding Command="Help" Executed="ShowHelp" />
   </Window.CommandBindings>
@@ -65,7 +65,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <!-- the column that gives way: at the window's narrowest, during a run, it keeps a few
              pixels, so each of its texts stays on one line, cut with an ellipsis, and the bar
-             keeps its height (ADR 0060) -->
+             keeps its height (ADR 0064) -->
         <StackPanel Grid.Column="1" VerticalAlignment="Center">
           <TextBlock Style="{StaticResource Faint}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                      Text="{local:T En='SIRIL SESSION FOLDER', Ro='FOLDER SESIUNE SIRIL'}" />

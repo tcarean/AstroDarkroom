@@ -6,7 +6,7 @@ The behaviour is R-029 to R-032; the reasons are ADR 0008. The pieces copied fro
 (`Theme/Dark.xaml`, `Presentation/*.cs` but four) are FlatCheck's to improve first (the same
 rule as the readers, ADR 0003); `Charts.cs` and the view-models are LightsCheck's own,
 `Presentation/Manual.cs` and `Presentation/ExternalLink.cs` are LightsCheck's, made on
-FlatCheck's model (ADR 0060), and `Presentation/AccessibleTabControl.cs` is AstroPhotoAnalyzer's
+FlatCheck's model (ADR 0064), and `Presentation/AccessibleTabControl.cs` is AstroPhotoAnalyzer's
 class in LightsCheck's style (ADR 0028).
 
 ## The shape
@@ -56,7 +56,7 @@ applies to its exact type only.
 
 `ApplicationCommands.Help`, whose default gesture is F1, is bound on the window to `ShowHelp`,
 and the Help button runs the same command, so the key and the button reach one handler; About is
-a plain click (R-091, ADR 0060). `ShowHelp` reads the selected tab's `Tag`, a `ManualSection`
+a plain click (R-091, ADR 0064). `ShowHelp` reads the selected tab's `Tag`, a `ManualSection`
 set in the XAML, and asks `Manual.SectionFor` with the view-model's `HasResult` and
 `IsRunning`: the tab's section when the tabs show, `OpeningASession` for every other screen.
 `Manual.Url` adds the section's anchor to the wiki page. The anchors are the ones GitHub makes

@@ -45,7 +45,7 @@ public enum ManualSection
 
 /// <summary>
 /// Where the Help button and F1 send the browser: LightsCheck's page of the suite's wiki, at the
-/// section of what the window shows (R-091, ADR 0060). The anchors are the ones GitHub makes from
+/// section of what the window shows (R-091, ADR 0064). The anchors are the ones GitHub makes from
 /// the page's headings; a heading renamed in the wiki is renamed here too.
 /// </summary>
 internal static class Manual

@@ -214,7 +214,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Setter>
   </Style>
 
-  <!-- The Help button's icon (R-091, ADR 0060), FlatCheck's: a question mark on a disc of the
+  <!-- The Help button's icon (R-091, ADR 0064), FlatCheck's: a question mark on a disc of the
        accent colour. Drawn, not a glyph: the icon fonts differ between Windows 10 and 11.
        16 x 16 units. -->
   <DrawingImage x:Key="HelpIcon">

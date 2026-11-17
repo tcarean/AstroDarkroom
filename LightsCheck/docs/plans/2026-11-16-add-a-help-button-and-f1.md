@@ -33,7 +33,7 @@ Facts found (2026-11-16):
   analysis, when Stop shows (931 and 961 px): About is cut by 11 and 41 px.
 
 What the owner decided (FlatCheck's answers carried over by "the same as FlatCheck", plus the
-question asked in this session). These make ADR 0060 `accepted 2026-11-16`:
+question asked in this session). These make ADR 0064 `accepted 2026-11-16`:
 
 1. F1 opens the manual; About keeps its button and loses the key.
 2. The button is an icon followed by the word, `(?) Help` / `(?) Ajutor`. Its place transposes
@@ -92,7 +92,7 @@ Worktree (already made, from `main` at dec039cf):
      `ro-help-top-bar` for `LIGHTSCHECK_DUMP_SCREENS`.
    Run them and paste the failing output (a compile failure first, since `Manual` does not
    exist yet).
-3. **ADR 0060**, `docs/decisions/0060-f1-and-a-help-button-open-the-manual-at-the-section-on-screen.md`,
+3. **ADR 0064**, `docs/decisions/0064-f1-and-a-help-button-open-the-manual-at-the-section-on-screen.md`,
    accepted 2026-11-16: the four points above and my choices: the icon is drawn in XAML
    (FlatCheck's drawing; icon fonts differ between Windows 10 and 11); the addresses live in the
    window project, since the console has no tabs and an address is neither a figure nor a
@@ -160,14 +160,14 @@ Worktree (already made, from `main` at dec039cf):
   folder's column keeps 39 px in Romanian, and its label, which wrapped, broke letter by letter
   and made the bar grow from 73 to 118 px (89 in English). Asked on the picture, the owner chose
   to keep 1040 px and to keep the column's texts on one line, cut with an ellipsis. R-091,
-  ADR 0060 and `R091_TheHelpButtonShowsAnIconAndTheWord` (the bar's height with Stop shown,
+  ADR 0064 and `R091_TheHelpButtonShowsAnIconAndTheWord` (the bar's height with Stop shown,
   which failed before the change) say so.
 - `ExternalLink.Open` takes a `Uri`, and the window's seam is `Action<Uri>`, so that the About
   window's catch of a relative link stays as it was.
 - A subagent reviewed the branch after the first commit (the owner's "Yes, review first"). Its
   six findings were checked in the code and all applied:
   - F1 held down opened one browser tab per key repeat: the window now takes the repeats of F1
-    in `PreviewKeyDown` (`IgnoreHeldF1`), as ImageVisualCompare's R-066 says; R-091 and ADR 0060
+    in `PreviewKeyDown` (`IgnoreHeldF1`), as ImageVisualCompare's R-066 says; R-091 and ADR 0064
     say so, and `R091_F1HeldDownOpensTheManualOnce` failed without it (6 addresses for 1).
   - The F1 test pressed every screen without the tabs with no tab selected (a window never shown
     has none), so it could not see `ShowHelp` ignore the view-model; it now presses a run, a
@@ -176,7 +176,7 @@ Worktree (already made, from `main` at dec039cf):
     1040 px holds 1024 px of content. The first measurements, the question put to the owner
     included, left it out (920 px inside the bar at 960, About cut by 11 and 41 px, 39 px left
     for the folder); the right figures are 904, 27 and 57, and about 23 px. The answers stand:
-    the bar fits at 1040. The test renders at the content width; ADR 0060 and the design note
+    the bar fits at 1040. The test renders at the content width; ADR 0064 and the design note
     carry the corrected figures.
   - "The button works during an analysis" had no test: the bar is now rendered during a real
     run, not with Stop forced visible, and the test checks that Help stays enabled.
@@ -196,7 +196,7 @@ Worktree (already made, from `main` at dec039cf):
     `IsRepeat`; that is its own task.
   - The tests' `PressF1` raised the KeyDown with the same arguments even when the preview was
     handled; it now follows the keyboard device. The design note said the same; corrected.
-  - ADR 0060 still said the icon alone would have fitted at 960 px: in English only, with the
+  - ADR 0064 still said the icon alone would have fitted at 960 px: in English only, with the
     frame counted.
   - "Help works during an analysis" now also asks the command's `CanExecute` on the button.
   - The corrected figures changed the premise of the owner's first answer (23 px for the folder,
@@ -204,6 +204,8 @@ Worktree (already made, from `main` at dec039cf):
 - A third subagent review, of the two fix commits together, at the owner's word ("Mai cere un
   code review ... doar pe fixurile tale"): no correctness defect. Applied: a run a test starts is
   stopped and awaited in a `finally`, so a failed assertion cannot leave it going into the next
-  test; ADR 0060's Consequences named the tests of the first commit only; the comment of
-  `_f1Through`. Accepted and written in ADR 0060: F1 kept held while clicking back into the window
+  test; ADR 0064's Consequences named the tests of the first commit only; the comment of
+  `_f1Through`. Accepted and written in ADR 0064: F1 kept held while clicking back into the window
   opens the manual once more, since WPF cannot tell it from a press whose release the browser took.
+- At the merge, main had taken ADRs 0060 to 0063 meanwhile (CR-011 to CR-016), so this task's ADR
+  was renumbered from 0060 to 0064, with every reference to it.

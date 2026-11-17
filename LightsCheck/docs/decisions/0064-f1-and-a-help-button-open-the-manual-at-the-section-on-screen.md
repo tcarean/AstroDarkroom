@@ -1,4 +1,4 @@
-# 0060. F1 and a Help button open the manual at the section on screen
+# 0064. F1 and a Help button open the manual at the section on screen
 
 Date: 2026-11-16
 Status: accepted 2026-11-16

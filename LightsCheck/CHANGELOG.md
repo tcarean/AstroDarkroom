@@ -8,7 +8,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
-- F1 opens the manual, no longer About, which opens from its button (R-091, ADR 0060). The
+- F1 opens the manual, no longer About, which opens from its button (R-091, ADR 0064). The
   window is at least 1040 px wide, up from 960, so that the top bar fits with Help during an
   analysis; the folder's label and `(none chosen)` in the bar stay on one line, cut with `…` as
   the folder's name already was, instead of making the bar taller.
@@ -55,7 +55,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - The window has a **Help** button, a question mark on a blue disc, also on the F1 key: it opens
   the manual in the wiki, in the browser, at the section of the tab on screen, or at "Opening a
-  session" before the tabs show (R-091, ADR 0060).
+  session" before the tabs show (R-091, ADR 0064).
 - A diagnostic log, for bug reports (R-070 to R-073, ADR 0029): each application writes
   `log\lightscheck.log` or `log\LightsCheck.Wpf.log` beside its executable (or under
   `%LOCALAPPDATA%\LightsCheck\log` when that folder cannot be written), at most 5 files of 1 MiB
