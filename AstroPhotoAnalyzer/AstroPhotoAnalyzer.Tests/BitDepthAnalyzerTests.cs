@@ -93,6 +93,73 @@ public class BitDepthAnalyzerTests
         Assert.False(res.IsUpscaled);
     }
 
+    /// <summary>
+    /// Real 16-bit data with the first <paramref name="black"/> of every plane at pure black and
+    /// the next <paramref name="white"/> at pure white, as clipping leaves them.
+    /// </summary>
+    static Raster Clipped(Raster r, double black, double white)
+    {
+        foreach (float[] plane in r.Planes)
+        {
+            int b = (int)(plane.Length * black), w = (int)(plane.Length * white);
+            for (int i = 0; i < b; i++) plane[i] = 0f;
+            for (int i = b; i < b + w; i++) plane[i] = 1f;
+        }
+        return r;
+    }
+
+    /// <summary>
+    /// CR-078: level 0 is its own high byte times 257, and so is 65535, so a clipped sample
+    /// counted as "an 8-bit level copied into 16 bits". A real 16-bit frame with 40 % of its
+    /// samples at pure black and 15 % at pure white read 55 % of such samples and was called an
+    /// 8-bit upscale, with thousands of levels beside the verdict. The share is asked of the
+    /// samples that can tell the two apart.
+    /// </summary>
+    [Fact]
+    public void R031_ClippedBlackAndWhiteDoNotMakeAFrameAnUpscale()
+    {
+        var res = BitDepthAnalyzer.Analyze(Clipped(Sixteen(), 0.40, 0.15));
+
+        Assert.All(res.DistinctLevels, n => Assert.True(n > 1500, "distinct levels: " + n));
+        Assert.InRange(res.UpscaledFraction, 0.0, 0.02);
+        Assert.False(res.IsUpscaled);
+    }
+
+    /// <summary>
+    /// ADR 0111, from the review of its branch: of the levels a shift writes (level x 256) only
+    /// 0 is also a level x 257, and 0 is left out, so a file saved by a shift has no sample of
+    /// the copied form at all. It is 8 bits by its levels alone, with the levels' sentence.
+    /// </summary>
+    [Fact]
+    public void R031_AShiftedFileHasNoSampleOfTheCopiedForm()
+    {
+        var res = BitDepthAnalyzer.Analyze(Shifted8(Sixteen()));
+
+        Assert.Equal(0.0, res.UpscaledFraction);
+        Assert.True(res.FewLevels);
+        Assert.True(res.IsUpscaled);
+    }
+
+    /// <summary>
+    /// R-031: the clipped samples left out, an upscale is still one. A x 257 file that is 60 %
+    /// pure black keeps a share of 1 on the samples that can tell; a file of pure black and pure
+    /// white alone has none that can, a share of 0, and is 8 bits by its two levels.
+    /// </summary>
+    [Fact]
+    public void R031_AnUpscaleWithClippedAreasIsStillCaught()
+    {
+        Raster up = SyntheticRasters.Upscaled8(Sixteen());
+        up.Source = new SourceInfo { BitDepth = 16, IsFloat = false, PlanesInFile = 3 };
+        var res = BitDepthAnalyzer.Analyze(Clipped(up, 0.60, 0.0));
+        Assert.Equal(1.0, res.UpscaledFraction);
+        Assert.True(res.IsUpscaled);
+
+        var ends = BitDepthAnalyzer.Analyze(Clipped(Sixteen(), 0.50, 0.50));
+        Assert.Equal(0.0, ends.UpscaledFraction);
+        Assert.All(ends.DistinctLevels, n => Assert.Equal(2, n));
+        Assert.True(ends.IsUpscaled);
+    }
+
     [Fact]
     public void NotApplicableOnEightBitSourcesFloatFitsOrNoSource()
     {
