@@ -20,7 +20,7 @@
 // An 8-bit file saved as 16 has every value equal to its high byte times 257
 // (n * 65535 / 255). On real 16 bits this coincidence happens on ~1 in 256 samples (0.4 %); on an
 // upscale, on all of them. Pure black and pure white are left out of that count: 0 and 65535 are
-// of that form in a real 16-bit file too, and clipping gathers samples there (ADR 0109). The
+// of that form in a real 16-bit file too, and clipping gathers samples there (ADR 0110). The
 // distinct levels per channel are counted too - a disguised 8-bit
 // has no more than 256 - and decide beside the fraction: a file saved by a shift (n * 256) has
 // none of the first form and is 8 bits all the same (ADR 0105).
@@ -50,7 +50,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The fraction of the samples (all planes) with value == high_byte * 257, among those
         /// that are neither pure black (0) nor pure white (65535): the two ends have that form
-        /// in a real 16-bit file as well, so they say nothing of which file it is (ADR 0109).
+        /// in a real 16-bit file as well, so they say nothing of which file it is (ADR 0110).
         /// 0 when every sample is at one of the two ends.
         /// </summary>
         internal double UpscaledFraction { get; init; }
@@ -65,7 +65,7 @@ namespace AstroPhotoAnalyzer
         /// The 16 bits hold 8 bits of information: <see cref="UpscaledFraction"/>, the share of
         /// a level times 257 among the samples off the two ends, is over
         /// <see cref="Thresholds.UpscaledFraction"/>, or <see cref="FewLevels"/> (R-031, ADR 0105,
-        /// ADR 0109).
+        /// ADR 0110).
         /// </summary>
         internal bool IsUpscaled => Applicable && (UpscaledFraction > Thresholds.UpscaledFraction || FewLevels);
     }

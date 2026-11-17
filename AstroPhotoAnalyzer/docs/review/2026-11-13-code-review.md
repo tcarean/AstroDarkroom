@@ -384,7 +384,7 @@ the rule is R-031's first clause, as it was before ADR 0105.
 - Test: none; `GenuineSixteenBitDataHasManyLevelsAndFewCoincidences` has uniform data, no
   clipped area.
 - Evidence: confirmed (by reading: the count's line and the threshold).
-- Status: fixed 336c3970 (ADR 0109; the evidence's wording and the new V-001 figure at the owner's word of 2026-11-17)
+- Status: fixed 336c3970 (ADR 0110; the evidence's wording and the new V-001 figure at the owner's word of 2026-11-17)
 - Corrected 2026-11-17, by the fix: the first case above does not reach the warning. A frame
   whose reference plane is more than half pure black has a median of 0 and is refused as a
   linear image (R-015). What reaches it is black under half with pure white beside it, or the

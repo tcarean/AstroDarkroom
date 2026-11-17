@@ -67,7 +67,7 @@ namespace AstroPhotoAnalyzer
         /// Over this fraction of samples with value == high_byte * 257, a 16-bit file is a scaled
         /// 8-bit one. On real 16 bits the fraction is ~0.4 % (coincidences); on an upscale it is
         /// 100 %. The fraction is taken among the samples that are neither 0 nor 65535: the two
-        /// ends have that form in every file, and clipping gathers samples there (ADR 0109).
+        /// ends have that form in every file, and clipping gathers samples there (ADR 0110).
         /// </summary>
         internal const double UpscaledFraction = 0.5;
 
