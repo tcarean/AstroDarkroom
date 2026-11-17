@@ -150,14 +150,16 @@ entry gives. Paths are relative to the project folder.
 | CR-072 | 4 | rare | confirmed | A failed computation of one gallery of the curves tab takes both away, and the box cannot be unticked to go round it | open |
 | CR-073 | 3 | rare | to measure | A curve can be missing from the gallery with the dust move: its strengths are judged with other points than the ones it gets | open |
 | CR-074 | 4 | common | confirmed | Two figures of the paper fit are not the same from one run to the next | open |
-| CR-075 | 3 | rare | owner | On a frame with too few stars a zone reads n/a under a description that promises its width from 5 stars | open |
-| CR-076 | 3 | rare | owner | "You lose nothing going to 8 bits" is also said of a file caught by its levels alone | open |
+| CR-075 | 3 | rare | owner | On a frame with too few stars a zone reads n/a under a description that promises its width from 5 stars | fixed bf88b340 |
+| CR-076 | 3 | rare | owner | "You lose nothing going to 8 bits" is also said of a file caught by its levels alone | fixed bf88b340 |
 | CR-077 | 4 | crafted | confirmed | The crop and the reader take a reference pixel with broken quoting apart differently | open |
+| CR-078 | 1 | rare | confirmed | A frame more than half pure black is called an 8-bit upscale | open |
 
 9 entries of severity 1, 4 of severity 2, 39 of severity 3, 15 of severity 4; 45 confirmed, 14
 to measure, 8 for the owner. (As counted on 2026-11-13; CR-068 and CR-069 were added on 2026-11-14, CR-070 to
 CR-074 on 2026-11-16 with the dust move of the suggested curves (ADR 0101), CR-075 to CR-077
-on 2026-11-16 by the reviews of the fixes of CR-006 to CR-010, and the
+on 2026-11-16 by the reviews of the fixes of CR-006 to CR-010, CR-078 on 2026-11-17 by the
+review of the fixes of CR-075 and CR-076, and the
 Status column says what has been closed since.) After the entries: what the owner may want to
 look at though no rule is broken, then the cleanup list (dead code, duplicates, work done twice).
 
@@ -359,6 +361,29 @@ bit. The 16-bit reference image is not touched.
 - Evidence: confirmed (the enabled button and the missing guard; that the focus returns to the
   button after the file dialog is WPF's usual behaviour, to see once in the window).
 - Status: fixed c075e9ae (ADR 0106; the test that needed this defect was replaced, the owner's answer of 2026-11-16)
+
+### CR-078 A frame more than half pure black is called an 8-bit upscale
+
+Added on 2026-11-17, by the review of the fixes of CR-075 and CR-076. Older than those fixes:
+the rule is R-031's first clause, as it was before ADR 0105.
+
+- Where: `Analysis/BitDepthAnalyzer.cs` (`Analyze`, the count of the samples equal to their high
+  byte times 257; `IsUpscaled`); `Report/Recommendations.cs` (`Warnings`).
+- What happens: level 0 is its own high byte times 257, and so is 65535, so a sample at pure
+  black or pure white counts as "an 8-bit level copied into 16 bits" whatever the rest of the
+  file holds.
+- Case (arithmetic, not run): a real 16-bit image whose sky was clipped to 0 over more than half
+  of the frame. The share passes `UpscaledFraction` (0.5), the file is called 8 bits in disguise
+  and told "you lose nothing going to 8 bits", with its tens of thousands of levels printed in
+  the same evidence. By the same count a file saved by a shift (level x 256) that is more than
+  half black takes the x 257 sentence, though its levels 128 and 129 merge in an 8-bit copy
+  (ADR 0108).
+- Should: a sample that both a real 16-bit file and an upscale can hold says nothing of which
+  it is; the share is asked of the samples that can tell them apart.
+- Test: none; `GenuineSixteenBitDataHasManyLevelsAndFewCoincidences` has uniform data, no
+  clipped area.
+- Evidence: confirmed (by reading: the count's line and the threshold).
+- Status: open
 
 ## Severity 2: a crash, a hang, or a file overwritten or lost
 
@@ -1069,7 +1094,7 @@ Added on 2026-11-16, from the fix of CR-006 (ADR 0103) and the review of its bra
 - Should: the sentence names both reasons. A text of the window changes only on the owner's yes
   (the rule "Plain words"); a wording was put to the owner on 2026-11-16.
 - Evidence: owner.
-- Status: open
+- Status: fixed bf88b340 (ADR 0108; the wording the owner approved on 2026-11-16)
 
 ### CR-076 "You lose nothing going to 8 bits" is also said of a file caught by its levels alone
 
@@ -1087,7 +1112,7 @@ Added on 2026-11-16, by the review of the fix of CR-008 (ADR 0105).
   for the first form only, so the levels' case needs a sentence of its own, or one that holds
   for both. The owner's call on the wording.
 - Evidence: owner.
-- Status: open
+- Status: fixed bf88b340 (ADR 0108; the wording the owner approved on 2026-11-16)
 
 ## Severity 4: robustness and cleanliness
 

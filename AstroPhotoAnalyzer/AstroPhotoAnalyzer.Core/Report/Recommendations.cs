@@ -539,7 +539,11 @@ namespace AstroPhotoAnalyzer
 
             if (b.IsUpscaled)
                 o.Add(new Recommendation(Topic.Warnings, Verdict.Attention,
-                    Tr.Pick("The file holds only 8 bits of information, saved as 16 bits: you lose nothing going to 8 bits, but you gain nothing from the 16 either.", "Fisierul are doar 8 biti de informatie, salvati ca 16 biti: nu pierzi nimic la trecerea pe 8 biti, dar nici nu castigi ceva din cei 16."),
+                    // "You lose nothing" is exact for the x 257 form alone: levels that are not
+                    // on the 8-bit steps can merge in an 8-bit copy (ADR 0108).
+                    b.UpscaledFraction > Thresholds.UpscaledFraction
+                        ? Tr.Pick("The file holds only 8 bits of information, saved as 16 bits: you lose nothing going to 8 bits, but you gain nothing from the 16 either.", "Fisierul are doar 8 biti de informatie, salvati ca 16 biti: nu pierzi nimic la trecerea pe 8 biti, dar nici nu castigi ceva din cei 16.")
+                        : Tr.Pick("The file holds only 8 bits of information, saved as 16 bits: the 16 bits bring nothing more than 8 would.", "Fisierul are doar 8 biti de informatie, salvati ca 16 biti: cei 16 biti nu aduc nimic in plus fata de 8."),
                     // Two ways to be 8 bits (ADR 0105): by the x 257 form, with the levels as a
                     // fact beside it, or, without that form, by the levels alone.
                     b.UpscaledFraction > Thresholds.UpscaledFraction

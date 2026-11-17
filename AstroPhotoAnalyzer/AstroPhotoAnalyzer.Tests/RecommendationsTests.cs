@@ -86,6 +86,32 @@ public class RecommendationsTests
         Assert.DoesNotContain("257", w.Because);
     }
 
+    /// <summary>
+    /// CR-076: "you lose nothing going to 8 bits" is exact for the form level x 257 only; a file
+    /// caught by its levels alone (ADR 0105) can merge neighbouring levels in an 8-bit copy, so
+    /// its sentence says only that the 16 bits bring nothing more. The x 257 form keeps its own
+    /// (the owner's yes of 2026-11-16).
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R096_AFileCaughtByItsLevelsAloneIsNotToldItLosesNothingAtEightBits(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        Raster src = Scenes.CleanSky();
+        Raster shifted = SyntheticRasters.From(src.H, src.W, src.Planes.Length, (x, y, p) => (RasterOps.Level8(src.At(p, y, x)) << 8) / 65535f);
+        shifted.Source = new SourceInfo { Format = "memorie", BitDepth = 16, IsFloat = false, PlanesInFile = 3 };
+        Raster copied = SyntheticRasters.Upscaled8(Scenes.CleanSky());
+        copied.Source = new SourceInfo { Format = "memorie", BitDepth = 16, IsFloat = false, PlanesInFile = 3 };
+        string eightBits = Tr.Pick("The file holds only 8 bits of information, saved as 16 bits: ", "Fisierul are doar 8 biti de informatie, salvati ca 16 biti: ");
+
+        string byLevels = Assert.Single(Of(Run(shifted), Topic.Warnings), x => x.Text.StartsWith(eightBits)).Text;
+        string byForm = Assert.Single(Of(Run(copied), Topic.Warnings), x => x.Text.StartsWith(eightBits)).Text;
+
+        Assert.Equal(eightBits + Tr.Pick("the 16 bits bring nothing more than 8 would.", "cei 16 biti nu aduc nimic in plus fata de 8."), byLevels);
+        Assert.Equal(eightBits + Tr.Pick("you lose nothing going to 8 bits, but you gain nothing from the 16 either.", "nu pierzi nimic la trecerea pe 8 biti, dar nici nu castigi ceva din cei 16."), byForm);
+    }
+
     [Fact]
     public void R096_AnUpscaledFileAndAMissingProfileAreWarnings()
     {

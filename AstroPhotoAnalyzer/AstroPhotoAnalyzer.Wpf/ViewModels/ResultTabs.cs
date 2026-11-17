@@ -871,11 +871,11 @@ namespace AstroPhotoAnalyzer.Wpf
                     centre
                         ? Tr.Pick($"The stars' width (FWHM) in five zones: the centre ({Fmt.F0(Thresholds.CenterFraction * 100)} % x {Fmt.F0(Thresholds.CenterFraction * 100)} % of the frame) "
                             + $"and the four corners ({Fmt.F0(Thresholds.RegionFraction * 100)} % of each side each, starting from the corner). "
-                            + $"A zone is shown only when it has at least {regionStars} stars, otherwise n/a. "
+                            + $"A zone is shown only when it has at least {regionStars} stars and the frame has enough stars to be measured, otherwise n/a. "
                             + "Compared with each other, they say whether the lens is equally good over the whole field.",
                             $"Latimea stelelor (FWHM) in cinci zone: centrul ({Fmt.F0(Thresholds.CenterFraction * 100)} % x {Fmt.F0(Thresholds.CenterFraction * 100)} % din cadru) "
                             + $"si cele patru colturi (cate {Fmt.F0(Thresholds.RegionFraction * 100)} % din fiecare latura, pornind din colt). "
-                            + $"O zona se arata doar daca are cel putin {regionStars} stele, altfel n/a. "
+                            + $"O zona se arata doar daca are cel putin {regionStars} stele si cadrul are destule stele ca sa fie masurat, altfel n/a. "
                             + "Comparate intre ele, spun daca obiectivul e la fel de bun pe tot campul.")
                         : null));
             }

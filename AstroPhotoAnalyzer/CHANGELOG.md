@@ -282,6 +282,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- Two texts say what the figures beside them show. On the Resolution tab, the zones' description
+  now names both reasons a zone reads `n/a`: under 5 stars in the zone, or too few stars in the
+  whole frame. And a 16-bit file caught as 8 bits by its 256 levels alone is told that the 16
+  bits bring nothing more than 8 would, no longer that nothing is lost at 8 bits, which holds
+  only for a level copied as x 257 (CR-075 and CR-076 of the code review of 2026-11-13, ADR
+  0108).
 - The console no longer replaces a file it reads with the report: `-o` naming the image, the
   `--wcs` file or the `--icc` profile (`AstroPhotoAnalyzer m31.tif -o m31.tif`) is an error
   before the analysis starts, and the file is untouched (CR-010 of the code review of

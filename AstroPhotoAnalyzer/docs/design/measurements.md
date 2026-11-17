@@ -30,7 +30,8 @@ distinct 16-bit levels per plane (`DistinctLevels`), and the fraction of samples
 of that form; genuine data has ~0.4 % by coincidence. `IsUpscaled` when the fraction
 exceeds `UpscaledFraction` (0.5), or when no plane has more than `EightBitLevels` (256)
 distinct levels (`FewLevels`, ADR 0105): a file saved by a shift, `level x 256`, has none of the
-first form. `Recommendations.Warnings` gives the evidence of whichever clause held.
+first form. `Recommendations.Warnings` gives the sentence and the evidence of whichever clause
+held: "you lose nothing going to 8 bits" is said of the first form alone (ADR 0108).
 
 ### A3 - `CropAnalyzer` - what a target aspect cuts
 
