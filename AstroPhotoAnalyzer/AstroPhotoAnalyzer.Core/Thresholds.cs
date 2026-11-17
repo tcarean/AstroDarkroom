@@ -835,7 +835,8 @@ namespace AstroPhotoAnalyzer
         internal const int CurveGamutGrid = 33;
 
         /// <summary>
-        /// How close to CurveGamutDeltaE a pixel's interpolated displacement must be for the
+        /// How close to the table's limit (CurveGamutDeltaE for the warning, GamutFitTargetDeltaE
+        /// for the paper fit, R-187) a pixel's interpolated displacement must be for the
         /// exact trip through the profile to decide instead of the interpolation (R-144, ADR
         /// 0042). The grid alone rounds the gamut's edge inward and counts too few, by up to 2.4
         /// points on a class (the reference image's dust on baryta: 0.0 % against 2.4 % exact;
@@ -902,11 +903,29 @@ namespace AstroPhotoAnalyzer
         internal const double GamutFitEdgeMargin = 0.6;
 
         /// <summary>
-        /// The knee of the Exacta variant (R-176): 1, a hard fit, only the pixels outside moved,
-        /// onto the edge. Measured 2026-11-06 with the probe of ADR 0083 (a quarter reduction) on
-        /// the plate-solved FITS through the lab's baryta: touches 1.88 % of the pixels, the chroma
-        /// given up 0.70 at the median, 4.2 at the 99 % mark; on the Smida TIFF through the
-        /// WhiteWall baryta 1.37 %, 1.85 and 14.1. V-016 holds the built code's figures.
+        /// The whole colour difference the paper fit aims at (R-187, ADR 0109): every pixel past
+        /// it is moved, and lands within it, a reserve under the warning's CurveGamutDeltaE, which
+        /// stays where it is. Measured 2026-11-17 on the Smida Milky Way TIFF against Lightroom
+        /// Classic's destination gamut warning, with trial files of the Lina variant: a fit to 4
+        /// left 0.31 % of the image marked through the WhiteWall Photo Rag Baryta profile and
+        /// 0.04 % through Hahnemuhle's P900 Photo Rag Baryta profile (the pixels landed just under
+        /// 4: 3.86 at the median under Lightroom's red), a fit to 3.5 at most 0.005 % and nothing
+        /// in the capture, a fit to 3 nothing; through the lab's baryta Lightroom marks nothing at
+        /// any limit. The cost on that TIFF's tonal subsample, pixels changed and chroma given up
+        /// at the median: WhiteWall 5.52 % and 1.43 against 4.33 % and 1.19 at 4, P900 7.85 % and
+        /// 1.97 against 6.79 % and 1.68, the lab's baryta 2.70 % and 0.29 against 1.49 % and 0.16.
+        /// One image, three profiles, one reference program; no limit could be read from the
+        /// profile itself (its own round-trip error does not predict where Lightroom stops).
+        /// </summary>
+        internal const double GamutFitTargetDeltaE = 3.5;
+
+        /// <summary>
+        /// The knee of the Exacta variant (R-176): 1, a hard fit, only the pixels past the fit's
+        /// target moved, onto its edge (R-187). Measured 2026-11-06 with the probe of ADR 0083 (a
+        /// quarter reduction), when the target was the warning's own limit, on the plate-solved
+        /// FITS through the lab's baryta: touches 1.88 % of the pixels, the chroma given up 0.70 at
+        /// the median, 4.2 at the 99 % mark; on the Smida TIFF through the WhiteWall baryta 1.37 %,
+        /// 1.85 and 14.1. V-016 holds the built code's figures.
         /// </summary>
         internal const double GamutFitKneeExact = 1.0;
 
@@ -915,14 +934,16 @@ namespace AstroPhotoAnalyzer
         /// of the edge, so that a gradient of growing saturation keeps its steps instead of
         /// flattening on the edge. Measured 2026-11-06 with the probe of ADR 0083: touches 4.06 %
         /// of the FITS's pixels (2.26 % of the TIFF's), the chroma given up 0.47 (0.74) at the
-        /// median; V-016 reads 3.81 % and 0.43 on the tonal subsample.
+        /// median; V-016 read 3.81 % and 0.43 on the tonal subsample then, and 5.05 % and 0.84
+        /// since the fit aims at its own target (R-187).
         /// </summary>
         internal const double GamutFitKneeSoft = 0.9;
 
         /// <summary>
         /// The knee of the Foarte lina variant (R-176): from this share of the edge. Measured
         /// 2026-11-06 with the probe of ADR 0083: touches 6.11 % of the FITS's pixels (3.50 % of
-        /// the TIFF's), the chroma given up 0.65 (0.53) at the median (V-016: 6.22 % and 0.58);
+        /// the TIFF's), the chroma given up 0.65 (0.53) at the median (V-016: 6.22 % and 0.58
+        /// then, 7.25 % and 0.89 since R-187);
         /// from 0.7 it would touch 8.54 % (5.34 %) for no further gain in the fit, which is why
         /// the gentlest variant stops here.
         /// </summary>
@@ -938,7 +959,8 @@ namespace AstroPhotoAnalyzer
         internal const double GamutFitMinChroma = 0.05;
 
         /// <summary>
-        /// The share of the pixels outside that the recipe's tone band must hold (R-176): the band
+        /// The share of the pixels outside that the recipe's tone band must hold (R-176; since
+        /// R-187 "outside" is, for the recipe, past the fit's target, as for the fit): the band
         /// is "under L* x" with x the smallest whole L* holding this share of them. 90 %: the
         /// outside pixels of the measured images are the dark dust, 97 to 99 % under L* 15, and
         /// a band that holds all of them would reach the few saturated bright ones.
@@ -946,9 +968,10 @@ namespace AstroPhotoAnalyzer
         internal const double GamutFitBandShare = 0.90;
 
         /// <summary>
-        /// The share of the band's pixels outside that the recipe's uniform saturation factor must
-        /// bring in (R-176); the pixels outside above the band are out of the mask's reach and are
-        /// counted in what is left. 99 %: the last pixels are the most saturated, whose factor would
+        /// The share of the band's pixels outside (past the fit's target, R-187) that the recipe's
+        /// uniform saturation factor must bring in (R-176); those above the band are out of the
+        /// mask's reach and are counted in what is left. 99 %: the last pixels are the most
+        /// saturated, whose factor would
         /// desaturate the whole band for nothing (measured 2026-11-06 on the Smida TIFF: a factor
         /// of 0.6 under L* 15 leaves 12 % of them, 0.75 everywhere 33 %).
         /// </summary>

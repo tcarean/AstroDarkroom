@@ -143,16 +143,27 @@ namespace AstroPhotoAnalyzer
             }
             string description = IccPaperBlack.Read(path).Description;
             progress?.Report(Tr.Pick("table", "tabela"));
-            GamutFitTable table = GamutFitTable.Build(gamut.ExactLab);
-            // The Soft proof tab's own judge decides which pixels are outside, the edge and what is
-            // left (R-175): a pixel is judged on its own samples, as that tab judges it, and a
-            // pixel the fit lands on the edge is inside for that tab too.
+            // The fit aims a little inside the warning (R-187, ADR 0109): the same table of round
+            // trips judged at the target, with a cache of its own.
+            GamutTable aim = gamut.WithLimit(Thresholds.GamutFitTargetDeltaE);
+            GamutFitTable table = GamutFitTable.Build(gamut.ExactLab, limit: Thresholds.GamutFitTargetDeltaE);
+            // The Soft proof tab's own judge, asked at the target, decides which pixels are moved
+            // and where they land (R-175): a pixel is judged on its own samples, as that tab
+            // judges it.
             table.Judge = (l, a, b) =>
+            {
+                var (r, g, bl) = ColorMath.SrgbOfLabD50(l, a, b);
+                return GamutAnalyzer.Outside(aim, (float)r, (float)g, (float)bl);
+            };
+            table.JudgeOfPixel = (r, g, bl) => GamutAnalyzer.Outside(aim, r, g, bl);
+            // The same judge at the warning's own limit counts what is outside, before and after:
+            // the shares and the masks are the Soft proof tab's.
+            table.Warning = (l, a, b) =>
             {
                 var (r, g, bl) = ColorMath.SrgbOfLabD50(l, a, b);
                 return GamutAnalyzer.Outside(gamut, (float)r, (float)g, (float)bl);
             };
-            table.JudgeOfPixel = (r, g, bl) => GamutAnalyzer.Outside(gamut, r, g, bl);
+            table.WarningOfPixel = (r, g, bl) => GamutAnalyzer.Outside(gamut, r, g, bl);
             clock.Lap("table");
             if (table.Problem != null)
             {
@@ -183,7 +194,7 @@ namespace AstroPhotoAnalyzer
             progress?.Report(Tr.Pick("recipe", "reteta"));
             GamutFitRecipe recipe = GamutFit.Recipe(sub, table);
             clock.Lap("recipe");
-            clock.Done("outside=" + LogText.Num(variants[0].Evidence.PctOutsideBefore) + " % recipe=L*<" + LogText.Num(recipe.LstarCeiling) + " x" + LogText.Num(recipe.Factor)
+            clock.Done("outside=" + LogText.Num(variants[0].Evidence.PctOutsideBefore) + " % target=" + LogText.Num(Thresholds.GamutFitTargetDeltaE) + " recipe=L*<" + LogText.Num(recipe.LstarCeiling) + " x" + LogText.Num(recipe.Factor)
                 + " left=" + LogText.Num(recipe.PctLeft) + " % description=" + LogText.Str(description));
             return new GamutFitSet
             {

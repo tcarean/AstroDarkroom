@@ -1,7 +1,7 @@
 # 0083. The paper fit reduces the chroma of what the paper cannot hold, tone and hue kept, in three variants, and writes a FITS or a 16-bit TIFF
 
 Date: 2026-11-06
-Status: accepted 2026-11-06
+Status: accepted 2026-11-06; decision 1, the fit moving only the pixels the warning marks and landing them on the warning's own edge, superseded by 0109
 Supersedes: 0032 in part (decision 5, the gamut as a figure only with the saturation corrected at soft-proofing; decision 6, the FITS as the tool's one export)
 
 ## Context
