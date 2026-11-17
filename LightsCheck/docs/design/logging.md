@@ -92,7 +92,7 @@ composes that line from plain values, so a test reaches it without such a raw. A
 builds its message before the logger looks at the level, so one that threw would throw at every
 level, `off` included: the About window's link line once asked a relative link for its absolute
 address, the failure its catch had just taken, and the window would have closed; it now names the
-link as written.
+link as written, from `ExternalLink.Open`, which the main window's Help button and F1 use too.
 
 `LogText` never writes a text the report words in the run's language: a FITS frame's scale is
 `none` in its `loaded` line (`FrameRun` assumes it from BITPIX, in the run's language) and its
@@ -137,9 +137,9 @@ three timed inside `FrameRun.Measure` by the clock it is handed; `open`, `measur
 | `FrameRun` | Info, Debug | through `RunClock`, `frame done detected=<n> fwhm=<v> elongation=<v>`; in `Measure`, every figure of the frame's measurement (`LogText.Measured`) at Debug, for the series' frames too |
 | `SeriesRun` | Info, Debug, Warn | through `RunClock`, `series done frames= measured= errors= good= marginal= bad= unknown= walking= polar=`; `frame <i>/<n> <file> detected= fwhm= elongation= in <ms>` per frame measured, from its worker thread; a frame that could not be measured, with the exception, in one line that also says whether its metadata could be read (`LogFailedFrame`), and the metadata read's exception on a line of its own when it is another error than the measurement's (another type or message); at Debug the reference frame, each frame's registration, the cadence, the dithering, the pattern, the pixel size and its source (`PixelPitchSource`), the read noise, the WCS with the flip the analysis uses, the series analysis and each frame's class with its flags and the mount's move; the read noise that could not be measured (Warn) or had fewer than two biases (Debug); each WCS candidate at the root skipped and why (no RA axis, a zero matrix row, a file that could not be read) and the one read (Debug), a candidate that could not be read for another reason than a broken or missing file, such as a refused access, at Warn with the exception, and so a session folder that can no longer be listed when the plate solve is looked for; a frame whose registration threw, with the exception (Warn, `RegisterGuarded`) |
 | `App` | Info, Warn | the language and the folder from the command line; a `--lang` refused; it hooks the window thread's unhandled exception, which `LogSetup` writes |
-| `MainWindow` | Info | the folder and export dialogs, chosen or cancelled; Stop; About |
+| `MainWindow` | Info | the folder and export dialogs, chosen or cancelled; Stop; About; Help and F1, with the address opened (`Help opened: <address>`) |
 | `MainViewModel` | Info, Warn, Debug, Error | `session <folder>: run started pixel= threads= east= north=`; `done in`, `stopped after`, or `refused after ...; the card shows the message` with the exception; a run a newer one replaced, at Debug; an exception the window does not handle, at Error, from an exception filter that returns false and records it with `LogSetup.Wrote`; every file the export writes, as soon as it is written, an export that failed, with the exception, and an export refused because its folder holds the session's frames, with the sentence shown and no exception (Warn); the cut-outs of a frame, and a decode that failed (Warn), at Debug when another frame was selected meanwhile |
-| `UserSettings`, `DarkTitleBar`, `AboutWindow`, `ScreenArea` | Debug | the settings file written, with its size, and one that could not be read or written; a window manager that cannot be called (no `dwmapi.dll` or entry point), the title bar staying light; a link that could not be opened; the About window once its content is rendered, its size and place, its screen's work area and whether its cards scroll (R-076); a screen's work area that Windows did not give, the primary screen's used; each failure with its exception |
+| `UserSettings`, `DarkTitleBar`, `ExternalLink`, `AboutWindow`, `ScreenArea` | Debug | the settings file written, with its size, and one that could not be read or written; a window manager that cannot be called (no `dwmapi.dll` or entry point), the title bar staying light; a link that could not be opened; the About window once its content is rendered, its size and place, its screen's work area and whether its cards scroll (R-076); a screen's work area that Windows did not give, the primary screen's used; each failure with its exception |
 
 Not logged: pixels, a FITS card below Trace, a progress tick (the frame lines are the progress),
 the cancellation of `CancelPending` racing the window's close.
@@ -184,7 +184,8 @@ title bar's catch, `ScreenArea`'s two lines for a work area Windows does not giv
 wiring of the hooks run in no test: no test builds `App`, crashes a process, lacks `dwmapi.dll`
 or has a screen Windows will not describe. The hooks' bodies, `LogSetup.Fatal` and `LogSetup.Unobserved`, and
 the view-model's filter for an exception it does not handle, `MainViewModel.LogUnhandled`, are
-tested directly. The About window's catch runs in
+tested directly. The link's catch, in `ExternalLink.Open`, runs in
 `R071_ALinkThatCannotBeOpenedIsADebugLineAndTheWindowStays`, which raises `RequestNavigate` on
-the window, on the tests' UI thread, with a relative link: asking for its absolute address throws
-before any browser is started, so the test opens nothing.
+the About window, on the tests' UI thread, with a relative link: asking for its absolute address
+throws before any browser is started, so the test opens nothing. The `Help opened` line is read
+in `R091_HelpAndF1OpenTheManualAtTheSectionOnScreen`, whose window opens no browser either.

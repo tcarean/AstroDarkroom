@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using NLog;
 
@@ -23,7 +24,8 @@ namespace LightsCheck.Wpf;
 
 /// <summary>
 /// The main window: the top bar and the tabs over one <see cref="MainViewModel"/>; its code only
-/// opens the dialogs and hands the chosen folders to the view-model.
+/// opens the dialogs, hands the chosen folders to the view-model, and opens the manual in the
+/// browser (Help, F1).
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -32,6 +34,12 @@ public partial class MainWindow : Window
 
     private readonly MainViewModel _vm;
 
+    /// <summary>
+    /// Whether a key-down of F1 went on, not taken as a repeat, since the window last came to the
+    /// front: only then is a key-down that WPF marks a repeat a repeat of that press.
+    /// </summary>
+    private bool _f1Through;
+
     /// <summary>The window over a new view-model, as the application opens it.</summary>
     public MainWindow() : this(new MainViewModel())
     {
@@ -39,7 +47,8 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// The window over a given view-model (the tests pass their own): binds it, asks for the dark
-    /// title bar once the window has a handle, and stops the run in flight when the window closes.
+    /// title bar once the window has a handle, keeps F1 held down from opening the manual again
+    /// and again, and stops the run in flight when the window closes.
     /// </summary>
     /// <param name="vm">The view-model the window binds.</param>
     internal MainWindow(MainViewModel vm)
@@ -48,7 +57,38 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = _vm;
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+        PreviewKeyDown += IgnoreHeldF1;
+        Activated += (_, _) => _f1Through = false;
         Closed += (_, _) => _vm.CancelPending();
+    }
+
+    /// <summary>
+    /// Takes the repeats of F1 held down (R-091): a held key repeats some thirty times a second,
+    /// and WPF turns each repeat into the Help command, which would open the browser again each
+    /// time. Marked handled here, WPF raises no KeyDown for a repeat, so the command never sees
+    /// it; the first press goes on to the command. WPF forgets a held key only when it sees the
+    /// key released, and the browser a press brings to the front may take that release: the
+    /// first F1 after the window comes back to the front goes through though WPF calls it a
+    /// repeat.
+    /// </summary>
+    /// <param name="sender">The window; not used.</param>
+    /// <param name="e">The key pressed; marked handled when it is a repeat of an F1 that went
+    /// through.</param>
+    private void IgnoreHeldF1(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.F1)
+        {
+            return;
+        }
+
+        if (e.IsRepeat && _f1Through)
+        {
+            e.Handled = true;
+        }
+        else
+        {
+            _f1Through = true;
+        }
     }
 
     /// <summary>Starts on the folder from the command line, or asks for one at once.</summary>
@@ -84,12 +124,33 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// The Help command (the "About" button or F1): shows the About window, modal, fitted to the
-    /// work area of this window's screen (R-076).
+    /// Opens an address in the browser: <see cref="ExternalLink.Open"/>, replaced in the tests so
+    /// that no browser starts.
     /// </summary>
-    /// <param name="sender">The element the command was executed on.</param>
+    internal Action<Uri> OpenAddress { get; set; } = ExternalLink.Open;
+
+    /// <summary>
+    /// The Help command (the "Help" button or F1, see MainWindow.xaml): opens the manual at the
+    /// section of what is on screen, the selected tab's read from its Tag, and logs the address
+    /// (R-091, ADR 0064).
+    /// </summary>
+    /// <param name="sender">The window, where the command is bound.</param>
     /// <param name="e">The command's arguments, not used.</param>
-    private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
+    private void ShowHelp(object sender, ExecutedRoutedEventArgs e)
+    {
+        ManualSection? tab = (Tabs.SelectedItem as TabItem)?.Tag as ManualSection?;
+        string address = Manual.Url(Manual.SectionFor(_vm.HasResult, _vm.IsRunning, tab));
+        Log.Info("Help opened: " + address);
+        OpenAddress(new Uri(address));
+    }
+
+    /// <summary>
+    /// The "About" button: shows the About window, modal, fitted to the work area of this window's
+    /// screen (R-076).
+    /// </summary>
+    /// <param name="sender">The button clicked.</param>
+    /// <param name="e">The click's arguments, not used.</param>
+    private void ShowAbout(object sender, RoutedEventArgs e)
     {
         Log.Info("About opened");
         new AboutWindow(ScreenArea.WorkAreaOf(this)) { Owner = this }.ShowDialog();

@@ -26,6 +26,6 @@ internal static class Loggers
     /// <summary>The application's own flow: its start, its arguments, its language.</summary>
     internal const string App = "App";
 
-    /// <summary>The main window, the view-model, the dialogs, the stored setting, the title bar, the About window and its screen's work area.</summary>
+    /// <summary>The main window, the view-model, the dialogs, the stored setting, the title bar, the About window and its screen's work area, the manual and the links opened.</summary>
     internal const string Window = "Window";
 }
