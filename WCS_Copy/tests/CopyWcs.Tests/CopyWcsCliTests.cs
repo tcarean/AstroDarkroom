@@ -465,4 +465,43 @@ public class CopyWcsCliTests
         Assert.Contains("copywcs <sursa.fit>", result.Stdout);
         Assert.Equal("", result.Stderr);
     }
+
+    /// <summary>A new file that is the source is one line on stderr and exit 1, and the source keeps every byte (R-019; CR-001).</summary>
+    [Fact]
+    public void R019_Run_ANewFileThatIsTheSource_ReturnsOneWithTheLineOnStderr()
+    {
+        using var ws = new TempWorkspace();
+        var sourceBytes = FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), FitsTestData.DeterministicData(400));
+        var sourcePath = ws.WriteFile("source.fit", sourceBytes);
+        var destPath = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        var result = Run(sourcePath, destPath, "-o", sourcePath);
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Equal($"Fisierul nou '{sourcePath}' este chiar sursa: scrierea lui ar suprascrie sursa plate-solved. "
+                     + "Alege alt nume pentru fisierul nou.", result.Stderr.TrimEnd());
+        Assert.Equal(sourceBytes, File.ReadAllBytes(sourcePath));
+    }
+
+    /// <summary>The dry run prints a long string's CONTINUE card on the line under the card it continues, indented like it (R-009, R-010; CR-005).</summary>
+    [Fact]
+    public void R009_Run_DryRun_PrintsAContinueCardUnderTheCardItContinues()
+    {
+        using var ws = new TempWorkspace();
+        var cards = FitsTestData.PlateSolvedCards();
+        int at = cards.FindIndex(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        cards[at] = FitsTestData.Card("OBJECT", "'NGC 6960, the Western Veil Nebula, with 52 Cygni in front &'");
+        cards.Insert(at + 1, FitsTestData.Continue("'of the filaments'"));
+        var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(cards));
+        var destPath = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        var result = Run(sourcePath, destPath, "--dry-run");
+
+        Assert.Equal(0, result.ExitCode);
+        string[] lines = result.Stdout.ReplaceLineEndings("\n").Split('\n');
+        int obj = Array.FindIndex(lines, l => l.StartsWith("  OBJECT", StringComparison.Ordinal));
+        Assert.Equal("  OBJECT  = 'NGC 6960, the Western Veil Nebula, with 52 Cygni in front &'", lines[obj]);
+        Assert.Equal("  CONTINUE  'of the filaments'", lines[obj + 1]);
+        Assert.Contains("Chei care ar fi copiate (15):", lines);
+    }
 }

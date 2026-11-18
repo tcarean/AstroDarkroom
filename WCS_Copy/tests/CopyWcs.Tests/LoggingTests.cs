@@ -340,7 +340,8 @@ public class LoggingTests
         Assert.Equal(PairKeys, cardLines.Select(m => m[5..m.IndexOf(':', StringComparison.Ordinal)]));
         Assert.Equal(14, cardLines.Count(m => m.EndsWith(" | dest: none", StringComparison.Ordinal)));
         Assert.Contains("appended HISTORY WCS copied from source.fit", messages);
-        Assert.Contains("write " + dst + " in place through " + dst + ".tmp, the data from byte 2880 of " + dst, messages);
+        Assert.Contains(messages, m => Regex.IsMatch(m, "^write " + Regex.Escape(dst) + " through " + Regex.Escape(dst)
+                                                        + @"\.copywcs-[0-9a-f]{8}\.tmp, the data from byte 2880 of " + Regex.Escape(dst) + "$"));
         Assert.Contains("wrote " + dst + " (3.2 KiB) bytes=3280 cards=21 blocks=1 data=400", messages);
         Assert.Matches("^copy done copied 15 keys into " + Regex.Escape(dst) + @" \(new 14, replaced 1, identical 0, dropped 0\) in \d+ ms"
                        + @" \(source \d+ ms, dest \d+ ms, select \d+ ms, write \d+ ms\)$", DoneLine(capture));
@@ -469,6 +470,9 @@ public class LoggingTests
     [InlineData("missingdest", @"cannot read the destination in \d+ ms \(source \d+ ms, dest \d+ ms\)")]
     [InlineData("dims", @"dimensions differ \(source 100x80, destination 200x80\) in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
     [InlineData("nokey", @"no relevant key in the source in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
+    [InlineData("samefile", @"the source and the destination are the same file in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
+    [InlineData("newfileissource", @"the new file is the source in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
+    [InlineData("newfileisdest", @"the new file is the destination in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
     public void R042_EveryRefusalSaysWhyInTheDoneLine(string scenario, string reason)
     {
         using var ws = new TempWorkspace();
@@ -478,6 +482,9 @@ public class LoggingTests
             "missingdest" => [src, ws.FilePath("missing.fit")],
             "dims" => [src, ws.WriteFile("wide.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(naxis1: 200)))],
             "nokey" => [ws.WriteFile("unsolved.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards())), dst, "--no-optical"],
+            "samefile" => [src, src, "--dry-run"],
+            "newfileissource" => [src, dst, "-o", src],
+            "newfileisdest" => [src, dst, "-o", dst],
             _ => throw new ArgumentException(scenario),
         };
         using var capture = LogCapture.Start();
@@ -486,6 +493,85 @@ public class LoggingTests
 
         Assert.Matches("^copy done refused: " + reason + "$", DoneLine(capture));
         Assert.Contains(capture.Events, e => e.Level == LogLevel.Warn && e.Logger == "WcsCopy");
+    }
+
+    /// <summary>A refusal of R-019 is one Warn line naming both paths as given, without an exception: nothing failed, the paths name one file.</summary>
+    [Fact]
+    public void R042_APathThatNamesTheSourceAsTheNewFileIsAWarnLineWithBothPaths()
+    {
+        using var ws = new TempWorkspace();
+        var (src, dst) = Pair(ws);
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(1, Cli(src, dst, "-o", src).Code);
+
+        LogCapture.Captured warn = Assert.Single(capture.Events, e => e.Level == LogLevel.Warn);
+        Assert.Equal("the new file " + src + " is the source " + src + "; nothing is written", warn.Message);
+        Assert.Null(warn.Exception);
+        Assert.DoesNotContain(capture.Events, e => e.Message.StartsWith("write ", StringComparison.Ordinal));
+    }
+
+    /// <summary>A long string's cards make one card line, joined by " + ", so the log shows the whole value the copy takes (R-042, R-010).</summary>
+    [Fact]
+    public void R042_ALongStringIsOneCardLineWithItsContinueCards()
+    {
+        using var ws = new TempWorkspace();
+        List<string> sourceCards = FitsTestData.PlateSolvedCards();
+        int at = sourceCards.FindIndex(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        sourceCards[at] = FitsTestData.Card("OBJECT", "'NGC 6960 &'");
+        sourceCards.Insert(at + 1, FitsTestData.Continue("'Veil'"));
+        var (src, dst) = Pair(ws, source: sourceCards);
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli(src, dst, "--dry-run").Code);
+
+        Assert.Contains("card OBJECT: OBJECT  = 'NGC 6960 &' + CONTINUE  'Veil' | dest: OBJECT  = 'M42'", capture.Messages);
+        Assert.DoesNotContain(capture.Messages, m => m.StartsWith("card CONTINUE", StringComparison.Ordinal));
+    }
+
+    /// <summary>The destination's CHECKSUM, which a copy drops, is named with its card at Debug, in a dry run too (R-042, R-018).</summary>
+    [Fact]
+    public void R042_ADroppedChecksumIsLoggedWithItsCard_InADryRunToo()
+    {
+        using var ws = new TempWorkspace();
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards.Add(FitsTestData.Card("CHECKSUM", "'6jF39j936jE36j93'", "HDU checksum"));
+        var (src, dst) = Pair(ws, dest: destCards);
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli(src, dst, "--dry-run").Code);
+
+        LogCapture.Captured line = Assert.Single(capture.Events, e => e.Message.StartsWith("drop CHECKSUM:", StringComparison.Ordinal));
+        Assert.Equal(LogLevel.Debug, line.Level);
+        Assert.Equal("drop CHECKSUM: CHECKSUM= '6jF39j936jE36j93' / HDU checksum", line.Message);
+    }
+
+    /// <summary>
+    /// A write that fails at the rename (a read-only destination, in place) removes its temporary
+    /// file, the one its write line named, and says so at Debug (R-042, R-014; CR-016).
+    /// </summary>
+    [Fact]
+    public void R042_AFailedWriteRemovesItsTemporaryFileAndSaysSo()
+    {
+        using var ws = new TempWorkspace();
+        var (src, dst) = Pair(ws);
+        File.SetAttributes(dst, FileAttributes.ReadOnly);
+        try
+        {
+            using var capture = LogCapture.Start();
+
+            Assert.Equal(1, Cli(src, dst).Code);
+
+            string write = Assert.Single(capture.Messages, m => m.StartsWith("write ", StringComparison.Ordinal));
+            string temp = Regex.Match(write, " through (.+?), the data from byte ").Groups[1].Value;
+            Assert.Matches("^" + Regex.Escape(dst) + @"\.copywcs-[0-9a-f]{8}\.tmp$", temp);
+            Assert.Contains("removed " + temp + ", the temporary file of the failed write", capture.Messages);
+            Assert.False(File.Exists(temp));
+        }
+        finally
+        {
+            File.SetAttributes(dst, FileAttributes.Normal);
+        }
     }
 
     [Fact]
@@ -827,6 +913,7 @@ public class LoggingTests
             "nokey" => [unsolved, processed, "--no-optical"],
             "unreadable" => [notFits, processed],
             "writeerror" => [solved, processed, "-o", ws.FilePath(Path.Combine("missing", "out.fit"))],
+            "samefile" => [solved, solved],
             _ => throw new ArgumentException(scenario),
         };
     }
@@ -846,6 +933,7 @@ public class LoggingTests
     [InlineData("nokey")]
     [InlineData("unreadable")]
     [InlineData("writeerror")]
+    [InlineData("samefile")]
     public void R046_TheLogIsTheSameInBothLanguages(string scenario)
     {
         IReadOnlyList<string> Run(string lang)
@@ -854,7 +942,9 @@ public class LoggingTests
             string[] args = Scenario(ws, scenario);
             using var capture = LogCapture.Start();
             CopyWcsCli.Run([.. args, "--lang", lang], new StringWriter(), new StringWriter());
-            return capture.Messages.Select(m => Regex.Replace(m.Replace(ws.Dir, "<ws>", StringComparison.Ordinal), @"\d+ ms\b", "# ms")).ToArray();
+            // The times and the random part of a write's temporary file (R-012) differ from run to run.
+            return capture.Messages.Select(m => Regex.Replace(Regex.Replace(m.Replace(ws.Dir, "<ws>", StringComparison.Ordinal), @"\d+ ms\b", "# ms"),
+                                                              @"\.copywcs-[0-9a-f]{8}\.tmp", ".copywcs-#.tmp")).ToArray();
         }
 
         IReadOnlyList<string> en = Run("en");

@@ -52,6 +52,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the usage gaining its `--lang` line.
 - The `HISTORY` card written into the destination reads `WCS copied from <file>` in both
   languages, where it read `WCS copiat din <file>` (ADR 0004).
+- `-o` onto an existing file replaces it as the in-place write does, with a new file renamed
+  over it: the file it replaces does not keep its creation date, its attributes or its own
+  permissions, a symbolic link is replaced by the file itself, and a folder that lets you
+  change files but not create them refuses the copy (ADR 0020).
 
 ### Fixed
 
@@ -66,6 +70,31 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   image. Siril 1.4.4 reads the `CD` matrix first, so such a leftover would have hidden the copied
   solution. The optical keys are never dropped; the preview and the copy name the keys dropped
   (ADR 0011).
+- The same file given twice is refused before anything is written, a dry run too: a new file
+  (`-o`, or the window's `Write a new file`) that is the solved source, which the copy used to
+  overwrite while saying `Copied`; a new file that is the destination, under any spelling, which
+  ended in a "used by another process" error or rewrote the destination in place; and the source
+  given as the destination, which was copied into itself. The files themselves are compared, not
+  how their paths are written (R-019, ADR 0018; CR-001, CR-013 and CR-014 of the review of
+  2026-11-16).
+- Closing the window during a Preview or a Copy waits for it to end, the window greyed
+  meanwhile, then the window closes by itself; the close used to end the program inside the
+  write, leaving a new file cut short and a log without the copy's last lines (R-050, ADR 0019;
+  CR-002 of the review of 2026-11-16).
+- A write that fails midway, a full disk or a drive that drops, no longer leaves a file cut
+  short: a new file is written under a temporary name beside it and renamed at the end, as an
+  in-place write was, so a file already at its name keeps every byte; and a failed write, in
+  place too, removes its temporary file, which it used to leave as big as the image. The
+  temporary file has a name of its own, so a `<name>.tmp` of yours is never touched (R-012,
+  R-014, ADR 0020; CR-003 and CR-016 of the review of 2026-11-16, and part of CR-018).
+- A copy removes the destination's `CHECKSUM` card, which the changed header no longer matched,
+  so a program that checks it saw the file as damaged; `DATASUM`, the data's own sum, stays, the
+  data being untouched (R-018, ADR 0021; CR-004 of the review of 2026-11-16).
+- A text too long for one card, carried on in `CONTINUE` cards, is copied whole: the copy took
+  its first card alone, a value cut short with a stray `&`, and left the `CONTINUE` cards of the
+  destination's own long value under the new one; the dry run and the window's Preview list the
+  `CONTINUE` cards too, and still count keys (R-009, R-010, ADR 0022; CR-005 of the review of
+  2026-11-16).
 
 ### Internal
 

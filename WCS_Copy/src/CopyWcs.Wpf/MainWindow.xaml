@@ -67,7 +67,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
           <!-- Help: the theme's drawn icon, then the word; F1 reaches the same handler through the
                window's PreviewKeyDown. The automation name is the word, since the content is not
-               a plain string. Live during a run, as About is: it touches nothing of what runs. -->
+               a plain string. Live during a run, as About is: it touches nothing of what runs;
+               off with the whole window once a close is held (R-050). -->
           <Button x:Name="HelpButton" Click="HelpClick"
                   AutomationProperties.Name="{l:T En='Help', Ro='Ajutor'}"
                   ToolTip="{l:T En='The manual, at the section about what is on screen (F1)', Ro='Manualul, la sectiunea despre ce e pe ecran (F1)'}">

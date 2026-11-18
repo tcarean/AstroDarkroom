@@ -97,6 +97,30 @@ public class ValidationTests
         Assert.All(c.KeysDropped, k => Assert.False(written.Contains(k), k));
     }
 
+    /// <summary>
+    /// The SyQon CLI's real header ends in CHECKSUM and DATASUM, valid before the copy; a forced
+    /// copy into it writes the target without CHECKSUM and with DATASUM as it was (R-018; CR-004
+    /// of the review of 2026-11-16, shown on this very file: the stale checksum was kept).
+    /// </summary>
+    [Fact]
+    public void R018_ACopyIntoTheRealSyQonHeader_DropsItsChecksumAndKeepsItsDatasum()
+    {
+        using var ws = new TempWorkspace();
+        var output = ws.FilePath("out.fit");
+        var destination = TestData.Fixture("veil-2026-10-06-syqon-cli-1.1.8-denoised.fit");
+        var before = FitsHeader.ReadPrimary(destination);
+        Assert.Equal("CHECKSUM= '6jF39j936jE36j93'   / HDU checksum updated 2026-10-27T10:58:49", before.GetCard("CHECKSUM")!.TrimEnd());
+
+        var outcome = WcsCopy.Run(new WcsCopyRequest(TestData.Fixture("veil-2026-10-06-siril-1.4.4-solve.fit"), destination, output,
+            IncludeOptical: true, Force: true, DryRun: false));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        var written = FitsHeader.ReadPrimary(output);
+        Assert.False(written.Contains("CHECKSUM"));
+        Assert.Equal(before.GetCard("DATASUM"), written.GetCard("DATASUM"));
+        Assert.Equal("2647693551", written.GetString("DATASUM"));
+    }
+
     /// <summary>The two real headers' plate solves, read as Siril reads them, are mirror images when recorded so, and the copy is then refused without force (R-017).</summary>
     [Theory]
     [MemberData(nameof(DropCaseIds))]

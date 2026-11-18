@@ -24,16 +24,27 @@ It is free software under the GNU General Public License v3 or later; see `LICEN
   `OBJCTDEC`, `RA`, `DEC`, `OBJECT`), the site, `DATE-OBS`, `INSTRUME`, `TELESCOP`.
 
 Only the keys present in the source are copied. A Siril 1.4.4 solve of a stack, for example, is
-72 cards: 21 WCS keys, 40 SIP coefficients and 11 optical keys.
+72 cards: 21 WCS keys, 40 SIP coefficients and 11 optical keys. A text too long for one card,
+an `OBJECT` or a `TELESCOP` of more than 68 characters, goes on in `CONTINUE` cards under it:
+those are copied with it, and a long value of the destination's that the copy replaces takes
+its own `CONTINUE` cards away with it, so the value reads whole and nothing of the old one stays.
 
 **The destination's old plate solve is dropped.** When the destination already holds a plate
 solve, one another program made for example, its plate-solve keys that the source does not have
 are removed before the copy: a `CD` matrix beside Siril's `PC` and `CDELT`, a `CROTA`, a SIP
 coefficient of a higher degree. Siril 1.4.4 reads a `CD` matrix in place of `PC` and `CDELT`
 when a file holds both, so a `CD` left behind would hide the copied solution from the very
-program the copy is checked in. The optical keys are never removed, and nothing is
+program the copy is checked in. The optical keys are never removed, and no plate-solve key is
 removed when the source has no `CTYPE1`. `--dry-run` and the window's Preview name the keys
 that would be dropped under the cards, and a copy names them before its closing lines.
+
+**The destination's checksum is removed.** Some programs, the SyQon CLI among them, end the
+header with a `CHECKSUM` card, a sum another program can use to check that the file is intact.
+A copy changes the header, so that sum would no longer match and the file would look damaged
+to a program that checks it; the copy removes the card, as the FITS convention asks of a
+program that changes a file. `DATASUM`, the sum of the image data alone, stays: the data is not
+touched. Siril 1.4.4 checks neither, so nothing changes there; the screen does not mention it,
+the log does.
 
 The two images must have the same pixel grid: the tool compares `NAXIS1` and `NAXIS2` and
 refuses to copy when they differ, because the solution would point at the wrong pixels.
@@ -70,9 +81,15 @@ copywcs <solved.fit> <destination.fit> [options]
 
 Every run begins with the version (`copywcs 1.0.0`) and the copyright line, so a pasted output
 says which version produced it. Exit codes: 0 on success or a dry run, 1 when the copy was
-refused (a file that cannot be read, different dimensions or a mirrored plate solve without
-`--force`, no relevant key,
+refused (a file that cannot be read, the same file given twice, different dimensions or a
+mirrored plate solve without `--force`, no relevant key,
 a write error, a `--lang` value that is not `en` or `ro`), 2 on a usage error.
+
+**The same file twice is refused.** The source and the destination must be two files, and a new
+file (`-o`) must be neither of them: `-o` naming the solved source would overwrite it, and `-o`
+naming the destination is the in-place write, which is what leaving `-o` out does. The check
+looks at the files themselves, so `Stack.fit` and `stack.fit` are one file, as Windows sees
+them. Nothing is written, and a dry run is refused too.
 
 Example: preview, then copy into a new file.
 
@@ -81,9 +98,18 @@ copywcs result_final.fit result_final_stretched.fit --dry-run
 copywcs result_final.fit result_final_stretched.fit -o result_final_stretched_wcs.fit
 ```
 
-Without `-o` the destination is rewritten in place: the new header is written to a temporary
-file beside it and moved over the original at the end, so a failure leaves the original as
-it was.
+Without `-o` the destination is rewritten in place; with `-o` the new file is written and the
+destination is not touched. Either way the file is first written whole under a temporary name
+beside it (`result_final_stretched_wcs.fit.copywcs-3f9a0c1e.tmp`) and only then put in place of
+the file it replaces. A write that fails, for a missing folder, a full disk or a drive that
+drops, leaves the folder as it was: the destination and any file of the new file's name keep
+every byte, and the temporary file is removed, unless its drive is gone by then (the log then
+names it). The error names your file, not the temporary one, or no file when the system names
+none (a read-only file: `Access to the path is denied.`); in a folder that lets you change files
+but not create them, it says access to your file is denied, because the temporary file cannot be
+made beside it. Any name Windows accepts can be written. A file put in place this way is a
+new file: the one it replaces does not keep its creation date, its attributes (Hidden, for one)
+or its own permissions, and a symbolic link is replaced by the file itself.
 
 ## The window
 
@@ -107,6 +133,13 @@ itself before a Preview or a Copy, the result after one, and the section on prob
 result is a refusal or a warning. **About** opens the version, the copyright, the GPLv3
 notice and the third-party components. The window is Windows-only; the console builds
 anywhere.
+
+Closing the window while a Preview or a Copy runs does not cut it short: the window greys and
+takes no more clicks until the copy is done, a second or so for a stack of a few hundred MB, then
+closes by itself. The file is written whole, or not at all when the write fails, and the log
+says which. Logging off or shutting Windows down ends the copy with the program: the file it
+would have replaced keeps every byte, or is replaced whole when the copy ends first, and a
+temporary file may stay beside it.
 
 ## The two languages
 
@@ -139,7 +172,8 @@ time each stage took; the warnings, the
 refusals with their reasons and every error with its technical details; in the window the
 language, the files picked and the About window; at the end the exit code and the time taken.
 The log's own words are English whatever `--lang` says; an error's message appears as you saw
-it, so in Romanian under `--lang ro`. It holds the paths of your files and the header cards
+it, so in Romanian under `--lang ro`, save that a failed write's names the temporary file the
+copy was writing, where you saw your file's name. It holds the paths of your files and the header cards
 copied, which include the site's latitude and longitude when the source has them: read it before
 you send it. It holds no pixel.
 

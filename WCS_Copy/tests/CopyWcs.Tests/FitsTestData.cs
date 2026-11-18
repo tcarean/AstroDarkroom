@@ -46,6 +46,27 @@ internal static class FitsTestData
     /// <summary>The card without padding to 80, to test the padding and the cut explicitly.</summary>
     public static string UnpaddedCard(string keyword, string value) => $"{keyword,-8}= {value}";
 
+    /// <summary>A CONTINUE card of a long string: the keyword, two spaces, then the value text, padded to 80.</summary>
+    public static string Continue(string value) => Pad("CONTINUE  " + value);
+
+    /// <summary>The cards of a file's primary header in their order, END excluded, cut as the standard lays them out: 80 bytes each, one byte one character.</summary>
+    public static List<string> HeaderCards(byte[] file)
+    {
+        var cards = new List<string>();
+        for (var i = 0; i + CardSize <= file.Length; i += CardSize)
+        {
+            var card = Encoding.Latin1.GetString(file, i, CardSize);
+            if (card.StartsWith("END     ", StringComparison.Ordinal))
+            {
+                break;
+            }
+
+            cards.Add(card);
+        }
+
+        return cards;
+    }
+
     /// <summary>Cards padded to 80 and concatenated, WITHOUT an END card and without padding to 2880.</summary>
     public static byte[] RawBytes(IEnumerable<string> cards)
     {

@@ -41,15 +41,22 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
   value from the card itself, not through `ValueText`, so a '/' inside the quotes stays text; a
   doubled quote is one, the trailing spaces go, and a value with no closing quote on the card is
   null.
-- `SetCard(key, raw)` replaces the first card of that keyword in place, keeping its position,
-  or appends when there is none; the raw text is padded to 80 or cut at 80 by `Pad`. This is
-  the verbatim copy of R-010: the caller passes the source's card, and nothing is reparsed.
-  A second card of the same keyword, which a header may hold though the standard says it
-  should not, is left as it is.
-- `CardsOf(key)` lists every card of a keyword in the header's order; `RemoveCards(key)` takes
-  them all out, the other cards keeping their order, and returns them (R-016). The run logs a
-  dropped key's cards through `CardsOf` before anything changes, and drops them through
-  `RemoveCards` before the first `SetCard`.
+- A value is a card and the `CONTINUE` cards right under it (R-010, ADR 0022). The FITS
+  standard writes a string longer than one card holds as a first card whose string ends in `&`
+  and `CONTINUE` cards that carry it on (`CONTINUE  'tail'`: the keyword, two spaces, the
+  string). `ValueCards(key)` returns the keyword's first card with every `CONTINUE` card that
+  follows it without a gap (`ContinuationsUnder`), whatever the strings end in, as astropy
+  reads them; `GetCard(key)` stays the first card alone, which the value readers parse.
+- `SetValueCards(key, cards)` replaces that run of cards where it stands with the given ones,
+  each padded to 80 or cut at 80 by `Pad`, or appends them when the keyword is nowhere;
+  `SetCard(key, raw)` is `SetValueCards(key, [raw])`. This is the verbatim copy of R-010: the
+  run passes the source's value cards, nothing is reparsed, and a destination's long string
+  replaced by a short one loses its old `CONTINUE` cards with it. A second card of the same
+  keyword, which a header may hold though the standard says it should not, is left as it is.
+- `CardsOf(key)` lists every card of a keyword, each with its `CONTINUE` cards, in the header's
+  order; `RemoveCards(key)` takes them all out, the other cards keeping their order, and returns
+  them (R-016, R-018). The run logs a dropped key's cards through `CardsOf` before anything
+  changes, and drops them through `RemoveCards` before the first `SetValueCards`.
 - `AddHistory(text)` appends `HISTORY ` plus at most 72 characters of `AsciiText.Of(text)`
   (R-011): the text is made ASCII first, then cut, so the cut counts the characters written.
 
@@ -80,17 +87,42 @@ runtime's Unicode data moves, that test says so, and the table is generated agai
 ## Writing back
 
 `WriteWithDataFrom(dataSource, target)` writes the cards, `END`, spaces to the next 2880-byte
-boundary, then copies `dataSource` from `_dataOffset` to its end. The header may have grown
-past its original number of blocks (a copy adds up to 47 fixed keys, the SIP coefficients and a HISTORY card; 72 on V-001), so the
-file cannot be patched in place: when `target` is `dataSource` itself, the output goes to
-`target + ".tmp"` and `File.Move(temp, target, overwrite: true)` replaces the original at the
-end (R-012, R-013). On a failure before the move, the original is untouched and the `.tmp`
-is left behind; on success it is gone. The data area is copied as bytes: `BITPIX`, `NAXIS3`,
-extensions and padding travel unchanged.
+boundary, then copies `dataSource` from `_dataOffset` to its end, always into a temporary file
+beside the target, which `File.Move(temp, full, overwrite: true)` renames over the target at
+the end (R-012, R-013): an existing target, the destination of an in-place write included, is
+replaced only once the whole file is written. Both paths are made whole (`Path.GetFullPath`)
+once, as the write begins, and the temporary file, the data read and the rename all use those,
+so a working folder that moves during the write (a file dialog of the window, CR-006) changes
+neither file; the review of the branch found the target looked up again at the rename, which
+`WorkingFolderTests` shows by moving the working folder at the write's first log line. The header may have grown past its original
+number of blocks (a copy adds up to 47 fixed keys, the SIP coefficients and a HISTORY card; 72
+on V-001), so an in-place write could not patch the destination anyway. `TemporaryBeside` names
+the temporary file after the target, `<name>.copywcs-<8 random hex digits>.tmp`, in the target's
+folder so the rename stays on one volume, `<name>` cut, never inside a surrogate pair, when it is
+too long to take the 21-character suffix within `NameLimit`, the 255 characters NTFS, FAT and
+exFAT allow, so every name the file system accepts can be written (the second review of the
+branch found every name over 234 characters refused); the write opens it with `FileMode.CreateNew`, so a
+file that already holds that name is never overwritten (the fixed `<name>.tmp` of before was,
+CR-018). The data source is opened first, so one that cannot be read creates no temporary file.
+A `finally` deletes the temporary file when the write created it and the rename did not happen,
+whatever failed (a missing folder, a full disk, a data source that stops being readable midway,
+a target that cannot be replaced): the target is as it was, or absent, and nothing is left
+beside it (R-014, ADR 0020). `DeleteTemporary` logs the removal, and a removal that fails is a
+Warn line, so it never hides the write's own exception. Only a killed process, or a removal
+that fails too (the drive gone), leaves a temporary file, named so that it tells which program
+wrote it. An exception goes on as the system raised it, the temporary file's path and the
+target's put in its `Data` (`TemporaryKey`, `TargetKey`), and `WriteErrorMessage` gives its
+message with the target where it named the temporary file, which `WcsCopy.Run` puts after
+`Write error:`, so the user reads the name they gave (R-014); a rename the system refuses names
+no path. `R014_Run_AWriteThatFailsMidway_...`
+make a write fail after its header and first 80 KB by holding a byte-range lock in the middle
+of the destination's data, which Windows enforces on every other handle; a read-only
+destination makes the in-place rename fail. The data area is copied as bytes: `BITPIX`,
+`NAXIS3`, extensions and padding travel unchanged.
 
 The cards are decoded and encoded with `Encoding.Latin1` (`CardEncoding`): each byte 0x00 to
 0xFF is the character of that code and is written back as the same byte, so a byte above 0x7F,
-which a FITS header may not hold but a file may, goes through the read, the `SetCard` and the
+which a FITS header may not hold but a file may, goes through the read, the `SetValueCards` and the
 write untouched, in a copied card and in a card of the destination the copy never selected
 alike (R-010, ADR 0010; until 2026-10-31 the cards went through `Encoding.ASCII`, which made
 such a byte `?`). A header that is all ASCII is unchanged by the switch: the Release console's
@@ -132,7 +164,7 @@ shows what this yields on a real Siril header: 61 WCS and SIP keys, 11 optical o
 that is in `WcsKeys` or matches `SipCoefficient` and that the source does not have, each once
 (R-016). It is the same two lists that decide what a plate solve is, read from the other side, so
 no card of those keys is left in the target but the source's, save a second card of a keyword the
-source has, which `SetCard` does not reach; a plate-solve card outside both lists (`RADECSYS`,
+source has, which `SetValueCards` does not reach; a plate-solve card outside both lists (`RADECSYS`,
 `PVi_m`, `CTYPE1A`) is neither copied nor dropped. `OpticalKeys` never take part, so a
 destination's own `OBJECT` or `SITELAT` stays when the source lacks it. The selector itself does
 not look at `CTYPE1`: the run asks for it only when the source has one (ADR 0011). V-002 shows it

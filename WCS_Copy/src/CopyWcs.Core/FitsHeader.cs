@@ -34,6 +34,18 @@ internal sealed class FitsHeader
     private const int CardSize = 80;
     private const int BlockSize = 2880;
 
+    /// <summary>The keyword of the cards that carry on a long string value from the card above them (R-010).</summary>
+    private const string ContinueKeyword = "CONTINUE";
+
+    /// <summary>The key under which a failed write keeps its temporary file's full path in the exception's <see cref="Exception.Data"/> (R-014).</summary>
+    private const string TemporaryKey = "CopyWcs.TemporaryFile";
+
+    /// <summary>The key under which a failed write keeps its target's full path in the exception's <see cref="Exception.Data"/> (R-014).</summary>
+    private const string TargetKey = "CopyWcs.Target";
+
+    /// <summary>The longest file name NTFS, FAT and exFAT accept, in UTF-16 units: the limit a write's temporary name keeps within (R-012).</summary>
+    private const int NameLimit = 255;
+
     /// <summary>
     /// The encoding of the cards: each byte 0x00 to 0xFF is the character of that code, and
     /// each such character is written back as the same byte, so no byte of a header is changed
@@ -222,13 +234,40 @@ internal sealed class FitsHeader
         return -1;
     }
 
-    /// <summary>The raw card of a keyword, exactly as read or set.</summary>
+    /// <summary>The raw card of a keyword, exactly as read or set: its first card alone, without the CONTINUE cards of a long string (<see cref="ValueCards"/>).</summary>
     /// <param name="key">The keyword, case-sensitive.</param>
     /// <returns>The 80-character card, or null when no card has the keyword.</returns>
     public string? GetCard(string key)
     {
         var i = IndexOf(key);
         return i < 0 ? null : _cards[i];
+    }
+
+    /// <summary>
+    /// The cards that hold a keyword's value: its first card and the CONTINUE cards right under
+    /// it, which carry on a long string (R-010), raw and in their order; a value of one card is
+    /// that card alone.
+    /// </summary>
+    /// <param name="key">The keyword, case-sensitive.</param>
+    /// <returns>The cards, the keyword's own first; empty when no card has the keyword.</returns>
+    public IReadOnlyList<string> ValueCards(string key)
+    {
+        var i = IndexOf(key);
+        return i < 0 ? [] : _cards.GetRange(i, 1 + ContinuationsUnder(i));
+    }
+
+    /// <summary>How many CONTINUE cards stand right under a card, up to the first card of another keyword.</summary>
+    /// <param name="i">The card's index in the header.</param>
+    /// <returns>The number of CONTINUE cards that follow it without a gap; 0 for a value of one card.</returns>
+    private int ContinuationsUnder(int i)
+    {
+        var n = 0;
+        while (i + 1 + n < _cards.Count && KeywordOf(_cards[i + 1 + n]) == ContinueKeyword)
+        {
+            n++;
+        }
+
+        return n;
     }
 
     /// <summary>The integer value of a card: the text between the '=' and the '/' comment, if any, trimmed of spaces only.</summary>
@@ -315,45 +354,89 @@ internal sealed class FitsHeader
         return (slash >= 0 ? value[..slash] : value).Trim(' ');
     }
 
-    /// <summary>Replaces the card of a keyword in place, or appends it when the header has none.</summary>
+    /// <summary>Replaces the value of a keyword with one card, where its first card stands, the CONTINUE cards under that card going with it, or appends the card when the header has none.</summary>
     /// <param name="key">The keyword the card is filed under, case-sensitive.</param>
     /// <param name="rawCard">The card's text, each character one byte of the file (a card read from a file, normally); padded to 80 characters, or cut to 80 when longer. A character above 0xFF has no byte and is written as <c>?</c>.</param>
-    public void SetCard(string key, string rawCard)
+    public void SetCard(string key, string rawCard) => SetValueCards(key, [rawCard]);
+
+    /// <summary>
+    /// Replaces the cards of a keyword's value (its first card and the CONTINUE cards right under
+    /// it, <see cref="ValueCards"/>) with the given ones, where they stand, or appends them when
+    /// the header has the keyword nowhere: how a copy sets a source's value, verbatim, a long
+    /// string whole (R-010). A second card of the keyword further down is left as it is.
+    /// </summary>
+    /// <param name="key">The keyword the cards are filed under, case-sensitive.</param>
+    /// <param name="rawCards">The cards, the keyword's own first, then its CONTINUE cards, each one byte per character; each padded to 80 or cut at 80; at least one.</param>
+    /// <exception cref="ArgumentOutOfRangeException">No card is given.</exception>
+    public void SetValueCards(string key, IReadOnlyList<string> rawCards)
     {
-        var card = Pad(rawCard);
+        ArgumentNullException.ThrowIfNull(rawCards);
+        ArgumentOutOfRangeException.ThrowIfZero(rawCards.Count, nameof(rawCards));
+
+        var cards = rawCards.Select(Pad).ToList();
         var i = IndexOf(key);
         if (i >= 0)
         {
-            _cards[i] = card;
+            _cards.RemoveRange(i, 1 + ContinuationsUnder(i));
+            _cards.InsertRange(i, cards);
         }
         else
         {
-            _cards.Add(card);
+            _cards.AddRange(cards);
         }
     }
 
     /// <summary>
-    /// Removes every card of a keyword, wherever it sits, the other cards keeping their order:
-    /// how a copy drops the destination's old plate-solve cards (R-016).
+    /// Removes every card of a keyword, wherever it sits, each with the CONTINUE cards right under
+    /// it, the other cards keeping their order: how a copy drops the destination's old
+    /// plate-solve cards (R-016) and its checksum (R-018).
     /// </summary>
     /// <param name="key">The keyword, case-sensitive, as <see cref="Contains"/> takes it.</param>
-    /// <returns>The cards removed, raw, in the order the header held them; empty when no card had the keyword.</returns>
+    /// <returns>The cards removed, raw, in the order the header held them, the CONTINUE ones included; empty when no card had the keyword.</returns>
     public IReadOnlyList<string> RemoveCards(string key)
     {
-        var removed = CardsOf(key);
-        if (removed.Count > 0)
+        var removed = new List<string>();
+        var i = 0;
+        while (i < _cards.Count)
         {
-            _cards.RemoveAll(c => string.Equals(KeywordOf(c), key, StringComparison.Ordinal));
+            if (string.Equals(KeywordOf(_cards[i]), key, StringComparison.Ordinal))
+            {
+                var n = 1 + ContinuationsUnder(i);
+                removed.AddRange(_cards.GetRange(i, n));
+                _cards.RemoveRange(i, n);
+            }
+            else
+            {
+                i++;
+            }
         }
 
         return removed;
     }
 
-    /// <summary>Every card of a keyword, raw, in the order the header holds them; a header may hold a keyword more than once.</summary>
+    /// <summary>Every card of a keyword, each with the CONTINUE cards right under it, raw, in the order the header holds them; a header may hold a keyword more than once.</summary>
     /// <param name="key">The keyword, case-sensitive.</param>
-    /// <returns>The cards; empty when no card has the keyword.</returns>
-    public IReadOnlyList<string> CardsOf(string key) =>
-        _cards.Where(c => string.Equals(KeywordOf(c), key, StringComparison.Ordinal)).ToList();
+    /// <returns>The cards, the CONTINUE ones included; empty when no card has the keyword.</returns>
+    public IReadOnlyList<string> CardsOf(string key)
+    {
+        var cards = new List<string>();
+        var i = 0;
+        while (i < _cards.Count)
+        {
+            if (string.Equals(KeywordOf(_cards[i]), key, StringComparison.Ordinal))
+            {
+                var n = 1 + ContinuationsUnder(i);
+                cards.AddRange(_cards.GetRange(i, n));
+                i += n;
+            }
+            else
+            {
+                i++;
+            }
+        }
+
+        return cards;
+    }
 
     /// <summary>
     /// Appends a HISTORY card, ASCII whatever the text holds (<see cref="AsciiText.Of"/>), so the
@@ -379,64 +462,159 @@ internal sealed class FitsHeader
         card.Length >= CardSize ? card[..CardSize] : card.PadRight(CardSize);
 
     /// <summary>
-    /// Writes this header, END and the padding to the next 2880-byte boundary, followed by
-    /// the data area copied from <paramref name="dataSource"/>. When the target is the data
-    /// source itself, the file is written beside it first and moved over it at the end: the
-    /// header may have grown past its original blocks, so it cannot be patched in place. Each
-    /// card's characters are written as the bytes they were read from (<see cref="CardEncoding"/>).
-    /// The diagnostic log gets the write before it starts (the temporary file of an in-place write;
-    /// at Trace every card to be written, so a failed write still shows the header it meant to
-    /// write) and the file written after it (R-042, R-044); a write that throws is its caller's
-    /// to log.
+    /// Writes this header, END and the padding to the next 2880-byte boundary, followed by the
+    /// data area copied from <paramref name="dataSource"/>, into a temporary file beside the
+    /// target, renamed over the target at the end (R-012): a write that fails at any point leaves
+    /// the target as it was, or absent, and its temporary file is deleted (R-014). The temporary
+    /// file has a name of its own (<see cref="TemporaryBeside"/>) and is created only when no
+    /// file holds that name, so no file of the user's is overwritten; an in-place write goes the
+    /// same way, since the header may have grown past its original blocks and cannot be patched
+    /// in place. Both paths are made whole once, as the write begins, so a working folder that
+    /// moves while the data streams (a file dialog of the window) changes neither the data read
+    /// nor the file replaced (R-012). An exception goes on as the system raised it, holding the
+    /// temporary file's path and the target's, so that <see cref="WriteErrorMessage"/> names the
+    /// target where its message names the temporary file, whose name the user never typed (R-014).
+    /// Each card's characters are written as the bytes they were read from
+    /// (<see cref="CardEncoding"/>). The diagnostic log gets the write before it starts, with its
+    /// temporary file (at Trace every card to be written, so a failed write still shows the
+    /// header it meant to write), the file written after it, and the removal of a failed write's
+    /// temporary file (R-042, R-044); a write that throws is its caller's to log.
     /// </summary>
-    /// <param name="dataSource">The FITS file whose data area, from its own header's end, is copied; normally the file this header was read from.</param>
-    /// <param name="target">The file to write; the same path as <paramref name="dataSource"/> for an in-place rewrite.</param>
-    /// <exception cref="IOException">The target cannot be created or written.</exception>
-    /// <exception cref="UnauthorizedAccessException">The target, or the original of an in-place rewrite, cannot be replaced by this user.</exception>
+    /// <param name="dataSource">The FITS file whose data area, from its own header's end, is copied; normally the file this header was read from. A relative path is taken from the working folder as the write begins.</param>
+    /// <param name="target">The file to write: a new file, an existing one, replaced only at the end, or the same path as <paramref name="dataSource"/> for an in-place rewrite. A relative path is taken from the working folder as the write begins.</param>
+    /// <exception cref="IOException">The target or its temporary file cannot be created, written or renamed (a missing folder, a full disk, a data source that cannot be read); its message is shown through <see cref="WriteErrorMessage"/>.</exception>
+    /// <exception cref="UnauthorizedAccessException">The target cannot be replaced by this user (read-only, a folder, no access); its message is shown the same way.</exception>
     /// <exception cref="ArgumentException">A path is empty or blank.</exception>
     public void WriteWithDataFrom(string dataSource, string target)
     {
-        var inPlace = Path.GetFullPath(dataSource) == Path.GetFullPath(target);
-        var temp = inPlace ? target + ".tmp" : target;
+        string data = Path.GetFullPath(dataSource);
+        string full = Path.GetFullPath(target);
+        string temp = TemporaryBeside(full);
 
-        Log.Debug("write " + target + (inPlace ? " in place through " + temp : "")
-                  + ", the data from byte " + LogText.Int(_dataOffset) + " of " + dataSource);
+        Log.Debug("write " + target + " through " + temp + ", the data from byte " + LogText.Int(_dataOffset)
+                  + " of " + dataSource);
         TraceCards(target);
 
         long headerBytes;
         long total;
-        using (var input = File.OpenRead(dataSource))
-        using (var output = File.Create(temp))
+        bool created = false;
+        bool moved = false;
+        try
         {
-            foreach (var card in _cards)
+            // The input first: a data source that cannot be read leaves no temporary file.
+            using (var input = File.OpenRead(data))
+            using (var output = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
-                output.Write(CardEncoding.GetBytes(Pad(card)));
+                created = true;
+                foreach (var card in _cards)
+                {
+                    output.Write(CardEncoding.GetBytes(Pad(card)));
+                }
+
+                output.Write(CardEncoding.GetBytes("END".PadRight(CardSize)));
+
+                // Spaces up to the next 2880-byte boundary.
+                var remainder = (int)(output.Position % BlockSize);
+                if (remainder != 0)
+                {
+                    var fill = new byte[BlockSize - remainder];
+                    Array.Fill(fill, (byte)' ');
+                    output.Write(fill);
+                }
+
+                headerBytes = output.Position;
+                input.Seek(_dataOffset, SeekOrigin.Begin);
+                input.CopyTo(output);
+                total = output.Position;
             }
 
-            output.Write(CardEncoding.GetBytes("END".PadRight(CardSize)));
-
-            // Spaces up to the next 2880-byte boundary.
-            var remainder = (int)(output.Position % BlockSize);
-            if (remainder != 0)
-            {
-                var fill = new byte[BlockSize - remainder];
-                Array.Fill(fill, (byte)' ');
-                output.Write(fill);
-            }
-
-            headerBytes = output.Position;
-            input.Seek(_dataOffset, SeekOrigin.Begin);
-            input.CopyTo(output);
-            total = output.Position;
+            File.Move(temp, full, overwrite: true);
+            moved = true;
         }
-
-        if (inPlace)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            File.Move(temp, target, overwrite: true);
+            // The user typed the target, not its temporary file: the message they are shown names
+            // the target (WriteErrorMessage, R-014); the exception itself goes on as the system
+            // raised it, and the log writes it so.
+            ex.Data[TemporaryKey] = temp;
+            ex.Data[TargetKey] = full;
+            throw;
+        }
+        finally
+        {
+            if (created && !moved)
+            {
+                DeleteTemporary(temp);
+            }
         }
 
         Log.Info("wrote " + target + " (" + LogText.Size(total) + ") bytes=" + LogText.Int(total)
                  + " cards=" + LogText.Int(_cards.Count) + " blocks=" + LogText.Int(headerBytes / BlockSize)
                  + " data=" + LogText.Int(total - headerBytes));
+    }
+
+    /// <summary>
+    /// The path of a write's temporary file: in the target's folder, so the rename at the end
+    /// stays on one volume, named as the target followed by <c>.copywcs-</c>, 8 random
+    /// hexadecimal digits and <c>.tmp</c> (<c>stack.fit.copywcs-3f9a0c1e.tmp</c>), a name that
+    /// tells which program left it should a killed process leave one. A target name too long to
+    /// take the 21-character suffix within <see cref="NameLimit"/> is shortened in the temporary
+    /// name, so every name the file system accepts can be written (R-012).
+    /// </summary>
+    /// <param name="full">The full path of the file to write.</param>
+    /// <returns>The temporary file's full path; the write creates it only when no file holds it.</returns>
+    private static string TemporaryBeside(string full)
+    {
+        string folder = Path.GetDirectoryName(full) ?? full;
+        string name = Path.GetFileName(full);
+        string suffix = ".copywcs-" + Guid.NewGuid().ToString("N")[..8] + ".tmp";
+        if (name.Length + suffix.Length > NameLimit)
+        {
+            int keep = NameLimit - suffix.Length;
+
+            // A character outside the Basic Multilingual Plane is two UTF-16 units: keep both or neither.
+            if (char.IsHighSurrogate(name[keep - 1]))
+            {
+                keep--;
+            }
+
+            name = name[..keep];
+        }
+
+        return Path.Combine(folder, name + suffix);
+    }
+
+    /// <summary>
+    /// Deletes the temporary file of a write that failed (R-014), and says so in the log; a
+    /// delete that fails is a Warn line, never a second exception over the write's own.
+    /// </summary>
+    /// <param name="temp">The temporary file, which this write created.</param>
+    private static void DeleteTemporary(string temp)
+    {
+        try
+        {
+            File.Delete(temp);
+            Log.Debug("removed " + temp + ", the temporary file of the failed write");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Warn(ex, "the temporary file " + temp + " of the failed write could not be removed");
+        }
+    }
+
+    /// <summary>
+    /// The message of an exception, as the user is shown it after a failed write: where the
+    /// system's message names the write's temporary file, it names the target instead
+    /// (<c>Could not find a part of the path 'E:\out\final_wcs.fit'.</c>), the file the user asked
+    /// for (R-014). A rename the system refused names no path at all, and stays so.
+    /// </summary>
+    /// <param name="ex">The exception <see cref="WriteWithDataFrom"/> threw, or any other; not null.</param>
+    /// <returns>The message, the temporary file's path replaced by the target's; any other exception's message as it is.</returns>
+    internal static string WriteErrorMessage(Exception ex)
+    {
+        ArgumentNullException.ThrowIfNull(ex);
+        return ex.Data[TemporaryKey] is string temp && ex.Data[TargetKey] is string full
+            ? ex.Message.Replace(temp, full, StringComparison.Ordinal)
+            : ex.Message;
     }
 }

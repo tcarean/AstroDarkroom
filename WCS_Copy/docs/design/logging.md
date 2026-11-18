@@ -124,11 +124,14 @@ the view-model, the About window).
 ## A copy's lines
 
 `WcsCopy.Run` holds a `RunClock` in a `using`: `copy start <request>` before the source is read,
-then a `Lap` after each stage, `source`, `dest`, `select` (the size check, the `CTYPE1` check, the
-mirror check, the selection and the keys to drop) and `write` (the old cards dropped, the cards
-set, the `HISTORY` card appended, the file written), and `Done` with the outcome and the times of
-the stages reached. A refusal laps the stage it happens in and says why (`refused: cannot read
-the source`, `cannot read the destination`, `dimensions differ (source 100x80, destination
+then a `Lap` after each stage, `source`, `dest`, `select` (the check of the three paths, the size
+check, the `CTYPE1` check, the mirror check, the selection and the keys to drop) and `write` (the
+old cards dropped, the cards set, the `HISTORY` card appended, the file written), and `Done` with
+the outcome and the times of the stages reached. A refusal laps the stage it happens in and says
+why (`refused: cannot read the source`, `cannot read the destination`, `the source and the
+destination are the same file`, `the new file is the source`, `the new file is the destination`
+(R-019, after a Warn line naming both paths: `the new file <output> is the source <source>;
+nothing is written`), `dimensions differ (source 100x80, destination
 200x80)`, `mirrored plate solve (source det -2.9641E-6, destination det +2.9641E-6)`, `no
 relevant key in the source`, `the write failed`), after a Warn line (an Error one for the write)
 holding the exception when there is one. The mirror's Warn line, `mirrored plate solve: source
@@ -140,11 +143,13 @@ destination det -9.28E-8`, `orientation not compared: source det -9.3025E-8, des
 none`; a mirrored copy that slips through the check still leaves its figures. A run that
 throws leaves the clock without `Done`, and `Dispose` writes `copy ended without an outcome after
 N ms (<stages>)`. `LogSelection` runs before any card is dropped or set: the counts per list
-(`WcsKeys`, `OpticalKeys`, the rest being SIP coefficients), then per key the source's card and
-what the destination held (`none`, `same`, or its card), counted into the done line's `(new,
+(`WcsKeys`, `OpticalKeys`, the rest being SIP coefficients), then per key the source's cards and
+what the destination held (`none`, `same`, or its cards), a long string's cards joined by ` + `
+(`card OBJECT: OBJECT  = 'NGC 6960 &' + CONTINUE  'Veil' | dest: none`, R-010), counted into the done line's `(new,
 replaced, identical, dropped)`, then one `drop <key>: <card>` line per card of each key the copy
 drops (R-016), every card of a keyword the destination holds twice, while `dropped` counts the
-keys; in a dry run too. The four counts are always written, `dropped 0` included: the version
+keys, and one `drop CHECKSUM: <card>` for the destination's checksum (R-018), which `dropped`
+does not count; in a dry run too. The four counts are always written, `dropped 0` included: the version
 does not change with a fix, so that count is what tells a log of a build that drops from one of
 a build that does not.
 
@@ -155,11 +160,11 @@ a build that does not.
 | `LogSetup` | Info, Fatal, Error | the first line, the last line (`exit <code> after <s> s`); the unhandled exceptions; a task nobody awaited |
 | `FitsHeader.ReadPrimary` | Info, Trace | `read <path> (<size>) bytes cards blocks dataOffset data` and the keys of `LogText.Keys` (`size unknown`, `bytes=none`, `data=none` when `FitsHeader.LengthOf` has no length: a stream that cannot seek, a named pipe, is not asked, and whatever a seekable file's query throws is taken as none); at Trace `<path> card <n>: <card>`, every card from 1 |
 | `FitsHeader.AddHistory` | Debug | `appended <card>` |
-| `FitsHeader.WriteWithDataFrom` | Debug, Trace, Info | `write <target>[ in place through <target>.tmp], the data from byte <offset> of <source>` before the file is created, every card to be written at Trace, `wrote <target> (<size>) bytes cards blocks data` after the move |
-| `WcsCopy.Run` | Info, Warn, Error, Debug | the start and done lines; `cannot read the source` / `the destination <path>` with the exception; the two warnings and the two refusals without one; `the write of <target> failed` with the exception; at Debug `selected <n> keys: <w> WCS, <s> SIP, <o> optical` and `card <KEY>: <card> \| dest: <none, same or card>` |
+| `FitsHeader.WriteWithDataFrom` | Debug, Trace, Info, Warn | `write <target> through <target>.copywcs-<8 hex digits>.tmp, the data from byte <offset> of <source>` (the target's name shortened in the temporary one when it is too long for both) before the temporary file is created, every card to be written at Trace, `wrote <target> (<size>) bytes cards blocks data` after the rename; after a failed write `removed <temporary file>, the temporary file of the failed write` at Debug, or at Warn, with the exception, `the temporary file <path> of the failed write could not be removed` |
+| `WcsCopy.Run` | Info, Warn, Error, Debug | the start and done lines; `cannot read the source` / `the destination <path>` with the exception; the three warnings and the refusals without one (the three paths of R-019, the size, the mirror, no key); `the write of <target> failed` with the exception; at Debug `selected <n> keys: <w> WCS, <s> SIP, <o> optical`, `card <KEY>: <card> \| dest: <none, same or card>` (a long string's cards joined by ` + `) and `drop <KEY>: <card>` per card dropped, the destination's `CHECKSUM` included |
 | `CopyWcsCli` | Warn, Info | `refused (exit 1): <the --lang message>`, `usage error (exit 2): <the line on stderr>`, `help shown (exit 0)` |
 | `App` | Info, Warn | `language=<en or ro> source from the command line: <path or none> dest: <path or none>` (`StartLine`); a `--lang` refused, before its message box |
-| `MainWindow` | Info, Debug | the file picked in each of the three dialogs, or the dialog closed without one; `About opened`; `Help opened: <address>`, for the Help button and F1 alike (R-039) |
+| `MainWindow` | Info, Debug, Warn | the file picked in each of the three dialogs, or the dialog closed without one; `About opened`; `Help opened: <address>`, for the Help button and F1 alike (R-039); `close asked while a run is in flight: the window closes when it ends`, once however many closes, and `the run ended: the window closes` after the run's done line (R-050); at Warn `the window closed while a run is in flight: Windows ended the session, the run is cut short`, when Windows closes the window during a run (a logoff, a shutdown) |
 | `MainViewModel.Facts` | Debug | no facts under a box: the header could not be read (with the exception), or has no `NAXIS1` or `NAXIS2` |
 | `AboutWindow.OpenLink` | Debug | a link that could not be opened, with the exception |
 | `ExternalLink.Open` | Debug | `the link <address> is not a web address, so it was not opened`; `the link <address> could not be opened`, with the exception |
@@ -183,7 +188,13 @@ and the `[pid:thread]` field separates them. A run is found from `copy start` to
 whose stage times say where the time went, or to `ended without an outcome` when it threw; a wrong
 WCS from the `card` lines and the two `read` lines (`ROWORDER`, `NAXIS`, the solve's `CTYPE`); an
 error by `WARN` or `ERROR` and the stack under it. At Trace the `card <n>` lines rebuild both
-headers and the one written.
+headers and the one written. A window closed during a run writes the held line, the run's done
+line, then `the run ended: the window closes`; at a logoff or a shutdown the held line is followed
+by the Warn line `the window closed while a run is in flight: ...` and the exit line, most often
+with no done line: the run ends with the process, its target as it was, or replaced whole when
+the copy reached its end before the process did, its done line then coming after the Warn line;
+a temporary file may stay beside the target (R-050, R-014). A failed write's `ERROR` line holds the system's exception, which may name the
+temporary file; the screen's `Write error:` line names the target instead.
 
 ## In the tests
 
@@ -193,7 +204,11 @@ line on its path, and a line whose message throws while it is composed fails the
 reaches it (an error inside NLog's own rendering is swallowed, as in a user's run). A test that
 reads the lines opens a capture with `LogCapture.Start`, an `AsyncLocal` scope like `Ui.Use`,
 which sees only its own call tree (a `Task.Run` inside it included), so the tests running beside
-it add nothing; one capture at a time per call tree. The window's test project links the same
+it add nothing; one capture at a time per call tree. `At(prefix, action)` runs an action once,
+at the first message of the capture that starts with a prefix, on the thread that logs it and
+before the logging code goes on, so a test can act at a moment inside a run:
+`WorkingFolderTests` moves the working folder as the write begins, in a collection that runs
+alone, since the working folder is the process's. The window's test project links the same
 file. The file tests never touch that configuration: they build the applications' configuration
 with `LogSetup.Build` into a private `LogFactory`, which stands for one process. `LogFiles`, linked
 into both test projects too, reads the files and runs the two writers of R-045, so each assembly

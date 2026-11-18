@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Runtime.Versioning;
+
 namespace CopyWcs.Tests;
 
 /// <summary>
@@ -182,6 +184,34 @@ public class WcsCopyTests
         Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
         Assert.StartsWith("Eroare la scriere", outcome.Error, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
+    }
+
+    /// <summary>
+    /// A write that fails names the file asked for, never its temporary file, whose name the user
+    /// never typed: a new file in a folder that does not exist reads as it did before every write
+    /// went through a temporary file, and the log keeps the system's own message under it (R-014;
+    /// the review of 2026-11-18: the line named <c>out.fit.copywcs-3f9a0c1e.tmp</c>).
+    /// </summary>
+    [Fact]
+    public void R014_Run_AWriteThatFails_NamesTheNewFile_NotItsTemporaryFile()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+        var output = Path.Combine(ws.FilePath("no-such-folder"), "out.fit");
+        using var log = LogCapture.Start();
+
+        WcsCopyOutcome outcome;
+        using (Ui.Use(UiLanguage.English))
+        {
+            outcome = WcsCopy.Run(Request(source, dest, output));
+        }
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.StartsWith("Write error: ", outcome.Error, StringComparison.Ordinal);
+        Assert.Contains($"'{output}'", outcome.Error, StringComparison.Ordinal);
+        Assert.DoesNotContain(".copywcs-", outcome.Error, StringComparison.Ordinal);
+        Assert.Contains("out.fit.copywcs-", log.Text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -540,5 +570,429 @@ public class WcsCopyTests
         Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
         Assert.StartsWith("Eroare la scriere", outcome.Error, StringComparison.Ordinal);
         Assert.Equal(destBytes, File.ReadAllBytes(dest));
+    }
+
+    /// <summary>The names of the files in a folder, sorted, so a test sees every file a run left there.</summary>
+    private static string[] FilesIn(string folder)
+        => Directory.GetFiles(folder).Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal).ToArray();
+
+    /// <summary>
+    /// A new file that is the source, as given or in another letter case, is refused before
+    /// anything is written, a dry run too, and the solved source keeps every byte (R-019; CR-001
+    /// of the review of 2026-11-16: the copy overwrote the source and said it had copied).
+    /// </summary>
+    [Fact]
+    public void R019_Run_ANewFileThatIsTheSource_IsRefused_ADryRunToo_AndTheSourceIsLeftAsItWas()
+    {
+        using var ws = new TempWorkspace();
+        var sourceBytes = FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), FitsTestData.DeterministicData(400));
+        var source = ws.WriteFile("Source.fit", sourceBytes);
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+
+        foreach (var output in new[] { source, ws.FilePath("source.fit") })
+        {
+            foreach (var dryRun in new[] { false, true })
+            {
+                var outcome = WcsCopy.Run(Request(source, dest, output, dryRun: dryRun));
+
+                Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+                Assert.Equal($"Fisierul nou '{output}' este chiar sursa: scrierea lui ar suprascrie sursa plate-solved. "
+                             + "Alege alt nume pentru fisierul nou.", outcome.Error);
+                Assert.Empty(outcome.Warnings);
+                Assert.Empty(outcome.Cards);
+                Assert.Null(outcome.Dropped);
+                Assert.Equal(sourceBytes, File.ReadAllBytes(source));
+                Assert.Equal(destBytes, File.ReadAllBytes(dest));
+                Assert.Equal(["Source.fit", "dest.fit"], FilesIn(ws.Dir));
+            }
+        }
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal($"The new file '{source}' is the source itself: writing it would overwrite the plate-solved source. "
+                         + "Choose another name for the new file.", WcsCopy.Run(Request(source, dest, source)).Error);
+        }
+    }
+
+    /// <summary>
+    /// The same file as the source and the destination, as given or in another letter case, is
+    /// refused before anything is written, a dry run too (R-019; CR-013: the file was copied into
+    /// itself and gained a HISTORY card saying it was copied from itself).
+    /// </summary>
+    [Fact]
+    public void R019_Run_TheSameFileAsSourceAndDestination_IsRefusedAndWritesNothing()
+    {
+        using var ws = new TempWorkspace();
+        var bytes = FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), FitsTestData.DeterministicData(400));
+        var stack = ws.WriteFile("stack.fit", bytes);
+
+        foreach (var dest in new[] { stack, ws.FilePath("STACK.FIT") })
+        {
+            foreach (var dryRun in new[] { false, true })
+            {
+                var outcome = WcsCopy.Run(Request(stack, dest, dryRun: dryRun));
+
+                Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+                Assert.Equal("Sursa si destinatia sunt acelasi fisier. Nimic de copiat.", outcome.Error);
+                Assert.Empty(outcome.Warnings);
+                Assert.Empty(outcome.Cards);
+                Assert.Equal(bytes, File.ReadAllBytes(stack));
+                Assert.Equal(["stack.fit"], FilesIn(ws.Dir));
+            }
+        }
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("The source and the destination are the same file. Nothing to copy.", WcsCopy.Run(Request(stack, stack)).Error);
+        }
+    }
+
+    /// <summary>
+    /// A new file that is the destination is refused under any spelling, the destination's own
+    /// included, and the destination keeps every byte, a dry run too (R-019; CR-014: another letter
+    /// case ended in a "used by another process" write error, and the same spelling rewrote the
+    /// destination in place, though R-012 says a new file leaves it as it was).
+    /// </summary>
+    [Fact]
+    public void R019_Run_ANewFileThatIsTheDestination_IsRefusedUnderAnySpelling()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
+        var dest = ws.WriteFile("Stack.fit", destBytes);
+
+        string[] spellings = [dest, ws.FilePath("stack.fit"), @"\\?\" + dest, Path.Combine(ws.Dir, "sub", "..", "Stack.fit")];
+        foreach (var output in spellings)
+        {
+            foreach (var dryRun in new[] { false, true })
+            {
+                var outcome = WcsCopy.Run(Request(source, dest, output, dryRun: dryRun));
+
+                Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+                Assert.Equal($"Fisierul nou '{output}' este chiar destinatia. Scrie in destinatie sau alege alt nume pentru fisierul nou.",
+                             outcome.Error);
+                Assert.Equal(destBytes, File.ReadAllBytes(dest));
+                Assert.Equal(["Stack.fit", "source.fit"], FilesIn(ws.Dir));
+            }
+        }
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal($"The new file '{dest}' is the destination itself. Write into the destination instead, or choose another name "
+                         + "for the new file.", WcsCopy.Run(Request(source, dest, dest)).Error);
+        }
+    }
+
+    /// <summary>A new file that does not exist yet is none of the two files, in another folder's spelling too: the copy writes it (R-019).</summary>
+    [Fact]
+    public void R019_Run_ANewFileThatDoesNotExistYet_IsWritten()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        var outcome = WcsCopy.Run(Request(source, dest, Path.Combine(ws.Dir, "sub", "..", "source_wcs.fit")));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.True(File.Exists(ws.FilePath("source_wcs.fit")));
+    }
+
+    /// <summary>
+    /// The paths are told apart before the pixel grids are compared (R-019): a new file that is the
+    /// source is refused with its own line though the destination's size differs too, so the one
+    /// refusal --force cannot let through comes first.
+    /// </summary>
+    [Fact]
+    public void R019_Run_ANewFileThatIsTheSource_IsRefusedBeforeTheDimensionsAreCompared()
+    {
+        using var ws = new TempWorkspace();
+        var sourceBytes = FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(100, 80));
+        var source = ws.WriteFile("source.fit", sourceBytes);
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(200, 80)));
+
+        var outcome = WcsCopy.Run(Request(source, dest, source));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.StartsWith($"Fisierul nou '{source}' este chiar sursa", outcome.Error, StringComparison.Ordinal);
+        Assert.Equal(sourceBytes, File.ReadAllBytes(source));
+    }
+
+    /// <summary>The data area of the destinations the midway failures use: larger than the 80 KB a copy streams at a time.</summary>
+    private const int LargeData = 200_000;
+
+    /// <summary>
+    /// Makes a destination's data unreadable from its middle on, as a disk that fills or drops
+    /// does to a write: a byte-range lock, which Windows enforces on every other handle, so the
+    /// copy's read fails after the header is written and its first 80 KB of data copied. The
+    /// header blocks stay readable, so both headers are read as usual.
+    /// </summary>
+    /// <param name="path">The destination; its data starts at byte 2880.</param>
+    /// <returns>The handle holding the lock; disposing it releases the lock.</returns>
+    [SupportedOSPlatform("windows")]
+    private static FileStream LockTheMiddleOfTheData(string path)
+    {
+        var hold = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        hold.Lock(2880 + 150_000, 1000);
+        return hold;
+    }
+
+    /// <summary>
+    /// A new file whose write fails midway is not left behind, cut short (R-014; CR-003 of the
+    /// review of 2026-11-16: the header and the first part of the data stayed as the new file).
+    /// </summary>
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void R014_Run_AWriteThatFailsMidway_LeavesNoNewFile()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(LargeData)));
+        var output = ws.FilePath("out.fit");
+        using var hold = LockTheMiddleOfTheData(dest);
+
+        var outcome = WcsCopy.Run(Request(source, dest, output));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.StartsWith("Eroare la scriere", outcome.Error, StringComparison.Ordinal);
+        Assert.Equal(["dest.fit", "source.fit"], FilesIn(ws.Dir));
+    }
+
+    /// <summary>
+    /// A file already at the new file's name keeps every byte when the write over it fails midway
+    /// (R-014; CR-003: the file was emptied when the write began, so a good earlier copy was lost).
+    /// </summary>
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void R014_Run_AWriteThatFailsMidway_LeavesAnExistingNewFileAsItWas()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(LargeData)));
+        var earlierBytes = FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), FitsTestData.DeterministicData(LargeData));
+        var output = ws.WriteFile("out.fit", earlierBytes);
+        using var hold = LockTheMiddleOfTheData(dest);
+
+        var outcome = WcsCopy.Run(Request(source, dest, output));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.Equal(earlierBytes, File.ReadAllBytes(output));
+        Assert.Equal(["dest.fit", "out.fit", "source.fit"], FilesIn(ws.Dir));
+    }
+
+    /// <summary>
+    /// An in-place write that cannot replace the destination (read-only) leaves the destination as
+    /// it was and no temporary file beside it (R-014; CR-016: a `.tmp` as big as the image stayed).
+    /// </summary>
+    [Fact]
+    public void R014_Run_AFailedInPlaceWrite_LeavesNoTemporaryFile()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+        File.SetAttributes(dest, FileAttributes.ReadOnly);
+        try
+        {
+            var outcome = WcsCopy.Run(Request(source, dest));
+
+            Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+            Assert.StartsWith("Eroare la scriere", outcome.Error, StringComparison.Ordinal);
+            Assert.Equal(destBytes, File.ReadAllBytes(dest));
+            Assert.Equal(["dest.fit", "source.fit"], FilesIn(ws.Dir));
+        }
+        finally
+        {
+            File.SetAttributes(dest, FileAttributes.Normal);
+        }
+    }
+
+    /// <summary>
+    /// A file of the user's named as the temporary file used to be, `dest.fit.tmp`, is left alone
+    /// by an in-place copy, which writes through a name of its own (R-012; part of CR-018: that
+    /// file was overwritten and moved over the destination).
+    /// </summary>
+    [Fact]
+    public void R012_Run_AFileNamedLikeTheOldTemporaryFile_IsLeftAlone()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400)));
+        byte[] owners = [1, 2, 3, 4];
+        var tmp = ws.WriteFile("dest.fit.tmp", owners);
+
+        var outcome = WcsCopy.Run(Request(source, dest));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.Equal(owners, File.ReadAllBytes(tmp));
+        Assert.True(FitsHeader.ReadPrimary(dest).Contains("CTYPE1"));
+        Assert.Equal(["dest.fit", "dest.fit.tmp", "source.fit"], FilesIn(ws.Dir));
+    }
+
+    /// <summary>
+    /// A name as long as the file system allows, 255 characters on NTFS, is written, as a new file
+    /// and in place: the temporary file's name is shortened to fit beside it (R-012; the second
+    /// review of 2026-11-18: its 21-character suffix made every name over 234 characters a write
+    /// error, though <c>-o</c> wrote such names before every write went through a temporary file).
+    /// </summary>
+    [Fact]
+    public void R012_Run_ANameAsLongAsTheFileSystemAllows_IsWritten_AsANewFileAndInPlace()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var data = FitsTestData.DeterministicData(400);
+        string destName = new string('n', 251) + ".fit";
+        string outputName = new string('o', 251) + ".fit";
+        var dest = ws.WriteFile(destName, FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), data));
+        var output = ws.FilePath(outputName);
+
+        var copy = WcsCopy.Run(Request(source, dest, output));
+        var inPlace = WcsCopy.Run(Request(source, dest));
+
+        Assert.Equal(WcsCopyKind.Copied, copy.Kind);
+        Assert.Equal(WcsCopyKind.Copied, inPlace.Kind);
+        Assert.True(FitsHeader.ReadPrimary(output).Contains("CTYPE1"));
+        Assert.True(FitsHeader.ReadPrimary(dest).Contains("CTYPE1"));
+        Assert.Equal(data, File.ReadAllBytes(dest)[^data.Length..]);
+        Assert.Equal([destName, outputName, "source.fit"], FilesIn(ws.Dir));
+    }
+
+    /// <summary>A header with the two checksum cards a program such as the SyQon CLI writes last, as in V-002's destination.</summary>
+    /// <param name="cards">The header's cards; the two are added at its end.</param>
+    /// <returns>The same list.</returns>
+    private static List<string> WithChecksum(List<string> cards)
+    {
+        cards.Add(FitsTestData.Card("CHECKSUM", "'6jF39j936jE36j93'", "HDU checksum updated 2026-10-27T10:58:49"));
+        cards.Add(FitsTestData.Card("DATASUM", "'2647693551'", "data unit checksum updated 2026-10-27T10:58:49"));
+        return cards;
+    }
+
+    /// <summary>
+    /// A destination holding CHECKSUM is written without it, into a new file and in place, from a
+    /// solved source and from one without CTYPE1, and keeps its DATASUM card byte for byte (R-018;
+    /// CR-004 of the review of 2026-11-16: the checksum was written back, no longer matching).
+    /// </summary>
+    [Fact]
+    public void R018_Run_ADestinationWithAChecksum_IsWrittenWithoutIt_AndKeepsItsDatasum()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var unsolvedCards = FitsTestData.PlateSolvedCards();
+        unsolvedCards.RemoveAll(c => c.StartsWith("CTYPE1", StringComparison.Ordinal));
+        var unsolved = ws.WriteFile("unsolved.fit", FitsTestData.MinimalFitsFile(unsolvedCards));
+        var destCards = WithChecksum(FitsTestData.ProcessedCards());
+        var datasum = destCards[^1];
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards, FitsTestData.DeterministicData(400)));
+        var other = ws.WriteFile("other.fit", FitsTestData.MinimalFitsFile(destCards, FitsTestData.DeterministicData(400)));
+        var output = ws.FilePath("out.fit");
+
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest, output)).Kind);
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest)).Kind);
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(unsolved, other)).Kind);
+
+        foreach (var path in new[] { output, dest, other })
+        {
+            var written = FitsHeader.ReadPrimary(path);
+            Assert.False(written.Contains("CHECKSUM"), path);
+            Assert.Equal(datasum, written.GetCard("DATASUM"));
+        }
+    }
+
+    /// <summary>A dry run, and a refused run, leave the destination's CHECKSUM where it is, as every other byte (R-018).</summary>
+    [Fact]
+    public void R018_Run_ADryRunOrARefusal_LeavesTheChecksum()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(WithChecksum(FitsTestData.ProcessedCards(200, 80)));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+
+        Assert.Equal(WcsCopyKind.Previewed, WcsCopy.Run(Request(source, dest, force: true, dryRun: true)).Kind);
+        Assert.Equal(WcsCopyKind.Refused, WcsCopy.Run(Request(source, dest)).Kind);
+        Assert.Equal(destBytes, File.ReadAllBytes(dest));
+    }
+
+    /// <summary>The first card of R-010's long OBJECT, its string ending in the ampersand that says it goes on.</summary>
+    private static readonly string LongObject = FitsTestData.Card("OBJECT", "'NGC 6960, the Western Veil Nebula, with 52 Cygni in front &'");
+
+    /// <summary>The CONTINUE card that ends R-010's long OBJECT.</summary>
+    private static readonly string LongObjectEnd = FitsTestData.Continue("'of the filaments'");
+
+    /// <summary>The default plate-solved header with its OBJECT as a long string of two cards.</summary>
+    private static List<string> SourceWithALongObject()
+    {
+        var cards = FitsTestData.PlateSolvedCards();
+        int at = cards.FindIndex(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        cards[at] = LongObject;
+        cards.Insert(at + 1, LongObjectEnd);
+        return cards;
+    }
+
+    /// <summary>
+    /// A long string value of the source reaches the destination whole, its CONTINUE card right
+    /// under its card, and the closing line still counts keys (R-010; CR-005 of the review of
+    /// 2026-11-16: the first card came alone, a value cut with a stray ampersand).
+    /// </summary>
+    [Fact]
+    public void R010_Run_ALongStringValue_TravelsWithItsContinueCards()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(SourceWithALongObject()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400)));
+
+        var outcome = WcsCopy.Run(Request(source, dest));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.Equal($"Copiate 15 chei in {dest}.", outcome.Notes[0]);
+        List<string> written = FitsTestData.HeaderCards(File.ReadAllBytes(dest));
+        int obj = written.FindIndex(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        Assert.Equal(LongObject, written[obj]);
+        Assert.Equal(LongObjectEnd, written[obj + 1]);
+        Assert.Single(written, c => c.StartsWith("CONTINUE", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A card of the destination that the copy replaces takes the CONTINUE cards right under it
+    /// away with it (R-010; CR-005: the old continuation stayed under the new short value, and
+    /// astropy reads the two as one).
+    /// </summary>
+    [Fact]
+    public void R010_Run_AReplacedCard_TakesItsOldContinueCardsWithIt()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destCards = FitsTestData.ProcessedCards();
+        destCards.Add(FitsTestData.Card("TELESCOP", "'Sky-Watcher Evostar 72ED on a Star Adventurer GTi, guided &'"));
+        destCards.Add(FitsTestData.Continue("'old tail'"));
+        destCards.Add(FitsTestData.Card("SITELAT", "46.77"));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards));
+
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest)).Kind);
+
+        List<string> written = FitsTestData.HeaderCards(File.ReadAllBytes(dest));
+        int tel = written.FindIndex(c => c.StartsWith("TELESCOP", StringComparison.Ordinal));
+        Assert.Equal(FitsTestData.Card("TELESCOP", "'My Scope'"), written[tel]);
+        Assert.StartsWith("SITELAT", written[tel + 1], StringComparison.Ordinal);
+        Assert.DoesNotContain(written, c => c.StartsWith("CONTINUE", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A dry run lists a CONTINUE card under the card it continues, and its heading counts the
+    /// key once: 15 keys, 16 cards (R-009, R-010; CR-005).
+    /// </summary>
+    [Fact]
+    public void R009_Run_DryRun_ListsTheContinueCardUnderItsCard_AndCountsTheKeyOnce()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(SourceWithALongObject()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        var outcome = WcsCopy.Run(Request(source, dest, dryRun: true));
+
+        Assert.Equal(["Chei care ar fi copiate (15):"], outcome.Notes);
+        Assert.Equal(16, outcome.Cards.Count);
+        int obj = outcome.Cards.ToList().FindIndex(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        Assert.Equal(LongObject, outcome.Cards[obj]);
+        Assert.Equal(LongObjectEnd, outcome.Cards[obj + 1]);
     }
 }

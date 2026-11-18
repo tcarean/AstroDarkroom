@@ -132,7 +132,7 @@ public class LanguageTests
         "ATENTIE", "Nu pot", "Chei care", "Copiate", "Dimensiuni", "Nicio cheie", "Eroare",
         "sursa", "destinatie", "Sunt necesare", "Optiune", "Verifica vizual", "optiuni",
         "Fisier", "trunchiat", "nu pare FITS", "nu incepe", "Chei vechi", "Eliminate", "eliminate",
-        "destinatiei", "in oglinda", "Intoarce", "pastreaza",
+        "destinatiei", "in oglinda", "Intoarce", "pastreaza", "acelasi", "chiar", "suprascrie",
     ];
 
     public static IEnumerable<object[]> Scenarios()
@@ -155,6 +155,9 @@ public class LanguageTests
         yield return ["drop"];
         yield return ["mirror"];
         yield return ["mirror-forced"];
+        yield return ["same-file"];
+        yield return ["new-file-is-source"];
+        yield return ["new-file-is-dest"];
     }
 
     [Theory]
@@ -217,6 +220,9 @@ public class LanguageTests
             "drop" => [source, oldSolve, "-o", ws.FilePath("out.fit")],
             "mirror" => [source, mirrored],
             "mirror-forced" => [source, mirrored, "--force", "-o", ws.FilePath("out.fit")],
+            "same-file" => [source, source],
+            "new-file-is-source" => [source, dest, "-o", source],
+            "new-file-is-dest" => [source, dest, "-o", dest],
             _ => throw new ArgumentException(scenario),
         };
 

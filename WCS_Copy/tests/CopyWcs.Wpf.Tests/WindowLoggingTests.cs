@@ -106,6 +106,37 @@ public class WindowLoggingTests
             Assert.Equal("About opened", line.Message);
         });
 
+    /// <summary>
+    /// A close held during a run is two Info lines of the window, around the run's own done line,
+    /// and a second close adds none (R-043, R-050): the log says the run ended before the window
+    /// closed, where it used to end at the process's exit line (CR-002).
+    /// </summary>
+    [Fact]
+    public Task R043_ACloseHeldDuringARunIsLoggedAroundTheRunsDoneLine()
+        => _sta.InvokeAsync(async () =>
+        {
+            using WindowFixture f = new();
+            using ManualResetEventSlim release = new();
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, RunCore = WindowCloseTests.HeldRun(release) };
+            MainWindow w = new(vm);
+            using LogCapture capture = LogCapture.Start();
+
+            Task preview = vm.Preview();
+            w.Close();
+            w.Close();
+            release.Set();
+            await preview;
+
+            LogCapture.Captured[] lines = capture.Events
+                .Where(e => e.Logger == "Window" || e.Message.StartsWith("copy done", StringComparison.Ordinal))
+                .ToArray();
+            Assert.Equal(3, lines.Length);
+            Assert.Equal("close asked while a run is in flight: the window closes when it ends", lines[0].Message);
+            Assert.StartsWith("copy done previewed 15 keys ", lines[1].Message, StringComparison.Ordinal);
+            Assert.Equal("the run ended: the window closes", lines[2].Message);
+            Assert.All([lines[0], lines[2]], l => Assert.Equal(LogLevel.Info, l.Level));
+        });
+
     [Fact]
     public void R043_TheStartLineNamesTheLanguageAndTheFilesFromTheCommandLine()
     {
@@ -184,7 +215,7 @@ public class WindowLoggingTests
         LogFiles.AssertEveryLineKept(folder, result, Lines);
     }
 
-    /// <summary>A run's messages from <c>copy start</c> to <c>copy done</c>, the folder and the times made neutral.</summary>
+    /// <summary>A run's messages from <c>copy start</c> to <c>copy done</c>, the folder, the times and the random part of the write's temporary file (R-012) made neutral.</summary>
     private static List<string> OfTheRun(LogCapture capture, string dir)
     {
         List<string> lines = capture.Events.Where(e => e.Logger is "WcsCopy" or "FitsHeader").Select(e => e.Message).ToList();
@@ -193,6 +224,7 @@ public class WindowLoggingTests
         Assert.True(start >= 0 && done > start, "no run between copy start and copy done");
         return lines.GetRange(start, done - start + 1)
                     .Select(m => Regex.Replace(m.Replace(dir, "<dir>", StringComparison.Ordinal), @"\d+ ms\b", "# ms"))
+                    .Select(m => Regex.Replace(m, @"\.copywcs-[0-9a-f]{8}\.tmp", ".copywcs-#.tmp"))
                     .ToList();
     }
 }

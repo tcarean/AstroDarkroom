@@ -382,13 +382,41 @@ public class MainViewModelTests
         Assert.Equal(Console(f.FilePath("missing.fit"), f.Dest, "--dry-run").Stderr, vm.Error);
 
         // a source with no key to copy (the processed header's OBJECT is an optical key, so
-        // those are left out): the heading of the preview is not shown
-        vm.Source = f.Dest;
+        // those are left out): the heading of the preview is not shown. A copy of the
+        // destination, since the destination itself as the source is R-019's refusal
+        string unsolved = f.FilePath("unsolved.fit");
+        File.Copy(f.Dest, unsolved);
+        vm.Source = unsolved;
         vm.IncludeOptical = false;
         await vm.Preview();
         Assert.Equal("Nicio cheie relevanta gasita in sursa. Nimic de copiat.", vm.Error);
         Assert.False(vm.HasHeading);
         Assert.False(vm.HasCards);
+    }
+
+    /// <summary>
+    /// The new file's box naming the source is the core's refusal, in the console's words, and
+    /// the solved source keeps every byte (R-019, R-033; CR-001, where the window's copy
+    /// overwrote the source).
+    /// </summary>
+    [Fact]
+    public async Task R019_ANewFileThatIsTheSourceIsRefusedInTheConsolesWords()
+    {
+        using WindowFixture f = new();
+        byte[] before = File.ReadAllBytes(f.Source);
+        MainViewModel vm = Open(f);
+        vm.WriteInPlace = false;
+        vm.Output = f.Source;
+
+        await vm.Copy();
+
+        Assert.True(vm.HasError);
+        Assert.False(vm.HasCards);
+        Assert.Equal(before, File.ReadAllBytes(f.Source));
+        (int code, _, string stderr) = Console(f.Source, f.Dest, "-o", f.Source);
+        Assert.Equal(1, code);
+        Assert.Equal(stderr, vm.Error);
+        Assert.StartsWith("Fisierul nou '", vm.Error, StringComparison.Ordinal);
     }
 
     [Fact]

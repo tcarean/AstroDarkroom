@@ -83,11 +83,11 @@ original and proposal side by side.
 
 | ID | Sev | Reach | Evidence | Title | Status |
 |----|----:|-------|----------|-------|--------|
-| CR-001 | 1 | slip | shown | A new-file path that names the source overwrites the solved source, and the run says `Copied` | open |
-| CR-002 | 1 | slip | confirmed | Closing the window during a copy cuts the write: a truncated new file, and a log that says `exit 0` | open |
-| CR-003 | 1 | rare | confirmed | A write to a new file that fails midway leaves a truncated file, and has already destroyed the one that was there | open |
-| CR-004 | 1 | some files | shown | A destination that holds `CHECKSUM` is written with the checksum left stale | open |
-| CR-005 | 1 | some files | shown | A long string value loses its `CONTINUE` cards, or keeps the destination's old ones | open |
+| CR-001 | 1 | slip | shown | A new-file path that names the source overwrites the solved source, and the run says `Copied` | fixed d1178b79 |
+| CR-002 | 1 | slip | confirmed | Closing the window during a copy cuts the write: a truncated new file, and a log that says `exit 0` | fixed c403bfc5 |
+| CR-003 | 1 | rare | confirmed | A write to a new file that fails midway leaves a truncated file, and has already destroyed the one that was there | fixed f7d27425 |
+| CR-004 | 1 | some files | shown | A destination that holds `CHECKSUM` is written with the checksum left stale | fixed 9453c365 |
+| CR-005 | 1 | some files | shown | A long string value loses its `CONTINUE` cards, or keeps the destination's old ones | fixed 2ed7ac1b |
 | CR-006 | 1 | rare | to measure | The window's relative paths follow the process's working folder | open |
 | CR-007 | 2 | slip | shown | A large file that is not FITS is read whole before it is refused | open |
 | CR-008 | 2 | some setups | to measure | The window reads the file facts on its own thread at every keystroke | open |
@@ -95,10 +95,10 @@ original and proposal side by side.
 | CR-010 | 3 | common | owner | A file's existence and facts are read only when the box's text changes | open |
 | CR-011 | 3 | some files | shown | A header without `NAXIS1` is reported as the size -1, with the advice to force | open |
 | CR-012 | 3 | some setups | to measure | The window may open taller than a small screen, and the cards may get no height | open |
-| CR-013 | 3 | slip | shown | The same file as source and destination is accepted and reported as a copy | open |
-| CR-014 | 3 | slip | shown | A new-file path that names the destination in another spelling ends in "used by another process" | open |
+| CR-013 | 3 | slip | shown | The same file as source and destination is accepted and reported as a copy | fixed d1178b79 |
+| CR-014 | 3 | slip | shown | A new-file path that names the destination in another spelling ends in "used by another process" | fixed d1178b79 |
 | CR-015 | 3 | slip | owner | `-o` takes a following flag as its file name: `-o --dry-run` writes a file | open |
-| CR-016 | 3 | slip | owner | A read-only destination is refused only after its whole copy is written, and the copy is left | open |
+| CR-016 | 3 | slip | owner | A read-only destination is refused only after its whole copy is written, and the copy is left | fixed f7d27425 |
 | CR-017 | 3 | rare | confirmed | The window draws the warnings under the refusal; R-033 says above | open |
 | CR-018 | 4 | rare | confirmed | The in-place replace is a plain move: creation time, attributes and links are lost, an existing `.tmp` is overwritten | open |
 | CR-019 | 4 | some files | shown | `WCSAXES` can be written after the WCS cards it must precede | open |
@@ -144,6 +144,7 @@ write through a temporary file.
   and output by the file each names (see CR-013 and CR-014).
 - **Test:** none gives the source as the output.
 - **Evidence:** shown.
+- **Status:** fixed d1178b79 (a new file that is the source, in any spelling, is refused before anything is written, a dry run too: one check of the three paths by the file each opens (`FileIdentity`), taken with CR-013 and CR-014 at the owner's word of 2026-11-18; R-019, ADR 0018).
 
 ### CR-002 Closing the window during a copy cuts the write
 
@@ -170,6 +171,7 @@ write through a temporary file.
 - **Evidence:** confirmed by reading (a thread-pool thread is a background thread; area 4's
   probe showed a line logged after `LogManager.Shutdown` is dropped). Not run; how wide the
   moment is on a real stack is for the task to measure.
+- **Status:** fixed c403bfc5 (a close during a Preview or a Copy is held until the run ends, then the window closes by itself, with no new text, the owner's answer of 2026-11-18; the log has the window's two lines around the run's done line; R-050, ADR 0019. Measured that day with the Release console: a copy of the 290 MB Veil stack wrote in 1327 ms cold, 315 ms and 307 ms warm).
 
 ### CR-003 A write to a new file that fails midway leaves a truncated file
 
@@ -190,6 +192,7 @@ write through a temporary file.
   `R016_Run_AWriteError_DropsNothingAndHasNoLine` use a target in a missing folder, where
   `File.Create` fails before any byte. No test fails a write after it began.
 - **Evidence:** confirmed by reading (no cleanup exists on any path); a full disk was not run.
+- **Status:** fixed f7d27425 (every write, new file and in place, goes to `<name>.copywcs-<8 hex digits>.tmp` beside the target, created only when no file holds that name, renamed over the target at the end and deleted when anything fails; shown before the fix by a byte-range lock on the middle of the destination's data, which left the new file cut short and an existing one changed; R-012, R-014, ADR 0020).
 
 ### CR-004 A destination that holds `CHECKSUM` is written with the checksum left stale
 
@@ -214,6 +217,7 @@ write through a temporary file.
   this very file and does not look at the card.
 - **Evidence:** shown. What Siril, ASTAP and PixInsight do with a stale `CHECKSUM` was not
   measured: the task starts there, since it decides how much this matters to the owner's files.
+- **Status:** fixed 9453c365 (the destination's `CHECKSUM` is dropped and `DATASUM` kept, nothing said on screen, the owner's answer of 2026-11-18 over recomputing it; measured that day: Siril 1.4.4 reads a stale `CHECKSUM` without a word, astropy warns only when opened with `checksum=True`, ASTAP and PixInsight are not installed; R-018, ADR 0021).
 
 ### CR-005 A long string value loses its `CONTINUE` cards
 
@@ -235,6 +239,7 @@ write through a temporary file.
   astropy.
 - **Test:** none.
 - **Evidence:** shown. Siril's own headers hold no such string in the two fixtures.
+- **Status:** fixed 2ed7ac1b (a card travels with every `CONTINUE` card right under it, in the copy, the replace and the drop; the outcome lists the `CONTINUE` cards and still counts keys; R-009, R-010, ADR 0022).
 
 ### CR-006 The window's relative paths follow the process's working folder
 
@@ -256,6 +261,14 @@ write through a temporary file.
 - **Test:** none; `AppTests` and `R034_StartFillsTheBoxesWithTheFilesGiven` use absolute paths.
 - **Evidence:** to measure: whether the file dialog of .NET 8 moves the working folder decides
   between severity 1 and 3. The fix is the same either way.
+- **Note (2026-11-18):** a worse case, shown by the second review of the branch of CR-001 to
+  CR-005 with a scratch console over the core: the working folder moved after the destination's
+  header was read and before the write began (at the `read dest.fit` log line) makes the copy
+  write the first folder's header, with the source's WCS, over the other folder's `dest.fit`,
+  whose own bytes from the first header's data offset become its data; the run says `Copied`.
+  The write itself now makes its two paths whole as it begins (ADR 0020), so a folder that moves
+  during the write moves nothing; one that moves before it is this entry's. The owner chose to
+  leave it to this entry's own task.
 
 ## Severity 2
 
@@ -368,6 +381,7 @@ write through a temporary file.
 - **Should:** a refusal: the source and the destination are the same file.
 - **Test:** none.
 - **Evidence:** shown. One check with CR-001 and CR-014.
+- **Status:** fixed d1178b79 (with CR-001: the same file as source and destination, in any spelling, is refused, a dry run too; R-019, ADR 0018).
 
 ### CR-014 A new-file path that names the destination in another spelling
 
@@ -384,6 +398,7 @@ write through a temporary file.
   a test that pins it.
 - **Test:** none; the in-place test passes the identical string twice.
 - **Evidence:** shown.
+- **Status:** fixed d1178b79 (with CR-001: a new file that is the destination is refused in every spelling, the destination's own included, rather than taken as the in-place write; the destination keeps every byte; R-019, ADR 0018).
 
 ### CR-015 `-o` takes a following flag as its file name
 
@@ -410,6 +425,7 @@ write through a temporary file.
 - **Test:** none with a destination that cannot be replaced.
 - **Evidence:** owner: `docs/design/fits-header.md` says "the `.tmp` is left behind" on a
   failure before the move; whether to keep that is the owner's call. Shown.
+- **Status:** fixed f7d27425 (with CR-003: a failed write's temporary file is deleted in place too, the owner's answer of 2026-11-18; the destination keeps every byte and nothing is left beside it; R-014, ADR 0020).
 
 ### CR-017 The window draws the warnings under the refusal
 
@@ -441,6 +457,7 @@ write through a temporary file.
 - **Direction:** `File.Replace` keeps the times, the attributes and the permissions; a
   temporary name that cannot collide.
 - **Evidence:** confirmed; the links are for the task to run.
+- **Note (2026-11-18):** still open, but its temporary file changed with CR-003's fix (f7d27425, ADR 0020): it is `<name>.copywcs-<8 hex digits>.tmp`, created only when no file holds that name, so a `dest.fit.tmp` of the owner's is left alone and two runs on one destination no longer share a file. The rest stands: the replaced file's times, attributes and permissions, a destination that is a link, no flush before the rename. With the same fix a new file (`-o`) that replaces an existing one goes the same way, a rename over it, so all of these reach it too, with two more for both writes: the replace needs room for both files, and a folder where the user may change the file but not create one refuses it (the review of the branch, 2026-11-18; ADR 0020).
 
 ### CR-019 `WCSAXES` can be written after the WCS cards it must precede
 

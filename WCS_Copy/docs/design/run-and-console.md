@@ -1,6 +1,6 @@
 # The copy run, the console and the language
 
-**Covers:** `src/CopyWcs.Core/WcsCopy.cs`, `src/CopyWcs.Core/Language/Ui.cs`,
+**Covers:** `src/CopyWcs.Core/WcsCopy.cs`, `src/CopyWcs.Core/FileIdentity.cs`, `src/CopyWcs.Core/Language/Ui.cs`,
 `src/CopyWcs.Core/Language/LanguageArgument.cs`, `src/CopyWcs.Core/VersionInfo.cs`,
 `src/CopyWcs.Core/LicenseInfo.cs`, `src/CopyWcs.Core/ThirdParty.cs`, `src/CopyWcs.Cli/Program.cs`,
 `src/CopyWcs.Cli/CopyWcsCli.cs` and `src/CopyWcs.Cli/Options.cs`.
@@ -20,27 +20,48 @@ place, optical keys or not, force, dry run. The outcome is a record of lines alr
 | `Kind` | `Copied`, `Previewed` or `Refused` | decides the exit code: 0, 0, 1 |
 | `Error` | the one line of a refusal, else null | stderr |
 | `Warnings` | the `WARNING:` lines, in order; forced mismatch, missing `CTYPE1`, forced mirror | stdout, before anything else |
-| `Cards` | the raw 80-character cards selected, in the source's order | the preview, indented, trailing spaces trimmed (a 0xA0 stays); a byte above 0x7F shows as the character of its Latin-1 code, which the log alone escapes (ADR 0010) |
+| `Cards` | the raw 80-character cards selected, in the source's order, a long string's `CONTINUE` cards under the card they continue (R-010), so there may be more cards than keys | the preview, indented, trailing spaces trimmed (a 0xA0 stays); a byte above 0x7F shows as the character of its Latin-1 code, which the log alone escapes (ADR 0010) |
 | `Target` | the file written, else null | nothing; the window reads the destination's facts again after a copy |
 | `Notes` | the preview's heading, or the count copied and the flip reminder | stdout: a preview's heading first, above its cards; a copy's lines last |
 | `Dropped` | the one line naming the destination's old plate-solve keys dropped, or a preview would drop (R-016), else null | stdout: a preview's after its cards, a copy's before its notes, so the count and the reminder stay the last two lines (R-012) |
 
 The sequence: read the source, read the destination (each read failure is a refusal naming
-which file and why, R-004; the reader's own messages of R-015 travel in it); compare
+which file and why, R-004; the reader's own messages of R-015 travel in it); refuse paths that
+name one file twice (`PathClash`, R-019, ADR 0018: the source as the destination, then a new file
+that is the source, then one that is the destination, the destination's own spelling included),
+before anything else so that even a dry run never gets that far; compare
 `NAXIS1`/`NAXIS2` (a refusal, or a warning under force, R-005); warn on a missing `CTYPE1`
 (R-006); ask `WcsMetadataKeys.Mirrored` whether the destination's own plate solve is the mirror
 image of the source's (true is a refusal, or a warning under force, R-017, ADR 0012; force passes
 both checks; false or null is a Debug line with both determinants); select the keys (R-007; none is a refusal, R-008) and, when the source has `CTYPE1`,
 the destination's keys to drop (`WcsMetadataKeys.SelectKeysToDrop`, R-016, ADR 0011); on a dry
-run return the cards, the heading and the drop line (R-009); else remove the dropped keys' cards,
-set each selected card verbatim, append the HISTORY card, write through the header engine (a
-write failure is a refusal, R-014) and return the count, the reminder and the drop line (R-012).
+run return the cards, the heading and the drop line (R-009); else remove the dropped keys' cards
+and the destination's `CHECKSUM`, which the changed header would no longer match, whatever the
+source holds (R-018, ADR 0021; `DATASUM` stays, the data being untouched, and no line says it),
+set each selected key's value cards verbatim (`SetValueCards`, a long string whole, R-010), append the HISTORY card, write through the header engine (a
+write failure is a refusal, R-014, its message through `FitsHeader.WriteErrorMessage`, which
+names the target where the system named the temporary file) and return the count, the reminder and the drop line (R-012); the heading's count and the closing line's count are of keys, not of cards.
 The keys dropped and the keys set never overlap: a dropped key is one the source lacks. A
 refusal drops nothing and carries no drop line, the write error's included, since the header in
 memory is thrown away. The warnings raised before a refusal stay in the outcome, so the console
 prints them before the error, as it did before the split. The core composes every sentence
 about the copy; an application adds nothing to them. Beside the outcome, the run writes its own lines
 to the diagnostic log, in English (`logging.md`, "A copy's lines").
+
+`FileIdentity.Same(a, b)` tells two paths apart by the file each opens. It opens both with every
+sharing allowed (`File.OpenHandle`, so a file another program holds open is still told) and, on
+Windows, compares the volume serial number and the 64-bit file index `GetFileInformationByHandle`
+gives each handle (a `LibraryImport` that fills the 13 fields of `BY_HANDLE_FILE_INFORMATION`
+into an array, so no struct is declared): another letter case, a `..`, a `\\?\` prefix, a short
+8.3 name or a link names the file it leads to, and the two names of a hard-linked file are one
+file. A path that cannot be opened (missing, a folder, empty) is never the same as another: it
+is no file the run could overwrite, and its read or its write says why it fails. Off Windows,
+when the call fails, or when the file system gives the index 0, which would make all its files
+one, the two full paths are compared, letter case ignored on Windows. The file index is exact on
+NTFS; Microsoft documents the 64-bit index as not guaranteed unique on ReFS, where two files
+could be taken for one and the run refused, writing nothing (ADR 0018: no ReFS drive here to try
+the 128-bit id of `GetFileInformationByHandleEx` on). `FileIdentityTests` checks
+the spellings, two files, a missing file, an empty path, a folder and a file held open elsewhere.
 
 ## The console (`CopyWcsCli`, `Options`, `Program`)
 
