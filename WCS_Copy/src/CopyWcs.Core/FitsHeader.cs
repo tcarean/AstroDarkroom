@@ -47,6 +47,13 @@ internal sealed class FitsHeader
     private const int NameLimit = 255;
 
     /// <summary>
+    /// The most blocks the reader reads looking for END (R-015, ADR 0024): 1,000 blocks, 2,880,000
+    /// bytes, where the owner's 5,200 FITS files of 2026-11-18 had headers of 1 to 4 blocks, so a
+    /// file that begins as FITS but never ends its header is not read to its end.
+    /// </summary>
+    private const int MaxHeaderBlocks = 1000;
+
+    /// <summary>
     /// The encoding of the cards: each byte 0x00 to 0xFF is the character of that code, and
     /// each such character is written back as the same byte, so no byte of a header is changed
     /// by the round trip (R-010, ADR 0010); an all-ASCII header reads and writes as under ASCII.
@@ -72,7 +79,7 @@ internal sealed class FitsHeader
     /// </summary>
     /// <param name="path">The file's path.</param>
     /// <returns>The header, with the data offset remembered for <see cref="WriteWithDataFrom"/>.</returns>
-    /// <exception cref="InvalidDataException">The file does not begin with SIMPLE, or ends before an END card.</exception>
+    /// <exception cref="InvalidDataException">The file does not begin with SIMPLE, or ends before an END card, or holds none in its first 1,000 blocks (<see cref="ReadFrom"/>).</exception>
     /// <exception cref="IOException">The file cannot be opened or read (missing, a folder in the path missing, locked).</exception>
     /// <exception cref="UnauthorizedAccessException">The path is a directory, or the file cannot be read by this user.</exception>
     /// <exception cref="ArgumentException">The path is empty or blank.</exception>
@@ -131,11 +138,14 @@ internal sealed class FitsHeader
     /// <summary>
     /// Reads a primary header from the start of a stream: whole 2880-byte blocks, card by
     /// card, up to and including the block that holds END; each card's bytes become its
-    /// characters one to one (<see cref="CardEncoding"/>).
+    /// characters one to one (<see cref="CardEncoding"/>). A file that is not FITS is refused at
+    /// its first card, after its first block, and a header is looked through for END over
+    /// <see cref="MaxHeaderBlocks"/> blocks at most, so no file is read to its end because it is
+    /// not a FITS header (R-015).
     /// </summary>
     /// <param name="stream">The stream, positioned at the first byte of the file; read in full blocks.</param>
     /// <returns>The header; the stream is left after the last header block.</returns>
-    /// <exception cref="InvalidDataException">The stream ends before an END card, or its first card is not SIMPLE.</exception>
+    /// <exception cref="InvalidDataException">The first card is not SIMPLE; or the stream ends before an END card, or holds none in its first <see cref="MaxHeaderBlocks"/> blocks.</exception>
     public static FitsHeader ReadFrom(Stream stream)
     {
         ArgumentNullException.ThrowIfNull(stream);
@@ -148,11 +158,25 @@ internal sealed class FitsHeader
 
         while (!sawEnd)
         {
+            if (consumed == (long)MaxHeaderBlocks * BlockSize)
+            {
+                throw NoEnd();
+            }
+
             var read = ReadFully(stream, block);
+
+            // The first card says whether the file is FITS at all: one that is not, a TIFF or a
+            // video picked by mistake, is refused here, before a byte more is read (CR-007 of the
+            // review of 2026-11-16). A file shorter than one card has none, and reads as cut short.
+            if (consumed == 0 && read >= CardSize && KeywordOf(CardEncoding.GetString(block, 0, CardSize)) != "SIMPLE")
+            {
+                throw new InvalidDataException(T("The file does not begin with SIMPLE - it does not look like FITS.",
+                    "Fisierul nu incepe cu SIMPLE - nu pare FITS."));
+            }
+
             if (read < BlockSize)
             {
-                throw new InvalidDataException(T("Truncated file, or not a valid FITS (the END card is missing).",
-                    "Fisier trunchiat sau nu este FITS valid (cardul END lipseste)."));
+                throw NoEnd();
             }
 
             consumed += BlockSize;
@@ -169,15 +193,15 @@ internal sealed class FitsHeader
             }
         }
 
-        if (h._cards.Count == 0 || KeywordOf(h._cards[0]) != "SIMPLE")
-        {
-            throw new InvalidDataException(T("The file does not begin with SIMPLE - it does not look like FITS.",
-                "Fisierul nu incepe cu SIMPLE - nu pare FITS."));
-        }
-
         h._dataOffset = consumed;
         return h;
     }
+
+    /// <summary>The reader's refusal of a header without its END card: the stream ended first, or <see cref="MaxHeaderBlocks"/> blocks held none (R-015).</summary>
+    /// <returns>The exception to throw, its message in the run's language.</returns>
+    private static InvalidDataException NoEnd()
+        => new(T("Truncated file, or not a valid FITS (the END card is missing).",
+            "Fisier trunchiat sau nu este FITS valid (cardul END lipseste)."));
 
     /// <summary>
     /// Reads until the buffer is full or the stream ends: <see cref="Stream.Read(byte[], int, int)"/>

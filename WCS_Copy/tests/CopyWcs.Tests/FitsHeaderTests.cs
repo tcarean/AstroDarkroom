@@ -85,6 +85,67 @@ public class FitsHeaderTests
         Assert.Throws<InvalidDataException>(() => FitsHeader.ReadFrom(new MemoryStream(bytes)));
     }
 
+    /// <summary>
+    /// A file that is not FITS is refused at its first card, after its first block, however long
+    /// it is, with the message that says so (R-015; CR-007 of the review of 2026-11-16: 200 MB of
+    /// other bytes were read whole, 4.6 s and 546 MB more memory, then called truncated).
+    /// </summary>
+    [Fact]
+    public void R015_ReadFrom_AFileThatIsNotFits_IsRefusedAtItsFirstCard()
+    {
+        byte[] text = System.Text.Encoding.ASCII.GetBytes(string.Concat(Enumerable.Repeat("A text file picked by mistake, not a FITS file.\n", 220_000)));
+        Assert.True(text.Length > 10_000_000);
+        using var stream = new MemoryStream(text);
+
+        InvalidDataException ex;
+        using (Ui.Use(UiLanguage.English))
+        {
+            ex = Assert.Throws<InvalidDataException>(() => FitsHeader.ReadFrom(stream));
+        }
+
+        Assert.Equal("The file does not begin with SIMPLE - it does not look like FITS.", ex.Message);
+        Assert.True(stream.Position <= 2880, $"{stream.Position} bytes read");
+    }
+
+    /// <summary>
+    /// A header that begins as FITS but holds no END in its first 1,000 blocks is refused there,
+    /// with the END message, and nothing after those 2,880,000 bytes is read (R-015; CR-007): the
+    /// owner's 5,200 FITS files of 2026-11-18 had headers of 1 to 4 blocks.
+    /// </summary>
+    [Fact]
+    public void R015_ReadFrom_NoEndInTheFirst1000Blocks_IsRefusedThere()
+    {
+        var cards = new List<string> { FitsTestData.Card("SIMPLE", "T") };
+        cards.AddRange(Enumerable.Range(1, 3000 * 36 - 1).Select(i => FitsTestData.Card("HISTORY", i.ToString(System.Globalization.CultureInfo.InvariantCulture))));
+        using var stream = new MemoryStream(FitsTestData.RawBytes(cards));
+        Assert.Equal(3000 * 2880, stream.Length);
+
+        InvalidDataException ex;
+        using (Ui.Use(UiLanguage.English))
+        {
+            ex = Assert.Throws<InvalidDataException>(() => FitsHeader.ReadFrom(stream));
+        }
+
+        Assert.Equal("Truncated file, or not a valid FITS (the END card is missing).", ex.Message);
+        Assert.Equal(1000 * 2880, stream.Position);
+    }
+
+    /// <summary>A header of exactly 1,000 blocks, its END the last card of the last one, is read whole (R-015): the limit is the 1,000th block, not one before it.</summary>
+    [Fact]
+    public void R015_ReadFrom_AHeaderOf1000Blocks_IsRead()
+    {
+        var cards = new List<string> { FitsTestData.Card("SIMPLE", "T") };
+        cards.AddRange(Enumerable.Range(1, 1000 * 36 - 2).Select(i => FitsTestData.Card("HISTORY", i.ToString(System.Globalization.CultureInfo.InvariantCulture))));
+        byte[] bytes = FitsTestData.HeaderBlock(cards);
+        Assert.Equal(1000 * 2880, bytes.Length);
+        using var stream = new MemoryStream([.. bytes, .. FitsTestData.DeterministicData(400)]);
+
+        var header = FitsHeader.ReadFrom(stream);
+
+        Assert.Equal(1000 * 36 - 1, header.Keywords.Count());
+        Assert.Equal(1000 * 2880, stream.Position);
+    }
+
     [Fact]
     public void ReadFrom_HeaderSpanningMultipleBlocks_ReadsAllCards()
     {

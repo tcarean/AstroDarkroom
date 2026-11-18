@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -127,6 +128,15 @@ public partial class WindowSmokeTests
                 Render(window);
                 english.AddRange(TextsOf(window));
 
+                // a copy held in flight: the card's in-progress line (R-053)
+                using ManualResetEventSlim release = new();
+                vm.RunCore = WindowCloseTests.HeldRun(release);
+                Task copy = vm.Copy();
+                Render(window, name: "window-running-en");
+                english.AddRange(TextsOf(window));
+                release.Set();
+                await copy;
+
                 AboutWindow about = new();
                 Render((FrameworkElement)about.Content, 560, AboutHeight(about), "about-en");
                 english.Add(about.Title);
@@ -140,14 +150,17 @@ public partial class WindowSmokeTests
             Assert.Contains("The manual, at the section about what is on screen (F1)", english);
             Assert.Contains("About", english);
             Assert.Contains("Refused", english);
+            Assert.Contains("Copy in progress...", english);
             Assert.Contains("Source: 100 x 80, plate-solved", english);
             Assert.Contains(english, t => t.StartsWith("Old plate-solve keys of the destination that would be dropped (6): ", StringComparison.Ordinal));
             Assert.Contains("Continue even when the dimensions differ or the image is mirrored", english);
             List<string> romanian = english.Where(t => RomanianWord().IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
             Assert.True(romanian.Count == 0, "Romanian left in the English window:\n" + string.Join("\n", romanian));
 
-            // the assembly's default, Romanian: the same elements, the other wording
+            // the assembly's default, Romanian: the same elements, the other wording, once the
+            // boxes' files are looked at (R-052)
             MainViewModel ro = new() { Source = f.Source, Dest = f.Dest };
+            await ro.FactsRead;
             FrameworkElement roWindow = (FrameworkElement)new MainWindow(ro).Content;
             Render(roWindow, name: "window-ro");
             List<string> texts = TextsOf(roWindow).ToList();
@@ -345,26 +358,69 @@ public partial class WindowSmokeTests
             Assert.Equal(Color.FromRgb(0x1B, 0x1B, 0x1D), Assert.IsType<SolidColorBrush>(w.Background).Color);
         });
 
-    /// <summary>The files from the command line fill the boxes, either one alone too (R-034).</summary>
+    /// <summary>
+    /// The files from the command line fill the boxes, either one alone too (R-034); their looks
+    /// end back on this thread (R-052), which the test lets them reach by awaiting.
+    /// </summary>
     [Fact]
-    public void R034_StartFillsTheBoxesWithTheFilesGiven()
-        => _sta.Invoke(() =>
+    public Task R034_StartFillsTheBoxesWithTheFilesGiven()
+        => _sta.InvokeAsync(async () =>
         {
             using WindowFixture f = new();
             MainViewModel vm = new();
             MainWindow w = new(vm);
 
             w.Start(f.Source, f.Dest);
+            await vm.FactsRead;
             Assert.Equal(f.Source, vm.Source);
             Assert.Equal(f.Dest, vm.Dest);
             Assert.True(vm.CanPreview);
 
             MainViewModel one = new();
             new MainWindow(one).Start(null, f.Dest);
+            await one.FactsRead;
             Assert.Equal("", one.Source);
             Assert.Equal(f.Dest, one.Dest);
             Assert.False(one.CanPreview);
         });
+
+    /// <summary>
+    /// The window back in front looks at its files again (R-054; CR-010 of the review of
+    /// 2026-11-16): a source plate-solved and saved in Siril while the window was behind shows
+    /// as plate-solved, with no edit of its box. The activation is WPF's own, raised through
+    /// <c>OnActivated</c>, since a test window is never shown.
+    /// </summary>
+    [Fact]
+    public Task R054_TheWindowBackInFrontLooksAgain()
+        => _sta.InvokeAsync(async () =>
+        {
+            List<string> unsolved = FitsTestData.PlateSolvedCards().Where(c => !c.StartsWith("CTYPE1", StringComparison.Ordinal)).ToList();
+            using WindowFixture f = new(sourceCards: unsolved);
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest };
+            MainWindow w = new(vm);
+            await vm.FactsRead;
+            Assert.Equal("Sursa: 100 x 80, fara plate solve", vm.SourceFacts);
+
+            File.WriteAllBytes(f.Source, FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), FitsTestData.DeterministicData(400)));
+            typeof(Window).GetMethod("OnActivated", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(w, [EventArgs.Empty]);
+            await vm.FactsRead;
+
+            Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
+        });
+
+    /// <summary>
+    /// The window's three file dialogs put the working folder back as they close, so no Browse
+    /// moves the folder a path typed relative is taken from (R-051; CR-006 of the review of
+    /// 2026-11-16). Measured on 2026-11-18 with .NET 8.0.34: the Save dialog never moved it, the
+    /// Open dialog with the setting did not; the Open dialog without it was not measured.
+    /// </summary>
+    [Fact]
+    public void R051_TheFileDialogsPutTheWorkingFolderBack()
+    {
+        Assert.True(MainWindow.OpenDialog("source", "").RestoreDirectory);
+        Assert.True(MainWindow.OpenDialog("destination", @"C:\Windows\win.ini").RestoreDirectory);
+        Assert.True(MainWindow.SaveDialog(@"C:\Windows\win.ini").RestoreDirectory);
+    }
 
     /// <summary>
     /// The About window: its own XAML, the icon through a decoder and a link bound to a
@@ -423,6 +479,15 @@ public partial class WindowSmokeTests
             await vm.Copy();
             Assert.True(vm.HasNotes);
             Render((FrameworkElement)w.Content, name: "window-copied");
+
+            // a preview held in flight: the card shows its in-progress line alone (R-053)
+            using ManualResetEventSlim release = new();
+            vm.RunCore = WindowCloseTests.HeldRun(release);
+            Task preview = vm.Preview();
+            Render((FrameworkElement)w.Content, name: "window-running");
+            Assert.Contains("Previzualizare in curs...", TextsOf((FrameworkElement)w.Content));
+            release.Set();
+            await preview;
 
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });

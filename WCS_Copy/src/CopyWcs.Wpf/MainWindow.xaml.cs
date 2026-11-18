@@ -28,7 +28,8 @@ namespace CopyWcs.Wpf;
 /// The main window: the band at the top, the two files, the output choice, the options, the two
 /// commands and the core's outcome, over one <see cref="MainViewModel"/>. It owns what needs a
 /// window (the file dialogs, the About window, the manual opened by Help and F1, a close held
-/// while a run is in flight) and computes nothing (ADR 0007, ADR 0008, ADR 0016, ADR 0019).
+/// while a run is in flight, a look again at the files when it comes back to the front) and
+/// computes nothing (ADR 0007, ADR 0008, ADR 0016, ADR 0019, ADR 0027).
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -63,8 +64,9 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// The window over a given view-model (the tests pass their own): binds it, asks for the
-    /// dark title bar once the window has a handle, and follows the view-model's running state,
-    /// so that a close held during a run is done when the run ends (R-050).
+    /// dark title bar once the window has a handle, follows the view-model's running state, so
+    /// that a close held during a run is done when the run ends (R-050), and looks at the files
+    /// again each time the window comes back to the front (R-054).
     /// </summary>
     /// <param name="vm">The view-model the window binds; not null.</param>
     internal MainWindow(MainViewModel vm)
@@ -74,7 +76,17 @@ public partial class MainWindow : Window
         DataContext = _vm;
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         _vm.PropertyChanged += CloseWhenTheRunEnds;
+        Activated += LookAgainWhenBackInFront;
     }
+
+    /// <summary>
+    /// The window back in front, from Siril or File Explorer most often: the files the boxes name
+    /// are looked at again, off this thread, so a file saved or plate-solved meanwhile shows as it
+    /// is now (R-054).
+    /// </summary>
+    /// <param name="sender">The window itself; not read.</param>
+    /// <param name="e">The activation; not read.</param>
+    private void LookAgainWhenBackInFront(object? sender, EventArgs e) => _vm.LookAgain();
 
     /// <summary>
     /// Holds a close asked while a Preview or a Copy is in flight (R-050): the run goes on to its
@@ -105,15 +117,18 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Stops following the view-model once the window is closed, so a run that ends later closes
-    /// nothing, and logs a close that came while a run was still in flight: one Windows forced as
-    /// the session ended (a logoff, a shutdown), since every other close is held (R-050). The run
-    /// ends with the process unless it reaches its end first: its target is left as it was, or
+    /// nothing, stops it from starting looks at the files, so the run a close was held for writes
+    /// no read line after the window's last one (R-054; a look already in flight ends as it
+    /// would), and logs a close that came while a run was still in flight: one Windows forced
+    /// as the session ended (a logoff, a shutdown), since every other close is held (R-050). The
+    /// run ends with the process unless it reaches its end first: its target is left as it was, or
     /// replaced whole (R-012, R-014).
     /// </summary>
     /// <param name="e">The event's arguments; passed on.</param>
     protected override void OnClosed(EventArgs e)
     {
         _vm.PropertyChanged -= CloseWhenTheRunEnds;
+        _vm.StopLooking();
         _closeWhenTheRunEnds = false;
         if (_vm.IsRunning)
         {
@@ -157,11 +172,11 @@ public partial class MainWindow : Window
     /// <param name="e">The click.</param>
     private void BrowseSource(object sender, RoutedEventArgs e)
     {
-        OpenFileDialog dlg = Open(T("Plate-solved source (FITS)", "Sursa plate-solved (FITS)"), _vm.Source);
+        OpenFileDialog dlg = OpenDialog(T("Plate-solved source (FITS)", "Sursa plate-solved (FITS)"), _vm.Source);
         if (dlg.ShowDialog(this) == true)
         {
             Log.Info("source picked in the dialog: " + dlg.FileName);
-            _vm.Source = dlg.FileName;
+            _vm.PickSource(dlg.FileName);
         }
         else
         {
@@ -174,11 +189,11 @@ public partial class MainWindow : Window
     /// <param name="e">The click.</param>
     private void BrowseDest(object sender, RoutedEventArgs e)
     {
-        OpenFileDialog dlg = Open(T("Destination (FITS)", "Destinatia (FITS)"), _vm.Dest);
+        OpenFileDialog dlg = OpenDialog(T("Destination (FITS)", "Destinatia (FITS)"), _vm.Dest);
         if (dlg.ShowDialog(this) == true)
         {
             Log.Info("destination picked in the dialog: " + dlg.FileName);
-            _vm.Dest = dlg.FileName;
+            _vm.PickDest(dlg.FileName);
         }
         else
         {
@@ -191,20 +206,7 @@ public partial class MainWindow : Window
     /// <param name="e">The click.</param>
     private void BrowseOutput(object sender, RoutedEventArgs e)
     {
-        SaveFileDialog dlg = new()
-        {
-            Title = T("Write a new file", "Scrie un fisier nou"),
-            Filter = Filter(),
-            DefaultExt = ".fit",
-            AddExtension = true,
-            OverwritePrompt = true,
-        };
-        string? beside = Path.GetDirectoryName(_vm.Dest);
-        if (!string.IsNullOrEmpty(beside) && Directory.Exists(beside))
-        {
-            dlg.InitialDirectory = beside;
-        }
-
+        SaveFileDialog dlg = SaveDialog(_vm.Dest);
         if (dlg.ShowDialog(this) == true)
         {
             Log.Info("new file picked in the dialog: " + dlg.FileName);
@@ -278,17 +280,47 @@ public partial class MainWindow : Window
         OpenAddress(address);
     }
 
-    /// <summary>An open-file dialog for FITS files, starting in the folder of a path when it has one.</summary>
+    /// <summary>
+    /// An open-file dialog for FITS files, starting in the folder of a path when it has one, that
+    /// puts the working folder back as it closes, so a path typed relative keeps its meaning
+    /// (R-051).
+    /// </summary>
     /// <param name="title">The dialog's title, in the run's language.</param>
     /// <param name="current">The path in the box, whose folder is proposed when it exists; may be empty.</param>
     /// <returns>The dialog, not yet shown.</returns>
-    private static OpenFileDialog Open(string title, string current)
+    internal static OpenFileDialog OpenDialog(string title, string current)
     {
-        OpenFileDialog dlg = new() { Title = title, Filter = Filter(), CheckFileExists = true };
+        OpenFileDialog dlg = new() { Title = title, Filter = Filter(), CheckFileExists = true, RestoreDirectory = true };
         string? folder = Path.GetDirectoryName(current);
         if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder))
         {
             dlg.InitialDirectory = folder;
+        }
+
+        return dlg;
+    }
+
+    /// <summary>
+    /// The save dialog of the new file, for FITS files, asking before it overwrites one, starting
+    /// beside the destination, that puts the working folder back as it closes (R-051).
+    /// </summary>
+    /// <param name="dest">The destination's box, whose folder is proposed when it exists; may be empty.</param>
+    /// <returns>The dialog, not yet shown.</returns>
+    internal static SaveFileDialog SaveDialog(string dest)
+    {
+        SaveFileDialog dlg = new()
+        {
+            Title = T("Write a new file", "Scrie un fisier nou"),
+            Filter = Filter(),
+            DefaultExt = ".fit",
+            AddExtension = true,
+            OverwritePrompt = true,
+            RestoreDirectory = true,
+        };
+        string? beside = Path.GetDirectoryName(dest);
+        if (!string.IsNullOrEmpty(beside) && Directory.Exists(beside))
+        {
+            dlg.InitialDirectory = beside;
         }
 
         return dlg;

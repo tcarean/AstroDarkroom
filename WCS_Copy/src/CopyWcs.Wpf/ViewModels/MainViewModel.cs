@@ -16,18 +16,26 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // MainViewModel.cs - what the window binds. Three things and no more (ADR 0007): the boxes and
-// the options become a WcsCopyRequest; two facts are read from each header before any run; the
-// WcsCopyOutcome is shown as the core gives it. No sentence about the copy is composed here; the
-// band's two lines are the core's banner and copyright, passed through (ADR 0008).
+// the options become a WcsCopyRequest, its paths made whole (ADR 0023); two facts are read from
+// each header, off the window's thread, when its box's text is set and again later (ADR 0025,
+// ADR 0027); the WcsCopyOutcome is shown as the core gives it, and taken away when it no longer
+// fits the boxes (ADR 0026). No sentence about the copy is composed here; the band's two lines
+// are the core's banner and copyright, passed through (ADR 0008).
 
 using NLog;
 using static CopyWcs.Ui;
 
 namespace CopyWcs.Wpf;
 
+/// <summary>What a look at a box's file found (R-052): whether the file exists, and the fact line under the box.</summary>
+/// <param name="Exists">True when the path names an existing file.</param>
+/// <param name="Facts">The line of <see cref="MainViewModel.Facts"/>; empty for a missing file, or one whose facts cannot be read.</param>
+internal readonly record struct FileLook(bool Exists, string Facts);
+
 /// <summary>
 /// The main window's state: the band's two lines, the two files, the output choice, the two
-/// options, the facts under the boxes, and the last outcome of the core (R-030 to R-033, R-038).
+/// options, the facts under the boxes, and the last outcome of the core (R-030 to R-033, R-038,
+/// R-051 to R-054).
 /// </summary>
 public sealed class MainViewModel : ObservableObject
 {
@@ -37,12 +45,41 @@ public sealed class MainViewModel : ObservableObject
     private string _source = "";
     private string _dest = "";
     private string _output = "";
+
+    /// <summary>The source box's path made whole when its text was set (R-051): what the facts and the run read.</summary>
+    private string _sourcePath = "";
+
+    /// <summary>The destination box's path made whole when its text was set (R-051): what the facts and the run read, and the folder of a new file typed relative.</summary>
+    private string _destPath = "";
+
+    /// <summary>The number of the source box's latest look: a look that ends under another number was overtaken by a newer text, and is dropped (R-052).</summary>
+    private int _sourceTurn;
+
+    /// <summary>The number of the destination box's latest look, as <see cref="_sourceTurn"/>.</summary>
+    private int _destTurn;
+
+    /// <summary>The looks at the boxes' files that may still be in flight, which <see cref="FactsRead"/> waits for; the ones ended are taken out as a new one starts.</summary>
+    private readonly List<Task> _looks = [];
+
+    /// <summary>The source box's latest look, shown or still in flight, which a run waits for (R-052).</summary>
+    private Task _sourceLook = Task.CompletedTask;
+
+    /// <summary>The destination box's latest look, as <see cref="_sourceLook"/>.</summary>
+    private Task _destLook = Task.CompletedTask;
+
+    /// <summary>True once the window has closed: no look starts any more (R-054), so the run a close was held for writes no read line after the window's last one; a look already in flight ends as it would.</summary>
+    private bool _lookingStopped;
+
     private bool _writeInPlace = true;
     private bool _includeOptical = true;
     private bool _force;
     private bool _sourceExists;
     private bool _destExists;
     private bool _running;
+
+    /// <summary>True while the run in flight is a Copy, false for a Preview: the card's in-progress line (R-053).</summary>
+    private bool _runningCopy;
+
     private string _sourceFacts = "";
     private string _destFacts = "";
     private WcsCopyOutcome? _outcome;
@@ -56,7 +93,7 @@ public sealed class MainViewModel : ObservableObject
     public string Copyright => LicenseInfo.Copyright;
 #pragma warning restore CA1822
 
-    /// <summary>The path of the plate-solved source; setting it reads the facts under its box.</summary>
+    /// <summary>The source box's text, as typed; setting it makes its path whole (R-051) and starts a look at its file off the window's thread (R-052).</summary>
     public string Source
     {
         get => _source;
@@ -64,14 +101,14 @@ public sealed class MainViewModel : ObservableObject
         {
             if (Set(ref _source, value))
             {
-                _sourceExists = File.Exists(Clean(value));
-                SourceFacts = _sourceExists ? Facts(Clean(value), source: true) : "";
-                RaiseCanRun();
+                _sourcePath = Whole(Clean(value), folder: null);
+                LookAt(source: true, fresh: true);
+                Clear();
             }
         }
     }
 
-    /// <summary>The path of the destination; setting it reads the facts under its box.</summary>
+    /// <summary>The destination box's text, as typed; setting it makes its path whole (R-051) and starts a look at its file off the window's thread (R-052).</summary>
     public string Dest
     {
         get => _dest;
@@ -79,14 +116,14 @@ public sealed class MainViewModel : ObservableObject
         {
             if (Set(ref _dest, value))
             {
-                _destExists = File.Exists(Clean(value));
-                DestFacts = _destExists ? Facts(Clean(value), source: false) : "";
-                RaiseCanRun();
+                _destPath = Whole(Clean(value), folder: null);
+                LookAt(source: false, fresh: true);
+                Clear();
             }
         }
     }
 
-    /// <summary>The path of the new file, used when <see cref="WriteInPlace"/> is false.</summary>
+    /// <summary>The new file's box, as typed, used when <see cref="WriteInPlace"/> is false; a relative path is taken beside the destination (R-051).</summary>
     public string Output
     {
         get => _output;
@@ -95,6 +132,7 @@ public sealed class MainViewModel : ObservableObject
             if (Set(ref _output, value))
             {
                 RaiseCanRun();
+                Clear();
             }
         }
     }
@@ -109,6 +147,7 @@ public sealed class MainViewModel : ObservableObject
             {
                 Raise(nameof(WritesNewFile));
                 RaiseCanRun();
+                Clear();
             }
         }
     }
@@ -120,18 +159,30 @@ public sealed class MainViewModel : ObservableObject
         set => WriteInPlace = !value;
     }
 
-    /// <summary>True to copy the optical metadata keys beside the WCS keys (the default).</summary>
+    /// <summary>True to copy the optical metadata keys beside the WCS keys (the default); a change empties the card (R-053).</summary>
     public bool IncludeOptical
     {
         get => _includeOptical;
-        set => Set(ref _includeOptical, value);
+        set
+        {
+            if (Set(ref _includeOptical, value))
+            {
+                Clear();
+            }
+        }
     }
 
-    /// <summary>True to copy even when the two images' dimensions differ or the destination's own plate solve is mirrored (R-005, R-017).</summary>
+    /// <summary>True to copy even when the two images' dimensions differ or the destination's own plate solve is mirrored (R-005, R-017); a change empties the card (R-053).</summary>
     public bool Force
     {
         get => _force;
-        set => Set(ref _force, value);
+        set
+        {
+            if (Set(ref _force, value))
+            {
+                Clear();
+            }
+        }
     }
 
     /// <summary>The source's size and whether it is plate-solved; empty when the file cannot be read.</summary>
@@ -163,10 +214,47 @@ public sealed class MainViewModel : ObservableObject
     /// </summary>
     internal Func<WcsCopyRequest, WcsCopyOutcome> RunCore { get; set; } = WcsCopy.Run;
 
-    /// <summary>True once a preview or a copy has run; the outcome card is shown then.</summary>
+    /// <summary>
+    /// The look at a box's file: <see cref="Look"/>, given the whole path and true for the
+    /// source's box, which a test replaces to hold a look in flight (R-052).
+    /// </summary>
+    internal Func<string, bool, FileLook> LookCore { get; set; } = Look;
+
+    /// <summary>
+    /// Completes once every look in flight at a box's file has ended and its facts are shown, or
+    /// dropped for a text that changed since (R-052): what a test waits for before it reads a
+    /// fact line or the commands' state.
+    /// </summary>
+    internal Task FactsRead
+    {
+        get
+        {
+            lock (_looks)
+            {
+                return Task.WhenAll([.. _looks]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Completes once each box's latest look has ended and its facts are shown (R-052): what a run
+    /// waits for. An earlier look of a box, overtaken by a newer text or by a look again of the
+    /// same one, is left out: its result is dropped.
+    /// </summary>
+    private Task LatestLooks => Task.WhenAll(_sourceLook, _destLook);
+
+    /// <summary>True while the card shows a run's outcome: from the run's end until a box or an option changes or the next run starts (R-053).</summary>
     public bool HasOutcome => _outcome is not null;
 
-    /// <summary>The core's one line of a refusal; null when the last run was not refused.</summary>
+    /// <summary>True while the card has something to show: an outcome, or a run in flight (R-053).</summary>
+    public bool HasCard => HasOutcome || _running;
+
+    /// <summary>The card's line while a run is in flight, the window's own pair for the run's kind (R-053); empty otherwise.</summary>
+    public string RunningLine => !_running ? ""
+        : _runningCopy ? T("Copy in progress...", "Copiere in curs...")
+        : T("Preview in progress...", "Previzualizare in curs...");
+
+    /// <summary>The core's one line of a refusal; null when the card shows no refusal.</summary>
     public string? Error => _outcome?.Error;
 
     public bool HasError => Error is not null;
@@ -207,51 +295,126 @@ public sealed class MainViewModel : ObservableObject
 
     public bool HasNotes => Notes.Count > 0;
 
+    /// <summary>
+    /// Looks at both boxes' files again, off the window's thread (R-054): a file saved, solved or
+    /// removed since its box's text was set shows as it is now; each line and the commands stay
+    /// as they are until its look ends. A box with no text is left alone.
+    /// </summary>
+    internal void LookAgain()
+    {
+        if (_sourcePath.Length > 0)
+        {
+            LookAt(source: true, fresh: false);
+        }
+
+        if (_destPath.Length > 0)
+        {
+            LookAt(source: false, fresh: false);
+        }
+    }
+
+    /// <summary>The source picked in its Browse dialog: the box takes the path, or, when it already holds it, looks at its file again (R-054).</summary>
+    /// <param name="path">The dialog's whole path.</param>
+    internal void PickSource(string path)
+    {
+        if (string.Equals(_source, path, StringComparison.Ordinal))
+        {
+            LookAt(source: true, fresh: false);
+        }
+        else
+        {
+            Source = path;
+        }
+    }
+
+    /// <summary>The destination picked in its Browse dialog: the box takes the path, or, when it already holds it, looks at its file again (R-054).</summary>
+    /// <param name="path">The dialog's whole path.</param>
+    internal void PickDest(string path)
+    {
+        if (string.Equals(_dest, path, StringComparison.Ordinal))
+        {
+            LookAt(source: false, fresh: false);
+        }
+        else
+        {
+            Dest = path;
+        }
+    }
+
     /// <summary>Runs the core's dry run on the boxes and shows its outcome (R-031).</summary>
-    /// <returns>Completes once the outcome is shown.</returns>
+    /// <returns>Completes once the outcome is shown and, while the window is open, both files are looked at again.</returns>
     public Task Preview() => RunAsync(dryRun: true);
 
-    /// <summary>Runs the copy on the boxes, shows its outcome and reads the destination's facts again (R-032).</summary>
-    /// <returns>Completes once the outcome is shown and the facts are read.</returns>
-    public async Task Copy()
-    {
-        await RunAsync(dryRun: false).ConfigureAwait(true);
-        DestFacts = Facts(Clean(_dest), source: false);
-    }
+    /// <summary>Runs the copy on the boxes and shows its outcome (R-032); while the window is open, both files are looked at again after it, so an in-place copy shows as plate-solved.</summary>
+    /// <returns>Completes once the outcome is shown and, while the window is open, both files are looked at again.</returns>
+    public Task Copy() => RunAsync(dryRun: false);
 
     /// <summary>
     /// Runs the core on a thread-pool thread, the commands off meanwhile (R-030): an in-place
     /// copy streams the whole data area through a temp file, seconds on a large stack, and the
-    /// window must stay live. The request is built here, on the caller's thread, and the
-    /// outcome is shown back on it; <see cref="IsRunning"/> is raised as the run starts and
-    /// after its outcome is shown (R-050).
+    /// window must stay live. The request is built here, on the caller's thread; the card is
+    /// emptied and shows the run's in-progress line (R-053); the run starts once each box's
+    /// latest look has ended (R-052), and the outcome is shown back on the caller's thread;
+    /// <see cref="IsRunning"/> is raised as the run starts and after its outcome is shown
+    /// (R-050). Then both files are looked at again (R-054), so the lines under the boxes say what
+    /// the run found, the destination of an in-place copy `already plate-solved`; once a held
+    /// close has closed the window, no look is started.
     /// </summary>
     /// <param name="dryRun">True to list the cards and write nothing.</param>
-    /// <returns>Completes once the outcome is shown.</returns>
+    /// <returns>Completes once the outcome is shown and, while the window is open, both files are looked at again.</returns>
     private async Task RunAsync(bool dryRun)
     {
         WcsCopyRequest request = Request(dryRun);
         Func<WcsCopyRequest, WcsCopyOutcome> run = RunCore;
         _running = true;
-        RaiseCanRun();
-        Raise(nameof(IsRunning));
+        _runningCopy = !dryRun;
+        Clear();
+        RaiseRunning();
         try
         {
+            // A look logs the reader's read line: waiting for the boxes' latest looks keeps their
+            // lines out of the run's in the log (R-043); an earlier look a newer one overtook is
+            // not waited for, its result being dropped.
+            await LatestLooks.ConfigureAwait(true);
             Show(await Task.Run(() => run(request)).ConfigureAwait(true));
         }
         finally
         {
             _running = false;
-            RaiseCanRun();
-            Raise(nameof(IsRunning));
+            RaiseRunning();
         }
+
+        LookAgain();
+        await LatestLooks.ConfigureAwait(true);
     }
 
-    /// <summary>The request the boxes and the options describe, the paths without their surrounding whitespace.</summary>
+    /// <summary>
+    /// Starts no look at the files from now on, the window having closed (R-054): a look again at
+    /// the end of the run a close was held for would write its read lines after the window's last
+    /// line, and race the process's exit line in the log. A look already in flight cannot be
+    /// stopped, and ends as it would.
+    /// </summary>
+    internal void StopLooking() => _lookingStopped = true;
+
+    /// <summary>Raises what follows the running state: the two commands, <see cref="IsRunning"/>, the card's visibility and its in-progress line.</summary>
+    private void RaiseRunning()
+    {
+        RaiseCanRun();
+        Raise(nameof(IsRunning));
+        Raise(nameof(HasCard));
+        Raise(nameof(RunningLine));
+    }
+
+    /// <summary>
+    /// The request the boxes and the options describe, each path whole (R-051): the source and
+    /// the destination as they were made whole when their texts were set, the new file made
+    /// whole against the destination's folder, so a bare name goes beside the destination.
+    /// </summary>
     /// <param name="dryRun">True to list the cards and write nothing.</param>
     /// <returns>The request for <see cref="WcsCopy.Run"/>.</returns>
     private WcsCopyRequest Request(bool dryRun)
-        => new(Clean(_source), Clean(_dest), _writeInPlace ? null : Clean(_output), _includeOptical, _force, dryRun);
+        => new(_sourcePath, _destPath, _writeInPlace ? null : Whole(Clean(_output), Path.GetDirectoryName(_destPath)),
+            _includeOptical, _force, dryRun);
 
     /// <summary>Keeps an outcome and raises every property the outcome card binds.</summary>
     /// <param name="outcome">The core's outcome; not null.</param>
@@ -259,9 +422,32 @@ public sealed class MainViewModel : ObservableObject
     {
         _outcome = outcome;
         Cards = outcome.Cards.Select(c => c.TrimEnd(' ')).ToList();
+        RaiseOutcome();
+    }
+
+    /// <summary>
+    /// Empties the card of its outcome (R-053): a box's text, the in-place or new-file choice or
+    /// an option changed, so it no longer says what a run would do, or a run starts. Nothing is
+    /// raised when there is no outcome to take away.
+    /// </summary>
+    private void Clear()
+    {
+        if (_outcome is null)
+        {
+            return;
+        }
+
+        _outcome = null;
+        Cards = [];
+        RaiseOutcome();
+    }
+
+    /// <summary>Raises every property the outcome card binds, after an outcome is kept or taken away.</summary>
+    private void RaiseOutcome()
+    {
         foreach (string name in new[]
                  {
-                     nameof(HasOutcome), nameof(Error), nameof(HasError), nameof(Warnings), nameof(HasWarnings),
+                     nameof(HasOutcome), nameof(HasCard), nameof(Error), nameof(HasError), nameof(Warnings), nameof(HasWarnings),
                      nameof(Heading), nameof(HasHeading), nameof(Cards), nameof(HasCards), nameof(Notes), nameof(HasNotes),
                  })
         {
@@ -289,6 +475,114 @@ public sealed class MainViewModel : ObservableObject
         string trimmed = path.Trim();
         return trimmed.Length >= 2 && trimmed[0] == '"' && trimmed[^1] == '"' ? trimmed[1..^1] : trimmed;
     }
+
+    /// <summary>
+    /// A box's cleaned path made whole (R-051), once, so that a working folder that moves later
+    /// changes nothing it names: against the working folder, or against a folder given.
+    /// </summary>
+    /// <param name="path">The path, cleaned (<see cref="Clean"/>); empty stays empty.</param>
+    /// <param name="folder">The whole folder a relative path is taken from; null or empty for the working folder.</param>
+    /// <returns>The whole path; the path as it was when the system cannot make one of it (a NUL inside, a folder that is itself not whole), so the run refuses it in its own words.</returns>
+    private static string Whole(string path, string? folder)
+    {
+        if (path.Length == 0)
+        {
+            return path;
+        }
+
+        try
+        {
+            return string.IsNullOrEmpty(folder) ? Path.GetFullPath(path) : Path.GetFullPath(path, folder);
+        }
+        catch (Exception ex) when (ex is ArgumentException or IOException)
+        {
+            return path;
+        }
+    }
+
+    /// <summary>
+    /// Starts a look at a box's file off the window's thread (R-052), through
+    /// <see cref="LookCore"/>, numbered as the box's latest: a look of a new text first empties
+    /// the box's fact line and turns its existence off, so the commands wait for it; a look again
+    /// keeps both as they are until it ends, and when asked during a run is left to the run's
+    /// end, whose own look again covers it (R-054). What it finds is shown on the caller's thread,
+    /// unless a newer look of the same box was started meanwhile. Once the window has closed
+    /// (<see cref="StopLooking"/>) no look starts.
+    /// </summary>
+    /// <param name="source">True for the source's box, false for the destination's.</param>
+    /// <param name="fresh">True when the box's text changed: its old facts no longer apply.</param>
+    private void LookAt(bool source, bool fresh)
+    {
+        // Started now, a look again would write its read lines among the run's in the log (R-043).
+        if (_lookingStopped || (_running && !fresh))
+        {
+            return;
+        }
+
+        int turn = source ? ++_sourceTurn : ++_destTurn;
+        string path = source ? _sourcePath : _destPath;
+        if (fresh)
+        {
+            Found(source, new FileLook(false, ""));
+        }
+
+        Func<string, bool, FileLook> look = LookCore;
+        Task shown = ShowWhenFound(source, turn, Task.Run(() => look(path, source)));
+        if (source)
+        {
+            _sourceLook = shown;
+        }
+        else
+        {
+            _destLook = shown;
+        }
+
+        lock (_looks)
+        {
+            _looks.RemoveAll(t => t.IsCompleted);
+            _looks.Add(shown);
+        }
+    }
+
+    /// <summary>Shows what a look found once it ends, on the caller's thread, unless its box has a newer look by then (R-052).</summary>
+    /// <param name="source">True for the source's box, false for the destination's.</param>
+    /// <param name="turn">The look's number, compared with the box's latest when it ends.</param>
+    /// <param name="looking">The look, running off the window's thread.</param>
+    /// <returns>Completes once the look is shown or dropped.</returns>
+    private async Task ShowWhenFound(bool source, int turn, Task<FileLook> looking)
+    {
+        FileLook found = await looking.ConfigureAwait(true);
+        if (turn == (source ? _sourceTurn : _destTurn))
+        {
+            Found(source, found);
+        }
+    }
+
+    /// <summary>Puts what a look found under its box: the existence the commands follow, and the fact line.</summary>
+    /// <param name="source">True for the source's box, false for the destination's.</param>
+    /// <param name="found">What the look found; an empty look for a text whose look has not ended.</param>
+    private void Found(bool source, FileLook found)
+    {
+        if (source)
+        {
+            _sourceExists = found.Exists;
+            SourceFacts = found.Facts;
+        }
+        else
+        {
+            _destExists = found.Exists;
+            DestFacts = found.Facts;
+        }
+
+        RaiseCanRun();
+    }
+
+    /// <summary>A look at a box's file (R-052): whether it exists, and if it does, the facts of its header.</summary>
+    /// <param name="path">The box's whole path; empty is allowed, and names no file.</param>
+    /// <param name="source">True for the source's box, false for the destination's.</param>
+    /// <returns>What the look found.</returns>
+    internal static FileLook Look(string path, bool source)
+        => File.Exists(path) ? new FileLook(true, Facts(path, source)) : new FileLook(false, "");
 
     /// <summary>
     /// The two facts of a header, worded for the box they sit under: the size, and whether

@@ -119,18 +119,24 @@ command line: the first two arguments that are existing files fill the boxes, so
 or "Send to" works; a path pasted in double quotes, as File Explorer's "Copy as path" gives
 it, is taken without them), choose whether to write into the destination or into a new file, keep or
 drop the optical metadata, allow or refuse different dimensions or a mirrored image, then
-**Preview** or **Copy**.
+**Preview** or **Copy**. A file name alone in the new file's box, `out.fit`, is written beside
+the destination; the files from the command line show in their boxes with their whole paths, and
+the result names the file it wrote with its folder.
 Under each file box the window shows what it read from the header (`Source: 5601 x 3692,
-plate-solved`, `Destination: 5601 x 3692`); after a copy the destination reads `already
-plate-solved`.
+plate-solved`, `Destination: 5601 x 3692`). It reads the files again when the window comes back
+to the front, when Browse picks a file, the same one too, and after every Preview or Copy, so a
+file saved or plate-solved in Siril meanwhile shows as it is now; after an in-place copy the
+destination reads `already plate-solved`.
 
 The window does what the console does: Preview lists exactly the cards `copywcs --dry-run`
 would print, Copy writes exactly the bytes the console writes, and a refusal or a warning is
-shown with the console's words (a refused copy writes nothing). The band at the top shows the
-version, the copyright and one sentence on what the tool does; its **Help** button (or F1)
-opens the wiki manual in the browser, at the section about what the window shows: the window
-itself before a Preview or a Copy, the result after one, and the section on problems when the
-result is a refusal or a warning. **About** opens the version, the copyright, the GPLv3
+shown with the console's words (a refused copy writes nothing). The result empties as soon as
+a box or an option changes, since it no longer says what a run would do, and while a Preview or
+a Copy runs the window says `Preview in progress...` or `Copy in progress...`. The band at the
+top shows the version, the copyright and one sentence on what the tool does; its **Help** button
+(or F1) opens the wiki manual in the browser, at the section about what the window shows: the
+window itself while no result is shown, the result after a Preview or a Copy, and the section on
+problems when the result is a refusal or a warning. **About** opens the version, the copyright, the GPLv3
 notice and the third-party components. The window is Windows-only; the console builds
 anywhere.
 

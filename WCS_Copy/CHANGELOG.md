@@ -95,6 +95,28 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   destination's own long value under the new one; the dry run and the window's Preview list the
   `CONTINUE` cards too, and still count keys (R-009, R-010, ADR 0022; CR-005 of the review of
   2026-11-16).
+- In the window, a file name alone in the new file's box is written beside the destination,
+  where it landed in whatever folder the window was started from, and the result names the
+  file with its folder; a relative path is taken once, when it is given, so nothing that moves
+  the program's working folder afterwards, a file dialog included, makes a copy read or write
+  another folder's files of the same names (R-051, ADR 0023; CR-006 of the review of 2026-11-16).
+- A file that is not FITS, a TIFF or a video picked by mistake, is turned away after its first
+  2,880 bytes with "does not begin with SIMPLE", where it was read whole and then called
+  truncated: 200 MB took 2.2 s and 585 MB of memory, and a file of several GB could crash the
+  program; a header that never reaches its `END` card is given up after 1,000 blocks
+  (R-015, ADR 0024; CR-007 of the review of 2026-11-16).
+- The window checks the file a box names away from its own thread, so typing a path on a slow
+  disk or on a share no longer freezes it: one letter of a path to a computer that does not
+  answer took 2.3 s; the line under the box comes when the check ends (R-052, ADR 0025; CR-008
+  of the review of 2026-11-16).
+- The window's result empties when a box or an option changes, where it kept listing the cards
+  of the files named before, and during a run it says `Preview in progress...` or
+  `Copy in progress...`, where it kept showing the last result, a refusal too (R-053, ADR 0026;
+  CR-009 of the review of 2026-11-16).
+- The window reads its files again when it comes back to the front, when Browse picks a file,
+  the same one too, and after every Preview or Copy: a file saved or plate-solved in Siril after
+  its path was typed used to stay missing or `not plate-solved` until the box was edited (R-054,
+  ADR 0027; CR-010 of the review of 2026-11-16).
 
 ### Internal
 

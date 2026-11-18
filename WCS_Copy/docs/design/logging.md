@@ -163,9 +163,9 @@ a build that does not.
 | `FitsHeader.WriteWithDataFrom` | Debug, Trace, Info, Warn | `write <target> through <target>.copywcs-<8 hex digits>.tmp, the data from byte <offset> of <source>` (the target's name shortened in the temporary one when it is too long for both) before the temporary file is created, every card to be written at Trace, `wrote <target> (<size>) bytes cards blocks data` after the rename; after a failed write `removed <temporary file>, the temporary file of the failed write` at Debug, or at Warn, with the exception, `the temporary file <path> of the failed write could not be removed` |
 | `WcsCopy.Run` | Info, Warn, Error, Debug | the start and done lines; `cannot read the source` / `the destination <path>` with the exception; the three warnings and the refusals without one (the three paths of R-019, the size, the mirror, no key); `the write of <target> failed` with the exception; at Debug `selected <n> keys: <w> WCS, <s> SIP, <o> optical`, `card <KEY>: <card> \| dest: <none, same or card>` (a long string's cards joined by ` + `) and `drop <KEY>: <card>` per card dropped, the destination's `CHECKSUM` included |
 | `CopyWcsCli` | Warn, Info | `refused (exit 1): <the --lang message>`, `usage error (exit 2): <the line on stderr>`, `help shown (exit 0)` |
-| `App` | Info, Warn | `language=<en or ro> source from the command line: <path or none> dest: <path or none>` (`StartLine`); a `--lang` refused, before its message box |
+| `App` | Info, Warn | `language=<en or ro> source from the command line: <path or none> dest: <path or none>` (`StartLine`), each path made whole (R-051); a `--lang` refused, before its message box |
 | `MainWindow` | Info, Debug, Warn | the file picked in each of the three dialogs, or the dialog closed without one; `About opened`; `Help opened: <address>`, for the Help button and F1 alike (R-039); `close asked while a run is in flight: the window closes when it ends`, once however many closes, and `the run ended: the window closes` after the run's done line (R-050); at Warn `the window closed while a run is in flight: Windows ended the session, the run is cut short`, when Windows closes the window during a run (a logoff, a shutdown) |
-| `MainViewModel.Facts` | Debug | no facts under a box: the header could not be read (with the exception), or has no `NAXIS1` or `NAXIS2` |
+| `MainViewModel.Facts` | Debug | no facts under a box: the header could not be read (with the exception), or has no `NAXIS1` or `NAXIS2`; written, as the reader's `read` line of an existing file, by the look at the box's file on a pool thread (R-052), before the start line of any run that follows; the looks again of R-054 write them after a run's done line and each time the window comes back to the front |
 | `AboutWindow.OpenLink` | Debug | a link that could not be opened, with the exception |
 | `ExternalLink.Open` | Debug | `the link <address> is not a web address, so it was not opened`; `the link <address> could not be opened`, with the exception |
 
@@ -188,7 +188,13 @@ and the `[pid:thread]` field separates them. A run is found from `copy start` to
 whose stage times say where the time went, or to `ended without an outcome` when it threw; a wrong
 WCS from the `card` lines and the two `read` lines (`ROWORDER`, `NAXIS`, the solve's `CTYPE`); an
 error by `WARN` or `ERROR` and the stack under it. At Trace the `card <n>` lines rebuild both
-headers and the one written. A window closed during a run writes the held line, the run's done
+headers and the one written. In the window's log a `read` line outside a run is a look at a
+box's file (R-052, R-054): when a box's text changes, before the start line of a run, after its
+done line, and each time the window comes back to the front. A run waits for each box's latest
+look, and a look again asked during it waits for its end, so only an earlier look a newer one
+overtook, or that of a box changed during the run, puts a `read` line among the run's, on another
+thread; a window that has closed starts no look, so the run a close was held for adds no `read`
+line after the window's last one, though a look already in flight on a slow disk or share may. A window closed during a run writes the held line, the run's done
 line, then `the run ended: the window closes`; at a logoff or a shutdown the held line is followed
 by the Warn line `the window closed while a run is in flight: ...` and the exit line, most often
 with no done line: the run ends with the process, its target as it was, or replaced whole when

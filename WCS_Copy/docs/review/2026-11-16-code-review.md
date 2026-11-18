@@ -88,11 +88,11 @@ original and proposal side by side.
 | CR-003 | 1 | rare | confirmed | A write to a new file that fails midway leaves a truncated file, and has already destroyed the one that was there | fixed f7d27425 |
 | CR-004 | 1 | some files | shown | A destination that holds `CHECKSUM` is written with the checksum left stale | fixed 9453c365 |
 | CR-005 | 1 | some files | shown | A long string value loses its `CONTINUE` cards, or keeps the destination's old ones | fixed 2ed7ac1b |
-| CR-006 | 1 | rare | to measure | The window's relative paths follow the process's working folder | open |
-| CR-007 | 2 | slip | shown | A large file that is not FITS is read whole before it is refused | open |
-| CR-008 | 2 | some setups | to measure | The window reads the file facts on its own thread at every keystroke | open |
-| CR-009 | 3 | common | confirmed | The outcome card stays as it was while the boxes change and during the next run | open |
-| CR-010 | 3 | common | owner | A file's existence and facts are read only when the box's text changes | open |
+| CR-006 | 1 | rare | to measure | The window's relative paths follow the process's working folder | fixed 9dc2a351 |
+| CR-007 | 2 | slip | shown | A large file that is not FITS is read whole before it is refused | fixed 6c2b5d23 |
+| CR-008 | 2 | some setups | to measure | The window reads the file facts on its own thread at every keystroke | fixed d346b52d |
+| CR-009 | 3 | common | confirmed | The outcome card stays as it was while the boxes change and during the next run | fixed bda57b2e |
+| CR-010 | 3 | common | owner | A file's existence and facts are read only when the box's text changes | fixed 277cc6bd |
 | CR-011 | 3 | some files | shown | A header without `NAXIS1` is reported as the size -1, with the advice to force | open |
 | CR-012 | 3 | some setups | to measure | The window may open taller than a small screen, and the cards may get no height | open |
 | CR-013 | 3 | slip | shown | The same file as source and destination is accepted and reported as a copy | fixed d1178b79 |
@@ -269,6 +269,7 @@ write through a temporary file.
   The write itself now makes its two paths whole as it begins (ADR 0020), so a folder that moves
   during the write moves nothing; one that moves before it is this entry's. The owner chose to
   leave it to this entry's own task.
+- **Status:** fixed 9dc2a351 (each path is made whole once, when it is given: a file of the command line, and a source or a destination typed relative, against the folder the window started in, the command line's files shown whole in their boxes; a new file typed relative against the destination's folder, so a bare name goes beside it, the owner's answer of 2026-11-18; the three file dialogs set `RestoreDirectory`. The run is given whole paths, so the note's case, a working folder moved between the destination's read and the write, is gone too. Measured that day with .NET 8.0.34, the dialogs run on a desktop of their own: the Save dialog never moved the working folder, the Open dialog with `RestoreDirectory` did not; the Open dialog without it, the window's two Browse buttons before the fix, was not measured, since the PC's security software refused the probe's next builds; severity 1 or 3 stays open, the fix being the same; R-051, ADR 0023).
 
 ## Severity 2
 
@@ -294,6 +295,7 @@ write through a temporary file.
 - **Test:** `R015_ReadFrom_MissingSimpleAsFirstCard_Throws` builds a block with `END`, so it
   does not reach this path.
 - **Evidence:** shown (the time and the memory; the crash at a given size was not run).
+- **Status:** fixed 6c2b5d23 (a file whose first card is not `SIMPLE` is refused after its first 2,880 bytes with the reader's "not FITS" message, and a header with no END in its first 1,000 blocks is refused there with the END message, no new text, the owner's answer of 2026-11-18; the owner's 5,200 FITS files under `E:\Photografie` had headers of 1 to 4 blocks that day. Measured on the same 200 MB of random bytes with the Release console: main took 2,153 and 2,241 ms at a peak working set of 585 MB and said truncated, the fix 161 to 299 ms at 26 to 27 MB; R-015, ADR 0024).
 
 ### CR-008 The window reads the file facts on its own thread at every keystroke
 
@@ -312,6 +314,7 @@ write through a temporary file.
   covers a 60-byte file.
 - **Evidence:** to measure, on a sleeping disk or a share; the read on the window's thread is
   certain by reading.
+- **Status:** fixed d346b52d (a box's file is looked at off the window's thread, its line empty and the commands off until the look of its latest text ends, a look overtaken by a newer text dropped, and a run waits for each box's latest look, so their read lines stay out of the run's lines in the log; since the branch's review, 845cc26c, a run no longer waits for an overtaken look, the owner's answer of 2026-11-18. Measured on 2026-11-18 with `File.Exists` on paths typed letter by letter: one letter of a path to a computer that does not answer took 2,274 ms, the owner's NAS 56 ms at most, the local disks 3.2 ms at most; the disks spin down after 20 minutes and none was caught asleep; R-052, ADR 0025).
 
 ## Severity 3
 
@@ -328,6 +331,7 @@ write through a temporary file.
   starts, and a run in flight said.
 - **Test:** none.
 - **Evidence:** confirmed.
+- **Status:** fixed bda57b2e (the card empties when the value of a box's text, of the in-place or new-file choice or of either option changes, and when a run starts; during the run it shows only `Preview in progress...` or `Copy in progress...` (`Previzualizare in curs...`, `Copiere in curs...`), then the run's outcome, the owner's answer of 2026-11-18 over dimming, the two texts approved with the plan; Help opens the window's section while the card holds no outcome; R-053, R-039, ADR 0026).
 
 ### CR-010 A file's existence and facts are read only when the box's text changes
 
@@ -345,6 +349,7 @@ write through a temporary file.
 - **Evidence:** owner: `docs/design/window.md` makes "checked once, when its path is set"
   deliberate, against a check in the getters; these two cases follow from it and are not
   named there.
+- **Status:** fixed 277cc6bd (the owner chose the fix on 2026-11-18: a box's file is looked at again when a Browse of it picks a file, the path the box holds included, both when the window comes back to the front, and both after every Preview and Copy, which stands for "before a run": the run reads both files itself, and a look after it keeps the window's read lines out of the run's lines in the log; a look again keeps the line and the commands until it ends, and one asked during a run is left to the run's end, 8191c3c8; a window that has closed starts no look, so the run a close was held for writes no read line after its last one, 845cc26c; R-054, ADR 0027).
 
 ### CR-011 A header without `NAXIS1` is reported as the size -1
 
@@ -666,6 +671,8 @@ that next touches the file.
   three of each. Lines 171-184 describe the console's crash order alone.
 - `MainViewModel.cs:237`: `Request`'s summary says "without their surrounding whitespace";
   `Clean` takes the quotes off too. Lines 51 and 167: two pragma blocks for one reason.
+  (The summary was rewritten by CR-006's fix, 9dc2a351, and no longer says it; the two pragma
+  blocks stay.)
 - `MainWindow.xaml.cs:123`, `166`: `Path.GetDirectoryName` gets the raw box text, so a quoted
   path proposes no folder; the Save dialog ignores the output box's own path, against
   `docs/design/window.md:41-42`.
@@ -673,4 +680,5 @@ that next touches the file.
 - `Views/AboutWindow.xaml.cs:31-34`: the summary lists the About window's parts without the
   third-party card.
 - `README.md:98-99`: "after a copy the destination reads `already plate-solved`" holds for an
-  in-place copy alone (R-032 says so).
+  in-place copy alone (R-032 says so). (Done with CR-010's fix, 277cc6bd: the README says "after
+  an in-place copy".)
