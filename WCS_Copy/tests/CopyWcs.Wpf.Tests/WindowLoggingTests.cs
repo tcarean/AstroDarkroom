@@ -138,7 +138,7 @@ public class WindowLoggingTests
         });
 
     /// <summary>
-    /// A window closed at the end of a held run reads no file after it has closed (R-050, R-054):
+    /// A window closed at the end of a held run starts no look after it has closed (R-050, R-054):
     /// the run's look again at its end would write its read lines after the window's last line,
     /// and in the application race the process's exit line (the review of the branch on
     /// 2026-11-18).

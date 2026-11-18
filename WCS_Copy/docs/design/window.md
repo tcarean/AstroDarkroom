@@ -67,8 +67,8 @@ whole, its done line logged, before the window and the process go. Every close g
 `OnClosing` (the X, Alt+F4, the taskbar, a never-shown window's `Close()` in the tests); a
 session's end makes WPF ignore the cancel, so a logoff is not held. `OnClosed` ends the window's
 watch of the view-model, so that a run ending after the window has gone closes nothing, stops
-the view-model's looks at the files (`StopLooking`, R-054), so that no read line follows the
-window's last one, and logs at Warn a close that came while a run was still in flight, which
+the view-model from starting looks at the files (`StopLooking`, R-054), so that the run's look
+again writes no read line after the window's last one, and logs at Warn a close that came while a run was still in flight, which
 only Windows' forced close reaches. The handlers of
 `Preview` and `Copy` call the view-model and nothing else; the two Browse handlers of the files
 hand the path picked to `PickSource` and `PickDest`, and `LookAgainWhenBackInFront`, on the
@@ -92,7 +92,7 @@ window's `Activated`, calls `LookAgain` (R-054).
   keeps its text as typed. `Preview()` runs it
   with the dry run, `Copy()` without. Both go through `RunAsync`: the request is built on the
   caller's thread, the run waits for each box's latest look (`LatestLooks`, in the next point),
-  so that the read lines of the looks of what the boxes name stay out of the run's in the log,
+  so that the read line of each box's latest look stays out of the run's in the log,
   the core runs in a `Task.Run` (an in-place copy streams the whole data area through a
   temp file, seconds on a large stack, and the window must stay live), and the outcome is shown
   back on the caller's thread; the window's two handlers are `async void` over them. The core
@@ -117,13 +117,15 @@ window's `Activated`, calls `LookAgain` (R-054).
   the window's, and `Found` puts the result under the box only when the look's number is still
   the box's latest, so a look overtaken by a newer text is dropped. Each box's latest look is
   kept in `_sourceLook` and `_destLook`, and `LatestLooks`, both of them, is what a run awaits
-  before it starts and after its look again: an overtaken look is not waited for, its box no
-  longer naming its file (on a share that does not answer it held a Preview 3 s, the review of
-  the branch on 2026-11-18), so its read line, like that of a box changed during a run, may fall
+  before it starts and after its look again: an earlier look of a box, overtaken by a newer
+  text or by a look again of the same one, is not waited for, its result being dropped (on a
+  share that does not answer it held a Preview 3 s, the review of the branch on 2026-11-18), so
+  its read line, like that of a box changed during a run, may fall
   among the run's. Every look started is kept in `_looks` until it ends, and `FactsRead`, which
   completes once they all have, is what the tests await. `StopLooking`, which the window's
-  `OnClosed` calls, stops every look, so the run a close was held for writes no read line after
-  the window's last one. The existence is checked by the look, not in the getters, which the
+  `OnClosed` calls, starts no look from then on, so the run a close was held for writes no read
+  line after the window's last one; a look already in flight, on a slow disk or share, still ends
+  and may write its line after it. The existence is checked by the look, not in the getters, which the
   boxes call at every keystroke; a check on the window's thread stopped it on a share that does
   not answer (2.3 s for one letter, measured on 2026-11-18). `LookAgain` looks at both files
   again (R-054, ADR 0027), each line and the commands kept as they are until its look ends: at

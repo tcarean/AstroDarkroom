@@ -611,9 +611,9 @@ public class MainViewModelTests
     }
 
     /// <summary>
-    /// A Preview clicked while a look is in flight runs once the look ends (R-052), so that the
-    /// run's lines in the log are its own (R-043): the look's read line comes before the run's
-    /// start line, and the run reads each file once.
+    /// A Preview clicked while a box's latest look is in flight runs once that look ends (R-052),
+    /// so that its read line stays out of the run's lines in the log (R-043): it comes before the
+    /// run's start line, and the run reads each file once.
     /// </summary>
     [Fact]
     public async Task R052_ARunWaitsForTheLooksInFlight()

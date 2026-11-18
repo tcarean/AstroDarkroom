@@ -22,11 +22,12 @@ way the user comes back from Siril or File Explorer; and both after every Previe
 its outcome is shown. A look again keeps the fact line and the commands as they are until it
 ends, and empties no card; one asked while a run is in flight, the window back in front during a
 copy most often, is left to the run's end, whose own look covers it; and a window that has closed
-looks at no file, so the run a close was held for (R-050) writes no read line after the window's
-last one, nor races the process's exit line (the review of the branch on 2026-11-18). The entry
-named "before a run": the run reads both files itself, and a
-look after it makes the lines agree with what it found without the window's `read` lines falling
-between the run's start and done lines in the log (R-043).
+starts no look, so the run a close was held for (R-050) writes no read line after the window's
+last one (the review of the branch on 2026-11-18); a look already in flight then, on a slow disk
+or share, cannot be stopped, and may still write its line after it or race the process's exit
+line. The entry named "before a run": the run reads both files itself, and a look after it makes
+the lines agree with what it found without the window's `read` lines falling between the run's
+start and done lines in the log (R-043).
 
 ## Alternatives rejected
 
@@ -40,8 +41,9 @@ between the run's start and done lines in the log (R-043).
 ## Consequences
 
 Each return of the window to the front writes the reader's `read` line of each existing file to
-the log, and so does the end of every run. The window's `Activated` reaches `LookAgain` through
-`LookAgainWhenBackInFront`, and the Browse handlers go through `PickSource` and `PickDest`. A box
+the log, and so does the end of every run while the window is open. The window's `Activated`
+reaches `LookAgain` through `LookAgainWhenBackInFront`, and the Browse handlers go through
+`PickSource` and `PickDest`. A box
 whose text changes during a run is still looked at at once, as its facts were read at once
 before, so that look's read line can fall among the run's, on another thread. Guarded by
 `MainViewModelTests.R054_BrowsingThePathTheBoxHoldsLooksAgain`,

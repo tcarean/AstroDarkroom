@@ -349,7 +349,7 @@ write through a temporary file.
 - **Evidence:** owner: `docs/design/window.md` makes "checked once, when its path is set"
   deliberate, against a check in the getters; these two cases follow from it and are not
   named there.
-- **Status:** fixed 277cc6bd (the owner chose the fix on 2026-11-18: a box's file is looked at again when a Browse of it picks a file, the path the box holds included, both when the window comes back to the front, and both after every Preview and Copy, which stands for "before a run": the run reads both files itself, and a look after it keeps the window's read lines out of the run's lines in the log; a look again keeps the line and the commands until it ends, and one asked during a run is left to the run's end, 8191c3c8; a window that has closed reads no file, so no read line follows its last one, 845cc26c; R-054, ADR 0027).
+- **Status:** fixed 277cc6bd (the owner chose the fix on 2026-11-18: a box's file is looked at again when a Browse of it picks a file, the path the box holds included, both when the window comes back to the front, and both after every Preview and Copy, which stands for "before a run": the run reads both files itself, and a look after it keeps the window's read lines out of the run's lines in the log; a look again keeps the line and the commands until it ends, and one asked during a run is left to the run's end, 8191c3c8; a window that has closed starts no look, so the run a close was held for writes no read line after its last one, 845cc26c; R-054, ADR 0027).
 
 ### CR-011 A header without `NAXIS1` is reported as the size -1
 

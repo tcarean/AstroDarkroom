@@ -191,9 +191,10 @@ error by `WARN` or `ERROR` and the stack under it. At Trace the `card <n>` lines
 headers and the one written. In the window's log a `read` line outside a run is a look at a
 box's file (R-052, R-054): when a box's text changes, before the start line of a run, after its
 done line, and each time the window comes back to the front. A run waits for each box's latest
-look, and a look again asked during it waits for its end, so only a look overtaken by a newer
-text, or that of a box changed during the run, puts a `read` line among the run's, on another
-thread; a window that has closed reads no file, so no `read` line follows its last one. A window closed during a run writes the held line, the run's done
+look, and a look again asked during it waits for its end, so only an earlier look a newer one
+overtook, or that of a box changed during the run, puts a `read` line among the run's, on another
+thread; a window that has closed starts no look, so the run a close was held for adds no `read`
+line after the window's last one, though a look already in flight on a slow disk or share may. A window closed during a run writes the held line, the run's done
 line, then `the run ended: the window closes`; at a logoff or a shutdown the held line is followed
 by the Warn line `the window closed while a run is in flight: ...` and the exit line, most often
 with no done line: the run ends with the process, its target as it was, or replaced whole when

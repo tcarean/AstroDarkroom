@@ -21,10 +21,11 @@ A box's change starts a look at its file in a `Task.Run`: the existence, then th
 box's fact line empties at once and its existence turns off, so Preview and Copy wait for the
 look; the look's result is shown on the window's thread when it ends, unless a newer look of the
 same box was started meanwhile, in which case it is dropped (R-052). A Preview or a Copy waits for
-each box's latest look before the core runs, so that the reader's `read` lines of the looks of
-what the boxes name stay out of the run's start and done lines in the log, which R-043 compares
-with the console's; a look overtaken by a newer text is not waited for, its box no longer naming
-its file (the owner's answer of 2026-11-18, after the review of the branch). The look goes
+each box's latest look before the core runs, so that the reader's `read` line of each box's
+latest look stays out of the run's start and done lines in the log, which R-043 compares with the
+console's; an earlier look of a box, overtaken by a newer text or by a look again of the same
+one, is not waited for, its result being dropped (the owner's answer of 2026-11-18, after the
+review of the branch: the run waits for the looks whose results it shows). The look goes
 through `LookCore`, which a test replaces to hold a look, as `RunCore` holds a run.
 
 ## Alternatives rejected

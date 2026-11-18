@@ -67,7 +67,7 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>The destination box's latest look, as <see cref="_sourceLook"/>.</summary>
     private Task _destLook = Task.CompletedTask;
 
-    /// <summary>True once the window has closed: no file is looked at again (R-054), so no read line follows the window's last one.</summary>
+    /// <summary>True once the window has closed: no look starts any more (R-054), so the run a close was held for writes no read line after the window's last one; a look already in flight ends as it would.</summary>
     private bool _lookingStopped;
 
     private bool _writeInPlace = true;
@@ -238,8 +238,8 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>
     /// Completes once each box's latest look has ended and its facts are shown (R-052): what a run
-    /// waits for. A look overtaken by a newer text is left out, since its box no longer names its
-    /// file and its result is dropped.
+    /// waits for. An earlier look of a box, overtaken by a newer text or by a look again of the
+    /// same one, is left out: its result is dropped.
     /// </summary>
     private Task LatestLooks => Task.WhenAll(_sourceLook, _destLook);
 
@@ -342,11 +342,11 @@ public sealed class MainViewModel : ObservableObject
     }
 
     /// <summary>Runs the core's dry run on the boxes and shows its outcome (R-031).</summary>
-    /// <returns>Completes once the outcome is shown and both files are looked at again.</returns>
+    /// <returns>Completes once the outcome is shown and, while the window is open, both files are looked at again.</returns>
     public Task Preview() => RunAsync(dryRun: true);
 
-    /// <summary>Runs the copy on the boxes and shows its outcome (R-032); both files are looked at again after it, so an in-place copy shows as plate-solved.</summary>
-    /// <returns>Completes once the outcome is shown and both files are looked at again.</returns>
+    /// <summary>Runs the copy on the boxes and shows its outcome (R-032); while the window is open, both files are looked at again after it, so an in-place copy shows as plate-solved.</summary>
+    /// <returns>Completes once the outcome is shown and, while the window is open, both files are looked at again.</returns>
     public Task Copy() => RunAsync(dryRun: false);
 
     /// <summary>
@@ -358,10 +358,10 @@ public sealed class MainViewModel : ObservableObject
     /// <see cref="IsRunning"/> is raised as the run starts and after its outcome is shown
     /// (R-050). Then both files are looked at again (R-054), so the lines under the boxes say what
     /// the run found, the destination of an in-place copy `already plate-solved`; once a held
-    /// close has closed the window, no file is.
+    /// close has closed the window, no look is started.
     /// </summary>
     /// <param name="dryRun">True to list the cards and write nothing.</param>
-    /// <returns>Completes once the outcome is shown and both files are looked at again.</returns>
+    /// <returns>Completes once the outcome is shown and, while the window is open, both files are looked at again.</returns>
     private async Task RunAsync(bool dryRun)
     {
         WcsCopyRequest request = Request(dryRun);
@@ -373,8 +373,8 @@ public sealed class MainViewModel : ObservableObject
         try
         {
             // A look logs the reader's read line: waiting for the boxes' latest looks keeps their
-            // lines out of the run's in the log (R-043); an overtaken look is not waited for, its
-            // box no longer naming its file.
+            // lines out of the run's in the log (R-043); an earlier look a newer one overtook is
+            // not waited for, its result being dropped.
             await LatestLooks.ConfigureAwait(true);
             Show(await Task.Run(() => run(request)).ConfigureAwait(true));
         }
@@ -389,9 +389,10 @@ public sealed class MainViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Stops every look at the files from now on, the window having closed (R-054): a look again
-    /// at the end of the run a close was held for would write its read lines after the window's
-    /// last line, and race the process's exit line in the log.
+    /// Starts no look at the files from now on, the window having closed (R-054): a look again at
+    /// the end of the run a close was held for would write its read lines after the window's last
+    /// line, and race the process's exit line in the log. A look already in flight cannot be
+    /// stopped, and ends as it would.
     /// </summary>
     internal void StopLooking() => _lookingStopped = true;
 
@@ -506,7 +507,7 @@ public sealed class MainViewModel : ObservableObject
     /// keeps both as they are until it ends, and when asked during a run is left to the run's
     /// end, whose own look again covers it (R-054). What it finds is shown on the caller's thread,
     /// unless a newer look of the same box was started meanwhile. Once the window has closed
-    /// (<see cref="StopLooking"/>) nothing is looked at.
+    /// (<see cref="StopLooking"/>) no look starts.
     /// </summary>
     /// <param name="source">True for the source's box, false for the destination's.</param>
     /// <param name="fresh">True when the box's text changed: its old facts no longer apply.</param>

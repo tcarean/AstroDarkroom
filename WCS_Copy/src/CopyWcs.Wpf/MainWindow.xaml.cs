@@ -117,8 +117,9 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Stops following the view-model once the window is closed, so a run that ends later closes
-    /// nothing, stops its looks at the files, so none writes a read line after the window's last
-    /// one (R-054), and logs a close that came while a run was still in flight: one Windows forced
+    /// nothing, stops it from starting looks at the files, so the run a close was held for writes
+    /// no read line after the window's last one (R-054; a look already in flight ends as it
+    /// would), and logs a close that came while a run was still in flight: one Windows forced
     /// as the session ended (a logoff, a shutdown), since every other close is held (R-050). The
     /// run ends with the process unless it reaches its end first: its target is left as it was, or
     /// replaced whole (R-012, R-014).
