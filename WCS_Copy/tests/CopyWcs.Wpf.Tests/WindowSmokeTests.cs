@@ -491,4 +491,68 @@ public partial class WindowSmokeTests
 
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
+
+    /// <summary>
+    /// The window fits into the work area of its screen when it opens (R-055; CR-012 of the
+    /// review of 2026-11-16): on a screen with 600 units of height it opens 600 high, its minimum
+    /// no taller, at the area's top; on a tall screen it keeps its own height and minimum and is
+    /// moved up only as far as its bottom needs.
+    /// </summary>
+    [Fact]
+    public void R055_TheWindowFitsIntoTheWorkAreaOfItsScreen()
+        => _sta.Invoke(() =>
+        {
+            MainWindow small = new() { Top = 300 };
+            small.FitInto(new Rect(0, 20, 1280, 600));
+            Assert.Equal(600, small.Height);
+            Assert.Equal(600, small.MinHeight);
+            Assert.Equal(20, small.Top);
+
+            MainWindow tall = new() { Top = 500 };
+            double height = tall.Height;
+            double minimum = tall.MinHeight;
+            tall.FitInto(new Rect(0, 0, 1920, 1040));
+            Assert.Equal(height, tall.Height);
+            Assert.Equal(minimum, tall.MinHeight);
+            Assert.Equal(1040 - height, tall.Top);
+        });
+
+    /// <summary>
+    /// At its minimum height the window keeps four cards in view in the worst case the core
+    /// gives (R-055): a forced copy with two warnings (different sizes, a mirrored plate solve),
+    /// the drop line and the two closing lines, in both languages. Measured on 2026-11-18 at the
+    /// old minimum of 620: the list had 29 px, one card.
+    /// </summary>
+    /// <param name="romanian">The language of the window.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task R055_AtItsMinimumHeightTheCardsListShowsFourCards(bool romanian)
+        => _sta.InvokeAsync(async () =>
+        {
+            using IDisposable _ = Ui.Use(romanian ? UiLanguage.Romanian : UiLanguage.English);
+            using WindowFixture f = new(destCards: FitsTestData.MirroredSolveCards(200, 80));
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, Force = true };
+            await vm.FactsRead;
+            MainWindow w = new(vm) { Left = -20000, Top = -20000, ShowActivated = false, Width = 720 };
+            w.Height = w.MinHeight;
+            w.Show();
+            try
+            {
+                await vm.Copy();
+                w.UpdateLayout();
+                Assert.Equal(2, vm.Warnings.Count);
+                Assert.Equal(3, vm.Notes.Count);
+                Render((FrameworkElement)w.Content, (int)((FrameworkElement)w.Content).ActualWidth,
+                    (int)((FrameworkElement)w.Content).ActualHeight, romanian ? "window-minimum-ro" : "window-minimum-en");
+
+                ListBox list = Descendants(w).OfType<ListBox>().Single();
+                ScrollViewer scroll = Descendants(list).OfType<ScrollViewer>().First();
+                Assert.True(scroll.ViewportHeight >= 4, $"the list shows {scroll.ViewportHeight} cards, {list.ActualHeight} px");
+            }
+            finally
+            {
+                w.Close();
+            }
+        });
 }

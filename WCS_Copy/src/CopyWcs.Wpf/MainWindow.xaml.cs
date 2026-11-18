@@ -64,7 +64,8 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// The window over a given view-model (the tests pass their own): binds it, asks for the
-    /// dark title bar once the window has a handle, follows the view-model's running state, so
+    /// dark title bar and fits itself into its screen (R-055) once it has a handle, follows the
+    /// view-model's running state, so
     /// that a close held during a run is done when the run ends (R-050), and looks at the files
     /// again each time the window comes back to the front (R-054).
     /// </summary>
@@ -74,9 +75,28 @@ public partial class MainWindow : Window
         _vm = vm;
         InitializeComponent();
         DataContext = _vm;
-        SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+        SourceInitialized += (_, _) =>
+        {
+            DarkTitleBar.Apply(this);
+            FitInto(ScreenArea.WorkAreaOf(this));
+        };
         _vm.PropertyChanged += CloseWhenTheRunEnds;
         Activated += LookAgainWhenBackInFront;
+    }
+
+    /// <summary>
+    /// Fits the window into the work area of the screen it opens on (R-055), once it has its
+    /// handle, WPF having placed it by then: its height and its minimum are capped at the area's,
+    /// so a window opened on a short screen (a 1080p laptop at 150 %) is not cut by the taskbar,
+    /// and its top is kept inside the area (<see cref="WindowFit.Top"/>). It stays resizable, and
+    /// a window that fits where it opened is not changed.
+    /// </summary>
+    /// <param name="workArea">The work area of the window's screen, in device-independent pixels.</param>
+    internal void FitInto(Rect workArea)
+    {
+        Height = Math.Min(Height, workArea.Height);
+        MinHeight = Math.Min(MinHeight, workArea.Height);
+        Top = WindowFit.Top(Top, Height, workArea.Top, workArea.Height);
     }
 
     /// <summary>

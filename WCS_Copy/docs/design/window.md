@@ -28,7 +28,13 @@ and About that needs 787 px inside the window, 803 px with its 16 px frame, so t
 820 px wide; below 803 px, down to its minimum of 720, the explanation takes three lines and the
 band 70 px (measured on 2026-11-16 in both languages, ADR 0016). The band made the window open
 700 px high instead of 640, with a minimum height of 620 instead of 560 (2026-10-28): the
-outcome card keeps its room.
+outcome card keeps its room. The minimum became 680 on 2026-11-18 (R-055, ADR 0029): at 620 a
+forced copy with two warnings, the drop line and the two closing lines left the cards list
+29 px, one card; at 680 it is 89 px, four cards, measured by
+`R055_AtItsMinimumHeightTheCardsListShowsFourCards` (three cards at 675). Once the window has
+its handle, `FitInto` caps its height and its minimum at the work area of its screen and keeps
+its top inside it (`ScreenArea.WorkAreaOf` and `WindowFit.Top`, both copied from AstroDarkroom,
+ADR 0007); the window stays resizable and its maximum is left alone.
 
 The second row is the form, one column with the margin `20,16`: the three file rows (a label,
 a `TextBox` bound to the path with `UpdateSourceTrigger=PropertyChanged`, a Browse button, and

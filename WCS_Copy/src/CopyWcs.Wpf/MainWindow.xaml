@@ -32,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         xmlns:l="clr-namespace:CopyWcs.Wpf"
         Title="CopyWcs" Height="700" Width="820"
         Icon="/CopyWcs.Wpf;component/Icon/copywcs.ico"
-        MinHeight="620" MinWidth="720"
+        MinHeight="680" MinWidth="720"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource WindowBg}"
         TextOptions.TextFormattingMode="Display"

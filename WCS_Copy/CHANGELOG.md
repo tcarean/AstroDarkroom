@@ -59,6 +59,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The window fits into its screen when it opens: on a small screen, a 1080p laptop at 150 %, it
+  no longer runs under the taskbar. Its minimum height is 680 instead of 620, so the result
+  keeps four cards in view with two warnings and the closing lines on screen, where it kept one
+  (ADR 0029).
 - A file with no image size in its main header (`NAXIS1` or `NAXIS2` missing, the image in an
   extension) is refused with a line that says so, even with `--force`, where it was reported as
   the size (-1, -1) with the advice to force, and two such files were copied (ADR 0028).
