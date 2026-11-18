@@ -21,10 +21,13 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
   bytes than asked, even mid-stream; the fake slow stream of `FitsHeaderTests` proves the loop
   copes) and walks each block card by card until the card whose keyword is `END`; the cards
   before it are kept, the rest of that block is ignored, and `_dataOffset` is the number of
-  blocks read times 2880. A stream that ends before END, including one of exactly 36 cards
-  with no END, is "truncated or not FITS"; a first card other than `SIMPLE` is "not FITS"
-  (R-015). Only the primary HDU is read; extensions, if any, are part of what is copied as
-  data.
+  blocks read times 2880. The first card is looked at as soon as its 80 bytes are in: one other
+  than `SIMPLE` is "not FITS" at once, after the first block, so a large file of another kind
+  is never read further (R-015, ADR 0024). A stream that ends before END, including one of
+  exactly 36 cards with no END or one shorter than a card, is "truncated or not FITS", and so
+  is a header with no END in its first `MaxHeaderBlocks` (1,000) blocks, where the reading
+  stops: the owner's 5,200 FITS files of 2026-11-18 took 1 to 4 blocks. Only the primary HDU is
+  read; extensions, if any, are part of what is copied as data.
 - `KeywordOf` is the first eight characters trimmed of spaces only (`Trim(' ')`, as `GetInt`
   trims a value: with Latin-1 the bytes 0x85 and 0xA0 read as white space that `Trim()` would
   strip, as it stripped the control characters 0x09 to 0x0D, while FITS pads with the space

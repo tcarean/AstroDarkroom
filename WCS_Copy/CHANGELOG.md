@@ -100,6 +100,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   file with its folder; a relative path is taken once, when it is given, so nothing that moves
   the program's working folder afterwards, a file dialog included, makes a copy read or write
   another folder's files of the same names (R-051, ADR 0023; CR-006 of the review of 2026-11-16).
+- A file that is not FITS, a TIFF or a video picked by mistake, is turned away after its first
+  2,880 bytes with "does not begin with SIMPLE", where it was read whole and then called
+  truncated: 200 MB took 2.2 s and 585 MB of memory, and a file of several GB could crash the
+  program; a header that never reaches its `END` card is given up after 1,000 blocks
+  (R-015, ADR 0024; CR-007 of the review of 2026-11-16).
 
 ### Internal
 

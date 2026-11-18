@@ -398,6 +398,24 @@ public class CopyWcsCliTests
         Assert.Contains("Nu pot citi sursa", result.Stderr);
     }
 
+    /// <summary>
+    /// A large source picked by mistake that is not FITS, here 10 MB of text, is refused in the
+    /// reader's words for it (R-004, R-015; CR-007 of the review of 2026-11-16, where it was read
+    /// whole and then called truncated).
+    /// </summary>
+    [Fact]
+    public void R015_Run_ALargeSourceThatIsNotFits_IsRefusedAsNotFits()
+    {
+        using var ws = new TempWorkspace();
+        var notes = ws.WriteFile("notes.fit", Encoding.ASCII.GetBytes(string.Concat(Enumerable.Repeat("A text file picked by mistake, not a FITS file.\n", 220_000))));
+        var destPath = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        var result = Run(notes, destPath);
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Equal("Nu pot citi sursa '" + notes + "': Fisierul nu incepe cu SIMPLE - nu pare FITS.", result.Stderr.Trim());
+    }
+
     [Fact]
     public void R004_Run_DestFileMissing_ReturnsOneWithReadErrorOnStderr()
     {
