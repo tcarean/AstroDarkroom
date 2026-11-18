@@ -66,9 +66,10 @@ logs and calls `Close()` when `IsRunning` turns false with a close remembered, s
 whole, its done line logged, before the window and the process go. Every close goes through
 `OnClosing` (the X, Alt+F4, the taskbar, a never-shown window's `Close()` in the tests); a
 session's end makes WPF ignore the cancel, so a logoff is not held. `OnClosed` ends the window's
-watch of the view-model, so that a run ending after the window has gone closes nothing, and logs
-at Warn a close that came while a run was still in flight, which only Windows' forced close
-reaches. The handlers of
+watch of the view-model, so that a run ending after the window has gone closes nothing, stops
+the view-model's looks at the files (`StopLooking`, R-054), so that no read line follows the
+window's last one, and logs at Warn a close that came while a run was still in flight, which
+only Windows' forced close reaches. The handlers of
 `Preview` and `Copy` call the view-model and nothing else; the two Browse handlers of the files
 hand the path picked to `PickSource` and `PickDest`, and `LookAgainWhenBackInFront`, on the
 window's `Activated`, calls `LookAgain` (R-054).
@@ -90,9 +91,9 @@ window's `Activated`, calls `LookAgain` (R-054).
   destination. A text the system cannot make whole stays as it is, for the core to refuse; a box
   keeps its text as typed. `Preview()` runs it
   with the dry run, `Copy()` without. Both go through `RunAsync`: the request is built on the
-  caller's thread, the run waits for every look at the boxes' files in flight (`FactsRead`,
-  in the next point), so that a look's read line never falls between the run's start and done lines in the
-  log, the core runs in a `Task.Run` (an in-place copy streams the whole data area through a
+  caller's thread, the run waits for each box's latest look (`LatestLooks`, in the next point),
+  so that the read lines of the looks of what the boxes name stay out of the run's in the log,
+  the core runs in a `Task.Run` (an in-place copy streams the whole data area through a
   temp file, seconds on a large stack, and the window must stay live), and the outcome is shown
   back on the caller's thread; the window's two handlers are `async void` over them. The core
   is reached through `RunCore`, `WcsCopy.Run` unless a test puts a run there that waits for
@@ -114,9 +115,15 @@ window's `Activated`, calls `LookAgain` (R-054).
   `LookCore` in a `Task.Run`: `Look`, which is `File.Exists` and then `Facts`, unless a test
   puts a look there that waits for it. `ShowWhenFound` awaits it back on the caller's thread,
   the window's, and `Found` puts the result under the box only when the look's number is still
-  the box's latest, so a look overtaken by a newer text is dropped. Every look started is kept
-  in `_looks` until it ends; `FactsRead` completes once they all have, which the run, `Copy()`
-  and the tests await. The existence is checked by the look, not in the getters, which the
+  the box's latest, so a look overtaken by a newer text is dropped. Each box's latest look is
+  kept in `_sourceLook` and `_destLook`, and `LatestLooks`, both of them, is what a run awaits
+  before it starts and after its look again: an overtaken look is not waited for, its box no
+  longer naming its file (on a share that does not answer it held a Preview 3 s, the review of
+  the branch on 2026-11-18), so its read line, like that of a box changed during a run, may fall
+  among the run's. Every look started is kept in `_looks` until it ends, and `FactsRead`, which
+  completes once they all have, is what the tests await. `StopLooking`, which the window's
+  `OnClosed` calls, stops every look, so the run a close was held for writes no read line after
+  the window's last one. The existence is checked by the look, not in the getters, which the
   boxes call at every keystroke; a check on the window's thread stopped it on a share that does
   not answer (2.3 s for one letter, measured on 2026-11-18). `LookAgain` looks at both files
   again (R-054, ADR 0027), each line and the commands kept as they are until its look ends: at
@@ -213,8 +220,10 @@ bytes with the console's on a second fixture, the refusal line with the console'
 test that reads a fact line or `CanPreview` after setting a path awaits `FactsRead` first; the
 R-052 tests put `HeldLook` in `LookCore`, which waits for the test on one path, and check that
 the setter comes back at once with the line empty and the commands off, that a look overtaken
-by a newer text is dropped though it ends last, and that a Preview waits for a held look, whose
-read line then comes before the run's start line. The R-053 tests change each box and option
+by a newer text is dropped though it ends last, that a Preview waits for a held look, whose
+read line then comes before the run's start line, and that it does not wait for a held look its
+box no longer names. `R030_TheCommandsAreOffWhileARunIsInFlight` waits for the looks before the
+click, so the commands are off for the run alone. The R-053 tests change each box and option
 after a Preview and find the card empty, set each to the value it has and find it kept, and
 hold a Copy and a Preview in `RunCore` to read the in-progress line in both languages, the old
 outcome gone, and the run's own outcome after it; `WindowSmokeTests` render the card during a
@@ -223,6 +232,8 @@ file that was missing, or plate-solve one that was not, after its look, then cal
 and `PickDest` with the paths the boxes hold, `LookAgain` with the look held (the old line and
 the commands stay until it is released), or run a Preview, and find the line as the file is now,
 and ask a look again during a held run, which starts no look before the run ends;
+`WindowLoggingTests.R054_AClosedWindowLooksAtNoFile` closes a window over a held run and finds
+no read line after the window's last;
 `WindowSmokeTests` raise WPF's own `OnActivated` by reflection, a test window being never shown.
 `WindowSmokeTests` lay out and render both windows to a bitmap on the `StaFixture` thread
 (the window's background drawn first, or the labels on transparency come out dim in a PNG; the

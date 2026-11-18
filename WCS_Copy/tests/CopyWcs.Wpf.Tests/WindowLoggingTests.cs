@@ -137,6 +137,35 @@ public class WindowLoggingTests
             Assert.All([lines[0], lines[2]], l => Assert.Equal(LogLevel.Info, l.Level));
         });
 
+    /// <summary>
+    /// A window closed at the end of a held run reads no file after it has closed (R-050, R-054):
+    /// the run's look again at its end would write its read lines after the window's last line,
+    /// and in the application race the process's exit line (the review of the branch on
+    /// 2026-11-18).
+    /// </summary>
+    [Fact]
+    public Task R054_AClosedWindowLooksAtNoFile()
+        => _sta.InvokeAsync(async () =>
+        {
+            using WindowFixture f = new();
+            using ManualResetEventSlim release = new();
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, RunCore = WindowCloseTests.HeldRun(release) };
+            await vm.FactsRead;
+            MainWindow w = new(vm);
+            using LogCapture capture = LogCapture.Start();
+
+            Task preview = vm.Preview();
+            w.Close();
+            release.Set();
+            await preview;
+            await vm.FactsRead;
+
+            List<string> lines = capture.Events.Where(e => e.Logger is "Window" or "FitsHeader").Select(e => e.Message).ToList();
+            int closed = lines.IndexOf("the run ended: the window closes");
+            Assert.True(closed > 0, "no close line");
+            Assert.DoesNotContain(lines[(closed + 1)..], m => m.StartsWith("read ", StringComparison.Ordinal));
+        });
+
     [Fact]
     public void R043_TheStartLineNamesTheLanguageAndTheFilesFromTheCommandLine()
     {

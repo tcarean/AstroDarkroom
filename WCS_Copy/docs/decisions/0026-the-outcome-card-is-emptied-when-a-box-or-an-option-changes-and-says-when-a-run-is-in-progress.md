@@ -2,6 +2,7 @@
 
 Date: 2026-11-18
 Status: accepted 2026-11-18
+Supersedes: 0016 in part (the card keeping the last outcome while a run goes, which the manual's section follows)
 
 ## Context
 

@@ -47,10 +47,11 @@ internal static class Manual
     internal static string Url(ManualSection section) => Page + "#" + Anchor(section);
 
     /// <summary>
-    /// The section of what the outcome card shows: none yet, a result, or a refusal or a warning.
-    /// The card keeps the last outcome while a run goes, so the section does too.
+    /// The section of what the outcome card shows: no outcome, a result, or a refusal or a
+    /// warning. The card holds no outcome before any run, after a box or an option changed, and
+    /// while a run goes (R-053), when the window's own section is the one to open.
     /// </summary>
-    /// <param name="hasOutcome">Whether a preview or a copy has run, so the card is shown.</param>
+    /// <param name="hasOutcome">Whether the card shows a run's outcome.</param>
     /// <param name="hasError">Whether the card shows a refusal.</param>
     /// <param name="hasWarnings">Whether the card shows a warning.</param>
     /// <returns>The section to open.</returns>

@@ -21,9 +21,11 @@ A box's change starts a look at its file in a `Task.Run`: the existence, then th
 box's fact line empties at once and its existence turns off, so Preview and Copy wait for the
 look; the look's result is shown on the window's thread when it ends, unless a newer look of the
 same box was started meanwhile, in which case it is dropped (R-052). A Preview or a Copy waits for
-every look in flight before the core runs, so that the reader's `read` line of a look never falls
-between the run's start and done lines in the log, which R-043 compares with the console's. The
-look goes through `LookCore`, which a test replaces to hold a look, as `RunCore` holds a run.
+each box's latest look before the core runs, so that the reader's `read` lines of the looks of
+what the boxes name stay out of the run's start and done lines in the log, which R-043 compares
+with the console's; a look overtaken by a newer text is not waited for, its box no longer naming
+its file (the owner's answer of 2026-11-18, after the review of the branch). The look goes
+through `LookCore`, which a test replaces to hold a look, as `RunCore` holds a run.
 
 ## Alternatives rejected
 
@@ -33,12 +35,19 @@ look goes through `LookCore`, which a test replaces to hold a look, as `RunCore`
   out on the thread it blocks, and a test under load would see either.
 - **Keep the old facts on screen until the new look ends.** They would describe the file the box
   named before, under a box that names another.
+- **A run that waits for every look in flight, overtaken ones too.** It keeps every look started
+  before the run out of the run's lines, but the review of the branch showed a Preview held 3 s
+  by the look of a share path the box no longer held, the card saying the run was in progress and
+  a close held meanwhile; the owner chose the latest looks only.
 
 ## Consequences
 
-The window's tests wait for `FactsRead` after setting a path before they read a fact line or the
-commands' state, and a render test lets the looks reach the STA thread by awaiting. A look of a
-file the window cannot read writes its Debug line from a pool thread. A look that hangs on a
-share delays a Preview or a Copy until the system gives up on it; the run would hang on the same
-share. Guarded by `MainViewModelTests.R052_TheWindowStaysLiveWhileAFileIsLookedAt`,
-`R052_OnlyTheLatestTextsLookIsShown` and `R052_ARunWaitsForTheLooksInFlight`.
+The window's tests wait for `FactsRead`, every look in flight, after setting a path before they
+read a fact line or the commands' state, and a render test lets the looks reach the STA thread by
+awaiting. A look of a file the window cannot read writes its Debug line from a pool thread. A
+box's latest look that hangs on a share delays a Preview or a Copy until the system gives up on
+it; the run would hang on the same share. An overtaken look still in flight, or the look of a box
+changed during a run, may write its read line among the run's, on another thread. Guarded by
+`MainViewModelTests.R052_TheWindowStaysLiveWhileAFileIsLookedAt`,
+`R052_OnlyTheLatestTextsLookIsShown`, `R052_ARunWaitsForTheLooksInFlight` and
+`R052_ARunWaitsOnlyForEachBoxsLatestLook`.

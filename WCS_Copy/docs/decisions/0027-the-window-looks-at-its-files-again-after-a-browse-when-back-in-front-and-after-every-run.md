@@ -21,8 +21,10 @@ the path the box already holds included; both files when the window comes back t
 way the user comes back from Siril or File Explorer; and both after every Preview and Copy, once
 its outcome is shown. A look again keeps the fact line and the commands as they are until it
 ends, and empties no card; one asked while a run is in flight, the window back in front during a
-copy most often, is left to the run's end, whose own look covers it. The entry named "before a
-run": the run reads both files itself, and a
+copy most often, is left to the run's end, whose own look covers it; and a window that has closed
+looks at no file, so the run a close was held for (R-050) writes no read line after the window's
+last one, nor races the process's exit line (the review of the branch on 2026-11-18). The entry
+named "before a run": the run reads both files itself, and a
 look after it makes the lines agree with what it found without the window's `read` lines falling
 between the run's start and done lines in the log (R-043).
 
@@ -44,5 +46,7 @@ whose text changes during a run is still looked at at once, as its facts were re
 before, so that look's read line can fall among the run's, on another thread. Guarded by
 `MainViewModelTests.R054_BrowsingThePathTheBoxHoldsLooksAgain`,
 `R054_ALookAgainKeepsTheLineAndTheCommandsUntilItEnds`, `R054_ARunLooksAgainWhenItEnds`,
-`R054_ALookAgainAskedDuringARunWaitsForTheRunsEnd` and
-`WindowSmokeTests.R054_TheWindowBackInFrontLooksAgain`.
+`R054_ALookAgainAskedDuringARunWaitsForTheRunsEnd`,
+`WindowSmokeTests.R054_TheWindowBackInFrontLooksAgain` and
+`WindowLoggingTests.R054_AClosedWindowLooksAtNoFile`; the window's `OnClosed` calls the
+view-model's `StopLooking`.

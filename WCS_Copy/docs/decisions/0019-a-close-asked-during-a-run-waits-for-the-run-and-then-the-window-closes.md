@@ -43,7 +43,9 @@ view-model, so a run that ends later closes nothing.
 The view-model exposes `IsRunning`, raised as a run starts and after its outcome is shown, and
 `RunCore`, the run its commands call, which `WindowCloseTests` replace with one that waits for
 the test so that a run can be held in flight. While a close is held the window is greyed and
-nothing else on screen changes (CR-009, the outcome card during a run, is still open). A run that
+nothing else on screen changes (CR-009, the outcome card during a run, is still open). (Restated
+2026-11-18: CR-009 is fixed by ADR 0026, so the card already shows the run's in-progress line
+when a close is held, from the run's start; the close itself still changes nothing else.) A run that
 hangs keeps the window open until the system gives up on the file. Windows' forced close is
 tested through WPF's own `Window.InternalClose(shutdown: true, ignoreCancel: true)`, reached by
 reflection, since the tests' one Application serves every window test and cannot be shut down.

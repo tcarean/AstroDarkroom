@@ -1,7 +1,7 @@
 # 0016. Help and F1 open the wiki manual at the section of what the outcome card shows
 
 Date: 2026-11-16
-Status: accepted 2026-11-16
+Status: accepted 2026-11-16; the card keeping the last outcome while a run goes, which the manual's section follows superseded by 0026
 Supersedes: 0008 in part (About alone on the band's right, opened by F1); 0009 in part (F1 in the About tooltip)
 
 ## Context

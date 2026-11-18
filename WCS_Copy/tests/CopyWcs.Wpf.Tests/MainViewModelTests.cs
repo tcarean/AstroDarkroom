@@ -118,6 +118,9 @@ public class MainViewModelTests
     {
         using WindowFixture f = new();
         MainViewModel vm = Open(f);
+        // both files looked at first (R-052), so the commands are off for the run alone
+        await vm.FactsRead;
+        Assert.True(vm.CanPreview);
 
         Task run = vm.Preview();
         Assert.False(vm.CanPreview);
@@ -547,6 +550,37 @@ public class MainViewModelTests
         await vm.FactsRead;
         Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
         Assert.True(vm.CanPreview);
+    }
+
+    /// <summary>
+    /// A run waits only for each box's latest look: one overtaken by a newer text, still in flight
+    /// as on a share that does not answer, does not hold the run whose boxes no longer name its
+    /// file (R-052; the review of the branch on 2026-11-18, where such a look held a Preview 3 s).
+    /// </summary>
+    [Fact]
+    public async Task R052_ARunWaitsOnlyForEachBoxsLatestLook()
+    {
+        using WindowFixture f = new();
+        using ManualResetEventSlim release = new();
+        using ManualResetEventSlim started = new();
+        string share = f.FilePath("on-a-share.fit");
+        MainViewModel vm = new() { Source = f.Source, LookCore = HeldLook(release, share) };
+        vm.Dest = share;
+        vm.Dest = f.Dest;
+        await WaitFor(() => vm.CanPreview, "the local file's look");
+        vm.RunCore = request =>
+        {
+            started.Set();
+            return WcsCopy.Run(request);
+        };
+
+        Task preview = vm.Preview();
+        Assert.True(started.Wait(TimeSpan.FromSeconds(3)), "the run waited for a look its box no longer needs");
+
+        release.Set();
+        await preview;
+        Assert.True(vm.HasCards);
+        Assert.Equal("Destinatia: 100 x 80", vm.DestFacts);
     }
 
     /// <summary>

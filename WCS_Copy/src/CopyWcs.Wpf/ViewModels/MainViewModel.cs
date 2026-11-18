@@ -61,6 +61,15 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>The looks at the boxes' files that may still be in flight, which <see cref="FactsRead"/> waits for; the ones ended are taken out as a new one starts.</summary>
     private readonly List<Task> _looks = [];
 
+    /// <summary>The source box's latest look, shown or still in flight, which a run waits for (R-052).</summary>
+    private Task _sourceLook = Task.CompletedTask;
+
+    /// <summary>The destination box's latest look, as <see cref="_sourceLook"/>.</summary>
+    private Task _destLook = Task.CompletedTask;
+
+    /// <summary>True once the window has closed: no file is looked at again (R-054), so no read line follows the window's last one.</summary>
+    private bool _lookingStopped;
+
     private bool _writeInPlace = true;
     private bool _includeOptical = true;
     private bool _force;
@@ -211,7 +220,11 @@ public sealed class MainViewModel : ObservableObject
     /// </summary>
     internal Func<string, bool, FileLook> LookCore { get; set; } = Look;
 
-    /// <summary>Completes once every look in flight at a box's file has ended and its facts are shown, or dropped for a text that changed since (R-052).</summary>
+    /// <summary>
+    /// Completes once every look in flight at a box's file has ended and its facts are shown, or
+    /// dropped for a text that changed since (R-052): what a test waits for before it reads a
+    /// fact line or the commands' state.
+    /// </summary>
     internal Task FactsRead
     {
         get
@@ -223,7 +236,14 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>True once a preview or a copy has run; the outcome card is shown then.</summary>
+    /// <summary>
+    /// Completes once each box's latest look has ended and its facts are shown (R-052): what a run
+    /// waits for. A look overtaken by a newer text is left out, since its box no longer names its
+    /// file and its result is dropped.
+    /// </summary>
+    private Task LatestLooks => Task.WhenAll(_sourceLook, _destLook);
+
+    /// <summary>True while the card shows a run's outcome: from the run's end until a box or an option changes or the next run starts (R-053).</summary>
     public bool HasOutcome => _outcome is not null;
 
     /// <summary>True while the card has something to show: an outcome, or a run in flight (R-053).</summary>
@@ -234,7 +254,7 @@ public sealed class MainViewModel : ObservableObject
         : _runningCopy ? T("Copy in progress...", "Copiere in curs...")
         : T("Preview in progress...", "Previzualizare in curs...");
 
-    /// <summary>The core's one line of a refusal; null when the last run was not refused.</summary>
+    /// <summary>The core's one line of a refusal; null when the card shows no refusal.</summary>
     public string? Error => _outcome?.Error;
 
     public bool HasError => Error is not null;
@@ -333,11 +353,12 @@ public sealed class MainViewModel : ObservableObject
     /// Runs the core on a thread-pool thread, the commands off meanwhile (R-030): an in-place
     /// copy streams the whole data area through a temp file, seconds on a large stack, and the
     /// window must stay live. The request is built here, on the caller's thread; the card is
-    /// emptied and shows the run's in-progress line (R-053); the run starts once every look at
-    /// the boxes' files in flight has ended (R-052), and the outcome is shown back on the
-    /// caller's thread; <see cref="IsRunning"/> is raised as the run starts and after its outcome
-    /// is shown (R-050). Then both files are looked at again (R-054), so the lines under the boxes
-    /// say what the run found, the destination of an in-place copy `already plate-solved`.
+    /// emptied and shows the run's in-progress line (R-053); the run starts once each box's
+    /// latest look has ended (R-052), and the outcome is shown back on the caller's thread;
+    /// <see cref="IsRunning"/> is raised as the run starts and after its outcome is shown
+    /// (R-050). Then both files are looked at again (R-054), so the lines under the boxes say what
+    /// the run found, the destination of an in-place copy `already plate-solved`; once a held
+    /// close has closed the window, no file is.
     /// </summary>
     /// <param name="dryRun">True to list the cards and write nothing.</param>
     /// <returns>Completes once the outcome is shown and both files are looked at again.</returns>
@@ -351,9 +372,10 @@ public sealed class MainViewModel : ObservableObject
         RaiseRunning();
         try
         {
-            // A look logs the reader's read line: waiting for the looks in flight keeps the lines
-            // between the run's start and done lines the run's own (R-043).
-            await FactsRead.ConfigureAwait(true);
+            // A look logs the reader's read line: waiting for the boxes' latest looks keeps their
+            // lines out of the run's in the log (R-043); an overtaken look is not waited for, its
+            // box no longer naming its file.
+            await LatestLooks.ConfigureAwait(true);
             Show(await Task.Run(() => run(request)).ConfigureAwait(true));
         }
         finally
@@ -363,8 +385,15 @@ public sealed class MainViewModel : ObservableObject
         }
 
         LookAgain();
-        await FactsRead.ConfigureAwait(true);
+        await LatestLooks.ConfigureAwait(true);
     }
+
+    /// <summary>
+    /// Stops every look at the files from now on, the window having closed (R-054): a look again
+    /// at the end of the run a close was held for would write its read lines after the window's
+    /// last line, and race the process's exit line in the log.
+    /// </summary>
+    internal void StopLooking() => _lookingStopped = true;
 
     /// <summary>Raises what follows the running state: the two commands, <see cref="IsRunning"/>, the card's visibility and its in-progress line.</summary>
     private void RaiseRunning()
@@ -476,14 +505,15 @@ public sealed class MainViewModel : ObservableObject
     /// the box's fact line and turns its existence off, so the commands wait for it; a look again
     /// keeps both as they are until it ends, and when asked during a run is left to the run's
     /// end, whose own look again covers it (R-054). What it finds is shown on the caller's thread,
-    /// unless a newer look of the same box was started meanwhile.
+    /// unless a newer look of the same box was started meanwhile. Once the window has closed
+    /// (<see cref="StopLooking"/>) nothing is looked at.
     /// </summary>
     /// <param name="source">True for the source's box, false for the destination's.</param>
     /// <param name="fresh">True when the box's text changed: its old facts no longer apply.</param>
     private void LookAt(bool source, bool fresh)
     {
         // Started now, a look again would write its read lines among the run's in the log (R-043).
-        if (_running && !fresh)
+        if (_lookingStopped || (_running && !fresh))
         {
             return;
         }
@@ -497,6 +527,15 @@ public sealed class MainViewModel : ObservableObject
 
         Func<string, bool, FileLook> look = LookCore;
         Task shown = ShowWhenFound(source, turn, Task.Run(() => look(path, source)));
+        if (source)
+        {
+            _sourceLook = shown;
+        }
+        else
+        {
+            _destLook = shown;
+        }
+
         lock (_looks)
         {
             _looks.RemoveAll(t => t.IsCompleted);
