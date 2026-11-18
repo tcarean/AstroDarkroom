@@ -122,7 +122,9 @@ window's `Activated`, calls `LookAgain` (R-054).
   again (R-054, ADR 0027), each line and the commands kept as they are until its look ends: at
   the end of every Preview and Copy, after the outcome is shown, so the lines say what the run
   found and an in-place copy shows up as `already plate-solved`; and when the window comes back
-  to the front. `PickSource` and `PickDest`, which the Browse handlers call, set the box's text,
+  to the front. A look again asked while a run is in flight is skipped by `LookAt`: the run's
+  own look again at its end covers it, and started at once its read lines would fall among the
+  run's. `PickSource` and `PickDest`, which the Browse handlers call, set the box's text,
   or look at its file again when the dialog gives back the path the box already holds, which
   the setter, a text equal to the old one, would leave alone.
 - **Show the outcome.** `Show(outcome)` keeps the `WcsCopyOutcome` and raises every bound
@@ -219,7 +221,8 @@ outcome gone, and the run's own outcome after it; `WindowSmokeTests` render the 
 held run, in English with no Romanian word and with no binding error. The R-054 tests make a
 file that was missing, or plate-solve one that was not, after its look, then call `PickSource`
 and `PickDest` with the paths the boxes hold, `LookAgain` with the look held (the old line and
-the commands stay until it is released), or run a Preview, and find the line as the file is now;
+the commands stay until it is released), or run a Preview, and find the line as the file is now,
+and ask a look again during a held run, which starts no look before the run ends;
 `WindowSmokeTests` raise WPF's own `OnActivated` by reflection, a test window being never shown.
 `WindowSmokeTests` lay out and render both windows to a bitmap on the `StaFixture` thread
 (the window's background drawn first, or the labels on transparency come out dim in a PNG; the

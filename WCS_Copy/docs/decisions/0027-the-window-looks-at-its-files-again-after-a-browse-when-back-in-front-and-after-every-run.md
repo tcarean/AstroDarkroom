@@ -20,7 +20,9 @@ The window looks at the files again (R-054): a box's file when a Browse of that 
 the path the box already holds included; both files when the window comes back to the front, the
 way the user comes back from Siril or File Explorer; and both after every Preview and Copy, once
 its outcome is shown. A look again keeps the fact line and the commands as they are until it
-ends, and empties no card. The entry named "before a run": the run reads both files itself, and a
+ends, and empties no card; one asked while a run is in flight, the window back in front during a
+copy most often, is left to the run's end, whose own look covers it. The entry named "before a
+run": the run reads both files itself, and a
 look after it makes the lines agree with what it found without the window's `read` lines falling
 between the run's start and done lines in the log (R-043).
 
@@ -37,7 +39,10 @@ between the run's start and done lines in the log (R-043).
 
 Each return of the window to the front writes the reader's `read` line of each existing file to
 the log, and so does the end of every run. The window's `Activated` reaches `LookAgain` through
-`LookAgainWhenBackInFront`, and the Browse handlers go through `PickSource` and `PickDest`. Guarded
-by `MainViewModelTests.R054_BrowsingThePathTheBoxHoldsLooksAgain`,
-`R054_ALookAgainKeepsTheLineAndTheCommandsUntilItEnds`, `R054_ARunLooksAgainWhenItEnds` and
+`LookAgainWhenBackInFront`, and the Browse handlers go through `PickSource` and `PickDest`. A box
+whose text changes during a run is still looked at at once, as its facts were read at once
+before, so that look's read line can fall among the run's, on another thread. Guarded by
+`MainViewModelTests.R054_BrowsingThePathTheBoxHoldsLooksAgain`,
+`R054_ALookAgainKeepsTheLineAndTheCommandsUntilItEnds`, `R054_ARunLooksAgainWhenItEnds`,
+`R054_ALookAgainAskedDuringARunWaitsForTheRunsEnd` and
 `WindowSmokeTests.R054_TheWindowBackInFrontLooksAgain`.

@@ -809,6 +809,36 @@ public class MainViewModelTests
         Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
     }
 
+    /// <summary>
+    /// A look again asked while a run is in flight, the window back in front during a copy, is
+    /// left to the run's end, whose own look again covers it (R-054): started at once, its read
+    /// lines would fall among the run's in the log (R-043).
+    /// </summary>
+    [Fact]
+    public async Task R054_ALookAgainAskedDuringARunWaitsForTheRunsEnd()
+    {
+        using WindowFixture f = new();
+        using ManualResetEventSlim release = new();
+        using ManualResetEventSlim looked = new();
+        MainViewModel vm = Open(f);
+        await vm.FactsRead;
+        vm.RunCore = WindowCloseTests.HeldRun(release);
+        vm.LookCore = (path, source) =>
+        {
+            looked.Set();
+            return MainViewModel.Look(path, source);
+        };
+
+        Task preview = vm.Preview();
+        vm.LookAgain();
+        Assert.False(looked.Wait(TimeSpan.FromMilliseconds(300)), "a look started while the run was in flight");
+
+        release.Set();
+        await preview;
+        Assert.True(looked.IsSet);
+        Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
+    }
+
     [Fact]
     public async Task R036_TheFactsAndTheHeadingFollowTheLanguageOfTheRun()
     {

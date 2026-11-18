@@ -16,9 +16,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // MainViewModel.cs - what the window binds. Three things and no more (ADR 0007): the boxes and
-// the options become a WcsCopyRequest; two facts are read from each header before any run; the
-// WcsCopyOutcome is shown as the core gives it. No sentence about the copy is composed here; the
-// band's two lines are the core's banner and copyright, passed through (ADR 0008).
+// the options become a WcsCopyRequest, its paths made whole (ADR 0023); two facts are read from
+// each header, off the window's thread, when its box's text is set and again later (ADR 0025,
+// ADR 0027); the WcsCopyOutcome is shown as the core gives it, and taken away when it no longer
+// fits the boxes (ADR 0026). No sentence about the copy is composed here; the band's two lines
+// are the core's banner and copyright, passed through (ADR 0008).
 
 using NLog;
 using static CopyWcs.Ui;
@@ -32,7 +34,8 @@ internal readonly record struct FileLook(bool Exists, string Facts);
 
 /// <summary>
 /// The main window's state: the band's two lines, the two files, the output choice, the two
-/// options, the facts under the boxes, and the last outcome of the core (R-030 to R-033, R-038).
+/// options, the facts under the boxes, and the last outcome of the core (R-030 to R-033, R-038,
+/// R-051 to R-054).
 /// </summary>
 public sealed class MainViewModel : ObservableObject
 {
@@ -471,13 +474,20 @@ public sealed class MainViewModel : ObservableObject
     /// Starts a look at a box's file off the window's thread (R-052), through
     /// <see cref="LookCore"/>, numbered as the box's latest: a look of a new text first empties
     /// the box's fact line and turns its existence off, so the commands wait for it; a look again
-    /// keeps both as they are until it ends. What it finds is shown on the caller's thread, unless
-    /// a newer look of the same box was started meanwhile.
+    /// keeps both as they are until it ends, and when asked during a run is left to the run's
+    /// end, whose own look again covers it (R-054). What it finds is shown on the caller's thread,
+    /// unless a newer look of the same box was started meanwhile.
     /// </summary>
     /// <param name="source">True for the source's box, false for the destination's.</param>
     /// <param name="fresh">True when the box's text changed: its old facts no longer apply.</param>
     private void LookAt(bool source, bool fresh)
     {
+        // Started now, a look again would write its read lines among the run's in the log (R-043).
+        if (_running && !fresh)
+        {
+            return;
+        }
+
         int turn = source ? ++_sourceTurn : ++_destTurn;
         string path = source ? _sourcePath : _destPath;
         if (fresh)
