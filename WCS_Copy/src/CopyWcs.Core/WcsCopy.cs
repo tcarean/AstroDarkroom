@@ -83,6 +83,9 @@ internal static class WcsCopy
     /// <summary>The copy run's lines in the diagnostic log: its start and done lines, the selection, every card, the refusals and the warnings (R-042).</summary>
     private static readonly Logger Log = LogManager.GetLogger("WcsCopy");
 
+    /// <summary>The keyword of the HDU's checksum, which a copy drops from the destination (R-018).</summary>
+    private const string Checksum = "CHECKSUM";
+
     /// <summary>
     /// Runs a copy: reads both headers, refuses paths that name one file twice (R-019), refuses
     /// a pixel grid that differs unless forced, warns about a source without <c>CTYPE1</c>,
@@ -247,6 +250,12 @@ internal static class WcsCopy
             dest.RemoveCards(k);
         }
 
+        // Every copy changes the header (the HISTORY card at least), so a checksum of the
+        // destination's would no longer match it: the checksum convention asks a program that
+        // changes an HDU to update the card or remove it, and the copy removes it. DATASUM stays,
+        // the data being the destination's, unchanged (R-018, ADR 0021).
+        dest.RemoveCards(Checksum);
+
         // The raw 80-byte card is copied, not a reparsed value: that keeps the source's
         // formatting and inline comment exactly (R-010).
         foreach (var k in present)
@@ -369,8 +378,8 @@ internal static class WcsCopy
     /// Writes the selection to the diagnostic log, before any card is set or dropped: the count
     /// of keys per list, and at Debug one line per key with the source's card and the
     /// destination's card it replaces (<c>none</c>, <c>same</c>, or that card), then one line per
-    /// card of the destination dropped (R-016), the one record a wrong WCS can be diagnosed from
-    /// (R-042).
+    /// card of the destination dropped (R-016) and per card of its <c>CHECKSUM</c> (R-018), the
+    /// one record a wrong WCS can be diagnosed from (R-042).
     /// </summary>
     /// <param name="present">The keys selected, in the copy's order.</param>
     /// <param name="cards">The source's cards of those keys, in the same order.</param>
@@ -415,7 +424,7 @@ internal static class WcsCopy
 
         if (Log.IsDebugEnabled)
         {
-            foreach (var key in drop)
+            foreach (var key in drop.Append(Checksum))
             {
                 foreach (var card in dest.CardsOf(key))
                 {

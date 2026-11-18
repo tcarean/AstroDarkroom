@@ -780,4 +780,59 @@ public class WcsCopyTests
         Assert.True(FitsHeader.ReadPrimary(dest).Contains("CTYPE1"));
         Assert.Equal(["dest.fit", "dest.fit.tmp", "source.fit"], FilesIn(ws.Dir));
     }
+
+    /// <summary>A header with the two checksum cards a program such as the SyQon CLI writes last, as in V-002's destination.</summary>
+    /// <param name="cards">The header's cards; the two are added at its end.</param>
+    /// <returns>The same list.</returns>
+    private static List<string> WithChecksum(List<string> cards)
+    {
+        cards.Add(FitsTestData.Card("CHECKSUM", "'6jF39j936jE36j93'", "HDU checksum updated 2026-10-27T10:58:49"));
+        cards.Add(FitsTestData.Card("DATASUM", "'2647693551'", "data unit checksum updated 2026-10-27T10:58:49"));
+        return cards;
+    }
+
+    /// <summary>
+    /// A destination holding CHECKSUM is written without it, into a new file and in place, from a
+    /// solved source and from one without CTYPE1, and keeps its DATASUM card byte for byte (R-018;
+    /// CR-004 of the review of 2026-11-16: the checksum was written back, no longer matching).
+    /// </summary>
+    [Fact]
+    public void R018_Run_ADestinationWithAChecksum_IsWrittenWithoutIt_AndKeepsItsDatasum()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var unsolvedCards = FitsTestData.PlateSolvedCards();
+        unsolvedCards.RemoveAll(c => c.StartsWith("CTYPE1", StringComparison.Ordinal));
+        var unsolved = ws.WriteFile("unsolved.fit", FitsTestData.MinimalFitsFile(unsolvedCards));
+        var destCards = WithChecksum(FitsTestData.ProcessedCards());
+        var datasum = destCards[^1];
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards, FitsTestData.DeterministicData(400)));
+        var other = ws.WriteFile("other.fit", FitsTestData.MinimalFitsFile(destCards, FitsTestData.DeterministicData(400)));
+        var output = ws.FilePath("out.fit");
+
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest, output)).Kind);
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest)).Kind);
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(unsolved, other)).Kind);
+
+        foreach (var path in new[] { output, dest, other })
+        {
+            var written = FitsHeader.ReadPrimary(path);
+            Assert.False(written.Contains("CHECKSUM"), path);
+            Assert.Equal(datasum, written.GetCard("DATASUM"));
+        }
+    }
+
+    /// <summary>A dry run, and a refused run, leave the destination's CHECKSUM where it is, as every other byte (R-018).</summary>
+    [Fact]
+    public void R018_Run_ADryRunOrARefusal_LeavesTheChecksum()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(WithChecksum(FitsTestData.ProcessedCards(200, 80)));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+
+        Assert.Equal(WcsCopyKind.Previewed, WcsCopy.Run(Request(source, dest, force: true, dryRun: true)).Kind);
+        Assert.Equal(WcsCopyKind.Refused, WcsCopy.Run(Request(source, dest)).Kind);
+        Assert.Equal(destBytes, File.ReadAllBytes(dest));
+    }
 }

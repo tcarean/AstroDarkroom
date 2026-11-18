@@ -35,7 +35,9 @@ before anything else so that even a dry run never gets that far; compare
 image of the source's (true is a refusal, or a warning under force, R-017, ADR 0012; force passes
 both checks; false or null is a Debug line with both determinants); select the keys (R-007; none is a refusal, R-008) and, when the source has `CTYPE1`,
 the destination's keys to drop (`WcsMetadataKeys.SelectKeysToDrop`, R-016, ADR 0011); on a dry
-run return the cards, the heading and the drop line (R-009); else remove the dropped keys' cards,
+run return the cards, the heading and the drop line (R-009); else remove the dropped keys' cards
+and the destination's `CHECKSUM`, which the changed header would no longer match, whatever the
+source holds (R-018, ADR 0021; `DATASUM` stays, the data being untouched, and no line says it),
 set each selected card verbatim, append the HISTORY card, write through the header engine (a
 write failure is a refusal, R-014) and return the count, the reminder and the drop line (R-012).
 The keys dropped and the keys set never overlap: a dropped key is one the source lacks. A

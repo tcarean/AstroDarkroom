@@ -82,6 +82,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   place too, removes its temporary file, which it used to leave as big as the image. The
   temporary file has a name of its own, so a `<name>.tmp` of yours is never touched (R-012,
   R-014, ADR 0020; CR-003 and CR-016 of the review of 2026-11-16, and part of CR-018).
+- A copy removes the destination's `CHECKSUM` card, which the changed header no longer matched,
+  so a program that checks it saw the file as damaged; `DATASUM`, the data's own sum, stays, the
+  data being untouched (R-018, ADR 0021; CR-004 of the review of 2026-11-16).
 
 ### Internal
 

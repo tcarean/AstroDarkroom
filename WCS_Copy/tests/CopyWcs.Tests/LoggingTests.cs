@@ -511,6 +511,23 @@ public class LoggingTests
         Assert.DoesNotContain(capture.Events, e => e.Message.StartsWith("write ", StringComparison.Ordinal));
     }
 
+    /// <summary>The destination's CHECKSUM, which a copy drops, is named with its card at Debug, in a dry run too (R-042, R-018).</summary>
+    [Fact]
+    public void R042_ADroppedChecksumIsLoggedWithItsCard_InADryRunToo()
+    {
+        using var ws = new TempWorkspace();
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards.Add(FitsTestData.Card("CHECKSUM", "'6jF39j936jE36j93'", "HDU checksum"));
+        var (src, dst) = Pair(ws, dest: destCards);
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli(src, dst, "--dry-run").Code);
+
+        LogCapture.Captured line = Assert.Single(capture.Events, e => e.Message.StartsWith("drop CHECKSUM:", StringComparison.Ordinal));
+        Assert.Equal(LogLevel.Debug, line.Level);
+        Assert.Equal("drop CHECKSUM: CHECKSUM= '6jF39j936jE36j93' / HDU checksum", line.Message);
+    }
+
     /// <summary>
     /// A write that fails at the rename (a read-only destination, in place) removes its temporary
     /// file, the one its write line named, and says so at Debug (R-042, R-014; CR-016).

@@ -31,9 +31,17 @@ solve, one another program made for example, its plate-solve keys that the sourc
 are removed before the copy: a `CD` matrix beside Siril's `PC` and `CDELT`, a `CROTA`, a SIP
 coefficient of a higher degree. Siril 1.4.4 reads a `CD` matrix in place of `PC` and `CDELT`
 when a file holds both, so a `CD` left behind would hide the copied solution from the very
-program the copy is checked in. The optical keys are never removed, and nothing is
+program the copy is checked in. The optical keys are never removed, and no plate-solve key is
 removed when the source has no `CTYPE1`. `--dry-run` and the window's Preview name the keys
 that would be dropped under the cards, and a copy names them before its closing lines.
+
+**The destination's checksum is removed.** Some programs, the SyQon CLI among them, end the
+header with a `CHECKSUM` card, a sum another program can use to check that the file is intact.
+A copy changes the header, so that sum would no longer match and the file would look damaged
+to a program that checks it; the copy removes the card, as the FITS convention asks of a
+program that changes a file. `DATASUM`, the sum of the image data alone, stays: the data is not
+touched. Siril 1.4.4 checks neither, so nothing changes there; the screen does not mention it,
+the log does.
 
 The two images must have the same pixel grid: the tool compares `NAXIS1` and `NAXIS2` and
 refuses to copy when they differ, because the solution would point at the wrong pixels.

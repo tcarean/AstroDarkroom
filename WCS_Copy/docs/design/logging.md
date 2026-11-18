@@ -147,7 +147,8 @@ N ms (<stages>)`. `LogSelection` runs before any card is dropped or set: the cou
 what the destination held (`none`, `same`, or its card), counted into the done line's `(new,
 replaced, identical, dropped)`, then one `drop <key>: <card>` line per card of each key the copy
 drops (R-016), every card of a keyword the destination holds twice, while `dropped` counts the
-keys; in a dry run too. The four counts are always written, `dropped 0` included: the version
+keys, and one `drop CHECKSUM: <card>` for the destination's checksum (R-018), which `dropped`
+does not count; in a dry run too. The four counts are always written, `dropped 0` included: the version
 does not change with a fix, so that count is what tells a log of a build that drops from one of
 a build that does not.
 
