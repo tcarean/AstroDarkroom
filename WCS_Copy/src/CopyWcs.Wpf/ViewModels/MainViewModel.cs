@@ -64,6 +64,10 @@ public sealed class MainViewModel : ObservableObject
     private bool _sourceExists;
     private bool _destExists;
     private bool _running;
+
+    /// <summary>True while the run in flight is a Copy, false for a Preview: the card's in-progress line (R-053).</summary>
+    private bool _runningCopy;
+
     private string _sourceFacts = "";
     private string _destFacts = "";
     private WcsCopyOutcome? _outcome;
@@ -87,6 +91,7 @@ public sealed class MainViewModel : ObservableObject
             {
                 _sourcePath = Whole(Clean(value), folder: null);
                 LookAt(source: true, fresh: true);
+                Clear();
             }
         }
     }
@@ -101,6 +106,7 @@ public sealed class MainViewModel : ObservableObject
             {
                 _destPath = Whole(Clean(value), folder: null);
                 LookAt(source: false, fresh: true);
+                Clear();
             }
         }
     }
@@ -114,6 +120,7 @@ public sealed class MainViewModel : ObservableObject
             if (Set(ref _output, value))
             {
                 RaiseCanRun();
+                Clear();
             }
         }
     }
@@ -128,6 +135,7 @@ public sealed class MainViewModel : ObservableObject
             {
                 Raise(nameof(WritesNewFile));
                 RaiseCanRun();
+                Clear();
             }
         }
     }
@@ -139,18 +147,30 @@ public sealed class MainViewModel : ObservableObject
         set => WriteInPlace = !value;
     }
 
-    /// <summary>True to copy the optical metadata keys beside the WCS keys (the default).</summary>
+    /// <summary>True to copy the optical metadata keys beside the WCS keys (the default); a change empties the card (R-053).</summary>
     public bool IncludeOptical
     {
         get => _includeOptical;
-        set => Set(ref _includeOptical, value);
+        set
+        {
+            if (Set(ref _includeOptical, value))
+            {
+                Clear();
+            }
+        }
     }
 
-    /// <summary>True to copy even when the two images' dimensions differ or the destination's own plate solve is mirrored (R-005, R-017).</summary>
+    /// <summary>True to copy even when the two images' dimensions differ or the destination's own plate solve is mirrored (R-005, R-017); a change empties the card (R-053).</summary>
     public bool Force
     {
         get => _force;
-        set => Set(ref _force, value);
+        set
+        {
+            if (Set(ref _force, value))
+            {
+                Clear();
+            }
+        }
     }
 
     /// <summary>The source's size and whether it is plate-solved; empty when the file cannot be read.</summary>
@@ -202,6 +222,14 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>True once a preview or a copy has run; the outcome card is shown then.</summary>
     public bool HasOutcome => _outcome is not null;
+
+    /// <summary>True while the card has something to show: an outcome, or a run in flight (R-053).</summary>
+    public bool HasCard => HasOutcome || _running;
+
+    /// <summary>The card's line while a run is in flight, the window's own pair for the run's kind (R-053); empty otherwise.</summary>
+    public string RunningLine => !_running ? ""
+        : _runningCopy ? T("Copy in progress...", "Copiere in curs...")
+        : T("Preview in progress...", "Previzualizare in curs...");
 
     /// <summary>The core's one line of a refusal; null when the last run was not refused.</summary>
     public string? Error => _outcome?.Error;
@@ -260,10 +288,11 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>
     /// Runs the core on a thread-pool thread, the commands off meanwhile (R-030): an in-place
     /// copy streams the whole data area through a temp file, seconds on a large stack, and the
-    /// window must stay live. The request is built here, on the caller's thread; the run starts
-    /// once every look at the boxes' files in flight has ended (R-052), and the outcome is shown
-    /// back on the caller's thread; <see cref="IsRunning"/> is raised as the run starts and after
-    /// its outcome is shown (R-050).
+    /// window must stay live. The request is built here, on the caller's thread; the card is
+    /// emptied and shows the run's in-progress line (R-053); the run starts once every look at
+    /// the boxes' files in flight has ended (R-052), and the outcome is shown back on the
+    /// caller's thread; <see cref="IsRunning"/> is raised as the run starts and after its outcome
+    /// is shown (R-050).
     /// </summary>
     /// <param name="dryRun">True to list the cards and write nothing.</param>
     /// <returns>Completes once the outcome is shown.</returns>
@@ -272,8 +301,9 @@ public sealed class MainViewModel : ObservableObject
         WcsCopyRequest request = Request(dryRun);
         Func<WcsCopyRequest, WcsCopyOutcome> run = RunCore;
         _running = true;
-        RaiseCanRun();
-        Raise(nameof(IsRunning));
+        _runningCopy = !dryRun;
+        Clear();
+        RaiseRunning();
         try
         {
             // A look logs the reader's read line: waiting for the looks in flight keeps the lines
@@ -284,9 +314,17 @@ public sealed class MainViewModel : ObservableObject
         finally
         {
             _running = false;
-            RaiseCanRun();
-            Raise(nameof(IsRunning));
+            RaiseRunning();
         }
+    }
+
+    /// <summary>Raises what follows the running state: the two commands, <see cref="IsRunning"/>, the card's visibility and its in-progress line.</summary>
+    private void RaiseRunning()
+    {
+        RaiseCanRun();
+        Raise(nameof(IsRunning));
+        Raise(nameof(HasCard));
+        Raise(nameof(RunningLine));
     }
 
     /// <summary>
@@ -306,9 +344,32 @@ public sealed class MainViewModel : ObservableObject
     {
         _outcome = outcome;
         Cards = outcome.Cards.Select(c => c.TrimEnd(' ')).ToList();
+        RaiseOutcome();
+    }
+
+    /// <summary>
+    /// Empties the card of its outcome (R-053): a box's text, the in-place or new-file choice or
+    /// an option changed, so it no longer says what a run would do, or a run starts. Nothing is
+    /// raised when there is no outcome to take away.
+    /// </summary>
+    private void Clear()
+    {
+        if (_outcome is null)
+        {
+            return;
+        }
+
+        _outcome = null;
+        Cards = [];
+        RaiseOutcome();
+    }
+
+    /// <summary>Raises every property the outcome card binds, after an outcome is kept or taken away.</summary>
+    private void RaiseOutcome()
+    {
         foreach (string name in new[]
                  {
-                     nameof(HasOutcome), nameof(Error), nameof(HasError), nameof(Warnings), nameof(HasWarnings),
+                     nameof(HasOutcome), nameof(HasCard), nameof(Error), nameof(HasError), nameof(Warnings), nameof(HasWarnings),
                      nameof(Heading), nameof(HasHeading), nameof(Cards), nameof(HasCards), nameof(Notes), nameof(HasNotes),
                  })
         {

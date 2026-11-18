@@ -2,10 +2,11 @@
 
 **Covers:** `src/CopyWcs.Wpf/`, `tests/CopyWcs.Wpf.Tests/`, `Icon/make_icon.py`.
 
-The behaviour is R-030 to R-039 and R-050 to R-052; the reasons are ADR 0007, ADR 0008, for
+The behaviour is R-030 to R-039 and R-050 to R-053; the reasons are ADR 0007, ADR 0008, for
 the About window's third-party card and the window's log lines ADR 0009, for Help and F1 ADR
-0016, for a close during a run ADR 0019, for the paths made whole ADR 0023, and for the files
-looked at off the window's thread ADR 0025. The pieces
+0016, for a close during a run ADR 0019, for the paths made whole ADR 0023, for the files
+looked at off the window's thread ADR 0025, and for the card emptied on a change and during a
+run ADR 0026. The pieces
 copied from the siblings (`Presentation/DarkTitleBar.cs`, `Presentation/TExtension.cs`,
 `Presentation/Mvvm.cs`, `Presentation/AppIcon.cs`, `Theme/Dark.xaml`, `Views/AboutWindow.*`,
 the band at the top of `MainWindow.xaml`, the test fixture `StaFixture`) are marked as such in
@@ -34,7 +35,9 @@ a `TextBox` bound to the path with `UpdateSourceTrigger=PropertyChanged`, a Brow
 under the two inputs the fact line read from the header), the two radio buttons for in place
 or a new file with the output row enabled only by the second, the two check boxes, the row of
 buttons (`Preview`, `Copy`), and the outcome card. The card is one `Border` of the `Card`
-style whose visibility follows `HasOutcome`, holding four blocks that each follow their own
+style whose visibility follows `HasCard` (an outcome, or a run in flight, R-053), holding a
+first row that shows `RunningLine` in the `Muted` style while `IsRunning`, alone in the card
+then, and four blocks that each follow their own
 flag: the refusal (the heading `RefusedHeading` in the `BadBr` colour over the core's
 `Error`), the warnings (an `ItemsControl` in `WarnBr`), the preview's heading, the cards (a
 `ListBox` in the monospace font with a horizontal scroll bar, since a card is 80 characters)
@@ -123,7 +126,14 @@ reaches. The handlers of
   prints it without the indent) and `Notes`, the lines under the cards in the console's order:
   the outcome's `Dropped` line when there is one (R-016), then, when the kind is `Copied`, its
   notes, the count and the reminder; a preview's `Notes` is the drop line alone, or empty. The
-  `Has...` flags are derived, never stored.
+  `Has...` flags are derived, never stored. `Clear()` takes the outcome away (R-053, ADR 0026)
+  when the value of a box's text, of `WriteInPlace` or of either option changes, since the card
+  no longer says what a run would do, and as a run starts; a value set to what it already is
+  clears nothing (`Set` returns false). `RunningLine` is the window's pair for the run in
+  flight, `Preview in progress...` or `Copy in progress...` after `_runningCopy`, empty with no
+  run; `RaiseRunning` raises it with `HasCard`, `IsRunning` and the commands as a run starts
+  and ends. A box changed during a run does not hide that run's outcome when it comes: a copy's
+  lines say a file was written.
 
 Beside the three, `Banner` and `Copyright` hand the band the core's `VersionInfo.Banner` and
 `LicenseInfo.Copyright`, the console's lines 1 and 2, as `AboutViewModel` does: passed
@@ -169,8 +179,8 @@ the section about what is on screen (F1)`, ImageVisualCompare's.
 headings (`the-window`, `the-result`, `when-something-goes-wrong`): a heading renamed in the
 wiki is renamed there, or the browser lands at the top of the page. `SectionFor` gives the
 problems' section when the card shows a refusal or a warning, the result's when it shows an
-outcome, the window's otherwise; the card keeps the last outcome during a run, and so does the
-section. `Presentation/ExternalLink.cs` hands the shell (`UseShellExecute`) only an absolute
+outcome, the window's otherwise: before any run, after a box or an option changed, and while a
+run goes, when the card holds no outcome (R-053). `Presentation/ExternalLink.cs` hands the shell (`UseShellExecute`) only an absolute
 http or https address (`IsWebAddress`), disposes the process it may get back, and logs at Debug
 an address it refused or could not open; the About window keeps its own `OpenLink`, a copied
 piece. `DarkTitleBar.Apply` is called on `SourceInitialized` of each window.
@@ -196,7 +206,11 @@ test that reads a fact line or `CanPreview` after setting a path awaits `FactsRe
 R-052 tests put `HeldLook` in `LookCore`, which waits for the test on one path, and check that
 the setter comes back at once with the line empty and the commands off, that a look overtaken
 by a newer text is dropped though it ends last, and that a Preview waits for a held look, whose
-read line then comes before the run's start line.
+read line then comes before the run's start line. The R-053 tests change each box and option
+after a Preview and find the card empty, set each to the value it has and find it kept, and
+hold a Copy and a Preview in `RunCore` to read the in-progress line in both languages, the old
+outcome gone, and the run's own outcome after it; `WindowSmokeTests` render the card during a
+held run, in English with no Romanian word and with no binding error.
 `WindowSmokeTests` lay out and render both windows to a bitmap on the `StaFixture` thread
 (the window's background drawn first, or the labels on transparency come out dim in a PNG; the
 About window at its content's height, measured over two layout passes since the third-party
@@ -215,6 +229,7 @@ language. `HelpTests` pin the three addresses and `SectionFor`, press F1 through
 `PreviewKeyDown` (a `KeyEventArgs` with a `PresentationSource` of its own, a repeat marked
 through WPF's internal `SetRepeat`, as ImageVisualCompare's test does) on the window and on a
 box inside it, and click Help, over a card with nothing, a result, a refusal and a warning,
+and during a held run, when the card holds no outcome (R-053),
 with `OpenAddress` replaced so no browser starts; a held F1 opens once, F1 with a modifier is
 not the Help key, About's click opens About once while F1 does not open it, and
 `ExternalLink` refuses a relative, `file:` or `mailto:` address with a Debug line.

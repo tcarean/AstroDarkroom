@@ -98,6 +98,32 @@ public class HelpTests
         });
 
     /// <summary>
+    /// While a run is in flight the card shows no outcome, so F1 opens the window's section; once
+    /// the run ends and the card shows its result, the result's (R-039, R-053).
+    /// </summary>
+    [Fact]
+    public Task R039_DuringARunHelpOpensTheWindowsSection()
+        => _sta.InvokeAsync(async () =>
+        {
+            using WindowFixture f = new();
+            using ManualResetEventSlim release = new();
+            List<string> opened = [];
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest };
+            MainWindow w = new(vm) { OpenAddress = opened.Add };
+            await vm.Preview();
+            Assert.True(vm.HasCards);
+            vm.RunCore = WindowCloseTests.HeldRun(release);
+
+            Task preview = vm.Preview();
+            Assert.True(PressF1(w));
+            release.Set();
+            await preview;
+            Assert.True(PressF1(w));
+
+            Assert.Equal([Page + "#the-window", Page + "#the-result"], opened);
+        });
+
+    /// <summary>
     /// A held F1 opens the manual once: its repeats, some thirty a second, would each open a
     /// browser tab. The repeats go through the window's key handler as the keyboard's would, and
     /// are taken (handled), so no command behind them runs either.

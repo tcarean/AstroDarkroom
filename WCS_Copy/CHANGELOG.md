@@ -109,6 +109,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   disk or on a share no longer freezes it: one letter of a path to a computer that does not
   answer took 2.3 s; the line under the box comes when the check ends (R-052, ADR 0025; CR-008
   of the review of 2026-11-16).
+- The window's result empties when a box or an option changes, where it kept listing the cards
+  of the files named before, and during a run it says `Preview in progress...` or
+  `Copy in progress...`, where it kept showing the last result, a refusal too (R-053, ADR 0026;
+  CR-009 of the review of 2026-11-16).
 
 ### Internal
 

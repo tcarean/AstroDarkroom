@@ -127,6 +127,15 @@ public partial class WindowSmokeTests
                 Render(window);
                 english.AddRange(TextsOf(window));
 
+                // a copy held in flight: the card's in-progress line (R-053)
+                using ManualResetEventSlim release = new();
+                vm.RunCore = WindowCloseTests.HeldRun(release);
+                Task copy = vm.Copy();
+                Render(window, name: "window-running-en");
+                english.AddRange(TextsOf(window));
+                release.Set();
+                await copy;
+
                 AboutWindow about = new();
                 Render((FrameworkElement)about.Content, 560, AboutHeight(about), "about-en");
                 english.Add(about.Title);
@@ -140,6 +149,7 @@ public partial class WindowSmokeTests
             Assert.Contains("The manual, at the section about what is on screen (F1)", english);
             Assert.Contains("About", english);
             Assert.Contains("Refused", english);
+            Assert.Contains("Copy in progress...", english);
             Assert.Contains("Source: 100 x 80, plate-solved", english);
             Assert.Contains(english, t => t.StartsWith("Old plate-solve keys of the destination that would be dropped (6): ", StringComparison.Ordinal));
             Assert.Contains("Continue even when the dimensions differ or the image is mirrored", english);
@@ -444,6 +454,15 @@ public partial class WindowSmokeTests
             await vm.Copy();
             Assert.True(vm.HasNotes);
             Render((FrameworkElement)w.Content, name: "window-copied");
+
+            // a preview held in flight: the card shows its in-progress line alone (R-053)
+            using ManualResetEventSlim release = new();
+            vm.RunCore = WindowCloseTests.HeldRun(release);
+            Task preview = vm.Preview();
+            Render((FrameworkElement)w.Content, name: "window-running");
+            Assert.Contains("Previzualizare in curs...", TextsOf((FrameworkElement)w.Content));
+            release.Set();
+            await preview;
 
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });

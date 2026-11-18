@@ -615,6 +615,125 @@ public class MainViewModelTests
         Assert.Equal(2, lines[start..done].Count(m => m.StartsWith("read ", StringComparison.Ordinal)));
     }
 
+    /// <summary>
+    /// A change of a box's text, of the in-place or new-file choice, or of either option empties
+    /// the card, which no longer says what a run would do (R-053; CR-009 of the review of
+    /// 2026-11-16, where it kept the last preview's cards under boxes naming other files).
+    /// </summary>
+    [Theory]
+    [InlineData("source")]
+    [InlineData("destination")]
+    [InlineData("new file")]
+    [InlineData("write a new file")]
+    [InlineData("optical")]
+    [InlineData("force")]
+    public async Task R053_AChangeOfABoxOrAnOptionEmptiesTheCard(string change)
+    {
+        using WindowFixture f = new();
+        MainViewModel vm = Open(f);
+        vm.Output = f.FilePath("out.fit");
+        await vm.Preview();
+        Assert.True(vm.HasCard && vm.HasOutcome && vm.HasHeading && vm.HasCards);
+
+        switch (change)
+        {
+            case "source":
+                vm.Source = " " + f.Source;
+                break;
+            case "destination":
+                vm.Dest = " " + f.Dest;
+                break;
+            case "new file":
+                vm.Output = f.FilePath("other.fit");
+                break;
+            case "write a new file":
+                vm.WritesNewFile = true;
+                break;
+            case "optical":
+                vm.IncludeOptical = false;
+                break;
+            default:
+                vm.Force = true;
+                break;
+        }
+
+        Assert.False(vm.HasCard);
+        Assert.False(vm.HasOutcome);
+        Assert.False(vm.HasHeading);
+        Assert.Empty(vm.Cards);
+        Assert.False(vm.HasCards);
+        Assert.False(vm.HasNotes);
+        Assert.False(vm.HasError);
+        Assert.False(vm.HasWarnings);
+    }
+
+    /// <summary>A value set to what it already is changes nothing a run would do, and keeps the card (R-053).</summary>
+    [Fact]
+    public async Task R053_AValueSetToWhatItIsKeepsTheCard()
+    {
+        using WindowFixture f = new();
+        MainViewModel vm = Open(f);
+        await vm.Preview();
+
+        vm.Source = f.Source;
+        vm.Dest = f.Dest;
+        vm.WriteInPlace = true;
+        vm.IncludeOptical = true;
+        vm.Force = false;
+
+        Assert.True(vm.HasOutcome);
+        Assert.Equal(15, vm.Cards.Count);
+    }
+
+    /// <summary>
+    /// While a run is in flight the card shows the run's in-progress line and nothing of the last
+    /// outcome, in the run's language; the run's own outcome comes when it ends (R-053; CR-009,
+    /// where a forced copy of a large stack still showed the refusal before it).
+    /// </summary>
+    [Fact]
+    public async Task R053_DuringARunTheCardSaysTheRunIsInProgress()
+    {
+        using WindowFixture f = new(destWidth: 200);
+        using ManualResetEventSlim release = new();
+        MainViewModel vm = Open(f);
+        await vm.Preview();
+        Assert.True(vm.HasError);
+        Assert.Equal("", vm.RunningLine);
+        vm.Force = true;
+        vm.RunCore = WindowCloseTests.HeldRun(release);
+
+        Task copy = vm.Copy();
+        Assert.True(vm.IsRunning);
+        Assert.True(vm.HasCard);
+        Assert.False(vm.HasOutcome);
+        Assert.False(vm.HasError);
+        Assert.Equal("Copiere in curs...", vm.RunningLine);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("Copy in progress...", vm.RunningLine);
+        }
+
+        release.Set();
+        await copy;
+        Assert.Equal("", vm.RunningLine);
+        Assert.True(vm.HasOutcome);
+        Assert.True(vm.HasWarnings);
+        Assert.StartsWith("Copiate 15 chei in ", vm.Notes[0], StringComparison.Ordinal);
+
+        release.Reset();
+        Task preview = vm.Preview();
+        Assert.Equal("Previzualizare in curs...", vm.RunningLine);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("Preview in progress...", vm.RunningLine);
+        }
+
+        release.Set();
+        await preview;
+        Assert.Equal("", vm.RunningLine);
+        Assert.True(vm.HasHeading);
+    }
+
     [Fact]
     public async Task R036_TheFactsAndTheHeadingFollowTheLanguageOfTheRun()
     {

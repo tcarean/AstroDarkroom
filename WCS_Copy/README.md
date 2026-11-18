@@ -128,11 +128,13 @@ plate-solved`.
 
 The window does what the console does: Preview lists exactly the cards `copywcs --dry-run`
 would print, Copy writes exactly the bytes the console writes, and a refusal or a warning is
-shown with the console's words (a refused copy writes nothing). The band at the top shows the
-version, the copyright and one sentence on what the tool does; its **Help** button (or F1)
-opens the wiki manual in the browser, at the section about what the window shows: the window
-itself before a Preview or a Copy, the result after one, and the section on problems when the
-result is a refusal or a warning. **About** opens the version, the copyright, the GPLv3
+shown with the console's words (a refused copy writes nothing). The result empties as soon as
+a box or an option changes, since it no longer says what a run would do, and while a Preview or
+a Copy runs the window says `Preview in progress...` or `Copy in progress...`. The band at the
+top shows the version, the copyright and one sentence on what the tool does; its **Help** button
+(or F1) opens the wiki manual in the browser, at the section about what the window shows: the
+window itself while no result is shown, the result after a Preview or a Copy, and the section on
+problems when the result is a refusal or a warning. **About** opens the version, the copyright, the GPLv3
 notice and the third-party components. The window is Windows-only; the console builds
 anywhere.
 
