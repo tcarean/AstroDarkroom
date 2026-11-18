@@ -228,6 +228,29 @@ public class CopyWcsCliTests
         Assert.Contains("Continui oricum", result.Stdout);
     }
 
+    /// <summary>
+    /// `-o --dry-run`, the file name forgotten (R-002): the line on stderr in English, the usage,
+    /// exit 2, and no copy, neither into the destination nor into a file named `--dry-run`.
+    /// </summary>
+    [Fact]
+    public void R002_Run_OutputFollowedByAFlag_IsAUsageErrorAndWritesNothing()
+    {
+        using var ws = new TempWorkspace();
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytesOriginal = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards());
+        var destPath = ws.WriteFile("dest.fit", destBytesOriginal);
+
+        var result = Run(sourcePath, destPath, "-o", "--dry-run");
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Equal("--output needs a file name.", result.Stderr.Trim());
+        Assert.Contains("Options:", result.Stdout);
+        Assert.Equal(destBytesOriginal, File.ReadAllBytes(destPath));
+        Assert.False(File.Exists("--dry-run"));
+        Assert.False(File.Exists(Path.Combine(ws.Dir, "--dry-run")));
+    }
+
     /// <summary>A forced copy from a source with no NAXIS1 (R-060): the line on stderr, exit 1, the destination unchanged.</summary>
     [Fact]
     public void R060_Run_ASourceWithNoImageSize_ReturnsOneWithTheLineOnStderr()

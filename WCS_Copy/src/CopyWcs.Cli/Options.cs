@@ -49,8 +49,8 @@ internal sealed class Options
     /// </summary>
     /// <param name="args">The arguments, without <c>--lang</c> and its value; not null.</param>
     /// <returns>The options.</returns>
-    /// <exception cref="ArgumentException">An unknown option, <c>-o</c> without a value, or
-    /// not exactly two paths; the message is one line in the run's language.</exception>
+    /// <exception cref="ArgumentException">An unknown option, <c>-o</c> without a value or
+    /// followed by one that starts with a dash, or not exactly two paths; the message is one line in the run's language.</exception>
     public static Options Parse(string[] args)
     {
         ArgumentNullException.ThrowIfNull(args);
@@ -68,7 +68,10 @@ internal sealed class Options
                     return o;
                 case "-o":
                 case "--output":
-                    if (++i >= args.Length)
+                    // A value that starts with a dash is a forgotten file name, not a file:
+                    // `-o --dry-run` would otherwise copy into a file named --dry-run (R-002, ADR
+                    // 0030). A name that does start with one is written .\-x.fit.
+                    if (++i >= args.Length || args[i].StartsWith('-'))
                     {
                         throw new ArgumentException(T("--output needs a file name.", "--output cere un nume de fisier."));
                     }

@@ -59,6 +59,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- `-o` followed by a word that starts with a dash, `-o --dry-run` with the file name forgotten,
+  is a usage error (`--output needs a file name.`, exit 2), where it copied into a file named
+  `--dry-run` without the dry run (ADR 0030).
 - The window fits into its screen when it opens: on a small screen, a 1080p laptop at 150 %, it
   no longer runs under the taskbar. Its minimum height is 680 instead of 620, so the result
   keeps four cards in view with two warnings and the closing lines on screen, where it kept one

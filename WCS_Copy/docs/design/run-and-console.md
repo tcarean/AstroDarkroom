@@ -69,7 +69,8 @@ the spellings, two files, a missing file, an empty path, a folder and a file hel
 `Program.Main` is a shim: it opens the diagnostic log, calls `CopyWcsCli.Run(args, stdout,
 stderr)` once, which the tests drive with string writers, and closes the log (`logging.md`). `Run` prints the banner and the copyright first (R-001), then takes
 `--lang` out of the arguments (below), then parses `Options`: two positional paths, the flags
-in any position, `-h` stopping the parse at once; a parse error is one line on stderr, the
+in any position, `-h` stopping the parse at once, the value after `-o` refused when it starts
+with a dash as a path is (ADR 0030); a parse error is one line on stderr, the
 usage on stdout and exit 2 (R-002); `--help` is the usage and exit 0 (R-003). The usage is
 written whole per language because its columns are aligned by hand; the warranty paragraph
 of GPLv3 section 5(d) follows it, there and not under the banner so that it does not weigh on

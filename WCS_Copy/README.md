@@ -74,7 +74,7 @@ copywcs <solved.fit> <destination.fit> [options]
 
 | Option | What it does |
 | --- | --- |
-| `-o, --output <file>` | Write a new file instead of changing the destination in place |
+| `-o, --output <file>` | Write a new file instead of changing the destination in place; a name that starts with a dash is written `.\-name.fit` |
 | `--dry-run` | Show the cards that would be copied, and the old plate-solve keys that would be dropped, without writing anything |
 | `--force` | Continue even when the images' dimensions differ or the destination's own plate solve is mirrored |
 | `--no-optical` | Copy only the WCS keys, not the optical metadata |

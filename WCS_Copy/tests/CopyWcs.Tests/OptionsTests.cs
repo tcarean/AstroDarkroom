@@ -70,13 +70,31 @@ public class OptionsTests
         Assert.Equal("out.fit", opt.Output);
     }
 
-    [Fact]
-    public void Parse_OutputValueLooksLikeAFlag_ConsumedVerbatimAsFilename()
+    /// <summary>
+    /// A value after -o that starts with a dash is a forgotten file name, not a file (R-002; CR-015
+    /// of the review of 2026-11-16): the usage error, whether it is one of the tool's flags or not.
+    /// Until 2026-11-18 this test pinned the opposite, at the owner's word changed with the fix.
+    /// </summary>
+    /// <param name="flag">The output flag.</param>
+    /// <param name="value">What follows it.</param>
+    [Theory]
+    [InlineData("-o", "--dry-run")]
+    [InlineData("--output", "--force")]
+    [InlineData("-o", "-x")]
+    [InlineData("-o", "-")]
+    public void R002_Parse_OutputFollowedByADash_Throws(string flag, string value)
     {
-        // Existing behaviour: the value after -o is taken as it is, even when it starts with '-'.
-        var opt = Options.Parse(["src.fit", "dest.fit", "-o", "-x"]);
+        var ex = Assert.Throws<ArgumentException>(() => Options.Parse(["src.fit", "dest.fit", flag, value]));
 
-        Assert.Equal("-x", opt.Output);
+        Assert.Equal("--output cere un nume de fisier.", ex.Message);
+    }
+
+    [Fact]
+    public void Parse_OutputValueWithADashInside_IsTheFileName()
+    {
+        var opt = Options.Parse(["src.fit", "dest.fit", "-o", @".\-x.fit"]);
+
+        Assert.Equal(@".\-x.fit", opt.Output);
     }
 
     [Fact]
