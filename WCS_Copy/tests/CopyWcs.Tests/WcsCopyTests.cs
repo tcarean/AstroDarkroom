@@ -835,4 +835,88 @@ public class WcsCopyTests
         Assert.Equal(WcsCopyKind.Refused, WcsCopy.Run(Request(source, dest)).Kind);
         Assert.Equal(destBytes, File.ReadAllBytes(dest));
     }
+
+    /// <summary>The first card of R-010's long OBJECT, its string ending in the ampersand that says it goes on.</summary>
+    private static readonly string LongObject = FitsTestData.Card("OBJECT", "'NGC 6960, the Western Veil Nebula, with 52 Cygni in front &'");
+
+    /// <summary>The CONTINUE card that ends R-010's long OBJECT.</summary>
+    private static readonly string LongObjectEnd = FitsTestData.Continue("'of the filaments'");
+
+    /// <summary>The default plate-solved header with its OBJECT as a long string of two cards.</summary>
+    private static List<string> SourceWithALongObject()
+    {
+        var cards = FitsTestData.PlateSolvedCards();
+        int at = cards.FindIndex(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        cards[at] = LongObject;
+        cards.Insert(at + 1, LongObjectEnd);
+        return cards;
+    }
+
+    /// <summary>
+    /// A long string value of the source reaches the destination whole, its CONTINUE card right
+    /// under its card, and the closing line still counts keys (R-010; CR-005 of the review of
+    /// 2026-11-16: the first card came alone, a value cut with a stray ampersand).
+    /// </summary>
+    [Fact]
+    public void R010_Run_ALongStringValue_TravelsWithItsContinueCards()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(SourceWithALongObject()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400)));
+
+        var outcome = WcsCopy.Run(Request(source, dest));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.Equal($"Copiate 15 chei in {dest}.", outcome.Notes[0]);
+        List<string> written = FitsTestData.HeaderCards(File.ReadAllBytes(dest));
+        int obj = written.FindIndex(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        Assert.Equal(LongObject, written[obj]);
+        Assert.Equal(LongObjectEnd, written[obj + 1]);
+        Assert.Single(written, c => c.StartsWith("CONTINUE", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A card of the destination that the copy replaces takes the CONTINUE cards right under it
+    /// away with it (R-010; CR-005: the old continuation stayed under the new short value, and
+    /// astropy reads the two as one).
+    /// </summary>
+    [Fact]
+    public void R010_Run_AReplacedCard_TakesItsOldContinueCardsWithIt()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destCards = FitsTestData.ProcessedCards();
+        destCards.Add(FitsTestData.Card("TELESCOP", "'Sky-Watcher Evostar 72ED on a Star Adventurer GTi, guided &'"));
+        destCards.Add(FitsTestData.Continue("'old tail'"));
+        destCards.Add(FitsTestData.Card("SITELAT", "46.77"));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards));
+
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest)).Kind);
+
+        List<string> written = FitsTestData.HeaderCards(File.ReadAllBytes(dest));
+        int tel = written.FindIndex(c => c.StartsWith("TELESCOP", StringComparison.Ordinal));
+        Assert.Equal(FitsTestData.Card("TELESCOP", "'My Scope'"), written[tel]);
+        Assert.StartsWith("SITELAT", written[tel + 1], StringComparison.Ordinal);
+        Assert.DoesNotContain(written, c => c.StartsWith("CONTINUE", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A dry run lists a CONTINUE card under the card it continues, and its heading counts the
+    /// key once: 15 keys, 16 cards (R-009, R-010; CR-005).
+    /// </summary>
+    [Fact]
+    public void R009_Run_DryRun_ListsTheContinueCardUnderItsCard_AndCountsTheKeyOnce()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(SourceWithALongObject()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        var outcome = WcsCopy.Run(Request(source, dest, dryRun: true));
+
+        Assert.Equal(["Chei care ar fi copiate (15):"], outcome.Notes);
+        Assert.Equal(16, outcome.Cards.Count);
+        int obj = outcome.Cards.ToList().FindIndex(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        Assert.Equal(LongObject, outcome.Cards[obj]);
+        Assert.Equal(LongObjectEnd, outcome.Cards[obj + 1]);
+    }
 }

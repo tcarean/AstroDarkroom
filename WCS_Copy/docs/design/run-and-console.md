@@ -20,7 +20,7 @@ place, optical keys or not, force, dry run. The outcome is a record of lines alr
 | `Kind` | `Copied`, `Previewed` or `Refused` | decides the exit code: 0, 0, 1 |
 | `Error` | the one line of a refusal, else null | stderr |
 | `Warnings` | the `WARNING:` lines, in order; forced mismatch, missing `CTYPE1`, forced mirror | stdout, before anything else |
-| `Cards` | the raw 80-character cards selected, in the source's order | the preview, indented, trailing spaces trimmed (a 0xA0 stays); a byte above 0x7F shows as the character of its Latin-1 code, which the log alone escapes (ADR 0010) |
+| `Cards` | the raw 80-character cards selected, in the source's order, a long string's `CONTINUE` cards under the card they continue (R-010), so there may be more cards than keys | the preview, indented, trailing spaces trimmed (a 0xA0 stays); a byte above 0x7F shows as the character of its Latin-1 code, which the log alone escapes (ADR 0010) |
 | `Target` | the file written, else null | nothing; the window reads the destination's facts again after a copy |
 | `Notes` | the preview's heading, or the count copied and the flip reminder | stdout: a preview's heading first, above its cards; a copy's lines last |
 | `Dropped` | the one line naming the destination's old plate-solve keys dropped, or a preview would drop (R-016), else null | stdout: a preview's after its cards, a copy's before its notes, so the count and the reminder stay the last two lines (R-012) |
@@ -38,8 +38,8 @@ the destination's keys to drop (`WcsMetadataKeys.SelectKeysToDrop`, R-016, ADR 0
 run return the cards, the heading and the drop line (R-009); else remove the dropped keys' cards
 and the destination's `CHECKSUM`, which the changed header would no longer match, whatever the
 source holds (R-018, ADR 0021; `DATASUM` stays, the data being untouched, and no line says it),
-set each selected card verbatim, append the HISTORY card, write through the header engine (a
-write failure is a refusal, R-014) and return the count, the reminder and the drop line (R-012).
+set each selected key's value cards verbatim (`SetValueCards`, a long string whole, R-010), append the HISTORY card, write through the header engine (a
+write failure is a refusal, R-014) and return the count, the reminder and the drop line (R-012); the heading's count and the closing line's count are of keys, not of cards.
 The keys dropped and the keys set never overlap: a dropped key is one the source lacks. A
 refusal drops nothing and carries no drop line, the write error's included, since the header in
 memory is thrown away. The warnings raised before a refusal stay in the outcome, so the console

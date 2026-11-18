@@ -85,6 +85,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - A copy removes the destination's `CHECKSUM` card, which the changed header no longer matched,
   so a program that checks it saw the file as damaged; `DATASUM`, the data's own sum, stays, the
   data being untouched (R-018, ADR 0021; CR-004 of the review of 2026-11-16).
+- A text too long for one card, carried on in `CONTINUE` cards, is copied whole: the copy took
+  its first card alone, a value cut short with a stray `&`, and left the `CONTINUE` cards of the
+  destination's own long value under the new one; the dry run and the window's Preview list the
+  `CONTINUE` cards too, and still count keys (R-009, R-010, ADR 0022; CR-005 of the review of
+  2026-11-16).
 
 ### Internal
 

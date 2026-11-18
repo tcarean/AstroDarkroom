@@ -511,6 +511,24 @@ public class LoggingTests
         Assert.DoesNotContain(capture.Events, e => e.Message.StartsWith("write ", StringComparison.Ordinal));
     }
 
+    /// <summary>A long string's cards make one card line, joined by " + ", so the log shows the whole value the copy takes (R-042, R-010).</summary>
+    [Fact]
+    public void R042_ALongStringIsOneCardLineWithItsContinueCards()
+    {
+        using var ws = new TempWorkspace();
+        List<string> sourceCards = FitsTestData.PlateSolvedCards();
+        int at = sourceCards.FindIndex(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        sourceCards[at] = FitsTestData.Card("OBJECT", "'NGC 6960 &'");
+        sourceCards.Insert(at + 1, FitsTestData.Continue("'Veil'"));
+        var (src, dst) = Pair(ws, source: sourceCards);
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli(src, dst, "--dry-run").Code);
+
+        Assert.Contains("card OBJECT: OBJECT  = 'NGC 6960 &' + CONTINUE  'Veil' | dest: OBJECT  = 'M42'", capture.Messages);
+        Assert.DoesNotContain(capture.Messages, m => m.StartsWith("card CONTINUE", StringComparison.Ordinal));
+    }
+
     /// <summary>The destination's CHECKSUM, which a copy drops, is named with its card at Debug, in a dry run too (R-042, R-018).</summary>
     [Fact]
     public void R042_ADroppedChecksumIsLoggedWithItsCard_InADryRunToo()

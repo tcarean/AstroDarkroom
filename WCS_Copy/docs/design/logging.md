@@ -143,8 +143,9 @@ destination det -9.28E-8`, `orientation not compared: source det -9.3025E-8, des
 none`; a mirrored copy that slips through the check still leaves its figures. A run that
 throws leaves the clock without `Done`, and `Dispose` writes `copy ended without an outcome after
 N ms (<stages>)`. `LogSelection` runs before any card is dropped or set: the counts per list
-(`WcsKeys`, `OpticalKeys`, the rest being SIP coefficients), then per key the source's card and
-what the destination held (`none`, `same`, or its card), counted into the done line's `(new,
+(`WcsKeys`, `OpticalKeys`, the rest being SIP coefficients), then per key the source's cards and
+what the destination held (`none`, `same`, or its cards), a long string's cards joined by ` + `
+(`card OBJECT: OBJECT  = 'NGC 6960 &' + CONTINUE  'Veil' | dest: none`, R-010), counted into the done line's `(new,
 replaced, identical, dropped)`, then one `drop <key>: <card>` line per card of each key the copy
 drops (R-016), every card of a keyword the destination holds twice, while `dropped` counts the
 keys, and one `drop CHECKSUM: <card>` for the destination's checksum (R-018), which `dropped`

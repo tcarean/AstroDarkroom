@@ -385,6 +385,52 @@ public class FitsHeaderTests
         Assert.Equal(["SIMPLE", "OBJECT"], header.Keywords);
     }
 
+    /// <summary>A keyword's value cards are its card and every CONTINUE card right under it, up to the next keyword; GetCard is the first alone (R-010).</summary>
+    [Fact]
+    public void R010_ValueCards_AreTheCardAndTheContinueCardsRightUnderIt()
+    {
+        var first = FitsTestData.Card("OBJECT", "'NGC 6960 &'");
+        var second = FitsTestData.Continue("'Veil &'");
+        var third = FitsTestData.Continue("'Nebula'");
+        var header = ReadHeader(first, second, third, FitsTestData.Card("TELESCOP", "'72ED'"), FitsTestData.Continue("'stray'"));
+
+        Assert.Equal([first, second, third], header.ValueCards("OBJECT"));
+        Assert.Equal(first, header.GetCard("OBJECT"));
+        Assert.Equal(2, header.ValueCards("TELESCOP").Count);
+        Assert.Empty(header.ValueCards("INSTRUME"));
+    }
+
+    /// <summary>Setting a value replaces its card and the CONTINUE cards under it where they stand, the cards after them in place; a keyword the header lacks is appended whole (R-010).</summary>
+    [Fact]
+    public void R010_SetValueCards_ReplacesTheCardAndItsContinueCardsWhereTheyStand()
+    {
+        var header = ReadHeader(FitsTestData.Card("OBJECT", "'old &'"), FitsTestData.Continue("'tail'"), FitsTestData.Card("SITELAT", "46.77"));
+        string[] longValue = [FitsTestData.Card("TELESCOP", "'a &'"), FitsTestData.Continue("'b'")];
+
+        header.SetValueCards("OBJECT", [FitsTestData.Card("OBJECT", "'M42'")]);
+        header.SetValueCards("TELESCOP", longValue);
+
+        Assert.Equal(["SIMPLE", "OBJECT", "SITELAT", "TELESCOP", "CONTINUE"], header.Keywords);
+        Assert.Equal(FitsTestData.Card("OBJECT", "'M42'"), header.GetCard("OBJECT"));
+        Assert.Equal(longValue, header.ValueCards("TELESCOP"));
+        Assert.Throws<ArgumentOutOfRangeException>(() => header.SetValueCards("OBJECT", []));
+    }
+
+    /// <summary>Removing a keyword takes each of its cards with the CONTINUE cards right under it, and CardsOf lists those same cards first (R-016, R-010).</summary>
+    [Fact]
+    public void R016_RemoveCards_TakesEachCardWithItsContinueCards()
+    {
+        var header = ReadHeader(FitsTestData.Card("CTYPE1", "'RA---TAN &'"), FitsTestData.Continue("'x'"),
+            FitsTestData.Card("OBJECT", "'M42'"), FitsTestData.Card("CTYPE1", "'second'"));
+
+        var listed = header.CardsOf("CTYPE1");
+        var removed = header.RemoveCards("CTYPE1");
+
+        Assert.Equal(3, removed.Count);
+        Assert.Equal(listed, removed);
+        Assert.Equal(["SIMPLE", "OBJECT"], header.Keywords);
+    }
+
     [Fact]
     public void R013_WriteWithDataFrom_NewOutputFile_HeaderWrittenAndDataBytesPreserved()
     {

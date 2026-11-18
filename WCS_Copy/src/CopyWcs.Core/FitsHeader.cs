@@ -34,6 +34,9 @@ internal sealed class FitsHeader
     private const int CardSize = 80;
     private const int BlockSize = 2880;
 
+    /// <summary>The keyword of the cards that carry on a long string value from the card above them (R-010).</summary>
+    private const string ContinueKeyword = "CONTINUE";
+
     /// <summary>
     /// The encoding of the cards: each byte 0x00 to 0xFF is the character of that code, and
     /// each such character is written back as the same byte, so no byte of a header is changed
@@ -222,13 +225,40 @@ internal sealed class FitsHeader
         return -1;
     }
 
-    /// <summary>The raw card of a keyword, exactly as read or set.</summary>
+    /// <summary>The raw card of a keyword, exactly as read or set: its first card alone, without the CONTINUE cards of a long string (<see cref="ValueCards"/>).</summary>
     /// <param name="key">The keyword, case-sensitive.</param>
     /// <returns>The 80-character card, or null when no card has the keyword.</returns>
     public string? GetCard(string key)
     {
         var i = IndexOf(key);
         return i < 0 ? null : _cards[i];
+    }
+
+    /// <summary>
+    /// The cards that hold a keyword's value: its first card and the CONTINUE cards right under
+    /// it, which carry on a long string (R-010), raw and in their order; a value of one card is
+    /// that card alone.
+    /// </summary>
+    /// <param name="key">The keyword, case-sensitive.</param>
+    /// <returns>The cards, the keyword's own first; empty when no card has the keyword.</returns>
+    public IReadOnlyList<string> ValueCards(string key)
+    {
+        var i = IndexOf(key);
+        return i < 0 ? [] : _cards.GetRange(i, 1 + ContinuationsUnder(i));
+    }
+
+    /// <summary>How many CONTINUE cards stand right under a card, up to the first card of another keyword.</summary>
+    /// <param name="i">The card's index in the header.</param>
+    /// <returns>The number of CONTINUE cards that follow it without a gap; 0 for a value of one card.</returns>
+    private int ContinuationsUnder(int i)
+    {
+        var n = 0;
+        while (i + 1 + n < _cards.Count && KeywordOf(_cards[i + 1 + n]) == ContinueKeyword)
+        {
+            n++;
+        }
+
+        return n;
     }
 
     /// <summary>The integer value of a card: the text between the '=' and the '/' comment, if any, trimmed of spaces only.</summary>
@@ -315,45 +345,89 @@ internal sealed class FitsHeader
         return (slash >= 0 ? value[..slash] : value).Trim(' ');
     }
 
-    /// <summary>Replaces the card of a keyword in place, or appends it when the header has none.</summary>
+    /// <summary>Replaces the value of a keyword with one card, where its first card stands, the CONTINUE cards under that card going with it, or appends the card when the header has none.</summary>
     /// <param name="key">The keyword the card is filed under, case-sensitive.</param>
     /// <param name="rawCard">The card's text, each character one byte of the file (a card read from a file, normally); padded to 80 characters, or cut to 80 when longer. A character above 0xFF has no byte and is written as <c>?</c>.</param>
-    public void SetCard(string key, string rawCard)
+    public void SetCard(string key, string rawCard) => SetValueCards(key, [rawCard]);
+
+    /// <summary>
+    /// Replaces the cards of a keyword's value (its first card and the CONTINUE cards right under
+    /// it, <see cref="ValueCards"/>) with the given ones, where they stand, or appends them when
+    /// the header has the keyword nowhere: how a copy sets a source's value, verbatim, a long
+    /// string whole (R-010). A second card of the keyword further down is left as it is.
+    /// </summary>
+    /// <param name="key">The keyword the cards are filed under, case-sensitive.</param>
+    /// <param name="rawCards">The cards, the keyword's own first, then its CONTINUE cards, each one byte per character; each padded to 80 or cut at 80; at least one.</param>
+    /// <exception cref="ArgumentOutOfRangeException">No card is given.</exception>
+    public void SetValueCards(string key, IReadOnlyList<string> rawCards)
     {
-        var card = Pad(rawCard);
+        ArgumentNullException.ThrowIfNull(rawCards);
+        ArgumentOutOfRangeException.ThrowIfZero(rawCards.Count, nameof(rawCards));
+
+        var cards = rawCards.Select(Pad).ToList();
         var i = IndexOf(key);
         if (i >= 0)
         {
-            _cards[i] = card;
+            _cards.RemoveRange(i, 1 + ContinuationsUnder(i));
+            _cards.InsertRange(i, cards);
         }
         else
         {
-            _cards.Add(card);
+            _cards.AddRange(cards);
         }
     }
 
     /// <summary>
-    /// Removes every card of a keyword, wherever it sits, the other cards keeping their order:
-    /// how a copy drops the destination's old plate-solve cards (R-016).
+    /// Removes every card of a keyword, wherever it sits, each with the CONTINUE cards right under
+    /// it, the other cards keeping their order: how a copy drops the destination's old
+    /// plate-solve cards (R-016) and its checksum (R-018).
     /// </summary>
     /// <param name="key">The keyword, case-sensitive, as <see cref="Contains"/> takes it.</param>
-    /// <returns>The cards removed, raw, in the order the header held them; empty when no card had the keyword.</returns>
+    /// <returns>The cards removed, raw, in the order the header held them, the CONTINUE ones included; empty when no card had the keyword.</returns>
     public IReadOnlyList<string> RemoveCards(string key)
     {
-        var removed = CardsOf(key);
-        if (removed.Count > 0)
+        var removed = new List<string>();
+        var i = 0;
+        while (i < _cards.Count)
         {
-            _cards.RemoveAll(c => string.Equals(KeywordOf(c), key, StringComparison.Ordinal));
+            if (string.Equals(KeywordOf(_cards[i]), key, StringComparison.Ordinal))
+            {
+                var n = 1 + ContinuationsUnder(i);
+                removed.AddRange(_cards.GetRange(i, n));
+                _cards.RemoveRange(i, n);
+            }
+            else
+            {
+                i++;
+            }
         }
 
         return removed;
     }
 
-    /// <summary>Every card of a keyword, raw, in the order the header holds them; a header may hold a keyword more than once.</summary>
+    /// <summary>Every card of a keyword, each with the CONTINUE cards right under it, raw, in the order the header holds them; a header may hold a keyword more than once.</summary>
     /// <param name="key">The keyword, case-sensitive.</param>
-    /// <returns>The cards; empty when no card has the keyword.</returns>
-    public IReadOnlyList<string> CardsOf(string key) =>
-        _cards.Where(c => string.Equals(KeywordOf(c), key, StringComparison.Ordinal)).ToList();
+    /// <returns>The cards, the CONTINUE ones included; empty when no card has the keyword.</returns>
+    public IReadOnlyList<string> CardsOf(string key)
+    {
+        var cards = new List<string>();
+        var i = 0;
+        while (i < _cards.Count)
+        {
+            if (string.Equals(KeywordOf(_cards[i]), key, StringComparison.Ordinal))
+            {
+                var n = 1 + ContinuationsUnder(i);
+                cards.AddRange(_cards.GetRange(i, n));
+                i += n;
+            }
+            else
+            {
+                i++;
+            }
+        }
+
+        return cards;
+    }
 
     /// <summary>
     /// Appends a HISTORY card, ASCII whatever the text holds (<see cref="AsciiText.Of"/>), so the

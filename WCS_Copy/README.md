@@ -24,7 +24,10 @@ It is free software under the GNU General Public License v3 or later; see `LICEN
   `OBJCTDEC`, `RA`, `DEC`, `OBJECT`), the site, `DATE-OBS`, `INSTRUME`, `TELESCOP`.
 
 Only the keys present in the source are copied. A Siril 1.4.4 solve of a stack, for example, is
-72 cards: 21 WCS keys, 40 SIP coefficients and 11 optical keys.
+72 cards: 21 WCS keys, 40 SIP coefficients and 11 optical keys. A text too long for one card,
+an `OBJECT` or a `TELESCOP` of more than 68 characters, goes on in `CONTINUE` cards under it:
+those are copied with it, and a long value of the destination's that the copy replaces takes
+its own `CONTINUE` cards away with it, so the value reads whole and nothing of the old one stays.
 
 **The destination's old plate solve is dropped.** When the destination already holds a plate
 solve, one another program made for example, its plate-solve keys that the source does not have

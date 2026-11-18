@@ -41,15 +41,22 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
   value from the card itself, not through `ValueText`, so a '/' inside the quotes stays text; a
   doubled quote is one, the trailing spaces go, and a value with no closing quote on the card is
   null.
-- `SetCard(key, raw)` replaces the first card of that keyword in place, keeping its position,
-  or appends when there is none; the raw text is padded to 80 or cut at 80 by `Pad`. This is
-  the verbatim copy of R-010: the caller passes the source's card, and nothing is reparsed.
-  A second card of the same keyword, which a header may hold though the standard says it
-  should not, is left as it is.
-- `CardsOf(key)` lists every card of a keyword in the header's order; `RemoveCards(key)` takes
-  them all out, the other cards keeping their order, and returns them (R-016). The run logs a
-  dropped key's cards through `CardsOf` before anything changes, and drops them through
-  `RemoveCards` before the first `SetCard`.
+- A value is a card and the `CONTINUE` cards right under it (R-010, ADR 0022). The FITS
+  standard writes a string longer than one card holds as a first card whose string ends in `&`
+  and `CONTINUE` cards that carry it on (`CONTINUE  'tail'`: the keyword, two spaces, the
+  string). `ValueCards(key)` returns the keyword's first card with every `CONTINUE` card that
+  follows it without a gap (`ContinuationsUnder`), whatever the strings end in, as astropy
+  reads them; `GetCard(key)` stays the first card alone, which the value readers parse.
+- `SetValueCards(key, cards)` replaces that run of cards where it stands with the given ones,
+  each padded to 80 or cut at 80 by `Pad`, or appends them when the keyword is nowhere;
+  `SetCard(key, raw)` is `SetValueCards(key, [raw])`. This is the verbatim copy of R-010: the
+  run passes the source's value cards, nothing is reparsed, and a destination's long string
+  replaced by a short one loses its old `CONTINUE` cards with it. A second card of the same
+  keyword, which a header may hold though the standard says it should not, is left as it is.
+- `CardsOf(key)` lists every card of a keyword, each with its `CONTINUE` cards, in the header's
+  order; `RemoveCards(key)` takes them all out, the other cards keeping their order, and returns
+  them (R-016, R-018). The run logs a dropped key's cards through `CardsOf` before anything
+  changes, and drops them through `RemoveCards` before the first `SetValueCards`.
 - `AddHistory(text)` appends `HISTORY ` plus at most 72 characters of `AsciiText.Of(text)`
   (R-011): the text is made ASCII first, then cut, so the cut counts the characters written.
 
