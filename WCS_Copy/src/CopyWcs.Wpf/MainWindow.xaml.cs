@@ -65,9 +65,8 @@ public partial class MainWindow : Window
     /// <summary>
     /// The window over a given view-model (the tests pass their own): binds it, asks for the
     /// dark title bar and fits itself into its screen (R-055) once it has a handle, follows the
-    /// view-model's running state, so
-    /// that a close held during a run is done when the run ends (R-050), and looks at the files
-    /// again each time the window comes back to the front (R-054).
+    /// view-model's running state, so that a close held during a run is done when the run ends
+    /// (R-050), and looks at the files again each time the window comes back to the front (R-054).
     /// </summary>
     /// <param name="vm">The view-model the window binds; not null.</param>
     internal MainWindow(MainViewModel vm)

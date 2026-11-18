@@ -490,8 +490,8 @@ internal sealed class FitsHeader
     /// data area copied from <paramref name="dataSource"/>, into a temporary file beside the
     /// target, flushed to the disk and put in the target's place at the end, an existing target
     /// replaced so that it keeps its creation time, attributes and permissions (R-012, ADR 0031):
-    /// a write that fails at any point leaves
-    /// the target as it was, or absent, and its temporary file is deleted (R-014). The temporary
+    /// a write that fails at any point leaves the target as it was, or absent, and its temporary
+    /// file is deleted (R-014). The temporary
     /// file has a name of its own (<see cref="TemporaryBeside"/>) and is created only when no
     /// file holds that name, so no file of the user's is overwritten; an in-place write goes the
     /// same way, since the header may have grown past its original blocks and cannot be patched

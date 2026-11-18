@@ -50,7 +50,8 @@ internal sealed class Options
     /// <param name="args">The arguments, without <c>--lang</c> and its value; not null.</param>
     /// <returns>The options.</returns>
     /// <exception cref="ArgumentException">An unknown option, <c>-o</c> without a value or
-    /// followed by one that starts with a dash, or not exactly two paths; the message is one line in the run's language.</exception>
+    /// followed by one that starts with a dash, or not exactly two paths; the message is one
+    /// line in the run's language.</exception>
     public static Options Parse(string[] args)
     {
         ArgumentNullException.ThrowIfNull(args);
