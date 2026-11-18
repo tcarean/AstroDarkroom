@@ -93,14 +93,14 @@ original and proposal side by side.
 | CR-008 | 2 | some setups | to measure | The window reads the file facts on its own thread at every keystroke | fixed d346b52d |
 | CR-009 | 3 | common | confirmed | The outcome card stays as it was while the boxes change and during the next run | fixed bda57b2e |
 | CR-010 | 3 | common | owner | A file's existence and facts are read only when the box's text changes | fixed 277cc6bd |
-| CR-011 | 3 | some files | shown | A header without `NAXIS1` is reported as the size -1, with the advice to force | open |
-| CR-012 | 3 | some setups | to measure | The window may open taller than a small screen, and the cards may get no height | open |
+| CR-011 | 3 | some files | shown | A header without `NAXIS1` is reported as the size -1, with the advice to force | fixed 3d98e508 |
+| CR-012 | 3 | some setups | to measure | The window may open taller than a small screen, and the cards may get no height | fixed 1b2f3fe1 |
 | CR-013 | 3 | slip | shown | The same file as source and destination is accepted and reported as a copy | fixed d1178b79 |
 | CR-014 | 3 | slip | shown | A new-file path that names the destination in another spelling ends in "used by another process" | fixed d1178b79 |
-| CR-015 | 3 | slip | owner | `-o` takes a following flag as its file name: `-o --dry-run` writes a file | open |
+| CR-015 | 3 | slip | owner | `-o` takes a following flag as its file name: `-o --dry-run` writes a file | fixed bae90794 |
 | CR-016 | 3 | slip | owner | A read-only destination is refused only after its whole copy is written, and the copy is left | fixed f7d27425 |
-| CR-017 | 3 | rare | confirmed | The window draws the warnings under the refusal; R-033 says above | open |
-| CR-018 | 4 | rare | confirmed | The in-place replace is a plain move: creation time, attributes and links are lost, an existing `.tmp` is overwritten | open |
+| CR-017 | 3 | rare | confirmed | The window draws the warnings under the refusal; R-033 says above | fixed c171e264 |
+| CR-018 | 4 | rare | confirmed | The in-place replace is a plain move: creation time, attributes and links are lost, an existing `.tmp` is overwritten | fixed 04143b47 |
 | CR-019 | 4 | some files | shown | `WCSAXES` can be written after the WCS cards it must precede | open |
 | CR-020 | 4 | some files | owner | The SIP keys `A_DMAX` and `B_DMAX` are in neither list | open |
 | CR-021 | 4 | crafted | shown | A keyword ending in a line feed passes for a SIP coefficient and splits a log line | open |
@@ -364,6 +364,7 @@ write through a temporary file.
   is not a size.
 - **Test:** none with a missing `NAXIS1`.
 - **Evidence:** shown. The new text is the owner's to approve.
+- **Status:** fixed 3d98e508 (a file whose primary header has no `NAXIS1` or `NAXIS2` is refused with a line that names it and says its image may be in an extension, the source checked first, a dry run too, and force does not let it through, the owner's answer of 2026-11-18, the line approved with the plan; two such files, which passed as equal sizes and were copied, are refused too; R-060, ADR 0028).
 
 ### CR-012 The window may open taller than a small screen
 
@@ -376,6 +377,7 @@ write through a temporary file.
 - **Should:** the window capped to its screen, as AstroDarkroom's (its CR-005), and the list a
   minimum height or the card a scroll.
 - **Evidence:** to measure, by a screenshot at 150 % and one at the minimum height.
+- **Status:** fixed 1b2f3fe1 (the window fits into the work area of its screen when it opens, its height and minimum capped at the area's and its top kept inside it, AstroDarkroom's `ScreenArea` and `WindowFit.Top` copied; the minimum height is 680, the owner's answer of 2026-11-18. Measured that day by a render of the window shown off the screen: at 720 x 620 a forced copy with two warnings, the drop line and the two closing lines left the cards list 29 px, one card, in both languages; at 680 it has 89 px, four cards (three at 675). The 150 % laptop was not measured, this PC's screens being 1080p at 100 %; the fit is tested with a given work area; R-055, ADR 0029).
 
 ### CR-013 The same file as source and destination is accepted
 
@@ -417,6 +419,7 @@ write through a temporary file.
   present behaviour, with the comment "Existing behaviour".
 - **Evidence:** owner: a test pins it and no requirement asks for it; changing it changes that
   test (the kit's rule "No test edited to pass").
+- **Status:** fixed bae90794 (a value after `-o` that starts with a dash is R-002's usage error, `--output needs a file name.` and exit 2, any such value and not only the tool's flags, a name that starts with one being written `.\-x.fit`; the owner chose it on 2026-11-18 and had the pinning test replaced by `R002_Parse_OutputFollowedByADash_Throws`; ADR 0030).
 
 ### CR-016 A read-only destination is refused only after its whole copy is written
 
@@ -445,6 +448,7 @@ write through a temporary file.
   blocks in the code's order, so the note and the requirement disagree too.
 - **Test:** none checks the order.
 - **Evidence:** confirmed.
+- **Status:** fixed c171e264 (the window draws the warnings above the refusal, as R-033 says and the console prints them; `window.md` lists the blocks in that order).
 
 ## Severity 4
 
@@ -463,6 +467,7 @@ write through a temporary file.
   temporary name that cannot collide.
 - **Evidence:** confirmed; the links are for the task to run.
 - **Note (2026-11-18):** still open, but its temporary file changed with CR-003's fix (f7d27425, ADR 0020): it is `<name>.copywcs-<8 hex digits>.tmp`, created only when no file holds that name, so a `dest.fit.tmp` of the owner's is left alone and two runs on one destination no longer share a file. The rest stands: the replaced file's times, attributes and permissions, a destination that is a link, no flush before the rename. With the same fix a new file (`-o`) that replaces an existing one goes the same way, a rename over it, so all of these reach it too, with two more for both writes: the replace needs room for both files, and a folder where the user may change the file but not create one refuses it (the review of the branch, 2026-11-18; ADR 0020).
+- **Status:** fixed 04143b47 (an existing target, in place or a file given to `-o`, is replaced by Windows' replace, `File.Replace` with `ignoreMetadataErrors`, and the copy is flushed to the disk first, the owner's answer of 2026-11-18. Measured that day: a target created in 2020 and Hidden keeps both, where a move gave it the day's date and `Archive` alone; an extra `Everyone:(R)` permission is kept; a read-only target is refused with the same line as before; a hard link is broken, as by the move; a symbolic link could not be made on this account and was not measured; the flush makes the 290 MB Veil stack's write on the hard disk 2.7 to 3.2 s, about 0.4 s before. The two limits of the note above stay; R-012, ADR 0031).
 
 ### CR-019 `WCSAXES` can be written after the WCS cards it must precede
 
