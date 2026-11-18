@@ -1,6 +1,6 @@
 # The copy run, the console and the language
 
-**Covers:** `src/CopyWcs.Core/WcsCopy.cs`, `src/CopyWcs.Core/Language/Ui.cs`,
+**Covers:** `src/CopyWcs.Core/WcsCopy.cs`, `src/CopyWcs.Core/FileIdentity.cs`, `src/CopyWcs.Core/Language/Ui.cs`,
 `src/CopyWcs.Core/Language/LanguageArgument.cs`, `src/CopyWcs.Core/VersionInfo.cs`,
 `src/CopyWcs.Core/LicenseInfo.cs`, `src/CopyWcs.Core/ThirdParty.cs`, `src/CopyWcs.Cli/Program.cs`,
 `src/CopyWcs.Cli/CopyWcsCli.cs` and `src/CopyWcs.Cli/Options.cs`.
@@ -26,7 +26,10 @@ place, optical keys or not, force, dry run. The outcome is a record of lines alr
 | `Dropped` | the one line naming the destination's old plate-solve keys dropped, or a preview would drop (R-016), else null | stdout: a preview's after its cards, a copy's before its notes, so the count and the reminder stay the last two lines (R-012) |
 
 The sequence: read the source, read the destination (each read failure is a refusal naming
-which file and why, R-004; the reader's own messages of R-015 travel in it); compare
+which file and why, R-004; the reader's own messages of R-015 travel in it); refuse paths that
+name one file twice (`PathClash`, R-019, ADR 0018: the source as the destination, then a new file
+that is the source, then one that is the destination, the destination's own spelling included),
+before anything else so that even a dry run never gets that far; compare
 `NAXIS1`/`NAXIS2` (a refusal, or a warning under force, R-005); warn on a missing `CTYPE1`
 (R-006); ask `WcsMetadataKeys.Mirrored` whether the destination's own plate solve is the mirror
 image of the source's (true is a refusal, or a warning under force, R-017, ADR 0012; force passes
@@ -41,6 +44,18 @@ memory is thrown away. The warnings raised before a refusal stay in the outcome,
 prints them before the error, as it did before the split. The core composes every sentence
 about the copy; an application adds nothing to them. Beside the outcome, the run writes its own lines
 to the diagnostic log, in English (`logging.md`, "A copy's lines").
+
+`FileIdentity.Same(a, b)` tells two paths apart by the file each opens. It opens both with every
+sharing allowed (`File.OpenHandle`, so a file another program holds open is still told) and, on
+Windows, compares the volume serial number and the 64-bit file index `GetFileInformationByHandle`
+gives each handle (a `LibraryImport` that fills the 13 fields of `BY_HANDLE_FILE_INFORMATION`
+into an array, so no struct is declared): another letter case, a `..`, a `\\?\` prefix, a short
+8.3 name or a link names the file it leads to, and the two names of a hard-linked file are one
+file. A path that cannot be opened (missing, a folder, empty) is never the same as another: it
+is no file the run could overwrite, and its read or its write says why it fails. Off Windows,
+when the call fails, or when the file system gives the index 0, which would make all its files
+one, the two full paths are compared, letter case ignored on Windows. `FileIdentityTests` checks
+the spellings, two files, a missing file, an empty path, a folder and a file held open elsewhere.
 
 ## The console (`CopyWcsCli`, `Options`, `Program`)
 

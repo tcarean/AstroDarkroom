@@ -541,4 +541,130 @@ public class WcsCopyTests
         Assert.StartsWith("Eroare la scriere", outcome.Error, StringComparison.Ordinal);
         Assert.Equal(destBytes, File.ReadAllBytes(dest));
     }
+
+    /// <summary>The names of the files in a folder, sorted, so a test sees every file a run left there.</summary>
+    private static string[] FilesIn(string folder)
+        => Directory.GetFiles(folder).Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal).ToArray();
+
+    /// <summary>
+    /// A new file that is the source, as given or in another letter case, is refused before
+    /// anything is written, a dry run too, and the solved source keeps every byte (R-019; CR-001
+    /// of the review of 2026-11-16: the copy overwrote the source and said it had copied).
+    /// </summary>
+    [Fact]
+    public void R019_Run_ANewFileThatIsTheSource_IsRefused_ADryRunToo_AndTheSourceIsLeftAsItWas()
+    {
+        using var ws = new TempWorkspace();
+        var sourceBytes = FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), FitsTestData.DeterministicData(400));
+        var source = ws.WriteFile("Source.fit", sourceBytes);
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+
+        foreach (var output in new[] { source, ws.FilePath("source.fit") })
+        {
+            foreach (var dryRun in new[] { false, true })
+            {
+                var outcome = WcsCopy.Run(Request(source, dest, output, dryRun: dryRun));
+
+                Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+                Assert.Equal($"Fisierul nou '{output}' este chiar sursa: scrierea lui ar suprascrie sursa plate-solved. "
+                             + "Alege alt nume pentru fisierul nou.", outcome.Error);
+                Assert.Empty(outcome.Warnings);
+                Assert.Empty(outcome.Cards);
+                Assert.Null(outcome.Dropped);
+                Assert.Equal(sourceBytes, File.ReadAllBytes(source));
+                Assert.Equal(destBytes, File.ReadAllBytes(dest));
+                Assert.Equal(["Source.fit", "dest.fit"], FilesIn(ws.Dir));
+            }
+        }
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal($"The new file '{source}' is the source itself: writing it would overwrite the plate-solved source. "
+                         + "Choose another name for the new file.", WcsCopy.Run(Request(source, dest, source)).Error);
+        }
+    }
+
+    /// <summary>
+    /// The same file as the source and the destination, as given or in another letter case, is
+    /// refused before anything is written, a dry run too (R-019; CR-013: the file was copied into
+    /// itself and gained a HISTORY card saying it was copied from itself).
+    /// </summary>
+    [Fact]
+    public void R019_Run_TheSameFileAsSourceAndDestination_IsRefusedAndWritesNothing()
+    {
+        using var ws = new TempWorkspace();
+        var bytes = FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), FitsTestData.DeterministicData(400));
+        var stack = ws.WriteFile("stack.fit", bytes);
+
+        foreach (var dest in new[] { stack, ws.FilePath("STACK.FIT") })
+        {
+            foreach (var dryRun in new[] { false, true })
+            {
+                var outcome = WcsCopy.Run(Request(stack, dest, dryRun: dryRun));
+
+                Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+                Assert.Equal("Sursa si destinatia sunt acelasi fisier. Nimic de copiat.", outcome.Error);
+                Assert.Empty(outcome.Warnings);
+                Assert.Empty(outcome.Cards);
+                Assert.Equal(bytes, File.ReadAllBytes(stack));
+                Assert.Equal(["stack.fit"], FilesIn(ws.Dir));
+            }
+        }
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("The source and the destination are the same file. Nothing to copy.", WcsCopy.Run(Request(stack, stack)).Error);
+        }
+    }
+
+    /// <summary>
+    /// A new file that is the destination is refused under any spelling, the destination's own
+    /// included, and the destination keeps every byte, a dry run too (R-019; CR-014: another letter
+    /// case ended in a "used by another process" write error, and the same spelling rewrote the
+    /// destination in place, though R-012 says a new file leaves it as it was).
+    /// </summary>
+    [Fact]
+    public void R019_Run_ANewFileThatIsTheDestination_IsRefusedUnderAnySpelling()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
+        var dest = ws.WriteFile("Stack.fit", destBytes);
+
+        string[] spellings = [dest, ws.FilePath("stack.fit"), @"\\?\" + dest, Path.Combine(ws.Dir, "sub", "..", "Stack.fit")];
+        foreach (var output in spellings)
+        {
+            foreach (var dryRun in new[] { false, true })
+            {
+                var outcome = WcsCopy.Run(Request(source, dest, output, dryRun: dryRun));
+
+                Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+                Assert.Equal($"Fisierul nou '{output}' este chiar destinatia. Scrie in destinatie sau alege alt nume pentru fisierul nou.",
+                             outcome.Error);
+                Assert.Equal(destBytes, File.ReadAllBytes(dest));
+                Assert.Equal(["Stack.fit", "source.fit"], FilesIn(ws.Dir));
+            }
+        }
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal($"The new file '{dest}' is the destination itself. Write into the destination instead, or choose another name "
+                         + "for the new file.", WcsCopy.Run(Request(source, dest, dest)).Error);
+        }
+    }
+
+    /// <summary>A new file that does not exist yet is none of the two files, in another folder's spelling too: the copy writes it (R-019).</summary>
+    [Fact]
+    public void R019_Run_ANewFileThatDoesNotExistYet_IsWritten()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        var outcome = WcsCopy.Run(Request(source, dest, Path.Combine(ws.Dir, "sub", "..", "source_wcs.fit")));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.True(File.Exists(ws.FilePath("source_wcs.fit")));
+    }
 }

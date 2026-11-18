@@ -124,11 +124,14 @@ the view-model, the About window).
 ## A copy's lines
 
 `WcsCopy.Run` holds a `RunClock` in a `using`: `copy start <request>` before the source is read,
-then a `Lap` after each stage, `source`, `dest`, `select` (the size check, the `CTYPE1` check, the
-mirror check, the selection and the keys to drop) and `write` (the old cards dropped, the cards
-set, the `HISTORY` card appended, the file written), and `Done` with the outcome and the times of
-the stages reached. A refusal laps the stage it happens in and says why (`refused: cannot read
-the source`, `cannot read the destination`, `dimensions differ (source 100x80, destination
+then a `Lap` after each stage, `source`, `dest`, `select` (the check of the three paths, the size
+check, the `CTYPE1` check, the mirror check, the selection and the keys to drop) and `write` (the
+old cards dropped, the cards set, the `HISTORY` card appended, the file written), and `Done` with
+the outcome and the times of the stages reached. A refusal laps the stage it happens in and says
+why (`refused: cannot read the source`, `cannot read the destination`, `the source and the
+destination are the same file`, `the new file is the source`, `the new file is the destination`
+(R-019, after a Warn line naming both paths: `the new file <output> is the source <source>;
+nothing is written`), `dimensions differ (source 100x80, destination
 200x80)`, `mirrored plate solve (source det -2.9641E-6, destination det +2.9641E-6)`, `no
 relevant key in the source`, `the write failed`), after a Warn line (an Error one for the write)
 holding the exception when there is one. The mirror's Warn line, `mirrored plate solve: source
@@ -156,7 +159,7 @@ a build that does not.
 | `FitsHeader.ReadPrimary` | Info, Trace | `read <path> (<size>) bytes cards blocks dataOffset data` and the keys of `LogText.Keys` (`size unknown`, `bytes=none`, `data=none` when `FitsHeader.LengthOf` has no length: a stream that cannot seek, a named pipe, is not asked, and whatever a seekable file's query throws is taken as none); at Trace `<path> card <n>: <card>`, every card from 1 |
 | `FitsHeader.AddHistory` | Debug | `appended <card>` |
 | `FitsHeader.WriteWithDataFrom` | Debug, Trace, Info | `write <target>[ in place through <target>.tmp], the data from byte <offset> of <source>` before the file is created, every card to be written at Trace, `wrote <target> (<size>) bytes cards blocks data` after the move |
-| `WcsCopy.Run` | Info, Warn, Error, Debug | the start and done lines; `cannot read the source` / `the destination <path>` with the exception; the two warnings and the two refusals without one; `the write of <target> failed` with the exception; at Debug `selected <n> keys: <w> WCS, <s> SIP, <o> optical` and `card <KEY>: <card> \| dest: <none, same or card>` |
+| `WcsCopy.Run` | Info, Warn, Error, Debug | the start and done lines; `cannot read the source` / `the destination <path>` with the exception; the three warnings and the refusals without one (the three paths of R-019, the size, the mirror, no key); `the write of <target> failed` with the exception; at Debug `selected <n> keys: <w> WCS, <s> SIP, <o> optical` and `card <KEY>: <card> \| dest: <none, same or card>` |
 | `CopyWcsCli` | Warn, Info | `refused (exit 1): <the --lang message>`, `usage error (exit 2): <the line on stderr>`, `help shown (exit 0)` |
 | `App` | Info, Warn | `language=<en or ro> source from the command line: <path or none> dest: <path or none>` (`StartLine`); a `--lang` refused, before its message box |
 | `MainWindow` | Info, Debug | the file picked in each of the three dialogs, or the dialog closed without one; `About opened`; `Help opened: <address>`, for the Help button and F1 alike (R-039) |

@@ -16,7 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // WcsCopy.cs - the copy run, shared by the console and the window: reads both headers, checks
-// the pixel grid and that the destination's own plate solve is no mirror of the source's (R-017),
+// that the three paths name three files (R-019), the pixel grid, and that the destination's own
+// plate solve is no mirror of the source's (R-017),
 // selects the cards and the destination's old plate-solve cards to drop (R-016), lists them, or
 // drops those and copies the others, and returns what happened as lines
 // already worded, so that each application only prints or shows them (ADR 0001, ADR 0007). The
@@ -83,8 +84,9 @@ internal static class WcsCopy
     private static readonly Logger Log = LogManager.GetLogger("WcsCopy");
 
     /// <summary>
-    /// Runs a copy: reads both headers, refuses a pixel grid that differs unless forced, warns
-    /// about a source without <c>CTYPE1</c>, refuses a destination whose own plate solve is the
+    /// Runs a copy: reads both headers, refuses paths that name one file twice (R-019), refuses
+    /// a pixel grid that differs unless forced, warns about a source without <c>CTYPE1</c>,
+    /// refuses a destination whose own plate solve is the
     /// mirror image of the source's unless forced (R-017), selects the cards and the destination's old
     /// plate-solve cards to drop (R-016), and either lists them (a dry run) or drops those,
     /// copies the selected cards verbatim, appends a HISTORY card and writes the target with the
@@ -133,6 +135,18 @@ internal static class WcsCopy
         }
 
         clock.Lap("dest");
+
+        // The three paths name three files, told by the file each opens and not by its spelling
+        // (R-019, ADR 0018): a new file that is the source would overwrite the plate-solved
+        // source, one that is the destination would be written over the file its data is read
+        // from, and a source that is the destination would be copied into itself.
+        if (PathClash(request) is { } clash)
+        {
+            Log.Warn(clash.Line + "; nothing is written");
+            clock.Lap("select");
+            clock.Done("refused: " + clash.Reason);
+            return Refused(clash.Error, warnings);
+        }
 
         // The WCS holds only on the same pixel grid.
         var srcDim = (source.GetInt("NAXIS1"), source.GetInt("NAXIS2"));
@@ -271,6 +285,51 @@ internal static class WcsCopy
               "pe parcursul procesarii, WCS-ul copiat va fi gresit fara sa dea eroare."),
         ],
         dropped);
+    }
+
+    /// <summary>
+    /// The refusal of a run whose paths name one file twice (R-019), checked in this order: the
+    /// source as the destination, then a new file that is the source, then one that is the
+    /// destination, whatever its spelling, the destination's own included. A new file that does
+    /// not exist yet is neither.
+    /// </summary>
+    /// <param name="request">The run's request; its paths as given.</param>
+    /// <returns>The refusal's line in the run's language, the log's line and the done line's reason, both in English; null when the paths name three files.</returns>
+    private static (string Error, string Line, string Reason)? PathClash(WcsCopyRequest request)
+    {
+        if (FileIdentity.Same(request.Source, request.Dest))
+        {
+            return (T("The source and the destination are the same file. Nothing to copy.",
+                    "Sursa si destinatia sunt acelasi fisier. Nimic de copiat."),
+                "the source " + request.Source + " and the destination " + request.Dest + " are the same file",
+                "the source and the destination are the same file");
+        }
+
+        if (request.Output is not { } output)
+        {
+            return null;
+        }
+
+        if (FileIdentity.Same(output, request.Source))
+        {
+            return (T($"The new file '{output}' is the source itself: writing it would overwrite the plate-solved source. "
+                      + "Choose another name for the new file.",
+                    $"Fisierul nou '{output}' este chiar sursa: scrierea lui ar suprascrie sursa plate-solved. "
+                    + "Alege alt nume pentru fisierul nou."),
+                "the new file " + output + " is the source " + request.Source,
+                "the new file is the source");
+        }
+
+        if (FileIdentity.Same(output, request.Dest))
+        {
+            return (T($"The new file '{output}' is the destination itself. Write into the destination instead, "
+                      + "or choose another name for the new file.",
+                    $"Fisierul nou '{output}' este chiar destinatia. Scrie in destinatie sau alege alt nume pentru fisierul nou."),
+                "the new file " + output + " is the destination " + request.Dest,
+                "the new file is the destination");
+        }
+
+        return null;
     }
 
     /// <summary>

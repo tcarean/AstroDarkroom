@@ -469,6 +469,9 @@ public class LoggingTests
     [InlineData("missingdest", @"cannot read the destination in \d+ ms \(source \d+ ms, dest \d+ ms\)")]
     [InlineData("dims", @"dimensions differ \(source 100x80, destination 200x80\) in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
     [InlineData("nokey", @"no relevant key in the source in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
+    [InlineData("samefile", @"the source and the destination are the same file in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
+    [InlineData("newfileissource", @"the new file is the source in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
+    [InlineData("newfileisdest", @"the new file is the destination in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
     public void R042_EveryRefusalSaysWhyInTheDoneLine(string scenario, string reason)
     {
         using var ws = new TempWorkspace();
@@ -478,6 +481,9 @@ public class LoggingTests
             "missingdest" => [src, ws.FilePath("missing.fit")],
             "dims" => [src, ws.WriteFile("wide.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(naxis1: 200)))],
             "nokey" => [ws.WriteFile("unsolved.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards())), dst, "--no-optical"],
+            "samefile" => [src, src, "--dry-run"],
+            "newfileissource" => [src, dst, "-o", src],
+            "newfileisdest" => [src, dst, "-o", dst],
             _ => throw new ArgumentException(scenario),
         };
         using var capture = LogCapture.Start();
@@ -486,6 +492,22 @@ public class LoggingTests
 
         Assert.Matches("^copy done refused: " + reason + "$", DoneLine(capture));
         Assert.Contains(capture.Events, e => e.Level == LogLevel.Warn && e.Logger == "WcsCopy");
+    }
+
+    /// <summary>A refusal of R-019 is one Warn line naming both paths as given, without an exception: nothing failed, the paths name one file.</summary>
+    [Fact]
+    public void R042_APathThatNamesTheSourceAsTheNewFileIsAWarnLineWithBothPaths()
+    {
+        using var ws = new TempWorkspace();
+        var (src, dst) = Pair(ws);
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(1, Cli(src, dst, "-o", src).Code);
+
+        LogCapture.Captured warn = Assert.Single(capture.Events, e => e.Level == LogLevel.Warn);
+        Assert.Equal("the new file " + src + " is the source " + src + "; nothing is written", warn.Message);
+        Assert.Null(warn.Exception);
+        Assert.DoesNotContain(capture.Events, e => e.Message.StartsWith("write ", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -827,6 +849,7 @@ public class LoggingTests
             "nokey" => [unsolved, processed, "--no-optical"],
             "unreadable" => [notFits, processed],
             "writeerror" => [solved, processed, "-o", ws.FilePath(Path.Combine("missing", "out.fit"))],
+            "samefile" => [solved, solved],
             _ => throw new ArgumentException(scenario),
         };
     }
@@ -846,6 +869,7 @@ public class LoggingTests
     [InlineData("nokey")]
     [InlineData("unreadable")]
     [InlineData("writeerror")]
+    [InlineData("samefile")]
     public void R046_TheLogIsTheSameInBothLanguages(string scenario)
     {
         IReadOnlyList<string> Run(string lang)

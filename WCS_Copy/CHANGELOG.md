@@ -66,6 +66,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   image. Siril 1.4.4 reads the `CD` matrix first, so such a leftover would have hidden the copied
   solution. The optical keys are never dropped; the preview and the copy name the keys dropped
   (ADR 0011).
+- The same file given twice is refused before anything is written, a dry run too: a new file
+  (`-o`, or the window's `Write a new file`) that is the solved source, which the copy used to
+  overwrite while saying `Copied`; a new file that is the destination, under any spelling, which
+  ended in a "used by another process" error or rewrote the destination in place; and the source
+  given as the destination, which was copied into itself. The files themselves are compared, not
+  how their paths are written (R-019, ADR 0018; CR-001, CR-013 and CR-014 of the review of
+  2026-11-16).
 
 ### Internal
 

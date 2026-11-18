@@ -70,9 +70,15 @@ copywcs <solved.fit> <destination.fit> [options]
 
 Every run begins with the version (`copywcs 1.0.0`) and the copyright line, so a pasted output
 says which version produced it. Exit codes: 0 on success or a dry run, 1 when the copy was
-refused (a file that cannot be read, different dimensions or a mirrored plate solve without
-`--force`, no relevant key,
+refused (a file that cannot be read, the same file given twice, different dimensions or a
+mirrored plate solve without `--force`, no relevant key,
 a write error, a `--lang` value that is not `en` or `ro`), 2 on a usage error.
+
+**The same file twice is refused.** The source and the destination must be two files, and a new
+file (`-o`) must be neither of them: `-o` naming the solved source would overwrite it, and `-o`
+naming the destination is the in-place write, which is what leaving `-o` out does. The check
+looks at the files themselves, so `Stack.fit` and `stack.fit` are one file, as Windows sees
+them. Nothing is written, and a dry run is refused too.
 
 Example: preview, then copy into a new file.
 

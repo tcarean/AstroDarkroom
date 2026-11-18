@@ -34,7 +34,8 @@ exports.
 ## Layout
 
 - `src/CopyWcs.Core/` - the FITS header engine (`FitsHeader`), the key lists
-  (`WcsMetadataKeys`), the copy run and its texts (`WcsCopy`), the language of the texts
+  (`WcsMetadataKeys`), the copy run and its texts (`WcsCopy`), whether two paths name one file
+  (`FileIdentity`, the core's one call into Windows), the language of the texts
   (`Language/`), the version and the copyright read from the assembly, the diagnostic log's
   configuration and its words (`Logging/`), the third-party list the About window shows
   (`ThirdParty.cs`). No Console, no UI, no entry point: a compile boundary.

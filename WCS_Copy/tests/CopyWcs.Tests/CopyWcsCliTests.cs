@@ -465,4 +465,21 @@ public class CopyWcsCliTests
         Assert.Contains("copywcs <sursa.fit>", result.Stdout);
         Assert.Equal("", result.Stderr);
     }
+
+    /// <summary>A new file that is the source is one line on stderr and exit 1, and the source keeps every byte (R-019; CR-001).</summary>
+    [Fact]
+    public void R019_Run_ANewFileThatIsTheSource_ReturnsOneWithTheLineOnStderr()
+    {
+        using var ws = new TempWorkspace();
+        var sourceBytes = FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), FitsTestData.DeterministicData(400));
+        var sourcePath = ws.WriteFile("source.fit", sourceBytes);
+        var destPath = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        var result = Run(sourcePath, destPath, "-o", sourcePath);
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Equal($"Fisierul nou '{sourcePath}' este chiar sursa: scrierea lui ar suprascrie sursa plate-solved. "
+                     + "Alege alt nume pentru fisierul nou.", result.Stderr.TrimEnd());
+        Assert.Equal(sourceBytes, File.ReadAllBytes(sourcePath));
+    }
 }

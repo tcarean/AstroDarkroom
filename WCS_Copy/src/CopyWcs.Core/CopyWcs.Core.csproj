@@ -8,6 +8,9 @@
        cannot (the property has no effect without a runtimeconfig). -->
   <PropertyGroup>
     <RootNamespace>CopyWcs</RootNamespace>
+    <!-- FileIdentity's LibraryImport (GetFileInformationByHandle) is source-generated as unsafe
+         code; nothing else in the project is unsafe (ADR 0018). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <!-- NLog, for the diagnostic log only (ADR 0009): the core logs at its seams (FitsHeader's
