@@ -80,13 +80,26 @@ runtime's Unicode data moves, that test says so, and the table is generated agai
 ## Writing back
 
 `WriteWithDataFrom(dataSource, target)` writes the cards, `END`, spaces to the next 2880-byte
-boundary, then copies `dataSource` from `_dataOffset` to its end. The header may have grown
-past its original number of blocks (a copy adds up to 47 fixed keys, the SIP coefficients and a HISTORY card; 72 on V-001), so the
-file cannot be patched in place: when `target` is `dataSource` itself, the output goes to
-`target + ".tmp"` and `File.Move(temp, target, overwrite: true)` replaces the original at the
-end (R-012, R-013). On a failure before the move, the original is untouched and the `.tmp`
-is left behind; on success it is gone. The data area is copied as bytes: `BITPIX`, `NAXIS3`,
-extensions and padding travel unchanged.
+boundary, then copies `dataSource` from `_dataOffset` to its end, always into a temporary file
+beside the target, which `File.Move(temp, target, overwrite: true)` renames over the target at
+the end (R-012, R-013): an existing target, the destination of an in-place write included, is
+replaced only once the whole file is written. The header may have grown past its original
+number of blocks (a copy adds up to 47 fixed keys, the SIP coefficients and a HISTORY card; 72
+on V-001), so an in-place write could not patch the destination anyway. `TemporaryBeside` names
+the temporary file after the target, `<name>.copywcs-<8 random hex digits>.tmp`, in the target's
+folder so the rename stays on one volume, and the write opens it with `FileMode.CreateNew`, so a
+file that already holds that name is never overwritten (the fixed `<name>.tmp` of before was,
+CR-018). The data source is opened first, so one that cannot be read creates no temporary file.
+A `finally` deletes the temporary file when the write created it and the rename did not happen,
+whatever failed (a missing folder, a full disk, a data source that stops being readable midway,
+a target that cannot be replaced): the target is as it was, or absent, and nothing is left
+beside it (R-014, ADR 0020). `DeleteTemporary` logs the removal, and a removal that fails is a
+Warn line, so it never hides the write's own exception. Only a killed process leaves a
+temporary file, named so that it tells which program wrote it. `R014_Run_AWriteThatFailsMidway_...`
+make a write fail after its header and first 80 KB by holding a byte-range lock in the middle
+of the destination's data, which Windows enforces on every other handle; a read-only
+destination makes the in-place rename fail. The data area is copied as bytes: `BITPIX`,
+`NAXIS3`, extensions and padding travel unchanged.
 
 The cards are decoded and encoded with `Encoding.Latin1` (`CardEncoding`): each byte 0x00 to
 0xFF is the character of that code and is written back as the same byte, so a byte above 0x7F,

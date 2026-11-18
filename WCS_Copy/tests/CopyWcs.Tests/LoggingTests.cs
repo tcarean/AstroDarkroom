@@ -340,7 +340,8 @@ public class LoggingTests
         Assert.Equal(PairKeys, cardLines.Select(m => m[5..m.IndexOf(':', StringComparison.Ordinal)]));
         Assert.Equal(14, cardLines.Count(m => m.EndsWith(" | dest: none", StringComparison.Ordinal)));
         Assert.Contains("appended HISTORY WCS copied from source.fit", messages);
-        Assert.Contains("write " + dst + " in place through " + dst + ".tmp, the data from byte 2880 of " + dst, messages);
+        Assert.Contains(messages, m => Regex.IsMatch(m, "^write " + Regex.Escape(dst) + " through " + Regex.Escape(dst)
+                                                        + @"\.copywcs-[0-9a-f]{8}\.tmp, the data from byte 2880 of " + Regex.Escape(dst) + "$"));
         Assert.Contains("wrote " + dst + " (3.2 KiB) bytes=3280 cards=21 blocks=1 data=400", messages);
         Assert.Matches("^copy done copied 15 keys into " + Regex.Escape(dst) + @" \(new 14, replaced 1, identical 0, dropped 0\) in \d+ ms"
                        + @" \(source \d+ ms, dest \d+ ms, select \d+ ms, write \d+ ms\)$", DoneLine(capture));
@@ -508,6 +509,34 @@ public class LoggingTests
         Assert.Equal("the new file " + src + " is the source " + src + "; nothing is written", warn.Message);
         Assert.Null(warn.Exception);
         Assert.DoesNotContain(capture.Events, e => e.Message.StartsWith("write ", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A write that fails at the rename (a read-only destination, in place) removes its temporary
+    /// file, the one its write line named, and says so at Debug (R-042, R-014; CR-016).
+    /// </summary>
+    [Fact]
+    public void R042_AFailedWriteRemovesItsTemporaryFileAndSaysSo()
+    {
+        using var ws = new TempWorkspace();
+        var (src, dst) = Pair(ws);
+        File.SetAttributes(dst, FileAttributes.ReadOnly);
+        try
+        {
+            using var capture = LogCapture.Start();
+
+            Assert.Equal(1, Cli(src, dst).Code);
+
+            string write = Assert.Single(capture.Messages, m => m.StartsWith("write ", StringComparison.Ordinal));
+            string temp = Regex.Match(write, " through (.+?), the data from byte ").Groups[1].Value;
+            Assert.Matches("^" + Regex.Escape(dst) + @"\.copywcs-[0-9a-f]{8}\.tmp$", temp);
+            Assert.Contains("removed " + temp + ", the temporary file of the failed write", capture.Messages);
+            Assert.False(File.Exists(temp));
+        }
+        finally
+        {
+            File.SetAttributes(dst, FileAttributes.Normal);
+        }
     }
 
     [Fact]
@@ -878,7 +907,9 @@ public class LoggingTests
             string[] args = Scenario(ws, scenario);
             using var capture = LogCapture.Start();
             CopyWcsCli.Run([.. args, "--lang", lang], new StringWriter(), new StringWriter());
-            return capture.Messages.Select(m => Regex.Replace(m.Replace(ws.Dir, "<ws>", StringComparison.Ordinal), @"\d+ ms\b", "# ms")).ToArray();
+            // The times and the random part of a write's temporary file (R-012) differ from run to run.
+            return capture.Messages.Select(m => Regex.Replace(Regex.Replace(m.Replace(ws.Dir, "<ws>", StringComparison.Ordinal), @"\d+ ms\b", "# ms"),
+                                                              @"\.copywcs-[0-9a-f]{8}\.tmp", ".copywcs-#.tmp")).ToArray();
         }
 
         IReadOnlyList<string> en = Run("en");

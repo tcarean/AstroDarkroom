@@ -418,7 +418,8 @@ public class FitsHeaderTests
         header.SetCard("OBJECT", FitsTestData.Card("OBJECT", "'changed'"));
         header.WriteWithDataFrom(path, path);
 
-        Assert.False(File.Exists(path + ".tmp"));
+        // The temporary file has a name of its own (R-012): the folder holds the destination alone.
+        Assert.Equal(["dest.fit"], Directory.GetFiles(ws.Dir).Select(f => Path.GetFileName(f)));
 
         var rewritten = FitsHeader.ReadPrimary(path);
         Assert.Contains("changed", rewritten.GetCard("OBJECT"));

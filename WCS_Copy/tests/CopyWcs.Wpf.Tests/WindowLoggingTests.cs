@@ -215,7 +215,7 @@ public class WindowLoggingTests
         LogFiles.AssertEveryLineKept(folder, result, Lines);
     }
 
-    /// <summary>A run's messages from <c>copy start</c> to <c>copy done</c>, the folder and the times made neutral.</summary>
+    /// <summary>A run's messages from <c>copy start</c> to <c>copy done</c>, the folder, the times and the random part of the write's temporary file (R-012) made neutral.</summary>
     private static List<string> OfTheRun(LogCapture capture, string dir)
     {
         List<string> lines = capture.Events.Where(e => e.Logger is "WcsCopy" or "FitsHeader").Select(e => e.Message).ToList();
@@ -224,6 +224,7 @@ public class WindowLoggingTests
         Assert.True(start >= 0 && done > start, "no run between copy start and copy done");
         return lines.GetRange(start, done - start + 1)
                     .Select(m => Regex.Replace(m.Replace(dir, "<dir>", StringComparison.Ordinal), @"\d+ ms\b", "# ms"))
+                    .Select(m => Regex.Replace(m, @"\.copywcs-[0-9a-f]{8}\.tmp", ".copywcs-#.tmp"))
                     .ToList();
     }
 }

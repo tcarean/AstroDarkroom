@@ -379,64 +379,112 @@ internal sealed class FitsHeader
         card.Length >= CardSize ? card[..CardSize] : card.PadRight(CardSize);
 
     /// <summary>
-    /// Writes this header, END and the padding to the next 2880-byte boundary, followed by
-    /// the data area copied from <paramref name="dataSource"/>. When the target is the data
-    /// source itself, the file is written beside it first and moved over it at the end: the
-    /// header may have grown past its original blocks, so it cannot be patched in place. Each
-    /// card's characters are written as the bytes they were read from (<see cref="CardEncoding"/>).
-    /// The diagnostic log gets the write before it starts (the temporary file of an in-place write;
-    /// at Trace every card to be written, so a failed write still shows the header it meant to
-    /// write) and the file written after it (R-042, R-044); a write that throws is its caller's
-    /// to log.
+    /// Writes this header, END and the padding to the next 2880-byte boundary, followed by the
+    /// data area copied from <paramref name="dataSource"/>, into a temporary file beside the
+    /// target, renamed over the target at the end (R-012): a write that fails at any point leaves
+    /// the target as it was, or absent, and its temporary file is deleted (R-014). The temporary
+    /// file has a name of its own (<see cref="TemporaryBeside"/>) and is created only when no
+    /// file holds that name, so no file of the user's is overwritten; an in-place write goes the
+    /// same way, since the header may have grown past its original blocks and cannot be patched
+    /// in place. Each card's characters are written as the bytes they were read from
+    /// (<see cref="CardEncoding"/>). The diagnostic log gets the write before it starts, with its
+    /// temporary file (at Trace every card to be written, so a failed write still shows the
+    /// header it meant to write), the file written after it, and the removal of a failed write's
+    /// temporary file (R-042, R-044); a write that throws is its caller's to log.
     /// </summary>
     /// <param name="dataSource">The FITS file whose data area, from its own header's end, is copied; normally the file this header was read from.</param>
-    /// <param name="target">The file to write; the same path as <paramref name="dataSource"/> for an in-place rewrite.</param>
-    /// <exception cref="IOException">The target cannot be created or written.</exception>
-    /// <exception cref="UnauthorizedAccessException">The target, or the original of an in-place rewrite, cannot be replaced by this user.</exception>
+    /// <param name="target">The file to write: a new file, an existing one, replaced only at the end, or the same path as <paramref name="dataSource"/> for an in-place rewrite.</param>
+    /// <exception cref="IOException">The target or its temporary file cannot be created, written or renamed (a missing folder, a full disk, a data source that cannot be read).</exception>
+    /// <exception cref="UnauthorizedAccessException">The target cannot be replaced by this user (read-only, a folder, no access).</exception>
     /// <exception cref="ArgumentException">A path is empty or blank.</exception>
     public void WriteWithDataFrom(string dataSource, string target)
     {
-        var inPlace = Path.GetFullPath(dataSource) == Path.GetFullPath(target);
-        var temp = inPlace ? target + ".tmp" : target;
+        string temp = TemporaryBeside(target);
 
-        Log.Debug("write " + target + (inPlace ? " in place through " + temp : "")
-                  + ", the data from byte " + LogText.Int(_dataOffset) + " of " + dataSource);
+        Log.Debug("write " + target + " through " + temp + ", the data from byte " + LogText.Int(_dataOffset)
+                  + " of " + dataSource);
         TraceCards(target);
 
         long headerBytes;
         long total;
-        using (var input = File.OpenRead(dataSource))
-        using (var output = File.Create(temp))
+        bool created = false;
+        bool moved = false;
+        try
         {
-            foreach (var card in _cards)
+            // The input first: a data source that cannot be read leaves no temporary file.
+            using (var input = File.OpenRead(dataSource))
+            using (var output = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
-                output.Write(CardEncoding.GetBytes(Pad(card)));
+                created = true;
+                foreach (var card in _cards)
+                {
+                    output.Write(CardEncoding.GetBytes(Pad(card)));
+                }
+
+                output.Write(CardEncoding.GetBytes("END".PadRight(CardSize)));
+
+                // Spaces up to the next 2880-byte boundary.
+                var remainder = (int)(output.Position % BlockSize);
+                if (remainder != 0)
+                {
+                    var fill = new byte[BlockSize - remainder];
+                    Array.Fill(fill, (byte)' ');
+                    output.Write(fill);
+                }
+
+                headerBytes = output.Position;
+                input.Seek(_dataOffset, SeekOrigin.Begin);
+                input.CopyTo(output);
+                total = output.Position;
             }
 
-            output.Write(CardEncoding.GetBytes("END".PadRight(CardSize)));
-
-            // Spaces up to the next 2880-byte boundary.
-            var remainder = (int)(output.Position % BlockSize);
-            if (remainder != 0)
-            {
-                var fill = new byte[BlockSize - remainder];
-                Array.Fill(fill, (byte)' ');
-                output.Write(fill);
-            }
-
-            headerBytes = output.Position;
-            input.Seek(_dataOffset, SeekOrigin.Begin);
-            input.CopyTo(output);
-            total = output.Position;
-        }
-
-        if (inPlace)
-        {
             File.Move(temp, target, overwrite: true);
+            moved = true;
+        }
+        finally
+        {
+            if (created && !moved)
+            {
+                DeleteTemporary(temp);
+            }
         }
 
         Log.Info("wrote " + target + " (" + LogText.Size(total) + ") bytes=" + LogText.Int(total)
                  + " cards=" + LogText.Int(_cards.Count) + " blocks=" + LogText.Int(headerBytes / BlockSize)
                  + " data=" + LogText.Int(total - headerBytes));
+    }
+
+    /// <summary>
+    /// The path of a write's temporary file: in the target's folder, so the rename at the end
+    /// stays on one volume, named as the target followed by <c>.copywcs-</c>, 8 random
+    /// hexadecimal digits and <c>.tmp</c> (<c>stack.fit.copywcs-3f9a0c1e.tmp</c>), a name that
+    /// tells which program left it should a killed process leave one.
+    /// </summary>
+    /// <param name="target">The file to write, as given; a relative path is taken from the working folder.</param>
+    /// <returns>The temporary file's full path; the write creates it only when no file holds it.</returns>
+    /// <exception cref="ArgumentException">The path is empty.</exception>
+    private static string TemporaryBeside(string target)
+    {
+        string full = Path.GetFullPath(target);
+        string folder = Path.GetDirectoryName(full) ?? full;
+        return Path.Combine(folder, Path.GetFileName(full) + ".copywcs-" + Guid.NewGuid().ToString("N")[..8] + ".tmp");
+    }
+
+    /// <summary>
+    /// Deletes the temporary file of a write that failed (R-014), and says so in the log; a
+    /// delete that fails is a Warn line, never a second exception over the write's own.
+    /// </summary>
+    /// <param name="temp">The temporary file, which this write created.</param>
+    private static void DeleteTemporary(string temp)
+    {
+        try
+        {
+            File.Delete(temp);
+            Log.Debug("removed " + temp + ", the temporary file of the failed write");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Warn(ex, "the temporary file " + temp + " of the failed write could not be removed");
+        }
     }
 }

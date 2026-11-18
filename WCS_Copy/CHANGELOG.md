@@ -76,6 +76,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - Closing the window during a Preview or a Copy waits for it to end, then the window closes by
   itself; the close used to end the program inside the write, leaving a new file cut short and a
   log without the copy's last lines (R-050, ADR 0019; CR-002 of the review of 2026-11-16).
+- A write that fails midway, a full disk or a drive that drops, no longer leaves a file cut
+  short: a new file is written under a temporary name beside it and renamed at the end, as an
+  in-place write was, so a file already at its name keeps every byte; and a failed write, in
+  place too, removes its temporary file, which it used to leave as big as the image. The
+  temporary file has a name of its own, so a `<name>.tmp` of yours is never touched (R-012,
+  R-014, ADR 0020; CR-003 and CR-016 of the review of 2026-11-16, and part of CR-018).
 
 ### Internal
 

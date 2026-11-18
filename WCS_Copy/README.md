@@ -87,9 +87,12 @@ copywcs result_final.fit result_final_stretched.fit --dry-run
 copywcs result_final.fit result_final_stretched.fit -o result_final_stretched_wcs.fit
 ```
 
-Without `-o` the destination is rewritten in place: the new header is written to a temporary
-file beside it and moved over the original at the end, so a failure leaves the original as
-it was.
+Without `-o` the destination is rewritten in place; with `-o` the new file is written and the
+destination is not touched. Either way the file is first written whole under a temporary name
+beside it (`result_final_stretched_wcs.fit.copywcs-3f9a0c1e.tmp`) and only then put in place of
+the file it replaces. A write that fails, for a missing folder, a full disk or a drive that
+drops, leaves the folder as it was: the destination and any file of the new file's name keep
+every byte, and the temporary file is removed.
 
 ## The window
 

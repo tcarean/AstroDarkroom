@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Runtime.Versioning;
+
 namespace CopyWcs.Tests;
 
 /// <summary>
@@ -666,5 +668,116 @@ public class WcsCopyTests
 
         Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
         Assert.True(File.Exists(ws.FilePath("source_wcs.fit")));
+    }
+
+    /// <summary>The data area of the destinations the midway failures use: larger than the 80 KB a copy streams at a time.</summary>
+    private const int LargeData = 200_000;
+
+    /// <summary>
+    /// Makes a destination's data unreadable from its middle on, as a disk that fills or drops
+    /// does to a write: a byte-range lock, which Windows enforces on every other handle, so the
+    /// copy's read fails after the header is written and its first 80 KB of data copied. The
+    /// header blocks stay readable, so both headers are read as usual.
+    /// </summary>
+    /// <param name="path">The destination; its data starts at byte 2880.</param>
+    /// <returns>The handle holding the lock; disposing it releases the lock.</returns>
+    [SupportedOSPlatform("windows")]
+    private static FileStream LockTheMiddleOfTheData(string path)
+    {
+        var hold = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        hold.Lock(2880 + 150_000, 1000);
+        return hold;
+    }
+
+    /// <summary>
+    /// A new file whose write fails midway is not left behind, cut short (R-014; CR-003 of the
+    /// review of 2026-11-16: the header and the first part of the data stayed as the new file).
+    /// </summary>
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void R014_Run_AWriteThatFailsMidway_LeavesNoNewFile()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(LargeData)));
+        var output = ws.FilePath("out.fit");
+        using var hold = LockTheMiddleOfTheData(dest);
+
+        var outcome = WcsCopy.Run(Request(source, dest, output));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.StartsWith("Eroare la scriere", outcome.Error, StringComparison.Ordinal);
+        Assert.Equal(["dest.fit", "source.fit"], FilesIn(ws.Dir));
+    }
+
+    /// <summary>
+    /// A file already at the new file's name keeps every byte when the write over it fails midway
+    /// (R-014; CR-003: the file was emptied when the write began, so a good earlier copy was lost).
+    /// </summary>
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void R014_Run_AWriteThatFailsMidway_LeavesAnExistingNewFileAsItWas()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(LargeData)));
+        var earlierBytes = FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), FitsTestData.DeterministicData(LargeData));
+        var output = ws.WriteFile("out.fit", earlierBytes);
+        using var hold = LockTheMiddleOfTheData(dest);
+
+        var outcome = WcsCopy.Run(Request(source, dest, output));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.Equal(earlierBytes, File.ReadAllBytes(output));
+        Assert.Equal(["dest.fit", "out.fit", "source.fit"], FilesIn(ws.Dir));
+    }
+
+    /// <summary>
+    /// An in-place write that cannot replace the destination (read-only) leaves the destination as
+    /// it was and no temporary file beside it (R-014; CR-016: a `.tmp` as big as the image stayed).
+    /// </summary>
+    [Fact]
+    public void R014_Run_AFailedInPlaceWrite_LeavesNoTemporaryFile()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+        File.SetAttributes(dest, FileAttributes.ReadOnly);
+        try
+        {
+            var outcome = WcsCopy.Run(Request(source, dest));
+
+            Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+            Assert.StartsWith("Eroare la scriere", outcome.Error, StringComparison.Ordinal);
+            Assert.Equal(destBytes, File.ReadAllBytes(dest));
+            Assert.Equal(["dest.fit", "source.fit"], FilesIn(ws.Dir));
+        }
+        finally
+        {
+            File.SetAttributes(dest, FileAttributes.Normal);
+        }
+    }
+
+    /// <summary>
+    /// A file of the user's named as the temporary file used to be, `dest.fit.tmp`, is left alone
+    /// by an in-place copy, which writes through a name of its own (R-012; part of CR-018: that
+    /// file was overwritten and moved over the destination).
+    /// </summary>
+    [Fact]
+    public void R012_Run_AFileNamedLikeTheOldTemporaryFile_IsLeftAlone()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400)));
+        byte[] owners = [1, 2, 3, 4];
+        var tmp = ws.WriteFile("dest.fit.tmp", owners);
+
+        var outcome = WcsCopy.Run(Request(source, dest));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.Equal(owners, File.ReadAllBytes(tmp));
+        Assert.True(FitsHeader.ReadPrimary(dest).Contains("CTYPE1"));
+        Assert.Equal(["dest.fit", "dest.fit.tmp", "source.fit"], FilesIn(ws.Dir));
     }
 }

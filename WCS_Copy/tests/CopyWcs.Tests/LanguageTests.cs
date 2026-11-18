@@ -178,9 +178,10 @@ public class LanguageTests
         }
     }
 
-    /// <summary>Every run of digits in a text, the temp folder's own path left out.</summary>
+    /// <summary>Every run of digits in a text, the temp folder's own path and the random part of a write's temporary file (R-012) left out.</summary>
     private static string[] Figures(string text, string folder)
-        => Regex.Matches(text.Replace(folder, "", StringComparison.Ordinal), @"\d+").Select(m => m.Value).ToArray();
+        => Regex.Matches(Regex.Replace(text.Replace(folder, "", StringComparison.Ordinal), @"\.copywcs-[0-9a-f]{8}\.tmp", ".copywcs.tmp"), @"\d+")
+            .Select(m => m.Value).ToArray();
 
     private static (int ExitCode, string Stdout, string Stderr) RunScenario(string scenario, TempWorkspace ws, string lang)
     {
