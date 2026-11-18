@@ -30,8 +30,8 @@ namespace CopyWcs.Wpf;
 /// <summary>What the command line asks of the window (R-034).</summary>
 /// <param name="Language">The language of the last <c>--lang</c>; English when there is none or its value is not understood.</param>
 /// <param name="BadLanguage">The value of a <c>--lang</c> that names no language (an empty string for a <c>--lang</c> with none), to be said to the user; null otherwise.</param>
-/// <param name="Source">The first argument that names an existing file, as given; null when there is none.</param>
-/// <param name="Dest">The second such argument; null when there is none.</param>
+/// <param name="Source">The first argument that names an existing file, made whole against the folder the window starts in (R-051); null when there is none.</param>
+/// <param name="Dest">The second such argument, made whole the same way; null when there is none.</param>
 internal sealed record StartArgs(UiLanguage Language, string? BadLanguage, string? Source, string? Dest);
 
 /// <summary>
@@ -122,11 +122,13 @@ public partial class App : Application
     /// <summary>
     /// Reads a command line once: the language of its last <c>--lang</c> (English when there is
     /// none or its value is not understood; R-020 to R-022), and the first two other arguments
-    /// that are existing files, in their order, a <c>--lang</c> and its value left out; anything
-    /// else is ignored, so a wrong argument never stops the window from opening (R-034).
+    /// that are existing files, in their order, a <c>--lang</c> and its value left out, each made
+    /// whole against the working folder the window starts in (R-051), so its box shows where it
+    /// is; anything else is ignored, so a wrong argument never stops the window from opening
+    /// (R-034).
     /// </summary>
     /// <param name="args">The command line without the executable; null is allowed and treated as none.</param>
-    /// <returns>The language, the value not understood if any, and the two files if any.</returns>
+    /// <returns>The language, the value not understood if any, and the two files if any, whole.</returns>
     internal static StartArgs Parse(string[]? args)
     {
         LanguageArgument lang = LanguageArgument.Extract(args ?? []);
@@ -140,13 +142,14 @@ public partial class App : Application
                 continue;
             }
 
+            // An existing file's path is one the system can make whole: File.Exists said so.
             if (source is null)
             {
-                source = a;
+                source = Path.GetFullPath(a);
             }
             else
             {
-                dest = a;
+                dest = Path.GetFullPath(a);
                 break;
             }
         }

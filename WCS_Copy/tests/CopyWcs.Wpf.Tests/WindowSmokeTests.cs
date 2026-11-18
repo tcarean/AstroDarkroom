@@ -367,6 +367,20 @@ public partial class WindowSmokeTests
         });
 
     /// <summary>
+    /// The window's three file dialogs put the working folder back as they close, so no Browse
+    /// moves the folder a path typed relative is taken from (R-051; CR-006 of the review of
+    /// 2026-11-16). Measured on 2026-11-18 with .NET 8.0.34: the Save dialog never moved it, the
+    /// Open dialog with the setting did not; the Open dialog without it was not measured.
+    /// </summary>
+    [Fact]
+    public void R051_TheFileDialogsPutTheWorkingFolderBack()
+    {
+        Assert.True(MainWindow.OpenDialog("source", "").RestoreDirectory);
+        Assert.True(MainWindow.OpenDialog("destination", @"C:\Windows\win.ini").RestoreDirectory);
+        Assert.True(MainWindow.SaveDialog(@"C:\Windows\win.ini").RestoreDirectory);
+    }
+
+    /// <summary>
     /// The About window: its own XAML, the icon through a decoder and a link bound to a
     /// property, all of which compile with a wrong name (R-035, R-037).
     /// </summary>

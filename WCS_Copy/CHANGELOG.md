@@ -95,6 +95,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   destination's own long value under the new one; the dry run and the window's Preview list the
   `CONTINUE` cards too, and still count keys (R-009, R-010, ADR 0022; CR-005 of the review of
   2026-11-16).
+- In the window, a file name alone in the new file's box is written beside the destination,
+  where it landed in whatever folder the window was started from, and the result names the
+  file with its folder; a relative path is taken once, when it is given, so nothing that moves
+  the program's working folder afterwards, a file dialog included, makes a copy read or write
+  another folder's files of the same names (R-051, ADR 0023; CR-006 of the review of 2026-11-16).
 
 ### Internal
 

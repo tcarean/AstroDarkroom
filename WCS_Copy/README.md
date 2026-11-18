@@ -119,7 +119,9 @@ command line: the first two arguments that are existing files fill the boxes, so
 or "Send to" works; a path pasted in double quotes, as File Explorer's "Copy as path" gives
 it, is taken without them), choose whether to write into the destination or into a new file, keep or
 drop the optical metadata, allow or refuse different dimensions or a mirrored image, then
-**Preview** or **Copy**.
+**Preview** or **Copy**. A file name alone in the new file's box, `out.fit`, is written beside
+the destination; the files from the command line show in their boxes with their whole paths, and
+the result names the file it wrote with its folder.
 Under each file box the window shows what it read from the header (`Source: 5601 x 3692,
 plate-solved`, `Destination: 5601 x 3692`); after a copy the destination reads `already
 plate-solved`.

@@ -37,6 +37,13 @@ public sealed class MainViewModel : ObservableObject
     private string _source = "";
     private string _dest = "";
     private string _output = "";
+
+    /// <summary>The source box's path made whole when its text was set (R-051): what the facts and the run read.</summary>
+    private string _sourcePath = "";
+
+    /// <summary>The destination box's path made whole when its text was set (R-051): what the facts and the run read, and the folder of a new file typed relative.</summary>
+    private string _destPath = "";
+
     private bool _writeInPlace = true;
     private bool _includeOptical = true;
     private bool _force;
@@ -56,7 +63,7 @@ public sealed class MainViewModel : ObservableObject
     public string Copyright => LicenseInfo.Copyright;
 #pragma warning restore CA1822
 
-    /// <summary>The path of the plate-solved source; setting it reads the facts under its box.</summary>
+    /// <summary>The source box's text, as typed; setting it makes its path whole (R-051) and reads the facts under the box.</summary>
     public string Source
     {
         get => _source;
@@ -64,14 +71,15 @@ public sealed class MainViewModel : ObservableObject
         {
             if (Set(ref _source, value))
             {
-                _sourceExists = File.Exists(Clean(value));
-                SourceFacts = _sourceExists ? Facts(Clean(value), source: true) : "";
+                _sourcePath = Whole(Clean(value), folder: null);
+                _sourceExists = File.Exists(_sourcePath);
+                SourceFacts = _sourceExists ? Facts(_sourcePath, source: true) : "";
                 RaiseCanRun();
             }
         }
     }
 
-    /// <summary>The path of the destination; setting it reads the facts under its box.</summary>
+    /// <summary>The destination box's text, as typed; setting it makes its path whole (R-051) and reads the facts under the box.</summary>
     public string Dest
     {
         get => _dest;
@@ -79,14 +87,15 @@ public sealed class MainViewModel : ObservableObject
         {
             if (Set(ref _dest, value))
             {
-                _destExists = File.Exists(Clean(value));
-                DestFacts = _destExists ? Facts(Clean(value), source: false) : "";
+                _destPath = Whole(Clean(value), folder: null);
+                _destExists = File.Exists(_destPath);
+                DestFacts = _destExists ? Facts(_destPath, source: false) : "";
                 RaiseCanRun();
             }
         }
     }
 
-    /// <summary>The path of the new file, used when <see cref="WriteInPlace"/> is false.</summary>
+    /// <summary>The new file's box, as typed, used when <see cref="WriteInPlace"/> is false; a relative path is taken beside the destination (R-051).</summary>
     public string Output
     {
         get => _output;
@@ -216,7 +225,7 @@ public sealed class MainViewModel : ObservableObject
     public async Task Copy()
     {
         await RunAsync(dryRun: false).ConfigureAwait(true);
-        DestFacts = Facts(Clean(_dest), source: false);
+        DestFacts = Facts(_destPath, source: false);
     }
 
     /// <summary>
@@ -247,11 +256,16 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>The request the boxes and the options describe, the paths without their surrounding whitespace.</summary>
+    /// <summary>
+    /// The request the boxes and the options describe, each path whole (R-051): the source and
+    /// the destination as they were made whole when their texts were set, the new file made
+    /// whole against the destination's folder, so a bare name goes beside the destination.
+    /// </summary>
     /// <param name="dryRun">True to list the cards and write nothing.</param>
     /// <returns>The request for <see cref="WcsCopy.Run"/>.</returns>
     private WcsCopyRequest Request(bool dryRun)
-        => new(Clean(_source), Clean(_dest), _writeInPlace ? null : Clean(_output), _includeOptical, _force, dryRun);
+        => new(_sourcePath, _destPath, _writeInPlace ? null : Whole(Clean(_output), Path.GetDirectoryName(_destPath)),
+            _includeOptical, _force, dryRun);
 
     /// <summary>Keeps an outcome and raises every property the outcome card binds.</summary>
     /// <param name="outcome">The core's outcome; not null.</param>
@@ -288,6 +302,30 @@ public sealed class MainViewModel : ObservableObject
     {
         string trimmed = path.Trim();
         return trimmed.Length >= 2 && trimmed[0] == '"' && trimmed[^1] == '"' ? trimmed[1..^1] : trimmed;
+    }
+
+    /// <summary>
+    /// A box's cleaned path made whole (R-051), once, so that a working folder that moves later
+    /// changes nothing it names: against the working folder, or against a folder given.
+    /// </summary>
+    /// <param name="path">The path, cleaned (<see cref="Clean"/>); empty stays empty.</param>
+    /// <param name="folder">The whole folder a relative path is taken from; null or empty for the working folder.</param>
+    /// <returns>The whole path; the path as it was when the system cannot make one of it (a NUL inside, a folder that is itself not whole), so the run refuses it in its own words.</returns>
+    private static string Whole(string path, string? folder)
+    {
+        if (path.Length == 0)
+        {
+            return path;
+        }
+
+        try
+        {
+            return string.IsNullOrEmpty(folder) ? Path.GetFullPath(path) : Path.GetFullPath(path, folder);
+        }
+        catch (Exception ex) when (ex is ArgumentException or IOException)
+        {
+            return path;
+        }
     }
 
     /// <summary>

@@ -157,7 +157,7 @@ public partial class MainWindow : Window
     /// <param name="e">The click.</param>
     private void BrowseSource(object sender, RoutedEventArgs e)
     {
-        OpenFileDialog dlg = Open(T("Plate-solved source (FITS)", "Sursa plate-solved (FITS)"), _vm.Source);
+        OpenFileDialog dlg = OpenDialog(T("Plate-solved source (FITS)", "Sursa plate-solved (FITS)"), _vm.Source);
         if (dlg.ShowDialog(this) == true)
         {
             Log.Info("source picked in the dialog: " + dlg.FileName);
@@ -174,7 +174,7 @@ public partial class MainWindow : Window
     /// <param name="e">The click.</param>
     private void BrowseDest(object sender, RoutedEventArgs e)
     {
-        OpenFileDialog dlg = Open(T("Destination (FITS)", "Destinatia (FITS)"), _vm.Dest);
+        OpenFileDialog dlg = OpenDialog(T("Destination (FITS)", "Destinatia (FITS)"), _vm.Dest);
         if (dlg.ShowDialog(this) == true)
         {
             Log.Info("destination picked in the dialog: " + dlg.FileName);
@@ -191,20 +191,7 @@ public partial class MainWindow : Window
     /// <param name="e">The click.</param>
     private void BrowseOutput(object sender, RoutedEventArgs e)
     {
-        SaveFileDialog dlg = new()
-        {
-            Title = T("Write a new file", "Scrie un fisier nou"),
-            Filter = Filter(),
-            DefaultExt = ".fit",
-            AddExtension = true,
-            OverwritePrompt = true,
-        };
-        string? beside = Path.GetDirectoryName(_vm.Dest);
-        if (!string.IsNullOrEmpty(beside) && Directory.Exists(beside))
-        {
-            dlg.InitialDirectory = beside;
-        }
-
+        SaveFileDialog dlg = SaveDialog(_vm.Dest);
         if (dlg.ShowDialog(this) == true)
         {
             Log.Info("new file picked in the dialog: " + dlg.FileName);
@@ -278,17 +265,47 @@ public partial class MainWindow : Window
         OpenAddress(address);
     }
 
-    /// <summary>An open-file dialog for FITS files, starting in the folder of a path when it has one.</summary>
+    /// <summary>
+    /// An open-file dialog for FITS files, starting in the folder of a path when it has one, that
+    /// puts the working folder back as it closes, so a path typed relative keeps its meaning
+    /// (R-051).
+    /// </summary>
     /// <param name="title">The dialog's title, in the run's language.</param>
     /// <param name="current">The path in the box, whose folder is proposed when it exists; may be empty.</param>
     /// <returns>The dialog, not yet shown.</returns>
-    private static OpenFileDialog Open(string title, string current)
+    internal static OpenFileDialog OpenDialog(string title, string current)
     {
-        OpenFileDialog dlg = new() { Title = title, Filter = Filter(), CheckFileExists = true };
+        OpenFileDialog dlg = new() { Title = title, Filter = Filter(), CheckFileExists = true, RestoreDirectory = true };
         string? folder = Path.GetDirectoryName(current);
         if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder))
         {
             dlg.InitialDirectory = folder;
+        }
+
+        return dlg;
+    }
+
+    /// <summary>
+    /// The save dialog of the new file, for FITS files, asking before it overwrites one, starting
+    /// beside the destination, that puts the working folder back as it closes (R-051).
+    /// </summary>
+    /// <param name="dest">The destination's box, whose folder is proposed when it exists; may be empty.</param>
+    /// <returns>The dialog, not yet shown.</returns>
+    internal static SaveFileDialog SaveDialog(string dest)
+    {
+        SaveFileDialog dlg = new()
+        {
+            Title = T("Write a new file", "Scrie un fisier nou"),
+            Filter = Filter(),
+            DefaultExt = ".fit",
+            AddExtension = true,
+            OverwritePrompt = true,
+            RestoreDirectory = true,
+        };
+        string? beside = Path.GetDirectoryName(dest);
+        if (!string.IsNullOrEmpty(beside) && Directory.Exists(beside))
+        {
+            dlg.InitialDirectory = beside;
         }
 
         return dlg;

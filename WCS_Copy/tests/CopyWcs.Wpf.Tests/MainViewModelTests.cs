@@ -419,6 +419,66 @@ public class MainViewModelTests
         Assert.StartsWith("Fisierul nou '", vm.Error, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A source and a destination typed relative keep naming the files of the folder they were
+    /// typed in, whatever the working folder does afterwards (R-051; CR-006 of the review of
+    /// 2026-11-16, where each use looked the path up again): another night's folder, which holds
+    /// a source without a plate solve and a wider destination under the same names, is neither
+    /// read nor written.
+    /// </summary>
+    [Fact]
+    public async Task R051_ARelativeSourceAndDestinationKeepTheFilesTheyNamedWhenTyped()
+    {
+        using WindowFixture night = new();
+        List<string> unsolved = FitsTestData.PlateSolvedCards().Where(c => !c.StartsWith("CTYPE1", StringComparison.Ordinal)).ToList();
+        using WindowFixture other = new(destWidth: 200, sourceCards: unsolved);
+        byte[] otherSource = File.ReadAllBytes(other.Source);
+        byte[] otherDest = File.ReadAllBytes(other.Dest);
+        MainViewModel vm;
+        using (new WorkingFolder(night.Dir))
+        {
+            vm = new() { Source = "source.fit", Dest = " \"dest.fit\" " };
+            WorkingFolder.MoveTo(other.Dir);
+
+            await vm.Preview();
+            Assert.False(vm.HasError);
+            Assert.False(vm.HasWarnings);
+            Assert.Equal(15, vm.Cards.Count);
+
+            await vm.Copy();
+        }
+
+        Assert.False(vm.HasError);
+        Assert.Equal("Copiate 15 chei in " + night.Dest + ".", vm.Notes[0]);
+        Assert.True(FitsHeader.ReadPrimary(night.Dest).Contains("CTYPE1"));
+        Assert.Equal(otherSource, File.ReadAllBytes(other.Source));
+        Assert.Equal(otherDest, File.ReadAllBytes(other.Dest));
+    }
+
+    /// <summary>
+    /// A bare name in the new file's box is written beside the destination, not in whatever
+    /// folder the window was started from, and the closing line names it whole (R-051; CR-006).
+    /// </summary>
+    [Fact]
+    public async Task R051_ARelativeNewFileIsWrittenBesideTheDestination()
+    {
+        using WindowFixture f = new();
+        using TempWorkspace elsewhere = new();
+        byte[] before = File.ReadAllBytes(f.Dest);
+        MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, WriteInPlace = false };
+        using (new WorkingFolder(elsewhere.Dir))
+        {
+            vm.Output = " out.fit ";
+            await vm.Copy();
+        }
+
+        Assert.False(vm.HasError);
+        Assert.Equal("Copiate 15 chei in " + f.FilePath("out.fit") + ".", vm.Notes[0]);
+        Assert.True(File.Exists(f.FilePath("out.fit")));
+        Assert.Equal(before, File.ReadAllBytes(f.Dest));
+        Assert.Empty(Directory.GetFileSystemEntries(elsewhere.Dir));
+    }
+
     [Fact]
     public async Task R036_TheFactsAndTheHeadingFollowTheLanguageOfTheRun()
     {

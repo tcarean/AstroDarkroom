@@ -82,6 +82,22 @@ public class AppTests
         Assert.Equal((f.Source, f.Dest), (both.Source, both.Dest));
     }
 
+    /// <summary>
+    /// The files given relative on the command line are made whole against the folder the window
+    /// starts in, so their boxes show where they are and a working folder that moves later
+    /// changes nothing (R-051; CR-006 of the review of 2026-11-16).
+    /// </summary>
+    [Fact]
+    public void R051_TheFilesOfTheCommandLineAreMadeWhole()
+    {
+        using WindowFixture f = new();
+        using (new WorkingFolder(f.Dir))
+        {
+            Assert.Equal((f.Source, f.Dest), Files("source.fit", "dest.fit"));
+            Assert.Equal((f.Source, f.Dest), Files("--lang", "ro", @".\source.fit", @"..\" + Path.GetFileName(f.Dir) + @"\dest.fit"));
+        }
+    }
+
     /// <summary>The facts under the boxes (`100 x 80`) must read as the console's whatever the Windows culture.</summary>
     [Fact]
     public void ForcingInvariantNumbersPinsTheCurrentAndTheDefaultCulture()

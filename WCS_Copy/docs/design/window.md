@@ -2,8 +2,9 @@
 
 **Covers:** `src/CopyWcs.Wpf/`, `tests/CopyWcs.Wpf.Tests/`, `Icon/make_icon.py`.
 
-The behaviour is R-030 to R-039; the reasons are ADR 0007, ADR 0008, for the About window's
-third-party card and the window's log lines ADR 0009, and for Help and F1 ADR 0016. The pieces
+The behaviour is R-030 to R-039, R-050 and R-051; the reasons are ADR 0007, ADR 0008, for the
+About window's third-party card and the window's log lines ADR 0009, for Help and F1 ADR 0016,
+for a close during a run ADR 0019, and for the paths made whole ADR 0023. The pieces
 copied from the siblings (`Presentation/DarkTitleBar.cs`, `Presentation/TExtension.cs`,
 `Presentation/Mvvm.cs`, `Presentation/AppIcon.cs`, `Theme/Dark.xaml`, `Views/AboutWindow.*`,
 the band at the top of `MainWindow.xaml`, the test fixture `StaFixture`) are marked as such in
@@ -46,8 +47,9 @@ nothing; the window binds no command, so `ApplicationCommands.Help`, whose gestu
 reaches nothing.
 
 `MainWindow.xaml.cs` owns what needs a window: the two `OpenFileDialog`s and the
-`SaveFileDialog` (the FITS filter first, every file second, the folder of the current path
-proposed), the About window (`ShowAbout`, About's click, through `OpenAbout`, which a test
+`SaveFileDialog`, made by `OpenDialog` and `SaveDialog` (the FITS filter first, every file
+second, the folder of the current path proposed, and `RestoreDirectory`, so that no dialog moves
+the working folder a path typed relative is taken from, R-051), the About window (`ShowAbout`, About's click, through `OpenAbout`, which a test
 replaces), the manual (`ShowHelp`, behind
 `HelpClick` and `OnPreviewKeyDown`: `Manual.SectionFor` over the view-model's `HasOutcome`,
 `HasError` and `HasWarnings`, `Manual.Url`, the log line, then `OpenAddress`, which is
@@ -75,7 +77,12 @@ reaches. The handlers of
   typed into, and a name with a space in front is not the file meant; then one pair of double
   quotes around the whole path taken off, the form File Explorer's "Copy as path" pastes, which
   no Windows file name holds; a quote left inside is kept, and the path then names no file,
-  R-030); `Preview()` runs it
+  R-030), then made whole by `Whole` (R-051, ADR 0023): the source and the destination when
+  their texts are set, against the working folder, kept in `_sourcePath` and `_destPath`, which
+  the facts read too, so a working folder that moves later changes nothing they name; the new
+  file in `Request`, against the folder of `_destPath`, so a bare name goes beside the
+  destination. A text the system cannot make whole stays as it is, for the core to refuse; a box
+  keeps its text as typed. `Preview()` runs it
   with the dry run, `Copy()` without. Both go through `RunAsync`: the request is built on the
   caller's thread, the core runs in a `Task.Run` (an in-place copy streams the whole data
   area through a temp file, seconds on a large stack, and the window must stay live), and the
@@ -114,9 +121,10 @@ internal, which an `x:Static` in XAML cannot reach.
 
 `App` reads the command line once, in its constructor, before `App.xaml`'s resources and the
 first view load: `Parse` takes `--lang` out with `LanguageArgument.Extract` (the console's
-reader) and then the first two existing files among the other arguments, in their order, so a
-`--lang` value is never mistaken for a file and a wrong argument never stops the window from
-opening; the result is a `StartArgs` record. The language becomes `Ui.Default` at once; a bad
+reader) and then the first two existing files among the other arguments, in their order, each
+made whole against the folder the window starts in (`Path.GetFullPath`, R-051), so a `--lang`
+value is never mistaken for a file, a wrong argument never stops the window from opening, and
+the boxes show where the files are; the result is a `StartArgs` record. The language becomes `Ui.Default` at once; a bad
 value is kept and said in an English message box once the window is up. `OnStartup` pins the
 invariant culture on the current thread and on `DefaultThreadCurrentCulture` (a WPF
 application cannot use `InvariantGlobalization`, FlatCheck's ADR 0037; the facts' figures must
@@ -209,7 +217,11 @@ check that it stays open, greyed, until the run is released, closes once, and le
 console's bytes, and close one as WPF does at a session's end (`Window.InternalClose(true,
 true)`, reached by reflection), which closes it at once and logs the run cut short (R-050);
 `AppTests` cover
-`Parse`, `--lang` and the files from the arguments; `IconTests` tie the sizes of the `.ico`,
+`Parse`, `--lang` and the files from the arguments, relative ones made whole;
+`WorkingFolder` moves the process's working folder for one test and puts it back, which the
+assembly's one test at a time makes safe: the R-051 tests of `MainViewModelTests` type relative
+paths and then move it, and read and write the files the paths named when typed, and
+`R051_TheFileDialogsPutTheWorkingFolderBack` reads `RestoreDirectory` off the dialogs' factories; `IconTests` tie the sizes of the `.ico`,
 the script's `SIZES` line and the two `ApplicationIcon` paths together. The tests that run the
 core await `Preview()` or `Copy()`; the smoke tests that do so run through
 `StaFixture.InvokeAsync`, since the outcome comes back on the dispatcher, which a blocking
