@@ -2,6 +2,7 @@
 
 Date: 2026-11-18
 Status: accepted 2026-11-18
+Supersedes: 0009 in part (a failed write's exception message as the user saw it)
 
 ## Context
 
@@ -37,7 +38,14 @@ file: `Write error: Could not find a part of the path 'E:\out\final_wcs.fit'.`, 
 change. The exception goes on as the system raised it, the two paths in its `Data`, and the log
 writes it so; `FitsHeader.WriteErrorMessage` makes the line's message. The owner's answer of
 2026-11-18, after the review of the branch found the line naming
-`final_wcs.fit.copywcs-3f9a0c1e.tmp`, a name the user never typed.
+`final_wcs.fit.copywcs-3f9a0c1e.tmp`, a name the user never typed. So the log's exception for a
+failed write names the temporary file where the user's line names the target: the one place
+where the log does not hold an exception's message as the user saw it (ADR 0009, R-046). The
+second review of the branch found two cases this does not set right, recorded at the owner's
+word of 2026-11-18: a rename the system refuses (a read-only target) names no file; and
+in a folder that lets the user change a file but not create one, the line says access to the
+target is denied, though the target is writable and the temporary file is what could not be
+created.
 
 ## Alternatives rejected
 
@@ -64,10 +72,13 @@ A new file that replaces an existing one is now a new file renamed over it, as t
 write was, so the rest of CR-018 reaches `-o` too: the replaced file's creation time, attributes
 and permissions are not kept, its other hard-linked names keep the old file, a symbolic link is
 replaced by a plain file, and nothing is flushed before the rename. The replace also needs room
-for both files, a folder where the user may change the file but not create one refuses it, and
-a name longer than 234 characters no longer fits NTFS's 255 once the 21-character suffix is
-added (251 for the in-place write's `.tmp` before). CR-018 stays open for those. Guarded by
+for both files, and a folder where the user may change the file but not create one refuses it.
+CR-018 stays open for those. A name too long to take the 21-character suffix within the file
+system's 255 characters is shortened in the temporary name, so every name the file system
+accepts can be written, as `-o` wrote it before: the second review of the branch found every
+name over 234 characters refused, and the owner chose to lift the limit (2026-11-18). Guarded by
 `WcsCopyTests`' `R014_` and `R012_` tests (a byte-range lock fails a write midway, a read-only
-destination fails the rename, a missing folder's line names the new file),
+destination fails the rename, a missing folder's line names the new file, a 255-character name
+is written),
 `WorkingFolderTests` (the working folder moved during the write) and
 `LoggingTests.R042_AFailedWriteRemovesItsTemporaryFileAndSaysSo`.

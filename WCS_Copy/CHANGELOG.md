@@ -52,6 +52,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the usage gaining its `--lang` line.
 - The `HISTORY` card written into the destination reads `WCS copied from <file>` in both
   languages, where it read `WCS copiat din <file>` (ADR 0004).
+- `-o` onto an existing file replaces it as the in-place write does, with a new file renamed
+  over it: the file it replaces does not keep its creation date, its attributes or its own
+  permissions, a symbolic link is replaced by the file itself, and a folder that lets you
+  change files but not create them refuses the copy (ADR 0020).
 
 ### Fixed
 
@@ -73,9 +77,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   given as the destination, which was copied into itself. The files themselves are compared, not
   how their paths are written (R-019, ADR 0018; CR-001, CR-013 and CR-014 of the review of
   2026-11-16).
-- Closing the window during a Preview or a Copy waits for it to end, the window greyed meanwhile,
-  then the window closes by itself; the close used to end the program inside the write, leaving a new file cut short and a
-  log without the copy's last lines (R-050, ADR 0019; CR-002 of the review of 2026-11-16).
+- Closing the window during a Preview or a Copy waits for it to end, the window greyed
+  meanwhile, then the window closes by itself; the close used to end the program inside the
+  write, leaving a new file cut short and a log without the copy's last lines (R-050, ADR 0019;
+  CR-002 of the review of 2026-11-16).
 - A write that fails midway, a full disk or a drive that drops, no longer leaves a file cut
   short: a new file is written under a temporary name beside it and renamed at the end, as an
   in-place write was, so a file already at its name keeps every byte; and a failed write, in

@@ -829,6 +829,34 @@ public class WcsCopyTests
         Assert.Equal(["dest.fit", "dest.fit.tmp", "source.fit"], FilesIn(ws.Dir));
     }
 
+    /// <summary>
+    /// A name as long as the file system allows, 255 characters on NTFS, is written, as a new file
+    /// and in place: the temporary file's name is shortened to fit beside it (R-012; the second
+    /// review of 2026-11-18: its 21-character suffix made every name over 234 characters a write
+    /// error, though <c>-o</c> wrote such names before every write went through a temporary file).
+    /// </summary>
+    [Fact]
+    public void R012_Run_ANameAsLongAsTheFileSystemAllows_IsWritten_AsANewFileAndInPlace()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var data = FitsTestData.DeterministicData(400);
+        string destName = new string('n', 251) + ".fit";
+        string outputName = new string('o', 251) + ".fit";
+        var dest = ws.WriteFile(destName, FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), data));
+        var output = ws.FilePath(outputName);
+
+        var copy = WcsCopy.Run(Request(source, dest, output));
+        var inPlace = WcsCopy.Run(Request(source, dest));
+
+        Assert.Equal(WcsCopyKind.Copied, copy.Kind);
+        Assert.Equal(WcsCopyKind.Copied, inPlace.Kind);
+        Assert.True(FitsHeader.ReadPrimary(output).Contains("CTYPE1"));
+        Assert.True(FitsHeader.ReadPrimary(dest).Contains("CTYPE1"));
+        Assert.Equal(data, File.ReadAllBytes(dest)[^data.Length..]);
+        Assert.Equal([destName, outputName, "source.fit"], FilesIn(ws.Dir));
+    }
+
     /// <summary>A header with the two checksum cards a program such as the SyQon CLI writes last, as in V-002's destination.</summary>
     /// <param name="cards">The header's cards; the two are added at its end.</param>
     /// <returns>The same list.</returns>

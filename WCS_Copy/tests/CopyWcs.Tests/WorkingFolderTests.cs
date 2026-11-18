@@ -55,12 +55,17 @@ public class WorkingFolderTests
         File.WriteAllBytes(Path.Combine(other, "dest.fit"), otherNight);
 
         string before = Environment.CurrentDirectory;
+        bool movedDuringTheWrite = false;
         WcsCopyOutcome outcome;
         try
         {
             Environment.CurrentDirectory = first;
             using var log = LogCapture.Start();
-            log.At("write ", () => Environment.CurrentDirectory = other);
+            log.At("write ", () =>
+            {
+                Environment.CurrentDirectory = other;
+                movedDuringTheWrite = true;
+            });
 
             outcome = WcsCopy.Run(new WcsCopyRequest("source.fit", "dest.fit", null, IncludeOptical: true, Force: false, DryRun: false));
         }
@@ -69,6 +74,8 @@ public class WorkingFolderTests
             Environment.CurrentDirectory = before;
         }
 
+        // Without the move the test would pass on any code: the write's log line must have come.
+        Assert.True(movedDuringTheWrite);
         Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
         Assert.Equal(otherNight, File.ReadAllBytes(Path.Combine(other, "dest.fit")));
         Assert.Equal(["dest.fit"], FilesIn(other));

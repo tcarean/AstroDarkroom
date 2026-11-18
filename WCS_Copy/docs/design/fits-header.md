@@ -98,7 +98,10 @@ neither file; the review of the branch found the target looked up again at the r
 number of blocks (a copy adds up to 47 fixed keys, the SIP coefficients and a HISTORY card; 72
 on V-001), so an in-place write could not patch the destination anyway. `TemporaryBeside` names
 the temporary file after the target, `<name>.copywcs-<8 random hex digits>.tmp`, in the target's
-folder so the rename stays on one volume, and the write opens it with `FileMode.CreateNew`, so a
+folder so the rename stays on one volume, `<name>` cut, never inside a surrogate pair, when it is
+too long to take the 21-character suffix within `NameLimit`, the 255 characters NTFS, FAT and
+exFAT allow, so every name the file system accepts can be written (the second review of the
+branch found every name over 234 characters refused); the write opens it with `FileMode.CreateNew`, so a
 file that already holds that name is never overwritten (the fixed `<name>.tmp` of before was,
 CR-018). The data source is opened first, so one that cannot be read creates no temporary file.
 A `finally` deletes the temporary file when the write created it and the rename did not happen,

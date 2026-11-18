@@ -107,7 +107,8 @@ public partial class MainWindow : Window
     /// Stops following the view-model once the window is closed, so a run that ends later closes
     /// nothing, and logs a close that came while a run was still in flight: one Windows forced as
     /// the session ended (a logoff, a shutdown), since every other close is held (R-050). The run
-    /// is cut short with the process; its target is left as it was (R-014).
+    /// ends with the process unless it reaches its end first: its target is left as it was, or
+    /// replaced whole (R-012, R-014).
     /// </summary>
     /// <param name="e">The event's arguments; passed on.</param>
     protected override void OnClosed(EventArgs e)

@@ -104,7 +104,10 @@ beside it (`result_final_stretched_wcs.fit.copywcs-3f9a0c1e.tmp`) and only then 
 the file it replaces. A write that fails, for a missing folder, a full disk or a drive that
 drops, leaves the folder as it was: the destination and any file of the new file's name keep
 every byte, and the temporary file is removed, unless its drive is gone by then (the log then
-names it). The error names your file, not the temporary one. A file put in place this way is a
+names it). The error names your file, not the temporary one, or no file when the system names
+none (a read-only file: `Access to the path is denied.`); in a folder that lets you change files
+but not create them, it says access to your file is denied, because the temporary file cannot be
+made beside it. Any name Windows accepts can be written. A file put in place this way is a
 new file: the one it replaces does not keep its creation date, its attributes (Hidden, for one)
 or its own permissions, and a symbolic link is replaced by the file itself.
 
@@ -134,8 +137,9 @@ anywhere.
 Closing the window while a Preview or a Copy runs does not cut it short: the window greys and
 takes no more clicks until the copy is done, a second or so for a stack of a few hundred MB, then
 closes by itself. The file is written whole, or not at all when the write fails, and the log
-says which. Logging off or shutting Windows down does cut the copy short: the file it would have
-replaced keeps every byte, and a temporary file may stay beside it.
+says which. Logging off or shutting Windows down ends the copy with the program: the file it
+would have replaced keeps every byte, or is replaced whole when the copy ends first, and a
+temporary file may stay beside it.
 
 ## The two languages
 
@@ -168,7 +172,8 @@ time each stage took; the warnings, the
 refusals with their reasons and every error with its technical details; in the window the
 language, the files picked and the About window; at the end the exit code and the time taken.
 The log's own words are English whatever `--lang` says; an error's message appears as you saw
-it, so in Romanian under `--lang ro`. It holds the paths of your files and the header cards
+it, so in Romanian under `--lang ro`, save that a failed write's names the temporary file the
+copy was writing, where you saw your file's name. It holds the paths of your files and the header cards
 copied, which include the site's latitude and longitude when the source has them: read it before
 you send it. It holds no pixel.
 

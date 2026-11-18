@@ -160,7 +160,7 @@ a build that does not.
 | `LogSetup` | Info, Fatal, Error | the first line, the last line (`exit <code> after <s> s`); the unhandled exceptions; a task nobody awaited |
 | `FitsHeader.ReadPrimary` | Info, Trace | `read <path> (<size>) bytes cards blocks dataOffset data` and the keys of `LogText.Keys` (`size unknown`, `bytes=none`, `data=none` when `FitsHeader.LengthOf` has no length: a stream that cannot seek, a named pipe, is not asked, and whatever a seekable file's query throws is taken as none); at Trace `<path> card <n>: <card>`, every card from 1 |
 | `FitsHeader.AddHistory` | Debug | `appended <card>` |
-| `FitsHeader.WriteWithDataFrom` | Debug, Trace, Info, Warn | `write <target> through <target>.copywcs-<8 hex digits>.tmp, the data from byte <offset> of <source>` before the temporary file is created, every card to be written at Trace, `wrote <target> (<size>) bytes cards blocks data` after the rename; after a failed write `removed <temporary file>, the temporary file of the failed write` at Debug, or at Warn, with the exception, `the temporary file <path> of the failed write could not be removed` |
+| `FitsHeader.WriteWithDataFrom` | Debug, Trace, Info, Warn | `write <target> through <target>.copywcs-<8 hex digits>.tmp, the data from byte <offset> of <source>` (the target's name shortened in the temporary one when it is too long for both) before the temporary file is created, every card to be written at Trace, `wrote <target> (<size>) bytes cards blocks data` after the rename; after a failed write `removed <temporary file>, the temporary file of the failed write` at Debug, or at Warn, with the exception, `the temporary file <path> of the failed write could not be removed` |
 | `WcsCopy.Run` | Info, Warn, Error, Debug | the start and done lines; `cannot read the source` / `the destination <path>` with the exception; the three warnings and the refusals without one (the three paths of R-019, the size, the mirror, no key); `the write of <target> failed` with the exception; at Debug `selected <n> keys: <w> WCS, <s> SIP, <o> optical`, `card <KEY>: <card> \| dest: <none, same or card>` (a long string's cards joined by ` + `) and `drop <KEY>: <card>` per card dropped, the destination's `CHECKSUM` included |
 | `CopyWcsCli` | Warn, Info | `refused (exit 1): <the --lang message>`, `usage error (exit 2): <the line on stderr>`, `help shown (exit 0)` |
 | `App` | Info, Warn | `language=<en or ro> source from the command line: <path or none> dest: <path or none>` (`StartLine`); a `--lang` refused, before its message box |
@@ -190,9 +190,10 @@ WCS from the `card` lines and the two `read` lines (`ROWORDER`, `NAXIS`, the sol
 error by `WARN` or `ERROR` and the stack under it. At Trace the `card <n>` lines rebuild both
 headers and the one written. A window closed during a run writes the held line, the run's done
 line, then `the run ended: the window closes`; at a logoff or a shutdown the held line is followed
-by the Warn line `the window closed while a run is in flight: ...` and the exit line, with no done
-line: the run was cut short, its target is as it was, and a temporary file may stay beside it
-(R-050, R-014). A failed write's `ERROR` line holds the system's exception, which may name the
+by the Warn line `the window closed while a run is in flight: ...` and the exit line, most often
+with no done line: the run ends with the process, its target as it was, or replaced whole when
+the copy reached its end before the process did, its done line then coming after the Warn line;
+a temporary file may stay beside the target (R-050, R-014). A failed write's `ERROR` line holds the system's exception, which may name the
 temporary file; the screen's `Write error:` line names the target instead.
 
 ## In the tests

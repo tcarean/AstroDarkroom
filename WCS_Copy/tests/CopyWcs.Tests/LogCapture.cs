@@ -92,7 +92,8 @@ internal sealed class LogCapture : IDisposable
     /// Runs an action once, at the first event of this capture whose message starts with a
     /// prefix, on the thread that logs it and before the code that logged it goes on: a test's
     /// way to act at a moment inside a run, such as moving the working folder as a write begins.
-    /// NLog swallows what the action throws, so it should be one that cannot fail.
+    /// Once even when two threads of the capture log at the same moment. NLog swallows what the
+    /// action throws, so a test should also assert that the action ran.
     /// </summary>
     /// <param name="prefix">The start of the message to wait for, compared ordinally.</param>
     /// <param name="action">What to do then.</param>
@@ -107,9 +108,9 @@ internal sealed class LogCapture : IDisposable
     private void Keep(Captured captured)
     {
         _events.Enqueue(captured);
-        if (_atAction is { } action && captured.Message.StartsWith(_atPrefix, StringComparison.Ordinal))
+        if (_atAction is not null && captured.Message.StartsWith(_atPrefix, StringComparison.Ordinal)
+            && Interlocked.Exchange(ref _atAction, null) is { } action)
         {
-            _atAction = null;
             action();
         }
     }

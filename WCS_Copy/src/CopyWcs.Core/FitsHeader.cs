@@ -43,6 +43,9 @@ internal sealed class FitsHeader
     /// <summary>The key under which a failed write keeps its target's full path in the exception's <see cref="Exception.Data"/> (R-014).</summary>
     private const string TargetKey = "CopyWcs.Target";
 
+    /// <summary>The longest file name NTFS, FAT and exFAT accept, in UTF-16 units: the limit a write's temporary name keeps within (R-012).</summary>
+    private const int NameLimit = 255;
+
     /// <summary>
     /// The encoding of the cards: each byte 0x00 to 0xFF is the character of that code, and
     /// each such character is written back as the same byte, so no byte of a header is changed
@@ -554,14 +557,31 @@ internal sealed class FitsHeader
     /// The path of a write's temporary file: in the target's folder, so the rename at the end
     /// stays on one volume, named as the target followed by <c>.copywcs-</c>, 8 random
     /// hexadecimal digits and <c>.tmp</c> (<c>stack.fit.copywcs-3f9a0c1e.tmp</c>), a name that
-    /// tells which program left it should a killed process leave one.
+    /// tells which program left it should a killed process leave one. A target name too long to
+    /// take the 21-character suffix within <see cref="NameLimit"/> is shortened in the temporary
+    /// name, so every name the file system accepts can be written (R-012).
     /// </summary>
     /// <param name="full">The full path of the file to write.</param>
     /// <returns>The temporary file's full path; the write creates it only when no file holds it.</returns>
     private static string TemporaryBeside(string full)
     {
         string folder = Path.GetDirectoryName(full) ?? full;
-        return Path.Combine(folder, Path.GetFileName(full) + ".copywcs-" + Guid.NewGuid().ToString("N")[..8] + ".tmp");
+        string name = Path.GetFileName(full);
+        string suffix = ".copywcs-" + Guid.NewGuid().ToString("N")[..8] + ".tmp";
+        if (name.Length + suffix.Length > NameLimit)
+        {
+            int keep = NameLimit - suffix.Length;
+
+            // A character outside the Basic Multilingual Plane is two UTF-16 units: keep both or neither.
+            if (char.IsHighSurrogate(name[keep - 1]))
+            {
+                keep--;
+            }
+
+            name = name[..keep];
+        }
+
+        return Path.Combine(folder, name + suffix);
     }
 
     /// <summary>
