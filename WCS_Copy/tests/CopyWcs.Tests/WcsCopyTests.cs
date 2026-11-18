@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Runtime.Versioning;
+using System.Text.RegularExpressions;
 
 namespace CopyWcs.Tests;
 
@@ -985,6 +986,132 @@ public class WcsCopyTests
         {
             File.SetAttributes(dest, FileAttributes.Normal);
         }
+    }
+
+    /// <summary>
+    /// A new file whose path names an existing folder is a write error that says access is
+    /// denied, as before the replace (R-014; the review of the branch, 2026-11-18: the move that
+    /// replaced the overwriting one said a file already existed), and the folder is left alone.
+    /// </summary>
+    [Fact]
+    public void R014_Run_ANewFileThatIsAFolder_IsAWriteErrorThatSaysAccessIsDenied()
+    {
+        using var ws = new TempWorkspace();
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+        string folder = Directory.CreateDirectory(ws.FilePath("outdir")).FullName;
+
+        var outcome = WcsCopy.Run(Request(source, dest, folder));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.Equal("Write error: Access to the path is denied.", outcome.Error);
+        Assert.Empty(Directory.GetFileSystemEntries(folder));
+        Assert.Equal(destBytes, File.ReadAllBytes(dest));
+        Assert.Equal(["dest.fit", "source.fit"], FilesIn(ws.Dir));
+    }
+
+    /// <summary>
+    /// Windows' replace failing halfway (R-014; ERROR_UNABLE_TO_MOVE_REPLACEMENT_2, 1177, which
+    /// shares and security software are reported to cause, never seen on this PC): the old file
+    /// is already under the backup name and the new one could not take its place. The write puts
+    /// the backup back, so the destination keeps every byte and nothing is left beside it.
+    /// </summary>
+    [Fact]
+    public void R014_Run_AReplaceThatFailsHalfway_PutsTheOriginalBack()
+    {
+        using var ws = new TempWorkspace();
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+        string? backupSeen = null;
+        FitsHeader.ReplaceForTests = (temp, target, backup) =>
+        {
+            backupSeen = backup;
+            File.Move(target, backup);
+            throw new IOException("Unable to move the replacement file to the file to be replaced.", unchecked((int)0x80070499));
+        };
+        try
+        {
+            var outcome = WcsCopy.Run(Request(source, dest));
+
+            Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+            Assert.Equal("Write error: Unable to move the replacement file to the file to be replaced.", outcome.Error);
+            Assert.Matches("^" + Regex.Escape(dest) + @"\.copywcs-[0-9a-f]{8}\.bak$", backupSeen);
+            Assert.Equal(destBytes, File.ReadAllBytes(dest));
+            Assert.Equal(["dest.fit", "source.fit"], FilesIn(ws.Dir));
+        }
+        finally
+        {
+            FitsHeader.ReplaceForTests = null;
+        }
+    }
+
+    /// <summary>
+    /// A replace that fails halfway, and a backup that cannot be put back (a folder now holds the
+    /// destination's name): nothing more is deleted, and the line says where the file is kept
+    /// (R-014), the one case where a failed write leaves a file beside the target.
+    /// </summary>
+    [Fact]
+    public void R014_Run_ABackupThatCannotBePutBack_IsKeptAndTheLineNamesIt()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+        string? backupSeen = null;
+        FitsHeader.ReplaceForTests = (temp, target, backup) =>
+        {
+            backupSeen = backup;
+            File.Move(target, backup);
+            Directory.CreateDirectory(target);
+            throw new IOException("Unable to move the replacement file to the file to be replaced.", unchecked((int)0x80070499));
+        };
+        try
+        {
+            var outcome = WcsCopy.Run(Request(source, dest));
+
+            Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+            Assert.NotNull(backupSeen);
+            Assert.Equal($"Eroare la scriere: Unable to move the replacement file to the file to be replaced. Fisierul a fost pastrat ca '{backupSeen}'.", outcome.Error);
+            Assert.Equal(destBytes, File.ReadAllBytes(backupSeen));
+        }
+        finally
+        {
+            FitsHeader.ReplaceForTests = null;
+            Directory.Delete(dest);
+        }
+    }
+
+    /// <summary>A replace that succeeds deletes the backup of the old file, in place and over an existing new file (R-012).</summary>
+    [Fact]
+    public void R012_Run_AReplaceThatSucceeds_LeavesNoBackup()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400)));
+        var output = ws.WriteFile("out.fit", [1, 2, 3]);
+        string? backupSeen = null;
+        FitsHeader.ReplaceForTests = (temp, target, backup) =>
+        {
+            backupSeen = backup;
+            File.Replace(temp, target, backup, ignoreMetadataErrors: true);
+            Assert.True(File.Exists(backup));
+        };
+        try
+        {
+            Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest, output)).Kind);
+            Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest)).Kind);
+        }
+        finally
+        {
+            FitsHeader.ReplaceForTests = null;
+        }
+
+        Assert.NotNull(backupSeen);
+        Assert.Equal(["dest.fit", "out.fit", "source.fit"], FilesIn(ws.Dir));
     }
 
     /// <summary>A header with the two checksum cards a program such as the SyQon CLI writes last, as in V-002's destination.</summary>

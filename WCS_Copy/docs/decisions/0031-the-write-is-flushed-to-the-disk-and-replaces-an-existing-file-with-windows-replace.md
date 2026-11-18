@@ -29,10 +29,23 @@ PowerShell probe; the branch's Release console then wrote the stack with `-o` on
 ## Decision
 
 The temporary file is flushed to the disk before it is closed, and then put in the target's
-place: an existing target by `File.Replace(temp, target, null, ignoreMetadataErrors: true)`, a
+place: an existing target by `File.Replace(temp, target, backup, ignoreMetadataErrors: true)`, a
 target that does not exist by `File.Move` (R-012). The replaced file keeps its creation time,
 attributes and permissions; a drive that cannot carry permissions over (FAT, some shares) does
 not fail the copy. The owner chose the replace and the flush, with their cost, on 2026-11-18.
+
+The replace names a backup beside the target, `<name>.copywcs-<8 hex digits>.bak`, deleted once
+it is done. The review of the branch (2026-11-18) read in Windows' documentation of
+`ReplaceFile` that it can fail halfway: without a backup name, error 1176 leaves "the replaced
+file no longer exists", and 1177 leaves it "with a different name"; the write then deleted its
+temporary file too, and the user's file was gone. Neither was reproduced (a target held open, a
+temporary file held open, a mapped target and a read-only one all failed cleanly). With a backup
+name, 1176 leaves both files under their own names, and 1177 leaves the old file under the
+backup's, which the write puts back (R-014). When even that fails, nothing more is deleted and
+the line says where the file is kept (`The file was kept as '<backup>'.`, `Fisierul a fost
+pastrat ca '<backup>'.`). The owner chose this on 2026-11-18, over going back to the move and
+over only recording the case. A target name that is a folder keeps the move over it, refused with
+`Access to the path is denied.` as before.
 
 ## Alternatives rejected
 
@@ -41,6 +54,9 @@ not fail the copy. The owner chose the replace and the flush, with their cost, o
   yet written, the owner's stack lost. The owner chose the 2 to 3 s per 290 MB.
 - **Copy the times and attributes by hand after a move.** More code for less: the permissions
   and the other metadata `ReplaceFile` carries would still be lost.
+- **Replace without a backup name.** The halfway failures above lose the file.
+- **Go back to the move, keeping the flush.** No halfway case, but the file loses its date,
+  attributes and permissions again, which CR-018 was about.
 - **Write through a link to the file it names.** Not measurable on this PC, and none of the
   owner's files is a link; left as the entry recorded it.
 
@@ -51,6 +67,11 @@ A copy takes about 2.5 s longer per 290 MB on a hard disk, during which the wind
 existence check and the replace is a write error, its temporary file deleted (R-014). The two
 limits of a write through a temporary file stay: the drive needs room for both files, and a
 folder where a file may be changed but not created refuses the write (ADR 0020). A hard link is
-broken, as before; a symbolic link was not measured. No test can see the flush. Guarded by
-`WcsCopyTests.R012_Run_AReplacedFileKeepsItsCreationTimeAndItsAttributes` and
+broken, as before; a symbolic link was not measured. No test can see the flush, and the halfway
+failures are made through `FitsHeader.ReplaceForTests`, a stand-in for Windows' call. The backup
+is a rename on the same volume, so it costs no copy. Guarded by
+`WcsCopyTests.R012_Run_AReplacedFileKeepsItsCreationTimeAndItsAttributes`,
+`R012_Run_AReplaceThatSucceeds_LeavesNoBackup`, `R014_Run_AReplaceThatFailsHalfway_PutsTheOriginalBack`,
+`R014_Run_ABackupThatCannotBePutBack_IsKeptAndTheLineNamesIt`,
+`R014_Run_ANewFileThatIsAFolder_IsAWriteErrorThatSaysAccessIsDenied` and
 `R014_Run_AReadOnlyDestination_IsAWriteErrorThatLeavesTheFolderAsItWas`.

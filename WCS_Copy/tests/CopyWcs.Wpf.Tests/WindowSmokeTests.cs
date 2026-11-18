@@ -580,5 +580,50 @@ public partial class WindowSmokeTests
             TextBlock refusal = TextBlockWith(window, vm.Error!);
             Assert.True(Box(warning, window).Bottom <= Box(refusal, window).Top,
                 $"warning at {Box(warning, window)}, refusal at {Box(refusal, window)}");
+            w.Close();
+        });
+
+    /// <summary>
+    /// Where a window's top goes to stay on its screen (R-055): its own top when it fits, the
+    /// area's top when it starts above it or is as tall as the area, and up until its bottom is
+    /// the area's when it runs past the bottom.
+    /// </summary>
+    /// <param name="top">The window's top before the fit.</param>
+    /// <param name="height">The window's height.</param>
+    /// <param name="expected">The top after the fit, in an area from 40 to 1040.</param>
+    [Theory]
+    [InlineData(200, 700, 200)]
+    [InlineData(-100, 700, 40)]
+    [InlineData(600, 700, 340)]
+    [InlineData(300, 1000, 40)]
+    [InlineData(300, 1200, 40)]
+    public void R055_WindowFitTopKeepsTheWindowInsideTheArea(double top, double height, double expected)
+        => Assert.Equal(expected, WindowFit.Top(top, height, 40, 1000));
+
+    /// <summary>
+    /// A shown window on a screen shorter than its minimum is no taller than the screen's work
+    /// area (R-055; the review of the branch, 2026-11-18): Windows holds a shown window at its
+    /// minimum, so the minimum must come down before the height does, or the window stays 680
+    /// high and runs past the area's bottom.
+    /// </summary>
+    [Fact]
+    public void R055_AShownWindowOnAShortScreenIsNoTallerThanItsWorkArea()
+        => _sta.Invoke(() =>
+        {
+            MainWindow w = new() { Left = -20000, Top = -20000, ShowActivated = false };
+            w.Show();
+            try
+            {
+                Rect area = new(-20000, -20000, 1280, 600);
+                w.FitInto(area);
+                w.UpdateLayout();
+
+                Assert.Equal(600, w.ActualHeight);
+                Assert.True(w.Top + w.ActualHeight <= area.Bottom, $"top {w.Top}, height {w.ActualHeight}");
+            }
+            finally
+            {
+                w.Close();
+            }
         });
 }

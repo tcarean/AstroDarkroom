@@ -473,6 +473,8 @@ public class LoggingTests
     [InlineData("samefile", @"the source and the destination are the same file in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
     [InlineData("newfileissource", @"the new file is the source in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
     [InlineData("newfileisdest", @"the new file is the destination in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
+    [InlineData("nosizesource", @"no image size in the source in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
+    [InlineData("nosizedest", @"no image size in the destination in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
     public void R042_EveryRefusalSaysWhyInTheDoneLine(string scenario, string reason)
     {
         using var ws = new TempWorkspace();
@@ -485,6 +487,8 @@ public class LoggingTests
             "samefile" => [src, src, "--dry-run"],
             "newfileissource" => [src, dst, "-o", src],
             "newfileisdest" => [src, dst, "-o", dst],
+            "nosizesource" => [ws.WriteFile("nosize.fit", FitsTestData.MinimalFitsFile(WithoutNaxis1(FitsTestData.PlateSolvedCards()))), dst, "--force"],
+            "nosizedest" => [src, ws.WriteFile("nosize.fit", FitsTestData.MinimalFitsFile(WithoutNaxis1(FitsTestData.ProcessedCards())))],
             _ => throw new ArgumentException(scenario),
         };
         using var capture = LogCapture.Start();
@@ -493,6 +497,26 @@ public class LoggingTests
 
         Assert.Matches("^copy done refused: " + reason + "$", DoneLine(capture));
         Assert.Contains(capture.Events, e => e.Level == LogLevel.Warn && e.Logger == "WcsCopy");
+    }
+
+    /// <summary>The cards without NAXIS1: a header with no image size (R-060).</summary>
+    private static List<string> WithoutNaxis1(List<string> cards)
+        => cards.Where(c => !c.StartsWith("NAXIS1  ", StringComparison.Ordinal)).ToList();
+
+    /// <summary>A refusal of R-060 is one Warn line with the size as read, and no exception.</summary>
+    [Fact]
+    public void R060_ANoSizeRefusalIsAWarnLineWithTheSizeAsRead()
+    {
+        using var ws = new TempWorkspace();
+        var (src, _) = Pair(ws);
+        string dst = ws.WriteFile("nosize.fit", FitsTestData.MinimalFitsFile(WithoutNaxis1(FitsTestData.ProcessedCards())));
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(1, Cli(src, dst).Code);
+
+        LogCapture.Captured warn = Assert.Single(capture.Events, e => e.Level == LogLevel.Warn);
+        Assert.Equal("no image size in the destination (NAXIS1 or NAXIS2 missing): -1x80; nothing is written", warn.Message);
+        Assert.Null(warn.Exception);
     }
 
     /// <summary>A refusal of R-019 is one Warn line naming both paths as given, without an exception: nothing failed, the paths name one file.</summary>

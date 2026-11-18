@@ -93,9 +93,19 @@ runtime's Unicode data moves, that test says so, and the table is generated agai
 boundary, then copies `dataSource` from `_dataOffset` to its end, always into a temporary file
 beside the target, flushed to the disk (`Flush(flushToDisk: true)`) and then put in the
 target's place (R-012, R-013): an existing target, the destination of an in-place write
-included, by `File.Replace(temp, full, null, ignoreMetadataErrors: true)`, Windows' replace,
+included, by `File.Replace(temp, full, backup, ignoreMetadataErrors: true)`, Windows' replace,
 which keeps the target's creation time, attributes and permissions, and a target that does not
 exist by `File.Move` (ADR 0031; until 2026-11-18 a move over the target, which lost them, CR-018).
+The replace moves the old file to `backup`, `BackupBeside`'s `<name>.copywcs-<8 hex>.bak`
+(`TemporaryBeside` with another extension, drawn again while a file holds it, since the replace
+would overwrite one), and `DeleteBackup` removes it once the replace is done. A replace that
+fails goes through `PutBack`: a backup Windows left with the target's name free (its error 1177)
+is moved back; a backup that cannot be put back is kept, the temporary file too, and
+`WriteErrorMessage` adds its name to the line (`KeptKey`). Windows' halfway failures cannot be
+made on demand, so `ReplaceForTests`, a thread-static stand-in, lets a test make one. A target
+name that is a folder still goes through the move over it, which refuses it with `Access to the
+path is denied.` as before (the replace and the move without overwrite would each say something
+else, the review of the branch).
 An existing target is replaced only once the whole file is written and on the disk. Both paths are made whole (`Path.GetFullPath`)
 once, as the write begins, and the temporary file, the data read and the rename all use those,
 so a working folder that moves during the write (a file dialog of the window, CR-006) changes

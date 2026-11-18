@@ -63,7 +63,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   creation date, its attributes (Hidden, for one) and its permissions, where it got the copy's
   date and lost them; the copy is flushed to the disk before it takes the file's place, so a
   power cut right after a copy cannot leave it half written, at a cost of about 2.5 s for a
-  290 MB stack on a hard disk (ADR 0031).
+  290 MB stack on a hard disk; a replace that Windows leaves half done puts the old file back
+  (ADR 0031).
 - The window shows the warnings raised before a refusal above it, as the console prints them,
   where it showed them under it.
 - `-o` followed by a word that starts with a dash, `-o --dry-run` with the file name forgotten,

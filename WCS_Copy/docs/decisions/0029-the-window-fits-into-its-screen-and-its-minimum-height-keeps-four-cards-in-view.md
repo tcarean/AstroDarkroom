@@ -23,6 +23,9 @@ The window fits into the work area of the screen it opens on once it has its han
 height and its minimum height are capped at the area's, and its top kept inside the area, by
 `ScreenArea.WorkAreaOf` and `WindowFit.Top`, copied from AstroDarkroom (ADR 0007) into
 `src/CopyWcs.Wpf/Presentation/`, since they place a window and say nothing about a copy. The
+minimum is lowered before the height: Windows holds a shown window at its minimum and WPF writes
+that back as its height, so the other order left the window 680 high on a work area of 600 (the
+review of the branch, 2026-11-18, shown by a window shown off the screen). The
 minimum height becomes 680: the same render gives the list 89 px, four cards (84 px, three, at
 675). The owner chose both, the fit and the four cards, on 2026-11-18.
 
@@ -40,6 +43,8 @@ minimum height becomes 680: the same render gives the list 89 px, four cards (84
 On a screen shorter than 680 units the minimum follows the screen, and the list has less than
 four cards again; such a screen is not one the owner has. The window's opening height on this
 PC's screens (work area 1040) is unchanged. Guarded by
-`WindowSmokeTests.R055_TheWindowFitsIntoTheWorkAreaOfItsScreen` and
+`WindowSmokeTests.R055_TheWindowFitsIntoTheWorkAreaOfItsScreen`,
+`R055_AShownWindowOnAShortScreenIsNoTallerThanItsWorkArea`,
+`R055_WindowFitTopKeepsTheWindowInsideTheArea` and
 `R055_AtItsMinimumHeightTheCardsListShowsFourCards`; the call of `ScreenArea.WorkAreaOf` itself
 is not tested, as in AstroDarkroom.

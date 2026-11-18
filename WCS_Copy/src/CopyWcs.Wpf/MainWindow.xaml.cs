@@ -93,8 +93,10 @@ public partial class MainWindow : Window
     /// <param name="workArea">The work area of the window's screen, in device-independent pixels.</param>
     internal void FitInto(Rect workArea)
     {
-        Height = Math.Min(Height, workArea.Height);
+        // The minimum first: Windows holds a shown window at its minimum, and WPF then writes
+        // that back as its height (the review of the branch, 2026-11-18).
         MinHeight = Math.Min(MinHeight, workArea.Height);
+        Height = Math.Min(Height, workArea.Height);
         Top = WindowFit.Top(Top, Height, workArea.Top, workArea.Height);
     }
 

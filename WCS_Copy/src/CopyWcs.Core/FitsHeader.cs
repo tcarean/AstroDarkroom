@@ -43,6 +43,18 @@ internal sealed class FitsHeader
     /// <summary>The key under which a failed write keeps its target's full path in the exception's <see cref="Exception.Data"/> (R-014).</summary>
     private const string TargetKey = "CopyWcs.Target";
 
+    /// <summary>The key under which a failed write keeps the backup of the old target it could not put back, in the exception's <see cref="Exception.Data"/> (R-014).</summary>
+    private const string KeptKey = "CopyWcs.KeptBackup";
+
+    /// <summary>
+    /// Stands in for Windows' replace in a test, on the test's own thread: the temporary file,
+    /// the target and the backup name, as <see cref="File.Replace(string, string, string?, bool)"/>
+    /// takes them; null, the real replace. Windows' halfway failures (1176, 1177) cannot be made
+    /// on demand, so a test makes them through this (ADR 0031).
+    /// </summary>
+    [ThreadStatic]
+    internal static Action<string, string, string>? ReplaceForTests;
+
     /// <summary>The longest file name NTFS, FAT and exFAT accept, in UTF-16 units: the limit a write's temporary name keeps within (R-012).</summary>
     private const int NameLimit = 255;
 
@@ -525,6 +537,8 @@ internal sealed class FitsHeader
         long total;
         bool created = false;
         bool moved = false;
+        bool kept = false;
+        string? backup = null;
         try
         {
             // The input first: a data source that cannot be read leaves no temporary file.
@@ -561,10 +575,20 @@ internal sealed class FitsHeader
 
             // An existing file is replaced by Windows' replace, which gives the new file the old
             // one's creation time, attributes and permissions, as a move does not; a permission
-            // the drive cannot carry over (FAT, some shares) does not fail the copy (ADR 0031).
-            if (File.Exists(full))
+            // the drive cannot carry over (FAT, some shares) does not fail the copy. The old file
+            // goes to a backup beside it, deleted after the replace, so a replace that fails
+            // halfway leaves it under a name the write knows and can put back (ADR 0031).
+            if (Directory.Exists(full))
             {
-                File.Replace(temp, full, destinationBackupFileName: null, ignoreMetadataErrors: true);
+                // A folder of that name: refused as the move over it always was, access denied.
+                File.Move(temp, full, overwrite: true);
+            }
+            else if (File.Exists(full))
+            {
+                backup = BackupBeside(full);
+                (ReplaceForTests ?? ((t, f, b) => File.Replace(t, f, b, ignoreMetadataErrors: true)))(temp, full, backup);
+                moved = true;
+                DeleteBackup(backup);
             }
             else
             {
@@ -580,11 +604,18 @@ internal sealed class FitsHeader
             // raised it, and the log writes it so.
             ex.Data[TemporaryKey] = temp;
             ex.Data[TargetKey] = full;
+            if (backup is not null && !moved && !PutBack(backup, full, temp))
+            {
+                kept = true;
+                ex.Data[KeptKey] = backup;
+            }
+
             throw;
         }
         finally
         {
-            if (created && !moved)
+            // A kept backup means the old file is not where it was: nothing more is deleted.
+            if (created && !moved && !kept)
             {
                 DeleteTemporary(temp);
             }
@@ -604,12 +635,13 @@ internal sealed class FitsHeader
     /// name, so every name the file system accepts can be written (R-012).
     /// </summary>
     /// <param name="full">The full path of the file to write.</param>
+    /// <param name="extension">The name's last four characters: <c>.tmp</c> for the temporary file, <c>.bak</c> for the backup of a replaced target.</param>
     /// <returns>The temporary file's full path; the write creates it only when no file holds it.</returns>
-    private static string TemporaryBeside(string full)
+    private static string TemporaryBeside(string full, string extension = ".tmp")
     {
         string folder = Path.GetDirectoryName(full) ?? full;
         string name = Path.GetFileName(full);
-        string suffix = ".copywcs-" + Guid.NewGuid().ToString("N")[..8] + ".tmp";
+        string suffix = ".copywcs-" + Guid.NewGuid().ToString("N")[..8] + extension;
         if (name.Length + suffix.Length > NameLimit)
         {
             int keep = NameLimit - suffix.Length;
@@ -624,6 +656,79 @@ internal sealed class FitsHeader
         }
 
         return Path.Combine(folder, name + suffix);
+    }
+
+    /// <summary>
+    /// The name of the backup Windows' replace moves the old target to (ADR 0031): as the
+    /// temporary file's, ending in <c>.bak</c>, <c>stack.fit.copywcs-3f9a0c1e.bak</c>, and one no
+    /// file holds, since the replace would overwrite it.
+    /// </summary>
+    /// <param name="full">The full path of the target being replaced.</param>
+    /// <returns>The backup's full path, beside the target.</returns>
+    private static string BackupBeside(string full)
+    {
+        string backup;
+        do
+        {
+            backup = TemporaryBeside(full, ".bak");
+        }
+        while (Path.Exists(backup));
+
+        return backup;
+    }
+
+    /// <summary>
+    /// Deletes the backup of the old target after a replace that succeeded (ADR 0031); a delete
+    /// that fails leaves the old file under the backup's name and is a Warn line, the copy itself
+    /// being done.
+    /// </summary>
+    /// <param name="backup">The backup, which the replace created.</param>
+    private static void DeleteBackup(string backup)
+    {
+        try
+        {
+            File.Delete(backup);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Warn(ex, "the backup " + backup + " of the replaced file could not be removed");
+        }
+    }
+
+    /// <summary>
+    /// After a replace that failed, puts the old target back from its backup when Windows left it
+    /// there and the target's name is free (ERROR_UNABLE_TO_MOVE_REPLACEMENT_2, 1177), so the
+    /// folder is as it was (R-014, ADR 0031); a failure that left the old file in place made no
+    /// backup, and there is nothing to do.
+    /// </summary>
+    /// <param name="backup">The backup's full path.</param>
+    /// <param name="full">The target's full path.</param>
+    /// <param name="temp">The write's temporary file, named in the log when the backup is kept.</param>
+    /// <returns>True when no backup is left; false when it is kept.</returns>
+    private static bool PutBack(string backup, string full, string temp)
+    {
+        if (!File.Exists(backup))
+        {
+            return true;
+        }
+
+        if (!Path.Exists(full))
+        {
+            try
+            {
+                File.Move(backup, full);
+                Log.Warn("the replace of " + full + " failed halfway; the old file was put back from " + backup);
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Log.Error(ex, "the old file could not be put back from " + backup + " to " + full);
+            }
+        }
+
+        Log.Error("the replace of " + full + " failed halfway; the old file is kept as " + backup
+                  + " and the new one as " + temp);
+        return false;
     }
 
     /// <summary>
@@ -648,15 +753,19 @@ internal sealed class FitsHeader
     /// The message of an exception, as the user is shown it after a failed write: where the
     /// system's message names the write's temporary file, it names the target instead
     /// (<c>Could not find a part of the path 'E:\out\final_wcs.fit'.</c>), the file the user asked
-    /// for (R-014). A rename the system refused names no path at all, and stays so.
+    /// for (R-014). A rename the system refused names no path at all, and stays so. A write that
+    /// could not put back the old target adds where it is kept (ADR 0031).
     /// </summary>
     /// <param name="ex">The exception <see cref="WriteWithDataFrom"/> threw, or any other; not null.</param>
     /// <returns>The message, the temporary file's path replaced by the target's; any other exception's message as it is.</returns>
     internal static string WriteErrorMessage(Exception ex)
     {
         ArgumentNullException.ThrowIfNull(ex);
-        return ex.Data[TemporaryKey] is string temp && ex.Data[TargetKey] is string full
+        string message = ex.Data[TemporaryKey] is string temp && ex.Data[TargetKey] is string full
             ? ex.Message.Replace(temp, full, StringComparison.Ordinal)
             : ex.Message;
+        return ex.Data[KeptKey] is string kept
+            ? message + T($" The file was kept as '{kept}'.", $" Fisierul a fost pastrat ca '{kept}'.")
+            : message;
     }
 }

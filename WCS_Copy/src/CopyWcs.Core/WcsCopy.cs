@@ -16,7 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // WcsCopy.cs - the copy run, shared by the console and the window: reads both headers, checks
-// that the three paths name three files (R-019), the pixel grid, and that the destination's own
+// that the three paths name three files (R-019), that both have an image size (R-060), the pixel
+// grid, and that the destination's own
 // plate solve is no mirror of the source's (R-017),
 // selects the cards and the destination's old plate-solve cards to drop (R-016), lists them, or
 // drops those and the destination's CHECKSUM (R-018) and copies the others, and returns what
@@ -89,6 +90,7 @@ internal static class WcsCopy
 
     /// <summary>
     /// Runs a copy: reads both headers, refuses paths that name one file twice (R-019), refuses
+    /// a file with no image size in its primary header, forced or not (R-060), refuses
     /// a pixel grid that differs unless forced, warns about a source without <c>CTYPE1</c>,
     /// refuses a destination whose own plate solve is the
     /// mirror image of the source's unless forced (R-017), selects the cards and the destination's old
