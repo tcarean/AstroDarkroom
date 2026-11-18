@@ -28,7 +28,8 @@ namespace CopyWcs.Wpf;
 /// The main window: the band at the top, the two files, the output choice, the options, the two
 /// commands and the core's outcome, over one <see cref="MainViewModel"/>. It owns what needs a
 /// window (the file dialogs, the About window, the manual opened by Help and F1, a close held
-/// while a run is in flight) and computes nothing (ADR 0007, ADR 0008, ADR 0016, ADR 0019).
+/// while a run is in flight, a look again at the files when it comes back to the front) and
+/// computes nothing (ADR 0007, ADR 0008, ADR 0016, ADR 0019, ADR 0027).
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -63,8 +64,9 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// The window over a given view-model (the tests pass their own): binds it, asks for the
-    /// dark title bar once the window has a handle, and follows the view-model's running state,
-    /// so that a close held during a run is done when the run ends (R-050).
+    /// dark title bar once the window has a handle, follows the view-model's running state, so
+    /// that a close held during a run is done when the run ends (R-050), and looks at the files
+    /// again each time the window comes back to the front (R-054).
     /// </summary>
     /// <param name="vm">The view-model the window binds; not null.</param>
     internal MainWindow(MainViewModel vm)
@@ -74,7 +76,17 @@ public partial class MainWindow : Window
         DataContext = _vm;
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         _vm.PropertyChanged += CloseWhenTheRunEnds;
+        Activated += LookAgainWhenBackInFront;
     }
+
+    /// <summary>
+    /// The window back in front, from Siril or File Explorer most often: the files the boxes name
+    /// are looked at again, off this thread, so a file saved or plate-solved meanwhile shows as it
+    /// is now (R-054).
+    /// </summary>
+    /// <param name="sender">The window itself; not read.</param>
+    /// <param name="e">The activation; not read.</param>
+    private void LookAgainWhenBackInFront(object? sender, EventArgs e) => _vm.LookAgain();
 
     /// <summary>
     /// Holds a close asked while a Preview or a Copy is in flight (R-050): the run goes on to its
@@ -161,7 +173,7 @@ public partial class MainWindow : Window
         if (dlg.ShowDialog(this) == true)
         {
             Log.Info("source picked in the dialog: " + dlg.FileName);
-            _vm.Source = dlg.FileName;
+            _vm.PickSource(dlg.FileName);
         }
         else
         {
@@ -178,7 +190,7 @@ public partial class MainWindow : Window
         if (dlg.ShowDialog(this) == true)
         {
             Log.Info("destination picked in the dialog: " + dlg.FileName);
-            _vm.Dest = dlg.FileName;
+            _vm.PickDest(dlg.FileName);
         }
         else
         {

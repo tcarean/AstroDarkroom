@@ -2,11 +2,11 @@
 
 **Covers:** `src/CopyWcs.Wpf/`, `tests/CopyWcs.Wpf.Tests/`, `Icon/make_icon.py`.
 
-The behaviour is R-030 to R-039 and R-050 to R-053; the reasons are ADR 0007, ADR 0008, for
+The behaviour is R-030 to R-039 and R-050 to R-054; the reasons are ADR 0007, ADR 0008, for
 the About window's third-party card and the window's log lines ADR 0009, for Help and F1 ADR
 0016, for a close during a run ADR 0019, for the paths made whole ADR 0023, for the files
-looked at off the window's thread ADR 0025, and for the card emptied on a change and during a
-run ADR 0026. The pieces
+looked at off the window's thread ADR 0025, for the card emptied on a change and during a run
+ADR 0026, and for the files looked at again ADR 0027. The pieces
 copied from the siblings (`Presentation/DarkTitleBar.cs`, `Presentation/TExtension.cs`,
 `Presentation/Mvvm.cs`, `Presentation/AppIcon.cs`, `Theme/Dark.xaml`, `Views/AboutWindow.*`,
 the band at the top of `MainWindow.xaml`, the test fixture `StaFixture`) are marked as such in
@@ -69,7 +69,9 @@ session's end makes WPF ignore the cancel, so a logoff is not held. `OnClosed` e
 watch of the view-model, so that a run ending after the window has gone closes nothing, and logs
 at Warn a close that came while a run was still in flight, which only Windows' forced close
 reaches. The handlers of
-`Preview` and `Copy` call the view-model and nothing else.
+`Preview` and `Copy` call the view-model and nothing else; the two Browse handlers of the files
+hand the path picked to `PickSource` and `PickDest`, and `LookAgainWhenBackInFront`, on the
+window's `Activated`, calls `LookAgain` (R-054).
 
 ## One view-model, three things
 
@@ -116,9 +118,13 @@ reaches. The handlers of
   in `_looks` until it ends; `FactsRead` completes once they all have, which the run, `Copy()`
   and the tests await. The existence is checked by the look, not in the getters, which the
   boxes call at every keystroke; a check on the window's thread stopped it on a share that does
-  not answer (2.3 s for one letter, measured on 2026-11-18). After a copy the destination is
-  looked at again, its old line kept until the look ends, so an in-place copy shows up as
-  `already plate-solved`.
+  not answer (2.3 s for one letter, measured on 2026-11-18). `LookAgain` looks at both files
+  again (R-054, ADR 0027), each line and the commands kept as they are until its look ends: at
+  the end of every Preview and Copy, after the outcome is shown, so the lines say what the run
+  found and an in-place copy shows up as `already plate-solved`; and when the window comes back
+  to the front. `PickSource` and `PickDest`, which the Browse handlers call, set the box's text,
+  or look at its file again when the dialog gives back the path the box already holds, which
+  the setter, a text equal to the old one, would leave alone.
 - **Show the outcome.** `Show(outcome)` keeps the `WcsCopyOutcome` and raises every bound
   property: `Error`, `Warnings`, `Heading` (the outcome's notes when the kind is `Previewed`:
   the core's one heading line), `Cards` (each card with its trailing spaces trimmed, a 0xA0
@@ -210,7 +216,11 @@ read line then comes before the run's start line. The R-053 tests change each bo
 after a Preview and find the card empty, set each to the value it has and find it kept, and
 hold a Copy and a Preview in `RunCore` to read the in-progress line in both languages, the old
 outcome gone, and the run's own outcome after it; `WindowSmokeTests` render the card during a
-held run, in English with no Romanian word and with no binding error.
+held run, in English with no Romanian word and with no binding error. The R-054 tests make a
+file that was missing, or plate-solve one that was not, after its look, then call `PickSource`
+and `PickDest` with the paths the boxes hold, `LookAgain` with the look held (the old line and
+the commands stay until it is released), or run a Preview, and find the line as the file is now;
+`WindowSmokeTests` raise WPF's own `OnActivated` by reflection, a test window being never shown.
 `WindowSmokeTests` lay out and render both windows to a bitmap on the `StaFixture` thread
 (the window's background drawn first, or the labels on transparency come out dim in a PNG; the
 About window at its content's height, measured over two layout passes since the third-party

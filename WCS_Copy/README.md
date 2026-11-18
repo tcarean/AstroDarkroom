@@ -123,8 +123,10 @@ drop the optical metadata, allow or refuse different dimensions or a mirrored im
 the destination; the files from the command line show in their boxes with their whole paths, and
 the result names the file it wrote with its folder.
 Under each file box the window shows what it read from the header (`Source: 5601 x 3692,
-plate-solved`, `Destination: 5601 x 3692`); after a copy the destination reads `already
-plate-solved`.
+plate-solved`, `Destination: 5601 x 3692`). It reads the files again when the window comes back
+to the front, when Browse picks a file, the same one too, and after every Preview or Copy, so a
+file saved or plate-solved in Siril meanwhile shows as it is now; after an in-place copy the
+destination reads `already plate-solved`.
 
 The window does what the console does: Preview lists exactly the cards `copywcs --dry-run`
 would print, Copy writes exactly the bytes the console writes, and a refusal or a warning is

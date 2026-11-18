@@ -113,6 +113,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   of the files named before, and during a run it says `Preview in progress...` or
   `Copy in progress...`, where it kept showing the last result, a refusal too (R-053, ADR 0026;
   CR-009 of the review of 2026-11-16).
+- The window reads its files again when it comes back to the front, when Browse picks a file,
+  the same one too, and after every Preview or Copy: a file saved or plate-solved in Siril after
+  its path was typed used to stay missing or `not plate-solved` until the box was edited (R-054,
+  ADR 0027; CR-010 of the review of 2026-11-16).
 
 ### Internal
 

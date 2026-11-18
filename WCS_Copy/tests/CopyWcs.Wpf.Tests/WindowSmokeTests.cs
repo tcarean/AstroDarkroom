@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -381,6 +382,30 @@ public partial class WindowSmokeTests
             Assert.Equal("", one.Source);
             Assert.Equal(f.Dest, one.Dest);
             Assert.False(one.CanPreview);
+        });
+
+    /// <summary>
+    /// The window back in front looks at its files again (R-054; CR-010 of the review of
+    /// 2026-11-16): a source plate-solved and saved in Siril while the window was behind shows
+    /// as plate-solved, with no edit of its box. The activation is WPF's own, raised through
+    /// <c>OnActivated</c>, since a test window is never shown.
+    /// </summary>
+    [Fact]
+    public Task R054_TheWindowBackInFrontLooksAgain()
+        => _sta.InvokeAsync(async () =>
+        {
+            List<string> unsolved = FitsTestData.PlateSolvedCards().Where(c => !c.StartsWith("CTYPE1", StringComparison.Ordinal)).ToList();
+            using WindowFixture f = new(sourceCards: unsolved);
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest };
+            MainWindow w = new(vm);
+            await vm.FactsRead;
+            Assert.Equal("Sursa: 100 x 80, fara plate solve", vm.SourceFacts);
+
+            File.WriteAllBytes(f.Source, FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), FitsTestData.DeterministicData(400)));
+            typeof(Window).GetMethod("OnActivated", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(w, [EventArgs.Empty]);
+            await vm.FactsRead;
+
+            Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
         });
 
     /// <summary>

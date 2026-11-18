@@ -734,6 +734,81 @@ public class MainViewModelTests
         Assert.True(vm.HasHeading);
     }
 
+    /// <summary>The source's cards without <c>CTYPE1</c>: a file Siril has not plate-solved yet.</summary>
+    private static List<string> Unsolved()
+        => FitsTestData.PlateSolvedCards().Where(c => !c.StartsWith("CTYPE1", StringComparison.Ordinal)).ToList();
+
+    /// <summary>
+    /// A Browse that gives back the path the box already holds looks at the file again (R-054;
+    /// CR-010 of the review of 2026-11-16): a source pasted before Siril saved it, then saved and
+    /// picked, comes on without an edit of the box; the destination's Browse the same.
+    /// </summary>
+    [Fact]
+    public async Task R054_BrowsingThePathTheBoxHoldsLooksAgain()
+    {
+        using WindowFixture f = new();
+        string source = f.FilePath("later.fit");
+        string dest = f.FilePath("later-dest.fit");
+        MainViewModel vm = new() { Source = source, Dest = dest };
+        await vm.FactsRead;
+        Assert.Equal("", vm.SourceFacts);
+        Assert.False(vm.CanPreview);
+
+        File.Copy(f.Source, source);
+        File.Copy(f.Dest, dest);
+        vm.PickSource(source);
+        vm.PickDest(dest);
+        await vm.FactsRead;
+
+        Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
+        Assert.Equal("Destinatia: 100 x 80", vm.DestFacts);
+        Assert.True(vm.CanPreview);
+    }
+
+    /// <summary>
+    /// A look again keeps the fact line and the commands as they are while it is in flight, then
+    /// shows what it found (R-054): a source plate-solved since it was looked at.
+    /// </summary>
+    [Fact]
+    public async Task R054_ALookAgainKeepsTheLineAndTheCommandsUntilItEnds()
+    {
+        using WindowFixture f = new(sourceCards: Unsolved());
+        using ManualResetEventSlim release = new();
+        MainViewModel vm = Open(f);
+        await vm.FactsRead;
+        File.WriteAllBytes(f.Source, FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), FitsTestData.DeterministicData(400)));
+        vm.LookCore = HeldLook(release, f.Source);
+
+        vm.LookAgain();
+        Assert.Equal("Sursa: 100 x 80, fara plate solve", vm.SourceFacts);
+        Assert.True(vm.CanPreview);
+
+        release.Set();
+        await vm.FactsRead;
+        Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
+        Assert.True(vm.CanPreview);
+    }
+
+    /// <summary>
+    /// After a Preview the files are looked at again, so the line under the source says what the
+    /// run found: a source plate-solved in Siril while the window stayed in front (R-054; CR-010,
+    /// where the line kept saying `fara plate solve`).
+    /// </summary>
+    [Fact]
+    public async Task R054_ARunLooksAgainWhenItEnds()
+    {
+        using WindowFixture f = new(sourceCards: Unsolved());
+        MainViewModel vm = Open(f);
+        await vm.FactsRead;
+        Assert.Equal("Sursa: 100 x 80, fara plate solve", vm.SourceFacts);
+        File.WriteAllBytes(f.Source, FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), FitsTestData.DeterministicData(400)));
+
+        await vm.Preview();
+
+        Assert.False(vm.HasWarnings);
+        Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
+    }
+
     [Fact]
     public async Task R036_TheFactsAndTheHeadingFollowTheLanguageOfTheRun()
     {

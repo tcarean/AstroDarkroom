@@ -272,18 +272,59 @@ public sealed class MainViewModel : ObservableObject
 
     public bool HasNotes => Notes.Count > 0;
 
+    /// <summary>
+    /// Looks at both boxes' files again, off the window's thread (R-054): a file saved, solved or
+    /// removed since its box's text was set shows as it is now; each line and the commands stay
+    /// as they are until its look ends. A box with no text is left alone.
+    /// </summary>
+    internal void LookAgain()
+    {
+        if (_sourcePath.Length > 0)
+        {
+            LookAt(source: true, fresh: false);
+        }
+
+        if (_destPath.Length > 0)
+        {
+            LookAt(source: false, fresh: false);
+        }
+    }
+
+    /// <summary>The source picked in its Browse dialog: the box takes the path, or, when it already holds it, looks at its file again (R-054).</summary>
+    /// <param name="path">The dialog's whole path.</param>
+    internal void PickSource(string path)
+    {
+        if (string.Equals(_source, path, StringComparison.Ordinal))
+        {
+            LookAt(source: true, fresh: false);
+        }
+        else
+        {
+            Source = path;
+        }
+    }
+
+    /// <summary>The destination picked in its Browse dialog: the box takes the path, or, when it already holds it, looks at its file again (R-054).</summary>
+    /// <param name="path">The dialog's whole path.</param>
+    internal void PickDest(string path)
+    {
+        if (string.Equals(_dest, path, StringComparison.Ordinal))
+        {
+            LookAt(source: false, fresh: false);
+        }
+        else
+        {
+            Dest = path;
+        }
+    }
+
     /// <summary>Runs the core's dry run on the boxes and shows its outcome (R-031).</summary>
-    /// <returns>Completes once the outcome is shown.</returns>
+    /// <returns>Completes once the outcome is shown and both files are looked at again.</returns>
     public Task Preview() => RunAsync(dryRun: true);
 
-    /// <summary>Runs the copy on the boxes, shows its outcome and looks at the destination again (R-032, R-052).</summary>
-    /// <returns>Completes once the outcome is shown and the destination's facts are read.</returns>
-    public async Task Copy()
-    {
-        await RunAsync(dryRun: false).ConfigureAwait(true);
-        LookAt(source: false, fresh: false);
-        await FactsRead.ConfigureAwait(true);
-    }
+    /// <summary>Runs the copy on the boxes and shows its outcome (R-032); both files are looked at again after it, so an in-place copy shows as plate-solved.</summary>
+    /// <returns>Completes once the outcome is shown and both files are looked at again.</returns>
+    public Task Copy() => RunAsync(dryRun: false);
 
     /// <summary>
     /// Runs the core on a thread-pool thread, the commands off meanwhile (R-030): an in-place
@@ -292,10 +333,11 @@ public sealed class MainViewModel : ObservableObject
     /// emptied and shows the run's in-progress line (R-053); the run starts once every look at
     /// the boxes' files in flight has ended (R-052), and the outcome is shown back on the
     /// caller's thread; <see cref="IsRunning"/> is raised as the run starts and after its outcome
-    /// is shown (R-050).
+    /// is shown (R-050). Then both files are looked at again (R-054), so the lines under the boxes
+    /// say what the run found, the destination of an in-place copy `already plate-solved`.
     /// </summary>
     /// <param name="dryRun">True to list the cards and write nothing.</param>
-    /// <returns>Completes once the outcome is shown.</returns>
+    /// <returns>Completes once the outcome is shown and both files are looked at again.</returns>
     private async Task RunAsync(bool dryRun)
     {
         WcsCopyRequest request = Request(dryRun);
@@ -316,6 +358,9 @@ public sealed class MainViewModel : ObservableObject
             _running = false;
             RaiseRunning();
         }
+
+        LookAgain();
+        await FactsRead.ConfigureAwait(true);
     }
 
     /// <summary>Raises what follows the running state: the two commands, <see cref="IsRunning"/>, the card's visibility and its in-progress line.</summary>
