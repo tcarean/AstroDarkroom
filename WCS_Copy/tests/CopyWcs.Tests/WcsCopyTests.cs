@@ -1012,11 +1012,17 @@ public class WcsCopyTests
         Assert.Equal(["dest.fit", "source.fit"], FilesIn(ws.Dir));
     }
 
+    /// <summary>The message .NET gives for Windows' error 1177 (ERROR_UNABLE_TO_MOVE_REPLACEMENT_2), measured on .NET 8 by the second review of the branch.</summary>
+    private const string Message1177 =
+        "Unable to move the replacement file to the file to be replaced. The file to be replaced has been renamed using the backup name.";
+
     /// <summary>
     /// Windows' replace failing halfway (R-014; ERROR_UNABLE_TO_MOVE_REPLACEMENT_2, 1177, which
     /// shares and security software are reported to cause, never seen on this PC): the old file
     /// is already under the backup name and the new one could not take its place. The write puts
-    /// the backup back, so the destination keeps every byte and nothing is left beside it.
+    /// the backup back, so the destination keeps every byte and nothing is left beside it; the
+    /// line keeps Windows' words, whose last sentence the put-back makes untrue, and says the file
+    /// was put back; the log says so at Warn.
     /// </summary>
     [Fact]
     public void R014_Run_AReplaceThatFailsHalfway_PutsTheOriginalBack()
@@ -1031,17 +1037,46 @@ public class WcsCopyTests
         {
             backupSeen = backup;
             File.Move(target, backup);
-            throw new IOException("Unable to move the replacement file to the file to be replaced.", unchecked((int)0x80070499));
+            throw new IOException(Message1177, unchecked((int)0x80070499));
+        };
+        try
+        {
+            using var log = LogCapture.Start();
+            var outcome = WcsCopy.Run(Request(source, dest));
+
+            Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+            Assert.Equal("Write error: " + Message1177 + " The file was put back as it was.", outcome.Error);
+            Assert.Matches("^" + Regex.Escape(dest) + @"\.copywcs-[0-9a-f]{8}\.bak$", backupSeen);
+            Assert.Equal(destBytes, File.ReadAllBytes(dest));
+            Assert.Equal(["dest.fit", "source.fit"], FilesIn(ws.Dir));
+            Assert.Contains(log.Events, e => e.Level.Name == "Warn"
+                && e.Message == "the replace of " + dest + " failed halfway; the old file was put back from " + backupSeen);
+        }
+        finally
+        {
+            FitsHeader.ReplaceForTests = null;
+        }
+    }
+
+    /// <summary>
+    /// The same in Romanian: the put-back sentence is the pair's second half (R-014).
+    /// </summary>
+    [Fact]
+    public void R014_Run_AReplaceThatFailsHalfway_SaysItWasPutBackInRomanian()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400)));
+        FitsHeader.ReplaceForTests = (temp, target, backup) =>
+        {
+            File.Move(target, backup);
+            throw new IOException(Message1177, unchecked((int)0x80070499));
         };
         try
         {
             var outcome = WcsCopy.Run(Request(source, dest));
 
-            Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
-            Assert.Equal("Write error: Unable to move the replacement file to the file to be replaced.", outcome.Error);
-            Assert.Matches("^" + Regex.Escape(dest) + @"\.copywcs-[0-9a-f]{8}\.bak$", backupSeen);
-            Assert.Equal(destBytes, File.ReadAllBytes(dest));
-            Assert.Equal(["dest.fit", "source.fit"], FilesIn(ws.Dir));
+            Assert.Equal("Eroare la scriere: " + Message1177 + " Fisierul a fost pus inapoi cum era.", outcome.Error);
         }
         finally
         {
@@ -1051,8 +1086,9 @@ public class WcsCopyTests
 
     /// <summary>
     /// A replace that fails halfway, and a backup that cannot be put back (a folder now holds the
-    /// destination's name): nothing more is deleted, and the line says where the file is kept
-    /// (R-014), the one case where a failed write leaves a file beside the target.
+    /// destination's name): nothing more is deleted, the new file kept as its temporary file too,
+    /// and the line says where the old file is kept (R-014), the one case where a failed write
+    /// leaves files beside the target; the log says so at Error.
     /// </summary>
     [Fact]
     public void R014_Run_ABackupThatCannotBePutBack_IsKeptAndTheLineNamesIt()
@@ -1062,27 +1098,114 @@ public class WcsCopyTests
         var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
         var dest = ws.WriteFile("dest.fit", destBytes);
         string? backupSeen = null;
+        string? tempSeen = null;
         FitsHeader.ReplaceForTests = (temp, target, backup) =>
         {
             backupSeen = backup;
+            tempSeen = temp;
             File.Move(target, backup);
             Directory.CreateDirectory(target);
-            throw new IOException("Unable to move the replacement file to the file to be replaced.", unchecked((int)0x80070499));
+            throw new IOException(Message1177, unchecked((int)0x80070499));
         };
         try
         {
+            using var log = LogCapture.Start();
             var outcome = WcsCopy.Run(Request(source, dest));
 
             Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
             Assert.NotNull(backupSeen);
-            Assert.Equal($"Eroare la scriere: Unable to move the replacement file to the file to be replaced. Fisierul a fost pastrat ca '{backupSeen}'.", outcome.Error);
+            Assert.NotNull(tempSeen);
+            Assert.Equal($"Eroare la scriere: {Message1177} Fisierul a fost pastrat ca '{backupSeen}'.", outcome.Error);
             Assert.Equal(destBytes, File.ReadAllBytes(backupSeen));
+            Assert.True(FitsHeader.ReadPrimary(tempSeen).Contains("CTYPE1"), "the new file is kept");
+            Assert.Contains(log.Events, e => e.Level.Name == "Error"
+                && e.Message == "the replace of " + dest + " failed halfway; the old file is kept as " + backupSeen + " and the new one as " + tempSeen);
         }
         finally
         {
             FitsHeader.ReplaceForTests = null;
             Directory.Delete(dest);
         }
+    }
+
+    /// <summary>
+    /// A backup whose move back fails (another program holds it open without delete sharing) is
+    /// kept, the move's exception at Error, and the line says where, in English too (R-014).
+    /// </summary>
+    [Fact]
+    public void R014_Run_ABackupWhoseMoveBackFails_IsKeptAndTheLineNamesIt()
+    {
+        using var ws = new TempWorkspace();
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+        string? backupSeen = null;
+        FileStream? hold = null;
+        FitsHeader.ReplaceForTests = (temp, target, backup) =>
+        {
+            backupSeen = backup;
+            File.Move(target, backup);
+            hold = new FileStream(backup, FileMode.Open, FileAccess.Read, FileShare.Read);
+            throw new IOException(Message1177, unchecked((int)0x80070499));
+        };
+        try
+        {
+            using var log = LogCapture.Start();
+            var outcome = WcsCopy.Run(Request(source, dest));
+
+            Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+            Assert.Equal($"Write error: {Message1177} The file was kept as '{backupSeen}'.", outcome.Error);
+            Assert.False(File.Exists(dest));
+            Assert.Contains(log.Events, e => e.Level.Name == "Error" && e.Exception is IOException
+                && e.Message == "the old file could not be put back from " + backupSeen + " to " + dest);
+        }
+        finally
+        {
+            FitsHeader.ReplaceForTests = null;
+            hold?.Dispose();
+        }
+
+        Assert.Equal(destBytes, File.ReadAllBytes(backupSeen!));
+    }
+
+    /// <summary>
+    /// A backup that cannot be deleted after a replace that succeeded (another program holds it
+    /// open): the copy is done, the old file stays under the backup's name, and the log says so at
+    /// Warn (R-012).
+    /// </summary>
+    [Fact]
+    public void R012_Run_ABackupThatCannotBeDeleted_LeavesTheCopyDoneAndSaysSoInTheLog()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+        string? backupSeen = null;
+        FileStream? hold = null;
+        FitsHeader.ReplaceForTests = (temp, target, backup) =>
+        {
+            backupSeen = backup;
+            File.Replace(temp, target, backup, ignoreMetadataErrors: true);
+            hold = new FileStream(backup, FileMode.Open, FileAccess.Read, FileShare.Read);
+        };
+        try
+        {
+            using var log = LogCapture.Start();
+            var outcome = WcsCopy.Run(Request(source, dest));
+
+            Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+            Assert.True(FitsHeader.ReadPrimary(dest).Contains("CTYPE1"));
+            Assert.Contains(log.Events, e => e.Level.Name == "Warn" && e.Exception is not null
+                && e.Message == "the backup " + backupSeen + " of the replaced file could not be removed");
+        }
+        finally
+        {
+            FitsHeader.ReplaceForTests = null;
+            hold?.Dispose();
+        }
+
+        Assert.Equal(destBytes, File.ReadAllBytes(backupSeen!));
     }
 
     /// <summary>A replace that succeeds deletes the backup of the old file, in place and over an existing new file (R-012).</summary>

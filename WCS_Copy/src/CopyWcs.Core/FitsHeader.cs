@@ -46,6 +46,9 @@ internal sealed class FitsHeader
     /// <summary>The key under which a failed write keeps the backup of the old target it could not put back, in the exception's <see cref="Exception.Data"/> (R-014).</summary>
     private const string KeptKey = "CopyWcs.KeptBackup";
 
+    /// <summary>The key under which a failed write says it put the old target back from its backup, in the exception's <see cref="Exception.Data"/> (R-014).</summary>
+    private const string PutBackKey = "CopyWcs.PutBack";
+
     /// <summary>
     /// Stands in for Windows' replace in a test, on the test's own thread: the temporary file,
     /// the target and the backup name, as <see cref="File.Replace(string, string, string?, bool)"/>
@@ -503,7 +506,8 @@ internal sealed class FitsHeader
     /// target, flushed to the disk and put in the target's place at the end, an existing target
     /// replaced so that it keeps its creation time, attributes and permissions (R-012, ADR 0031):
     /// a write that fails at any point leaves the target as it was, or absent, and its temporary
-    /// file is deleted (R-014). The temporary
+    /// file is deleted (R-014), save a replace that failed halfway with an old file that cannot be
+    /// put back from its backup, which keeps both files (<see cref="PutBack"/>). The temporary
     /// file has a name of its own (<see cref="TemporaryBeside"/>) and is created only when no
     /// file holds that name, so no file of the user's is overwritten; an in-place write goes the
     /// same way, since the header may have grown past its original blocks and cannot be patched
@@ -515,13 +519,14 @@ internal sealed class FitsHeader
     /// Each card's characters are written as the bytes they were read from
     /// (<see cref="CardEncoding"/>). The diagnostic log gets the write before it starts, with its
     /// temporary file (at Trace every card to be written, so a failed write still shows the
-    /// header it meant to write), the file written after it, and the removal of a failed write's
-    /// temporary file (R-042, R-044); a write that throws is its caller's to log.
+    /// header it meant to write), the file written after it, the removal of a failed write's
+    /// temporary file, a backup that could not be removed, and what became of the backup of a
+    /// replace that failed halfway (R-042, R-044); a write that throws is its caller's to log.
     /// </summary>
     /// <param name="dataSource">The FITS file whose data area, from its own header's end, is copied; normally the file this header was read from. A relative path is taken from the working folder as the write begins.</param>
     /// <param name="target">The file to write: a new file, an existing one, replaced only at the end, or the same path as <paramref name="dataSource"/> for an in-place rewrite. A relative path is taken from the working folder as the write begins.</param>
     /// <exception cref="IOException">The target or its temporary file cannot be created, written or renamed (a missing folder, a full disk, a data source that cannot be read); its message is shown through <see cref="WriteErrorMessage"/>.</exception>
-    /// <exception cref="UnauthorizedAccessException">The target cannot be replaced by this user (read-only, a folder, no access); its message is shown the same way.</exception>
+    /// <exception cref="UnauthorizedAccessException">The target cannot be replaced by this user (read-only, a folder of that name, no access); its message is shown the same way.</exception>
     /// <exception cref="ArgumentException">A path is empty or blank.</exception>
     public void WriteWithDataFrom(string dataSource, string target)
     {
@@ -604,10 +609,18 @@ internal sealed class FitsHeader
             // raised it, and the log writes it so.
             ex.Data[TemporaryKey] = temp;
             ex.Data[TargetKey] = full;
-            if (backup is not null && !moved && !PutBack(backup, full, temp))
+            if (backup is not null && !moved)
             {
-                kept = true;
-                ex.Data[KeptKey] = backup;
+                switch (PutBack(backup, full, temp))
+                {
+                    case BackupFate.PutBack:
+                        ex.Data[PutBackKey] = true;
+                        break;
+                    case BackupFate.Kept:
+                        kept = true;
+                        ex.Data[KeptKey] = backup;
+                        break;
+                }
             }
 
             throw;
@@ -627,16 +640,17 @@ internal sealed class FitsHeader
     }
 
     /// <summary>
-    /// The path of a write's temporary file: in the target's folder, so the rename at the end
-    /// stays on one volume, named as the target followed by <c>.copywcs-</c>, 8 random
-    /// hexadecimal digits and <c>.tmp</c> (<c>stack.fit.copywcs-3f9a0c1e.tmp</c>), a name that
-    /// tells which program left it should a killed process leave one. A target name too long to
+    /// The path of a write's temporary file, or of the backup of a replaced target: in the
+    /// target's folder, so the rename at the end stays on one volume, named as the target followed
+    /// by <c>.copywcs-</c>, 8 random hexadecimal digits and the extension
+    /// (<c>stack.fit.copywcs-3f9a0c1e.tmp</c>, <c>.bak</c> for a backup), a name that tells which
+    /// program left it should a killed process leave one. A target name too long to
     /// take the 21-character suffix within <see cref="NameLimit"/> is shortened in the temporary
     /// name, so every name the file system accepts can be written (R-012).
     /// </summary>
     /// <param name="full">The full path of the file to write.</param>
     /// <param name="extension">The name's last four characters: <c>.tmp</c> for the temporary file, <c>.bak</c> for the backup of a replaced target.</param>
-    /// <returns>The temporary file's full path; the write creates it only when no file holds it.</returns>
+    /// <returns>The file's full path; the write creates a temporary file only when no file holds it, and draws a backup's again while one does (<see cref="BackupBeside"/>).</returns>
     private static string TemporaryBeside(string full, string extension = ".tmp")
     {
         string folder = Path.GetDirectoryName(full) ?? full;
@@ -704,12 +718,12 @@ internal sealed class FitsHeader
     /// <param name="backup">The backup's full path.</param>
     /// <param name="full">The target's full path.</param>
     /// <param name="temp">The write's temporary file, named in the log when the backup is kept.</param>
-    /// <returns>True when no backup is left; false when it is kept.</returns>
-    private static bool PutBack(string backup, string full, string temp)
+    /// <returns>What became of the backup: none was made, it was put back, or it is kept.</returns>
+    private static BackupFate PutBack(string backup, string full, string temp)
     {
         if (!File.Exists(backup))
         {
-            return true;
+            return BackupFate.None;
         }
 
         if (!Path.Exists(full))
@@ -718,7 +732,7 @@ internal sealed class FitsHeader
             {
                 File.Move(backup, full);
                 Log.Warn("the replace of " + full + " failed halfway; the old file was put back from " + backup);
-                return true;
+                return BackupFate.PutBack;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -728,7 +742,20 @@ internal sealed class FitsHeader
 
         Log.Error("the replace of " + full + " failed halfway; the old file is kept as " + backup
                   + " and the new one as " + temp);
-        return false;
+        return BackupFate.Kept;
+    }
+
+    /// <summary>What became of the backup of a replace that failed (ADR 0031).</summary>
+    private enum BackupFate
+    {
+        /// <summary>The replace failed before it made one: the old file is where it was.</summary>
+        None,
+
+        /// <summary>The old file was moved back from the backup to its own name.</summary>
+        PutBack,
+
+        /// <summary>The backup could not be put back and is kept, the new file too.</summary>
+        Kept,
     }
 
     /// <summary>
@@ -753,19 +780,25 @@ internal sealed class FitsHeader
     /// The message of an exception, as the user is shown it after a failed write: where the
     /// system's message names the write's temporary file, it names the target instead
     /// (<c>Could not find a part of the path 'E:\out\final_wcs.fit'.</c>), the file the user asked
-    /// for (R-014). A rename the system refused names no path at all, and stays so. A write that
-    /// could not put back the old target adds where it is kept (ADR 0031).
+    /// for (R-014). A rename the system refused names no path at all, and stays so. After a replace
+    /// that failed halfway (ADR 0031) it adds that the old file was put back, since Windows' own
+    /// words then say it was renamed, or where it is kept when it could not be put back.
     /// </summary>
     /// <param name="ex">The exception <see cref="WriteWithDataFrom"/> threw, or any other; not null.</param>
-    /// <returns>The message, the temporary file's path replaced by the target's; any other exception's message as it is.</returns>
+    /// <returns>The message, the temporary file's path replaced by the target's, and the sentence on the old file after a replace that failed halfway; any other exception's message as it is.</returns>
     internal static string WriteErrorMessage(Exception ex)
     {
         ArgumentNullException.ThrowIfNull(ex);
         string message = ex.Data[TemporaryKey] is string temp && ex.Data[TargetKey] is string full
             ? ex.Message.Replace(temp, full, StringComparison.Ordinal)
             : ex.Message;
-        return ex.Data[KeptKey] is string kept
-            ? message + T($" The file was kept as '{kept}'.", $" Fisierul a fost pastrat ca '{kept}'.")
+        if (ex.Data[KeptKey] is string kept)
+        {
+            return message + T($" The file was kept as '{kept}'.", $" Fisierul a fost pastrat ca '{kept}'.");
+        }
+
+        return ex.Data[PutBackKey] is true
+            ? message + T(" The file was put back as it was.", " Fisierul a fost pus inapoi cum era.")
             : message;
     }
 }

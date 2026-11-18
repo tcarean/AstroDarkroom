@@ -41,7 +41,10 @@ file no longer exists", and 1177 leaves it "with a different name"; the write th
 temporary file too, and the user's file was gone. Neither was reproduced (a target held open, a
 temporary file held open, a mapped target and a read-only one all failed cleanly). With a backup
 name, 1176 leaves both files under their own names, and 1177 leaves the old file under the
-backup's, which the write puts back (R-014). When even that fails, nothing more is deleted and
+backup's, which the write puts back (R-014); the line then adds `The file was put back as it
+was.` (`Fisierul a fost pus inapoi cum era.`), since Windows' own words, which may be in the
+computer's language and so cannot be cut, say the file "has been renamed using the backup name"
+(the second review of the branch; the owner's answer of 2026-11-18). When even that fails, nothing more is deleted and
 the line says where the file is kept (`The file was kept as '<backup>'.`, `Fisierul a fost
 pastrat ca '<backup>'.`). The owner chose this on 2026-11-18, over going back to the move and
 over only recording the case. A target name that is a folder keeps the move over it, refused with
@@ -72,6 +75,9 @@ failures are made through `FitsHeader.ReplaceForTests`, a stand-in for Windows' 
 is a rename on the same volume, so it costs no copy. Guarded by
 `WcsCopyTests.R012_Run_AReplacedFileKeepsItsCreationTimeAndItsAttributes`,
 `R012_Run_AReplaceThatSucceeds_LeavesNoBackup`, `R014_Run_AReplaceThatFailsHalfway_PutsTheOriginalBack`,
+`R014_Run_AReplaceThatFailsHalfway_SaysItWasPutBackInRomanian`,
 `R014_Run_ABackupThatCannotBePutBack_IsKeptAndTheLineNamesIt`,
+`R014_Run_ABackupWhoseMoveBackFails_IsKeptAndTheLineNamesIt`,
+`R012_Run_ABackupThatCannotBeDeleted_LeavesTheCopyDoneAndSaysSoInTheLog`,
 `R014_Run_ANewFileThatIsAFolder_IsAWriteErrorThatSaysAccessIsDenied` and
 `R014_Run_AReadOnlyDestination_IsAWriteErrorThatLeavesTheFolderAsItWas`.

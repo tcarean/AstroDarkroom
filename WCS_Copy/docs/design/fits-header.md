@@ -100,8 +100,10 @@ The replace moves the old file to `backup`, `BackupBeside`'s `<name>.copywcs-<8 
 (`TemporaryBeside` with another extension, drawn again while a file holds it, since the replace
 would overwrite one), and `DeleteBackup` removes it once the replace is done. A replace that
 fails goes through `PutBack`: a backup Windows left with the target's name free (its error 1177)
-is moved back; a backup that cannot be put back is kept, the temporary file too, and
-`WriteErrorMessage` adds its name to the line (`KeptKey`). Windows' halfway failures cannot be
+is moved back and `WriteErrorMessage` adds that it was (`PutBackKey`), Windows' own words then
+saying it was renamed; a backup that cannot be put back is kept, the temporary file too, and
+`WriteErrorMessage` adds its name to the line (`KeptKey`). `PutBack` returns which of the three
+became of the backup (`BackupFate`). Windows' halfway failures cannot be
 made on demand, so `ReplaceForTests`, a thread-static stand-in, lets a test make one. A target
 name that is a folder still goes through the move over it, which refuses it with `Access to the
 path is denied.` as before (the replace and the move without overwrite would each say something
