@@ -314,7 +314,7 @@ write through a temporary file.
   covers a 60-byte file.
 - **Evidence:** to measure, on a sleeping disk or a share; the read on the window's thread is
   certain by reading.
-- **Status:** fixed d346b52d (a box's file is looked at off the window's thread, its line empty and the commands off until the look of its latest text ends, a look overtaken by a newer text dropped, and a run waits for the looks in flight, so their read lines stay out of the run's lines in the log. Measured on 2026-11-18 with `File.Exists` on paths typed letter by letter: one letter of a path to a computer that does not answer took 2,274 ms, the owner's NAS 56 ms at most, the local disks 3.2 ms at most; the disks spin down after 20 minutes and none was caught asleep; R-052, ADR 0025).
+- **Status:** fixed d346b52d (a box's file is looked at off the window's thread, its line empty and the commands off until the look of its latest text ends, a look overtaken by a newer text dropped, and a run waits for each box's latest look, so their read lines stay out of the run's lines in the log; since the branch's review, 845cc26c, a run no longer waits for an overtaken look, the owner's answer of 2026-11-18. Measured on 2026-11-18 with `File.Exists` on paths typed letter by letter: one letter of a path to a computer that does not answer took 2,274 ms, the owner's NAS 56 ms at most, the local disks 3.2 ms at most; the disks spin down after 20 minutes and none was caught asleep; R-052, ADR 0025).
 
 ## Severity 3
 
@@ -349,7 +349,7 @@ write through a temporary file.
 - **Evidence:** owner: `docs/design/window.md` makes "checked once, when its path is set"
   deliberate, against a check in the getters; these two cases follow from it and are not
   named there.
-- **Status:** fixed 277cc6bd (the owner chose the fix on 2026-11-18: a box's file is looked at again when a Browse of it picks a file, the path the box holds included, both when the window comes back to the front, and both after every Preview and Copy, which stands for "before a run": the run reads both files itself, and a look after it keeps the window's read lines out of the run's lines in the log; a look again keeps the line and the commands until it ends, and one asked during a run is left to the run's end, 8191c3c8; R-054, ADR 0027).
+- **Status:** fixed 277cc6bd (the owner chose the fix on 2026-11-18: a box's file is looked at again when a Browse of it picks a file, the path the box holds included, both when the window comes back to the front, and both after every Preview and Copy, which stands for "before a run": the run reads both files itself, and a look after it keeps the window's read lines out of the run's lines in the log; a look again keeps the line and the commands until it ends, and one asked during a run is left to the run's end, 8191c3c8; a window that has closed reads no file, so no read line follows its last one, 845cc26c; R-054, ADR 0027).
 
 ### CR-011 A header without `NAXIS1` is reported as the size -1
 
