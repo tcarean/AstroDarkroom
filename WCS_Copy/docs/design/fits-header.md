@@ -36,9 +36,9 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
   non-blank ones, so
   `COMMENT` and `HISTORY` count as keywords and blank cards do not.
 - `GetInt` takes the text after `=` up to a `/`, trimmed, and returns -1 when the card is
-  missing, has no `=` or is not an integer. Two files that both lack `NAXIS1` therefore
-  compare as equal sizes (-1 and -1); the run does not special-case it, since such a file is
-  not an image. `GetDouble` reads the same text (`ValueText`, shared by both) as a finite
+  missing, has no `=` or is not an integer. The run takes a -1 for `NAXIS1` or `NAXIS2` as a
+  file with no image size and refuses it before comparing (R-060), so two files that both lack
+  the keys no longer pass as equal sizes. `GetDouble` reads the same text (`ValueText`, shared by both) as a finite
   double, invariant, the FITS exponent letter `D` taken as `E`, and gives null for a missing
   card, a string, a logical or nothing: the numbers of R-017's check. `GetString` reads a quoted
   value from the card itself, not through `ValueText`, so a '/' inside the quotes stays text; a

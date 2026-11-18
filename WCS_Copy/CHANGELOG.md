@@ -59,6 +59,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A file with no image size in its main header (`NAXIS1` or `NAXIS2` missing, the image in an
+  extension) is refused with a line that says so, even with `--force`, where it was reported as
+  the size (-1, -1) with the advice to force, and two such files were copied (ADR 0028).
 - In the window, a path pasted in double quotes, as File Explorer's "Copy as path" gives it,
   now names its file: the quotes are taken off, so its facts show and Preview and Copy come on.
 - The copy's closing line counts as each language does: `Copied 1 key`, `Copiata 1 cheie`, and

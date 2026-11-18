@@ -718,6 +718,75 @@ public class WcsCopyTests
         Assert.Equal(sourceBytes, File.ReadAllBytes(source));
     }
 
+    /// <summary>The cards without the one of a keyword: a header that lacks it.</summary>
+    private static List<string> Without(List<string> cards, string keyword)
+        => cards.Where(c => !c.StartsWith(keyword.PadRight(8), StringComparison.Ordinal)).ToList();
+
+    /// <summary>
+    /// A source with no image size in its primary header (R-060) is refused with its own line,
+    /// not as the size -1, and the option to force does not let it through; a dry run is refused
+    /// too, and nothing is written.
+    /// </summary>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void R060_Run_ASourceWithNoImageSize_IsRefusedForceOrNot(bool force, bool dryRun)
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(Without(FitsTestData.PlateSolvedCards(100, 80), "NAXIS1")));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(100, 80));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+
+        var outcome = WcsCopy.Run(Request(source, dest, force: force, dryRun: dryRun));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.Equal(
+            "Sursa nu are dimensiunea imaginii in header-ul principal (lipseste NAXIS1 sau NAXIS2): imaginea poate fi intr-o extensie, pe care unealta nu o citeste.",
+            outcome.Error);
+        Assert.Empty(outcome.Warnings);
+        Assert.Empty(outcome.Cards);
+        Assert.Equal(destBytes, File.ReadAllBytes(dest));
+    }
+
+    /// <summary>A destination with no NAXIS2 (R-060) is refused with the destination's line, in English too.</summary>
+    [Fact]
+    public void R060_Run_ADestinationWithNoImageSize_IsRefusedWithItsLine()
+    {
+        using var ws = new TempWorkspace();
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(100, 80)));
+        var destBytes = FitsTestData.MinimalFitsFile(Without(FitsTestData.ProcessedCards(100, 80), "NAXIS2"));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+
+        var outcome = WcsCopy.Run(Request(source, dest, force: true));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.Equal(
+            "The destination has no image size in its main header (NAXIS1 or NAXIS2 is missing): its image may be in an extension, which this tool does not read.",
+            outcome.Error);
+        Assert.Equal(destBytes, File.ReadAllBytes(dest));
+    }
+
+    /// <summary>
+    /// Two files that both lack the size (R-060) are refused with the source's line, where they
+    /// passed as equal sizes and were copied.
+    /// </summary>
+    [Fact]
+    public void R060_Run_TwoFilesWithNoImageSize_AreRefusedWithTheSourcesLine()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(Without(FitsTestData.PlateSolvedCards(100, 80), "NAXIS1")));
+        var destBytes = FitsTestData.MinimalFitsFile(Without(FitsTestData.ProcessedCards(100, 80), "NAXIS1"));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+
+        var outcome = WcsCopy.Run(Request(source, dest));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.StartsWith("Sursa nu are dimensiunea imaginii", outcome.Error, StringComparison.Ordinal);
+        Assert.Equal(destBytes, File.ReadAllBytes(dest));
+    }
+
     /// <summary>The data area of the destinations the midway failures use: larger than the 80 KB a copy streams at a time.</summary>
     private const int LargeData = 200_000;
 

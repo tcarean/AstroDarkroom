@@ -228,6 +228,24 @@ public class CopyWcsCliTests
         Assert.Contains("Continui oricum", result.Stdout);
     }
 
+    /// <summary>A forced copy from a source with no NAXIS1 (R-060): the line on stderr, exit 1, the destination unchanged.</summary>
+    [Fact]
+    public void R060_Run_ASourceWithNoImageSize_ReturnsOneWithTheLineOnStderr()
+    {
+        using var ws = new TempWorkspace();
+        var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(
+            FitsTestData.PlateSolvedCards().Where(c => !c.StartsWith("NAXIS1  ", StringComparison.Ordinal))));
+        var destBytesOriginal = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards());
+        var destPath = ws.WriteFile("dest.fit", destBytesOriginal);
+
+        var result = Run(sourcePath, destPath, "--force");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("Sursa nu are dimensiunea imaginii in header-ul principal", result.Stderr);
+        Assert.DoesNotContain("-1", result.Stderr);
+        Assert.Equal(destBytesOriginal, File.ReadAllBytes(destPath));
+    }
+
     [Fact]
     public void R006_Run_SourceMissingCtype1_PrintsWarningButContinues()
     {

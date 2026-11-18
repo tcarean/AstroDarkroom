@@ -48,7 +48,9 @@ the log does.
 
 The two images must have the same pixel grid: the tool compares `NAXIS1` and `NAXIS2` and
 refuses to copy when they differ, because the solution would point at the wrong pixels.
-`--force` copies anyway, for the case you know is right.
+`--force` copies anyway, for the case you know is right. A file whose main header has no
+`NAXIS1` or `NAXIS2` is refused even with `--force`: its image, if it has one, is in an
+extension (as astropy and fpack write it), which the tool does not read.
 
 **A mirrored destination is refused.** When the destination holds a plate solve of its own and
 it is the mirror image of the source's, its pixels were mirrored or flipped after the source was
@@ -81,7 +83,8 @@ copywcs <solved.fit> <destination.fit> [options]
 
 Every run begins with the version (`copywcs 1.0.0`) and the copyright line, so a pasted output
 says which version produced it. Exit codes: 0 on success or a dry run, 1 when the copy was
-refused (a file that cannot be read, the same file given twice, different dimensions or a
+refused (a file that cannot be read, the same file given twice, a file with no image size,
+different dimensions or a
 mirrored plate solve without `--force`, no relevant key,
 a write error, a `--lang` value that is not `en` or `ro`), 2 on a usage error.
 
