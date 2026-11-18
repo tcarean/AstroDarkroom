@@ -926,6 +926,67 @@ public class WcsCopyTests
         Assert.Equal([destName, outputName, "source.fit"], FilesIn(ws.Dir));
     }
 
+    /// <summary>
+    /// A file replaced by a copy keeps what makes it the user's file: its creation time and its
+    /// attributes, Hidden here, in place and as an existing new file (R-012; CR-018 of the review of
+    /// 2026-11-16: a plain move gave it the copy's creation time and the Archive attribute alone).
+    /// </summary>
+    /// <param name="inPlace">True for the destination rewritten in place, false for an existing file given to -o.</param>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R012_Run_AReplacedFileKeepsItsCreationTimeAndItsAttributes(bool inPlace)
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var data = FitsTestData.DeterministicData(400);
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), data));
+        string target = inPlace ? dest : ws.WriteFile("out.fit", [1, 2, 3]);
+        var created = new DateTime(2020, 1, 2, 3, 4, 5, DateTimeKind.Local);
+        File.SetCreationTime(target, created);
+        File.SetAttributes(target, FileAttributes.Hidden | FileAttributes.Archive);
+
+        var outcome = WcsCopy.Run(Request(source, dest, inPlace ? null : target));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.True(FitsHeader.ReadPrimary(target).Contains("CTYPE1"));
+        Assert.Equal(data, File.ReadAllBytes(target)[^data.Length..]);
+        Assert.Equal(created, File.GetCreationTime(target));
+        Assert.True(File.GetAttributes(target).HasFlag(FileAttributes.Hidden), File.GetAttributes(target).ToString());
+        Assert.Equal(inPlace ? ["dest.fit", "source.fit"] : ["dest.fit", "out.fit", "source.fit"], FilesIn(ws.Dir));
+    }
+
+    /// <summary>
+    /// A read-only destination is refused at the replace in place (R-014): the line says access is
+    /// denied and names no temporary file, the destination keeps every byte and nothing is left
+    /// beside it, through the replace as through the move it was.
+    /// </summary>
+    [Fact]
+    public void R014_Run_AReadOnlyDestination_IsAWriteErrorThatLeavesTheFolderAsItWas()
+    {
+        using var ws = new TempWorkspace();
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400));
+        var dest = ws.WriteFile("dest.fit", destBytes);
+        File.SetAttributes(dest, FileAttributes.ReadOnly);
+        try
+        {
+            var outcome = WcsCopy.Run(Request(source, dest));
+
+            Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+            Assert.StartsWith("Write error: Access to the path", outcome.Error, StringComparison.Ordinal);
+            Assert.EndsWith("denied.", outcome.Error, StringComparison.Ordinal);
+            Assert.DoesNotContain(".copywcs-", outcome.Error, StringComparison.Ordinal);
+            Assert.Equal(destBytes, File.ReadAllBytes(dest));
+            Assert.Equal(["dest.fit", "source.fit"], FilesIn(ws.Dir));
+        }
+        finally
+        {
+            File.SetAttributes(dest, FileAttributes.Normal);
+        }
+    }
+
     /// <summary>A header with the two checksum cards a program such as the SyQon CLI writes last, as in V-002's destination.</summary>
     /// <param name="cards">The header's cards; the two are added at its end.</param>
     /// <returns>The same list.</returns>

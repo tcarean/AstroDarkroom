@@ -488,7 +488,9 @@ internal sealed class FitsHeader
     /// <summary>
     /// Writes this header, END and the padding to the next 2880-byte boundary, followed by the
     /// data area copied from <paramref name="dataSource"/>, into a temporary file beside the
-    /// target, renamed over the target at the end (R-012): a write that fails at any point leaves
+    /// target, flushed to the disk and put in the target's place at the end, an existing target
+    /// replaced so that it keeps its creation time, attributes and permissions (R-012, ADR 0031):
+    /// a write that fails at any point leaves
     /// the target as it was, or absent, and its temporary file is deleted (R-014). The temporary
     /// file has a name of its own (<see cref="TemporaryBeside"/>) and is created only when no
     /// file holds that name, so no file of the user's is overwritten; an in-place write goes the
@@ -550,9 +552,25 @@ internal sealed class FitsHeader
                 input.Seek(_dataOffset, SeekOrigin.Begin);
                 input.CopyTo(output);
                 total = output.Position;
+
+                // On the disk before the rename: the file system journals the rename, not the
+                // data, so a power cut right after an unflushed copy could leave the target's
+                // name on a file not yet written (ADR 0031).
+                output.Flush(flushToDisk: true);
             }
 
-            File.Move(temp, full, overwrite: true);
+            // An existing file is replaced by Windows' replace, which gives the new file the old
+            // one's creation time, attributes and permissions, as a move does not; a permission
+            // the drive cannot carry over (FAT, some shares) does not fail the copy (ADR 0031).
+            if (File.Exists(full))
+            {
+                File.Replace(temp, full, destinationBackupFileName: null, ignoreMetadataErrors: true);
+            }
+            else
+            {
+                File.Move(temp, full);
+            }
+
             moved = true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

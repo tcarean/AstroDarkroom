@@ -91,9 +91,12 @@ runtime's Unicode data moves, that test says so, and the table is generated agai
 
 `WriteWithDataFrom(dataSource, target)` writes the cards, `END`, spaces to the next 2880-byte
 boundary, then copies `dataSource` from `_dataOffset` to its end, always into a temporary file
-beside the target, which `File.Move(temp, full, overwrite: true)` renames over the target at
-the end (R-012, R-013): an existing target, the destination of an in-place write included, is
-replaced only once the whole file is written. Both paths are made whole (`Path.GetFullPath`)
+beside the target, flushed to the disk (`Flush(flushToDisk: true)`) and then put in the
+target's place (R-012, R-013): an existing target, the destination of an in-place write
+included, by `File.Replace(temp, full, null, ignoreMetadataErrors: true)`, Windows' replace,
+which keeps the target's creation time, attributes and permissions, and a target that does not
+exist by `File.Move` (ADR 0031; until 2026-11-18 a move over the target, which lost them, CR-018).
+An existing target is replaced only once the whole file is written and on the disk. Both paths are made whole (`Path.GetFullPath`)
 once, as the write begins, and the temporary file, the data read and the rename all use those,
 so a working folder that moves during the write (a file dialog of the window, CR-006) changes
 neither file; the review of the branch found the target looked up again at the rename, which
@@ -120,7 +123,9 @@ message with the target where it named the temporary file, which `WcsCopy.Run` p
 no path. `R014_Run_AWriteThatFailsMidway_...`
 make a write fail after its header and first 80 KB by holding a byte-range lock in the middle
 of the destination's data, which Windows enforces on every other handle; a read-only
-destination makes the in-place rename fail. The data area is copied as bytes: `BITPIX`,
+destination makes the in-place replace fail with the same `Access to the path is denied.` as the
+move did. The flush is not seen by any test: ADR 0031 has its cost, 2.7 to 3.2 s for the 290 MB
+Veil stack written on the hard disk E:. The data area is copied as bytes: `BITPIX`,
 `NAXIS3`, extensions and padding travel unchanged.
 
 The cards are decoded and encoded with `Encoding.Latin1` (`CardEncoding`): each byte 0x00 to
