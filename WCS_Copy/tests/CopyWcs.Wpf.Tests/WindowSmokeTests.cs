@@ -555,4 +555,30 @@ public partial class WindowSmokeTests
                 w.Close();
             }
         });
+
+    /// <summary>
+    /// A refusal with a warning raised before it shows the warning above the refusal, as R-033
+    /// says and the console prints them (CR-017 of the review of 2026-11-16): a source without a
+    /// plate solve and the optical keys off gives the warning, then `No relevant key found`.
+    /// </summary>
+    [Fact]
+    public Task R033_TheWarningsRaisedBeforeARefusalAreShownAboveIt()
+        => _sta.InvokeAsync(async () =>
+        {
+            using IDisposable _ = Ui.Use(UiLanguage.English);
+            // a processed header as the source: no plate solve at all, the optical keys only
+            using WindowFixture f = new(sourceCards: FitsTestData.ProcessedCards());
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, IncludeOptical = false };
+            MainWindow w = new(vm);
+            await vm.Preview();
+            Assert.True(vm.HasError);
+            Assert.True(vm.HasWarnings);
+            FrameworkElement window = (FrameworkElement)w.Content;
+            Render(window, name: "window-warning-and-refusal");
+
+            TextBlock warning = TextBlockWith(window, Assert.Single(vm.Warnings));
+            TextBlock refusal = TextBlockWith(window, vm.Error!);
+            Assert.True(Box(warning, window).Bottom <= Box(refusal, window).Top,
+                $"warning at {Box(warning, window)}, refusal at {Box(refusal, window)}");
+        });
 }

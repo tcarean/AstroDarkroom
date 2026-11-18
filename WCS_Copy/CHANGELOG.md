@@ -59,6 +59,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The window shows the warnings raised before a refusal above it, as the console prints them,
+  where it showed them under it.
 - `-o` followed by a word that starts with a dash, `-o --dry-run` with the file name forgotten,
   is a usage error (`--output needs a file name.`, exit 2), where it copied into a file named
   `--dry-run` without the dry run (ADR 0030).

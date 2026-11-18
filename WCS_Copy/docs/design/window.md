@@ -44,8 +44,9 @@ buttons (`Preview`, `Copy`), and the outcome card. The card is one `Border` of t
 style whose visibility follows `HasCard` (an outcome, or a run in flight, R-053), holding a
 first row that shows `RunningLine` in the `Muted` style while `IsRunning`, alone in the card
 then, and four blocks that each follow their own
-flag: the refusal (the heading `RefusedHeading` in the `BadBr` colour over the core's
-`Error`), the warnings (an `ItemsControl` in `WarnBr`), the preview's heading, the cards (a
+flag, in the console's order (R-033): the warnings (an `ItemsControl` in `WarnBr`), the refusal
+(the heading `RefusedHeading` in the `BadBr` colour over the core's `Error`; above the warnings
+until 2026-11-18, CR-017), the preview's heading, the cards (a
 `ListBox` in the monospace font with a horizontal scroll bar, since a card is 80 characters)
 and the closing notes. The built-in `BooleanToVisibilityConverter` does every visibility;
 there is no converter of the project's own. Every label is `{l:T En='...', Ro='...'}`,
