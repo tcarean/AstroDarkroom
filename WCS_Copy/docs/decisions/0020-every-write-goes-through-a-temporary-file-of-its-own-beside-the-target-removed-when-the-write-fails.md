@@ -25,6 +25,20 @@ name, and renames it over the target once it is whole (R-012). When anything fai
 rename, a `finally` deletes the temporary file it created; the target and the destination keep
 every byte, and the run is the usual `Write error:` refusal (R-014).
 
+Both paths are made whole once, as the write begins, so the rename lands beside its temporary
+file and the data is read from the file the write began with, even when the working folder moves
+meanwhile, as a file dialog of the window may (CR-006). The review of the branch found the
+temporary file's folder fixed at the start and the target looked up again at the rename, which
+could have replaced a file of the same name in another folder; shown by a test that moves the
+working folder at the write's first log line.
+
+The `Write error:` line names the file asked for where the system's message names the temporary
+file: `Write error: Could not find a part of the path 'E:\out\final_wcs.fit'.`, as before this
+change. The exception goes on as the system raised it, the two paths in its `Data`, and the log
+writes it so; `FitsHeader.WriteErrorMessage` makes the line's message. The owner's answer of
+2026-11-18, after the review of the branch found the line naming
+`final_wcs.fit.copywcs-3f9a0c1e.tmp`, a name the user never typed.
+
 ## Alternatives rejected
 
 - **Keep `File.Create` for a new file and delete it on failure.** A file of that name the user
@@ -38,11 +52,22 @@ every byte, and the run is the usual `Write error:` refusal (R-014).
 
 The log's write line names the temporary file for both writes, and a failed write adds the
 removal at Debug, or a Warn line when the removal fails. The random part of the name differs from
-run to run, so the three tests that compare two runs' lines (R-023's figures, R-046's English and
-Romanian logs, R-043's window and console) mask it as they mask the times. A write error raised on
-the temporary file names it in its message (a missing folder: `Could not find a part of the path
-'...\out.fit.copywcs-3f9a0c1e.tmp'`). Only a killed process leaves a temporary file behind. The
-rest of CR-018 (the replaced file's times, attributes and permissions, a destination that is a
-link, no flush before the rename) is not changed. Guarded by `WcsCopyTests`' `R014_` and `R012_`
-tests (a byte-range lock fails a write midway, a read-only destination fails the rename) and
+run to run, so the two tests that compare two runs' log lines (R-046's English and Romanian logs,
+R-043's window and console) mask it as they mask the times; R-023's figures, on screen, need no
+mask, since the screen never shows that name. A rename the system refuses (a read-only target)
+says `Access to the path is denied.` with no path, as the in-place write's always did; for `-o`
+onto a read-only file, `File.Create` used to name it. A temporary file stays behind only when the
+process is killed, or when its removal fails too (the drive that holds it gone), and the log's
+Warn line names it then.
+
+A new file that replaces an existing one is now a new file renamed over it, as the in-place
+write was, so the rest of CR-018 reaches `-o` too: the replaced file's creation time, attributes
+and permissions are not kept, its other hard-linked names keep the old file, a symbolic link is
+replaced by a plain file, and nothing is flushed before the rename. The replace also needs room
+for both files, a folder where the user may change the file but not create one refuses it, and
+a name longer than 234 characters no longer fits NTFS's 255 once the 21-character suffix is
+added (251 for the in-place write's `.tmp` before). CR-018 stays open for those. Guarded by
+`WcsCopyTests`' `R014_` and `R012_` tests (a byte-range lock fails a write midway, a read-only
+destination fails the rename, a missing folder's line names the new file),
+`WorkingFolderTests` (the working folder moved during the write) and
 `LoggingTests.R042_AFailedWriteRemovesItsTemporaryFileAndSaysSo`.

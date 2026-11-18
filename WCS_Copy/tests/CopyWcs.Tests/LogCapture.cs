@@ -43,6 +43,12 @@ internal sealed class LogCapture : IDisposable
     /// <summary>The events seen, in the order they were written.</summary>
     private readonly ConcurrentQueue<Captured> _events = new();
 
+    /// <summary>The prefix of the message <see cref="_atAction"/> waits for.</summary>
+    private string _atPrefix = "";
+
+    /// <summary>The action to run at the first message that starts with <see cref="_atPrefix"/>, or null.</summary>
+    private Action? _atAction;
+
     /// <summary>One event as the test sees it.</summary>
     /// <param name="Level">Its level.</param>
     /// <param name="Logger">The logger's name.</param>
@@ -82,6 +88,32 @@ internal sealed class LogCapture : IDisposable
     /// <summary>Closes the capture; the events stay readable.</summary>
     public void Dispose() => Current.Value = null;
 
+    /// <summary>
+    /// Runs an action once, at the first event of this capture whose message starts with a
+    /// prefix, on the thread that logs it and before the code that logged it goes on: a test's
+    /// way to act at a moment inside a run, such as moving the working folder as a write begins.
+    /// NLog swallows what the action throws, so it should be one that cannot fail.
+    /// </summary>
+    /// <param name="prefix">The start of the message to wait for, compared ordinally.</param>
+    /// <param name="action">What to do then.</param>
+    internal void At(string prefix, Action action)
+    {
+        _atPrefix = prefix;
+        _atAction = action;
+    }
+
+    /// <summary>Keeps an event, then runs the action <see cref="At"/> set when its message is the one waited for.</summary>
+    /// <param name="captured">The event.</param>
+    private void Keep(Captured captured)
+    {
+        _events.Enqueue(captured);
+        if (_atAction is { } action && captured.Message.StartsWith(_atPrefix, StringComparison.Ordinal))
+        {
+            _atAction = null;
+            action();
+        }
+    }
+
     /// <summary>The events seen so far.</summary>
     internal IReadOnlyList<Captured> Events => _events.ToArray();
 
@@ -105,7 +137,7 @@ internal sealed class LogCapture : IDisposable
         protected override void Write(LogEventInfo logEvent)
         {
             string line = RenderLogEvent(Layout, logEvent);
-            Current.Value?._events.Enqueue(new Captured(logEvent.Level, logEvent.LoggerName ?? "", logEvent.FormattedMessage ?? "", line, logEvent.Exception));
+            Current.Value?.Keep(new Captured(logEvent.Level, logEvent.LoggerName ?? "", logEvent.FormattedMessage ?? "", line, logEvent.Exception));
         }
     }
 }

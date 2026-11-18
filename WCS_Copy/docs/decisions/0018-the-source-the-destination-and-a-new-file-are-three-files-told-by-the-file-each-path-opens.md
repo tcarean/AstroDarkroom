@@ -34,14 +34,23 @@ destination is refused under every spelling, the destination's own included.
   the other name holding the old file.
 - **Check in the applications.** The window and the console reach the same run, and the window
   computes nothing (ADR 0007).
+- **The 128-bit file id of `GetFileInformationByHandleEx` (`FILE_ID_INFO`).** Microsoft documents
+  the 64-bit file index as not guaranteed unique on ReFS, whose 128-bit id is the one to compare
+  there. No drive here is ReFS (C:, D: and E: are NTFS, looked up on 2026-11-18) and Windows 10
+  Home cannot create one, so the call could not be tested on the file system it is for, and a
+  wrong answer there only refuses. The owner's answer of 2026-11-18, after the review of the
+  branch: record the limit and keep the call.
 
 ## Consequences
 
 The core makes its one call into Windows, `GetFileInformationByHandle`, a `LibraryImport` that
 needs `AllowUnsafeBlocks` in `CopyWcs.Core.csproj`, as `DarkTitleBar` does in the window. Where
 the call cannot tell (off Windows, a failure, a file system that gives the index 0), the full
-paths are compared. A path that cannot be opened is never the same file as another, so a
+paths are compared. The file index is exact on NTFS; on ReFS two files may give the same one,
+and the copy is then refused as `the same file`, writing nothing. A path that cannot be opened
+is never the same file as another, so a
 missing new file is written and an unreadable source is still R-004's refusal. A run that used
 the destination as its source, as one window test did for a source without keys, is now this
-refusal. Guarded by the `R019_` tests in `WcsCopyTests`, `CopyWcsCliTests` and
+refusal. Guarded by the `R019_` tests in `WcsCopyTests` (one of them with a destination of
+another size too, so the check stays before the pixel grid's), `CopyWcsCliTests` and
 `MainViewModelTests`, `FileIdentityTests`, R-023's three scenarios and R-042's done lines.

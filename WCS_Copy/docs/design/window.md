@@ -53,12 +53,16 @@ replaces), the manual (`ShowHelp`, behind
 `HasError` and `HasWarnings`, `Manual.Url`, the log line, then `OpenAddress`, which is
 `ExternalLink.Open` unless a test replaced it), `Start(source, dest)`, which `App` calls
 with the files from the command line, and a close during a run (R-050, ADR 0019): `OnClosing`
-cancels a close while the view-model's `IsRunning` is true, remembers it and logs it once, and
+cancels a close while the view-model's `IsRunning` is true, remembers it, logs it once and
+turns the window's `IsEnabled` off, so that no dialog is opened under the close, and
 `CloseWhenTheRunEnds`, which follows the view-model's `PropertyChanged` from the constructor on,
 logs and calls `Close()` when `IsRunning` turns false with a close remembered, so the run ends
 whole, its done line logged, before the window and the process go. Every close goes through
 `OnClosing` (the X, Alt+F4, the taskbar, a never-shown window's `Close()` in the tests); a
-session's end makes WPF ignore the cancel, so a logoff is not held. The handlers of
+session's end makes WPF ignore the cancel, so a logoff is not held. `OnClosed` ends the window's
+watch of the view-model, so that a run ending after the window has gone closes nothing, and logs
+at Warn a close that came while a run was still in flight, which only Windows' forced close
+reaches. The handlers of
 `Preview` and `Copy` call the view-model and nothing else.
 
 ## One view-model, three things
@@ -201,8 +205,10 @@ close held during a run writes its two lines around the run's done line, and
 that two writers through the window's build of `NLog.Targets.AtomicFile` keep every line
 (R-045); `WindowCloseTests` put a run that waits for the test in `RunCore`, close a window
 that was never shown over a Preview and over a Copy into a new file (twice for the copy), and
-check that it stays open until the run is released, closes once, and leaves the console's
-bytes (R-050); `AppTests` cover
+check that it stays open, greyed, until the run is released, closes once, and leaves the
+console's bytes, and close one as WPF does at a session's end (`Window.InternalClose(true,
+true)`, reached by reflection), which closes it at once and logs the run cut short (R-050);
+`AppTests` cover
 `Parse`, `--lang` and the files from the arguments; `IconTests` tie the sizes of the `.ico`,
 the script's `SIZES` line and the two `ApplicationIcon` paths together. The tests that run the
 core await `Preview()` or `Copy()`; the smoke tests that do so run through

@@ -103,7 +103,10 @@ destination is not touched. Either way the file is first written whole under a t
 beside it (`result_final_stretched_wcs.fit.copywcs-3f9a0c1e.tmp`) and only then put in place of
 the file it replaces. A write that fails, for a missing folder, a full disk or a drive that
 drops, leaves the folder as it was: the destination and any file of the new file's name keep
-every byte, and the temporary file is removed.
+every byte, and the temporary file is removed, unless its drive is gone by then (the log then
+names it). The error names your file, not the temporary one. A file put in place this way is a
+new file: the one it replaces does not keep its creation date, its attributes (Hidden, for one)
+or its own permissions, and a symbolic link is replaced by the file itself.
 
 ## The window
 
@@ -128,9 +131,11 @@ result is a refusal or a warning. **About** opens the version, the copyright, th
 notice and the third-party components. The window is Windows-only; the console builds
 anywhere.
 
-Closing the window while a Preview or a Copy runs does not cut it short: the window stays until
-the copy is done, a second or so for a stack of a few hundred MB, then closes by itself, and the
-file is written whole.
+Closing the window while a Preview or a Copy runs does not cut it short: the window greys and
+takes no more clicks until the copy is done, a second or so for a stack of a few hundred MB, then
+closes by itself. The file is written whole, or not at all when the write fails, and the log
+says which. Logging off or shutting Windows down does cut the copy short: the file it would have
+replaced keeps every byte, and a temporary file may stay beside it.
 
 ## The two languages
 

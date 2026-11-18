@@ -37,6 +37,12 @@ internal sealed class FitsHeader
     /// <summary>The keyword of the cards that carry on a long string value from the card above them (R-010).</summary>
     private const string ContinueKeyword = "CONTINUE";
 
+    /// <summary>The key under which a failed write keeps its temporary file's full path in the exception's <see cref="Exception.Data"/> (R-014).</summary>
+    private const string TemporaryKey = "CopyWcs.TemporaryFile";
+
+    /// <summary>The key under which a failed write keeps its target's full path in the exception's <see cref="Exception.Data"/> (R-014).</summary>
+    private const string TargetKey = "CopyWcs.Target";
+
     /// <summary>
     /// The encoding of the cards: each byte 0x00 to 0xFF is the character of that code, and
     /// each such character is written back as the same byte, so no byte of a header is changed
@@ -460,20 +466,27 @@ internal sealed class FitsHeader
     /// file has a name of its own (<see cref="TemporaryBeside"/>) and is created only when no
     /// file holds that name, so no file of the user's is overwritten; an in-place write goes the
     /// same way, since the header may have grown past its original blocks and cannot be patched
-    /// in place. Each card's characters are written as the bytes they were read from
+    /// in place. Both paths are made whole once, as the write begins, so a working folder that
+    /// moves while the data streams (a file dialog of the window) changes neither the data read
+    /// nor the file replaced (R-012). An exception goes on as the system raised it, holding the
+    /// temporary file's path and the target's, so that <see cref="WriteErrorMessage"/> names the
+    /// target where its message names the temporary file, whose name the user never typed (R-014).
+    /// Each card's characters are written as the bytes they were read from
     /// (<see cref="CardEncoding"/>). The diagnostic log gets the write before it starts, with its
     /// temporary file (at Trace every card to be written, so a failed write still shows the
     /// header it meant to write), the file written after it, and the removal of a failed write's
     /// temporary file (R-042, R-044); a write that throws is its caller's to log.
     /// </summary>
-    /// <param name="dataSource">The FITS file whose data area, from its own header's end, is copied; normally the file this header was read from.</param>
-    /// <param name="target">The file to write: a new file, an existing one, replaced only at the end, or the same path as <paramref name="dataSource"/> for an in-place rewrite.</param>
-    /// <exception cref="IOException">The target or its temporary file cannot be created, written or renamed (a missing folder, a full disk, a data source that cannot be read).</exception>
-    /// <exception cref="UnauthorizedAccessException">The target cannot be replaced by this user (read-only, a folder, no access).</exception>
+    /// <param name="dataSource">The FITS file whose data area, from its own header's end, is copied; normally the file this header was read from. A relative path is taken from the working folder as the write begins.</param>
+    /// <param name="target">The file to write: a new file, an existing one, replaced only at the end, or the same path as <paramref name="dataSource"/> for an in-place rewrite. A relative path is taken from the working folder as the write begins.</param>
+    /// <exception cref="IOException">The target or its temporary file cannot be created, written or renamed (a missing folder, a full disk, a data source that cannot be read); its message is shown through <see cref="WriteErrorMessage"/>.</exception>
+    /// <exception cref="UnauthorizedAccessException">The target cannot be replaced by this user (read-only, a folder, no access); its message is shown the same way.</exception>
     /// <exception cref="ArgumentException">A path is empty or blank.</exception>
     public void WriteWithDataFrom(string dataSource, string target)
     {
-        string temp = TemporaryBeside(target);
+        string data = Path.GetFullPath(dataSource);
+        string full = Path.GetFullPath(target);
+        string temp = TemporaryBeside(full);
 
         Log.Debug("write " + target + " through " + temp + ", the data from byte " + LogText.Int(_dataOffset)
                   + " of " + dataSource);
@@ -486,7 +499,7 @@ internal sealed class FitsHeader
         try
         {
             // The input first: a data source that cannot be read leaves no temporary file.
-            using (var input = File.OpenRead(dataSource))
+            using (var input = File.OpenRead(data))
             using (var output = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
                 created = true;
@@ -512,8 +525,17 @@ internal sealed class FitsHeader
                 total = output.Position;
             }
 
-            File.Move(temp, target, overwrite: true);
+            File.Move(temp, full, overwrite: true);
             moved = true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // The user typed the target, not its temporary file: the message they are shown names
+            // the target (WriteErrorMessage, R-014); the exception itself goes on as the system
+            // raised it, and the log writes it so.
+            ex.Data[TemporaryKey] = temp;
+            ex.Data[TargetKey] = full;
+            throw;
         }
         finally
         {
@@ -534,12 +556,10 @@ internal sealed class FitsHeader
     /// hexadecimal digits and <c>.tmp</c> (<c>stack.fit.copywcs-3f9a0c1e.tmp</c>), a name that
     /// tells which program left it should a killed process leave one.
     /// </summary>
-    /// <param name="target">The file to write, as given; a relative path is taken from the working folder.</param>
+    /// <param name="full">The full path of the file to write.</param>
     /// <returns>The temporary file's full path; the write creates it only when no file holds it.</returns>
-    /// <exception cref="ArgumentException">The path is empty.</exception>
-    private static string TemporaryBeside(string target)
+    private static string TemporaryBeside(string full)
     {
-        string full = Path.GetFullPath(target);
         string folder = Path.GetDirectoryName(full) ?? full;
         return Path.Combine(folder, Path.GetFileName(full) + ".copywcs-" + Guid.NewGuid().ToString("N")[..8] + ".tmp");
     }
@@ -560,5 +580,21 @@ internal sealed class FitsHeader
         {
             Log.Warn(ex, "the temporary file " + temp + " of the failed write could not be removed");
         }
+    }
+
+    /// <summary>
+    /// The message of an exception, as the user is shown it after a failed write: where the
+    /// system's message names the write's temporary file, it names the target instead
+    /// (<c>Could not find a part of the path 'E:\out\final_wcs.fit'.</c>), the file the user asked
+    /// for (R-014). A rename the system refused names no path at all, and stays so.
+    /// </summary>
+    /// <param name="ex">The exception <see cref="WriteWithDataFrom"/> threw, or any other; not null.</param>
+    /// <returns>The message, the temporary file's path replaced by the target's; any other exception's message as it is.</returns>
+    internal static string WriteErrorMessage(Exception ex)
+    {
+        ArgumentNullException.ThrowIfNull(ex);
+        return ex.Data[TemporaryKey] is string temp && ex.Data[TargetKey] is string full
+            ? ex.Message.Replace(temp, full, StringComparison.Ordinal)
+            : ex.Message;
     }
 }

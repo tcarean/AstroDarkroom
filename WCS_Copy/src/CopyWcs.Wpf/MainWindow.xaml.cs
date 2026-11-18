@@ -78,8 +78,10 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Holds a close asked while a Preview or a Copy is in flight (R-050): the run goes on to its
-    /// end, its file whole and its lines in the log, and the window closes then; a close with no
-    /// run closes at once. A close Windows itself forces (a logoff) is not held.
+    /// end, its file whole and its lines in the log, and the window closes then, taking no more
+    /// input meanwhile, so no dialog opened after the close is open under it when it closes; a
+    /// close with no run closes at once. A close Windows itself forces (a logoff) is not held:
+    /// WPF ignores the cancel then, and <see cref="OnClosed"/> logs that the run was cut short.
     /// </summary>
     /// <param name="e">The close; cancelled while a run is in flight.</param>
     protected override void OnClosing(CancelEventArgs e)
@@ -91,6 +93,7 @@ public partial class MainWindow : Window
             if (!_closeWhenTheRunEnds)
             {
                 _closeWhenTheRunEnds = true;
+                IsEnabled = false;
                 Log.Info("close asked while a run is in flight: the window closes when it ends");
             }
 
@@ -98,6 +101,25 @@ public partial class MainWindow : Window
         }
 
         base.OnClosing(e);
+    }
+
+    /// <summary>
+    /// Stops following the view-model once the window is closed, so a run that ends later closes
+    /// nothing, and logs a close that came while a run was still in flight: one Windows forced as
+    /// the session ended (a logoff, a shutdown), since every other close is held (R-050). The run
+    /// is cut short with the process; its target is left as it was (R-014).
+    /// </summary>
+    /// <param name="e">The event's arguments; passed on.</param>
+    protected override void OnClosed(EventArgs e)
+    {
+        _vm.PropertyChanged -= CloseWhenTheRunEnds;
+        _closeWhenTheRunEnds = false;
+        if (_vm.IsRunning)
+        {
+            Log.Warn("the window closed while a run is in flight: Windows ended the session, the run is cut short");
+        }
+
+        base.OnClosed(e);
     }
 
     /// <summary>Closes the window once the run ends, when a close was held during it (R-050).</summary>

@@ -88,9 +88,13 @@ runtime's Unicode data moves, that test says so, and the table is generated agai
 
 `WriteWithDataFrom(dataSource, target)` writes the cards, `END`, spaces to the next 2880-byte
 boundary, then copies `dataSource` from `_dataOffset` to its end, always into a temporary file
-beside the target, which `File.Move(temp, target, overwrite: true)` renames over the target at
+beside the target, which `File.Move(temp, full, overwrite: true)` renames over the target at
 the end (R-012, R-013): an existing target, the destination of an in-place write included, is
-replaced only once the whole file is written. The header may have grown past its original
+replaced only once the whole file is written. Both paths are made whole (`Path.GetFullPath`)
+once, as the write begins, and the temporary file, the data read and the rename all use those,
+so a working folder that moves during the write (a file dialog of the window, CR-006) changes
+neither file; the review of the branch found the target looked up again at the rename, which
+`WorkingFolderTests` shows by moving the working folder at the write's first log line. The header may have grown past its original
 number of blocks (a copy adds up to 47 fixed keys, the SIP coefficients and a HISTORY card; 72
 on V-001), so an in-place write could not patch the destination anyway. `TemporaryBeside` names
 the temporary file after the target, `<name>.copywcs-<8 random hex digits>.tmp`, in the target's
@@ -101,8 +105,13 @@ A `finally` deletes the temporary file when the write created it and the rename 
 whatever failed (a missing folder, a full disk, a data source that stops being readable midway,
 a target that cannot be replaced): the target is as it was, or absent, and nothing is left
 beside it (R-014, ADR 0020). `DeleteTemporary` logs the removal, and a removal that fails is a
-Warn line, so it never hides the write's own exception. Only a killed process leaves a
-temporary file, named so that it tells which program wrote it. `R014_Run_AWriteThatFailsMidway_...`
+Warn line, so it never hides the write's own exception. Only a killed process, or a removal
+that fails too (the drive gone), leaves a temporary file, named so that it tells which program
+wrote it. An exception goes on as the system raised it, the temporary file's path and the
+target's put in its `Data` (`TemporaryKey`, `TargetKey`), and `WriteErrorMessage` gives its
+message with the target where it named the temporary file, which `WcsCopy.Run` puts after
+`Write error:`, so the user reads the name they gave (R-014); a rename the system refuses names
+no path. `R014_Run_AWriteThatFailsMidway_...`
 make a write fail after its header and first 80 KB by holding a byte-range lock in the middle
 of the destination's data, which Windows enforces on every other handle; a read-only
 destination makes the in-place rename fail. The data area is copied as bytes: `BITPIX`,
@@ -110,7 +119,7 @@ destination makes the in-place rename fail. The data area is copied as bytes: `B
 
 The cards are decoded and encoded with `Encoding.Latin1` (`CardEncoding`): each byte 0x00 to
 0xFF is the character of that code and is written back as the same byte, so a byte above 0x7F,
-which a FITS header may not hold but a file may, goes through the read, the `SetCard` and the
+which a FITS header may not hold but a file may, goes through the read, the `SetValueCards` and the
 write untouched, in a copied card and in a card of the destination the copy never selected
 alike (R-010, ADR 0010; until 2026-10-31 the cards went through `Encoding.ASCII`, which made
 such a byte `?`). A header that is all ASCII is unchanged by the switch: the Release console's
@@ -152,7 +161,7 @@ shows what this yields on a real Siril header: 61 WCS and SIP keys, 11 optical o
 that is in `WcsKeys` or matches `SipCoefficient` and that the source does not have, each once
 (R-016). It is the same two lists that decide what a plate solve is, read from the other side, so
 no card of those keys is left in the target but the source's, save a second card of a keyword the
-source has, which `SetCard` does not reach; a plate-solve card outside both lists (`RADECSYS`,
+source has, which `SetValueCards` does not reach; a plate-solve card outside both lists (`RADECSYS`,
 `PVi_m`, `CTYPE1A`) is neither copied nor dropped. `OpticalKeys` never take part, so a
 destination's own `OBJECT` or `SITELAT` stays when the source lacks it. The selector itself does
 not look at `CTYPE1`: the run asks for it only when the source has one (ADR 0011). V-002 shows it

@@ -39,7 +39,8 @@ run return the cards, the heading and the drop line (R-009); else remove the dro
 and the destination's `CHECKSUM`, which the changed header would no longer match, whatever the
 source holds (R-018, ADR 0021; `DATASUM` stays, the data being untouched, and no line says it),
 set each selected key's value cards verbatim (`SetValueCards`, a long string whole, R-010), append the HISTORY card, write through the header engine (a
-write failure is a refusal, R-014) and return the count, the reminder and the drop line (R-012); the heading's count and the closing line's count are of keys, not of cards.
+write failure is a refusal, R-014, its message through `FitsHeader.WriteErrorMessage`, which
+names the target where the system named the temporary file) and return the count, the reminder and the drop line (R-012); the heading's count and the closing line's count are of keys, not of cards.
 The keys dropped and the keys set never overlap: a dropped key is one the source lacks. A
 refusal drops nothing and carries no drop line, the write error's included, since the header in
 memory is thrown away. The warnings raised before a refusal stay in the outcome, so the console
@@ -56,7 +57,10 @@ into an array, so no struct is declared): another letter case, a `..`, a `\\?\` 
 file. A path that cannot be opened (missing, a folder, empty) is never the same as another: it
 is no file the run could overwrite, and its read or its write says why it fails. Off Windows,
 when the call fails, or when the file system gives the index 0, which would make all its files
-one, the two full paths are compared, letter case ignored on Windows. `FileIdentityTests` checks
+one, the two full paths are compared, letter case ignored on Windows. The file index is exact on
+NTFS; Microsoft documents the 64-bit index as not guaranteed unique on ReFS, where two files
+could be taken for one and the run refused, writing nothing (ADR 0018: no ReFS drive here to try
+the 128-bit id of `GetFileInformationByHandleEx` on). `FileIdentityTests` checks
 the spellings, two files, a missing file, an empty path, a folder and a file held open elsewhere.
 
 ## The console (`CopyWcsCli`, `Options`, `Program`)

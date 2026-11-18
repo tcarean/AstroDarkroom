@@ -15,6 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Reflection;
+using System.Windows;
+using CopyWcs.Tests;
+using NLog;
+
 namespace CopyWcs.Wpf.Tests;
 
 /// <summary>
@@ -102,6 +107,90 @@ public class WindowCloseTests
 
             Assert.Equal(1, closed);
         });
+
+    /// <summary>
+    /// Once a close is held the window takes no more input until it closes, so no dialog opened
+    /// after the close is still open when the run ends and the window closes over it (R-050; the
+    /// review of 2026-11-18: About and the three Browse buttons stayed live).
+    /// </summary>
+    [Fact]
+    public Task R050_ACloseHeldDuringARun_TakesNoMoreInputUntilTheWindowCloses()
+        => _sta.InvokeAsync(async () =>
+        {
+            using WindowFixture f = new();
+            using ManualResetEventSlim release = new();
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, RunCore = HeldRun(release) };
+            MainWindow w = new(vm);
+            int closed = 0;
+            w.Closed += (_, _) => closed++;
+
+            Task preview = vm.Preview();
+            try
+            {
+                Assert.True(w.IsEnabled);
+                w.Close();
+                Assert.False(w.IsEnabled);
+                Assert.Equal(0, closed);
+            }
+            finally
+            {
+                release.Set();
+                await preview;
+            }
+
+            Assert.Equal(1, closed);
+        });
+
+    /// <summary>
+    /// Windows ending the session during a run closes the window at once, as WPF closes every
+    /// window then, with the cancel ignored; the log says the run was cut short, after the line of
+    /// the close it could not hold, and the run's end later closes nothing more (R-050; the review
+    /// of 2026-11-18: the log said the window would close when the run ended).
+    /// </summary>
+    [Fact]
+    public Task R050_WindowsEndingTheSessionDuringARun_ClosesTheWindow_AndTheLogSaysTheRunIsCutShort()
+        => _sta.InvokeAsync(async () =>
+        {
+            using WindowFixture f = new();
+            using ManualResetEventSlim release = new();
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, RunCore = HeldRun(release) };
+            MainWindow w = new(vm);
+            int closed = 0;
+            w.Closed += (_, _) => closed++;
+            using LogCapture capture = LogCapture.Start();
+
+            Task preview = vm.Preview();
+            try
+            {
+                CloseAsAtTheSessionsEnd(w);
+                Assert.Equal(1, closed);
+            }
+            finally
+            {
+                release.Set();
+                await preview;
+            }
+
+            Assert.Equal(1, closed);
+            LogCapture.Captured[] lines = capture.Events.Where(e => e.Logger == "Window").ToArray();
+            Assert.Equal(2, lines.Length);
+            Assert.Equal("close asked while a run is in flight: the window closes when it ends", lines[0].Message);
+            Assert.Equal("the window closed while a run is in flight: Windows ended the session, the run is cut short", lines[1].Message);
+            Assert.Equal(LogLevel.Warn, lines[1].Level);
+        });
+
+    /// <summary>
+    /// Closes a window as WPF does when Windows ends the session: <c>Application.Shutdown</c> closes
+    /// every window through <c>Window.InternalClose(shutdown: true, ignoreCancel: true)</c>, which no
+    /// handler can cancel. Reached by reflection, since the tests' one Application serves every
+    /// window test and cannot be shut down.
+    /// </summary>
+    private static void CloseAsAtTheSessionsEnd(Window w)
+    {
+        MethodInfo close = typeof(Window).GetMethod("InternalClose", BindingFlags.Instance | BindingFlags.NonPublic, [typeof(bool), typeof(bool)])
+            ?? throw new InvalidOperationException("WPF's Window.InternalClose(bool, bool) was not found");
+        close.Invoke(w, [true, true]);
+    }
 
     /// <summary>With no run in flight the window closes at once.</summary>
     [Fact]

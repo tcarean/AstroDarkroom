@@ -42,7 +42,9 @@ internal static partial class FileIdentity
     /// system gives both the same volume serial number and file index, so another letter case, a
     /// <c>..</c>, a <c>\\?\</c> prefix, a short 8.3 name or a link names the file it leads to;
     /// elsewhere, or when the system gives no index, the two full paths are compared, letter case
-    /// ignored on Windows.
+    /// ignored on Windows. The index is exact on NTFS; on ReFS Microsoft documents the 64-bit
+    /// index as not guaranteed unique, so two files there may be taken for one, which only
+    /// refuses a run (ADR 0018).
     /// </summary>
     /// <param name="a">A path as given: relative, missing, empty or a folder are all allowed.</param>
     /// <param name="b">Another path, taken the same way.</param>

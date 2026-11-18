@@ -73,8 +73,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   given as the destination, which was copied into itself. The files themselves are compared, not
   how their paths are written (R-019, ADR 0018; CR-001, CR-013 and CR-014 of the review of
   2026-11-16).
-- Closing the window during a Preview or a Copy waits for it to end, then the window closes by
-  itself; the close used to end the program inside the write, leaving a new file cut short and a
+- Closing the window during a Preview or a Copy waits for it to end, the window greyed meanwhile,
+  then the window closes by itself; the close used to end the program inside the write, leaving a new file cut short and a
   log without the copy's last lines (R-050, ADR 0019; CR-002 of the review of 2026-11-16).
 - A write that fails midway, a full disk or a drive that drops, no longer leaves a file cut
   short: a new file is written under a temporary name beside it and renamed at the end, as an

@@ -186,6 +186,34 @@ public class WcsCopyTests
         Assert.False(File.Exists(output));
     }
 
+    /// <summary>
+    /// A write that fails names the file asked for, never its temporary file, whose name the user
+    /// never typed: a new file in a folder that does not exist reads as it did before every write
+    /// went through a temporary file, and the log keeps the system's own message under it (R-014;
+    /// the review of 2026-11-18: the line named <c>out.fit.copywcs-3f9a0c1e.tmp</c>).
+    /// </summary>
+    [Fact]
+    public void R014_Run_AWriteThatFails_NamesTheNewFile_NotItsTemporaryFile()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+        var output = Path.Combine(ws.FilePath("no-such-folder"), "out.fit");
+        using var log = LogCapture.Start();
+
+        WcsCopyOutcome outcome;
+        using (Ui.Use(UiLanguage.English))
+        {
+            outcome = WcsCopy.Run(Request(source, dest, output));
+        }
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.StartsWith("Write error: ", outcome.Error, StringComparison.Ordinal);
+        Assert.Contains($"'{output}'", outcome.Error, StringComparison.Ordinal);
+        Assert.DoesNotContain(".copywcs-", outcome.Error, StringComparison.Ordinal);
+        Assert.Contains("out.fit.copywcs-", log.Text, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R016_Run_Copy_DropsTheDestinationsOldPlateSolveCards_AndNamesThem()
     {
@@ -668,6 +696,26 @@ public class WcsCopyTests
 
         Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
         Assert.True(File.Exists(ws.FilePath("source_wcs.fit")));
+    }
+
+    /// <summary>
+    /// The paths are told apart before the pixel grids are compared (R-019): a new file that is the
+    /// source is refused with its own line though the destination's size differs too, so the one
+    /// refusal --force cannot let through comes first.
+    /// </summary>
+    [Fact]
+    public void R019_Run_ANewFileThatIsTheSource_IsRefusedBeforeTheDimensionsAreCompared()
+    {
+        using var ws = new TempWorkspace();
+        var sourceBytes = FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(100, 80));
+        var source = ws.WriteFile("source.fit", sourceBytes);
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(200, 80)));
+
+        var outcome = WcsCopy.Run(Request(source, dest, source));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.StartsWith($"Fisierul nou '{source}' este chiar sursa", outcome.Error, StringComparison.Ordinal);
+        Assert.Equal(sourceBytes, File.ReadAllBytes(source));
     }
 
     /// <summary>The data area of the destinations the midway failures use: larger than the 80 KB a copy streams at a time.</summary>

@@ -449,7 +449,7 @@ write through a temporary file.
 - **Direction:** `File.Replace` keeps the times, the attributes and the permissions; a
   temporary name that cannot collide.
 - **Evidence:** confirmed; the links are for the task to run.
-- **Note (2026-11-18):** still open, but its temporary file changed with CR-003's fix (f7d27425, ADR 0020): it is `<name>.copywcs-<8 hex digits>.tmp`, created only when no file holds that name, so a `dest.fit.tmp` of the owner's is left alone and two runs on one destination no longer share a file. The rest stands: the replaced file's times, attributes and permissions, a destination that is a link, no flush before the rename.
+- **Note (2026-11-18):** still open, but its temporary file changed with CR-003's fix (f7d27425, ADR 0020): it is `<name>.copywcs-<8 hex digits>.tmp`, created only when no file holds that name, so a `dest.fit.tmp` of the owner's is left alone and two runs on one destination no longer share a file. The rest stands: the replaced file's times, attributes and permissions, a destination that is a link, no flush before the rename. With the same fix a new file (`-o`) that replaces an existing one goes the same way, a rename over it, so all of these reach it too, with three more for both writes: the replace needs room for both files, a folder where the user may change the file but not create one refuses it, and a name longer than 234 characters no longer fits NTFS's 255 with the 21-character suffix (the review of the branch, 2026-11-18; ADR 0020).
 
 ### CR-019 `WCSAXES` can be written after the WCS cards it must precede
 

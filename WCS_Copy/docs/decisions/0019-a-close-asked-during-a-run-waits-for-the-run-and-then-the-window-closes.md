@@ -19,8 +19,15 @@ until the run ends and then close the window, with no new text.
 
 `MainWindow.OnClosing` cancels a close while the view-model's `IsRunning` is true, remembers it
 and logs it once; when `IsRunning` turns false the window logs and closes itself, without showing
-the outcome (R-050). A second close meanwhile adds nothing. A close Windows forces at a logoff or
-a shutdown is not held: WPF ignores the cancel then.
+the outcome (R-050). A second close meanwhile adds nothing. From the held close until the window
+closes it takes no more input (`IsEnabled` false, its controls greyed), so no dialog is opened
+under the close: the review of the branch found About and the three Browse buttons live then,
+and the run's end would have closed the window under their dialog; the owner's answer of
+2026-11-18. A close Windows forces at a logoff or a shutdown is not held: WPF ignores the cancel
+then, after the held line is written. `OnClosed`, reached while a run is in flight only by such a
+close, adds a Warn line saying the run is cut short, so the log does not say the window waits
+for a run the process ends with (the owner's answer of 2026-11-18), and stops following the
+view-model, so a run that ends later closes nothing.
 
 ## Alternatives rejected
 
@@ -35,7 +42,9 @@ a shutdown is not held: WPF ignores the cancel then.
 
 The view-model exposes `IsRunning`, raised as a run starts and after its outcome is shown, and
 `RunCore`, the run its commands call, which `WindowCloseTests` replace with one that waits for
-the test so that a run can be held in flight. While a close is held nothing on screen changes
-(CR-009, the outcome card during a run, is still open). A run that hangs keeps the window open
-until the system gives up on the file. Guarded by `WindowCloseTests` (R-050) and
-`WindowLoggingTests`' close lines (R-043).
+the test so that a run can be held in flight. While a close is held the window is greyed and
+nothing else on screen changes (CR-009, the outcome card during a run, is still open). A run that
+hangs keeps the window open until the system gives up on the file. Windows' forced close is
+tested through WPF's own `Window.InternalClose(shutdown: true, ignoreCancel: true)`, reached by
+reflection, since the tests' one Application serves every window test and cannot be shut down.
+Guarded by `WindowCloseTests` (R-050) and `WindowLoggingTests`' close lines (R-043).
