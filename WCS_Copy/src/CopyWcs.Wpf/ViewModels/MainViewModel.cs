@@ -154,6 +154,15 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>True when a preview can run and, for a new file, its path is set (R-030).</summary>
     public bool CanCopy => CanPreview && (_writeInPlace || !string.IsNullOrWhiteSpace(_output));
 
+    /// <summary>True while a Preview or a Copy runs; the window holds a close until it is false again (R-050).</summary>
+    public bool IsRunning => _running;
+
+    /// <summary>
+    /// The copy run the two commands call, off the window's thread: <see cref="WcsCopy.Run"/>,
+    /// which a test replaces to hold a run in flight (R-050).
+    /// </summary>
+    internal Func<WcsCopyRequest, WcsCopyOutcome> RunCore { get; set; } = WcsCopy.Run;
+
     /// <summary>True once a preview or a copy has run; the outcome card is shown then.</summary>
     public bool HasOutcome => _outcome is not null;
 
@@ -214,23 +223,27 @@ public sealed class MainViewModel : ObservableObject
     /// Runs the core on a thread-pool thread, the commands off meanwhile (R-030): an in-place
     /// copy streams the whole data area through a temp file, seconds on a large stack, and the
     /// window must stay live. The request is built here, on the caller's thread, and the
-    /// outcome is shown back on it.
+    /// outcome is shown back on it; <see cref="IsRunning"/> is raised as the run starts and
+    /// after its outcome is shown (R-050).
     /// </summary>
     /// <param name="dryRun">True to list the cards and write nothing.</param>
     /// <returns>Completes once the outcome is shown.</returns>
     private async Task RunAsync(bool dryRun)
     {
         WcsCopyRequest request = Request(dryRun);
+        Func<WcsCopyRequest, WcsCopyOutcome> run = RunCore;
         _running = true;
         RaiseCanRun();
+        Raise(nameof(IsRunning));
         try
         {
-            Show(await Task.Run(() => WcsCopy.Run(request)).ConfigureAwait(true));
+            Show(await Task.Run(() => run(request)).ConfigureAwait(true));
         }
         finally
         {
             _running = false;
             RaiseCanRun();
+            Raise(nameof(IsRunning));
         }
     }
 

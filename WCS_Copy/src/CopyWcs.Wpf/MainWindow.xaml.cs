@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Win32;
@@ -26,8 +27,8 @@ namespace CopyWcs.Wpf;
 /// <summary>
 /// The main window: the band at the top, the two files, the output choice, the options, the two
 /// commands and the core's outcome, over one <see cref="MainViewModel"/>. It owns what needs a
-/// window (the file dialogs, the About window, the manual opened by Help and F1) and computes
-/// nothing (ADR 0007, ADR 0008, ADR 0016).
+/// window (the file dialogs, the About window, the manual opened by Help and F1, a close held
+/// while a run is in flight) and computes nothing (ADR 0007, ADR 0008, ADR 0016, ADR 0019).
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -35,10 +36,13 @@ public partial class MainWindow : Window
     // in both languages.
     private const string FitsPattern = "*.fit;*.fits;*.fts";
 
-    /// <summary>The window's lines in the diagnostic log: the files picked in the dialogs, the About window, the manual opened (R-043).</summary>
+    /// <summary>The window's lines in the diagnostic log: the files picked in the dialogs, the About window, the manual opened, a close held during a run (R-043).</summary>
     private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     private readonly MainViewModel _vm;
+
+    /// <summary>True once a close was asked while a run was in flight: the window closes when the run ends (R-050).</summary>
+    private bool _closeWhenTheRunEnds;
 
     /// <summary>
     /// Opens an address in the system's browser: <see cref="ExternalLink.Open(string)"/>, which a
@@ -58,8 +62,9 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// The window over a given view-model (the tests pass their own): binds it and asks for the
-    /// dark title bar once the window has a handle.
+    /// The window over a given view-model (the tests pass their own): binds it, asks for the
+    /// dark title bar once the window has a handle, and follows the view-model's running state,
+    /// so that a close held during a run is done when the run ends (R-050).
     /// </summary>
     /// <param name="vm">The view-model the window binds; not null.</param>
     internal MainWindow(MainViewModel vm)
@@ -68,6 +73,44 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = _vm;
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+        _vm.PropertyChanged += CloseWhenTheRunEnds;
+    }
+
+    /// <summary>
+    /// Holds a close asked while a Preview or a Copy is in flight (R-050): the run goes on to its
+    /// end, its file whole and its lines in the log, and the window closes then; a close with no
+    /// run closes at once. A close Windows itself forces (a logoff) is not held.
+    /// </summary>
+    /// <param name="e">The close; cancelled while a run is in flight.</param>
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+        if (_vm.IsRunning)
+        {
+            e.Cancel = true;
+            if (!_closeWhenTheRunEnds)
+            {
+                _closeWhenTheRunEnds = true;
+                Log.Info("close asked while a run is in flight: the window closes when it ends");
+            }
+
+            return;
+        }
+
+        base.OnClosing(e);
+    }
+
+    /// <summary>Closes the window once the run ends, when a close was held during it (R-050).</summary>
+    /// <param name="sender">The view-model; not read.</param>
+    /// <param name="e">The property that changed; only <see cref="MainViewModel.IsRunning"/> is looked at.</param>
+    private void CloseWhenTheRunEnds(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_closeWhenTheRunEnds && e.PropertyName == nameof(MainViewModel.IsRunning) && !_vm.IsRunning)
+        {
+            _closeWhenTheRunEnds = false;
+            Log.Info("the run ended: the window closes");
+            Close();
+        }
     }
 
     /// <summary>Fills the boxes from the command line (R-034); a box whose file is absent stays empty.</summary>

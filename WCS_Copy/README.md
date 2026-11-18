@@ -114,6 +114,10 @@ result is a refusal or a warning. **About** opens the version, the copyright, th
 notice and the third-party components. The window is Windows-only; the console builds
 anywhere.
 
+Closing the window while a Preview or a Copy runs does not cut it short: the window stays until
+the copy is done, a second or so for a stack of a few hundred MB, then closes by itself, and the
+file is written whole.
+
 ## The two languages
 
 The texts are English unless `--lang ro` asks for Romanian (written without diacritics), in

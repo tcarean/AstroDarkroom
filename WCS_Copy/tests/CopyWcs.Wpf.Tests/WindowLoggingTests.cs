@@ -106,6 +106,37 @@ public class WindowLoggingTests
             Assert.Equal("About opened", line.Message);
         });
 
+    /// <summary>
+    /// A close held during a run is two Info lines of the window, around the run's own done line,
+    /// and a second close adds none (R-043, R-050): the log says the run ended before the window
+    /// closed, where it used to end at the process's exit line (CR-002).
+    /// </summary>
+    [Fact]
+    public Task R043_ACloseHeldDuringARunIsLoggedAroundTheRunsDoneLine()
+        => _sta.InvokeAsync(async () =>
+        {
+            using WindowFixture f = new();
+            using ManualResetEventSlim release = new();
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, RunCore = WindowCloseTests.HeldRun(release) };
+            MainWindow w = new(vm);
+            using LogCapture capture = LogCapture.Start();
+
+            Task preview = vm.Preview();
+            w.Close();
+            w.Close();
+            release.Set();
+            await preview;
+
+            LogCapture.Captured[] lines = capture.Events
+                .Where(e => e.Logger == "Window" || e.Message.StartsWith("copy done", StringComparison.Ordinal))
+                .ToArray();
+            Assert.Equal(3, lines.Length);
+            Assert.Equal("close asked while a run is in flight: the window closes when it ends", lines[0].Message);
+            Assert.StartsWith("copy done previewed 15 keys ", lines[1].Message, StringComparison.Ordinal);
+            Assert.Equal("the run ended: the window closes", lines[2].Message);
+            Assert.All([lines[0], lines[2]], l => Assert.Equal(LogLevel.Info, l.Level));
+        });
+
     [Fact]
     public void R043_TheStartLineNamesTheLanguageAndTheFilesFromTheCommandLine()
     {
