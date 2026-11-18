@@ -105,6 +105,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   truncated: 200 MB took 2.2 s and 585 MB of memory, and a file of several GB could crash the
   program; a header that never reaches its `END` card is given up after 1,000 blocks
   (R-015, ADR 0024; CR-007 of the review of 2026-11-16).
+- The window checks the file a box names away from its own thread, so typing a path on a slow
+  disk or on a share no longer freezes it: one letter of a path to a computer that does not
+  answer took 2.3 s; the line under the box comes when the check ends (R-052, ADR 0025; CR-008
+  of the review of 2026-11-16).
 
 ### Internal
 

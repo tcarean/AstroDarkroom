@@ -25,6 +25,11 @@ using static CopyWcs.Ui;
 
 namespace CopyWcs.Wpf;
 
+/// <summary>What a look at a box's file found (R-052): whether the file exists, and the fact line under the box.</summary>
+/// <param name="Exists">True when the path names an existing file.</param>
+/// <param name="Facts">The line of <see cref="MainViewModel.Facts"/>; empty for a missing file, or one whose facts cannot be read.</param>
+internal readonly record struct FileLook(bool Exists, string Facts);
+
 /// <summary>
 /// The main window's state: the band's two lines, the two files, the output choice, the two
 /// options, the facts under the boxes, and the last outcome of the core (R-030 to R-033, R-038).
@@ -43,6 +48,15 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>The destination box's path made whole when its text was set (R-051): what the facts and the run read, and the folder of a new file typed relative.</summary>
     private string _destPath = "";
+
+    /// <summary>The number of the source box's latest look: a look that ends under another number was overtaken by a newer text, and is dropped (R-052).</summary>
+    private int _sourceTurn;
+
+    /// <summary>The number of the destination box's latest look, as <see cref="_sourceTurn"/>.</summary>
+    private int _destTurn;
+
+    /// <summary>The looks at the boxes' files that may still be in flight, which <see cref="FactsRead"/> waits for; the ones ended are taken out as a new one starts.</summary>
+    private readonly List<Task> _looks = [];
 
     private bool _writeInPlace = true;
     private bool _includeOptical = true;
@@ -63,7 +77,7 @@ public sealed class MainViewModel : ObservableObject
     public string Copyright => LicenseInfo.Copyright;
 #pragma warning restore CA1822
 
-    /// <summary>The source box's text, as typed; setting it makes its path whole (R-051) and reads the facts under the box.</summary>
+    /// <summary>The source box's text, as typed; setting it makes its path whole (R-051) and starts a look at its file off the window's thread (R-052).</summary>
     public string Source
     {
         get => _source;
@@ -72,14 +86,12 @@ public sealed class MainViewModel : ObservableObject
             if (Set(ref _source, value))
             {
                 _sourcePath = Whole(Clean(value), folder: null);
-                _sourceExists = File.Exists(_sourcePath);
-                SourceFacts = _sourceExists ? Facts(_sourcePath, source: true) : "";
-                RaiseCanRun();
+                LookAt(source: true, fresh: true);
             }
         }
     }
 
-    /// <summary>The destination box's text, as typed; setting it makes its path whole (R-051) and reads the facts under the box.</summary>
+    /// <summary>The destination box's text, as typed; setting it makes its path whole (R-051) and starts a look at its file off the window's thread (R-052).</summary>
     public string Dest
     {
         get => _dest;
@@ -88,9 +100,7 @@ public sealed class MainViewModel : ObservableObject
             if (Set(ref _dest, value))
             {
                 _destPath = Whole(Clean(value), folder: null);
-                _destExists = File.Exists(_destPath);
-                DestFacts = _destExists ? Facts(_destPath, source: false) : "";
-                RaiseCanRun();
+                LookAt(source: false, fresh: true);
             }
         }
     }
@@ -172,6 +182,24 @@ public sealed class MainViewModel : ObservableObject
     /// </summary>
     internal Func<WcsCopyRequest, WcsCopyOutcome> RunCore { get; set; } = WcsCopy.Run;
 
+    /// <summary>
+    /// The look at a box's file: <see cref="Look"/>, given the whole path and true for the
+    /// source's box, which a test replaces to hold a look in flight (R-052).
+    /// </summary>
+    internal Func<string, bool, FileLook> LookCore { get; set; } = Look;
+
+    /// <summary>Completes once every look in flight at a box's file has ended and its facts are shown, or dropped for a text that changed since (R-052).</summary>
+    internal Task FactsRead
+    {
+        get
+        {
+            lock (_looks)
+            {
+                return Task.WhenAll([.. _looks]);
+            }
+        }
+    }
+
     /// <summary>True once a preview or a copy has run; the outcome card is shown then.</summary>
     public bool HasOutcome => _outcome is not null;
 
@@ -220,20 +248,22 @@ public sealed class MainViewModel : ObservableObject
     /// <returns>Completes once the outcome is shown.</returns>
     public Task Preview() => RunAsync(dryRun: true);
 
-    /// <summary>Runs the copy on the boxes, shows its outcome and reads the destination's facts again (R-032).</summary>
-    /// <returns>Completes once the outcome is shown and the facts are read.</returns>
+    /// <summary>Runs the copy on the boxes, shows its outcome and looks at the destination again (R-032, R-052).</summary>
+    /// <returns>Completes once the outcome is shown and the destination's facts are read.</returns>
     public async Task Copy()
     {
         await RunAsync(dryRun: false).ConfigureAwait(true);
-        DestFacts = Facts(_destPath, source: false);
+        LookAt(source: false, fresh: false);
+        await FactsRead.ConfigureAwait(true);
     }
 
     /// <summary>
     /// Runs the core on a thread-pool thread, the commands off meanwhile (R-030): an in-place
     /// copy streams the whole data area through a temp file, seconds on a large stack, and the
-    /// window must stay live. The request is built here, on the caller's thread, and the
-    /// outcome is shown back on it; <see cref="IsRunning"/> is raised as the run starts and
-    /// after its outcome is shown (R-050).
+    /// window must stay live. The request is built here, on the caller's thread; the run starts
+    /// once every look at the boxes' files in flight has ended (R-052), and the outcome is shown
+    /// back on the caller's thread; <see cref="IsRunning"/> is raised as the run starts and after
+    /// its outcome is shown (R-050).
     /// </summary>
     /// <param name="dryRun">True to list the cards and write nothing.</param>
     /// <returns>Completes once the outcome is shown.</returns>
@@ -246,6 +276,9 @@ public sealed class MainViewModel : ObservableObject
         Raise(nameof(IsRunning));
         try
         {
+            // A look logs the reader's read line: waiting for the looks in flight keeps the lines
+            // between the run's start and done lines the run's own (R-043).
+            await FactsRead.ConfigureAwait(true);
             Show(await Task.Run(() => run(request)).ConfigureAwait(true));
         }
         finally
@@ -327,6 +360,73 @@ public sealed class MainViewModel : ObservableObject
             return path;
         }
     }
+
+    /// <summary>
+    /// Starts a look at a box's file off the window's thread (R-052), through
+    /// <see cref="LookCore"/>, numbered as the box's latest: a look of a new text first empties
+    /// the box's fact line and turns its existence off, so the commands wait for it; a look again
+    /// keeps both as they are until it ends. What it finds is shown on the caller's thread, unless
+    /// a newer look of the same box was started meanwhile.
+    /// </summary>
+    /// <param name="source">True for the source's box, false for the destination's.</param>
+    /// <param name="fresh">True when the box's text changed: its old facts no longer apply.</param>
+    private void LookAt(bool source, bool fresh)
+    {
+        int turn = source ? ++_sourceTurn : ++_destTurn;
+        string path = source ? _sourcePath : _destPath;
+        if (fresh)
+        {
+            Found(source, new FileLook(false, ""));
+        }
+
+        Func<string, bool, FileLook> look = LookCore;
+        Task shown = ShowWhenFound(source, turn, Task.Run(() => look(path, source)));
+        lock (_looks)
+        {
+            _looks.RemoveAll(t => t.IsCompleted);
+            _looks.Add(shown);
+        }
+    }
+
+    /// <summary>Shows what a look found once it ends, on the caller's thread, unless its box has a newer look by then (R-052).</summary>
+    /// <param name="source">True for the source's box, false for the destination's.</param>
+    /// <param name="turn">The look's number, compared with the box's latest when it ends.</param>
+    /// <param name="looking">The look, running off the window's thread.</param>
+    /// <returns>Completes once the look is shown or dropped.</returns>
+    private async Task ShowWhenFound(bool source, int turn, Task<FileLook> looking)
+    {
+        FileLook found = await looking.ConfigureAwait(true);
+        if (turn == (source ? _sourceTurn : _destTurn))
+        {
+            Found(source, found);
+        }
+    }
+
+    /// <summary>Puts what a look found under its box: the existence the commands follow, and the fact line.</summary>
+    /// <param name="source">True for the source's box, false for the destination's.</param>
+    /// <param name="found">What the look found; an empty look for a text whose look has not ended.</param>
+    private void Found(bool source, FileLook found)
+    {
+        if (source)
+        {
+            _sourceExists = found.Exists;
+            SourceFacts = found.Facts;
+        }
+        else
+        {
+            _destExists = found.Exists;
+            DestFacts = found.Facts;
+        }
+
+        RaiseCanRun();
+    }
+
+    /// <summary>A look at a box's file (R-052): whether it exists, and if it does, the facts of its header.</summary>
+    /// <param name="path">The box's whole path; empty is allowed, and names no file.</param>
+    /// <param name="source">True for the source's box, false for the destination's.</param>
+    /// <returns>What the look found.</returns>
+    internal static FileLook Look(string path, bool source)
+        => File.Exists(path) ? new FileLook(true, Facts(path, source)) : new FileLook(false, "");
 
     /// <summary>
     /// The two facts of a header, worded for the box they sit under: the size, and whether

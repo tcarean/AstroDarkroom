@@ -2,9 +2,10 @@
 
 **Covers:** `src/CopyWcs.Wpf/`, `tests/CopyWcs.Wpf.Tests/`, `Icon/make_icon.py`.
 
-The behaviour is R-030 to R-039, R-050 and R-051; the reasons are ADR 0007, ADR 0008, for the
-About window's third-party card and the window's log lines ADR 0009, for Help and F1 ADR 0016,
-for a close during a run ADR 0019, and for the paths made whole ADR 0023. The pieces
+The behaviour is R-030 to R-039 and R-050 to R-052; the reasons are ADR 0007, ADR 0008, for
+the About window's third-party card and the window's log lines ADR 0009, for Help and F1 ADR
+0016, for a close during a run ADR 0019, for the paths made whole ADR 0023, and for the files
+looked at off the window's thread ADR 0025. The pieces
 copied from the siblings (`Presentation/DarkTitleBar.cs`, `Presentation/TExtension.cs`,
 `Presentation/Mvvm.cs`, `Presentation/AppIcon.cs`, `Theme/Dark.xaml`, `Views/AboutWindow.*`,
 the band at the top of `MainWindow.xaml`, the test fixture `StaFixture`) are marked as such in
@@ -84,25 +85,37 @@ reaches. The handlers of
   destination. A text the system cannot make whole stays as it is, for the core to refuse; a box
   keeps its text as typed. `Preview()` runs it
   with the dry run, `Copy()` without. Both go through `RunAsync`: the request is built on the
-  caller's thread, the core runs in a `Task.Run` (an in-place copy streams the whole data
-  area through a temp file, seconds on a large stack, and the window must stay live), and the
-  outcome is shown back on the caller's thread; the window's two handlers are `async void`
-  over them. The core is reached through `RunCore`, `WcsCopy.Run` unless a test puts a run
-  there that waits for it, and `IsRunning` is raised as a run starts and again after its
-  outcome is shown, for the window's close (R-050). `CanPreview` is "both paths name existing files and no run is in flight",
+  caller's thread, the run waits for every look at the boxes' files in flight (`FactsRead`,
+  in the next point), so that a look's read line never falls between the run's start and done lines in the
+  log, the core runs in a `Task.Run` (an in-place copy streams the whole data area through a
+  temp file, seconds on a large stack, and the window must stay live), and the outcome is shown
+  back on the caller's thread; the window's two handlers are `async void` over them. The core
+  is reached through `RunCore`, `WcsCopy.Run` unless a test puts a run there that waits for
+  it, and `IsRunning` is raised as a run starts and again after its outcome is shown, for the
+  window's close (R-050). `CanPreview` is "both paths name existing files and no run is in flight",
   `CanCopy` adds "the output path is not blank when a new file is chosen"; both are raised
-  whenever a path, the choice or the running state changes, and the buttons bind them, so a
-  second click during a run finds the buttons off. The existence of each file is checked once,
-  when its path is set (`_sourceExists`, `_destExists`), not in the getters: the boxes update
-  on every keystroke. The view-model never guards the commands itself: a run on a missing
-  file is the core's refusal, in the core's words.
-- **Read two facts of each header.** `Facts(path, source)` is the one reading of a file the
-  window does: `FitsHeader.ReadPrimary`, `NAXIS1 x NAXIS2`, and whether `CTYPE1` is present,
-  worded as `Source: 100 x 80, plate-solved` / `not plate-solved` and `Destination: 100 x 80`
-  / `, already plate-solved`; a file that is missing (not read at all), that the reader refuses,
-  or whose header has no `NAXIS1` or `NAXIS2` (the reader's -1, not a size) gives an empty
-  string, since the run will say why. The facts are read when a path is set and the
-  destination's again after a copy, so an in-place copy shows up as `already plate-solved`.
+  whenever a path, the choice, the running state or a look's result changes, and the buttons
+  bind them, so a second click during a run finds the buttons off. The view-model never guards
+  the commands itself: a run on a missing file is the core's refusal, in the core's words.
+- **Read two facts of each header**, off the window's thread (R-052, ADR 0025).
+  `Facts(path, source)` is the one reading of a file the window does: `FitsHeader.ReadPrimary`,
+  `NAXIS1 x NAXIS2`, and whether `CTYPE1` is present, worded as `Source: 100 x 80,
+  plate-solved` / `not plate-solved` and `Destination: 100 x 80` / `, already plate-solved`; a
+  file that is missing (not read at all), that the reader refuses, or whose header has no
+  `NAXIS1` or `NAXIS2` (the reader's -1, not a size) gives an empty string, since the run will
+  say why. A box's setter makes its path whole and calls `LookAt`, which numbers the look as
+  the box's latest (`_sourceTurn`, `_destTurn`), empties the box's fact line and turns its
+  existence (`_sourceExists`, `_destExists`) off, since the old facts no longer apply, and runs
+  `LookCore` in a `Task.Run`: `Look`, which is `File.Exists` and then `Facts`, unless a test
+  puts a look there that waits for it. `ShowWhenFound` awaits it back on the caller's thread,
+  the window's, and `Found` puts the result under the box only when the look's number is still
+  the box's latest, so a look overtaken by a newer text is dropped. Every look started is kept
+  in `_looks` until it ends; `FactsRead` completes once they all have, which the run, `Copy()`
+  and the tests await. The existence is checked by the look, not in the getters, which the
+  boxes call at every keystroke; a check on the window's thread stopped it on a share that does
+  not answer (2.3 s for one letter, measured on 2026-11-18). After a copy the destination is
+  looked at again, its old line kept until the look ends, so an in-place copy shows up as
+  `already plate-solved`.
 - **Show the outcome.** `Show(outcome)` keeps the `WcsCopyOutcome` and raises every bound
   property: `Error`, `Warnings`, `Heading` (the outcome's notes when the kind is `Previewed`:
   the core's one heading line), `Cards` (each card with its trailing spaces trimmed, a 0xA0
@@ -178,7 +191,12 @@ processed destination of a given width into a temp folder; `RomanianByDefault` s
 assembly's language as the console's tests do; `AssemblyInfo` turns parallel collections off.
 `MainViewModelTests` run the console in process (`CopyWcsCli.Run`, through the console's
 `InternalsVisibleTo`) and compare: the preview's cards with the dry run's lines, the copy's
-bytes with the console's on a second fixture, the refusal line with the console's stderr.
+bytes with the console's on a second fixture, the refusal line with the console's stderr. A
+test that reads a fact line or `CanPreview` after setting a path awaits `FactsRead` first; the
+R-052 tests put `HeldLook` in `LookCore`, which waits for the test on one path, and check that
+the setter comes back at once with the line empty and the commands off, that a look overtaken
+by a newer text is dropped though it ends last, and that a Preview waits for a held look, whose
+read line then comes before the run's start line.
 `WindowSmokeTests` lay out and render both windows to a bitmap on the `StaFixture` thread
 (the window's background drawn first, or the labels on transparency come out dim in a PNG; the
 About window at its content's height, measured over two layout passes since the third-party

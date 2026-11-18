@@ -147,9 +147,9 @@ public class WindowLoggingTests
         Assert.Equal("language=en source from the command line: none dest: none", App.StartLine(App.Parse([])));
     }
 
-    /// <summary>The facts' quiet catch is a Debug line with the reader's exception; the box stays empty.</summary>
+    /// <summary>The facts' quiet catch is a Debug line with the reader's exception, written by the look off the window's thread (R-052); the box stays empty.</summary>
     [Fact]
-    public void R043_AFileWhoseFactsCannotBeReadIsADebugLineWithTheException()
+    public async Task R043_AFileWhoseFactsCannotBeReadIsADebugLineWithTheException()
     {
         using WindowFixture f = new();
         string notFits = f.FilePath("notes.fit");
@@ -157,6 +157,7 @@ public class WindowLoggingTests
         using var capture = LogCapture.Start();
 
         MainViewModel vm = new() { Source = notFits };
+        await vm.FactsRead;
 
         Assert.Equal("", vm.SourceFacts);
         LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == "Window");

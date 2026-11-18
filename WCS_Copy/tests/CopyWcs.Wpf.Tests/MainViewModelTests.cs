@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Diagnostics;
 using CopyWcs.Tests;
 
 namespace CopyWcs.Wpf.Tests;
@@ -40,8 +41,34 @@ public class MainViewModelTests
 
     private static MainViewModel Open(WindowFixture f) => new() { Source = f.Source, Dest = f.Dest };
 
+    /// <summary>
+    /// A look at a box's file that waits, for the path given, until the test releases it (5 s at
+    /// most), as a look on a slow share would, then looks as the window does (R-052).
+    /// </summary>
+    internal static Func<string, bool, FileLook> HeldLook(ManualResetEventSlim release, string heldPath)
+        => (path, source) =>
+        {
+            if (string.Equals(path, heldPath, StringComparison.Ordinal))
+            {
+                release.Wait(TimeSpan.FromSeconds(5));
+            }
+
+            return MainViewModel.Look(path, source);
+        };
+
+    /// <summary>Waits until a condition holds, 10 s at most: a look ends on another thread.</summary>
+    private static async Task WaitFor(Func<bool> condition, string what)
+    {
+        Stopwatch clock = Stopwatch.StartNew();
+        while (!condition())
+        {
+            Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), "waited 10 s for " + what);
+            await Task.Delay(10);
+        }
+    }
+
     [Fact]
-    public void R030_TheCommandsWaitForBothFilesAndTheCopyForTheNewFilesPath()
+    public async Task R030_TheCommandsWaitForBothFilesAndTheCopyForTheNewFilesPath()
     {
         using WindowFixture f = new();
         MainViewModel vm = new();
@@ -55,14 +82,18 @@ public class MainViewModelTests
         Assert.Equal("", vm.SourceFacts);
         Assert.Equal("", vm.DestFacts);
 
+        // each box's file is looked at off the window's thread (R-052): the test waits for it
         vm.Source = f.Source;
+        await vm.FactsRead;
         Assert.False(vm.CanPreview);
         vm.Dest = f.Dest;
+        await vm.FactsRead;
         Assert.True(vm.CanPreview);
         Assert.True(vm.CanCopy);
 
         // a path typed with spaces around it names the same file
         vm.Source = "  " + f.Source + " ";
+        await vm.FactsRead;
         Assert.True(vm.CanPreview);
         Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
 
@@ -76,6 +107,7 @@ public class MainViewModelTests
         Assert.True(vm.CanCopy);
 
         vm.Dest = f.FilePath("missing.fit");
+        await vm.FactsRead;
         Assert.False(vm.CanPreview);
         Assert.False(vm.CanCopy);
     }
@@ -98,10 +130,11 @@ public class MainViewModelTests
     }
 
     [Fact]
-    public void R030_TheFactsUnderEachBoxComeFromTheHeaderAndVanishWhenTheFileCannotBeRead()
+    public async Task R030_TheFactsUnderEachBoxComeFromTheHeaderAndVanishWhenTheFileCannotBeRead()
     {
         using WindowFixture f = new();
         MainViewModel vm = Open(f);
+        await vm.FactsRead;
 
         Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
         Assert.Equal("Destinatia: 100 x 80", vm.DestFacts);
@@ -109,14 +142,17 @@ public class MainViewModelTests
         // the source is not plate-solved, the destination already is
         vm.Source = f.Dest;
         vm.Dest = f.Source;
+        await vm.FactsRead;
         Assert.Equal("Sursa: 100 x 80, fara plate solve", vm.SourceFacts);
         Assert.Equal("Destinatia: 100 x 80, deja plate-solved", vm.DestFacts);
 
         // a missing file and a file that is not FITS say nothing: the run will say why
         vm.Source = f.FilePath("missing.fit");
+        await vm.FactsRead;
         Assert.Equal("", vm.SourceFacts);
         File.WriteAllText(f.FilePath("text.fit"), "not a FITS file at all, just text that is long enough to read");
         vm.Dest = f.FilePath("text.fit");
+        await vm.FactsRead;
         Assert.Equal("", vm.DestFacts);
 
         // a header the reader accepts but that names no image size (NAXIS = 0) says nothing
@@ -127,6 +163,7 @@ public class MainViewModelTests
             .ToList();
         using WindowFixture g = new(sourceCards: noSize);
         vm.Source = g.Source;
+        await vm.FactsRead;
         Assert.Equal("", vm.SourceFacts);
     }
 
@@ -276,6 +313,7 @@ public class MainViewModelTests
         string outFile = f.FilePath("out.fit");
         vm.WriteInPlace = false;
         vm.Output = "  " + outFile + " ";
+        await vm.FactsRead;
         Assert.True(vm.CanCopy);
 
         await vm.Copy();
@@ -296,6 +334,7 @@ public class MainViewModelTests
     {
         using WindowFixture f = new();
         MainViewModel vm = new() { Source = "\"" + f.Source + "\"", Dest = " \"" + f.Dest + "\" " };
+        await vm.FactsRead;
 
         Assert.True(vm.CanPreview);
         Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
@@ -312,6 +351,7 @@ public class MainViewModelTests
 
         // one pair only, and only around the whole path: a quote left inside is not the file
         vm.Source = "\"\"" + f.Source + "\"\"";
+        await vm.FactsRead;
         Assert.False(vm.CanPreview);
     }
 
@@ -360,6 +400,7 @@ public class MainViewModelTests
         List<string> cards = FitsTestData.PlateSolvedCards().Where(c => !c.StartsWith("CTYPE1", StringComparison.Ordinal)).ToList();
         using WindowFixture f = new(sourceCards: cards);
         MainViewModel vm = Open(f);
+        await vm.FactsRead;
         Assert.Equal("Sursa: 100 x 80, fara plate solve", vm.SourceFacts);
 
         await vm.Preview();
@@ -479,6 +520,101 @@ public class MainViewModelTests
         Assert.Empty(Directory.GetFileSystemEntries(elsewhere.Dir));
     }
 
+    /// <summary>
+    /// The look at a box's file goes off the window's thread (R-052; CR-008 of the review of
+    /// 2026-11-16, where each keystroke checked the file on it): with the look held, as on a share
+    /// that does not answer, the box's setter comes back at once, the line is empty and the
+    /// commands are off; the facts come when the look ends.
+    /// </summary>
+    [Fact]
+    public async Task R052_TheWindowStaysLiveWhileAFileIsLookedAt()
+    {
+        using WindowFixture f = new();
+        using ManualResetEventSlim release = new();
+        MainViewModel vm = new() { Dest = f.Dest };
+        await vm.FactsRead;
+        vm.LookCore = HeldLook(release, f.Source);
+
+        Stopwatch clock = Stopwatch.StartNew();
+        vm.Source = f.Source;
+        clock.Stop();
+
+        Assert.True(clock.ElapsedMilliseconds < 2000, $"the box's setter took {clock.ElapsedMilliseconds} ms with its look held");
+        Assert.Equal("", vm.SourceFacts);
+        Assert.False(vm.CanPreview);
+
+        release.Set();
+        await vm.FactsRead;
+        Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
+        Assert.True(vm.CanPreview);
+    }
+
+    /// <summary>
+    /// A look that ends after its box's text changed again is dropped (R-052): the first path's
+    /// look is held while a second path is typed, whose look ends first; when the first ends, at
+    /// last, the line keeps the second path's facts.
+    /// </summary>
+    [Fact]
+    public async Task R052_OnlyTheLatestTextsLookIsShown()
+    {
+        using WindowFixture f = new();
+        using WindowFixture wider = new(destWidth: 200);
+        using ManualResetEventSlim release = new();
+        MainViewModel vm = new() { LookCore = HeldLook(release, f.Dest) };
+
+        Stopwatch clock = Stopwatch.StartNew();
+        vm.Dest = f.Dest;
+        vm.Dest = wider.Dest;
+        clock.Stop();
+        Assert.True(clock.ElapsedMilliseconds < 2000, $"the two texts took {clock.ElapsedMilliseconds} ms with the first look held");
+
+        await WaitFor(() => vm.DestFacts.Length > 0, "the second text's look");
+        Assert.Equal("Destinatia: 200 x 80", vm.DestFacts);
+
+        release.Set();
+        await vm.FactsRead;
+        Assert.Equal("Destinatia: 200 x 80", vm.DestFacts);
+    }
+
+    /// <summary>
+    /// A Preview clicked while a look is in flight runs once the look ends (R-052), so that the
+    /// run's lines in the log are its own (R-043): the look's read line comes before the run's
+    /// start line, and the run reads each file once.
+    /// </summary>
+    [Fact]
+    public async Task R052_ARunWaitsForTheLooksInFlight()
+    {
+        using WindowFixture f = new();
+        using ManualResetEventSlim release = new();
+        using ManualResetEventSlim started = new();
+        MainViewModel vm = new() { Source = f.Source, Dest = f.Dest };
+        await vm.FactsRead;
+        vm.LookCore = HeldLook(release, f.Dest);
+        vm.RunCore = request =>
+        {
+            started.Set();
+            return WcsCopy.Run(request);
+        };
+        using LogCapture capture = LogCapture.Start();
+
+        // the same file in another text: a new look, held
+        vm.Dest = " " + f.Dest;
+        Task preview = vm.Preview();
+        Assert.False(started.Wait(TimeSpan.FromMilliseconds(300)), "the run started while a look was in flight");
+
+        release.Set();
+        await preview;
+        Assert.True(started.IsSet);
+        Assert.True(vm.HasCards);
+        // the reader's read lines alone: at Trace it adds one line per card under each
+        List<string> lines = capture.Events.Where(e => e.Logger is "WcsCopy" or "FitsHeader").Select(e => e.Message).ToList();
+        int start = lines.FindIndex(m => m.StartsWith("copy start ", StringComparison.Ordinal));
+        int done = lines.FindIndex(m => m.StartsWith("copy done ", StringComparison.Ordinal));
+        string look = Assert.Single(lines[..start], m => m.StartsWith("read ", StringComparison.Ordinal));
+        Assert.StartsWith("read " + f.Dest + " (", look, StringComparison.Ordinal);
+        Assert.Equal(2, lines[start..done].Count(m => m.StartsWith("read ", StringComparison.Ordinal)));
+    }
+
     [Fact]
     public async Task R036_TheFactsAndTheHeadingFollowTheLanguageOfTheRun()
     {
@@ -487,6 +623,7 @@ public class MainViewModelTests
         using (Ui.Use(UiLanguage.English))
         {
             MainViewModel vm = Open(f);
+            await vm.FactsRead;
             Assert.Equal("Source: 100 x 80, plate-solved", vm.SourceFacts);
             Assert.Equal("Destination: 200 x 80", vm.DestFacts);
             Assert.Equal("Refused", vm.RefusedHeading);
@@ -495,12 +632,15 @@ public class MainViewModelTests
             Assert.StartsWith("Different dimensions: source (100, 80) vs destination (200, 80).", vm.Error, StringComparison.Ordinal);
 
             vm.Source = f.Dest;
+            await vm.FactsRead;
             Assert.Equal("Source: 200 x 80, not plate-solved", vm.SourceFacts);
             vm.Dest = f.Source;
+            await vm.FactsRead;
             Assert.Equal("Destination: 100 x 80, already plate-solved", vm.DestFacts);
         }
 
         MainViewModel ro = Open(f);
+        await ro.FactsRead;
         Assert.Equal("Sursa: 100 x 80, plate-solved", ro.SourceFacts);
         Assert.Equal("Refuzat", ro.RefusedHeading);
     }
