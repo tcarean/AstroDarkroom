@@ -550,6 +550,37 @@ public class MainViewModelTests
         Assert.False(Directory.Exists(Path.Combine(f.Root, "rapoarte")));
     }
 
+    /// <summary>
+    /// CR-020: after a partner that failed, the result holds no partner, and the export wrote its files into the
+    /// partner's folder when that one was picked.
+    /// </summary>
+    [Fact]
+    public async Task R074_ExportIntoTheFolderOfAPartnerThatFailedIsRefused()
+    {
+        using SessionFixture f = WindowFixture.Session();
+        // darks of another size than the session's: the run ends with the partner's error
+        using SessionFixture p = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 900 + i, Width = 128, Height = 96 }, inSubfolder: false);
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        await vm.ChoosePartnerAsync(p.Root);
+        Assert.Null(vm.Result!.Partner);
+        Assert.NotNull(vm.Result.PartnerError);
+
+        foreach (string dir in new[] { p.Root, Path.Combine(p.Root, "rapoarte") })
+        {
+            vm.Export(dir);
+            Assert.StartsWith("EROARE: --out nu poate fi folderul partenerului sau unul din el", vm.Status, StringComparison.Ordinal);
+        }
+
+        Assert.False(Directory.Exists(Path.Combine(p.Root, "rapoarte")));
+        Assert.DoesNotContain(Directory.GetFiles(p.Root), x => Path.GetFileName(x).StartsWith("darkscheck", StringComparison.Ordinal));
+
+        // elsewhere the files are written, the partner's error in the report
+        using TempWorkspace outDir = new();
+        vm.Export(outDir.Dir);
+        Assert.StartsWith("Scris:", vm.Status, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R074_ExportWithoutAResultDoesNothing()
     {

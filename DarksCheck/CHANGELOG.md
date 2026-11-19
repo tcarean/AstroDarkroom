@@ -350,6 +350,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- After a partner that could not be used (darks of another size, a folder without darks), the
+  window's `Write the files...` could write the report, the CSV files and the maps into the
+  partner's folder: the refusal knew the partner only when it had been matched. The partner's
+  folder is now refused whatever became of the partner (R-074; CR-020 of the code review).
+
 - `--out`, and the window's `Write the files...`, are refused by the folder, not by how it was
   typed. A library opened as `<name>\darks` could be given `--out <name>\reports`, and lights
   given as `<session>\lights` allowed `--out <session>\reports`, though both are refused when

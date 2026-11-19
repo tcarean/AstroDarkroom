@@ -335,7 +335,9 @@ darks as `darkPaths`, recomputes check 1's match with the partner darks' metadat
 camera), records the partner's root in `Inventory.DarksFromPartner` and
 `DarkSeriesResult.DarksFromPartner` (which `DarkOutputs.WriteAll` refuses as an export folder,
 like the session and the chosen lights' folder, each named by `DarkOutputs.OutFolder` in the
-refusal), keeps the partner's own label in `DarkSeriesResult.DarksFromPartnerLabel` for the
+refusal; the writer reads the partner's folder from `DarkSeriesResult.PartnerFolder`, the
+folder as the run was given it, set whenever a partner was given, so that a partner that failed
+and left `Partner` null is still kept clear), keeps the partner's own label in `DarkSeriesResult.DarksFromPartnerLabel` for the
 `dark-uri (partener)` row, labels the session on its lights' index once the lights are measured
 (R-066, `lights-and-index.md`, "The index") and skips `MatchPartner` (the
 darks are the partner's); a partner that does not open fails the run with its own message

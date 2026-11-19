@@ -1567,6 +1567,45 @@ public class LightsAndIndexTests
         Assert.Null(shared.Table);
     }
 
+    /// <summary>
+    /// CR-020: the writer refused the partner's folder only through the partner it had matched, so after a
+    /// partner that failed (the window's export; the console checks before the run) the files could be
+    /// written into the partner's folder.
+    /// </summary>
+    [Fact]
+    public void R026_AfterAPartnerThatFailedItsFolderIsStillRefused()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, Dark);
+
+        // a partner whose darks have another size: the run ends with the partner's error and no partner
+        using SessionFixture small = new SessionFixture().WithDarks(3, inSubfolder: false);
+        DarkSeriesResult r = Run(s, small.Root);
+        Assert.Null(r.Partner);
+        Assert.NotNull(r.PartnerError);
+        Assert.Equal(small.Root, r.PartnerFolder);
+        foreach (string dir in new[] { small.Root, Path.Combine(small.Root, "rapoarte") })
+        {
+            InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => DarkOutputs.WriteAll(r, dir));
+            Assert.StartsWith("--out nu poate fi folderul partenerului sau unul din el (", e.Message, StringComparison.Ordinal);
+        }
+
+        Assert.False(Directory.Exists(Path.Combine(small.Root, "rapoarte")));
+        Assert.DoesNotContain(Directory.GetFiles(small.Root), f => Path.GetFileName(f).StartsWith("darkscheck", StringComparison.Ordinal));
+
+        // a library kept as name\darks that fails: the folder around it too
+        using SessionFixture kept = new SessionFixture().WithDarks(3);
+        DarkSeriesResult k = Run(s, kept.DarksDir);
+        Assert.NotNull(k.PartnerError);
+        Assert.Throws<InvalidOperationException>(() => DarkOutputs.WriteAll(k, Path.Combine(kept.Root, "rapoarte")));
+        Assert.False(Directory.Exists(Path.Combine(kept.Root, "rapoarte")));
+
+        // a folder outside is written, the partner's error in its report; a run without a partner names none
+        using TempWorkspace outDir = new();
+        Assert.Contains(Path.Combine(outDir.Dir, DarkOutputs.ReportName), DarkOutputs.WriteAll(r, outDir.Dir));
+        Assert.Contains("    partener           : ATENTIE: ", File.ReadAllText(Path.Combine(outDir.Dir, DarkOutputs.ReportName)), StringComparison.Ordinal);
+        Assert.Null(Run(s).PartnerFolder);
+    }
+
     [Fact]
     public void R063_APartnerThatCannotBeUsedIsAnAttentionLineAndExit1()
     {

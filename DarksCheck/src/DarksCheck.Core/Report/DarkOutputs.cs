@@ -43,8 +43,9 @@ internal static class DarkOutputs
     /// <summary>
     /// Writes every output file into <paramref name="dir"/>, creating it when missing, after
     /// refusing a folder inside the session, the partner or the chosen lights' folder
-    /// (<see cref="CheckOut"/>, the rule "Read-only input"). Existing files of the same names are
-    /// overwritten.
+    /// (<see cref="CheckOut"/>, the rule "Read-only input"); the partner's also when the partner
+    /// could not be used (<see cref="DarkSeriesResult.PartnerFolder"/>). Existing files of the same
+    /// names are overwritten.
     /// </summary>
     /// <param name="r">The run's result; not null.</param>
     /// <param name="dir">The output folder.</param>
@@ -60,8 +61,9 @@ internal static class DarkOutputs
     {
         ArgumentNullException.ThrowIfNull(r);
 
-        // the partner matched, or the one whose darks were read by a lights-only run (R-054)
-        CheckOut(r.Inventory.Session, r.Partner?.Folder ?? r.DarksFromPartner, dir);
+        // the partner as the run was given it, also when it failed and the result holds none
+        // (R-074); the one matched, or whose darks were read (R-054), for a result made without it
+        CheckOut(r.Inventory.Session, r.PartnerFolder ?? r.Partner?.Folder ?? r.DarksFromPartner, dir);
         Directory.CreateDirectory(dir);
         List<string> written = [];
 
