@@ -33,19 +33,22 @@ with no plate solve gets the copied keys appended in R-007's order, `WCSAXES` fi
 `CONTINUE` cards. No log line is added: the Trace of the cards written shows the order.
 
 The move keeps `WCSAXES` above the plate solve the copy writes, not above every WCS keyword of
-Table 22: the standard's other WCS keywords are no keys of the lists and are not looked at. A
-Siril header holds `DATE` and `DATE-OBS` at cards 15 and 16 and `CTYPE1` at 36, so the copied
-`WCSAXES` stands at card 36, under the two dates; the SyQon CLI writes its header in alphabetical
-order and gets it at card 11, above `AP_0_0`, its first SIP coefficient. The review of the branch
-found this on 2026-11-19, the plan having said the move followed the standard; the owner chose
-that day to keep the code and say what it does, the recommended option, since no file of the
-owner's holds `WCSAXES` and astropy reads either order the same.
+Table 22: it looks at the WCS keys of R-007 and the SIP coefficients alone. Of the standard's
+other WCS keywords, `DATE` and `MJD-OBS` are no keys of the lists, and `DATE-OBS` is an optical
+key a copy sets where the destination's card stands; none of them moves. A Siril header holds
+`DATE` and `DATE-OBS` at cards 15 and 16 and `CTYPE1` at 36, so the copied `WCSAXES` stands at
+card 36, under the two dates; the SyQon CLI writes its header in alphabetical order and gets it
+at card 11, above `AP_0_0`, its first SIP coefficient. The review of the branch found this on
+2026-11-19, the plan having said the move followed the standard; the owner chose that day to
+keep the code and say what it does, the recommended option, since no file of the owner's holds
+`WCSAXES` and astropy reads either order the same.
 
 ## Alternatives rejected
 
 - **Leave the order and reject the entry.** No reader measured minds, but the standard says
   "must", the tool promises a standard header, and the fix is a few lines.
-- **Put `WCSAXES` right after the mandatory cards (`NAXISn`, `EXTEND`).** It meets the
+- **Put `WCSAXES` right after the image size (`NAXISn`, and `EXTEND`, which follows them in
+  these headers, though the standard no longer asks for it).** It meets the
   standard's letter in every header, the date cards included, but takes the card far from the
   plate solve it belongs to, above cards that are no WCS (`BZERO`, `COMMENT`), and changes every
   copy's header for a case no file of the owner's holds; offered to the owner again at the
@@ -55,15 +58,20 @@ owner's holds `WCSAXES` and astropy reads either order the same.
 
 ## Consequences
 
-The keys outside both lists (`PVi_m`, an alternate description such as `CTYPE1A`, the date
-cards) are not looked at, as R-016 leaves them alone; a valid header holds its mandatory cards
-first, so `WCSAXES` never goes above `NAXISn`. Guarded by
-`WcsCopyTests.R061_Run_ACopiedWcsaxes_GoesRightAboveTheDestinationsPlateSolve`,
-`R061_Run_ADestinationsOwnWcsaxesBelowItsSolve_IsMovedAboveIt`,
-`R061_Run_IntoADestinationWithoutAPlateSolve_TheKeysFollowItsCardsInTheListsOrder`,
-`R061_Run_ACopyThatSetsNoWcsaxes_LeavesTheDestinationsOwnWhereItStands`, the two
-`R061_MoveAbove_` tests of `FitsHeaderTests` and
-`ValidationTests.R061_ACopiedWcsaxesGoesAboveTheFirstSipCoefficientOfTheRealSyQonHeader`, the
-last two added by the review of the branch, whose mutations (a move above `CTYPE1` alone, one
-above the WCS keys without the SIP coefficients, a move whatever the source held) every earlier
-test had let pass.
+The move looks at no card outside the plate solve of the lists: not at the keys outside both
+lists (`PVi_m`, an alternate description such as `CTYPE1A`, `DATE`, `MJD-OBS`), which R-016
+leaves alone, nor at the optical keys, `DATE-OBS` among them; a valid header holds its mandatory
+cards first, so `WCSAXES` never goes above `NAXISn`. Guarded by the `R061_` tests: in
+`WcsCopyTests`, `R061_Run_ACopiedWcsaxes_GoesRightAboveTheDestinationsPlateSolve`,
+`R061_Run_ADestinationsOwnWcsaxesBelowItsSolve_IsMovedAboveIt` and
+`R061_Run_IntoADestinationWithoutAPlateSolve_TheKeysFollowItsCardsInTheListsOrder`, with the two
+`R061_MoveAbove_` tests of `FitsHeaderTests`; added by the review of the branch,
+`WcsCopyTests.R061_Run_ACopyThatSetsNoWcsaxes_LeavesTheDestinationsOwnWhereItStands` and
+`ValidationTests.R061_ACopiedWcsaxesGoesAboveTheFirstSipCoefficientOfTheRealSyQonHeader`, which
+fail under a move above `CTYPE1` alone, one above the WCS keys without the SIP coefficients, and
+a move whatever the source held; added by its second review,
+`ValidationTests.R061_ACopiedWcsaxesGoesRightAboveCtype1OfTheRealSirilHeader_UnderItsDateCards`,
+`WcsCopyTests.R061_Run_ADestinationWhoseSolveBeginsWithCdelt1_GetsWcsaxesRightAboveIt` and
+`R061_Run_ASourceWithWcsaxesButNoCtype1_StillPutsItAboveTheDestinationsSolve`, which fail under a
+move only when keys were dropped, one above the date cards too, one above `CTYPE1` or a SIP
+coefficient alone, and one asked by the source's `CTYPE1`.

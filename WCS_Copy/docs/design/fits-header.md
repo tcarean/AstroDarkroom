@@ -67,11 +67,10 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
   copied `WCSAXES` this way, with `WcsMetadataKeys.IsPlateSolveKey` as the predicate (R-061,
   ADR 0032): `SetValueCards` replaces the destination's own cards of the plate solve where they
   stand and appends a `WCSAXES` the destination lacks after them, where the FITS standard wants
-  it above them (CR-019). The standard's other WCS keywords of its Table 22 (`DATE`, `DATE-OBS`,
-  `MJD-OBS`, `PVi_m`, `WCSNAME`) are no keys of the lists and are not looked at, so in a Siril
-  header the copied `WCSAXES` stands under `DATE` and `DATE-OBS` (cards 15 and 16 of the V-001
-  fixture), right above `CTYPE1`; the SyQon CLI's alphabetical header gets it at card 11, above
-  `AP_0_0`, its first SIP coefficient.
+  it above them (CR-019). The predicate is the plate solve of the lists and nothing else, so
+  the standard's other WCS keywords, the date cards among them (`DATE-OBS` an optical key the
+  copy sets where the destination's card stands), may stay above the copied `WCSAXES`; ADR 0032
+  says where it lands in a Siril header and in the SyQon CLI's.
 - `AddHistory(text)` appends `HISTORY ` plus at most 72 characters of `AsciiText.Of(text)`
   (R-011): the text is made printable ASCII first, then cut, so the cut counts the characters
   written.

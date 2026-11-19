@@ -148,6 +148,35 @@ public class ValidationTests
         Assert.Equal(11, keys.IndexOf("AP_0_0"));
     }
 
+    /// <summary>
+    /// In the real Siril header the date cards DATE and DATE-OBS, which the FITS standard counts
+    /// among the WCS keywords too, stand above the plate solve, which begins with CTYPE1: the
+    /// copied WCSAXES goes right above CTYPE1 and under the two dates, which the move does not
+    /// look at, though nothing is dropped (R-061, ADR 0032; the second review of the branch of
+    /// CR-019: a move only when keys were dropped, and one above the date cards too, passed every
+    /// other test).
+    /// </summary>
+    [Fact]
+    public void R061_ACopiedWcsaxesGoesRightAboveCtype1OfTheRealSirilHeader_UnderItsDateCards()
+    {
+        using var ws = new TempWorkspace();
+        var destination = TestData.Fixture("veil-2026-10-06-siril-1.4.4-solve.fit");
+        List<string> cards = FitsTestData.HeaderCards(File.ReadAllBytes(destination));
+        cards.Insert(cards.FindIndex(c => c.StartsWith("NAXIS3", StringComparison.Ordinal)) + 1, FitsTestData.Card("WCSAXES", "2"));
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(cards));
+        List<string> before = FitsHeader.ReadPrimary(destination).Keywords.ToList();
+        Assert.Equal([14, 15, 35], new[] { before.IndexOf("DATE"), before.IndexOf("DATE-OBS"), before.IndexOf("CTYPE1") });
+        var output = ws.FilePath("out.fit");
+
+        var outcome = WcsCopy.Run(new WcsCopyRequest(source, destination, output,
+            IncludeOptical: true, Force: false, DryRun: false));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.Null(outcome.Dropped);
+        List<string> keys = FitsHeader.ReadPrimary(output).Keywords.ToList();
+        Assert.Equal([14, 15, 35, 36], new[] { keys.IndexOf("DATE"), keys.IndexOf("DATE-OBS"), keys.IndexOf("WCSAXES"), keys.IndexOf("CTYPE1") });
+    }
+
     /// <summary>The two real headers' plate solves, read as Siril reads them, are mirror images when recorded so, and the copy is then refused without force (R-017).</summary>
     [Theory]
     [MemberData(nameof(DropCaseIds))]
