@@ -36,9 +36,9 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
   non-blank ones, so
   `COMMENT` and `HISTORY` count as keywords and blank cards do not.
 - `GetInt` takes the text after `=` up to a `/`, trimmed, and returns -1 when the card is
-  missing, has no `=` or is not an integer. Two files that both lack `NAXIS1` therefore
-  compare as equal sizes (-1 and -1); the run does not special-case it, since such a file is
-  not an image. `GetDouble` reads the same text (`ValueText`, shared by both) as a finite
+  missing, has no `=` or is not an integer. The run takes a -1 for `NAXIS1` or `NAXIS2` as a
+  file with no image size and refuses it before comparing (R-060), so two files that both lack
+  the keys no longer pass as equal sizes. `GetDouble` reads the same text (`ValueText`, shared by both) as a finite
   double, invariant, the FITS exponent letter `D` taken as `E`, and gives null for a missing
   card, a string, a logical or nothing: the numbers of R-017's check. `GetString` reads a quoted
   value from the card itself, not through `ValueText`, so a '/' inside the quotes stays text; a
@@ -91,9 +91,24 @@ runtime's Unicode data moves, that test says so, and the table is generated agai
 
 `WriteWithDataFrom(dataSource, target)` writes the cards, `END`, spaces to the next 2880-byte
 boundary, then copies `dataSource` from `_dataOffset` to its end, always into a temporary file
-beside the target, which `File.Move(temp, full, overwrite: true)` renames over the target at
-the end (R-012, R-013): an existing target, the destination of an in-place write included, is
-replaced only once the whole file is written. Both paths are made whole (`Path.GetFullPath`)
+beside the target, flushed to the disk (`Flush(flushToDisk: true)`) and then put in the
+target's place (R-012, R-013): an existing target, the destination of an in-place write
+included, by `File.Replace(temp, full, backup, ignoreMetadataErrors: true)`, Windows' replace,
+which keeps the target's creation time, attributes and permissions, and a target that does not
+exist by `File.Move` (ADR 0031; until 2026-11-18 a move over the target, which lost them, CR-018).
+The replace moves the old file to `backup`, `BackupBeside`'s `<name>.copywcs-<8 hex>.bak`
+(`TemporaryBeside` with another extension, drawn again while a file holds it, since the replace
+would overwrite one), and `DeleteBackup` removes it once the replace is done. A replace that
+fails goes through `PutBack`: a backup Windows left with the target's name free (its error 1177)
+is moved back and `WriteErrorMessage` adds that it was (`PutBackKey`), Windows' own words then
+saying it was renamed; a backup that cannot be put back is kept, the temporary file too, and
+`WriteErrorMessage` adds its name to the line (`KeptKey`). `PutBack` returns which of the three
+became of the backup (`BackupFate`). Windows' halfway failures cannot be
+made on demand, so `ReplaceForTests`, a thread-static stand-in, lets a test make one. A target
+name that is a folder still goes through the move over it, which refuses it with `Access to the
+path is denied.` as before (the replace and the move without overwrite would each say something
+else, the review of the branch).
+An existing target is replaced only once the whole file is written and on the disk. Both paths are made whole (`Path.GetFullPath`)
 once, as the write begins, and the temporary file, the data read and the rename all use those,
 so a working folder that moves during the write (a file dialog of the window, CR-006) changes
 neither file; the review of the branch found the target looked up again at the rename, which
@@ -120,7 +135,9 @@ message with the target where it named the temporary file, which `WcsCopy.Run` p
 no path. `R014_Run_AWriteThatFailsMidway_...`
 make a write fail after its header and first 80 KB by holding a byte-range lock in the middle
 of the destination's data, which Windows enforces on every other handle; a read-only
-destination makes the in-place rename fail. The data area is copied as bytes: `BITPIX`,
+destination makes the in-place replace fail with the same `Access to the path is denied.` as the
+move did. The flush is not seen by any test: ADR 0031 has its cost, 2.7 to 3.2 s for the 290 MB
+Veil stack written on the hard disk E:. The data area is copied as bytes: `BITPIX`,
 `NAXIS3`, extensions and padding travel unchanged.
 
 The cards are decoded and encoded with `Encoding.Latin1` (`CardEncoding`): each byte 0x00 to

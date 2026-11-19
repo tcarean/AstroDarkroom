@@ -16,7 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // WcsCopy.cs - the copy run, shared by the console and the window: reads both headers, checks
-// that the three paths name three files (R-019), the pixel grid, and that the destination's own
+// that the three paths name three files (R-019), that both have an image size (R-060), the pixel
+// grid, and that the destination's own
 // plate solve is no mirror of the source's (R-017),
 // selects the cards and the destination's old plate-solve cards to drop (R-016), lists them, or
 // drops those and the destination's CHECKSUM (R-018) and copies the others, and returns what
@@ -89,6 +90,7 @@ internal static class WcsCopy
 
     /// <summary>
     /// Runs a copy: reads both headers, refuses paths that name one file twice (R-019), refuses
+    /// a file with no image size in its primary header, forced or not (R-060), refuses
     /// a pixel grid that differs unless forced, warns about a source without <c>CTYPE1</c>,
     /// refuses a destination whose own plate solve is the
     /// mirror image of the source's unless forced (R-017), selects the cards and the destination's old
@@ -154,9 +156,30 @@ internal static class WcsCopy
             return Refused(clash.Error, warnings);
         }
 
-        // The WCS holds only on the same pixel grid.
+        // The WCS holds only on the same pixel grid, and a file with no size in its primary header
+        // has no grid there to compare: its image, if any, is in an extension this tool never
+        // reads, so the copy is refused whatever the force says (R-060, ADR 0028). The source is
+        // checked first.
         var srcDim = (source.GetInt("NAXIS1"), source.GetInt("NAXIS2"));
         var dstDim = (dest.GetInt("NAXIS1"), dest.GetInt("NAXIS2"));
+        foreach ((string who, (int W, int H) dim) in new[] { ("source", srcDim), ("destination", dstDim) })
+        {
+            if (dim.W >= 0 && dim.H >= 0)
+            {
+                continue;
+            }
+
+            Log.Warn("no image size in the " + who + " (NAXIS1 or NAXIS2 missing): "
+                     + LogText.Dimensions(dim.W, dim.H) + "; nothing is written");
+            clock.Lap("select");
+            clock.Done("refused: no image size in the " + who);
+            return Refused(who == "source"
+                ? T("The source has no image size in its main header (NAXIS1 or NAXIS2 is missing): its image may be in an extension, which this tool does not read.",
+                    "Sursa nu are dimensiunea imaginii in header-ul principal (lipseste NAXIS1 sau NAXIS2): imaginea poate fi intr-o extensie, pe care unealta nu o citeste.")
+                : T("The destination has no image size in its main header (NAXIS1 or NAXIS2 is missing): its image may be in an extension, which this tool does not read.",
+                    "Destinatia nu are dimensiunea imaginii in header-ul principal (lipseste NAXIS1 sau NAXIS2): imaginea poate fi intr-o extensie, pe care unealta nu o citeste."), warnings);
+        }
+
         if (srcDim != dstDim)
         {
             string sizes = "source " + LogText.Dimensions(srcDim.Item1, srcDim.Item2)

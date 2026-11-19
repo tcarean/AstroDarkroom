@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
      card shows, as F1 does (ADR 0016), and the window's one About button. Under it one column:
      the three file rows (a label, a box, a Browse button, the facts read from the header under
      it), the output choice, the two options, the buttons, then the outcome card: a run's
-     in-progress line while one is in flight (ADR 0026), else the core's refusal, warnings, cards
+     in-progress line while one is in flight (ADR 0026), else the core's warnings, refusal, cards
      and closing lines, as it gives them (ADR 0007). Every label is a
      pair, {l:T En='...', Ro='...'}. -->
 
@@ -32,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         xmlns:l="clr-namespace:CopyWcs.Wpf"
         Title="CopyWcs" Height="700" Width="820"
         Icon="/CopyWcs.Wpf;component/Icon/copywcs.ico"
-        MinHeight="620" MinWidth="720"
+        MinHeight="680" MinWidth="720"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource WindowBg}"
         TextOptions.TextFormattingMode="Display"
@@ -174,13 +174,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Grid.Row="0" Style="{StaticResource Muted}" Text="{Binding RunningLine}"
                      Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
 
-          <!-- the refusal: the heading is the window's one word, the line is the core's -->
-          <StackPanel Grid.Row="1" Margin="0,0,0,10" Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
-            <TextBlock Style="{StaticResource Heading}" Foreground="{StaticResource BadBr}" Opacity="1" Text="{Binding RefusedHeading}" />
-            <TextBlock TextWrapping="Wrap" Text="{Binding Error}" />
-          </StackPanel>
-
-          <ItemsControl Grid.Row="2" ItemsSource="{Binding Warnings}" Focusable="False"
+          <ItemsControl Grid.Row="1" ItemsSource="{Binding Warnings}" Focusable="False"
                         Visibility="{Binding HasWarnings, Converter={StaticResource BoolToVis}}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
@@ -188,6 +182,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
+
+          <!-- the refusal: the heading is the window's one word, the line is the core's; under the
+               warnings raised before it, as the console prints them (R-033) -->
+          <StackPanel Grid.Row="2" Margin="0,0,0,10" Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
+            <TextBlock Style="{StaticResource Heading}" Foreground="{StaticResource BadBr}" Opacity="1" Text="{Binding RefusedHeading}" />
+            <TextBlock TextWrapping="Wrap" Text="{Binding Error}" />
+          </StackPanel>
 
           <TextBlock Grid.Row="3" Margin="0,0,0,8" Text="{Binding Heading}"
                      Visibility="{Binding HasHeading, Converter={StaticResource BoolToVis}}" />

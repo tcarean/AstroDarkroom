@@ -28,7 +28,13 @@ and About that needs 787 px inside the window, 803 px with its 16 px frame, so t
 820 px wide; below 803 px, down to its minimum of 720, the explanation takes three lines and the
 band 70 px (measured on 2026-11-16 in both languages, ADR 0016). The band made the window open
 700 px high instead of 640, with a minimum height of 620 instead of 560 (2026-10-28): the
-outcome card keeps its room.
+outcome card keeps its room. The minimum became 680 on 2026-11-18 (R-055, ADR 0029): at 620 a
+forced copy with two warnings, the drop line and the two closing lines left the cards list
+29 px, one card; at 680 it is 89 px, four cards, measured by
+`R055_AtItsMinimumHeightTheCardsListShowsFourCards` (three cards at 675). Once the window has
+its handle, `FitInto` caps its height and its minimum at the work area of its screen and keeps
+its top inside it (`ScreenArea.WorkAreaOf` and `WindowFit.Top`, both copied from AstroDarkroom,
+ADR 0007); the window stays resizable and its maximum is left alone.
 
 The second row is the form, one column with the margin `20,16`: the three file rows (a label,
 a `TextBox` bound to the path with `UpdateSourceTrigger=PropertyChanged`, a Browse button, and
@@ -38,8 +44,9 @@ buttons (`Preview`, `Copy`), and the outcome card. The card is one `Border` of t
 style whose visibility follows `HasCard` (an outcome, or a run in flight, R-053), holding a
 first row that shows `RunningLine` in the `Muted` style while `IsRunning`, alone in the card
 then, and four blocks that each follow their own
-flag: the refusal (the heading `RefusedHeading` in the `BadBr` colour over the core's
-`Error`), the warnings (an `ItemsControl` in `WarnBr`), the preview's heading, the cards (a
+flag, in the console's order (R-033): the warnings (an `ItemsControl` in `WarnBr`), the refusal
+(the heading `RefusedHeading` in the `BadBr` colour over the core's `Error`; above the warnings
+until 2026-11-18, CR-017), the preview's heading, the cards (a
 `ListBox` in the monospace font with a horizontal scroll bar, since a card is 80 characters)
 and the closing notes. The built-in `BooleanToVisibilityConverter` does every visibility;
 there is no converter of the project's own. Every label is `{l:T En='...', Ro='...'}`,

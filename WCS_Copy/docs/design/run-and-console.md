@@ -29,8 +29,9 @@ The sequence: read the source, read the destination (each read failure is a refu
 which file and why, R-004; the reader's own messages of R-015 travel in it); refuse paths that
 name one file twice (`PathClash`, R-019, ADR 0018: the source as the destination, then a new file
 that is the source, then one that is the destination, the destination's own spelling included),
-before anything else so that even a dry run never gets that far; compare
-`NAXIS1`/`NAXIS2` (a refusal, or a warning under force, R-005); warn on a missing `CTYPE1`
+before anything else so that even a dry run never gets that far; refuse a file whose
+`NAXIS1` or `NAXIS2` is missing (`GetInt` gives -1), the source checked first, force or not
+(R-060, ADR 0028); compare `NAXIS1`/`NAXIS2` (a refusal, or a warning under force, R-005); warn on a missing `CTYPE1`
 (R-006); ask `WcsMetadataKeys.Mirrored` whether the destination's own plate solve is the mirror
 image of the source's (true is a refusal, or a warning under force, R-017, ADR 0012; force passes
 both checks; false or null is a Debug line with both determinants); select the keys (R-007; none is a refusal, R-008) and, when the source has `CTYPE1`,
@@ -68,7 +69,8 @@ the spellings, two files, a missing file, an empty path, a folder and a file hel
 `Program.Main` is a shim: it opens the diagnostic log, calls `CopyWcsCli.Run(args, stdout,
 stderr)` once, which the tests drive with string writers, and closes the log (`logging.md`). `Run` prints the banner and the copyright first (R-001), then takes
 `--lang` out of the arguments (below), then parses `Options`: two positional paths, the flags
-in any position, `-h` stopping the parse at once; a parse error is one line on stderr, the
+in any position, `-h` stopping the parse at once, the value after `-o` refused when it starts
+with a dash as a path is (ADR 0030); a parse error is one line on stderr, the
 usage on stdout and exit 2 (R-002); `--help` is the usage and exit 0 (R-003). The usage is
 written whole per language because its columns are aligned by hand; the warranty paragraph
 of GPLv3 section 5(d) follows it, there and not under the banner so that it does not weigh on

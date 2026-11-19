@@ -59,6 +59,24 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A file a copy replaces, the destination in place or an existing file given to `-o`, keeps its
+  creation date, its attributes (Hidden, for one) and its permissions, where it got the copy's
+  date and lost them; the copy is flushed to the disk before it takes the file's place, so a
+  power cut right after a copy cannot leave it half written, at a cost of about 2.5 s for a
+  290 MB stack on a hard disk; a replace that Windows leaves half done puts the old file back
+  (ADR 0031).
+- The window shows the warnings raised before a refusal above it, as the console prints them,
+  where it showed them under it.
+- `-o` followed by a word that starts with a dash, `-o --dry-run` with the file name forgotten,
+  is a usage error (`--output needs a file name.`, exit 2), where it copied into a file named
+  `--dry-run` without the dry run (ADR 0030).
+- The window fits into its screen when it opens: on a small screen, a 1080p laptop at 150 %, it
+  no longer runs under the taskbar. Its minimum height is 680 instead of 620, so the result
+  keeps four cards in view with two warnings and the closing lines on screen, where it kept one
+  (ADR 0029).
+- A file with no image size in its main header (`NAXIS1` or `NAXIS2` missing, the image in an
+  extension) is refused with a line that says so, even with `--force`, where it was reported as
+  the size (-1, -1) with the advice to force, and two such files were copied (ADR 0028).
 - In the window, a path pasted in double quotes, as File Explorer's "Copy as path" gives it,
   now names its file: the quotes are taken off, so its facts show and Preview and Copy come on.
 - The copy's closing line counts as each language does: `Copied 1 key`, `Copiata 1 cheie`, and

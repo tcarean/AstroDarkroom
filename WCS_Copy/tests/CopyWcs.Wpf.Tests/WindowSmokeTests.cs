@@ -491,4 +491,139 @@ public partial class WindowSmokeTests
 
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
+
+    /// <summary>
+    /// The window fits into the work area of its screen when it opens (R-055; CR-012 of the
+    /// review of 2026-11-16): on a screen with 600 units of height it opens 600 high, its minimum
+    /// no taller, at the area's top; on a tall screen it keeps its own height and minimum and is
+    /// moved up only as far as its bottom needs.
+    /// </summary>
+    [Fact]
+    public void R055_TheWindowFitsIntoTheWorkAreaOfItsScreen()
+        => _sta.Invoke(() =>
+        {
+            MainWindow small = new() { Top = 300 };
+            small.FitInto(new Rect(0, 20, 1280, 600));
+            Assert.Equal(600, small.Height);
+            Assert.Equal(600, small.MinHeight);
+            Assert.Equal(20, small.Top);
+
+            MainWindow tall = new() { Top = 500 };
+            double height = tall.Height;
+            double minimum = tall.MinHeight;
+            tall.FitInto(new Rect(0, 0, 1920, 1040));
+            Assert.Equal(height, tall.Height);
+            Assert.Equal(minimum, tall.MinHeight);
+            Assert.Equal(1040 - height, tall.Top);
+        });
+
+    /// <summary>
+    /// At its minimum height the window keeps four cards in view in the worst case the core
+    /// gives (R-055): a forced copy with two warnings (different sizes, a mirrored plate solve),
+    /// the drop line and the two closing lines, in both languages. Measured on 2026-11-18 at the
+    /// old minimum of 620: the list had 29 px, one card.
+    /// </summary>
+    /// <param name="romanian">The language of the window.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task R055_AtItsMinimumHeightTheCardsListShowsFourCards(bool romanian)
+        => _sta.InvokeAsync(async () =>
+        {
+            using IDisposable _ = Ui.Use(romanian ? UiLanguage.Romanian : UiLanguage.English);
+            using WindowFixture f = new(destCards: FitsTestData.MirroredSolveCards(200, 80));
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, Force = true };
+            await vm.FactsRead;
+            MainWindow w = new(vm) { Left = -20000, Top = -20000, ShowActivated = false, Width = 720 };
+            w.Height = w.MinHeight;
+            w.Show();
+            try
+            {
+                await vm.Copy();
+                w.UpdateLayout();
+                Assert.Equal(2, vm.Warnings.Count);
+                Assert.Equal(3, vm.Notes.Count);
+                Render((FrameworkElement)w.Content, (int)((FrameworkElement)w.Content).ActualWidth,
+                    (int)((FrameworkElement)w.Content).ActualHeight, romanian ? "window-minimum-ro" : "window-minimum-en");
+
+                ListBox list = Descendants(w).OfType<ListBox>().Single();
+                ScrollViewer scroll = Descendants(list).OfType<ScrollViewer>().First();
+                Assert.True(scroll.ViewportHeight >= 4, $"the list shows {scroll.ViewportHeight} cards, {list.ActualHeight} px");
+            }
+            finally
+            {
+                w.Close();
+            }
+        });
+
+    /// <summary>
+    /// A refusal with a warning raised before it shows the warning above the refusal, as R-033
+    /// says and the console prints them (CR-017 of the review of 2026-11-16): a source without a
+    /// plate solve and the optical keys off gives the warning, then `No relevant key found`.
+    /// </summary>
+    [Fact]
+    public Task R033_TheWarningsRaisedBeforeARefusalAreShownAboveIt()
+        => _sta.InvokeAsync(async () =>
+        {
+            using IDisposable _ = Ui.Use(UiLanguage.English);
+            // a processed header as the source: no plate solve at all, the optical keys only
+            using WindowFixture f = new(sourceCards: FitsTestData.ProcessedCards());
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, IncludeOptical = false };
+            MainWindow w = new(vm);
+            await vm.Preview();
+            Assert.True(vm.HasError);
+            Assert.True(vm.HasWarnings);
+            FrameworkElement window = (FrameworkElement)w.Content;
+            Render(window, name: "window-warning-and-refusal");
+
+            TextBlock warning = TextBlockWith(window, Assert.Single(vm.Warnings));
+            TextBlock refusal = TextBlockWith(window, vm.Error!);
+            Assert.True(Box(warning, window).Bottom <= Box(refusal, window).Top,
+                $"warning at {Box(warning, window)}, refusal at {Box(refusal, window)}");
+            w.Close();
+        });
+
+    /// <summary>
+    /// Where a window's top goes to stay on its screen (R-055): its own top when it fits, the
+    /// area's top when it starts above it or is as tall as the area, and up until its bottom is
+    /// the area's when it runs past the bottom.
+    /// </summary>
+    /// <param name="top">The window's top before the fit.</param>
+    /// <param name="height">The window's height.</param>
+    /// <param name="expected">The top after the fit, in an area from 40 to 1040.</param>
+    [Theory]
+    [InlineData(200, 700, 200)]
+    [InlineData(-100, 700, 40)]
+    [InlineData(600, 700, 340)]
+    [InlineData(300, 1000, 40)]
+    [InlineData(300, 1200, 40)]
+    public void R055_WindowFitTopKeepsTheWindowInsideTheArea(double top, double height, double expected)
+        => Assert.Equal(expected, WindowFit.Top(top, height, 40, 1000));
+
+    /// <summary>
+    /// A shown window on a screen shorter than its minimum is no taller than the screen's work
+    /// area (R-055; the review of the branch, 2026-11-18): Windows holds a shown window at its
+    /// minimum, so the minimum must come down before the height does, or the window stays 680
+    /// high and runs past the area's bottom.
+    /// </summary>
+    [Fact]
+    public void R055_AShownWindowOnAShortScreenIsNoTallerThanItsWorkArea()
+        => _sta.Invoke(() =>
+        {
+            MainWindow w = new() { Left = -20000, Top = -20000, ShowActivated = false };
+            w.Show();
+            try
+            {
+                Rect area = new(-20000, -20000, 1280, 600);
+                w.FitInto(area);
+                w.UpdateLayout();
+
+                Assert.Equal(600, w.ActualHeight);
+                Assert.True(w.Top + w.ActualHeight <= area.Bottom, $"top {w.Top}, height {w.ActualHeight}");
+            }
+            finally
+            {
+                w.Close();
+            }
+        });
 }

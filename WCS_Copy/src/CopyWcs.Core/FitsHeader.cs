@@ -43,6 +43,21 @@ internal sealed class FitsHeader
     /// <summary>The key under which a failed write keeps its target's full path in the exception's <see cref="Exception.Data"/> (R-014).</summary>
     private const string TargetKey = "CopyWcs.Target";
 
+    /// <summary>The key under which a failed write keeps the backup of the old target it could not put back, in the exception's <see cref="Exception.Data"/> (R-014).</summary>
+    private const string KeptKey = "CopyWcs.KeptBackup";
+
+    /// <summary>The key under which a failed write says it put the old target back from its backup, in the exception's <see cref="Exception.Data"/> (R-014).</summary>
+    private const string PutBackKey = "CopyWcs.PutBack";
+
+    /// <summary>
+    /// Stands in for Windows' replace in a test, on the test's own thread: the temporary file,
+    /// the target and the backup name, as <see cref="File.Replace(string, string, string?, bool)"/>
+    /// takes them; null, the real replace. Windows' halfway failures (1176, 1177) cannot be made
+    /// on demand, so a test makes them through this (ADR 0031).
+    /// </summary>
+    [ThreadStatic]
+    internal static Action<string, string, string>? ReplaceForTests;
+
     /// <summary>The longest file name NTFS, FAT and exFAT accept, in UTF-16 units: the limit a write's temporary name keeps within (R-012).</summary>
     private const int NameLimit = 255;
 
@@ -488,8 +503,11 @@ internal sealed class FitsHeader
     /// <summary>
     /// Writes this header, END and the padding to the next 2880-byte boundary, followed by the
     /// data area copied from <paramref name="dataSource"/>, into a temporary file beside the
-    /// target, renamed over the target at the end (R-012): a write that fails at any point leaves
-    /// the target as it was, or absent, and its temporary file is deleted (R-014). The temporary
+    /// target, flushed to the disk and put in the target's place at the end, an existing target
+    /// replaced so that it keeps its creation time, attributes and permissions (R-012, ADR 0031):
+    /// a write that fails at any point leaves the target as it was, or absent, and its temporary
+    /// file is deleted (R-014), save a replace that failed halfway with an old file that cannot be
+    /// put back from its backup, which keeps both files (<see cref="PutBack"/>). The temporary
     /// file has a name of its own (<see cref="TemporaryBeside"/>) and is created only when no
     /// file holds that name, so no file of the user's is overwritten; an in-place write goes the
     /// same way, since the header may have grown past its original blocks and cannot be patched
@@ -501,13 +519,14 @@ internal sealed class FitsHeader
     /// Each card's characters are written as the bytes they were read from
     /// (<see cref="CardEncoding"/>). The diagnostic log gets the write before it starts, with its
     /// temporary file (at Trace every card to be written, so a failed write still shows the
-    /// header it meant to write), the file written after it, and the removal of a failed write's
-    /// temporary file (R-042, R-044); a write that throws is its caller's to log.
+    /// header it meant to write), the file written after it, the removal of a failed write's
+    /// temporary file, a backup that could not be removed, and what became of the backup of a
+    /// replace that failed halfway (R-042, R-044); a write that throws is its caller's to log.
     /// </summary>
     /// <param name="dataSource">The FITS file whose data area, from its own header's end, is copied; normally the file this header was read from. A relative path is taken from the working folder as the write begins.</param>
     /// <param name="target">The file to write: a new file, an existing one, replaced only at the end, or the same path as <paramref name="dataSource"/> for an in-place rewrite. A relative path is taken from the working folder as the write begins.</param>
     /// <exception cref="IOException">The target or its temporary file cannot be created, written or renamed (a missing folder, a full disk, a data source that cannot be read); its message is shown through <see cref="WriteErrorMessage"/>.</exception>
-    /// <exception cref="UnauthorizedAccessException">The target cannot be replaced by this user (read-only, a folder, no access); its message is shown the same way.</exception>
+    /// <exception cref="UnauthorizedAccessException">The target cannot be replaced by this user (read-only, a folder of that name, no access); its message is shown the same way.</exception>
     /// <exception cref="ArgumentException">A path is empty or blank.</exception>
     public void WriteWithDataFrom(string dataSource, string target)
     {
@@ -523,6 +542,8 @@ internal sealed class FitsHeader
         long total;
         bool created = false;
         bool moved = false;
+        bool kept = false;
+        string? backup = null;
         try
         {
             // The input first: a data source that cannot be read leaves no temporary file.
@@ -550,9 +571,35 @@ internal sealed class FitsHeader
                 input.Seek(_dataOffset, SeekOrigin.Begin);
                 input.CopyTo(output);
                 total = output.Position;
+
+                // On the disk before the rename: the file system journals the rename, not the
+                // data, so a power cut right after an unflushed copy could leave the target's
+                // name on a file not yet written (ADR 0031).
+                output.Flush(flushToDisk: true);
             }
 
-            File.Move(temp, full, overwrite: true);
+            // An existing file is replaced by Windows' replace, which gives the new file the old
+            // one's creation time, attributes and permissions, as a move does not; a permission
+            // the drive cannot carry over (FAT, some shares) does not fail the copy. The old file
+            // goes to a backup beside it, deleted after the replace, so a replace that fails
+            // halfway leaves it under a name the write knows and can put back (ADR 0031).
+            if (Directory.Exists(full))
+            {
+                // A folder of that name: refused as the move over it always was, access denied.
+                File.Move(temp, full, overwrite: true);
+            }
+            else if (File.Exists(full))
+            {
+                backup = BackupBeside(full);
+                (ReplaceForTests ?? ((t, f, b) => File.Replace(t, f, b, ignoreMetadataErrors: true)))(temp, full, backup);
+                moved = true;
+                DeleteBackup(backup);
+            }
+            else
+            {
+                File.Move(temp, full);
+            }
+
             moved = true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -562,11 +609,26 @@ internal sealed class FitsHeader
             // raised it, and the log writes it so.
             ex.Data[TemporaryKey] = temp;
             ex.Data[TargetKey] = full;
+            if (backup is not null && !moved)
+            {
+                switch (PutBack(backup, full, temp))
+                {
+                    case BackupFate.PutBack:
+                        ex.Data[PutBackKey] = true;
+                        break;
+                    case BackupFate.Kept:
+                        kept = true;
+                        ex.Data[KeptKey] = backup;
+                        break;
+                }
+            }
+
             throw;
         }
         finally
         {
-            if (created && !moved)
+            // A kept backup means the old file is not where it was: nothing more is deleted.
+            if (created && !moved && !kept)
             {
                 DeleteTemporary(temp);
             }
@@ -578,20 +640,22 @@ internal sealed class FitsHeader
     }
 
     /// <summary>
-    /// The path of a write's temporary file: in the target's folder, so the rename at the end
-    /// stays on one volume, named as the target followed by <c>.copywcs-</c>, 8 random
-    /// hexadecimal digits and <c>.tmp</c> (<c>stack.fit.copywcs-3f9a0c1e.tmp</c>), a name that
-    /// tells which program left it should a killed process leave one. A target name too long to
+    /// The path of a write's temporary file, or of the backup of a replaced target: in the
+    /// target's folder, so the rename at the end stays on one volume, named as the target followed
+    /// by <c>.copywcs-</c>, 8 random hexadecimal digits and the extension
+    /// (<c>stack.fit.copywcs-3f9a0c1e.tmp</c>, <c>.bak</c> for a backup), a name that tells which
+    /// program left it should a killed process leave one. A target name too long to
     /// take the 21-character suffix within <see cref="NameLimit"/> is shortened in the temporary
     /// name, so every name the file system accepts can be written (R-012).
     /// </summary>
     /// <param name="full">The full path of the file to write.</param>
-    /// <returns>The temporary file's full path; the write creates it only when no file holds it.</returns>
-    private static string TemporaryBeside(string full)
+    /// <param name="extension">The name's last four characters: <c>.tmp</c> for the temporary file, <c>.bak</c> for the backup of a replaced target.</param>
+    /// <returns>The file's full path; the write creates a temporary file only when no file holds it, and draws a backup's again while one does (<see cref="BackupBeside"/>).</returns>
+    private static string TemporaryBeside(string full, string extension = ".tmp")
     {
         string folder = Path.GetDirectoryName(full) ?? full;
         string name = Path.GetFileName(full);
-        string suffix = ".copywcs-" + Guid.NewGuid().ToString("N")[..8] + ".tmp";
+        string suffix = ".copywcs-" + Guid.NewGuid().ToString("N")[..8] + extension;
         if (name.Length + suffix.Length > NameLimit)
         {
             int keep = NameLimit - suffix.Length;
@@ -606,6 +670,92 @@ internal sealed class FitsHeader
         }
 
         return Path.Combine(folder, name + suffix);
+    }
+
+    /// <summary>
+    /// The name of the backup Windows' replace moves the old target to (ADR 0031): as the
+    /// temporary file's, ending in <c>.bak</c>, <c>stack.fit.copywcs-3f9a0c1e.bak</c>, and one no
+    /// file holds, since the replace would overwrite it.
+    /// </summary>
+    /// <param name="full">The full path of the target being replaced.</param>
+    /// <returns>The backup's full path, beside the target.</returns>
+    private static string BackupBeside(string full)
+    {
+        string backup;
+        do
+        {
+            backup = TemporaryBeside(full, ".bak");
+        }
+        while (Path.Exists(backup));
+
+        return backup;
+    }
+
+    /// <summary>
+    /// Deletes the backup of the old target after a replace that succeeded (ADR 0031); a delete
+    /// that fails leaves the old file under the backup's name and is a Warn line, the copy itself
+    /// being done.
+    /// </summary>
+    /// <param name="backup">The backup, which the replace created.</param>
+    private static void DeleteBackup(string backup)
+    {
+        try
+        {
+            File.Delete(backup);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Warn(ex, "the backup " + backup + " of the replaced file could not be removed");
+        }
+    }
+
+    /// <summary>
+    /// After a replace that failed, puts the old target back from its backup when Windows left it
+    /// there and the target's name is free (ERROR_UNABLE_TO_MOVE_REPLACEMENT_2, 1177), so the
+    /// folder is as it was (R-014, ADR 0031); a failure that left the old file in place made no
+    /// backup, and there is nothing to do.
+    /// </summary>
+    /// <param name="backup">The backup's full path.</param>
+    /// <param name="full">The target's full path.</param>
+    /// <param name="temp">The write's temporary file, named in the log when the backup is kept.</param>
+    /// <returns>What became of the backup: none was made, it was put back, or it is kept.</returns>
+    private static BackupFate PutBack(string backup, string full, string temp)
+    {
+        if (!File.Exists(backup))
+        {
+            return BackupFate.None;
+        }
+
+        if (!Path.Exists(full))
+        {
+            try
+            {
+                File.Move(backup, full);
+                Log.Warn("the replace of " + full + " failed halfway; the old file was put back from " + backup);
+                return BackupFate.PutBack;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Log.Error(ex, "the old file could not be put back from " + backup + " to " + full);
+            }
+        }
+
+        Log.Error("the replace of " + full + " failed halfway; the old file is kept as " + backup
+                  + " and the new one as " + temp);
+        return BackupFate.Kept;
+    }
+
+    /// <summary>What became of the backup of a replace that failed (ADR 0031).</summary>
+    private enum BackupFate
+    {
+        /// <summary>The replace failed before it made one: the old file is where it was.</summary>
+        None,
+
+        /// <summary>The old file was moved back from the backup to its own name.</summary>
+        PutBack,
+
+        /// <summary>The backup could not be put back and is kept, the new file too.</summary>
+        Kept,
     }
 
     /// <summary>
@@ -630,15 +780,25 @@ internal sealed class FitsHeader
     /// The message of an exception, as the user is shown it after a failed write: where the
     /// system's message names the write's temporary file, it names the target instead
     /// (<c>Could not find a part of the path 'E:\out\final_wcs.fit'.</c>), the file the user asked
-    /// for (R-014). A rename the system refused names no path at all, and stays so.
+    /// for (R-014). A rename the system refused names no path at all, and stays so. After a replace
+    /// that failed halfway (ADR 0031) it adds that the old file was put back, since Windows' own
+    /// words then say it was renamed, or where it is kept when it could not be put back.
     /// </summary>
     /// <param name="ex">The exception <see cref="WriteWithDataFrom"/> threw, or any other; not null.</param>
-    /// <returns>The message, the temporary file's path replaced by the target's; any other exception's message as it is.</returns>
+    /// <returns>The message, the temporary file's path replaced by the target's, and the sentence on the old file after a replace that failed halfway; any other exception's message as it is.</returns>
     internal static string WriteErrorMessage(Exception ex)
     {
         ArgumentNullException.ThrowIfNull(ex);
-        return ex.Data[TemporaryKey] is string temp && ex.Data[TargetKey] is string full
+        string message = ex.Data[TemporaryKey] is string temp && ex.Data[TargetKey] is string full
             ? ex.Message.Replace(temp, full, StringComparison.Ordinal)
             : ex.Message;
+        if (ex.Data[KeptKey] is string kept)
+        {
+            return message + T($" The file was kept as '{kept}'.", $" Fisierul a fost pastrat ca '{kept}'.");
+        }
+
+        return ex.Data[PutBackKey] is true
+            ? message + T(" The file was put back as it was.", " Fisierul a fost pus inapoi cum era.")
+            : message;
     }
 }
