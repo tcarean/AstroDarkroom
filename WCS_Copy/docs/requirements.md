@@ -19,7 +19,7 @@ R-001 to R-015 describe the tool as it was built in August 2026 and were written
 from its tests (ADR 0001), R-016 and R-017 the plan
 `docs/plans/2026-11-06-drop-the-destinations-old-plate-solve-cards.md`, R-018, R-019 and R-050, and the changes of that day to R-009, R-010, R-012, R-014, R-016, R-039, R-042, R-043 and R-046, the plan
 `docs/plans/2026-11-18-fix-cr-001-to-cr-005.md`, and R-051 to R-054 and the changes of that day
-to R-015, R-030, R-032, R-034, R-039, R-043 and R-050 the plan `docs/plans/2026-11-18-fix-cr-006-to-cr-010.md`, R-055 and R-060 and the changes of that day to R-002, R-005 and R-012 the plan `docs/plans/2026-11-18-fix-cr-011-to-cr-018.md`, which fixed
+to R-015, R-030, R-032, R-034, R-039, R-043 and R-050 the plan `docs/plans/2026-11-18-fix-cr-006-to-cr-010.md`, R-055 and R-060 and the changes of that day to R-002, R-005 and R-012 the plan `docs/plans/2026-11-18-fix-cr-011-to-cr-018.md`, R-061 and the changes of 2026-11-19 to R-003, R-007, R-011 and R-016 the plan `docs/plans/2026-11-19-fix-cr-019-to-cr-023.md`, which fixed
 entries of the review of 2026-11-16; the window rows (R-030 on) are the second task of
 `docs/plans/2026-10-26-adopt-the-kit-and-build-the-window.md`, R-038 the plan
 `docs/plans/2026-10-28-add-the-top-band-to-the-window.md`, R-039 the plan

@@ -124,8 +124,9 @@ once, as the write begins, and the temporary file, the data read and the rename 
 so a working folder that moves during the write (a file dialog of the window, CR-006) changes
 neither file; the review of the branch found the target looked up again at the rename, which
 `WorkingFolderTests` shows by moving the working folder at the write's first log line. The header may have grown past its original
-number of blocks (a copy adds up to 47 fixed keys, the SIP coefficients and a HISTORY card; 72
-on V-001), so an in-place write could not patch the destination anyway. `TemporaryBeside` names
+number of blocks (a copy adds up to 49 fixed keys, the 32 WCS and the 17 optical ones, the SIP
+coefficients and a HISTORY card; 72 on V-001), so an in-place write could not patch the
+destination anyway. `TemporaryBeside` names
 the temporary file after the target, `<name>.copywcs-<8 random hex digits>.tmp`, in the target's
 folder so the rename stays on one volume, `<name>` cut, never inside a surrogate pair, when it is
 too long to take the 21-character suffix within `NameLimit`, the 255 characters NTFS, FAT and

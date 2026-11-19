@@ -90,3 +90,10 @@ The log of the refused run holds `copy done refused: mirrored plate solve (sourc
   found the pair to be mirror images, and R-017 (ADR 0012) refuses it without `--force`: V-002
   gained `mirrored: true`, its copy is measured forced, and the dry run above was measured
   again with the build that refuses (76 lines without the warning before, 77 with it now).
+- 2026-11-19: both cases measured again with the Release console of the branch that fixed CR-019
+  to CR-023 of the review of 2026-11-16, which changed the code they measure (`A_DMAX` and
+  `B_DMAX` in the WCS list, the SIP pattern ending at the keyword's end, a copied `WCSAXES`
+  moved above the plate solve): V-001's dry run still lists 72 keys, 61 with `--no-optical`;
+  V-002's is refused with exit 1 without `--force`, and with it prints 77 lines, 72 keys and
+  the drop line of the four `CD` keys. No figure moved: Siril writes neither `WCSAXES` nor the
+  two new keys.
