@@ -1545,6 +1545,40 @@ public partial class DarkSeriesTests
     }
 
     /// <summary>
+    /// CR-018: the noise from one frame to the next, and with it the master's noise and the frames needed, rested
+    /// on the first two decoded frames alone; it is the median over every pair of consecutive frames.
+    /// </summary>
+    [Fact]
+    public void R024_OneNoisyFirstFrameDoesNotSetTheMastersNoise()
+    {
+        // twelve darks of noise 3, the first of noise 9: the first pair reads sqrt((81 + 9) / 2) = 6.7
+        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Noise = i == 0 ? 9 : 3 });
+        NoiseVsN nv = Run(s).Darks.Noise;
+        Assert.InRange(nv.TemporalSigma, 2.8, 3.2);
+        // the median master of twelve frames of noise 3: 1.25 x 3 / sqrt(12) = 1.09 (2.42 from the first pair)
+        Assert.InRange(nv.MasterNoise, 1.0, 1.17);
+        // the measured curve is not touched: its first point is still the first frame against the second
+        Assert.Equal(1, nv.Curve[0].N);
+        Assert.InRange(nv.Curve[0].Measured, 6.2, 7.2);
+
+        // the same with the noisy frame last, and in the middle, where it sits in two pairs of eleven
+        foreach (int odd in new[] { 11, 5 })
+        {
+            using SessionFixture t = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Noise = i == odd ? 9 : 3 });
+            Assert.InRange(Run(t).Darks.Noise.TemporalSigma, 2.8, 3.2);
+        }
+
+        // two frames have one pair: the figure is that pair's, as before
+        using SessionFixture two = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 100 + i, Noise = 3 });
+        NoiseVsN pair = Run(two).Darks.Noise;
+        Assert.Equal(pair.Curve[0].Measured, pair.TemporalSigma, 12);
+
+        // one frame has none: no figure from one frame to the next
+        using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 3 });
+        Assert.True(double.IsNaN(Run(one).Darks.Noise.TemporalSigma));
+    }
+
+    /// <summary>
     /// CR-007: without lights check 9 asked for a master noise under one value step, so on a camera whose values
     /// go 1 by 1 twelve darks of noise 9 read WARNING with 128 needed; the same darks with their lights are judged
     /// on the stack. Without lights only the minimum of ten is judged, and the words say where the answer is.

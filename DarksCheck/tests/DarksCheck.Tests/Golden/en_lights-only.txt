@@ -45,7 +45,7 @@ Copyright (C) 2026 Tudor Carean
 
   5. THE NOISE OF EACH FRAME
     against the master : R 2.65 .. 2.71; G1 2.65 .. 2.72 (on average 2.69); G2 2.61 .. 2.71; B 2.62 .. 2.71  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]
-    read noise         : R 2.02  G1 2.03  G2 2.03  B 2.03 ADU (from 1 pairs of biases taken one after the other); the noise the exposure adds above the read noise, on the green pixels G1: ~2.23 ADU (it comes from the sensor's heat and from the value step)
+    read noise         : R 2.02  G1 2.03  G2 2.03  B 2.03 ADU (from 1 pairs of biases taken one after the other); the noise the exposure adds above the read noise, on the green pixels G1: ~2.24 ADU (it comes from the sensor's heat and from the value step)
     random banding     : horizontal: the rows differ from one another by 0.238 ADU, 1.0 times what the noise alone would give; vertical: 1.0 times (1 means no banding)
     verdict            : OK: no frame has noise more than 1.5 times the average noise (2.69 ADU)
 
@@ -67,8 +67,8 @@ Copyright (C) 2026 Tudor Carean
 
   9. HOW MANY DARKS ARE ENOUGH
     noise when averaged: the average of 2 frames has 2.14 ADU of noise; from the noise of a single frame (3.01 ADU), 2.13 was expected  [the green pixels G1, the central 192 px, ADU; measured from one frame to the next]
-    master             : 4 frames give a master with 1.89 ADU of noise per pixel (from the noise from one frame to the next, 3.01); a master of 2 frames made with the median and one of the other 2 made with the mean differ by 3.03 ADU
-    with n frames      : 4 frames (now): 1.89 ADU (the stack 11.3 % noisier; too few); 5 frames: 1.69 ADU (-11 % against the master of now; the stack 9.1 % noisier; too few); 10 frames: 1.19 ADU (-37 % against the master of now; the stack 4.6 % noisier; enough)  [against the stack made with an ideal dark master, that is, one made from very many frames, with no noise of its own; it is the stack of the 3 lights (6.7 ADU of noise each), counted without dithering; with dithering the difference is smaller]
+    master             : 4 frames give a master with 1.89 ADU of noise per pixel (from the noise from one frame to the next, 3.02); a master of 2 frames made with the median and one of the other 2 made with the mean differ by 3.03 ADU
+    with n frames      : 4 frames (now): 1.89 ADU (the stack 11.3 % noisier; too few); 5 frames: 1.69 ADU (-11 % against the master of now; the stack 9.2 % noisier; too few); 10 frames: 1.20 ADU (-37 % against the master of now; the stack 4.7 % noisier; enough)  [against the stack made with an ideal dark master, that is, one made from very many frames, with no noise of its own; it is the stack of the 3 lights (6.7 ADU of noise each), counted without dithering; with dithering the difference is smaller]
     enough from        : 10 frames for a stack at most 10 % noisier than with an ideal dark master; 10 for at most 5 %
     verdict            : WARNING: only 4 frames; at least 10 are needed, so that one odd frame does not spoil the master (the master's noise would be 1.89 ADU)
 
@@ -122,7 +122,7 @@ Copyright (C) 2026 Tudor Carean
 
     Against the sky: on a light of this session the sky is at 500.0 ADU above the black, so 1
     ADU is 0.20 % of the sky, about as much as a flat is off on average. In the stack of the 3
-    lights the noise per pixel falls to 4.15 ADU if you make it with the mean (5.01 with the
+    lights the noise per pixel falls to 4.16 ADU if you make it with the mean (5.01 with the
     median). Two noises go into this figure. The lights' noise (6.4 ADU on one light) falls the
     more lights you add. The dark master's noise (1.89 ADU) does not fall, because the same
     master is subtracted from every light. And an error of 1 ADU in the master stays 1 ADU in

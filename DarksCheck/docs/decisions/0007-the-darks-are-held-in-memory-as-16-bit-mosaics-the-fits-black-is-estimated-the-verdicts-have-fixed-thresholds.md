@@ -76,3 +76,10 @@ R-020 to R-041; the design note `docs/design/dark-analysis.md`; V-003 and V-004 
 figures. The window (plan step 4) exposes the thread count and the frame cap as settings. The
 memory knob lives in `src/DarksCheck.Cli/runtimeconfig.template.json` and the window's project
 gets the same file. A library of more than 60 frames reads a subset until the cap is raised.
+
+## Note of 2026-11-19
+
+The figures above that follow from the noise from one frame to the next are those of the first
+pair of frames, as it was read until 2026-11-19. Since ADR 0068 that noise is the median over
+every pair of consecutive frames: on Smida 1.48 ADU and a median-master noise of 0.41 ADU, where this
+record says 1.43 and 0.40.

@@ -108,3 +108,12 @@ The owner's answers of 2026-11-12 and 2026-11-13:
   the frames read, and the verdict then leaves out how many could be dropped (the review of
   2026-11-13). A folder of more darks than the cap is judged as the cap's worth of them.
 - R-024 is rewritten and R-123 is new; the ten goldens change in check 9's rows alone.
+
+## Note of 2026-11-19
+
+The figures above that follow from the noise from one frame to the next are those of the first
+pair of frames, as it was read until 2026-11-19. Since ADR 0068 that noise is the median over
+every pair of consecutive frames: 1.475 ADU on Smida (5.8 % at its 20 darks, 12 needed at
+10 % and 24 at 5 %), 5.405 on the 15.8 °C library (15.8 % at 30 with the Veil lights of
+2026-10-06, 49 and 100 needed), 3.381 on the -2 °C darks (3.0 % at 35, 11 and 22 needed). The
+table of the three pairs and the consequence `12.8 %, 39 needed` are the earlier figures.

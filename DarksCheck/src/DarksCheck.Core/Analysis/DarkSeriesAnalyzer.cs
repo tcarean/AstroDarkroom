@@ -176,17 +176,19 @@ internal sealed record HotStability(double ThresholdAdu, int Hot, IReadOnlyList<
 internal sealed record NoisePoint(int N, double Measured, double Expected);
 
 /// <summary>
-/// The noise of the mean of n frames against sigma / sqrt(n) (R-024); the temporal sigma (the n = 1
-/// point: frame against frame, the fixed pattern out), the median master's noise from half the
-/// frames, the predicted noise of the whole median master (<see cref="Th.MedianNoiseFactor"/> x
-/// temporal / sqrt(N)), and the side of the crop read.
+/// The noise of the mean of n frames against sigma / sqrt(n) (R-024); the temporal sigma (frame
+/// against frame, the fixed pattern out, the median over every pair of consecutive frames), the
+/// median master's noise from half the frames, the predicted noise of the whole median master
+/// (<see cref="Th.MedianNoiseFactor"/> x temporal / sqrt(N)), and the side of the crop read.
 /// </summary>
 /// <param name="Curve">The points, for each of <see cref="Th.NoiseCurveCounts"/> while two
 /// disjoint groups of that size fit in the series; empty under two frames.</param>
 /// <param name="SigmaFrame">The median over the decoded frames of the reference plane's clipped
 /// sigma, in raw ADU.</param>
-/// <param name="TemporalSigma">The first point's measured noise; NaN when the curve is
-/// empty.</param>
+/// <param name="TemporalSigma">The noise from one frame to the next, in raw ADU: the median, over
+/// every pair of consecutive decoded frames, of the clipped sigma of their difference over
+/// sqrt(2), at the quiet pixels of the crop (ADR 0068); the one pair's figure for two frames, NaN
+/// under two frames.</param>
 /// <param name="MedianHalfVsMeanHalf">The clipped sigma of the mean of the first half of the
 /// frames minus the median of the second half, at the quiet pixels, in raw ADU; NaN under two
 /// frames.</param>
@@ -1014,10 +1016,24 @@ internal static class DarkSeriesAnalyzer
             (halfVs, _) = Planes.ClippedSigma([.. diff]);
         }
 
+        // The noise from one frame to the next is read on every pair of consecutive frames and the
+        // median taken (R-024, ADR 0068), as the biases' read noise is. The first pair alone, the
+        // curve's n = 1 point, is the series' coldest on a camera that warms as it shoots, so it
+        // read 3 to 12 % low on five of the six real sets, and one odd first frame moved it whole.
+        List<double> pairs = [];
+        for (int k = 0; k + 1 < n; k++)
+        {
+            (double s, _) = Planes.ClippedSigma(MeanDiff(crops, k, k + 1, k + 1, k + 2, quietMask));
+            if (!double.IsNaN(s))
+            {
+                pairs.Add(s / Math.Sqrt(2));
+            }
+        }
+
         // The median master's noise: the temporal sigma (frame against frame, the pattern out)
         // over sqrt(N), times the median's penalty; the spatial sigma stands in when a single
         // frame leaves no temporal figure.
-        double temporal = curve.Count > 0 ? curve[0].Measured : double.NaN;
+        double temporal = Planes.Median(pairs);
         double basis = double.IsNaN(temporal) ? sigmaFrame : temporal;
         return new NoiseVsN(curve, sigmaFrame, temporal, halfVs, Th.MedianNoiseFactor * basis / Math.Sqrt(n), size);
     }

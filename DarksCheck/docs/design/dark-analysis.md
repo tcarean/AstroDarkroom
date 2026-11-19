@@ -110,7 +110,12 @@ against the next n on the central crop, hot pixels masked out, and compares with
 sigma / sqrt(n). The mask (`NoiseCurve`'s `quietMask`) keeps a pixel of the crop when the
 median master has it less than the hot threshold above the crop's own median level, so it never
 empties: half the crop lies at or under that level (ADR 0054). `MeanDiff` and the half against
-half read only those pixels. `Planes.ClippedSigma` answers NaN, not 0, for an empty array, so a
+half read only those pixels. The noise from one frame to the next (`NoiseVsN.TemporalSigma`),
+from which the master's noise, check 9's table and frames needed and check 5's noise above the
+read noise follow, is not the curve's first point: `NoiseCurve` reads `MeanDiff` on every pair
+of consecutive frames and takes the median of their sigmas (ADR 0068), so neither the cold
+first pair of a series that warms nor one odd frame sets it; with two frames it is that one
+pair's, the curve's first point. `Planes.ClippedSigma` answers NaN, not 0, for an empty array, so a
 figure read on nothing can only come out unmeasured.
 
 ## The biases and the dark current

@@ -273,7 +273,7 @@ The three need at least 6 frames with hot pixels, and the split also needs a ser
 (an amplitude ratio that spans at least 0.1; the test series span 0.24 to 0.38);
 otherwise they say why they cannot. Every light found is also given in raw ADU as a fraction of
 the dark master's noise per pixel (check 9), and of the lights stack's when there are lights:
-`+0.79 ADU is 0.55 times the dark master's noise per pixel (1.43 ADU)`. In the tests the glow
+`+0.79 ADU is 0.51 times the dark master's noise per pixel (1.55 ADU)`. In the tests the glow
 was at the top-left, 0.05 to 0.22 ADU-eq. A test series taken with the eyepiece uncovered and a
 lamp aimed at the camera reads 5 frames at +0.17 to +0.47 ADU-eq and a top side at +0.20, which
 the verdict on the master alone had read as `OK`.
@@ -334,7 +334,8 @@ its row.
 - **9. How many darks are enough**: first the rule, measured: the noise of the mean of n frames
   beside the noise of a single frame over sqrt(n) (the frames are independent when the two
   agree), and the predicted noise of the median master, 1.25 x the frame-against-frame noise /
-  sqrt(N). Then the row `with n frames`: what the master would be with 5, 10, 15, ... frames, to
+  sqrt(N); that noise is read on every pair of neighbouring frames and the middle value taken,
+  so one odd frame does not move it. Then the row `with n frames`: what the master would be with 5, 10, 15, ... frames, to
   two rows past the frames read: its noise, how that compares with the master of now
   and, when there are lights, how much noisier their stack comes out than with an ideal dark
   master, one made from very many frames, with no noise of its own. A master of few frames keeps some
@@ -354,7 +355,7 @@ its row.
   tells whether the frames check 4 lists as `to discard` can go. With more darks than
   `--max-frames` reads, the table speaks of the frames read, not of the folder's, and the
   verdict leaves that count out. As an example of what to
-  expect, 35 darks under 83 lights of two minutes gave a stack 3.1 % noisier, 11 darks were
+  expect, 35 darks under 83 lights of two minutes gave a stack 3.0 % noisier, 11 darks were
   enough at 10 % and 22 at 5 %.
 
 #### The index and the label

@@ -350,6 +350,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The master's noise of check 9 is worked out from the noise between every two neighbouring
+  darks, the middle value taken, no longer from the first two darks alone. One odd first frame
+  moved the figure whole, and on a series in which the camera warms the first two frames are
+  the quietest: on five of the six test series the figure was 3 to 12 % too small. The master's
+  noise, the table `with n frames`, the frames needed and check 5's noise added during the
+  exposure follow; a series that warms now needs a few more darks (39 became 49 on a warm
+  library against a long night of lights). The row `noise after averaging` keeps its points
+  (R-024, ADR 0068; CR-018 of the code review).
+
 - `--lights DIR`, and the lights folder chosen in the window, no longer take the files at the
   root of a session: when DIR has a session subfolder (`lights`, `darks`, `biases` or `flats`)
   its lights come from `DIR\lights` alone, and a session whose `lights\` holds no frame is

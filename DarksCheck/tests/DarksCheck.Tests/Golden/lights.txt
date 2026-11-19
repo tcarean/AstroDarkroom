@@ -64,10 +64,10 @@ Copyright (C) 2026 Tudor Carean
 
   9. CATE DARK-URI AJUNG
     zgomot dupa medie  : media a 2 cadre are 2.16 ADU de zgomot; din zgomotul unui singur cadru (3.01 ADU) se asteptau 2.13  [pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul]
-    master             : 4 cadre dau un master cu 1.87 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 2.99); un master din 2 cadre facut cu mediana si unul din celelalte 2 facut cu media difera cu 3.06 ADU
-    cu n cadre         : 4 cadre (acum): 1.87 ADU (stack cu 17.9 % mai zgomotos; prea putine); 5 cadre: 1.67 ADU (-11 % fata de masterul de acum; stack cu 14.5 % mai zgomotos; prea putine); 10 cadre: 1.18 ADU (-37 % fata de masterul de acum; stack cu 7.5 % mai zgomotos; ajung)  [fata de stack-ul facut cu un master dark ideal, adica din foarte multe cadre, fara zgomot propriu; e stack-ul celor 5 lights (6.7 ADU de zgomot fiecare), socotit fara dithering; cu dithering diferenta e mai mica]
+    master             : 4 cadre dau un master cu 1.89 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 3.01); un master din 2 cadre facut cu mediana si unul din celelalte 2 facut cu media difera cu 3.06 ADU
+    cu n cadre         : 4 cadre (acum): 1.89 ADU (stack cu 18.2 % mai zgomotos; prea putine); 5 cadre: 1.69 ADU (-11 % fata de masterul de acum; stack cu 14.8 % mai zgomotos; prea putine); 10 cadre: 1.19 ADU (-37 % fata de masterul de acum; stack cu 7.7 % mai zgomotos; ajung)  [fata de stack-ul facut cu un master dark ideal, adica din foarte multe cadre, fara zgomot propriu; e stack-ul celor 5 lights (6.7 ADU de zgomot fiecare), socotit fara dithering; cu dithering diferenta e mai mica]
     ajung de la        : 10 cadre pentru un stack cu cel mult 10 % mai zgomotos decat cu un master dark ideal; 16 pentru cel mult 5 %
-    verdict            : ATENTIE: doar 4 cadre; trebuie cel putin 10, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi 1.87 ADU)
+    verdict            : ATENTIE: doar 4 cadre; trebuie cel putin 10, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi 1.89 ADU)
 
   INDEX
     dark-uri           : idx121 (121.0 ADU-eq: valoarea medie a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)
@@ -101,7 +101,7 @@ Copyright (C) 2026 Tudor Carean
     electroni          : la ISO 400, 1 ADU = 2.07 electroni (senzorul transforma lumina in electroni, iar camera ii numara in ADU); 1 ADU-eq = 1.00 ADU = 2.1 electroni; intr-un pixel incap 34446 electroni (full well), iar pixelul prinde 56 % din lumina care cade pe el (QE). Cifre pentru Nikon D3300 de pe photonstophotos.net, scoase din masuratorile DxOMark, citite pe 2026-10-20; la senzorii mici metoda da prea multi electroni pe ADU.
     zgomot de citire   : NEMASURAT: sesiunea nu are bias-uri (sursa da 2.0 electroni pentru Nikon D3300)
     zgomot pe un dark  : un dark are 3.01 ADU de zgomot pe pixel; curentul de intuneric (ce aduna un pixel din caldura senzorului) se masoara doar cu bias-uri
-    zgomot in master   : masterul dark, facut din 4 cadre, mai are 1.87 ADU de zgomot pe pixel; stack-ul celor 5 lights are 3.4 ADU pe pixel daca il faci cu media si 4.0 daca il faci cu mediana (cu zgomotul masterului dark inclus)
+    zgomot in master   : masterul dark, facut din 4 cadre, mai are 1.89 ADU de zgomot pe pixel; stack-ul celor 5 lights are 3.4 ADU pe pixel daca il faci cu media si 4.0 daca il faci cu mediana (cu zgomotul masterului dark inclus)
     praguri pe set     : pixel fierbinte: peste 20 ADU-eq (20 ADU in fisier); scurgere de lumina pe harta: peste 1.0 ADU-eq (1.0 ADU); lumina constanta pe o latura: peste 0.15 ADU-eq (0.15 ADU); lumina pe un singur cadru: peste 0.1 ADU-eq (0.10 ADU)
     ce s-a gasit       : nimic peste praguri
     cer                : pe un light, cerul e la 500.0 ADU peste negru, cu 6.3 ADU de zgomot pe pixel (pixelii verzi G1, din 5 lights)
@@ -117,7 +117,7 @@ Copyright (C) 2026 Tudor Carean
     O greseala din masterul dark nu e zgomot. De exemplu: lumina intrata in aparat, sau un nivel
     de negru putin mutat. Masterul se scade din fiecare light, asa ca greseala ajunge intreaga
     in stack, oricate cadre ai aduna. Zgomotul, in schimb, scade cand aduni cadre: de 4 ori mai
-    multe cadre il injumatatesc. Masterul dark, facut din 4 cadre, mai are 1.87 ADU de zgomot pe
+    multe cadre il injumatatesc. Masterul dark, facut din 4 cadre, mai are 1.89 ADU de zgomot pe
     pixel; cu acesta compari o greseala, nu cu zgomotul unui singur cadru. Pe un singur pixel,
     cei 3.0 ADU de zgomot ai unui dark ascund orice greseala sub 1 ADU. Dar ochiul vede zone, nu
     pixeli: intr-o zona de 50 x 50 de pixeli zgomotul se compenseaza, iar greseala se vede de 50
@@ -126,9 +126,9 @@ Copyright (C) 2026 Tudor Carean
 
     Fata de cer: pe un light al acestei sesiuni cerul e la 500.0 ADU peste negru, deci 1 ADU e
     0.20 % din cer, cam cat greseste in medie un flat. In stack-ul celor 5 lights zgomotul pe
-    pixel scade la 3.40 ADU daca il faci cu media (4.02 cu mediana). In cifra asta intra doua
+    pixel scade la 3.41 ADU daca il faci cu media (4.03 cu mediana). In cifra asta intra doua
     zgomote. Al lights-urilor (6.3 ADU pe un light) scade cu cat aduni mai multe. Al masterului
-    dark (1.87 ADU) nu scade, pentru ca acelasi master se scade din toate lights-urile. Iar o
+    dark (1.89 ADU) nu scade, pentru ca acelasi master se scade din toate lights-urile. Iar o
     greseala de 1 ADU din master ramane 1 ADU in stack.
 
     Pragurile: un pixel e fierbinte peste 20 ADU-eq. Pe harta din tab-ul Harti, o scurgere de
