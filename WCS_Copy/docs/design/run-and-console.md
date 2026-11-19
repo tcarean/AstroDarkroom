@@ -72,9 +72,14 @@ stderr)` once, which the tests drive with string writers, and closes the log (`l
 in any position, `-h` stopping the parse at once, the value after `-o` refused when it starts
 with a dash as a path is (ADR 0030); a parse error is one line on stderr, the
 usage on stdout and exit 2 (R-002); `--help` is the usage and exit 0 (R-003). The usage is
-written whole per language because its columns are aligned by hand; the warranty paragraph
-of GPLv3 section 5(d) follows it, there and not under the banner so that it does not weigh on
-every run. Then the run, and the printing of the outcome as the table above says. Exit codes:
+written whole per language because its columns are aligned by hand, one raw string each
+(`EnglishUsage`, `RomanianUsage`), its line ends, LF in the repository, replaced by the
+writer's own (`ReplaceLineEndings(writer.NewLine)`), so its lines end in CR LF on Windows as
+every other line of the console (CR-023: one `WriteLine` of the raw string left 10 bare LF
+inside the CRLF output; the tests' `Lines()` normalise line ends and could not see it, and
+`R003_EveryLineOfTheUsageEndsInTheConsolesLineEnd` writes into a CR LF writer); the warranty
+paragraph of GPLv3 section 5(d) follows it, there and not under the banner so that it does not
+weigh on every run. Then the run, and the printing of the outcome as the table above says. Exit codes:
 0 success or preview, 1 refused or a bad `--lang`, 2 usage.
 
 ## The language (`Ui`, `LanguageArgument`)

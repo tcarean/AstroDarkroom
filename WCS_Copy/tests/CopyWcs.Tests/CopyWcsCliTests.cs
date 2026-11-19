@@ -544,6 +544,30 @@ public class CopyWcsCliTests
         Assert.Equal("", result.Stderr);
     }
 
+    /// <summary>
+    /// Every line the console writes ends in its output's line end, the usage's too, in both
+    /// languages and after a usage error: a writer whose line end is CR LF, the console's on
+    /// Windows, gets no bare LF (R-003; CR-023 of the review of 2026-11-16: the usage, one raw
+    /// string, kept the LF line ends of the source file inside the CRLF output, 10 lines of 19).
+    /// </summary>
+    /// <param name="commandLine">The arguments, separated by spaces.</param>
+    [Theory]
+    [InlineData("--help")]
+    [InlineData("--help --lang en")]
+    [InlineData("only-one-path")]
+    public void R003_EveryLineOfTheUsageEndsInTheConsolesLineEnd(string commandLine)
+    {
+        var stdout = new StringWriter { NewLine = "\r\n" };
+
+        CopyWcsCli.Run(commandLine.Split(' '), stdout, new StringWriter());
+
+        string text = stdout.ToString();
+        string rest = text.Replace("\r\n", "", StringComparison.Ordinal);
+        Assert.EndsWith("\r\n", text, StringComparison.Ordinal);
+        Assert.DoesNotContain('\n', rest);
+        Assert.DoesNotContain('\r', rest);
+    }
+
     /// <summary>A new file that is the source is one line on stderr and exit 1, and the source keeps every byte (R-019; CR-001).</summary>
     [Fact]
     public void R019_Run_ANewFileThatIsTheSource_ReturnsOneWithTheLineOnStderr()

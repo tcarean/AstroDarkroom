@@ -59,6 +59,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- `copywcs --help`, and the usage after a wrong command line, end every line in CR LF on
+  Windows, as the rest of the console's output, where the usage's own lines ended in a bare LF
+  (R-003; CR-023 of the review of 2026-11-16).
 - The `HISTORY` card writes a control character of the source's name, the 0x7F a Windows file
   name may hold, as `?`, where it wrote the byte itself, which a FITS header may not hold (R-011,
   ADR 0034; CR-022 of the review of 2026-11-16).
