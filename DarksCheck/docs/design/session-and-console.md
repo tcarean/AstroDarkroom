@@ -36,6 +36,9 @@ partner is `RunReport.LightsOnlyNeedsPartner`, the same in the console and the w
 (R-055). `ChosenLights` resolves `lightsFrom` first, before the darks are even listed, so a bad
 folder is refused at once and once: the full path must exist (`DirectoryNotFoundException`),
 its `lights\` is taken when that holds frames, else the folder itself, which must hold frames
+and have no session subfolder (`lights`, `darks`, `biases`, `flats`): a session's root holds
+its stacked results, so a session whose `lights\` gives no frame is refused with that folder
+named, and its root is never listed (ADR 0067)
 (`InvalidOperationException`); both messages open with `lights-urile alese: ` / `the chosen
 lights: `, as the partner's open with `partenerul: `. The result replaces `LightsDir` and
 `Lights` whatever the folder's own `lights\` holds, and `ChosenLightsRoot` keeps the folder as

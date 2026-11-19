@@ -350,6 +350,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- `--lights DIR`, and the lights folder chosen in the window, no longer take the files at the
+  root of a session: when DIR has a session subfolder (`lights`, `darks`, `biases` or `flats`)
+  its lights come from `DIR\lights` alone, and a session whose `lights\` holds no frame is
+  refused with `the chosen lights: no light in DIR\lights`. Until now the stacked `result.fit`
+  at the root was measured as the one light. A folder with the lights directly in it works as
+  before (R-055, ADR 0067; CR-017 of the code review).
+
 - A frame whose black or white is not the first frame's is left out and listed, like a frame of
   another size (`different black and white: 150 and 4095 instead of 600 and 16383`; `different
   white: 255 instead of 65535` for a FITS). Until now 12-bit files among 14-bit ones of the same

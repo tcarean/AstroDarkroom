@@ -1826,6 +1826,61 @@ public class LightsAndIndexTests
         Assert.Equal(RunReport.LightsOnlyNeedsPartner(other.Root), e.Message);
     }
 
+    /// <summary>
+    /// CR-017: a session given as the lights' folder fell back to its own FITS files when its lights\ was empty,
+    /// so the stacked result.fit at its root was measured as the one light.
+    /// </summary>
+    [Fact]
+    public void R055_ASessionWithoutLightsIsRefusedNotReadFromItsRoot()
+    {
+        using SessionFixture library = new SessionFixture().WithDarkSeries(3, Dark, inSubfolder: false);
+
+        // a session whose lights\ is empty (the raws archived), with a stacked result at its root
+        using SessionFixture emptied = new SessionFixture().WithDarkSeries(2, Dark);
+        Directory.CreateDirectory(emptied.LightsDir);
+        File.WriteAllBytes(Path.Combine(emptied.Root, "result.fit"), Light(0).Build(SessionFixture.FirstStart.AddSeconds(-3600)));
+        InvalidOperationException none = Assert.Throws<InvalidOperationException>(() => Run(library, lightsFrom: emptied.Root));
+        Assert.StartsWith($"lights-urile alese: niciun light in {emptied.LightsDir} (raw: ", none.Message, StringComparison.Ordinal);
+
+        // a session with no lights\ at all: its darks\ says it is a session, so its root is not read either
+        using SessionFixture darksOnly = new SessionFixture().WithDarkSeries(2, Dark);
+        File.WriteAllBytes(Path.Combine(darksOnly.Root, "result.fit"), Light(0).Build(SessionFixture.FirstStart.AddSeconds(-3600)));
+        InvalidOperationException noFolder = Assert.Throws<InvalidOperationException>(() => Run(library, lightsFrom: darksOnly.Root));
+        Assert.StartsWith($"lights-urile alese: niciun light in {darksOnly.LightsDir} (raw: ", noFolder.Message, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            InvalidOperationException en = Assert.Throws<InvalidOperationException>(() => Run(library, lightsFrom: darksOnly.Root));
+            Assert.StartsWith($"the chosen lights: no light in {darksOnly.LightsDir} (raw: ", en.Message, StringComparison.Ordinal);
+        }
+
+        // the same for biases\ and flats\ alone
+        foreach (string sub in new[] { "biases", "flats" })
+        {
+            using TempWorkspace ws = new();
+            Directory.CreateDirectory(Path.Combine(ws.Dir, sub));
+            File.WriteAllBytes(Path.Combine(ws.Dir, "result.fit"), Light(0).Build(SessionFixture.FirstStart.AddSeconds(-3600)));
+            Assert.Throws<InvalidOperationException>(() => Run(library, lightsFrom: ws.Dir));
+        }
+
+        // through the console: refused before anything is decoded
+        (int code, string stdout, string stderr) = Cli.Run(library.Root, "--threads", "2", "--lights", emptied.Root);
+        Assert.Equal(1, code);
+        Assert.Contains($"EROARE: lights-urile alese: niciun light in {emptied.LightsDir} (raw: ", stderr, StringComparison.Ordinal);
+        Assert.DoesNotContain("Se citesc", stderr, StringComparison.Ordinal);
+        Assert.DoesNotContain("=== DARK-URI", stdout, StringComparison.Ordinal);
+
+        // a folder with no session subfolder still gives its own frames
+        using TempWorkspace bare = new();
+        for (int i = 0; i < 2; i++)
+        {
+            File.WriteAllBytes(Path.Combine(bare.Dir, $"light_{i + 1:0000}.fit"), Light(i).Build(SessionFixture.FirstStart.AddSeconds(-3600 + (i * 150))));
+        }
+
+        DarkSeriesResult r = Run(library, lightsFrom: bare.Dir);
+        Assert.Equal(2, r.Inventory.Session.Lights.Count);
+        Assert.Equal(bare.Dir, r.Inventory.Session.LightsDir);
+    }
+
     [Fact]
     public void R055_LightsTakesAFolderAndIsRefusedBeforeDecoding()
     {

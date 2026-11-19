@@ -97,8 +97,8 @@ internal sealed class SessionFolder
     /// <param name="allowLightsOnly">True to accept a session with lights and no darks (R-054), as
     /// a run against a partner does.</param>
     /// <param name="lightsFrom">The folder to take the lights from instead of <c>lights/</c>
-    /// (R-055): a session, whose <c>lights/</c> is taken when it holds frames, or a folder of
-    /// lights; null for the folder's own. A folder that does not exist throws
+    /// (R-055): a session, whose <c>lights/</c> is taken and must hold frames, or a folder of
+    /// lights with no session subfolder; null for the folder's own. A folder that does not exist throws
     /// <see cref="DirectoryNotFoundException"/>, one without a frame
     /// <see cref="InvalidOperationException"/>, both naming the chosen lights.</param>
     /// <returns>The folder with its frames' paths.</returns>
@@ -154,15 +154,18 @@ internal sealed class SessionFolder
     }
 
     /// <summary>
-    /// The lights of a chosen folder (R-055): the folder's <c>lights/</c> when that holds frames,
-    /// otherwise the folder itself, which must hold frames.
+    /// The lights of a chosen folder (R-055): the folder's <c>lights/</c> when that holds frames;
+    /// otherwise the folder itself, which must hold frames and have no session subfolder
+    /// (<c>lights/</c>, <c>darks/</c>, <c>biases/</c>, <c>flats/</c>): the files at a session's
+    /// root are its stacked results (ADR 0067).
     /// </summary>
     /// <param name="folder">The folder chosen; not blank, relative paths allowed.</param>
     /// <returns>The folder made full, the folder the frames were listed in, and the frames'
     /// paths, sorted.</returns>
     /// <exception cref="DirectoryNotFoundException">The folder does not exist.</exception>
     /// <exception cref="InvalidOperationException">Neither the folder nor its <c>lights/</c>
-    /// holds a frame.</exception>
+    /// holds a frame, or the folder is a session whose <c>lights/</c> holds none; the message
+    /// names the folder that was searched.</exception>
     private static (string Root, string Dir, IReadOnlyList<string> Frames) ChosenLights(string folder)
     {
         string prefix = T("the chosen lights: ", "lights-urile alese: ");
@@ -184,11 +187,17 @@ internal sealed class SessionFolder
             }
         }
 
-        IReadOnlyList<string> own = FramesIn(root);
+        // A session keeps its lights in lights\ and its stacked results at its root: with a
+        // session subfolder the root's own files are never lights (ADR 0067), as Open never
+        // takes a session's root for its darks.
+        string[] session = [LightsName, DarksName, BiasesName, FlatsName];
+        bool isSession = session.Any(n => Directory.Exists(Path.Combine(root, n)));
+        IReadOnlyList<string> own = isSession ? [] : FramesIn(root);
         if (own.Count == 0)
         {
+            string searched = isSession ? sub : root;
             throw new InvalidOperationException(
-                prefix + T($"no light in {root} (raw: ", $"niciun light in {root} (raw: ") + string.Join(", ", RawReader.RawExtensions)
+                prefix + T($"no light in {searched} (raw: ", $"niciun light in {searched} (raw: ") + string.Join(", ", RawReader.RawExtensions)
                 + "; FITS: .fit, .fits, .fts)");
         }
 

@@ -486,7 +486,9 @@ the `lights` row of `INDEX` says what dark they are like; the darks' index and l
 open folder's and do not change. The figures are the ones the same lights give from the
 folder's own `lights\`: the library of the example above, given those 87 lights, reads the same
 0.43, on the same 3933 pixels. A lights folder that does not exist or holds no frame is refused
-with `ERROR` before anything is decoded, and `--out` cannot point inside it. A folder with
+with `ERROR` before anything is decoded, and `--out` cannot point inside it. A session whose
+`lights\` holds no frame is refused too: the files beside it (a stacked `result.fit`) are never
+taken as lights. A folder with
 lights and no darks still needs its partner, whichever lights it is given.
 
 ### FITS frames
