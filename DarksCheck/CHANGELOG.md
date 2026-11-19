@@ -350,6 +350,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A frame whose black or white is not the first frame's is left out and listed, like a frame of
+  another size (`different black and white: 150 and 4095 instead of 600 and 16383`; `different
+  white: 255 instead of 65535` for a FITS). Until now 12-bit files among 14-bit ones of the same
+  size, ISO and exposure were measured against the first frame's black and white. A black that
+  the camera measures in each frame, and that moves by a few ADU, stays within the limit of 1 %
+  of the white. A FITS with decimals on 0 .. 1 that holds a value just over 1 is no longer read
+  as a file in ADU, which turned the whole frame to zeros: such a file is in ADU only when more
+  than 0.1 % of its values are over 1 (R-020, ADR 0066; CR-016 of the code review).
+
 - The `+/-` beside each side's constant light in check 3 is worked out from the line the value
   itself comes from. When the warming of the series rested on one cold frame the error shown
   was several times too small (about 0.04 where the value really scattered by 0.28), and a

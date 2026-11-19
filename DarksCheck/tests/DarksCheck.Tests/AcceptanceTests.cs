@@ -361,6 +361,19 @@ public class AcceptanceTests
     }
 
     [Fact]
+    public void R020_AFrameWithAnotherWhitePrintsItsReasonAndTheOthersAreAnalysed_Exit1()
+    {
+        // CR-016: an 8-bit file among 16-bit ones of the same size and settings is left out, not measured on their scale
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i });
+        string[] cards = [.. SessionFixture.Cards(SessionFixture.FirstStart.AddSeconds(480), 120, 400), .. FitsTestData.BayerCards("RGGB")];
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0005.fit"), FitsTestData.BuildFits(256, 192, (x, y) => 100 + ((x + y) % 3), bitpix: 8, extraCards: cards));
+        (int code, string stdout, _) = Cli.Run(s.Root, "--threads", "2");
+        Assert.Equal(1, code);
+        Assert.Contains("=== DARK-URI: cadre citite 4 din 5", stdout, StringComparison.Ordinal);
+        Assert.Contains("eroare: alb diferit: 255 fata de 65535", stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void R126_TheConsoleWarnsWhenTheNamesAreNotInTheOrderTheFramesWereTaken_Exit0()
     {
         // CR-013: six darks, the last two by name taken first; the line follows the darks' interval and the run exits 0

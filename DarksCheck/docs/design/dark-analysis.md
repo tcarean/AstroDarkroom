@@ -40,10 +40,17 @@ one at a time, in order, until one decodes with that setting (`SameSettings`: th
 exposure each on its own, within `Th.ExposureTolerance`; the frame's settings are those its
 metadata read gave, the reading the group's setting came from, and the decoder's only when
 that read failed) and sets the geometry and the scale;
-the others decode in parallel and must match that setting and that size. A frame at another
+the others decode in parallel and must match that setting, that size and that scale
+(`SameScale`: the white, and the black when the files carry one, within `Th.ScaleTolerance` of
+the stack's white, so files of another bit depth are left out and a black the camera measures
+per frame is not; ADR 0066). The first reason that holds names the frame's error: its settings,
+its size, then its black and white (`ScaleError`). A frame at another
 setting sets nothing and is left out wherever it stands; when no file's metadata can be read
 the first decoded frame's settings decide. A float FITS on 0 .. 1 is brought to 0 ..
-65535, one already in ADU is kept with 65535 as the presumed white. A FITS carries no black
+65535, one already in ADU is kept with 65535 as the presumed white; `ToUshort` takes a float
+frame as in ADU when more than `Th.FloatAduMinShare` of its values are over 1, each frame on
+its own, the lights' through `DecodeOne` too, so one value just over 1 does not turn a frame on
+0 .. 1 into zeros. A FITS carries no black
 level, so the black of a FITS stack is the median of
 the first decoded frame's reference plane, or the black the biases' stack established when
 `DarkSeriesRun` read the biases first (a dark's median would overstate the pedestal by the

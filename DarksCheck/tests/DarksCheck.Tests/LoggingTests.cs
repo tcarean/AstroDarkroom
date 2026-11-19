@@ -491,6 +491,22 @@ public partial class LoggingTests
         Assert.DoesNotContain(capture.Events, e => e.Level == LogLevel.Warn && e.Exception is not null);
     }
 
+    /// <summary>CR-016: a frame left out for its black or white is a Warn line with both scales, in the log's words.</summary>
+    [Fact]
+    public void R101_AFrameLeftOutForItsWhiteIsAWarnLineInTheLogsWords()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i });
+        string eightBit = Path.Combine(s.DarksDir, "DSC_0004.fit");
+        string[] cards = [.. SessionFixture.Cards(SessionFixture.FirstStart.AddSeconds(360), 120, 400), .. FitsTestData.BayerCards("RGGB")];
+        File.WriteAllBytes(eightBit, FitsTestData.BuildFits(256, 192, (x, y) => 100, bitpix: 8, extraCards: cards));
+        using LogCapture capture = LogCapture.Start();
+
+        DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2));
+
+        string[] warned = capture.Events.Where(e => e.Level == LogLevel.Warn).Select(e => e.Logger + ": " + e.Message).ToArray();
+        Assert.Equal(["FrameStack: frame 4/4 " + eightBit + " left out: black=none white=255, the stack's black=none white=65535; its row says so"], warned);
+    }
+
     /// <summary>
     /// A run that throws leaves its start line and, from its clock, the stages it reached; the
     /// exception is its caller's line (R-101). No dark decodes, so the run throws after the darks'

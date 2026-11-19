@@ -47,8 +47,9 @@ internal sealed record FitsBlack(double Black, int Width, int Height);
 /// <summary>
 /// A group of frames decoded into memory as 16-bit mosaics (24 MP = 48 MB each; ADR 0007),
 /// with the settings, the geometry and the scale they share: every frame must have the setting
-/// most of the group's frames have (the dominant one, which check 1 names) and the size of the
-/// first decoded frame that has it, or it is listed with an error and left out. The scale is the file's
+/// most of the group's frames have (the dominant one, which check 1 names) and the size, the
+/// black and the white of the first decoded frame that has it (<see cref="SameScale"/>), or it is
+/// listed with an error and left out. The scale is the file's
 /// (libraw's exact black and white for a raw; BITPIX's range for an integer FITS; a float
 /// FITS on 0..1 is brought to 0..65535). A FITS carries no black level, and a FITS Siril
 /// converted from a raw keeps the camera's pedestal (150 on the D3300), so for a FITS the
@@ -153,7 +154,8 @@ internal sealed class FrameStack
     /// <paramref name="threads"/> of them in flight at most). The metadata of every file is read
     /// first and gives the group's dominant setting (<see cref="Reference"/>); the first file in
     /// order that decodes with that setting sets the geometry and the scale, the others must match
-    /// it, and a frame at another setting is left out wherever it stands. Above <paramref name="maxFrames"/> frames
+    /// both (a frame of another size, or of another black or white, is left out with its error),
+    /// and a frame at another setting is left out wherever it stands. Above <paramref name="maxFrames"/> frames
     /// exactly that many files are decoded, from the first to the last at even distances
     /// (<see cref="Chosen"/>), so the memory stays bounded; the others are listed as skipped.
     /// <paramref name="fitsBlack"/> is the black level to use for a FITS, when a group
@@ -238,14 +240,23 @@ internal sealed class FrameStack
                     }
                 }
 
-                // the stack's size, or the frame's own for a frame left out for its settings
+                // the stack's size and scale, or the frame's own for a frame left out for its settings
                 int fw = f.Image.W, fh = f.Image.H;
-                (int w, int h) = sameSettings ? (geometry!.Value.W, geometry.Value.H) : (fw, fh);
-                frames[i] = !sameSettings
-                    ? new StackFrame(info, null, T($"other settings than most frames: ISO {Fmt(own.Iso)}, {Fmt(own.ExposureSeconds)} s", $"alte setari decat majoritatea cadrelor: ISO {Fmt(own.Iso)}, {Fmt(own.ExposureSeconds)} s"))
-                    : fw != w || fh != h
-                        ? new StackFrame(info, null, T($"different size: {fw} x {fh} instead of {w} x {h}", $"dimensiune diferita: {fw} x {fh} fata de {w} x {h}"))
-                        : new StackFrame(info, px, null);
+                (int w, int h, double stackBlack, double stackWhite) = sameSettings ? (geometry!.Value.W, geometry.Value.H, geometry.Value.Black, geometry.Value.White) : (fw, fh, black, white);
+
+                // why the frame is left out, the first reason that holds: its settings, its size,
+                // then its black and white (R-020, ADR 0066)
+                LeftOut why = !sameSettings ? LeftOut.Settings
+                    : fw != w || fh != h ? LeftOut.Size
+                    : !SameScale(black, white, stackBlack, stackWhite) ? LeftOut.Scale
+                    : LeftOut.None;
+                frames[i] = why switch
+                {
+                    LeftOut.Settings => new StackFrame(info, null, T($"other settings than most frames: ISO {Fmt(own.Iso)}, {Fmt(own.ExposureSeconds)} s", $"alte setari decat majoritatea cadrelor: ISO {Fmt(own.Iso)}, {Fmt(own.ExposureSeconds)} s")),
+                    LeftOut.Size => new StackFrame(info, null, T($"different size: {fw} x {fh} instead of {w} x {h}", $"dimensiune diferita: {fw} x {fh} fata de {w} x {h}")),
+                    LeftOut.Scale => new StackFrame(info, null, ScaleError(black, white, stackBlack, stackWhite)),
+                    _ => new StackFrame(info, px, null),
+                };
                 f = null!;
 
                 // The decoder's raster (194 MB of doubles at 24 MP) is garbage now, but on a
@@ -254,7 +265,7 @@ internal sealed class FrameStack
                 // (ADR 0007). One collection per decoded frame costs milliseconds against a
                 // second of decoding and keeps the peak at the frames kept plus those in flight.
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: false);
-                LogDecoded(i + 1, n, frames[i], against, fw, fh, w, h, black, white, nz, one.ElapsedMilliseconds);
+                LogDecoded(i + 1, n, frames[i], why, against, fw, fh, w, h, black, white, stackBlack, stackWhite, nz, one.ElapsedMilliseconds);
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
@@ -315,15 +326,32 @@ internal sealed class FrameStack
         return stack;
     }
 
+    /// <summary>Why the decoding loop left a decoded frame out of its stack.</summary>
+    private enum LeftOut
+    {
+        /// <summary>The frame is kept.</summary>
+        None,
+
+        /// <summary>Another ISO or exposure than the group's dominant setting.</summary>
+        Settings,
+
+        /// <summary>Another size than the stack's.</summary>
+        Size,
+
+        /// <summary>Another black or white than the stack's.</summary>
+        Scale,
+    }
+
     /// <summary>
     /// Writes a frame the decoding loop kept or left out: at Debug, a decoded frame's size, scale,
     /// normalisation, time and the process's working set after the collection that follows it (the
-    /// figure ADR 0007's memory trap needed); at Warn, a frame left out for its size or its
-    /// settings, in the log's words, the row keeping the report's.
+    /// figure ADR 0007's memory trap needed); at Warn, a frame left out for its settings, its size
+    /// or its black and white, in the log's words, the row keeping the report's.
     /// </summary>
     /// <param name="index">The frame's 1-based position in its group.</param>
     /// <param name="count">The group's number of files.</param>
     /// <param name="frame">The frame as the stack keeps it; not null.</param>
+    /// <param name="why">Why the frame was left out, or that it was kept.</param>
     /// <param name="settings">The frame whose settings the group's frames must have; not null.</param>
     /// <param name="fw">The frame's width, in pixels.</param>
     /// <param name="fh">The frame's height, in pixels.</param>
@@ -331,19 +359,28 @@ internal sealed class FrameStack
     /// <param name="h">The stack's height, in pixels; the frame's own for a frame left out for its settings.</param>
     /// <param name="black">The file's black level, in ADU; NaN for a FITS, which carries none.</param>
     /// <param name="white">The white level the frame was read with, in ADU.</param>
+    /// <param name="stackBlack">The black of the frame that set the stack's scale, in ADU; NaN for
+    /// a FITS; the frame's own for a frame left out for its settings.</param>
+    /// <param name="stackWhite">The white of that frame, in ADU; the frame's own for a frame left
+    /// out for its settings.</param>
     /// <param name="nz">The normalisation settings.</param>
     /// <param name="ms">The milliseconds the frame took, its read, conversion and collection.</param>
-    private static void LogDecoded(int index, int count, StackFrame frame, FrameInfo settings, int fw, int fh, int w, int h, double black, double white, Normalisation nz, long ms)
+    private static void LogDecoded(int index, int count, StackFrame frame, LeftOut why, FrameInfo settings, int fw, int fh, int w, int h, double black, double white, double stackBlack, double stackWhite, Normalisation nz, long ms)
     {
         string what = "frame " + LogText.Int(index) + "/" + LogText.Int(count) + " " + frame.Info.Path;
-        if (fw != w || fh != h)
+        if (why == LeftOut.Size)
         {
             Log.Warn(what + " left out: " + LogText.Int(fw) + "x" + LogText.Int(fh) + " instead of " + LogText.Int(w) + "x" + LogText.Int(h) + "; its row says so");
         }
-        else if (frame.Pixels is null)
+        else if (why == LeftOut.Settings)
         {
             Log.Warn(what + " left out: ISO " + LogText.Num(frame.Info.Iso) + " and " + LogText.Num(frame.Info.ExposureSeconds) + " s, most frames ISO "
                 + LogText.Num(settings.Iso) + " and " + LogText.Num(settings.ExposureSeconds) + " s; its row says so");
+        }
+        else if (why == LeftOut.Scale)
+        {
+            Log.Warn(what + " left out: black=" + LogText.Num(double.IsNaN(black) ? null : black) + " white=" + LogText.Num(white) + ", the stack's black="
+                + LogText.Num(double.IsNaN(stackBlack) ? null : stackBlack) + " white=" + LogText.Num(stackWhite) + "; its row says so");
         }
         else if (Log.IsDebugEnabled)
         {
@@ -384,7 +421,7 @@ internal sealed class FrameStack
         }
     }
 
-    /// <summary>A stack's frames counted: <c>28 decoded, 1 failed, 1 skipped</c>; a frame left out for its size or settings counts as failed.</summary>
+    /// <summary>A stack's frames counted: <c>28 decoded, 1 failed, 1 skipped</c>; a frame left out for its size, its settings or its scale counts as failed.</summary>
     /// <param name="frames">The frames.</param>
     /// <returns>The text.</returns>
     private static string Counts(IReadOnlyList<StackFrame> frames) =>
@@ -458,6 +495,45 @@ internal sealed class FrameStack
         bool sameExposure = a.ExposureSeconds is not double ea || first.ExposureSeconds is not double eb || MatchAnalyzer.SameExposure(ea, eb);
         return sameIso && sameExposure;
     }
+
+    /// <summary>
+    /// Whether a frame's black and white are the stack's (R-020, ADR 0066): the white, and the
+    /// black when both have one, within <see cref="Th.ScaleTolerance"/> of the stack's white. A
+    /// black the camera measures in each frame moves by a few ADU and stays the same scale; files
+    /// of another bit depth do not.
+    /// </summary>
+    /// <param name="black">The frame's black level, in ADU; NaN when its file carries none (a
+    /// FITS).</param>
+    /// <param name="white">The frame's white level, in ADU.</param>
+    /// <param name="stackBlack">The black of the frame that set the stack's scale, in ADU; NaN
+    /// when its file carries none.</param>
+    /// <param name="stackWhite">The white of that frame, in ADU, above 0.</param>
+    /// <returns>True when the frame can be measured on the stack's scale.</returns>
+    internal static bool SameScale(double black, double white, double stackBlack, double stackWhite)
+    {
+        double limit = Th.ScaleTolerance * stackWhite;
+        bool sameWhite = Math.Abs(white - stackWhite) <= limit;
+        // a black only one side gives cannot be compared: the white decides alone
+        bool sameBlack = double.IsNaN(black) || double.IsNaN(stackBlack) || Math.Abs(black - stackBlack) <= limit;
+        return sameWhite && sameBlack;
+    }
+
+    /// <summary>
+    /// The error of a frame left out for its scale (R-020): its black and white against the
+    /// stack's, or the two whites alone when the files carry no black (a FITS).
+    /// </summary>
+    /// <param name="black">The frame's black level, in ADU; NaN when its file carries none.</param>
+    /// <param name="white">The frame's white level, in ADU.</param>
+    /// <param name="stackBlack">The stack's black level as its first frame's file gave it, in ADU;
+    /// NaN when that file carries none.</param>
+    /// <param name="stackWhite">The stack's white level, in ADU.</param>
+    /// <returns>The error, in the run's language, for the frame's row.</returns>
+    internal static string ScaleError(double black, double white, double stackBlack, double stackWhite) =>
+        double.IsNaN(black) || double.IsNaN(stackBlack)
+            ? T($"different white: {Fmt(white)} instead of {Fmt(stackWhite)}", $"alb diferit: {Fmt(white)} fata de {Fmt(stackWhite)}")
+            : T(
+                $"different black and white: {Fmt(black)} and {Fmt(white)} instead of {Fmt(stackBlack)} and {Fmt(stackWhite)}",
+                $"negru si alb diferite: {Fmt(black)} si {Fmt(white)} fata de {Fmt(stackBlack)} si {Fmt(stackWhite)}");
 
     /// <summary>
     /// Which files of a group are decoded under the frame cap (R-027, ADR 0057): all of them up to
@@ -537,7 +613,8 @@ internal sealed class FrameStack
     /// A decoded frame's raster as 16-bit values, rounded and clamped to 0..65535, with its
     /// scale: the file's black and white, or for a FITS a NaN black and the white BITPIX
     /// allows; a float FITS on 0..1 is multiplied by 65535, one already in ADU is kept, both
-    /// with 65535 as the white.
+    /// with 65535 as the white. A float frame is in ADU when more than
+    /// <see cref="Th.FloatAduMinShare"/> of its values are over 1 (ADR 0066).
     /// </summary>
     /// <param name="f">The decoded frame.</param>
     /// <returns>The mosaic, the black (NaN when the file has none), the white, and the scale's
@@ -555,9 +632,20 @@ internal sealed class FrameStack
         if (f.Scale is null && f.Bitpix < 0)
         {
             // a float frame: on 0..1 it is brought to the 16-bit range so the stack stays
-            // integer; already in ADU it is kept, with 65535 as the presumed white
-            double max = img.D.Length == 0 ? 0 : img.D.Max();
-            if (max <= 1.0)
+            // integer; already in ADU it is kept, with 65535 as the presumed white. A frame in ADU
+            // has nearly every value over 1; a frame on 0..1 at most a few, which clip at the
+            // white. The largest value alone let one such value turn a whole frame to zeros
+            // (R-020, ADR 0066).
+            long over = 0;
+            foreach (double v in img.D)
+            {
+                if (v > 1.0)
+                {
+                    over++;
+                }
+            }
+
+            if (over <= Th.FloatAduMinShare * img.D.Length)
             {
                 factor = 65535;
                 white = 65535;

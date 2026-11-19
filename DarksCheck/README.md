@@ -137,10 +137,11 @@ short series or a low ISO does not count noise as hot pixels; the dead-pixel thr
 black - 50 ADU) and the figures of the biases are in raw ADU, since they do not depend on the
 exposure.
 
-A frame whose size differs from the first frame's, or whose ISO or exposure is not the one most
-frames have (the exposure by more than 2 %), is left out of the figures and listed as an error
-(`error: different size: ...`, `error: other settings than most frames: ...`), so the exit
-code is `1`. A single dark is not a series: checks 4, 5 and 9 and the stability of check 6 stay
+A frame whose size differs from the first frame's, or whose black or white is not the first
+frame's (12-bit files among 14-bit ones), or whose ISO or exposure is not the one most frames
+have (the exposure by more than 2 %), is left out of the figures and listed as an error
+(`error: different size: ...`, `error: different black and white: ...`, `error: other settings
+than most frames: ...`), so the exit code is `1`. A single dark is not a series: checks 4, 5 and 9 and the stability of check 6 stay
 `UNMEASURED`.
 
 The start of a report, on a session of 20 darks, 30 biases and 32 lights:
