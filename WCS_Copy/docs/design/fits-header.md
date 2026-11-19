@@ -181,8 +181,11 @@ no length.
 - `OpticalKeys`, 17 keys: the focal length and pixel size a later re-solve needs as a starting
   scale, the binning, the pointing (`OBJCTRA`, `OBJCTDEC`, `RA`, `DEC`, `OBJECT`), the site,
   the date and the instrument.
-- `SipCoefficient`, `^(A|B|AP|BP)_\d+_\d+$`: the distortion coefficients, whose names vary
-  with the polynomial degree; `ABC_1_2` does not match, nor does `A_ORDER`.
+- `SipCoefficient`, `^(A|B|AP|BP)_[0-9]+_[0-9]+\z`: the distortion coefficients, whose names
+  vary with the polynomial degree; `ABC_1_2` does not match, nor does `A_ORDER`, nor `A_1_2`
+  followed by a line feed, a byte `KeywordOf` keeps in a keyword: `\z` ends the match at the
+  keyword's end, where `$` also matched before a final line feed, and `[0-9]` says the indices
+  are ASCII digits, where `\d` took any script's (CR-021; a Latin-1 card holds no other digit).
 
 `SelectKeysToCopy(source, includeOptical)` builds the wanted list in that order, the SIP
 coefficients in the source's own order between the WCS keys and the optical ones, drops

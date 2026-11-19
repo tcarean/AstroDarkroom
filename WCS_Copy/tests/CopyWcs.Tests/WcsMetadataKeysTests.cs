@@ -98,6 +98,45 @@ public class WcsMetadataKeysTests
         Assert.Equal(["A_ORDER", "A_DMAX", "B_DMAX"], selected);
     }
 
+    /// <summary>
+    /// A plate-solve key is a WCS key of the list or a SIP coefficient whose two indices are ASCII
+    /// digits with nothing after them: a line feed after them, which a keyword may hold (R-010),
+    /// or a digit of another script makes no SIP coefficient (R-007; CR-021 of the review of
+    /// 2026-11-16: the pattern's <c>$</c> matched before a final line feed, its <c>\d</c> any
+    /// decimal digit).
+    /// </summary>
+    /// <param name="keyword">The keyword, as a header's Keywords give it.</param>
+    /// <param name="expected">Whether it is a plate-solve key.</param>
+    [Theory]
+    [InlineData("A_0_2", true)]
+    [InlineData("BP_1_1", true)]
+    [InlineData("AP_10_0", true)]
+    [InlineData("A_ORDER", true)]
+    [InlineData("A_DMAX", true)]
+    [InlineData("CD1_1", true)]
+    [InlineData("WCSAXES", true)]
+    [InlineData("ABC_1_2", false)]
+    [InlineData("A_1_2\n", false)]
+    [InlineData("A_1_2\r", false)]
+    [InlineData("A_١_2", false)]
+    [InlineData("OBJECT", false)]
+    [InlineData("SITELAT", false)]
+    [InlineData("", false)]
+    public void R007_IsPlateSolveKey_IsAWcsKeyOrASipCoefficientWithAsciiDigitsAndNothingAfter(string keyword, bool expected)
+    {
+        Assert.Equal(expected, WcsMetadataKeys.IsPlateSolveKey(keyword));
+    }
+
+    /// <summary>A card whose keyword field holds <c>A_1_2</c> and a line feed is no SIP coefficient: not selected (R-007; CR-021).</summary>
+    [Fact]
+    public void R007_SelectKeysToCopy_AKeywordWithALineFeedAfterItsDigits_IsNoSipCoefficient()
+    {
+        var header = Header(FitsTestData.Pad("A_1_2\n  = 1.0e-05"));
+        Assert.Contains("A_1_2\n", header.Keywords);
+
+        Assert.Empty(WcsMetadataKeys.SelectKeysToCopy(header, includeOptical: true));
+    }
+
     [Fact]
     public void R007_SelectKeysToCopy_OpticalKeyIncludedOnlyWhenIncludeOpticalTrue()
     {
@@ -173,6 +212,17 @@ public class WcsMetadataKeysTests
         destCards.AddRange([FitsTestData.Card("A_DMAX", "1.5"), FitsTestData.Card("B_DMAX", "1.2")]);
 
         Assert.Equal(["A_DMAX", "B_DMAX"], WcsMetadataKeys.SelectKeysToDrop(source, Read(destCards)));
+    }
+
+    /// <summary>A destination's card whose keyword field holds <c>A_1_2</c> and a line feed is no plate-solve key: it is not dropped, and stays as it is (R-016; CR-021).</summary>
+    [Fact]
+    public void R016_SelectKeysToDrop_AKeywordWithALineFeedAfterItsDigits_IsNotDropped()
+    {
+        var source = Read(FitsTestData.PlateSolvedCards());
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards.Add(FitsTestData.Pad("A_1_2\n  = 1.0e-05"));
+
+        Assert.Empty(WcsMetadataKeys.SelectKeysToDrop(source, Read(destCards)));
     }
 
     [Fact]

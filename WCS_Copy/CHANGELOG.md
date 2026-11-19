@@ -59,6 +59,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A keyword such as `A_1_2` followed by a line feed, which only a damaged or crafted file holds,
+  is no longer taken for a SIP coefficient: a copy neither copies nor drops it, and its line feed
+  no longer splits a line of the log or the line naming the dropped keys (R-007; CR-021 of the
+  review of 2026-11-16).
 - A copy takes the SIP distortion's largest corrections, `A_DMAX` and `B_DMAX`, with the rest of
   the plate solve, and drops the destination's old ones the source does not have, where it left
   both alone (ADR 0033; CR-020 of the review of 2026-11-16).
