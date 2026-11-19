@@ -430,7 +430,7 @@ internal sealed class FitsHeader
     /// cards right under it) up, right above the first card whose keyword
     /// <paramref name="below"/> accepts, when that card stands above them; else nothing changes.
     /// The other cards keep their order. How a copy keeps WCSAXES above the other keys of the
-    /// plate solve, as the FITS standard asks (R-061).
+    /// plate solve (R-061).
     /// </summary>
     /// <param name="key">The keyword whose cards move, case-sensitive; nothing moves when no card has it.</param>
     /// <param name="below">Given a card's keyword (an empty string for a blank card), whether that card must stand below the moved ones; not null. It may accept the moved keyword itself, which then stays where it is when it is the first accepted.</param>

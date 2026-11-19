@@ -118,7 +118,7 @@ public class WcsMetadataKeysTests
     [InlineData("ABC_1_2", false)]
     [InlineData("A_1_2\n", false)]
     [InlineData("A_1_2\r", false)]
-    [InlineData("A_١_2", false)]
+    [InlineData("A_\u0661_2", false)]
     [InlineData("OBJECT", false)]
     [InlineData("SITELAT", false)]
     [InlineData("", false)]

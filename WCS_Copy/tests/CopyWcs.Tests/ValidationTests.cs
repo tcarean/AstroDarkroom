@@ -121,6 +121,33 @@ public class ValidationTests
         Assert.Equal("2647693551", written.GetString("DATASUM"));
     }
 
+    /// <summary>
+    /// The SyQon CLI writes its header in alphabetical order, so its plate solve begins with the
+    /// SIP coefficient AP_0_0, the eleventh card, not with CTYPE1: a forced copy of the real Siril
+    /// solve with a WCSAXES card added under the image size, as astrometry.net writes one, puts
+    /// WCSAXES right above AP_0_0 (R-061; the review of the branch of CR-019: every other test's
+    /// plate solve began with CTYPE1, so a move above CTYPE1 alone passed them all).
+    /// </summary>
+    [Fact]
+    public void R061_ACopiedWcsaxesGoesAboveTheFirstSipCoefficientOfTheRealSyQonHeader()
+    {
+        using var ws = new TempWorkspace();
+        List<string> cards = FitsTestData.HeaderCards(File.ReadAllBytes(TestData.Fixture("veil-2026-10-06-siril-1.4.4-solve.fit")));
+        cards.Insert(cards.FindIndex(c => c.StartsWith("NAXIS3", StringComparison.Ordinal)) + 1, FitsTestData.Card("WCSAXES", "2"));
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(cards));
+        var destination = TestData.Fixture("veil-2026-10-06-syqon-cli-1.1.8-denoised.fit");
+        Assert.Equal(10, FitsHeader.ReadPrimary(destination).Keywords.ToList().IndexOf("AP_0_0"));
+        var output = ws.FilePath("out.fit");
+
+        var outcome = WcsCopy.Run(new WcsCopyRequest(source, destination, output,
+            IncludeOptical: true, Force: true, DryRun: false));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        List<string> keys = FitsHeader.ReadPrimary(output).Keywords.ToList();
+        Assert.Equal(10, keys.IndexOf("WCSAXES"));
+        Assert.Equal(11, keys.IndexOf("AP_0_0"));
+    }
+
     /// <summary>The two real headers' plate solves, read as Siril reads them, are mirror images when recorded so, and the copy is then refused without force (R-017).</summary>
     [Theory]
     [MemberData(nameof(DropCaseIds))]

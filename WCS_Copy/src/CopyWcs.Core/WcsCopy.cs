@@ -291,9 +291,11 @@ internal static class WcsCopy
             dest.SetValueCards(present[i], values[i]);
         }
 
-        // WCSAXES stands above every other WCS key (FITS 4.0, section 8.2), but the destination's
-        // own cards of the plate solve are replaced where they stand and a WCSAXES it lacks is
-        // appended after them: the copied one goes right above the first of them (R-061, ADR 0032).
+        // The FITS standard puts WCSAXES above the WCS keys (4.0, section 8.2), but the
+        // destination's own cards of the plate solve are replaced where they stand and a WCSAXES
+        // it lacks is appended after them: the copied one goes right above the first of them, a key
+        // of the lists. The standard's other WCS keywords, the date cards among them, are left
+        // where they are, above it in a Siril header (R-061, ADR 0032).
         if (present.Contains("WCSAXES"))
         {
             dest.MoveAbove("WCSAXES", WcsMetadataKeys.IsPlateSolveKey);

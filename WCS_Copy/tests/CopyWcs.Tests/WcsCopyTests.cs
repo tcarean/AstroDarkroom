@@ -1424,6 +1424,30 @@ public class WcsCopyTests
             FitsHeader.ReadPrimary(dest).Keywords.Take(8));
     }
 
+    /// <summary>
+    /// A copy that sets no WCSAXES, from a source with neither WCSAXES nor CTYPE1, which drops
+    /// nothing (R-016), leaves a destination's own WCSAXES where it stands, below its plate solve:
+    /// only a WCSAXES the copy set moves (R-061; the review of the branch of CR-019: a move asked
+    /// whatever the source held passed every test).
+    /// </summary>
+    [Fact]
+    public void R061_Run_ACopyThatSetsNoWcsaxes_LeavesTheDestinationsOwnWhereItStands()
+    {
+        using var ws = new TempWorkspace();
+        List<string> sourceCards = FitsTestData.ProcessedCards();
+        sourceCards.Add(FitsTestData.Card("FOCALLEN", "700.0"));
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(sourceCards));
+        List<string> destCards = FitsTestData.OldSolveCards();
+        destCards.Add(FitsTestData.Card("WCSAXES", "2"));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards));
+
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest)).Kind);
+
+        List<string> keys = FitsHeader.ReadPrimary(dest).Keywords.ToList();
+        Assert.Equal(keys.IndexOf("SITELAT") + 1, keys.IndexOf("WCSAXES"));
+        Assert.True(keys.IndexOf("CTYPE1") < keys.IndexOf("WCSAXES"));
+    }
+
     /// <summary>A destination's own WCSAXES that stands below its plate solve, which the copy replaces where it stands, is moved above that solve too (R-061; CR-019).</summary>
     [Fact]
     public void R061_Run_ADestinationsOwnWcsaxesBelowItsSolve_IsMovedAboveIt()

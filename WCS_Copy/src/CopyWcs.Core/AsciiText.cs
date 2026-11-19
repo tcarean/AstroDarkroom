@@ -104,9 +104,10 @@ internal static class AsciiText
     /// hold: a character with an ASCII base in Unicode's canonical decomposition becomes that
     /// base (a with breve to <c>a</c>, A with ring to <c>A</c>, the seven letters R-011 names
     /// among the 495 of the table); a combining mark standing alone, as in a name already
-    /// decomposed, is dropped; a control character (below 0x20, or 0x7F, which a Windows file
-    /// name may hold) becomes one <c>?</c> (ADR 0034), and so does any other character outside
-    /// ASCII, an emoji or a letter of another script, however many UTF-16 units it takes.
+    /// decomposed, is dropped; a control character (below 0x20, or 0x7F, the one of them a
+    /// Windows file name may hold) becomes one <c>?</c> (ADR 0034), and so does any other
+    /// character outside ASCII, an emoji or a letter of another script, however many UTF-16
+    /// units it takes.
     /// </summary>
     /// <param name="text">The text; a file name, normally.</param>
     /// <returns>The printable ASCII text; the same instance when the text already was.</returns>

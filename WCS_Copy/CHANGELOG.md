@@ -72,9 +72,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - A copy takes the SIP distortion's largest corrections, `A_DMAX` and `B_DMAX`, with the rest of
   the plate solve, and drops the destination's old ones the source does not have, where it left
   both alone (ADR 0033; CR-020 of the review of 2026-11-16).
-- A copy writes `WCSAXES` above the other cards of the plate solve, as the FITS standard asks,
-  where a destination's own plate solve kept its cards above the copied `WCSAXES`; astropy reads
-  either order the same (R-061, ADR 0032; CR-019 of the review of 2026-11-16).
+- A copy writes `WCSAXES` above the destination's other plate-solve cards, where they stayed
+  above the copied `WCSAXES`. The FITS standard wants it above every WCS card, and counts the
+  date cards (`DATE-OBS`) among them, which a copy leaves where they are; astropy reads either
+  order the same (R-061, ADR 0032; CR-019 of the review of 2026-11-16).
 - A file a copy replaces, the destination in place or an existing file given to `-o`, keeps its
   creation date, its attributes (Hidden, for one) and its permissions, where it got the copy's
   date and lost them; the copy is flushed to the disk before it takes the file's place, so a
