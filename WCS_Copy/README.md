@@ -18,7 +18,8 @@ It is free software under the GNU General Public License v3 or later; see `LICEN
 - The astrometric solution: `CTYPE`, `CUNIT`, `CRPIX`, `CRVAL`, the scale and rotation in
   whichever form the solver wrote (`CDELT` and `CROTA`, the `CD` matrix or the `PC` matrix),
   `EQUINOX`, `RADESYS`, `LONPOLE`, `LATPOLE`, `WCSAXES`, Siril's `PLTSOLVD`, and every SIP
-  distortion coefficient (`A_i_j`, `B_i_j`, `AP_i_j`, `BP_i_j`) with its order.
+  distortion coefficient (`A_i_j`, `B_i_j`, `AP_i_j`, `BP_i_j`) with its order and, when the
+  solver wrote them, the largest corrections `A_DMAX` and `B_DMAX`.
 - Unless `--no-optical`, the optical and observation metadata a later re-solve needs as a
   starting point: `FOCALLEN`, `XPIXSZ`, `YPIXSZ`, the binning, the pointing (`OBJCTRA`,
   `OBJCTDEC`, `RA`, `DEC`, `OBJECT`), the site, `DATE-OBS`, `INSTRUME`, `TELESCOP`.

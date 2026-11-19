@@ -59,6 +59,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A copy takes the SIP distortion's largest corrections, `A_DMAX` and `B_DMAX`, with the rest of
+  the plate solve, and drops the destination's old ones the source does not have, where it left
+  both alone (ADR 0033; CR-020 of the review of 2026-11-16).
 - A copy writes `WCSAXES` above the other cards of the plate solve, as the FITS standard asks,
   where a destination's own plate solve kept its cards above the copied `WCSAXES`; astropy reads
   either order the same (R-061, ADR 0032; CR-019 of the review of 2026-11-16).

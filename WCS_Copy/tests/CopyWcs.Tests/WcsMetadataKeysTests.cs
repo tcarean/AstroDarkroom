@@ -83,6 +83,21 @@ public class WcsMetadataKeysTests
         Assert.DoesNotContain("ABC_1_2", selected);
     }
 
+    /// <summary>
+    /// The SIP convention's largest corrections, A_DMAX and B_DMAX, are WCS keys: copied when the
+    /// source has them, after the orders (R-007; CR-020 of the review of 2026-11-16: neither list
+    /// held them).
+    /// </summary>
+    [Fact]
+    public void R007_SelectKeysToCopy_TheSipLargestCorrections_AreCopied()
+    {
+        var header = Header(FitsTestData.Card("A_ORDER", "2"), FitsTestData.Card("A_DMAX", "1.5"), FitsTestData.Card("B_DMAX", "1.2"));
+
+        var selected = WcsMetadataKeys.SelectKeysToCopy(header, includeOptical: false);
+
+        Assert.Equal(["A_ORDER", "A_DMAX", "B_DMAX"], selected);
+    }
+
     [Fact]
     public void R007_SelectKeysToCopy_OpticalKeyIncludedOnlyWhenIncludeOpticalTrue()
     {
@@ -147,6 +162,17 @@ public class WcsMetadataKeysTests
         Assert.DoesNotContain("A_0_2", drop);
         Assert.DoesNotContain("OBJECT", drop);
         Assert.DoesNotContain("ABC_1_2", drop);
+    }
+
+    /// <summary>A destination's own A_DMAX and B_DMAX, an old solve's, are dropped when the plate-solved source lacks them (R-016; CR-020).</summary>
+    [Fact]
+    public void R016_SelectKeysToDrop_TheDestinationsOldSipLargestCorrections_AreDropped()
+    {
+        var source = Read(FitsTestData.PlateSolvedCards());
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards.AddRange([FitsTestData.Card("A_DMAX", "1.5"), FitsTestData.Card("B_DMAX", "1.2")]);
+
+        Assert.Equal(["A_DMAX", "B_DMAX"], WcsMetadataKeys.SelectKeysToDrop(source, Read(destCards)));
     }
 
     [Fact]

@@ -26,7 +26,11 @@ namespace CopyWcs;
 /// </summary>
 internal static class WcsMetadataKeys
 {
-    /// <summary>The keys that describe the astrometric solution itself.</summary>
+    /// <summary>
+    /// The keys that describe the astrometric solution itself, 32: the SIP convention's orders
+    /// and its largest corrections (<c>A_DMAX</c>, <c>B_DMAX</c>, ADR 0033) among them; the SIP
+    /// coefficients themselves are <see cref="SipCoefficient"/>'s.
+    /// </summary>
     internal static readonly string[] WcsKeys =
     {
         "WCSAXES", "CTYPE1", "CTYPE2", "CUNIT1", "CUNIT2",
@@ -36,6 +40,7 @@ internal static class WcsMetadataKeys
         "PC1_1", "PC1_2", "PC2_1", "PC2_2",
         "EQUINOX", "RADESYS", "LONPOLE", "LATPOLE",
         "A_ORDER", "B_ORDER", "AP_ORDER", "BP_ORDER",
+        "A_DMAX", "B_DMAX",
         "PLTSOLVD"
     };
 

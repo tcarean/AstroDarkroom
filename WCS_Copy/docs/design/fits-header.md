@@ -172,11 +172,12 @@ no length.
 
 `WcsMetadataKeys` holds two literal lists and a pattern:
 
-- `WcsKeys`, 30 keys: the axis and projection (`WCSAXES`, `CTYPE`, `CUNIT`), the reference
+- `WcsKeys`, 32 keys: the axis and projection (`WCSAXES`, `CTYPE`, `CUNIT`), the reference
   pixel and value (`CRPIX`, `CRVAL`), the scale and rotation in their three forms (`CDELT`
   with `CROTA`, the `CD` matrix, the `PC` matrix), the frame (`EQUINOX`, `RADESYS`, `LONPOLE`,
-  `LATPOLE`), the SIP orders and Siril's `PLTSOLVD`. A header carries one of the three scale
-  forms; the list has all three so that any solver's output is copied whole.
+  `LATPOLE`), the SIP orders, the SIP convention's largest corrections (`A_DMAX`, `B_DMAX`; ADR
+  0033, CR-020) and Siril's `PLTSOLVD`. A header carries one of the three scale forms; the list
+  has all three so that any solver's output is copied whole.
 - `OpticalKeys`, 17 keys: the focal length and pixel size a later re-solve needs as a starting
   scale, the binning, the pointing (`OBJCTRA`, `OBJCTDEC`, `RA`, `DEC`, `OBJECT`), the site,
   the date and the instrument.
