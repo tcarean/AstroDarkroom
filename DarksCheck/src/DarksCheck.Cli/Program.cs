@@ -162,7 +162,11 @@ internal static class Program
 
             // a bad --against, --lights or --out is refused before the minutes of decoding, not
             // after (R-026, R-055, R-063)
-            string? partnerRoot = o.Against is null ? null : SessionFolder.Open(o.Against).Root;
+            if (o.Against is not null)
+            {
+                SessionFolder.Open(o.Against);
+            }
+
             if (o.Lights is not null || o.Out is not null)
             {
                 // one open, with the chosen lights: a folder that is lights-only by those lights
@@ -170,16 +174,8 @@ internal static class Program
                 SessionFolder session = SessionFolder.Open(o.Folder!, allowLightsOnly: true, o.Lights);
                 if (o.Out is not null)
                 {
-                    DarkOutputs.CheckOutDir(session.Root, o.Out);
-                    if (partnerRoot is not null)
-                    {
-                        DarkOutputs.CheckOutDir(partnerRoot, o.Out, DarkOutputs.OutFolder.Partner);
-                    }
-
-                    if (session.ChosenLightsRoot is string chosenLightsRoot)
-                    {
-                        DarkOutputs.CheckOutDir(chosenLightsRoot, o.Out, DarkOutputs.OutFolder.ChosenLights);
-                    }
+                    // the folders WriteAll refuses after the run, refused here before it
+                    DarkOutputs.CheckOut(session, o.Against, o.Out);
                 }
             }
 

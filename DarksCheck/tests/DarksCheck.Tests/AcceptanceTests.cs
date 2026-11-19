@@ -283,6 +283,83 @@ public class AcceptanceTests
         }
     }
 
+    /// <summary>
+    /// CR-019: --out was refused by the spelling of the folder given. A library opened as name\darks is the library
+    /// name (R-061), so the folder around the darks is refused too, as it is when name itself is opened.
+    /// </summary>
+    [Fact]
+    public void R026_OutBesideTheDarksOfALibraryKeptAsNameDarksIsRefused_Exit1()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 100 + i });
+        using SessionFixture partner = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 200 + i });
+        foreach (string dir in new[] { s.Root, Path.Combine(s.Root, "rapoarte"), s.DarksDir })
+        {
+            // the darks folder itself is opened: a bare folder of darks named darks
+            (int code, string stdout, string stderr) = Cli.Run(s.DarksDir, "--threads", "2", "--out", dir);
+            Assert.Equal(1, code);
+            Assert.Contains("EROARE: --out nu poate fi folderul sesiunii sau unul din el (", stderr, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(Path.Combine(s.Root, "rapoarte")));
+            Assert.DoesNotContain("=== DARK-URI", stdout, StringComparison.Ordinal);
+        }
+
+        // the refusal names the folder around the darks when the output is beside them
+        (_, _, string beside) = Cli.Run(s.DarksDir, "--threads", "2", "--out", Path.Combine(s.Root, "rapoarte"));
+        Assert.Contains($"EROARE: --out nu poate fi folderul sesiunii sau unul din el ({s.Root}): acolo nu se scrie nimic", beside, StringComparison.Ordinal);
+
+        // the same for a partner given as name\darks
+        (int pc, _, string pe) = Cli.Run(s.Root, "--threads", "2", "--against", partner.DarksDir, "--out", Path.Combine(partner.Root, "rapoarte"));
+        Assert.Equal(1, pc);
+        Assert.Contains($"EROARE: --out nu poate fi folderul partenerului sau unul din el ({partner.Root})", pe, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(Path.Combine(partner.Root, "rapoarte")));
+
+        // and for lights given as name\lights
+        using SessionFixture other = new SessionFixture().WithLights(2, i => new SyntheticLight { Seed = 300 + i });
+        (int lc, _, string le) = Cli.Run(s.Root, "--threads", "2", "--lights", other.LightsDir, "--out", Path.Combine(other.Root, "rapoarte"));
+        Assert.Equal(1, lc);
+        Assert.Contains($"EROARE: --out nu poate fi folderul lights-urilor alese sau unul din el ({other.Root})", le, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(Path.Combine(other.Root, "rapoarte")));
+
+        // a folder outside all of them is still written
+        using TempWorkspace outDir = new();
+        (int ok, string written, _) = Cli.Run(s.DarksDir, "--threads", "2", "--out", outDir.Dir);
+        Assert.Equal(0, ok);
+        Assert.Contains("    -> scris: " + Path.Combine(outDir.Dir, "darkscheck-report.txt"), written, StringComparison.Ordinal);
+    }
+
+    /// <summary>CR-019: another name of the session's folder, a junction to it or the \\?\ prefix, is the session's folder.</summary>
+    [Fact]
+    public void R026_OutThroughAnotherNameOfTheSessionIsRefused_Exit1()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 100 + i });
+        using TempWorkspace ws = new();
+        string link = Path.Combine(ws.Dir, "alt-nume");
+        FolderIdentityTests.Junction(link, s.Root);
+        try
+        {
+            foreach (string dir in new[] { link, Path.Combine(link, "rapoarte"), @"\\?\" + Path.Combine(s.Root, "rapoarte") })
+            {
+                (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2", "--out", dir);
+                Assert.Equal(1, code);
+                Assert.Contains("EROARE: --out nu poate fi folderul sesiunii sau unul din el (", stderr, StringComparison.Ordinal);
+                Assert.False(Directory.Exists(Path.Combine(s.Root, "rapoarte")));
+                Assert.DoesNotContain("=== DARK-URI", stdout, StringComparison.Ordinal);
+            }
+
+            // the session opened through the link, the output by the folder's own name
+            (int back, _, string backErr) = Cli.Run(link, "--threads", "2", "--out", Path.Combine(s.Root, "rapoarte"));
+            Assert.Equal(1, back);
+            Assert.Contains("EROARE: --out nu poate fi folderul sesiunii sau unul din el (", backErr, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(Path.Combine(s.Root, "rapoarte")));
+        }
+        finally
+        {
+            // the link alone, never the session it points at
+            Directory.Delete(link);
+        }
+
+        Assert.Equal(2, Directory.GetFiles(s.DarksDir).Length);
+    }
+
     [Fact]
     public void R026_TheBiasesCsvHasOneRowPerBiasAndTheRawColumns()
     {

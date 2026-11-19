@@ -350,6 +350,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- `--out`, and the window's `Write the files...`, are refused by the folder, not by how it was
+  typed. A library opened as `<name>\darks` could be given `--out <name>\reports`, and lights
+  given as `<session>\lights` allowed `--out <session>\reports`, though both are refused when
+  `<name>` or `<session>` itself is given; a partner given as `<name>\darks` likewise. And
+  another name of the session's folder passed: a `\\?\` prefix, a junction or a link, a
+  `subst` drive, a short 8.3 name. Now the folder around a `darks` or `lights` folder is kept
+  clear too, and two paths that Windows says are one folder are one folder (R-026, ADR 0069;
+  CR-019 of the code review).
+
 - The master's noise of check 9 is worked out from the noise between every two neighbouring
   darks, the middle value taken, no longer from the first two darks alone. One odd first frame
   moved the figure whole, and on a series in which the camera warms the first two frames are

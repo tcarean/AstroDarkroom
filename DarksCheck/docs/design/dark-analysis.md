@@ -237,7 +237,13 @@ the dead and saturated counts; and whether the frames are enough, the next secti
 limit is raw, and the biases' plane figures are not normalised. `DarkReport` prints the
 words; `DarkOutputs` writes the report, two CSV files and three grey PNG maps of the
 reference plane, refuses a folder inside the session (the console checks that before the
-decoding starts) and skips the PNG of a map without blocks. A frame the cap skipped, dark or
+decoding starts) and skips the PNG of a map without blocks. The refusal is one list,
+`DarkOutputs.ReadOnlyFolders`: the folder opened, the partner's and the chosen lights', each
+with the folder around it when it was given as a session's subfolder (`Around`: a library
+opened as `name\darks`, lights given as `name\lights`; ADR 0069). `CheckOut` holds the output
+folder against each of them with `FolderIdentity.IsOrInside`
+(`docs/design/session-and-console.md`); the console calls it before the run and `WriteAll`
+again, so the window's export refuses what `--out` refuses. A frame the cap skipped, dark or
 bias, is listed as `sarit`, not as an error, and the exit code ignores it; a bias that failed
 is counted in an `ATENTIE` line of the darks header, since the darks run prints no bias table.
 With a single frame the residual, the stability, the warming and the noise curve have nothing

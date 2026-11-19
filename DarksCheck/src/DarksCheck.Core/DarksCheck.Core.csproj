@@ -7,6 +7,9 @@
     <!-- Numbers are formatted and parsed with the invariant culture whatever the Windows
          culture: "0.24", never "0,24" on a Romanian Windows. -->
     <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- FolderIdentity's LibraryImports (CreateFileW, GetFileInformationByHandle) are
+         source-generated as unsafe code; nothing else in the project is unsafe (ADR 0069). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <!-- Sdcb.LibRaw, only for camera raw files: no pure managed .NET library decodes the Bayer

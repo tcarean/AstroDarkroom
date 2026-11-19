@@ -1,6 +1,6 @@
 # The session folder, the inventory and the console
 
-**Covers:** `src/DarksCheck.Core/Session/SessionFolder.cs`, `src/DarksCheck.Core/Session/FrameInfo.cs`, `src/DarksCheck.Core/Analysis/CadenceAnalyzer.cs`, `src/DarksCheck.Core/Analysis/MatchAnalyzer.cs`, `src/DarksCheck.Core/Thresholds.cs`, `src/DarksCheck.Core/Runs/InventoryRun.cs`, `src/DarksCheck.Core/Report/InventoryReport.cs`, `src/DarksCheck.Core/Report/RunReport.cs`, `src/DarksCheck.Core/Version.cs`, `src/DarksCheck.Cli/Options.cs`, `src/DarksCheck.Cli/Program.cs`, `src/DarksCheck.Core/Language/Ui.cs`, `src/DarksCheck.Core/Language/LanguageArgument.cs`.
+**Covers:** `src/DarksCheck.Core/Session/SessionFolder.cs`, `src/DarksCheck.Core/Session/FolderIdentity.cs`, `src/DarksCheck.Core/Session/FrameInfo.cs`, `src/DarksCheck.Core/Analysis/CadenceAnalyzer.cs`, `src/DarksCheck.Core/Analysis/MatchAnalyzer.cs`, `src/DarksCheck.Core/Thresholds.cs`, `src/DarksCheck.Core/Runs/InventoryRun.cs`, `src/DarksCheck.Core/Report/InventoryReport.cs`, `src/DarksCheck.Core/Report/RunReport.cs`, `src/DarksCheck.Core/Version.cs`, `src/DarksCheck.Cli/Options.cs`, `src/DarksCheck.Cli/Program.cs`, `src/DarksCheck.Core/Language/Ui.cs`, `src/DarksCheck.Core/Language/LanguageArgument.cs`.
 
 The behaviour is R-001 to R-007; the shapes of the input are ADR 0002. This note says how the
 pieces fit.
@@ -129,7 +129,16 @@ and `--lights` are passed through (`DarkOptions.LightsFrom` for the last; neithe
 `--against` goes with `--inventory`); before the run the partner folder is opened, the session
 is opened with the chosen lights when `--lights` is given (a bad lights folder fails here), and
 `--out` is checked against the session's root, the partner's and the chosen lights' folder
-(`DarkOutputs.OutFolder`), so a wrong folder costs no decoding. The exceptions
+(`DarkOutputs.CheckOut`, each named by `DarkOutputs.OutFolder`), so a wrong folder costs no
+decoding. Whether the output folder is one of those folders or lies inside it is
+`FolderIdentity.IsOrInside`'s answer (ADR 0069). First the full paths, without case and without
+a `\\?\` prefix before a drive letter, which also settles a folder that does not exist yet.
+Then the folders themselves: `Id` opens a folder for nothing but its attributes
+(`CreateFileW` with `FILE_FLAG_BACKUP_SEMANTICS`) and reads the volume's serial number and the
+file index (`GetFileInformationByHandle`), and the output folder and every folder above it are
+held against the protected folder's pair, so a junction, a link, a `subst` drive and a short
+8.3 name of the session are the session. A folder that cannot be opened has no identity and is
+told by its path alone. The exceptions
 a bad folder or a frame can raise, the `AggregateException` of a parallel loop included, are
 turned into `ERROR:` on stderr and exit 1. `Main` runs `Program.Run` between the diagnostic log's
 first and last lines (`LogSetup.Apply` and `LogSetup.Close`, each guarded, so a log that cannot be

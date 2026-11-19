@@ -42,8 +42,9 @@ internal static class DarkOutputs
 
     /// <summary>
     /// Writes every output file into <paramref name="dir"/>, creating it when missing, after
-    /// refusing a folder inside the session or the partner (the rule "Read-only input"). Existing
-    /// files of the same names are overwritten.
+    /// refusing a folder inside the session, the partner or the chosen lights' folder
+    /// (<see cref="CheckOut"/>, the rule "Read-only input"). Existing files of the same names are
+    /// overwritten.
     /// </summary>
     /// <param name="r">The run's result; not null.</param>
     /// <param name="dir">The output folder.</param>
@@ -58,24 +59,9 @@ internal static class DarkOutputs
     internal static IReadOnlyList<string> WriteAll(DarkSeriesResult r, string dir, Action<string>? wrote = null)
     {
         ArgumentNullException.ThrowIfNull(r);
-        CheckOutDir(r.Inventory.Session.Root, dir, OutFolder.Session);
-        if (r.Partner is PartnerAnalysis partner)
-        {
-            CheckOutDir(partner.Folder, dir, OutFolder.Partner);
-        }
 
-        if (r.DarksFromPartner is string darksPartner)
-        {
-            // a lights-only run: the partner's folder is the one whose darks were read (R-054)
-            CheckOutDir(darksPartner, dir, OutFolder.Partner);
-        }
-
-        if (r.Inventory.Session.ChosenLightsRoot is string chosenLights)
-        {
-            // lights from another folder (R-055): nothing is written there either
-            CheckOutDir(chosenLights, dir, OutFolder.ChosenLights);
-        }
-
+        // the partner matched, or the one whose darks were read by a lights-only run (R-054)
+        CheckOut(r.Inventory.Session, r.Partner?.Folder ?? r.DarksFromPartner, dir);
         Directory.CreateDirectory(dir);
         List<string> written = [];
 
@@ -122,22 +108,92 @@ internal static class DarkOutputs
     }
 
     /// <summary>
-    /// The rule "Read-only input": the output folder may not be the session folder or one under
-    /// it. Called before the analysis runs (the console) and again by <see cref="WriteAll"/>.
+    /// The rule "Read-only input" for a run's output folder (R-026, R-055, R-074): it may not be
+    /// one of <see cref="ReadOnlyFolders"/> or lie inside one. Called before the analysis runs (the
+    /// console) and again by <see cref="WriteAll"/>, so both refuse the same folders.
+    /// </summary>
+    /// <param name="session">The session or library opened, with its chosen lights; not null.</param>
+    /// <param name="partner">The partner's folder as it was given; null without one.</param>
+    /// <param name="dir">The output folder asked for; not null or blank.</param>
+    /// <exception cref="InvalidOperationException">The output folder is one of those folders or
+    /// lies inside one; the message names whose and which.</exception>
+    internal static void CheckOut(SessionFolder session, string? partner, string dir)
+    {
+        foreach ((string folder, OutFolder which) in ReadOnlyFolders(session, partner))
+        {
+            CheckOutDir(folder, dir, which);
+        }
+    }
+
+    /// <summary>
+    /// The folders nothing is written into, each with whose it is: the folder opened, the
+    /// partner's and the chosen lights' (R-055), and for each of them that was given as a
+    /// session's subfolder, the folder around it (<see cref="Around"/>): a library opened as
+    /// <c>name\darks</c>, a partner given so, and lights given as <c>name\lights</c> (ADR 0069).
+    /// </summary>
+    /// <param name="session">The session or library opened; not null.</param>
+    /// <param name="partner">The partner's folder as it was given; null or blank without one. A
+    /// path that cannot be made full names no folder and is left out.</param>
+    /// <returns>The folders as full paths, the session's first.</returns>
+    internal static IReadOnlyList<(string Folder, OutFolder Which)> ReadOnlyFolders(SessionFolder session, string? partner)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        List<(string, OutFolder)> folders = [(session.Root, OutFolder.Session)];
+
+        // the darks listed in the folder opened, and that folder named darks: the library around it
+        if (session.DarksDir == session.Root && Around(session.Root, SessionFolder.DarksName) is string library)
+        {
+            folders.Add((library, OutFolder.Session));
+        }
+
+        if (!string.IsNullOrWhiteSpace(partner))
+        {
+            try
+            {
+                string full = FolderIdentity.Full(partner);
+                folders.Add((full, OutFolder.Partner));
+                if (Around(full, SessionFolder.DarksName) is string partnerLibrary)
+                {
+                    folders.Add((partnerLibrary, OutFolder.Partner));
+                }
+            }
+            catch (Exception e) when (e is ArgumentException or NotSupportedException or IOException)
+            {
+                // a partner whose path is no path was never opened: there is no folder to keep clear
+            }
+        }
+
+        if (session.ChosenLightsRoot is string lights)
+        {
+            folders.Add((lights, OutFolder.ChosenLights));
+
+            // the lights listed in the folder given, and that folder named lights: the session around it
+            if (session.LightsDir == lights && Around(lights, SessionFolder.LightsName) is string lightsSession)
+            {
+                folders.Add((lightsSession, OutFolder.ChosenLights));
+            }
+        }
+
+        return folders;
+    }
+
+    /// <summary>
+    /// The rule "Read-only input" for one folder: the output folder may not be that folder or one
+    /// under it, whichever name of the folder it was reached through
+    /// (<see cref="FolderIdentity.IsOrInside"/>).
     /// </summary>
     /// <param name="sessionRoot">The folder nothing may be written into; not null or blank.</param>
     /// <param name="dir">The output folder asked for; not null or blank.</param>
     /// <param name="which">Whose folder it is, which names it in the refusal; the session's by
     /// default.</param>
     /// <exception cref="InvalidOperationException">The output folder is that folder or lies inside
-    /// it (compared without case).</exception>
+    /// it.</exception>
     internal static void CheckOutDir(string sessionRoot, string dir, OutFolder which = OutFolder.Session)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionRoot);
         ArgumentException.ThrowIfNullOrWhiteSpace(dir);
-        string full = Path.GetFullPath(dir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        string root = Path.GetFullPath(sessionRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        if (full.Equals(root, StringComparison.OrdinalIgnoreCase) || full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        string root = FolderIdentity.Full(sessionRoot);
+        if (FolderIdentity.IsOrInside(dir, root))
         {
             throw new InvalidOperationException(which switch
             {
@@ -146,6 +202,29 @@ internal static class DarkOutputs
                 _ => T($"--out cannot be the session's folder or one inside it ({root}): nothing is written there", $"--out nu poate fi folderul sesiunii sau unul din el ({root}): acolo nu se scrie nimic"),
             });
         }
+    }
+
+    /// <summary>
+    /// The folder a folder named as a session's subfolder stands for (R-026, ADR 0069): the folder
+    /// around it. A library kept as <c>name\darks</c> is the library <c>name</c> (R-061), and
+    /// lights given as <c>name\lights</c> are the session <c>name</c>'s, so nothing is written
+    /// into <c>name</c> either, as when <c>name</c> itself is given.
+    /// </summary>
+    /// <param name="folder">The folder given; not null or blank.</param>
+    /// <param name="subfolder">The name that makes it a session's subfolder, <c>darks</c> or
+    /// <c>lights</c>, compared without case.</param>
+    /// <returns>The full path of the folder around it; null when the folder has another name, or
+    /// when the folder around it is a drive's root, which is no session.</returns>
+    internal static string? Around(string folder, string subfolder)
+    {
+        string full = FolderIdentity.Full(folder);
+        if (!string.Equals(Path.GetFileName(full), subfolder, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        string? parent = Path.GetDirectoryName(full);
+        return parent is null || string.Equals(Path.GetPathRoot(parent), parent, StringComparison.OrdinalIgnoreCase) ? null : parent;
     }
 
     /// <summary>Whose folder <see cref="CheckOutDir"/> refuses to write into; it names the folder in the refusal.</summary>

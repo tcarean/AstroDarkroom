@@ -510,7 +510,9 @@ PNG files (`darkscheck-map-dark.png`, `darkscheck-map-bias.png`,
 `darkscheck-map-dark-minus-bias.png`; one block is a 4 x 4 square, and each map is stretched
 between its own 1st and 99th percentiles). It prints `-> written: <path>` for each file. The
 names are the same in both languages. Nothing is written into the session: a DIR that is the
-session folder, or a folder inside it, is refused with `ERROR` before the analysis starts.
+session folder, or a folder inside it, is refused with `ERROR` before the analysis starts,
+whichever way the folder was typed: beside the darks of a library kept as `<name>\darks`, or
+through another name of the same folder (a junction, a `subst` drive).
 
 ### Only the metadata: `--inventory`
 
