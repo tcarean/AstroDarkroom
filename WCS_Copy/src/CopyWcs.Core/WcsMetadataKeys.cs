@@ -77,6 +77,16 @@ internal static class WcsMetadataKeys
     }
 
     /// <summary>
+    /// Whether a keyword is part of a plate solve as the two lists see it: one of
+    /// <see cref="WcsKeys"/> or a SIP coefficient. The keys a copy drops from the destination are
+    /// such keys (R-016), and a copied WCSAXES goes above the first of them (R-061).
+    /// </summary>
+    /// <param name="keyword">The keyword, as <see cref="FitsHeader.Keywords"/> gives it; not null.</param>
+    /// <returns>True for a WCS key or a SIP coefficient; false for any other keyword, an optical key included.</returns>
+    internal static bool IsPlateSolveKey(string keyword)
+        => WcsKeys.Contains(keyword) || SipCoefficient.IsMatch(keyword);
+
+    /// <summary>
     /// The orientation of a header's plate solve (R-017): the sign of the determinant of its
     /// linear part, read as Siril 1.4.4 reads it (measured, ADR 0011): the CD matrix when the
     /// header holds any <c>CDi_j</c> card, a missing one being 0 as the WCS standard says; else
@@ -148,7 +158,7 @@ internal static class WcsMetadataKeys
 
     /// <summary>
     /// The destination's old plate-solve keys a copy drops (R-016): every keyword of the
-    /// destination that is one of <see cref="WcsKeys"/> or a SIP coefficient and that the source
+    /// destination that is a plate-solve key (<see cref="IsPlateSolveKey"/>) and that the source
     /// does not have, each once, in the order the destination holds them. Never an optical key.
     /// Whether to drop at all, only when the source has <c>CTYPE1</c>, is the run's rule.
     /// </summary>
@@ -161,7 +171,7 @@ internal static class WcsMetadataKeys
         ArgumentNullException.ThrowIfNull(dest);
 
         return dest.Keywords
-            .Where(k => (WcsKeys.Contains(k) || SipCoefficient.IsMatch(k)) && !source.Contains(k))
+            .Where(k => IsPlateSolveKey(k) && !source.Contains(k))
             .Distinct()
             .ToList();
     }

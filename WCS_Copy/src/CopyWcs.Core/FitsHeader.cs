@@ -426,6 +426,31 @@ internal sealed class FitsHeader
     }
 
     /// <summary>
+    /// Moves a keyword's value cards (<see cref="ValueCards"/>: its first card and the CONTINUE
+    /// cards right under it) up, right above the first card whose keyword
+    /// <paramref name="below"/> accepts, when that card stands above them; else nothing changes.
+    /// The other cards keep their order. How a copy keeps WCSAXES above the other keys of the
+    /// plate solve, as the FITS standard asks (R-061).
+    /// </summary>
+    /// <param name="key">The keyword whose cards move, case-sensitive; nothing moves when no card has it.</param>
+    /// <param name="below">Given a card's keyword (an empty string for a blank card), whether that card must stand below the moved ones; not null. It may accept the moved keyword itself, which then stays where it is when it is the first accepted.</param>
+    public void MoveAbove(string key, Func<string, bool> below)
+    {
+        ArgumentNullException.ThrowIfNull(below);
+
+        var i = IndexOf(key);
+        var first = _cards.FindIndex(c => below(KeywordOf(c)));
+        if (i < 0 || first < 0 || first >= i)
+        {
+            return;
+        }
+
+        var cards = _cards.GetRange(i, 1 + ContinuationsUnder(i));
+        _cards.RemoveRange(i, cards.Count);
+        _cards.InsertRange(first, cards);
+    }
+
+    /// <summary>
     /// Removes every card of a keyword, wherever it sits, each with the CONTINUE cards right under
     /// it, the other cards keeping their order: how a copy drops the destination's old
     /// plate-solve cards (R-016) and its checksum (R-018).

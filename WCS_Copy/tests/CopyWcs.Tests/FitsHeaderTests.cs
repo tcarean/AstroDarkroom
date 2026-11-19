@@ -307,6 +307,40 @@ public class FitsHeaderTests
         Assert.Equal(["SIMPLE", "A"], header.Keywords);
     }
 
+    /// <summary>
+    /// A keyword's cards, the CONTINUE cards under its first one with it, move up right above the
+    /// first card the predicate accepts, the other cards keeping their order (R-061).
+    /// </summary>
+    [Fact]
+    public void R061_MoveAbove_TheCardsGoRightAboveTheFirstCardAccepted_WithTheirContinueCards()
+    {
+        var header = ReadHeader(
+            FitsTestData.Card("A", "1"),
+            FitsTestData.Card("B", "2"),
+            FitsTestData.Card("C", "3"),
+            FitsTestData.Card("OBJECT", "'NGC 6960 &'"),
+            FitsTestData.Continue("'Veil'"),
+            FitsTestData.Card("D", "4"));
+
+        header.MoveAbove("OBJECT", k => k is "B" or "C" or "OBJECT");
+
+        Assert.Equal(["SIMPLE", "A", "OBJECT", "CONTINUE", "B", "C", "D"], header.Keywords);
+        Assert.Equal([FitsTestData.Card("OBJECT", "'NGC 6960 &'"), FitsTestData.Continue("'Veil'")], header.ValueCards("OBJECT"));
+    }
+
+    /// <summary>Nothing moves when the keyword is missing, when no card the predicate accepts stands above it, or when it is itself the first accepted (R-061).</summary>
+    [Fact]
+    public void R061_MoveAbove_NothingAcceptedAboveTheCards_OrNoSuchKeyword_MovesNothing()
+    {
+        var header = ReadHeader(FitsTestData.Card("A", "1"), FitsTestData.Card("B", "2"), FitsTestData.Card("C", "3"));
+
+        header.MoveAbove("B", k => k == "C");
+        header.MoveAbove("B", k => k is "B" or "C");
+        header.MoveAbove("Z", _ => true);
+
+        Assert.Equal(["SIMPLE", "A", "B", "C"], header.Keywords);
+    }
+
     [Fact]
     public void SetCard_ShortCard_PadsTo80Chars()
     {

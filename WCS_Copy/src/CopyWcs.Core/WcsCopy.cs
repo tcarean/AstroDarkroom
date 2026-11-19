@@ -17,14 +17,12 @@
 
 // WcsCopy.cs - the copy run, shared by the console and the window: reads both headers, checks
 // that the three paths name three files (R-019), that both have an image size (R-060), the pixel
-// grid, and that the destination's own
-// plate solve is no mirror of the source's (R-017),
-// selects the cards and the destination's old plate-solve cards to drop (R-016), lists them, or
-// drops those and the destination's CHECKSUM (R-018) and copies the others, and returns what
-// happened as lines
-// already worded, so that each application only prints or shows them (ADR 0001, ADR 0007). The
-// run also writes its own lines to the diagnostic log, in English, never the worded ones (R-042,
-// R-046, ADR 0009).
+// grid, and that the destination's own plate solve is no mirror of the source's (R-017), selects
+// the cards and the destination's old plate-solve cards to drop (R-016), lists them, or drops
+// those and the destination's CHECKSUM (R-018) and copies the others, a copied WCSAXES above the
+// rest of the plate solve (R-061), and returns what happened as lines already worded, so that
+// each application only prints or shows them (ADR 0001, ADR 0007). The run also writes its own
+// lines to the diagnostic log, in English, never the worded ones (R-042, R-046, ADR 0009).
 
 using NLog;
 using static CopyWcs.Ui;
@@ -90,16 +88,16 @@ internal static class WcsCopy
 
     /// <summary>
     /// Runs a copy: reads both headers, refuses paths that name one file twice (R-019), refuses
-    /// a file with no image size in its primary header, forced or not (R-060), refuses
-    /// a pixel grid that differs unless forced, warns about a source without <c>CTYPE1</c>,
-    /// refuses a destination whose own plate solve is the
-    /// mirror image of the source's unless forced (R-017), selects the cards and the destination's old
-    /// plate-solve cards to drop (R-016), and either lists them (a dry run) or drops those and
-    /// the destination's CHECKSUM (R-018), copies the selected cards verbatim, appends a HISTORY
-    /// card and writes the target with the destination's data, a failed write's message naming
-    /// the target and not its temporary file (R-014). Every step writes its line to the
-    /// diagnostic log (R-042); a refusal's exception goes there with its stack, the outcome keeps
-    /// its message only.
+    /// a file with no image size in its primary header, forced or not (R-060), refuses a pixel
+    /// grid that differs unless forced, warns about a source without <c>CTYPE1</c>, refuses a
+    /// destination whose own plate solve is the mirror image of the source's unless forced
+    /// (R-017), selects the cards and the destination's old plate-solve cards to drop (R-016),
+    /// and either lists them (a dry run) or drops those and the destination's CHECKSUM (R-018),
+    /// copies the selected cards verbatim, a copied WCSAXES above the rest of the plate solve
+    /// (R-061), appends a HISTORY card and writes the target with the destination's data, a
+    /// failed write's message naming the target and not its temporary file (R-014). Every step
+    /// writes its line to the diagnostic log (R-042); a refusal's exception goes there with its
+    /// stack, the outcome keeps its message only.
     /// </summary>
     /// <param name="request">What to copy, from where to where, and how; not null.</param>
     /// <returns>The outcome, with every line the applications print.</returns>
@@ -291,6 +289,14 @@ internal static class WcsCopy
         for (var i = 0; i < present.Count; i++)
         {
             dest.SetValueCards(present[i], values[i]);
+        }
+
+        // WCSAXES stands above every other WCS key (FITS 4.0, section 8.2), but the destination's
+        // own cards of the plate solve are replaced where they stand and a WCSAXES it lacks is
+        // appended after them: the copied one goes right above the first of them (R-061, ADR 0032).
+        if (present.Contains("WCSAXES"))
+        {
+            dest.MoveAbove("WCSAXES", WcsMetadataKeys.IsPlateSolveKey);
         }
 
         // The card is data other programs read, not interface text: English in both languages

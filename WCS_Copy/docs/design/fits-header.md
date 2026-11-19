@@ -60,6 +60,14 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
   order; `RemoveCards(key)` takes them all out, the other cards keeping their order, and returns
   them (R-016, R-018). The run logs a dropped key's cards through `CardsOf` before anything
   changes, and drops them through `RemoveCards` before the first `SetValueCards`.
+- `MoveAbove(key, below)` moves a keyword's value cards, its `CONTINUE` cards with it, right
+  above the first card whose keyword the predicate accepts, when that card stands above them,
+  the other cards keeping their order; a predicate that accepts the moved keyword itself leaves
+  it where it is when it is the first accepted. After the last `SetValueCards` the run moves a
+  copied `WCSAXES` this way, with `WcsMetadataKeys.IsPlateSolveKey` as the predicate (R-061,
+  ADR 0032): `SetValueCards` replaces the destination's own cards of the plate solve where they
+  stand and appends a `WCSAXES` the destination lacks after them, where the FITS standard wants
+  it above them (CR-019).
 - `AddHistory(text)` appends `HISTORY ` plus at most 72 characters of `AsciiText.Of(text)`
   (R-011): the text is made ASCII first, then cut, so the cut counts the characters written.
 
@@ -180,12 +188,14 @@ coefficients in the source's own order between the WCS keys and the optical ones
 duplicates and keeps only the keys the source has (R-007). V-001 in `docs/validation.md`
 shows what this yields on a real Siril header: 61 WCS and SIP keys, 11 optical ones.
 
-`SelectKeysToDrop(source, dest)` walks the destination's `Keywords` in order and keeps each one
-that is in `WcsKeys` or matches `SipCoefficient` and that the source does not have, each once
-(R-016). It is the same two lists that decide what a plate solve is, read from the other side, so
-no card of those keys is left in the target but the source's, save a second card of a keyword the
-source has, which `SetValueCards` does not reach; a plate-solve card outside both lists (`RADECSYS`,
-`PVi_m`, `CTYPE1A`) is neither copied nor dropped. `OpticalKeys` never take part, so a
+`IsPlateSolveKey(keyword)` is that one test, a keyword in `WcsKeys` or matching
+`SipCoefficient`: what the lists call a plate solve, for the drop and for the place of a copied
+`WCSAXES` (R-061). `SelectKeysToDrop(source, dest)` walks the destination's `Keywords` in order
+and keeps each plate-solve key the source does not have, each once (R-016). It is the same two
+lists that decide what a plate solve is, read from the other side, so no card of those keys is
+left in the target but the source's, save a second card of a keyword the source has, which
+`SetValueCards` does not reach; a plate-solve card outside both lists (`RADECSYS`, `PVi_m`,
+`CTYPE1A`) is neither copied nor dropped. `OpticalKeys` never take part, so a
 destination's own `OBJECT` or `SITELAT` stays when the source lacks it. The selector itself does
 not look at `CTYPE1`: the run asks for it only when the source has one (ADR 0011). V-002 shows it
 on a real destination: the 4 `CD` keys the SyQon CLI wrote beside Siril's `PC`.

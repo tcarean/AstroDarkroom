@@ -39,7 +39,7 @@ the destination's keys to drop (`WcsMetadataKeys.SelectKeysToDrop`, R-016, ADR 0
 run return the cards, the heading and the drop line (R-009); else remove the dropped keys' cards
 and the destination's `CHECKSUM`, which the changed header would no longer match, whatever the
 source holds (R-018, ADR 0021; `DATASUM` stays, the data being untouched, and no line says it),
-set each selected key's value cards verbatim (`SetValueCards`, a long string whole, R-010), append the HISTORY card, write through the header engine (a
+set each selected key's value cards verbatim (`SetValueCards`, a long string whole, R-010), move a copied `WCSAXES` right above the first card of the plate solve when one stands above it (`FitsHeader.MoveAbove`, R-061, ADR 0032), append the HISTORY card, write through the header engine (a
 write failure is a refusal, R-014, its message through `FitsHeader.WriteErrorMessage`, which
 names the target where the system named the temporary file) and return the count, the reminder and the drop line (R-012); the heading's count and the closing line's count are of keys, not of cards.
 The keys dropped and the keys set never overlap: a dropped key is one the source lacks. A
