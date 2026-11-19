@@ -15,8 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// AsciiText.cs - a text as a card the tool builds may hold it: ASCII only (R-011, ADR 0010). The
-// rule is Unicode's canonical decomposition (FormD) with the combining marks dropped, frozen into
+// AsciiText.cs - a text as a card the tool builds may hold it: printable ASCII only, a control
+// character as '?' (R-011, ADR 0010, ADR 0034). The rule for a character outside ASCII is
+// Unicode's canonical decomposition (FormD) with the combining marks dropped, frozen into
 // a table here because the console and the core tests run with InvariantGlobalization, where
 // string.Normalize returns a text unchanged (measured on .NET 8.0.33, 2026-10-31), and the window
 // does not: through the runtime's Normalize the two applications would write different HISTORY
@@ -31,7 +32,7 @@ using System.Text;
 
 namespace CopyWcs;
 
-/// <summary>The one way the tool turns a text it composes into ASCII (R-011, ADR 0010).</summary>
+/// <summary>The one way the tool turns a text it composes into printable ASCII (R-011, ADR 0010, ADR 0034).</summary>
 internal static class AsciiText
 {
     /// <summary>
@@ -99,20 +100,21 @@ internal static class AsciiText
     }
 
     /// <summary>
-    /// A text with every character below 0x80: a character with an ASCII base in Unicode's
-    /// canonical decomposition becomes that base (a with breve to <c>a</c>, A with ring to
-    /// <c>A</c>, the seven letters R-011 names among the 495 of the table); a combining mark
-    /// standing alone, as in a name already decomposed, is dropped; any other character outside
-    /// ASCII, an emoji or a letter of another script, becomes one <c>?</c>, however many UTF-16
-    /// units it takes.
+    /// A text with every character printable ASCII, 0x20 to 0x7E, the bytes a FITS header may
+    /// hold: a character with an ASCII base in Unicode's canonical decomposition becomes that
+    /// base (a with breve to <c>a</c>, A with ring to <c>A</c>, the seven letters R-011 names
+    /// among the 495 of the table); a combining mark standing alone, as in a name already
+    /// decomposed, is dropped; a control character (below 0x20, or 0x7F, which a Windows file
+    /// name may hold) becomes one <c>?</c> (ADR 0034), and so does any other character outside
+    /// ASCII, an emoji or a letter of another script, however many UTF-16 units it takes.
     /// </summary>
     /// <param name="text">The text; a file name, normally.</param>
-    /// <returns>The ASCII text; the same instance when the text already was ASCII.</returns>
+    /// <returns>The printable ASCII text; the same instance when the text already was.</returns>
     internal static string Of(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
 
-        if (text.All(c => c < 0x80))
+        if (text.All(IsPrintable))
         {
             return text;
         }
@@ -122,7 +124,9 @@ internal static class AsciiText
         {
             if (rune.Value < 0x80)
             {
-                sb.Append((char)rune.Value);
+                // A control character has no place in a card: one '?', as a character with no
+                // ASCII form (CR-022 of the review of 2026-11-16).
+                sb.Append(IsPrintable((char)rune.Value) ? (char)rune.Value : '?');
             }
             else if (rune.IsBmp && BaseOf.TryGetValue((char)rune.Value, out var baseCharacter))
             {
@@ -136,4 +140,9 @@ internal static class AsciiText
 
         return sb.ToString();
     }
+
+    /// <summary>Whether a character is printable ASCII, a byte a FITS header may hold: 0x20, the space, to 0x7E.</summary>
+    /// <param name="c">The character.</param>
+    /// <returns>True from 0x20 to 0x7E; false for a control character, 0x7F and anything above it.</returns>
+    private static bool IsPrintable(char c) => c is >= ' ' and <= '~';
 }

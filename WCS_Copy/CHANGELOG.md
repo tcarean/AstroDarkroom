@@ -59,6 +59,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The `HISTORY` card writes a control character of the source's name, the 0x7F a Windows file
+  name may hold, as `?`, where it wrote the byte itself, which a FITS header may not hold (R-011,
+  ADR 0034; CR-022 of the review of 2026-11-16).
 - A keyword such as `A_1_2` followed by a line feed, which only a damaged or crafted file holds,
   is no longer taken for a SIP coefficient: a copy neither copies nor drops it, and its line feed
   no longer splits a line of the log or the line naming the dropped keys (R-007; CR-021 of the

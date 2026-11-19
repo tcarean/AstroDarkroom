@@ -503,11 +503,11 @@ internal sealed class FitsHeader
     }
 
     /// <summary>
-    /// Appends a HISTORY card, ASCII whatever the text holds (<see cref="AsciiText.Of"/>), so the
-    /// copy never puts a byte above 0x7F in a header itself, and writes it to the diagnostic log
-    /// at Debug as it was stored (R-011, R-042, ADR 0010).
+    /// Appends a HISTORY card, printable ASCII whatever the text holds (<see cref="AsciiText.Of"/>),
+    /// so the copy never puts a byte outside 0x20 to 0x7E in a card it composes, and writes it to
+    /// the diagnostic log at Debug as it was stored (R-011, R-042, ADR 0010, ADR 0034).
     /// </summary>
-    /// <param name="text">The text after the keyword; made ASCII, then cut to 72 characters, the room a card has after "HISTORY ".</param>
+    /// <param name="text">The text after the keyword; made printable ASCII, then cut to 72 characters, the room a card has after "HISTORY ".</param>
     public void AddHistory(string text)
     {
         ArgumentNullException.ThrowIfNull(text);

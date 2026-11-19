@@ -460,6 +460,21 @@ public class FitsHeaderTests
         Assert.Equal("HISTORY WCS copied from ?.fit".PadRight(80), header.GetCard("HISTORY"));
     }
 
+    /// <summary>
+    /// A control character, a tab, the 0x7F a Windows file name may hold, a NUL, is one <c>?</c>
+    /// in the card, the space staying a space: a header holds the bytes 0x20 to 0x7E only (R-011,
+    /// ADR 0034; CR-022 of the review of 2026-11-16: the bytes 0x09 and 0x7F reached the card).
+    /// </summary>
+    [Fact]
+    public void R011_AddHistory_AControlCharacter_IsOneQuestionMark()
+    {
+        var header = ReadHeader();
+
+        header.AddHistory("WCS copied from a\tb" + (char)0x7F + "c" + (char)0x00 + " d.fit");
+
+        Assert.Equal("HISTORY WCS copied from a?b?c? d.fit".PadRight(80), header.GetCard("HISTORY"));
+    }
+
     /// <summary>The cut at 72 counts the ASCII characters written, after the transliteration (ADR 0010).</summary>
     [Fact]
     public void R011_AddHistory_TheCutAt72_CountsTheCharactersWritten()

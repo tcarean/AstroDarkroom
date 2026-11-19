@@ -185,6 +185,25 @@ public class CopyWcsCliTests
         Assert.DoesNotContain(written, b => b > 0x7F);
     }
 
+    /// <summary>
+    /// A source named with the character 0x7F, which Windows allows in a file name, is named in
+    /// the HISTORY card with a <c>?</c> there: a header holds the bytes 0x20 to 0x7E only (R-011,
+    /// ADR 0034; CR-022 of the review of 2026-11-16: the byte 0x7F reached the card).
+    /// </summary>
+    [Fact]
+    public void R011_Run_ASourceNamedWith0x7F_WritesAQuestionMarkInHistory()
+    {
+        using var ws = new TempWorkspace();
+        var sourcePath = ws.WriteFile("Veil" + (char)0x7F + "1.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destPath = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        Assert.Equal(0, Run(sourcePath, destPath).ExitCode);
+
+        var header = Encoding.Latin1.GetString(File.ReadAllBytes(destPath));
+        Assert.Contains("HISTORY WCS copied from Veil?1.fit".PadRight(80), header, StringComparison.Ordinal);
+        Assert.DoesNotContain('\u007F', header);
+    }
+
     /// <summary>Puts a byte into a file's bytes where a marker's last character is: the one way a test file gets a byte above 0x7F.</summary>
     /// <param name="file">The file's bytes, changed in place.</param>
     /// <param name="marker">An ASCII text the file holds once, whose last character is replaced.</param>

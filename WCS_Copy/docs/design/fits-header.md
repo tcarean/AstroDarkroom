@@ -69,16 +69,19 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
   stand and appends a `WCSAXES` the destination lacks after them, where the FITS standard wants
   it above them (CR-019).
 - `AddHistory(text)` appends `HISTORY ` plus at most 72 characters of `AsciiText.Of(text)`
-  (R-011): the text is made ASCII first, then cut, so the cut counts the characters written.
+  (R-011): the text is made printable ASCII first, then cut, so the cut counts the characters
+  written.
 
 ## The ASCII of a card the tool composes
 
 `AsciiText.Of` is the one place a text the tool composes (today the source's file name in the
-HISTORY card) becomes ASCII. It walks the text by runes: a rune below 0x80 is itself; one the
-table `BaseCharacters` holds becomes its base character; a combining mark standing alone
+HISTORY card) becomes printable ASCII, the bytes 0x20 to 0x7E a header may hold. It walks the
+text by runes: a printable ASCII rune is itself; a control character, below 0x20 or 0x7F, is one
+`?` (ADR 0034; CR-022: a Windows file name may hold 0x7F, which reached the card); one the table
+`BaseCharacters` holds becomes its base character; a combining mark standing alone
 (`Rune.GetUnicodeCategory` is `NonSpacingMark`, a name already in decomposed form) is dropped;
 any other rune becomes one `?`, an emoji's two UTF-16 units included. A text that is already
-ASCII is returned as the same instance.
+printable ASCII (`IsPrintable`, every character) is returned as the same instance.
 
 The table is a `const string` of pairs, the character then its base, read once into a
 `Dictionary<char, char>`: the 495 characters of the Basic Multilingual Plane whose FormD
