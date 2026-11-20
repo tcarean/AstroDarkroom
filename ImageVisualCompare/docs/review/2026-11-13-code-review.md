@@ -82,10 +82,10 @@ numbers are those of 2026-11-13; a task finds its lines again by the names the e
 | CR-006 | 1 | rare | to measure | The read-out is not refreshed when the pair or the view changes under a resting pointer | fixed f5cf5c51, 1f6223dc |
 | CR-007 | 1 | rare | to measure | A float sample is quantised in double precision, Siril does it in single: 127 values differ by a level | fixed 5c65300a, 1f6223dc |
 | CR-008 | 1 | crafted | confirmed | A FITS card with no space after `=` loses the first character of its value | fixed 1b261833 |
-| CR-009 | 1 | crafted | confirmed | A `BZERO` or `BSCALE` that does not parse is read as 0 or 1 | fixed a21d59ab |
+| CR-009 | 1 | crafted | confirmed | A `BZERO` or `BSCALE` that does not parse is read as 0 or 1 | fixed a21d59ab, a8f45631 |
 | CR-010 | 2 | some setups | to measure | A three-plane FITS not in the file cache is read with a seek per plane per row | fixed 54f7807a; measured, severity 4 |
 | CR-011 | 3 | common | confirmed | At fit, a rounding residue shows a scrollbar and the minimap's rectangle | fixed 71e02ddd |
-| CR-012 | 3 | common | owner | The bottom-left corner of the image is always under the minimap at 100 % and above | fixed fb42836a |
+| CR-012 | 3 | common | owner | The bottom-left corner of the image is always under the minimap at 100 % and above | fixed fb42836a, a8f45631 |
 | CR-013 | 3 | some setups | to measure | On a narrow window the status bar cuts B's read-out before the pair line | open |
 | CR-014 | 3 | slip | to measure | Up or Down on the surface moves the keyboard focus to the toolbar | open |
 | CR-015 | 3 | slip | to measure | A right click on a scrollbar thumb opens WPF's own menu: light, English, a page of one pixel | open |
@@ -371,7 +371,9 @@ a defect: dead code, duplicates, small inaccuracies.
   `3.2768d4` or `32768,0`, and `ffgphd` then keeps 1.0 or 0.0 and reads on, so Siril opens such a
   file with the default, as this program did; the owner chose the refusal over showing the same
   wrong image in silence. An empty value is refused too. The `//` comment above the `///` block
-  of `Number`, of the cleanup list, went with it.
+  of `Number`, of the cleanup list, went with it. After the branch's review, a8f45631: the
+  comments, ADR 0058 and the note said a lower-case exponent letter is refused, where only a
+  lower-case `d` is; `3.2768e4` is a number for cfitsio and for this reader, and a test pins it.
 - **Where:** `src/ImageVisualCompare.Core/FitsHeader.cs:446-457` (`Number`).
 - **What happens.** `Count` refuses a value that is not an integer and `Number` refuses NaN and
   the infinities, but text that does not parse is treated as a missing keyword. Only an
@@ -469,7 +471,12 @@ a defect: dead code, duplicates, small inaccuracies.
   down: `M` took both off (the corner shows in the render), a repeat of the held key changed
   nothing, they stayed hidden through `H`, and `M` brought them back. Not done: the application
   on screen with real keys (the owner was at the PC), and the wiki manual, where the key's row
-  waits for the owner's word.
+  waits for the owner's word. After the branch's review, a8f45631: the test of the held key read
+  the state only after two repeats, which cancel out; it reads it after each. Left to the owner,
+  from the same review: the hint is cut from its end when the status bar is short of room
+  (R-054), and `M minimap` is its last item but one. In the render of a window 1920 wide it is
+  whole in `Linear` and ends `M minimap · F1 h…` in `Histogram`; a padded pair or a narrower
+  window cuts the key's name too (CR-013 is about that bar).
 - **Where:** `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml:95-98` (the minimap, bottom
   left, above everything), `:56-59` (the zoom badge, top right);
   `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml.cs:79-85` (`Hide` exists and is never
