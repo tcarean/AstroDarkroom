@@ -81,11 +81,11 @@ numbers are those of 2026-11-13; a task finds its lines again by the names the e
 | CR-005 | 1 | some files | owner | A transparent pixel is drawn over black and read unblended; a float RGBA loses its alpha | fixed 115684cf, 1f6223dc |
 | CR-006 | 1 | rare | to measure | The read-out is not refreshed when the pair or the view changes under a resting pointer | fixed f5cf5c51, 1f6223dc |
 | CR-007 | 1 | rare | to measure | A float sample is quantised in double precision, Siril does it in single: 127 values differ by a level | fixed 5c65300a, 1f6223dc |
-| CR-008 | 1 | crafted | confirmed | A FITS card with no space after `=` loses the first character of its value | open |
-| CR-009 | 1 | crafted | confirmed | A `BZERO` or `BSCALE` that does not parse is read as 0 or 1 | open |
-| CR-010 | 2 | some setups | to measure | A three-plane FITS not in the file cache is read with a seek per plane per row | open |
-| CR-011 | 3 | common | confirmed | At fit, a rounding residue shows a scrollbar and the minimap's rectangle | open |
-| CR-012 | 3 | common | owner | The bottom-left corner of the image is always under the minimap at 100 % and above | open |
+| CR-008 | 1 | crafted | confirmed | A FITS card with no space after `=` loses the first character of its value | fixed 1b261833 |
+| CR-009 | 1 | crafted | confirmed | A `BZERO` or `BSCALE` that does not parse is read as 0 or 1 | fixed a21d59ab, a8f45631 |
+| CR-010 | 2 | some setups | to measure | A three-plane FITS not in the file cache is read with a seek per plane per row | fixed 54f7807a, a8f45631; measured, severity 4 |
+| CR-011 | 3 | common | confirmed | At fit, a rounding residue shows a scrollbar and the minimap's rectangle | fixed 71e02ddd, a8f45631 |
+| CR-012 | 3 | common | owner | The bottom-left corner of the image is always under the minimap at 100 % and above | fixed fb42836a, a8f45631 |
 | CR-013 | 3 | some setups | to measure | On a narrow window the status bar cuts B's read-out before the pair line | open |
 | CR-014 | 3 | slip | to measure | Up or Down on the surface moves the keyboard focus to the toolbar | open |
 | CR-015 | 3 | slip | to measure | A right click on a scrollbar thumb opens WPF's own menu: light, English, a page of one pixel | open |
@@ -346,7 +346,13 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-008. A FITS card with no space after `=` loses the first character of its value
 
-- **Severity 1, crafted, confirmed.** Status: open.
+- **Severity 1, crafted, confirmed.** Status: fixed 1b261833, by the owner's choice of 2026-11-20:
+  the value is read from right after the `=`, with or without the space (R-014, ADR 0057). Read
+  that day in the source of cfitsio 4.7.0, through which Siril reads a FITS: `ffpsvc` takes the
+  value from right after the `=` when columns 9 and 10 are not `= `, so Siril reads
+  `NAXIS1  =5938` as 5938 and opens the file; so does this program now. `ReadCards` hands `Value`
+  the card from its tenth character on. Left as it was: a keyword shorter than eight characters
+  followed at once by `=` (`NAXIS1=5938`), which cfitsio also reads.
 - **Where:** `src/ImageVisualCompare.Core/FitsHeader.cs:363-366` (`ReadCards`).
 - **What happens.** A card is a value card when its ninth character is `=`, and the value is
   taken from the eleventh on; the tenth is skipped without being looked at.
@@ -359,7 +365,15 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-009. A `BZERO` or `BSCALE` that does not parse is read as 0 or 1
 
-- **Severity 1, crafted, confirmed.** Status: open.
+- **Severity 1, crafted, confirmed.** Status: fixed a21d59ab, by the owner's choice of 2026-11-20:
+  `FITS: the header is not valid.`, and the default only when the header has no such keyword
+  (R-019, ADR 0058). Read that day in the source of cfitsio 4.7.0: `ffc2dd` does not convert
+  `3.2768d4` or `32768,0`, and `ffgphd` then keeps 1.0 or 0.0 and reads on, so Siril opens such a
+  file with the default, as this program did; the owner chose the refusal over showing the same
+  wrong image in silence. An empty value is refused too. The `//` comment above the `///` block
+  of `Number`, of the cleanup list, went with it. After the branch's review, a8f45631: the
+  comments, ADR 0058 and the note said a lower-case exponent letter is refused, where only a
+  lower-case `d` is; `3.2768e4` is a number for cfitsio and for this reader, and a test pins it.
 - **Where:** `src/ImageVisualCompare.Core/FitsHeader.cs:446-457` (`Number`).
 - **What happens.** `Count` refuses a value that is not an integer and `Number` refuses NaN and
   the infinities, but text that does not parse is treated as a missing keyword. Only an
@@ -379,7 +393,22 @@ a defect: dead code, duplicates, small inaccuracies.
 ### CR-010. A three-plane FITS not in the file cache is read with a seek per plane per row
 
 - **Severity 2 if the run shows a stall that reads as a hang, otherwise 4; some setups; to
-  measure.** Status: open.
+  measure.** Status: fixed 54f7807a; measured on 2026-11-20, and it is severity 4: no stall. On
+  `result_3813s.fit` (277 MB, three float planes) on the hard disk, dropped from the Windows
+  cache before each run by a handle opened without buffering (a read of the whole file then
+  took 1.4 to 1.5 s, against 0.2 s from the cache; no restart was made): `Load` took 3.95 and
+  4.87 s in `Linear`, where 1.67 s from the cache, and 4.33 s in `Histogram` (2.10 s). The reads
+  alone took 3.34 s a row at a time, 2.31 s in bands of 1 MiB a plane, 1.68 s at 4 MiB, 1.64 s
+  at 8 MiB. So the seeks cost about two seconds a file, never a minute: the drive's read-ahead
+  hid most of them, as the entry allowed. `FitsRowDecoder` now reads each plane in bands of
+  4 MiB (`DefaultBandBytes`, `FillBand`) and `OpenRead` no longer asks for `RandomAccess`: 2.33
+  and 2.38 s cold in `Linear`, 3.04 s in `Histogram`, and from the cache as before; the six
+  bitmaps of the two real FITS in the three modes are the same bytes as before (SHA-256), and
+  the six validation cases pass. A test counts the reads: 3 for a 200-row image of three planes,
+  where there were 600. Not measured: the first open after a real restart, a fragmented file, a
+  USB disk, a network share. The figures are in `docs/design/imaging.md`. After the branch's
+  review, a8f45631: the note says the three bands are held during each pass (`Pass` makes a
+  decoder a pass), and the `stream` parameter of `Pass` no longer speaks of a row a read.
 - **Where:** `src/ImageVisualCompare.Wpf/Imaging/FitsImageLoader.cs:305-318` (`Pass`),
   `:330-331` (`OpenRead`: no buffer, `FileOptions.RandomAccess`);
   `src/ImageVisualCompare.Core/FitsRowDecoder.cs:59-65`, `:98-107`.
@@ -402,7 +431,17 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-011. At fit, a rounding residue shows a scrollbar and the minimap's rectangle
 
-- **Severity 3, common, confirmed.** Status: open.
+- **Severity 3, common, confirmed.** Status: fixed 71e02ddd. `Viewport.Overflow` takes an
+  overflow of up to `WholeTolerance` (1e-9) of a physical pixel as none, so `MaxOffsetX` and
+  `MaxOffsetY` are 0 at such a fit, and `ClampOffsets` puts the axis at 0, not at half the
+  residue (R-043, R-041). Recomputed on 2026-11-20: 85 heights over and 85 under, as below; over
+  1.9 million random sizes of image and view the largest residue is 1.3e-12 of a physical pixel.
+  Run with the real window off the desktop on the real FITS pair: `Fit` on 401 window heights,
+  68 of them with a residue, showed no bar and no rectangle. The last sentence of the case, the
+  top screen row reading no pixel, was already gone since CR-001: the read-out takes the centre
+  of the screen pixel; the test pins it. After the branch's two reviews, a8f45631 and the commit
+  of the second review: the note and a test's comment said an overflow "however small" still scrolls,
+  where it is one above the slack that does.
 - **Where:** `src/ImageVisualCompare.Core/Viewport.cs:57-58`, `:67-78`, `:234-243`, `:317-327`;
   `src/ImageVisualCompare.Core/ScrollBarState.cs:52-56`, `:71-75`;
   `src/ImageVisualCompare.Core/MinimapGeometry.cs:80-82`; shown by
@@ -426,7 +465,22 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-012. The bottom-left corner of the image is always under the minimap at 100 % and above
 
-- **Severity 3, common, owner.** Status: open.
+- **Severity 3, common, owner.** Status: fixed fb42836a, by the owner's choice of 2026-11-20, of
+  three (a key; a pan that overshoots the edge; leaving it): the key `M` hides the minimap and
+  the zoom badge and shows them again, wherever the focus is; a held key acts once, the choice
+  holds through a mode switch and a new pair, and the status bar's hint names the key (R-067,
+  ADR 0059). `CompareView.ToggleOverlays` and `MainWindow.OnOverlaysKey`. `MinimapView.Hide`,
+  which also drops the thumbnail, is not what a toggle needs and stays on the cleanup list. Run
+  with the real window off the desktop on the real FITS pair, at 100 % panned fully left and
+  down: `M` took both off (the corner shows in the render), a repeat of the held key changed
+  nothing, they stayed hidden through `H`, and `M` brought them back. Not done: the application
+  on screen with real keys (the owner was at the PC), and the wiki manual, where the key's row
+  waits for the owner's word. After the branch's review, a8f45631: the test of the held key read
+  the state only after two repeats, which cancel out; it reads it after each. Left to the owner,
+  from the same review: the hint is cut from its end when the status bar is short of room
+  (R-054), and `M minimap` is its last item but one. In the render of a window 1920 wide it is
+  whole in `Linear` and ends `M minimap · F1 h…` in `Histogram`; a padded pair or a narrower
+  window cuts the key's name too (CR-013 is about that bar).
 - **Where:** `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml:95-98` (the minimap, bottom
   left, above everything), `:56-59` (the zoom badge, top right);
   `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml.cs:79-85` (`Hide` exists and is never
@@ -770,6 +824,7 @@ Not defects; a task may take several together.
   has no `generic.xaml`.
 - `ThirdParty.cs:67`: a stray blank line before the class's closing brace.
 - `FitsHeader.cs:436`, `FitsScale.cs:82`, `FitsImageLoader.cs:323-324`: a `//` comment above the
-  `///` block of the member it explains.
+  `///` block of the member it explains. (The first went with CR-009, a21d59ab, the last with
+  CR-010, 54f7807a; `FitsScale.cs` is not done.)
 - `Directory.Build.props:31`: `GenerateDocumentationFile` puts the two `.xml` documentation
   files beside the executable of a publish; no ADR or note says that is accepted.

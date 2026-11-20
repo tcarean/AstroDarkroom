@@ -36,6 +36,16 @@ public sealed class UiTextTests : IDisposable
     public void Dispose() => _images.Dispose();
 
     [Fact]
+    public void TheHint_NamesTheKeyThatHidesTheMinimap_InBothLanguages()
+    {
+        // R-054 and R-067: the key is of no use to someone who does not know it is there.
+        Assert.Equal(
+            "wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open · H histogram · F false colours · M minimap · F1 help",
+            UiText.English.Hint);
+        Assert.Contains(" · M: minimap · ", UiText.Romanian.Hint);
+    }
+
+    [Fact]
     public void R101_TheLanguageIsEnglish_UntilTheStartUpChoosesAnother()
     {
         Assert.Same(UiText.English, UiText.Current);
@@ -249,7 +259,7 @@ ot-here.png"]);
             Assert.Equal("Ajutor", System.Windows.Automation.AutomationProperties.GetName(window.HelpButton));
             Assert.Equal("Manualul, la secțiunea despre ce e pe ecran (F1)", window.HelpButton.ToolTip);
             Assert.Equal(
-                "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide · H: histogramă · F: culori false · F1: ajutor",
+                "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide · H: histogramă · F: culori false · M: minimap · F1: ajutor",
                 window.HintText.Text);
             Assert.Equal(VersionInfo.Banner, window.Title);
         });

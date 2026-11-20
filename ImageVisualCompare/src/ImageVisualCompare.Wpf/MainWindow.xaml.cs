@@ -168,14 +168,15 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Opens another pair on Ctrl+O, switches the display mode on H and F (R-114), and opens the
-    /// manual on F1 (R-066), wherever the focus is; a held H, F or F1 acts once
-    /// (<see cref="OnModeKeyAsync"/>, <see cref="OnHelpKey"/>), and while a pair is being opened
-    /// or switched the first three do nothing (<see cref="OpenPairAsync"/>,
+    /// Opens another pair on Ctrl+O, switches the display mode on H and F (R-114), hides the
+    /// minimap and the zoom badge on M (R-067), and opens the manual on F1 (R-066), wherever the
+    /// focus is; a held H, F, M or F1 acts once (<see cref="OnModeKeyAsync"/>,
+    /// <see cref="OnOverlaysKey"/>, <see cref="OnHelpKey"/>), and while a pair is being opened
+    /// or switched Ctrl+O, H and F do nothing (<see cref="OpenPairAsync"/>,
     /// <see cref="ToggleModeAsync"/>).
     /// </summary>
     /// <param name="sender">The window itself; not read.</param>
-    /// <param name="e">The key; marked handled when it is one of the four.</param>
+    /// <param name="e">The key; marked handled when it is one of the five.</param>
     private async void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.O && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
@@ -194,11 +195,34 @@ public partial class MainWindow : Window
             e.Handled = true;
             await OnModeKeyAsync(e.Key == Key.H ? DisplayMode.Histogram : DisplayMode.FalseColours, e.IsRepeat);
         }
+        else if (e.Key == Key.M && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            e.Handled = true;
+            OnOverlaysKey(e.IsRepeat);
+        }
         else if (e.Key == Key.F1 && Keyboard.Modifiers == ModifierKeys.None)
         {
             e.Handled = true;
             OnHelpKey(e.IsRepeat);
         }
+    }
+
+    /// <summary>
+    /// Takes a press of M (R-067): the first hides the minimap and the zoom badge, or shows them
+    /// again (<see cref="Controls.CompareView.ToggleOverlays"/>); a repeat of the key held down
+    /// does nothing and writes nothing, since a held key repeats some thirty times a second and
+    /// would leave them shown or hidden by chance.
+    /// </summary>
+    /// <param name="isRepeat">True for a repeat of a key held down.</param>
+    internal void OnOverlaysKey(bool isRepeat)
+    {
+        if (isRepeat)
+        {
+            return;
+        }
+
+        Compare.ToggleOverlays();
+        Log.Info("M: the minimap and the zoom badge are " + (Compare.OverlaysHidden ? "hidden" : "shown"));
     }
 
     /// <summary>

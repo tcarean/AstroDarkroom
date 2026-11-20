@@ -68,7 +68,7 @@ bitmap at once and records the mode of every load: it clicks Open, waits between
 dispatcher until the pair line of the status bar is filled, moves the divider, calls
 `ToggleModeAsync` and reads the buttons, the status bar and the divider back; the keys `H` and
 `F` themselves are checked by launching the application, though they could be pressed as `F1`
-is. A `KeyEventArgs` needs a presentation source, which a window never shown does not have, so
+and `M` (R-067) are. A `KeyEventArgs` needs a presentation source, which a window never shown does not have, so
 `F1` (R-066) is pressed with one of the test's own (`KeySource`, as FlatCheck's tests press it),
 raised on the surface or a button so that it tunnels to the window's `PreviewKeyDown`, and its
 repeat is marked through `KeyEventArgs`'s internal `SetRepeat`, as WPF marks a held key's; the window's `OpenAddress` keeps the addresses instead of starting a browser,
