@@ -167,7 +167,7 @@ each pair has the same defect unless the entry says otherwise.
 | CR-077 | 1 | rare | confirmed | Darks without an ISO between lights and a partner at two ISOs: the chained verdict can read `as it is`, and two rows take the darks' ISO two ways | fixed 581dd50a |
 | CR-078 | 1 | some setups | to measure | On a short clean series whose frames scatter more than the 0.1 ADU-eq floor, check 3 names a frame as lit in a few series in a hundred | open |
 | CR-079 | 1 | slip | owner | The first frame that decodes sets the size and the scale: a stray first file of another size or bit depth leaves the whole series out | open |
-| CR-080 | 2 | rare | confirmed | Links are followed on the output's side only, and not past the 260th character: the files can still land among the frames | open |
+| CR-080 | 2 | rare | confirmed | Links are followed on the output's side only, and not past the 260th character: the files can still land among the frames | fixed 50a2230e |
 | CR-081 | 2 | rare | confirmed | A link that leads nowhere is not followed, nor are the subfolders beside a library opened as `name\darks`: the files can land in the session through the link | open |
 | CR-082 | 3 | rare | confirmed | A `darks\`, `biases\` or `lights\` link that leads nowhere ends the run with the system's own English line | open |
 
@@ -1704,7 +1704,7 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
   takes long paths.
 - Test: none. `R026_AJunctionToAFolderInsideIsInsideToo` has the links on the output's side.
 - Evidence: confirmed (both run by the review on the console built from c052d918).
-- Status: open
+- Status: fixed 50a2230e (each of the three folders, the one opened, the partner's and the chosen lights', and each of its session subfolders `lights\`, `darks\`, `biases\` and `flats\` is kept clear by the path it really has, whether the run reads frames from it or not, with the folder around a real `darks` or `lights` folder; a folder is opened in the `\\?\` form from 248 characters on; a share was run by the review, a `subst` drive was not tried; a dated note on ADR 0069; the two reviews of the fix are in the plan `docs/plans/2026-11-20-fix-cr-080.md`; what they ran that `main` has too is CR-081 and CR-082)
 
 ### CR-081 A link that leads nowhere is not followed, nor are the subfolders beside a library opened as `name\darks`
 
