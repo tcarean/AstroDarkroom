@@ -351,6 +351,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   under it, shown only when there are any: `marginal for another reason: 4, 5 (wide stars or too
   few stars)`. The Rejected tab's explanation points at both rows (R-094, ADR 0068; CR-020 of
   the review of 2026-11-13).
+- The console's Romanian tables did not sit under their headers: in the frame table `FWHM`,
+  `stele`, `fond`, `pauza` and `pas` ended a column before their figures, and in the table of
+  `--inventory` so did `ISO`, `f/`, `focala` and `pauza`. A row with a long cell was pushed to
+  the right in both languages: the Romanian class `la limita`, a pause of 1000 s or more, a
+  cell such as `10/10 de la 100`. The headers are now built with the rows' widths in both
+  languages, and a long cell widens its column for every row (R-095; CR-018 of the review of
+  2026-11-13).
 
 ### Internal
 

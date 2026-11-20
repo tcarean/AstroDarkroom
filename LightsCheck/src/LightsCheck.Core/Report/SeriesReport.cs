@@ -122,14 +122,20 @@ internal static class SeriesReport
 
         w.WriteLine();
         w.WriteLine(T("  FRAME BY FRAME", "  TABEL PE CADRE"));
-        w.WriteLine(T(
-            $"    {"no",3}  {"file",-20}  {"time",-8}  {"exposure",8}  {"class",-8}  {"elong",5}  {"FWHM",5}  {"stars",6}  {"bg",5}  {"pause",5}  {"step",5}  {"dX",6}  {"dY",6}  {"dithering",-42}  {"same spot",-14}  reasons",
-            $"     nr  fisier                ora       expunere  clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  {"dithering",-42}  acelasi loc     motive"));
+        // One writer pads the header and the rows, so a title sits over its cells in both
+        // languages and a long cell widens its column (R-095); the widths are the least ones.
+        TextTable table = new(
+            new(T("no", "nr"), true, 3), new(T("file", "fisier"), false, 20), new(T("time", "ora"), false, 8), new(T("exposure", "expunere"), true, 8),
+            new(T("class", "clasa"), false, 8), new(T("elong", "alung"), true, 5), new("FWHM", true, 5), new(T("stars", "stele"), true, 6),
+            new(T("bg", "fond"), true, 5), new(T("pause", "pauza"), true, 5), new(T("step", "pas"), true, 5), new("dX", true, 6), new("dY", true, 6),
+            new("dithering", false, 42), new(T("same spot", "acelasi loc"), false, 14), new(T("reasons", "motive"), false, 0));
         foreach (FrameTableRow f in FrameRows(r))
         {
             string name = f.FileName.Length > 20 ? f.FileName[..20] : f.FileName;
-            w.WriteLine($"    {f.Index.ToString(Inv),3}  {name,-20}  {f.Time,-8}  {f.Exposure,8}  {f.Class,-8}  {f.Elongation,5}  {f.Fwhm,5}  {f.Stars,6}  {f.Background,5}  {f.Pause,5}  {f.Step,5}  {f.Dx,6}  {f.Dy,6}  {f.Move,-42}  {f.Spot,-14}  {f.Reasons}");
+            table.Add(f.Index.ToString(Inv), name, f.Time, f.Exposure, f.Class, f.Elongation, f.Fwhm, f.Stars, f.Background, f.Pause, f.Step, f.Dx, f.Dy, f.Move, f.Spot, f.Reasons);
         }
+
+        table.Write(w, "    ");
     }
 
     /// <summary>

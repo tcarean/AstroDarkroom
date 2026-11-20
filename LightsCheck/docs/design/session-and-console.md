@@ -1,6 +1,6 @@
 # The session, the inventory and the console
 
-**Covers:** `src/LightsCheck.Core/Session/SessionFolder.cs`, `src/LightsCheck.Core/Session/FrameInfo.cs`, `src/LightsCheck.Core/Analysis/CadenceAnalyzer.cs`, `src/LightsCheck.Core/Runs/InventoryRun.cs`, `src/LightsCheck.Core/Report/InventoryReport.cs`, `src/LightsCheck.Core/Report/RunReport.cs`, `src/LightsCheck.Cli/Options.cs`, `src/LightsCheck.Cli/Program.cs`.
+**Covers:** `src/LightsCheck.Core/Session/SessionFolder.cs`, `src/LightsCheck.Core/Session/FrameInfo.cs`, `src/LightsCheck.Core/Analysis/CadenceAnalyzer.cs`, `src/LightsCheck.Core/Runs/InventoryRun.cs`, `src/LightsCheck.Core/Report/InventoryReport.cs`, `src/LightsCheck.Core/Report/RunReport.cs`, `src/LightsCheck.Core/Report/TextTable.cs`, `src/LightsCheck.Cli/Options.cs`, `src/LightsCheck.Cli/Program.cs`.
 
 The part every run goes through before a pixel is decoded: finding the frames, reading what
 their files say about the shot, the rhythm of the night, and the console that dispatches the
@@ -87,6 +87,21 @@ before it, and says what follows the names (R-089), with no change of the exit c
 the `WARNING` of the frames that could not be read, which comes after it. The table prints one row per light with
 `-` for a missing field and `error: <message>` in place of the fields for a frame that
 could not be read. File names are cut at 20 characters.
+
+## The console's tables (`TextTable`)
+
+The table of the lights and the frame table of the series report are written by one small
+class. It is given the columns (a title, already in the run's language, the side its cells
+are set to, and a least width), then the rows as plain cells, and only when it is written
+does it fix each column's width: the widest of the least width, the title and the cells. The
+header and every row are then padded with those widths, so a title cannot stand apart from
+its cells in either language, and a cell longer than the least width (the Romanian `la
+limita`, a pause of 1000 s) widens its column for all rows (R-095). The least widths are the
+ones the tables had when their rows were format strings, which keeps the English output as it
+was wherever no cell is longer. A last column of words is not padded. `AddSpanning` is for
+the inventory's unreadable light: its number and name in their columns, then the error as
+one text over the rest. Nothing else in the reports is a table: the sections are rows of a
+label and a value (`SeriesReport.Section`).
 
 ## The lines every run shares (`RunReport`)
 

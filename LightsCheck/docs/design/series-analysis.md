@@ -331,7 +331,8 @@ Each section is a list of `ReportRow(Label, Value, Verdict)` built by a producer
 `RejectedRows`); `Write` prints every row as the label in a 19-column field, a colon, then the
 verdict word and the value, and the window binds the same rows (ADR 0008). A section's text
 therefore has one label column; a label longer than the field pushes its colon right.
-`FrameRows` formats the table's cells once for the console and the window (`SpotCell` the
+`FrameRows` formats the table's cells once for the console and the window; the console's
+`Write` hands them to `TextTable` (the note of the console), the window has its own columns (`SpotCell` the
 `k/n from f` cell of a run, `-` outside one), `RejectedRows` and `RejectedHeading` the
 REJECTED block (the heading counts the bad and the unread frames through `Count`, singular for
 one, R-081). A count is written with its word wherever one follows it (R-093): `Count` for a

@@ -469,6 +469,48 @@ public class SeriesTests
         Assert.StartsWith(start, e.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The frame table of the series report sits under its header in both languages (R-095,
+    /// CR-018): the classes session, whose Romanian `la limita` is wider than the class column,
+    /// with a wait of 1500 s before one frame and a `same spot` cell of a run that began at
+    /// frame 100, both wider than their columns' least widths.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R095_TheFrameTableSitsUnderItsHeader(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        File.WriteAllBytes(Path.Combine(f.LightsDir, "DSC_0009.fit"), new byte[100]);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        double?[] pauses = [.. r.Cadence.PauseSeconds];
+        pauses[5] = 1500;
+        SpotRun?[] runs = [.. r.Dither.SpotRun];
+        runs[7] = new SpotRun(10, 10, 100);
+        r = r with { Cadence = r.Cadence with { PauseSeconds = pauses }, Dither = r.Dither with { SpotRun = runs } };
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        string[] lines = sw.ToString().Split(Environment.NewLine);
+        int title = Array.IndexOf(lines, english ? "  FRAME BY FRAME" : "  TABEL PE CADRE");
+        string[] table = lines[(title + 1)..].Where(l => l.Length > 0).ToArray();
+
+        Assert.Equal(1 + 14, table.Length);
+        Assert.Contains(table, l => l.Contains(" 1500 s ", StringComparison.Ordinal));
+        Assert.Contains(table, l => l.Contains(english ? " 10/10 from 100 " : " 10/10 de la 100 ", StringComparison.Ordinal));
+        if (english)
+        {
+            TextTableTests.AssertUnderHeader(table, ("no", true), ("file", false), ("time", false), ("exposure", true), ("class", false), ("elong", true), ("FWHM", true), ("stars", true),
+                ("bg", true), ("pause", true), ("step", true), ("dX", true), ("dY", true), ("dithering", false), ("same spot", false), ("reasons", false));
+        }
+        else
+        {
+            Assert.Contains(table, l => l.Contains("  la limita  ", StringComparison.Ordinal));
+            TextTableTests.AssertUnderHeader(table, ("nr", true), ("fisier", false), ("ora", false), ("expunere", true), ("clasa", false), ("alung", true), ("FWHM", true), ("stele", true),
+                ("fond", true), ("pauza", true), ("pas", true), ("dX", true), ("dY", true), ("dithering", false), ("acelasi loc", false), ("motive", false));
+        }
+    }
+
     private static SeriesResult RunPattern(int biases = 0)
     {
         using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: biases);

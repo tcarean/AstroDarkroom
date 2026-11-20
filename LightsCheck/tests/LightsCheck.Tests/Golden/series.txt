@@ -71,7 +71,7 @@ Copyright (C) 2026 Tudor Carean
       6  DSC_0006.fit          alungire 1.88 (de la 1.73 cadrul e slab), dara pe RA (-90 de grade)
 
   TABEL PE CADRE
-     nr  fisier                ora       expunere  clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  dithering                                   acelasi loc     motive
+     nr  fisier                ora       expunere  clasa     alung   FWHM   stele   fond  pauza    pas      dX      dY  dithering                                   acelasi loc     motive
       1  DSC_0001.fit          20:35:03   120.0 s  bun        1.01   3.22      40   2000      -      -     0.0     0.0  -                                           -               
       2  DSC_0002.fit          20:37:04   120.0 s  bun        1.01   3.22      40   2000    1 s    0.5     0.5     0.2  -                                           -               
       3  DSC_0003.fit          20:39:34   120.0 s  SLAB       1.88   4.89      40   2000   30 s   11.5    12.0     0.0  DEC 12 px                                   -               alungire 1.88 (de la 1.73 cadrul e slab), dara pe RA (-90 de grade)

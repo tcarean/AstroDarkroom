@@ -40,7 +40,8 @@ locals and both wordings use the locals, so the two cannot differ in a number. T
 - a literal or a sentence: `T("...", "...")` where it was;
 - a text aligned by hand across many lines: written whole per language, chosen by
   `Ui.IsRomanian` (the usage, `WriteUsageEnglish` / `WriteUsageRomanian`); a table header is
-  built in English with the same `{x,n}` widths as its rows, the Romanian literal kept as it was;
+  not one of them: its titles are `T` pairs handed to `TextTable`, which pads them with the
+  widths of the rows (R-095; until 2026-11-20 the Romanian header was a literal typed by hand);
 - a list once built in a `static readonly` field (`RunReport.WarrantyLines`,
   `ThirdParty.Components`, `SeriesReport.RejectedExplanation`, `SeriesReport.DitherExplanation`),
   or a `const` that held a text (`SeriesReport.ScaleLabel`): now a property, built in the language
