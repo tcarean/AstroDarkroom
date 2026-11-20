@@ -136,7 +136,9 @@ awaits; the window's log lines and the two logger names of `Loggers` are in `log
   classes) so a change there moves the lines; a map point whose frame sits in a run at 10 px
   (`DitherAnalysis.SpotRun`) carries `Ring`, the map's axis labels are
   `SeriesReport.AxisLabels`, and each step point carries the table row's `StepTip` as its
-  `Tip`; the frames table shows the row's `Move` as the `dithering` column;
+  `Tip`; the labels along the value axis are written by the reports' formatter
+  (`ChartElement.Num` calls `RunReport.F`), so a line a hair under zero reads `0.0` as the
+  texts do (R-092); the frames table shows the row's `Move` as the `dithering` column;
 
 The window's sentences built in code are `WindowTexts`, each a pair of English and Romanian; its
 fixed labels are `{local:T}` pairs in the XAML (`language.md`, which also covers the start-up's

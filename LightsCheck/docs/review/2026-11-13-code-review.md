@@ -93,11 +93,11 @@ rule "Golden files").
 | CR-014 | 2 | slip | confirmed | The report files can be written into `lights/` or `biases/` | fixed 08b016ba |
 | CR-015 | 2 | rare | confirmed | One late failure loses the whole run, after every frame was measured | fixed d57b73d2 |
 | CR-016 | 3 | common | confirmed | A wrong pixel size is not marked in the window | fixed ffc7cd0b |
-| CR-017 | 3 | common | confirmed | The exposure verdict and the figure printed beside it disagree at the limit | open |
-| CR-018 | 3 | common | confirmed | The Romanian tables do not sit under their headers | open |
-| CR-019 | 3 | common | confirmed | A count of one gets a plural word | open |
-| CR-020 | 3 | common | owner | The `marginal (elongation between ...)` row lists frames that are not | open |
-| CR-021 | 3 | common | owner | A small negative figure prints as a negative zero | open |
+| CR-017 | 3 | common | confirmed | The exposure verdict and the figure printed beside it disagree at the limit | fixed b10fb82d |
+| CR-018 | 3 | common | confirmed | The Romanian tables do not sit under their headers | fixed 0fc75ab2 |
+| CR-019 | 3 | common | confirmed | A count of one gets a plural word | fixed d32b8e2f |
+| CR-020 | 3 | common | owner | The `marginal (elongation between ...)` row lists frames that are not | fixed dd8e29b3 |
+| CR-021 | 3 | common | owner | A small negative figure prints as a negative zero | fixed d3230f6f |
 | CR-022 | 3 | common | confirmed | Stop shows nothing until the frames in flight finish | open |
 | CR-023 | 3 | common | owner | Changing an input after a result changes nothing on screen | open |
 | CR-024 | 3 | common | to measure | The Frames tab cuts the `same spot` cell | open |
@@ -468,7 +468,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Should: a figure that does not contradict its verdict.
 - Test: the two goldens pin both lines.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed b10fb82d (the verdict is taken on the ratio as the row shows it, with one decimal, the owner's answer of 2026-11-20: ADR 0067, R-024; the row gives what the read noise adds with one decimal, `adds 4.9 %`, and the `5` of `adds under 5 %` is worked out from `Th.SwampingRatioOk`; the other figures written beside a limit stay with CR-040, for which `RunReport.Shown` is there)
 
 ### CR-018 The Romanian tables do not sit under their headers
 
@@ -488,7 +488,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: `SeriesTests.cs:614` and `:722` pin the Romanian header's own literal, never the header
   against a row.
 - Evidence: confirmed (counted on the goldens).
-- Status: open
+- Status: fixed 0fc75ab2 (both tables are written by one writer, `TextTable`, which pads the header and the rows alike in both languages and makes a column as wide as its widest cell, never narrower than before: R-095; the English tables are byte for byte as they were where no cell is longer than its column; the window's own columns, CR-024 and CR-025, are not touched)
 
 ### CR-019 A count of one gets a plural word
 
@@ -507,7 +507,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Should: the singular for one, and `de` from twenty.
 - Test: `SeriesTests.cs:179` pins `1 bune`.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed d32b8e2f (the texts the entry lists take the singular for one, and the Romanian warning of unread frames its `de`: R-093; the label of FOCUS's second row has no count when fewer than two good frames leave nothing to compare; four more counts written with a plural word only were found by a search and left for the owner, as texts not yet shown: `1 stars kept` in `--frame`, `1 hot pixels per million pixels`, `1 move over 1 frames` and `in 1 frames of 20` in DITHERING)
 
 ### CR-020 The `marginal (elongation between ...)` row lists frames that are not
 
@@ -521,7 +521,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Should: the owner's call: the label, or the list.
 - Test: the golden pins it.
 - Evidence: owner.
-- Status: open
+- Status: fixed dd8e29b3 (two rows, the owner's answer of 2026-11-20: ADR 0068, R-094; the row with the elongation bounds lists the frames marginal by their elongation, and `marginal for another reason`, there only when it has a frame, lists those marginal for wide stars or too few stars; the Rejected tab's explanation points at both)
 
 ### CR-021 A small negative figure prints as a negative zero
 
@@ -536,7 +536,7 @@ there first, and the cleanup list, which holds what is not a defect.
   `SeriesTests.cs:356` and `:639` assert it; FlatCheck settled the same question for itself in
   its ADR 0092.
 - Evidence: owner.
-- Status: open
+- Status: fixed d3230f6f (a figure that rounds to zero is written without a minus, and as `+0` where the sign is always written, FlatCheck's rule, the owner's answer of 2026-11-20: ADR 0066, R-092; the trail's angle and the charts' tick labels go through the same formatter; the CSV keeps its numbers as they are)
 
 ### CR-022 Stop shows nothing until the frames in flight finish
 
@@ -1014,7 +1014,8 @@ there first, and the cleanup list, which holds what is not a defect.
   - `src/LightsCheck.Core/Report/FrameReport.cs:74-75`: `ring 5-10 px / core 3 px`, beside a 40
     that is read from `Th`. (Settled on 2026-11-15 by the change of ADR 0059: the line reads its
     rings, now in star widths, from `Th`. The other items stay open.)
-  - `src/LightsCheck.Core/Report/SeriesReport.cs:481-482`: `adds under 5 %` (CR-017); `:817`:
+  - `src/LightsCheck.Core/Report/SeriesReport.cs:481-482`: `adds under 5 %` (CR-017; settled
+    on 2026-11-20 by its fix, which works the figure out from `Th.SwampingRatioOk`); `:817`:
     `never 2 frames`.
   - `src/LightsCheck.Core/Session/SessionFolder.cs:114`: `.fit, .fits, .fts`, beside
     `FitsReader.FitsExtensions`.
