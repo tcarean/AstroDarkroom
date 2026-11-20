@@ -143,7 +143,8 @@ internal static class DarkOutputs
         List<(string, OutFolder)> folders = [(session.Root, OutFolder.Session)];
 
         // the darks listed in the folder opened, and that folder named darks: the library around it
-        if (session.DarksDir == session.Root && Around(session.Root, SessionFolder.DarksName) is string library)
+        // (by the folder it really is, so a link to a darks folder names the library around the darks)
+        if (session.DarksDir == session.Root && Around(FolderIdentity.Real(session.Root), SessionFolder.DarksName) is string library)
         {
             folders.Add((library, OutFolder.Session));
         }
@@ -154,7 +155,7 @@ internal static class DarkOutputs
             {
                 string full = FolderIdentity.Full(partner);
                 folders.Add((full, OutFolder.Partner));
-                if (Around(full, SessionFolder.DarksName) is string partnerLibrary)
+                if (Around(FolderIdentity.Real(full), SessionFolder.DarksName) is string partnerLibrary)
                 {
                     folders.Add((partnerLibrary, OutFolder.Partner));
                 }
@@ -170,7 +171,7 @@ internal static class DarkOutputs
             folders.Add((lights, OutFolder.ChosenLights));
 
             // the lights listed in the folder given, and that folder named lights: the session around it
-            if (session.LightsDir == lights && Around(lights, SessionFolder.LightsName) is string lightsSession)
+            if (session.LightsDir == lights && Around(FolderIdentity.Real(lights), SessionFolder.LightsName) is string lightsSession)
             {
                 folders.Add((lightsSession, OutFolder.ChosenLights));
             }
@@ -212,7 +213,9 @@ internal static class DarkOutputs
     /// lights given as <c>name\lights</c> are the session <c>name</c>'s, so nothing is written
     /// into <c>name</c> either, as when <c>name</c> itself is given.
     /// </summary>
-    /// <param name="folder">The folder given; not null or blank.</param>
+    /// <param name="folder">The folder given, by the path it really has
+    /// (<see cref="FolderIdentity.Real"/>) when another name of it must count too; not null or
+    /// blank.</param>
     /// <param name="subfolder">The name that makes it a session's subfolder, <c>darks</c> or
     /// <c>lights</c>, compared without case.</param>
     /// <returns>The full path of the folder around it; null when the folder has another name, or

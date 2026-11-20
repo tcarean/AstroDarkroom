@@ -30,16 +30,23 @@ entry is of severity 2 and not 1.
    session. The refusal names the folder around it, in today's words.
 2. **Two paths that the system says are one folder are one folder.** On Windows a folder is
    opened for its attributes alone and asked for its volume serial number and file index
-   (`FolderIdentity`, after CopyWcs's `FileIdentity`, its ADR 0018); the output folder and every
-   folder above it are held against the protected folder's pair. The full paths are compared
-   first, without case and without a `\\?\` prefix before a drive letter, which also answers
-   for an output folder that does not exist yet.
+   (`FolderIdentity`, after CopyWcs's `FileIdentity`, its ADR 0018). The output folder is taken
+   by the path the system resolves it to, every link followed, from its deepest folder that
+   exists, and that folder and every folder above it are held against the protected folder's
+   pair. The folders of the path as typed are not enough: a junction beside the session that
+   leads to a folder inside it, its `darks\` included, has neither the session's identity nor
+   the session above it (found by the review of the branch, which wrote the files among the
+   frames that way). The folder around a `darks` or `lights` folder (point 1) is taken from the
+   resolved path too, so a library opened through another name of its `darks` folder keeps the
+   library clear. The full paths are compared first, without case and without a `\\?\` prefix
+   before a drive letter, which also answers for an output folder that does not exist yet.
 3. **One list of folders, used twice.** `DarkOutputs.ReadOnlyFolders` gives the folders,
    `CheckOut` refuses the output folder in any of them; the console calls it before the run and
    `WriteAll` after it, so the window's export refuses exactly what `--out` refuses.
 
-Two calls into Windows' `kernel32` (`CreateFileW`, `GetFileInformationByHandle`) are
-source-generated as unsafe code, so the core project allows unsafe blocks; no package is added.
+Three calls into Windows' `kernel32` (`CreateFileW`, `GetFileInformationByHandle`,
+`GetFinalPathNameByHandleW`) are source-generated as unsafe code, so the core project allows
+unsafe blocks; no package is added.
 
 ## Alternatives rejected
 
@@ -58,10 +65,12 @@ refused where it was accepted: the files go to a folder outside. A folder named 
 `lights` that is no part of a session (`Desktop\darks`) keeps the folder around it clear too,
 which is the same answer the folder around it gives when opened. On a file system that gives no
 file index, and anywhere but Windows, the paths alone are compared, as before. A `subst` drive
-and an 8.3 name were not tried: making either changes the machine; the same identity answers
-for them as for the junction the tests make. Guarded by
+and an 8.3 name were not tried: making either changes the machine; the same resolved path
+answers for them as for the junctions the tests make. A path of 260 characters or more was not
+tried either: if the system does not open it as typed, the folder has no identity and the paths
+alone are compared, as before. Guarded by
 `R026_OutBesideTheDarksOfALibraryKeptAsNameDarksIsRefused_Exit1`,
 `R026_OutThroughAnotherNameOfTheSessionIsRefused_Exit1`,
 `R026_AFolderIsHeldAgainstAnotherByItsFullPathWhateverItsSpelling`,
-`R026_AJunctionToAFolderIsThatFolder` and
+`R026_AJunctionToAFolderIsThatFolder`, `R026_AJunctionToAFolderInsideIsInsideToo` and
 `R026_AFolderNamedDarksOrLightsStandsForTheFolderAroundIt`.

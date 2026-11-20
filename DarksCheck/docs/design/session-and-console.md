@@ -135,10 +135,16 @@ decoding. Whether the output folder is one of those folders or lies inside it is
 a `\\?\` prefix before a drive letter, which also settles a folder that does not exist yet.
 Then the folders themselves: `Id` opens a folder for nothing but its attributes
 (`CreateFileW` with `FILE_FLAG_BACKUP_SEMANTICS`) and reads the volume's serial number and the
-file index (`GetFileInformationByHandle`), and the output folder and every folder above it are
-held against the protected folder's pair, so a junction, a link, a `subst` drive and a short
-8.3 name of the session are the session. A folder that cannot be opened has no identity and is
-told by its path alone. The exceptions
+file index (`GetFileInformationByHandle`). The output folder is not walked as it was typed: the
+folder above a link is not above the place the link leads to, so a junction beside the session
+that leads to its `darks\` would pass. `Resolved` takes the deepest folder of the output path
+that exists by the path the system resolves it to (`FinalPath`, `GetFinalPathNameByHandleW`),
+puts the folders that do not exist yet back on, and that path's folders, from the last up, are
+held against the protected folder's pair. So a junction, a link, a `subst` drive and a short
+8.3 name of the session, or of a folder inside it, are all inside the session. `Real` is the
+same resolved path without its `\\?\` prefix, which `DarkOutputs.ReadOnlyFolders` hands to
+`Around`, so a folder reached by another name still names the folder around it. A folder that
+cannot be opened has no identity and is told by its path alone. The exceptions
 a bad folder or a frame can raise, the `AggregateException` of a parallel loop included, are
 turned into `ERROR:` on stderr and exit 1. `Main` runs `Program.Run` between the diagnostic log's
 first and last lines (`LogSetup.Apply` and `LogSetup.Close`, each guarded, so a log that cannot be

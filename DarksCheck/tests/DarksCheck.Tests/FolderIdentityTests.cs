@@ -100,6 +100,52 @@ public class FolderIdentityTests
         Assert.True(Directory.Exists(Path.Combine(root, "darks")));
     }
 
+    /// <summary>
+    /// The review of the branch: a junction that leads to a folder inside the session has that folder's
+    /// identity, not the session's, and its typed parent is not the session either; only the path the system
+    /// resolves it to shows that it lies inside.
+    /// </summary>
+    [Fact]
+    public void R026_AJunctionToAFolderInsideIsInsideToo()
+    {
+        using TempWorkspace ws = new();
+        string root = Path.Combine(ws.Dir, "Session");
+        Directory.CreateDirectory(Path.Combine(root, "darks"));
+        Directory.CreateDirectory(Path.Combine(root, "reports"));
+        Directory.CreateDirectory(Path.Combine(ws.Dir, "Other"));
+        string toReports = Path.Combine(ws.Dir, "ToReports"), toDarks = Path.Combine(ws.Dir, "ToDarks"), toOther = Path.Combine(ws.Dir, "ToOther");
+        Junction(toReports, Path.Combine(root, "reports"));
+        Junction(toDarks, Path.Combine(root, "darks"));
+        Junction(toOther, Path.Combine(ws.Dir, "Other"));
+        try
+        {
+            Assert.True(FolderIdentity.IsOrInside(toReports, root));
+            Assert.True(FolderIdentity.IsOrInside(Path.Combine(toReports, "today"), root));
+            Assert.True(FolderIdentity.IsOrInside(Path.Combine(toReports, "today", "deeper"), root));
+            Assert.True(FolderIdentity.IsOrInside(toDarks, root));
+            // a junction to a folder beside the session stays outside
+            Assert.False(FolderIdentity.IsOrInside(toOther, root));
+            Assert.False(FolderIdentity.IsOrInside(Path.Combine(toOther, "today"), root));
+
+            // the folder a path really names, for the folder around it
+            // (held against the real path of the folder itself: the temp folder may have a short name on the way)
+            Assert.Equal(FolderIdentity.Real(Path.Combine(root, "darks")), FolderIdentity.Real(toDarks), ignoreCase: true);
+            Assert.Equal(FolderIdentity.Real(root), DarkOutputs.Around(FolderIdentity.Real(toDarks), "darks"), ignoreCase: true);
+            Assert.DoesNotContain(@"\\?\", FolderIdentity.Real(toDarks), StringComparison.Ordinal);
+            // a folder that does not exist is its own full path
+            Assert.Equal(Path.Combine(ws.Dir, "missing"), FolderIdentity.Real(Path.Combine(ws.Dir, "missing")));
+        }
+        finally
+        {
+            Directory.Delete(toReports);
+            Directory.Delete(toDarks);
+            Directory.Delete(toOther);
+        }
+
+        Assert.True(Directory.Exists(Path.Combine(root, "darks")));
+        Assert.Empty(Directory.GetFileSystemEntries(Path.Combine(root, "reports")));
+    }
+
     [Fact]
     public void R026_AFolderNamedDarksOrLightsStandsForTheFolderAroundIt()
     {

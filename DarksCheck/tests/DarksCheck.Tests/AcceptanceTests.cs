@@ -358,6 +358,32 @@ public class AcceptanceTests
         }
 
         Assert.Equal(2, Directory.GetFiles(s.DarksDir).Length);
+
+        // the review of the branch: a junction that leads to a folder inside the session, the darks' own included
+        string toDarks = Path.Combine(ws.Dir, "spre-darks");
+        FolderIdentityTests.Junction(toDarks, s.DarksDir);
+        try
+        {
+            foreach (string dir in new[] { toDarks, Path.Combine(toDarks, "rapoarte") })
+            {
+                (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2", "--out", dir);
+                Assert.Equal(1, code);
+                Assert.Contains("EROARE: --out nu poate fi folderul sesiunii sau unul din el (", stderr, StringComparison.Ordinal);
+                Assert.DoesNotContain("=== DARK-URI", stdout, StringComparison.Ordinal);
+            }
+
+            // and the library opened through another name of its darks folder: the folder around the darks is kept clear
+            (int around, _, string aroundErr) = Cli.Run(toDarks, "--threads", "2", "--out", Path.Combine(s.Root, "rapoarte"));
+            Assert.Equal(1, around);
+            Assert.Contains("EROARE: --out nu poate fi folderul sesiunii sau unul din el (", aroundErr, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(toDarks);
+        }
+
+        Assert.Equal(2, Directory.GetFileSystemEntries(s.DarksDir).Length);
+        Assert.False(Directory.Exists(Path.Combine(s.Root, "rapoarte")));
     }
 
     [Fact]

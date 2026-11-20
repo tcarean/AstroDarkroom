@@ -2014,6 +2014,16 @@ public partial class DarkSeriesTests
         // the value over 1 clips at the white
         Assert.Equal(65535, stack.Frames[1].Pixels![(5 * 64) + 7]);
 
+        // the limit itself: of 3072 values 0.1 % is 3.07, so three over 1 are still a frame on 0 .. 1 and four
+        // make it a frame in ADU, whose 200 / 65535 round to zero
+        foreach ((int over, int median) in new[] { (3, 200), (4, 0) })
+        {
+            string limit = Path.Combine(ws.Dir, $"limit_{over}.fit");
+            File.WriteAllBytes(limit, FitsTestData.BuildFits(64, 48, (x, y) => y == 0 && x < over ? 1.0001 : 200 / 65535.0, bitpix: -32, extraCards: FitsTestData.BayerCards("RGGB")));
+            FrameStack one = FrameStack.Load([limit], 1, maxFrames: 60);
+            Assert.Equal(median, Planes.Median([.. one.Frames[0].Pixels!.Select(v => (float)v)]));
+        }
+
         // a float frame in ADU is still kept as it is: nearly every value is over 1
         string adu = Path.Combine(ws.Dir, "adu.fit");
         File.WriteAllBytes(adu, FitsTestData.BuildFits(64, 48, (x, y) => 200 + ((x + y) % 5), bitpix: -32, extraCards: FitsTestData.BayerCards("RGGB")));

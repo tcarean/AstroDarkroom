@@ -524,7 +524,7 @@ five of them are of severity 1.
 - Also: `--out \\?\E:\S\out` passes too, since `Path.GetFullPath` leaves such a path as it is.
 - Test: `R026_OutInsideTheSessionIsRefused_Exit1` uses the session root only.
 - Evidence: confirmed.
-- Status: fixed 27df0814 (the folder around a `darks` or `lights` folder is kept clear too, and two paths that Windows says are one folder are one folder; a `subst` drive and an 8.3 name were not tried, the junction and the `\\?\` prefix were; ADR 0069)
+- Status: fixed 27df0814 (the folder around a `darks` or `lights` folder is kept clear too, and two paths that Windows says are one folder are one folder; a `subst` drive and an 8.3 name were not tried, the `\\?\` prefix and junctions were, to the session and to a folder inside it, the second after the branch's review; ADR 0069)
 
 ### CR-020 After a partner that failed, the window's export can write into the partner's folder
 
