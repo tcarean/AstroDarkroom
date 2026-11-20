@@ -46,7 +46,11 @@ public sealed class Viewport
 
     /// <summary>
     /// How near a whole number a scale, or the half of a physical pixel an offset is rounded at,
-    /// has to be to count as it: the arithmetic of a zoom leaves both a last bit away.
+    /// has to be to count as it: the arithmetic of a zoom leaves both a last bit away. Also how
+    /// far past the view, in physical pixels, the image may reach and still count as fitting it
+    /// (<see cref="MaxOffsetX"/>): the division of the fit leaves up to 1.3e-12 of a pixel either
+    /// way, by a sweep of 1.9 million sizes of image and view, and a thousandth of a millionth
+    /// of a pixel is nothing anyone can scroll to.
     /// </summary>
     public const double WholeTolerance = 1e-9;
 
@@ -99,9 +103,15 @@ public sealed class Viewport
 
     public double VisibleContentHeight => _scale > 0 ? ViewportHeight / _scale : 0;
 
-    public double MaxOffsetX => Math.Max(0, ContentWidth - VisibleContentWidth);
+    /// <summary>
+    /// The largest pan to the right, in image pixels: how much wider the image is than what the
+    /// view shows of it, and 0 when it is not wider, or wider only by what rounding leaves at
+    /// the fit (<see cref="Overflow"/>).
+    /// </summary>
+    public double MaxOffsetX => Overflow(ContentWidth, VisibleContentWidth);
 
-    public double MaxOffsetY => Math.Max(0, ContentHeight - VisibleContentHeight);
+    /// <summary>The largest pan down, in image pixels; as <see cref="MaxOffsetX"/>.</summary>
+    public double MaxOffsetY => Overflow(ContentHeight, VisibleContentHeight);
 
     /// <summary>True when the image overflows the viewport horizontally and a scrollbar is useful.</summary>
     public bool CanScrollHorizontally => MaxOffsetX > 0;
@@ -432,16 +442,37 @@ public sealed class Viewport
         OffsetX = ClampAxis(OffsetX, ContentWidth, VisibleContentWidth);
         OffsetY = ClampAxis(OffsetY, ContentHeight, VisibleContentHeight);
 
-        static double ClampAxis(double offset, double content, double visible)
+        double ClampAxis(double offset, double content, double visible)
         {
-            // When the axis fits entirely, centre it. The resulting offset is negative,
-            // which leaves equal empty margins on both sides.
-            if (visible >= content)
+            double overflow = Overflow(content, visible);
+            if (overflow > 0)
             {
-                return (content - visible) / 2;
+                return Math.Clamp(offset, 0, overflow);
             }
 
-            return Math.Clamp(offset, 0, content - visible);
+            // When the axis fits entirely, centre it. The resulting offset is negative,
+            // which leaves equal empty margins on both sides; an axis that fits exactly but
+            // for what rounding left has no margin to share, and starts at the image's edge.
+            return Overflow(visible, content) > 0 ? (content - visible) / 2 : 0;
         }
+    }
+
+    /// <summary>
+    /// Says by how much one extent is larger than another on an axis, taking a difference that
+    /// only rounding left as none. At the fit the scale is the view over the image and the
+    /// visible extent the view over the scale, and in doubles that does not always give the
+    /// image's size back: on a view 1920 x 973 a 5938 x 3888 image has a visible height of
+    /// 3887.9999999999995, which is not an image taller than the view (R-043).
+    /// </summary>
+    /// <param name="larger">The extent expected to be the larger one, in image pixels.</param>
+    /// <param name="smaller">The other extent, in image pixels.</param>
+    /// <returns>
+    /// The difference, in image pixels, when at the current scale it is more than
+    /// <see cref="WholeTolerance"/> of a physical pixel; otherwise 0.
+    /// </returns>
+    private double Overflow(double larger, double smaller)
+    {
+        double difference = larger - smaller;
+        return difference * _scale > WholeTolerance ? difference : 0;
     }
 }

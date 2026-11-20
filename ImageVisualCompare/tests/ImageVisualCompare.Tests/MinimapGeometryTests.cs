@@ -76,6 +76,21 @@ public class MinimapGeometryTests
         Assert.False(layout.ShowViewportRect);
     }
 
+    [Theory]
+    [InlineData(973)]
+    [InlineData(604)]
+    public void R041_AtFit_ARoundingResidueShowsNoRectangle(double height)
+    {
+        // CR-011: the residue of the fit's division counted as an image larger than the view,
+        // and the rectangle was drawn around the whole thumbnail.
+        Viewport viewport = Create(contentWidth: 5938, contentHeight: 3888, viewportWidth: 1920, viewportHeight: height);
+        viewport.ZoomToFit();
+
+        MinimapLayout layout = MinimapGeometry.Layout(viewport, 188, 122.4);
+
+        Assert.False(layout.ShowViewportRect);
+    }
+
     [Fact]
     public void R041_TheRectangleIsClampedWhereTheViewportOverhangsTheImage()
     {

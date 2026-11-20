@@ -82,6 +82,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- At `Fit`, on some window sizes, a scrollbar with a thumb as long as its track and the minimap's
+  rectangle around the whole thumbnail were shown, though the whole image was on screen: a
+  rounding residue of a millionth of a millionth of a pixel counted as an image larger than the
+  view. With a 5938 × 3888 image it happened at 85 of the 900 view heights from 600 to 1499
+  (R-043, R-041).
 - A FITS whose `BZERO` or `BSCALE` is not a number (`3.2768d4`, `32768,0`) was shown with the
   default, 0 or 1, in silence: with a `BZERO` of 32768 lost, 32,768 too low and its dark half
   black. Such a file now gives `FITS: the header is not valid.` (R-019, ADR 0058).
