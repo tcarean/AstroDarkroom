@@ -47,6 +47,12 @@ internal static class FitsTestData
         return Encoding.ASCII.GetBytes(string.Concat(list));
     }
 
+    /// <summary>
+    /// A header alone, with no data after it: the cards as given, END, padded to a block. For
+    /// an HDU the generator would never write (a negative axis, sizes no file holds).
+    /// </summary>
+    internal static byte[] HeaderOnly(params string[] cards) => HeaderBlocks(cards);
+
     static double DefaultBzero(int bitpix) => bitpix == 16 ? 32768 : bitpix == 32 ? 2147483648 : 0;
 
     static void AppendSample(List<byte> into, double physical, int bitpix, double bzero, double bscale)

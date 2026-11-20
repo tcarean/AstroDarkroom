@@ -132,16 +132,14 @@ namespace AstroPhotoAnalyzer
                 if (hdr == null) throw new Exception(Tr.Pick("FITS: no HDU with an image found.", "FITS: niciun HDU cu imagine gasit."));
                 long headerEnd = s.Position;
 
-                int bitpix = FitsReader.HInt(hdr, "BITPIX", 0);
-                int naxis = FitsReader.HInt(hdr, "NAXIS", 0);
-                long npix = naxis == 0 ? 0 : 1;
-                for (int ax = 1; ax <= naxis; ax++) npix *= FitsReader.HInt(hdr, "NAXIS" + ax, 1);
-                int bytesPer = Math.Abs(bitpix) / 8;
-                long dataBlocks = (npix * bytesPer + Block - 1) / Block * Block;
-                int n1 = FitsReader.HInt(hdr, "NAXIS1", 0), n2 = FitsReader.HInt(hdr, "NAXIS2", 0);
-                int n3 = naxis >= 3 ? FitsReader.HInt(hdr, "NAXIS3", 1) : 1;
+                // The sizes checked, as the reader takes them (ADR 0114): a negative one made
+                // this walk copy nothing and read the same header again, for ever.
+                FitsReader.HduShape shape = FitsReader.Shape(hdr);
+                int bytesPer = shape.BytesPer;
+                long dataBlocks = shape.DataBlocks;
+                int n1 = shape.N1, n2 = shape.N2, n3 = shape.N3;
 
-                if (!(naxis >= 2 && n1 > 0 && n2 > 0))
+                if (!shape.HasImage)
                 {
                     // An HDU before the image: it passes as it is.
                     Copy(s, o, start, headerEnd + dataBlocks);
@@ -149,7 +147,7 @@ namespace AstroPhotoAnalyzer
                 }
                 if (n1 != imageW || n2 != imageH || n3 != planes)
                     throw new Exception(Tr.Pick("the source FITS no longer has the geometry of the image analysed: ", "FITS-ul sursa nu mai are geometria imaginii analizate: ") + sourceFits);
-                if (bytesPer == 0 || headerEnd + npix * bytesPer > s.Length) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
+                if (bytesPer == 0 || shape.DataBytes > s.Length - headerEnd) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
 
                 // The raster's row y is the file's row imageH - 1 - y, so the rectangle's rows
                 // are the file's rows from firstRow on, and firstRow file rows are cut before
@@ -345,15 +343,13 @@ namespace AstroPhotoAnalyzer
                 if (hdr == null) throw new Exception(Tr.Pick("FITS: no HDU with an image found.", "FITS: niciun HDU cu imagine gasit."));
                 long headerEnd = s.Position;
 
-                int bitpix = FitsReader.HInt(hdr, "BITPIX", 0);
-                int naxis = FitsReader.HInt(hdr, "NAXIS", 0);
-                long npix = naxis == 0 ? 0 : 1;
-                for (int ax = 1; ax <= naxis; ax++) npix *= FitsReader.HInt(hdr, "NAXIS" + ax, 1);
-                long dataBlocks = (npix * (Math.Abs(bitpix) / 8) + Block - 1) / Block * Block;
-                int n1 = FitsReader.HInt(hdr, "NAXIS1", 0), n2 = FitsReader.HInt(hdr, "NAXIS2", 0);
-                int n3 = naxis >= 3 ? FitsReader.HInt(hdr, "NAXIS3", 1) : 1;
+                // The sizes checked, as the reader takes them (ADR 0114).
+                FitsReader.HduShape shape = FitsReader.Shape(hdr);
+                int bitpix = shape.Bitpix;
+                long dataBlocks = shape.DataBlocks;
+                int n1 = shape.N1, n2 = shape.N2, n3 = shape.N3;
 
-                if (!(naxis >= 2 && n1 > 0 && n2 > 0))
+                if (!shape.HasImage)
                 {
                     // An HDU before the image: it passes as it is.
                     Copy(s, o, start, headerEnd + dataBlocks);

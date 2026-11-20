@@ -288,6 +288,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A FITS whose header holds an impossible size is refused with a sentence that names it,
+  instead of being followed. A negative axis length in a part of the file that is skipped
+  made the tool read the same header for ever (the console never returned, the window's run
+  never ended, and saving a crop or a curve hung the same way); other values looped for
+  minutes, overflowed, or took gigabytes of memory for an image that was not in the file. Such
+  a header comes from a damaged file, not from Siril (R-011, ADR 0114).
+
 - An image with a side over 65535 px (a wide panorama) is analysed to the end. A JPEG cannot
   hold such an image, and the measurement of the JPEG qualities stopped the whole analysis
   with `Image is too large to encode ... for JPEG format`, after everything else was measured.
