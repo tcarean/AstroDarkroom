@@ -206,12 +206,12 @@ internal static class WindowTexts
     internal static string LightsChartLead(TraceFigures band, bool otherSettings = false) => otherSettings
         ? T(
             "Each point is a light: how hot the master's hot pixels are in it, against the master (1 = the same), once ISO and exposure are taken into account. "
-            + "The darks are made at other settings than the lights, so no point is green: the dark is not subtracted as it is. "
-            + $"Yellow between {RunReport.F(Th.MatchWarmLow, 1)} and {RunReport.F(Th.MatchNearHigh, 1)}: use the dark for the cosmetic correction only. "
+            + "The darks are made at other settings than the lights, so no point is green: the dark is not subtracted as it is. Make darks at the lights' settings. "
+            + $"Yellow between {RunReport.F(Th.MatchWarmLow, 1)} and {RunReport.F(Th.MatchNearHigh, 1)}: the temperatures are close. "
             + "Red beyond: they do not match. The first lights of the night usually sit lower, because the camera is still cold.",
             "Fiecare punct e un light: cat de fierbinti sunt in el pixelii fierbinti ai masterului, fata de master (1 = la fel), dupa ce se tine cont de ISO si de expunere. "
-            + "Dark-urile sunt facute la alte setari decat lights-urile, asa ca niciun punct nu e verde: dark-ul nu se scade asa cum e. "
-            + $"Galben intre {RunReport.F(Th.MatchWarmLow, 1)} si {RunReport.F(Th.MatchNearHigh, 1)}: foloseste dark-ul doar pentru corectia cosmetica. "
+            + "Dark-urile sunt facute la alte setari decat lights-urile, asa ca niciun punct nu e verde: dark-ul nu se scade asa cum e. Fa dark-uri la setarile lights-urilor. "
+            + $"Galben intre {RunReport.F(Th.MatchWarmLow, 1)} si {RunReport.F(Th.MatchNearHigh, 1)}: temperaturile sunt apropiate. "
             + "Rosu mai departe: nu se potrivesc. Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.")
         : band.Widened
         ? T(

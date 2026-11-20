@@ -102,13 +102,13 @@ public class MainViewModelTests
         // at the same temperature, and still no point is green
         Assert.All(vm.LightPoints, p => Assert.Equal(VerdictPalette.Warn, p.Colour));
         Assert.StartsWith("nu scadea dark-ul asa cum e", vm.LightRows[^1].Rest, StringComparison.Ordinal);
-        Assert.Contains("Dark-urile sunt facute la alte setari decat lights-urile, asa ca niciun punct nu e verde: dark-ul nu se scade asa cum e. Galben intre 0.4 si 1.4: foloseste dark-ul doar pentru corectia cosmetica. Rosu mai departe: nu se potrivesc.", vm.LightsChartLead, StringComparison.Ordinal);
+        Assert.Contains("Dark-urile sunt facute la alte setari decat lights-urile, asa ca niciun punct nu e verde: dark-ul nu se scade asa cum e. Fa dark-uri la setarile lights-urilor. Galben intre 0.4 si 1.4: temperaturile sunt apropiate. Rosu mai departe: nu se potrivesc.", vm.LightsChartLead, StringComparison.Ordinal);
         Assert.DoesNotContain("scade-l", vm.LightsChartLead, StringComparison.Ordinal);
         Assert.DoesNotMatch(PlainWords.RomanianTabWords(), vm.LightsChartLead);
         using (Ui.Use(UiLanguage.English))
         {
             string english = WindowTexts.LightsChartLead(l.Traces, otherSettings: true);
-            Assert.Contains("The darks are made at other settings than the lights, so no point is green: the dark is not subtracted as it is. Yellow between 0.4 and 1.4: use the dark for the cosmetic correction only. Red beyond: they do not match.", english, StringComparison.Ordinal);
+            Assert.Contains("The darks are made at other settings than the lights, so no point is green: the dark is not subtracted as it is. Make darks at the lights' settings. Yellow between 0.4 and 1.4: the temperatures are close. Red beyond: they do not match.", english, StringComparison.Ordinal);
             Assert.DoesNotContain("subtract it as it is", english, StringComparison.Ordinal);
             Assert.DoesNotMatch(PlainWords.EnglishTabWords(), english);
         }

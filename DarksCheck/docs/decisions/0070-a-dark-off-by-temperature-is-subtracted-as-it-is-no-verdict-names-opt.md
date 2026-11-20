@@ -73,16 +73,19 @@ The owner decided in chat on 2026-11-20, each from options with these figures:
    do not match`. `Th.MatchOptLow`, `MatchOptHigh` and `MatchCosmeticLow` are renamed
    `MatchNearLow`, `MatchNearHigh` and `MatchWarmLow`.
 5. **Darks at other settings than the lights** (ADR 0055) are still never subtracted as they
-   are. The advice is darks made at the lights' settings first, then the cosmetic correction
-   only. A ratio from 0.4 under 0.7 at other settings takes these words too: its own would
-   say to subtract a dark of another ISO as it is.
+   are, and the one advice is darks made at the lights' settings. "The cosmetic correction
+   only", which stood beside `-opt` there, is gone too: Siril's manual (Commands, 1.4.4, read
+   2026-11-20) says of `-cc=dark` that "a masterdark must be given with the -dark= option",
+   and `calibrate` subtracts the dark it is given, so the advice could not be followed with
+   the switch it named. A ratio from 0.4 under 0.7 at other settings takes these words too:
+   its own would say to subtract a dark of another ISO as it is.
 6. **Check 4** says of a frame outside 0.7 .. 1.4 of the master that it is too far from the
    master and gives the band; it no longer says what Siril could match.
 7. **The sentence above the window's chart**, for lights at other settings than the darks,
-   says that no point is green, that the dark is not subtracted as it is, and that yellow
-   between 0.4 and 1.4 means the cosmetic correction only (the owner's answer of the same day
-   to a finding of the review: the plain sentence would say "subtract it as it is all the
-   same" beside a red verdict that says not to).
+   says that no point is green, that the dark is not subtracted as it is, to make darks at
+   the lights' settings, and that yellow between 0.4 and 1.4 means the temperatures are close
+   (the owner's answers of the same day to a finding of the review: the plain sentence would
+   say "subtract it as it is all the same" beside a red verdict that says not to).
 
 The texts are R-052's, R-062's, R-063's, R-023's and R-086's, shown to the owner original
 beside proposal in the plan of 2026-11-20.
@@ -107,9 +110,9 @@ beside proposal in the plan of 2026-11-20.
 
 R-023, R-052, R-054, R-055, R-062, R-063, R-064, R-067, R-086, R-101 and R-122 amended; ten
 lines of eight golden files changed, each one of the texts above. No formula and no constant's
-value changed. `docs/validation.json` records the verdict's name in two cases (V-005 and
-V-012, `CosmeticOnly`), which the rename makes `/validate` fail on; what the record says there
-is the owner's to decide and was open when this was written.
+value changed. `docs/validation.json` recorded the verdict's name in two cases (V-005 and
+V-012, `CosmeticOnly`); at the owner's word of 2026-11-20 the two read `MuchWarmer`, the name
+alone, and `/validate` was run after it (`docs/validation.md`, History).
 Guarded by `R052_TheAmplitudeRatioOfTheLightsOverTheMasterGivesTheVerdict`,
 `R052_ADarkMuchWarmerThanLightsAtOtherSettingsIsNotSubtractedAsItIs`,
 `R052_LightsAtOtherSettingsThanTheDarksAreNeverSubtractedAsTheyAre`,
@@ -119,7 +122,8 @@ index names `-opt`.
 
 Not measured, and the texts lean on it: another camera, lights without a filter, lights that
 were not dithered (the leftover then stays on the same pixel of the stack, as the row `what
-is left` already says), and a dark at another ISO or exposure, where "cosmetic correction
-only" is the cautious advice and nothing was tried. The yellow verdicts now ask nothing of the
+is left` already says), and a dark at another ISO or exposure, where nothing was tried and the text advises only
+new darks. Repairing with such a dark without subtracting it would go through `find_hot` and
+`-cc=bpm`, by the manual; not tried, and not advised. The yellow verdicts now ask nothing of the
 owner beyond what the stock script does; they stay yellow because they say the darks were not
 taken at the night's temperature, which is what the next set of darks can do better.

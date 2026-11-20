@@ -126,7 +126,8 @@ Order: requirements, tests, code, docs (the kit's rule "Requirements first").
 - `R067_TheTracesOnlyRelaxTheOptBandAndAMatchedDarkLeavesNothing` was renamed `...TheNearBand...`.
 - The plan was wrong that no recorded figure holds a verdict word: `docs/validation.json` holds
   `CosmeticOnly` in V-005 and V-012, and `ValidationTests` compares it with the verdict's name
-  (found by the review). The record is not touched until the owner decides.
+  (found by the review). At the owner's word the two read `MuchWarmer`, and `/validate` was run
+  after it (`docs/validation.md`, History).
 - The review also found that, for lights at other settings, the chart's sentence said "subtract
   it as it is all the same" beside a verdict that says not to. The owner approved a sentence of
   its own for that case (text 9: `The darks are made at other settings than the lights, so no
@@ -135,3 +136,9 @@ Order: requirements, tests, code, docs (the kit's rule "Requirements first").
   lights-urile, asa ca niciun punct nu e verde: dark-ul nu se scade asa cum e. Galben intre 0.4
   si 1.4: foloseste dark-ul doar pentru corectia cosmetica.`), R-086.
 - ADR 0017's body keeps the old constant names; only its "±5 °C" got a dated correction.
+- Asked what a much warmer dark is good for, the owner was told what Siril's manual says:
+  `-cc=dark` needs `-dark=`, and `calibrate` subtracts the dark it is given, so "the cosmetic
+  correction only" is no switch. At the owner's word texts 3, 4 and 9 advise one thing: `Make
+  darks at the lights' settings` / `Fa dark-uri la setarile lights-urilor` (`Use darks made at
+  the lights' settings` / `Foloseste dark-uri facute la setarile lights-urilor` for a partner),
+  and text 9's yellow reads `the temperatures are close` / `temperaturile sunt apropiate`.

@@ -210,8 +210,7 @@ it still tells the temperatures apart, but the dark is never said to be subtract
 the files the hot pixels of the lights do not have the height they have in the dark. For a
 ratio between 0.4 and 1.4 the verdict then reads `WARNING: do not subtract the dark as it is`,
 names both settings and how many times the dark's the hot pixels of the lights are in the
-files, and advises, in this order, darks made at the lights' settings, then the cosmetic
-correction only; outside 0.4 to 1.4 the verdicts of the table
+files, and advises darks made at the lights' settings; outside 0.4 to 1.4 the verdicts of the table
 keep their words and say that the ratio is worked out for the same settings. The row `lights
 against dark` gives the ratio in the files beside the one worked out, and the row `what is
 left` is worked out on the files. A partner made at other settings gets the same verdict.
