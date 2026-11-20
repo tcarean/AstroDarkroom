@@ -288,6 +288,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- **Save the report...** becomes enabled when an analysis ends. The button stayed grey after
+  every analysis, so the report could not be saved from the window at all (R-110, R-111, ADR
+  0116).
+
 - The window starts whatever its settings file holds. One damaged shape of the file (a text
   with a broken `\ud800` escape) stopped the window at every start, before anything showed,
   until the file was deleted by hand; it now means "no profile remembered", like every other

@@ -30,7 +30,7 @@ the command line (`App.FileFromArgs`) is opened at once; otherwise the open dial
 shown.
 
 **`MainViewModel`**: `Path`, `HasPath`, `IsBusy`/`IsIdle`, `CanRun`, `BusyMessage`
-(the progress stage), `Error`/`HasError`, `HasResult`, `CanSave`, `DefaultReportPath`
+(the progress stage), `Error`/`HasError`, `HasResult`, `CanSave` (announced by `HasResult` and by `IsBusy`, the two it is computed from: the save button, `SaveButton`, is bound to it, ADR 0116), `DefaultReportPath`
 (`Report.txt`, `Raport.txt` in Romanian, beside the image), `Banner`, `Copyright`; `OpenAsync(path)` sets the path
 and runs, changing nothing while a run lasts (ADR 0106), and for another image than the one whose result is on screen it first drops that
 result (`DropResult`: no result, empty tabs, the soft proof's comparison ended), since the run

@@ -299,6 +299,39 @@ public class ViewModelTests
     }
 
     /// <summary>
+    /// CR-014: CanSave is computed from HasResult and IsBusy, and only HasResult announced it,
+    /// while the run was still busy; whoever listens (the button) heard false last. The end of
+    /// the run announces it, and so does the start of the next one.
+    /// </summary>
+    [Fact]
+    public async Task R111_ThatTheReportCanBeSavedIsAnnouncedWhenTheRunEnds()
+    {
+        using var ws = new TempWorkspace();
+        Raster r = Scenes.CleanSky();
+        string tif = ws.WriteFile("curat.tif", TiffTestData.Build16Rgb(r.W, r.H, (x, y, c) => RasterOps.Level16(r.At(c, y, x)), IccTestData.V4("sRGB IEC61966-2.1")));
+        var vm = new MainViewModel();
+        var heard = new List<bool>();
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainViewModel.CanSave)) heard.Add(vm.CanSave); };
+
+        await vm.OpenAsync(tif);
+
+        Assert.True(vm.HasResult, vm.Error);
+        Assert.True(vm.CanSave);
+        Assert.NotEmpty(heard);
+        Assert.True(heard[^1], "the last thing a listener heard of CanSave was false, though the report can be saved");
+
+        heard.Clear();
+        Task again = vm.RunAsync();
+        Assert.True(vm.IsBusy);
+        Assert.False(vm.CanSave);
+        Assert.NotEmpty(heard);
+        Assert.False(heard[^1]);
+        await again;
+        Assert.True(heard[^1]);
+        await vm.CurvesComputation;
+    }
+
+    /// <summary>
     /// A report that cannot be written is told under the buttons, not thrown (R-111): the
     /// result and the tabs stay; a save that works says where it went; the next run clears both.
     /// </summary>

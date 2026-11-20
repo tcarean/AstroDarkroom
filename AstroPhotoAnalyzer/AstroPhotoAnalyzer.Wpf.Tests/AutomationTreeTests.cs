@@ -102,6 +102,55 @@ public class AutomationTreeTests
     }
 
     /// <summary>
+    /// CR-014: "Save the report..." is bound to CanSave, which only HasResult announced, and a
+    /// run sets HasResult while it is still busy; the end of the run announced nothing for it,
+    /// so the button read false once and stayed grey after every analysis.
+    /// </summary>
+    [Fact]
+    public async Task R110_TheSaveButtonIsEnabledOnceARunHasEndedWithAResult()
+    {
+        using var ws = new TempWorkspace();
+        Raster r = Scenes.CleanSky();
+        string tif = ws.WriteFile("a.tif", TiffTestData.Build16Rgb(r.W, r.H, (x, y, c) => RasterOps.Level16(r.At(c, y, x)), IccTestData.V4("sRGB IEC61966-2.1")));
+        var vm = new MainViewModel();
+
+        await _sta.InvokeAsync(async () =>
+        {
+            var window = new MainWindow { DataContext = vm };
+            try
+            {
+                var content = (FrameworkElement)window.Content;
+                content.Measure(new Size(1400, 860)); content.Arrange(new Rect(0, 0, 1400, 860)); content.UpdateLayout();
+                var save = (Button)window.FindName("SaveButton");
+                Assert.False(save.IsEnabled);
+
+                Task run = vm.OpenAsync(tif);
+                Assert.True(vm.IsBusy);
+                content.UpdateLayout();
+                Assert.False(save.IsEnabled);
+
+                await run;
+                Assert.True(vm.HasResult, vm.Error);
+                content.UpdateLayout();
+                Assert.True(save.IsEnabled, "the report of the result on screen cannot be saved: the button is disabled");
+
+                // The next run takes it away while it lasts and gives it back.
+                run = vm.RunAsync();
+                content.UpdateLayout();
+                Assert.False(save.IsEnabled);
+                await run;
+                content.UpdateLayout();
+                Assert.True(save.IsEnabled);
+                await vm.CurvesComputation;
+            }
+            finally
+            {
+                window.DataContext = null;
+            }
+        });
+    }
+
+    /// <summary>
     /// Every tab, selected in turn over a real result, has its view under its item in the tree,
     /// once, and under no other tab's item, and on Tonuri the simulation's Preview buttons are
     /// found there, as a client looks for them.

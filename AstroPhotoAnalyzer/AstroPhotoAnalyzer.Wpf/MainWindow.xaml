@@ -107,7 +107,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel Grid.Column="2" VerticalAlignment="Center">
           <StackPanel x:Name="TopButtons" Orientation="Horizontal">
             <Button x:Name="OpenButton" Content="{local:T En='Open image...', Ro='Deschide imagine...'}" Click="ChooseImage" IsEnabled="{Binding IsIdle}" />
-            <Button Content="{local:T En='Save the report...', Ro='Salveaza raportul...'}" Click="SaveReport" IsEnabled="{Binding CanSave}" Margin="10,0,0,0" />
+            <Button x:Name="SaveButton" Content="{local:T En='Save the report...', Ro='Salveaza raportul...'}" Click="SaveReport" IsEnabled="{Binding CanSave}" Margin="10,0,0,0" />
             <!-- Help and About stay active during the analysis too, because they touch nothing of
                  what runs. Help's icon is the theme's HelpIcon; the automation name is the word,
                  since the content is not a plain string. -->

@@ -131,7 +131,10 @@ namespace AstroPhotoAnalyzer.Wpf
         public bool IsBusy
         {
             get => _busy;
-            private set { if (Set(ref _busy, value)) { Raise(nameof(IsIdle)); Raise(nameof(CanRun)); } }
+            // Every value computed from the run's state is announced with it. CanSave was not:
+            // a run sets HasResult while still busy, the save button read false then and was
+            // never told of the run's end (ADR 0116).
+            private set { if (Set(ref _busy, value)) { Raise(nameof(IsIdle)); Raise(nameof(CanRun)); Raise(nameof(CanSave)); } }
         }
 
         public bool IsIdle => !_busy;
