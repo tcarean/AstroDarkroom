@@ -299,7 +299,7 @@ public partial class LanguageWindowTests
                 // no button runs the folder again: a choice does (R-122, ADR 0048)
                 Assert.DoesNotContain(english ? "Analyse again" : "Analizeaza din nou", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "The first lights of the night usually sit lower, because the camera is still cold." : "Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.", all, StringComparison.Ordinal);
-                Assert.Contains(english ? "0.4 cosmetic only" : "0.4 doar cosmetic", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "0.4 much warmer" : "0.4 mult mai cald", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "how bright the sky is in the light: the average value of the pixels, above the black, in ADU" : "cat de luminos e cerul in light: valoarea medie a pixelilor, peste negru, in ADU", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "stars and hot pixels" : "stele si pixeli fierbinti", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "half of the hot pixels of the master are, in this light, between low and high" : "jumatate din pixelii fierbinti ai masterului sunt, in acest light, intre jos si sus", all, StringComparison.Ordinal);

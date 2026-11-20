@@ -241,11 +241,11 @@ public partial class DarkSeriesTests
         Assert.Equal("NEMASURAT: la sfarsitul seriei pixelii fierbinti ai masterului nu se vad", check4.Rows[0].Value);
         Assert.Equal("NEMASURAT: la sfarsitul seriei pixelii fierbinti ai masterului nu se vad", check4.Rows[1].Value);
         Assert.All(DarkReport.FrameRows(r), row => Assert.Equal("-", row.End));
-        // the verdict is still given: the three frames are outside what -opt corrects (R-023: NEMASURAT only under
+        // the verdict is still given: the three frames are too far from the master (R-023: NEMASURAT only under
         // two frames or without a hot pixel)
         Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
         Assert.Equal([6, 7, 8], r.Verdicts.Drift.OutsideFrames);
-        Assert.StartsWith("ATENTIE: 3 cadre (6 .. 8) sunt prea departe de master ca Siril sa le potriveasca cu -opt (in afara 0.7 .. 1.4; ", check4.Rows[2].Value, StringComparison.Ordinal);
+        Assert.StartsWith("ATENTIE: 3 cadre (6 .. 8) sunt prea departe de master (pixelii lor fierbinti sunt in afara 0.7 .. 1.4 din ai masterului; ", check4.Rows[2].Value, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -317,7 +317,7 @@ public partial class DarkSeriesTests
         Assert.True(r.Verdicts.Drift.MasterNearEnd);
         Assert.Equal([1], r.Darks.Warming.OffEndFrames);
         string verdict = DarkReport.Sections(r).Single(x => x.Check == ReportCheck.Warming).Rows[^1].Value;
-        Assert.StartsWith("ATENTIE: 1 cadru (1) e prea departe de master ca Siril sa il potriveasca cu -opt (in afara 0.7 .. 1.4; cel mai departe 0.5", verdict, StringComparison.Ordinal);
+        Assert.StartsWith("ATENTIE: 1 cadru (1) e prea departe de master (pixelii lui fierbinti sunt in afara 0.7 .. 1.4 din ai masterului; cel mai departe 0.5", verdict, StringComparison.Ordinal);
         Assert.EndsWith("): seria a pornit rece; arunca-l", verdict, StringComparison.Ordinal);
     }
 
@@ -387,7 +387,7 @@ public partial class DarkSeriesTests
         Assert.Contains(" Sfarsitul seriei (media ultimelor 5 cadre) e la 0.7", DarkReport.WarmingChartNote(r), StringComparison.Ordinal);
 
         // a warming series mostly off its end (the hot pixels double every eight frames): the same verdict, the advice
-        // is a longer series, with no cause named; the frames outside the -opt band come last
+        // is a longer series, with no cause named; the frames too far from the master come last
         using SessionFixture warming = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = Math.Pow(2, i / 8.0) });
         DarkSeriesResult rw = Run(warming);
         Assert.Equal([1, 2, 3, 4, 5, 6, 7], rw.Darks.Warming.OffEndFrames);
@@ -464,7 +464,7 @@ public partial class DarkSeriesTests
         Assert.Equal("NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti", check4.Rows[0].Value);
         Assert.Equal("NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti", check4.Rows[1].Value);
         Assert.Equal("OK: niciun cadru nu e prea departe de master (pixelii fierbinti ai fiecarui cadru sunt intre 0.7 si 1.4 din ai masterului); sunt mai putin de 6 cadre, deci sfarsitul seriei nu se masoara", check4.Rows[2].Value);
-        // an OK asks nothing of the owner, so it does not name -opt (only the ATENTIE for a frame outside the band does)
+        // no verdict names -opt (ADR 0070)
         Assert.DoesNotContain("-opt", check4.Rows[2].Value, StringComparison.Ordinal);
         Assert.All(DarkReport.FrameRows(r), row => Assert.Equal("-", row.End));
 
@@ -554,7 +554,7 @@ public partial class DarkSeriesTests
         Assert.StartsWith("nicio margine si niciun colt nu difera de centru", ok.Lines![0], StringComparison.Ordinal);
         Assert.Equal("niciun cadru nu are lumina in plus", ok.Lines[^1]);
 
-        // check 4 on a series that cooled steeply: the count, the advice and the frames -opt cannot match, each on a line
+        // check 4 on a series that cooled steeply: the count, the advice and the frames too far from the master, each on a line
         using SessionFixture cooling = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 0.35 + 1.45 * Math.Exp(-i / 6.0) });
         DarkSeriesResult r = Run(cooling);
         ReportRow redo = VerdictRow(r, ReportCheck.Warming);
@@ -562,7 +562,7 @@ public partial class DarkSeriesTests
         AssertStatements(redo);
         Assert.Equal("7 din 12 cadre sunt la peste 2.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi", redo.Lines![0]);
         Assert.StartsWith("aparatul a pornit mai cald decat locul in care a stat: refa seria", redo.Lines[1], StringComparison.Ordinal);
-        Assert.Contains(redo.Lines, line => line.Contains("(in afara 0.7 .. 1.4; cel mai departe ", StringComparison.Ordinal));
+        Assert.Contains(redo.Lines, line => line.Contains("(pixelii lor fierbinti sunt in afara 0.7 .. 1.4 din ai masterului; cel mai departe ", StringComparison.Ordinal));
         using (Ui.Use(UiLanguage.English))
         {
             ReportRow en = VerdictRow(r, ReportCheck.Warming);
@@ -1327,7 +1327,7 @@ public partial class DarkSeriesTests
             Assert.Contains(english ? "of constant light against the centre, which does not come from the bias" : "lumina constanta fata de centru, care nu vine din bias", all, StringComparison.Ordinal);
             Assert.Contains(english ? "the camera warmed during the series: the hot pixels rise from " : "aparatul s-a incalzit in timpul seriei: pixelii fierbinti cresc de la ", all, StringComparison.Ordinal);
             Assert.Contains(english ? "the frames from the start, colder, pull it down; take a longer series" : "cadrele de la inceput, mai reci, il trag in jos; fa seria mai lunga", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "too far from the master for Siril to match it with -opt" : "prea departe de master ca Siril sa il potriveasca cu -opt", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "too far from the master (its hot pixels are outside 0.7 .. 1.4 of the master's; " : "prea departe de master (pixelii lui fierbinti sunt in afara 0.7 .. 1.4 din ai masterului; ", all, StringComparison.Ordinal);
             Assert.Contains(english ? "the camera stayed at the same temperature: the hot pixels are at " : "aparatul a stat la aceeasi temperatura: pixelii fierbinti sunt la ", all, StringComparison.Ordinal);
             Assert.Contains(english ? "light that got in or a level difference of the readout" : "lumina intrata sau o diferenta de nivel din citire", all, StringComparison.Ordinal);
             Assert.Contains(english ? "a single frame has nothing to be compared with" : "un singur cadru nu are cu ce fi comparat", all, StringComparison.Ordinal);

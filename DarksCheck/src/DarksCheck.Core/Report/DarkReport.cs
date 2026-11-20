@@ -382,7 +382,7 @@ internal static class DarkReport
         bool tooMuch = m.Ratio < t.Centre;
         string strong = F(Th.TraceStrongFactor, 0);
         // a trace under the noise is a part of it; from the noise up it is so many times the noise,
-        // as the -opt verdict under the row says it
+        // as the verdict under the row says it
         string size = t.Median < 1
             ? T($"{median} of the noise of a light", $"{median} din zgomotul unui light")
             : T($"{median} times the noise of a light", $"{median} ori cat zgomotul unui light");
@@ -859,7 +859,7 @@ internal static class DarkReport
     /// <param name="where">Where the set's hot pixels are, as the sentence names it ("in lights",
     /// "in dark-urile sesiunii"), in the run's language.</param>
     /// <param name="traces">What a plain subtraction leaves, for a set of lights against its
-    /// darks (R-067): a verdict the traces relaxed says so, and an -opt verdict says how much is
+    /// darks (R-067): a verdict the traces relaxed says so, and one left a few degrees off says how much is
     /// left; null for a partner, whose verdict is the ratio's alone.</param>
     /// <param name="other">The two settings in words, when the set is at other settings than the
     /// master (ADR 0055): the master is then never said to be subtracted as it is, and a ratio is
@@ -889,7 +889,7 @@ internal static class DarkReport
         string ratio = T(
             $"{where} the hot pixels are {F(m.Ratio, 2)} times what they are {atMaster}{same}",
             $"{where} pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat {atMaster}{same}");
-        // what is left after a plain subtraction, when it was measured: said after the -opt band
+        // what is left after a plain subtraction, when it was measured: said after the band of a master a few degrees off
         string left = traces is { Pixels: > 0 } t && !double.IsNaN(t.Median)
             ? T(
                 $", and what the subtraction leaves is on average {F(t.Median, 2)} times the noise of a light",
@@ -898,14 +898,15 @@ internal static class DarkReport
         return m.Verdict switch
         {
             MatchVerdict.Unmeasured => T("UNMEASURED", "NEMASURAT"),
-            // a master made at other settings is never subtracted as it is, however well the temperatures fit (ADR 0055)
-            MatchVerdict.Direct or MatchVerdict.WithOpt when other is not null => partner
+            // a master made at other settings is never subtracted as it is, however well the temperatures fit (ADR 0055);
+            // a much warmer one neither, whose own words would say to subtract it (ADR 0070)
+            MatchVerdict.Direct or MatchVerdict.Near or MatchVerdict.MuchWarmer when other is not null => partner
                 ? T(
-                    $"WARNING: do not subtract the partner as it is: it is made at other settings than {other.Than} ({other.MasterSettings} against {other.SetSettings}), so in the files the hot pixels {other.OfSet} are {F(other.RatioInFiles, 2)} times what they are at the partner. Best use darks made at the lights' settings. With this partner, subtract with -opt (-opt: Siril multiplies the partner so that it matches the lights; it needs the biases too) or use it for the cosmetic correction only (-cc=dark); worked out for the same settings, the hot pixels are {F(m.Ratio, 2)} times what they are at the partner: {temperature}",
-                    $"ATENTIE: nu scadea partenerul asa cum e: e facut la alte setari decat {other.Than} ({other.MasterSettings} fata de {other.SetSettings}), asa ca in fisiere pixelii fierbinti {other.OfSet} sunt de {F(other.RatioInFiles, 2)} ori cat la partener. Cel mai bine foloseste dark-uri facute la setarile lights-urilor. Cu acest partener, scade cu -opt (-opt: Siril inmulteste partenerul cat sa se potriveasca cu lights-urile; are nevoie si de bias-uri) sau foloseste-l doar pentru corectia cosmetica (-cc=dark); socotiti pentru aceleasi setari, pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat la partener: {temperature}")
+                    $"WARNING: do not subtract the partner as it is: it is made at other settings than {other.Than} ({other.MasterSettings} against {other.SetSettings}), so in the files the hot pixels {other.OfSet} are {F(other.RatioInFiles, 2)} times what they are at the partner. Best use darks made at the lights' settings. With this partner, use it for the cosmetic correction only (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); worked out for the same settings, the hot pixels are {F(m.Ratio, 2)} times what they are at the partner: {temperature}",
+                    $"ATENTIE: nu scadea partenerul asa cum e: e facut la alte setari decat {other.Than} ({other.MasterSettings} fata de {other.SetSettings}), asa ca in fisiere pixelii fierbinti {other.OfSet} sunt de {F(other.RatioInFiles, 2)} ori cat la partener. Cel mai bine foloseste dark-uri facute la setarile lights-urilor. Cu acest partener, foloseste-l doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); socotiti pentru aceleasi setari, pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat la partener: {temperature}")
                 : T(
-                    $"WARNING: do not subtract the dark as it is: the darks are made at other settings than the lights ({other.MasterSettings} against {other.SetSettings}), so in the files the hot pixels of the lights are {F(other.RatioInFiles, 2)} times what they are in the dark. Best make darks at the lights' settings. With these darks, subtract with -opt (-opt: Siril multiplies the dark so that it matches the lights; it needs the biases too) or use the dark for the cosmetic correction only (-cc=dark); worked out for the same settings, the hot pixels are {F(m.Ratio, 2)} times what they are in the dark: {temperature}",
-                    $"ATENTIE: nu scadea dark-ul asa cum e: dark-urile sunt facute la alte setari decat lights-urile ({other.MasterSettings} fata de {other.SetSettings}), asa ca in fisiere pixelii fierbinti din lights sunt de {F(other.RatioInFiles, 2)} ori cat in dark. Cel mai bine fa dark-uri la setarile lights-urilor. Cu aceste dark-uri, scade cu -opt (-opt: Siril inmulteste dark-ul cat sa se potriveasca cu lights-urile; are nevoie si de bias-uri) sau foloseste dark-ul doar pentru corectia cosmetica (-cc=dark); socotiti pentru aceleasi setari, pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat in dark: {temperature}"),
+                    $"WARNING: do not subtract the dark as it is: the darks are made at other settings than the lights ({other.MasterSettings} against {other.SetSettings}), so in the files the hot pixels of the lights are {F(other.RatioInFiles, 2)} times what they are in the dark. Best make darks at the lights' settings. With these darks, use the dark for the cosmetic correction only (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); worked out for the same settings, the hot pixels are {F(m.Ratio, 2)} times what they are in the dark: {temperature}",
+                    $"ATENTIE: nu scadea dark-ul asa cum e: dark-urile sunt facute la alte setari decat lights-urile ({other.MasterSettings} fata de {other.SetSettings}), asa ca in fisiere pixelii fierbinti din lights sunt de {F(other.RatioInFiles, 2)} ori cat in dark. Cel mai bine fa dark-uri la setarile lights-urilor. Cu aceste dark-uri, foloseste dark-ul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); socotiti pentru aceleasi setari, pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat in dark: {temperature}"),
             // inside the band the traces widened (R-067): outside 0.9 .. 1.1, and the words say why it is still as it is
             MatchVerdict.Direct when traces is { Relaxed: true } r => T(
                 $"OK: {master} can be subtracted as it is; {ratio}, outside {F(Th.MatchDirectLow, 1)} .. {F(Th.MatchDirectHigh, 1)}, but what the subtraction leaves is on average under the noise of a light ({F(r.Median, 2)} of it; on these lights that holds between {F(r.DirectLow, 2)} and {F(r.DirectHigh, 2)}): {temperature}",
@@ -913,12 +914,12 @@ internal static class DarkReport
             MatchVerdict.Direct => T(
                 $"OK: {master} can be subtracted as it is; {ratio}, between {F(Th.MatchDirectLow, 1)} and {F(Th.MatchDirectHigh, 1)}: {temperature}",
                 $"OK: {master} se poate scadea asa cum e; {ratio}, intre {F(Th.MatchDirectLow, 1)} si {F(Th.MatchDirectHigh, 1)}: {temperature}"),
-            MatchVerdict.WithOpt => T(
-                $"WARNING: subtract {master} with -opt (-opt: Siril multiplies it so that it matches the lights); {ratio}, between {F(Th.MatchOptLow, 1)} and {F(Th.MatchOptHigh, 1)}{left}: {temperature}",
-                $"ATENTIE: scade {master} cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); {ratio}, intre {F(Th.MatchOptLow, 1)} si {F(Th.MatchOptHigh, 1)}{left}: {temperature}"),
-            MatchVerdict.CosmeticOnly => T(
-                $"WARNING: use {master} for the cosmetic correction only (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); {ratio}: {temperature}, it sees them all, but subtracted it would take out too much and leave black dots",
-                $"ATENTIE: foloseste {master} doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); {ratio}: {temperature}, ii vede pe toti, dar scazut ar scoate prea mult si ar lasa puncte negre"),
+            MatchVerdict.Near => T(
+                $"WARNING: subtract {master} as it is, though it is not at the same temperature; {ratio}, between {F(Th.MatchNearLow, 1)} and {F(Th.MatchNearHigh, 1)}{left}: {temperature}",
+                $"ATENTIE: scade {master} asa cum e, desi nu e la aceeasi temperatura; {ratio}, intre {F(Th.MatchNearLow, 1)} si {F(Th.MatchNearHigh, 1)}{left}: {temperature}"),
+            MatchVerdict.MuchWarmer => T(
+                $"WARNING: subtract {master} as it is, with the cosmetic correction on (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); {ratio}: {temperature}. In one light the subtraction takes too much at the hot pixels; with dithering this does not show in the stack",
+                $"ATENTIE: scade {master} asa cum e, cu corectia cosmetica pornita (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); {ratio}: {temperature}. Intr-un light scaderea ia prea mult la pixelii fierbinti; cu dithering asta nu se vede in stack"),
             _ => T(
                 $"WARNING: they do not match; {ratio}: {temperature}; {(m.Ratio > 1 ? "it is too cold and misses the faint ones" : "it is too warm")}",
                 $"ATENTIE: nu se potrivesc; {ratio}: {temperature}; {(m.Ratio > 1 ? "e prea rece si ii pierde pe cei slabi" : "e prea cald")}"),
@@ -1464,7 +1465,7 @@ internal static class DarkReport
 
     /// <summary>
     /// The verdict row of check 4: whether the master is near the end of the series, whether most
-    /// frames are off it, and the frames outside the range -opt corrects.
+    /// frames are off it, and the frames too far from the master.
     /// </summary>
     /// <param name="v">Check 4's verdict.</param>
     /// <param name="nz">The normalisation, whose doubling rule the words name.</param>
@@ -1473,11 +1474,10 @@ internal static class DarkReport
     private static string Drift(DriftVerdict v, Normalisation nz)
     {
         Warming w = v.Warming;
-        // an OK asks nothing of the owner, so it says the band in its own words and names no -opt;
-        // only the frames outside it are told what Siril could still do with them
+        // the band in the report's own words; no verdict names -opt (ADR 0070)
         string within = T(
-            $"no frame is too far from the master (the hot pixels of every frame are between {F(Th.MatchOptLow, 1)} and {F(Th.MatchOptHigh, 1)} of the master's)",
-            $"niciun cadru nu e prea departe de master (pixelii fierbinti ai fiecarui cadru sunt intre {F(Th.MatchOptLow, 1)} si {F(Th.MatchOptHigh, 1)} din ai masterului)");
+            $"no frame is too far from the master (the hot pixels of every frame are between {F(Th.MatchNearLow, 1)} and {F(Th.MatchNearHigh, 1)} of the master's)",
+            $"niciun cadru nu e prea departe de master (pixelii fierbinti ai fiecarui cadru sunt intre {F(Th.MatchNearLow, 1)} si {F(Th.MatchNearHigh, 1)} din ai masterului)");
         if (v.Verdict == Verdict.Unmeasured)
         {
             return T("UNMEASURED", "NEMASURAT");
@@ -1552,8 +1552,8 @@ internal static class DarkReport
         {
             int n = v.OutsideFrames.Count;
             parts.Add(T(
-                $"{RunReport.Frames(n)} ({Ranges(v.OutsideFrames)}) {(n == 1 ? "is" : "are")} too far from the master for Siril to match {(n == 1 ? "it" : "them")} with -opt (outside {F(Th.MatchOptLow, 1)} .. {F(Th.MatchOptHigh, 1)}; the farthest {F(v.FarthestRatio, 2)}): the series started {(v.FarthestRatio < 1 ? "cold" : "warm")}; discard {(n == 1 ? "it" : "them")}",
-                $"{RunReport.Frames(n)} ({Ranges(v.OutsideFrames)}) {(n == 1 ? "e prea departe" : "sunt prea departe")} de master ca Siril sa {(n == 1 ? "il" : "le")} potriveasca cu -opt (in afara {F(Th.MatchOptLow, 1)} .. {F(Th.MatchOptHigh, 1)}; cel mai departe {F(v.FarthestRatio, 2)}): seria a pornit {(v.FarthestRatio < 1 ? "rece" : "calda")}; arunca-{(n == 1 ? "l" : "le")}"));
+                $"{RunReport.Frames(n)} ({Ranges(v.OutsideFrames)}) {(n == 1 ? "is" : "are")} too far from the master ({(n == 1 ? "its" : "their")} hot pixels are outside {F(Th.MatchNearLow, 1)} .. {F(Th.MatchNearHigh, 1)} of the master's; the farthest {F(v.FarthestRatio, 2)}): the series started {(v.FarthestRatio < 1 ? "cold" : "warm")}; discard {(n == 1 ? "it" : "them")}",
+                $"{RunReport.Frames(n)} ({Ranges(v.OutsideFrames)}) {(n == 1 ? "e prea departe" : "sunt prea departe")} de master (pixelii {(n == 1 ? "lui" : "lor")} fierbinti sunt in afara {F(Th.MatchNearLow, 1)} .. {F(Th.MatchNearHigh, 1)} din ai masterului; cel mai departe {F(v.FarthestRatio, 2)}): seria a pornit {(v.FarthestRatio < 1 ? "rece" : "calda")}; arunca-{(n == 1 ? "l" : "le")}"));
         }
 
         return VerdictWord(v.Verdict) + ": " + string.Join("; ", parts);

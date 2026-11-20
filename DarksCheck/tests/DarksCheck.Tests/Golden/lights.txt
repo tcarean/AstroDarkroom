@@ -26,7 +26,7 @@ Copyright (C) 2026 Tudor Carean
     ce ramane          : scaderea ia prea putin: la un pixel fierbinte ramane in medie un rest de 5.57 ori cat zgomotul unui light; la 20 din 20 restul trece de zgomot, la 20 de 3 ori zgomotul (zgomotul light-ului pe culoarea pixelului; cu dithering urmele se imprastie, fara el raman in acelasi loc in stack)
     index dark-uri     : idx121
     index lights       : idx157 (de 1.30 ori cat dark-ul, adica cu 2.3 grade mai calde decat el)
-    verdict            : ATENTIE: scade dark-ul cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); in lights pixelii fierbinti sunt de 1.30 ori cat in dark, intre 0.7 si 1.4, iar ce ramane dupa scadere e in medie de 5.57 ori zgomotul unui light: dark-ul e mai rece cu 2.3 grade
+    verdict            : ATENTIE: scade dark-ul asa cum e, desi nu e la aceeasi temperatura; in lights pixelii fierbinti sunt de 1.30 ori cat in dark, intre 0.7 si 1.4, iar ce ramane dupa scadere e in medie de 5.57 ori zgomotul unui light: dark-ul e mai rece cu 2.3 grade
 
   3. SCURGERI DE LUMINA SI DIFERENTE PE CADRU
     master dark        : centru -0.02, colturi -0.11 / 0.12 / 0.03 / 0.10 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus -0.01 jos 0.00 stanga -0.05 dreapta -0.03  [pixelii verzi G1, ADU peste negru, media a 4 cadre, pe patrate de 32 px]
@@ -77,7 +77,7 @@ Copyright (C) 2026 Tudor Carean
     dark-uri / partener: pixelii fierbinti sunt in dark-urile sesiunii de 0.50 ori cat la partener, la aceleasi setari (jumatate dintre ei intre 0.50 si 0.50; 20 de pixeli fierbinti in amandoua), adica dark-urile sesiunii sunt cu 6.0 grade mai reci decat partenerul
     pixeli comuni      : 20 din 20 ai sesiunii peste 50 ADU-eq sunt peste 50 si la partener (100 %); 20 din 20 ai partenerului peste 50 sunt peste 20 in sesiune (100 %)
     lights / partener  : pixelii fierbinti sunt in lights de 0.65 ori cat la partener (socotit prin dark-urile sesiunii), adica lights-urile sunt cu 3.7 grade mai reci decat partenerul
-    verdict partener   : ATENTIE: foloseste partenerul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.65 ori cat la partener: partenerul e mai cald cu 3.7 grade, ii vede pe toti, dar scazut ar scoate prea mult si ar lasa puncte negre
+    verdict partener   : ATENTIE: scade partenerul asa cum e, cu corectia cosmetica pornita (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.65 ori cat la partener: partenerul e mai cald cu 3.7 grade. Intr-un light scaderea ia prea mult la pixelii fierbinti; cu dithering asta nu se vede in stack
 
   TABEL PE CADRE
      nr  fisier                ora        medie  zgomot    dif.   benzi   fierb. sfarsit  lumina  latura   >20   [pixelii verzi G1; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); sfarsit = cu cate grade e cadrul fata de sfarsitul seriei; de aruncat = la peste 2.0 grade de el (verificarea 4); lumina = lumina in plus fata de cat explica incalzirea, ADU; latura = latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)]

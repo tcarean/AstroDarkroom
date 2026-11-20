@@ -181,8 +181,8 @@ they only set it. The `Partner` and `LightsFrom` setters alone run nothing.
   light, coloured by `LightsAnalysis.Judge` through `VerdictPalette.For(MatchVerdict)`, so
   with the `Direct` band the traces allow, R-067; five guides named by what to do with the dark,
   the two green ones at `TraceFigures.DirectLow` and `DirectHigh`, `0.9 asa cum e` or, when the
-  band is `Widened`, `0.80 asa cum e` with two decimals, then `0.7 cu -opt` and `0.4 doar
-  cosmetic` at `Th.Match*`; the sentence above it is `WindowTexts.LightsChartLead(TraceFigures)`,
+  band is `Widened`, `0.80 asa cum e` with two decimals, then `0.7 la cateva grade` and `0.4 mult
+  mai cald` at `Th.Match*`; the sentence above it is `WindowTexts.LightsChartLead(TraceFigures)`,
   which names the same band and is raised with the result); a frame without a figure is `NaN`
   and the chart leaves a gap;
 - `Label` and `Tag` are the result's `Label` and `LabelTag` (the tag the label ends with,

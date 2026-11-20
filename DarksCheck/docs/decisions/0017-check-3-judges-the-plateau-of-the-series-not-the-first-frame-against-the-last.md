@@ -16,7 +16,8 @@ series moved 2.2 .. 3.6 °C first to last. No series of this camera could pass t
 so the verdict said nothing. The lights of the Smida night themselves spanned 3.4 °C
 (0.72 → 1.07 → 0.94 of the dark master, the drop in the last twenty minutes from pauses of up
 to four minutes), and check 9 gave them `OK` at a ratio of 1.00; the `-opt` margin absorbs
-±5 °C. What the master needs is a series that has settled, so that its median belongs to a
+±5 °C. (Corrected 2026-11-20: the band 0.7 .. 1.4 is about ±3 °C by the 6-degree doubling, and
+Siril's `-opt` could not be carried out on these frames; ADR 0070.) What the master needs is a series that has settled, so that its median belongs to a
 temperature, and a list of the frames still in the warm-up, for the owner to move to
 `aruncate` by hand (ADR 0002).
 
@@ -27,7 +28,7 @@ plateau (least squares of the two linear coefficients for each time constant on 
 fiftieth of the span to three times it; at least `Th.WarmingFitMinFrames` = 6 frames) and
 judges three things: the series has settled when the fitted curve is within
 `Th.SettledCelsius` = 1 °C of the plateau at the last frame; every frame's ratio stays in the
-`-opt` band of the master, `Th.MatchOptLow` .. `Th.MatchOptHigh` (0.7 .. 1.4); and the frames
+`-opt` band of the master, `Th.MatchNearLow` .. `Th.MatchNearHigh` (0.7 .. 1.4); and the frames
 more than `Th.OffPlateauCelsius` = 2 °C from the plateau, measured against the plateau and not
 against the master (the owner's choice of 2026-10-21), are listed as the ones to discard, in
 the `de aruncat` row with the noise the master would gain without them (the square root of

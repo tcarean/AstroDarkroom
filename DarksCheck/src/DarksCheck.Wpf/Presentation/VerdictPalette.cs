@@ -85,7 +85,7 @@ internal static class VerdictPalette
     };
 
     /// <summary>
-    /// The colour of a match verdict (R-062): direct is good, -opt and cosmetic are attention,
+    /// The colour of a match verdict (R-062): direct is good, a few degrees off and much warmer are attention,
     /// unmatched is bad, unmeasured neutral.
     /// </summary>
     /// <param name="v">The match verdict of the core.</param>
@@ -93,8 +93,8 @@ internal static class VerdictPalette
     internal static Color For(MatchVerdict v) => v switch
     {
         MatchVerdict.Direct => Good,
-        MatchVerdict.WithOpt => Warn,
-        MatchVerdict.CosmeticOnly => Warn,
+        MatchVerdict.Near => Warn,
+        MatchVerdict.MuchWarmer => Warn,
         MatchVerdict.Unmatched => Bad,
         _ => Neutral,
     };

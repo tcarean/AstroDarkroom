@@ -891,9 +891,9 @@ public sealed class MainViewModel : ObservableObject
             [
                 new GuideLine(band.DirectLow, T($"{RunReport.F(band.DirectLow, digits)} as it is", $"{RunReport.F(band.DirectLow, digits)} asa cum e"), VerdictPalette.Good),
                 new GuideLine(band.DirectHigh, T($"{RunReport.F(band.DirectHigh, digits)} as it is", $"{RunReport.F(band.DirectHigh, digits)} asa cum e"), VerdictPalette.Good),
-                new GuideLine(Th.MatchOptLow, T($"{RunReport.F(Th.MatchOptLow, 1)} with -opt", $"{RunReport.F(Th.MatchOptLow, 1)} cu -opt"), VerdictPalette.Warn),
-                new GuideLine(Th.MatchOptHigh, T($"{RunReport.F(Th.MatchOptHigh, 1)} with -opt", $"{RunReport.F(Th.MatchOptHigh, 1)} cu -opt"), VerdictPalette.Warn),
-                new GuideLine(Th.MatchCosmeticLow, T($"{RunReport.F(Th.MatchCosmeticLow, 1)} cosmetic only", $"{RunReport.F(Th.MatchCosmeticLow, 1)} doar cosmetic"), VerdictPalette.Bad),
+                new GuideLine(Th.MatchNearLow, T($"{RunReport.F(Th.MatchNearLow, 1)} a few degrees off", $"{RunReport.F(Th.MatchNearLow, 1)} la cateva grade"), VerdictPalette.Warn),
+                new GuideLine(Th.MatchNearHigh, T($"{RunReport.F(Th.MatchNearHigh, 1)} a few degrees off", $"{RunReport.F(Th.MatchNearHigh, 1)} la cateva grade"), VerdictPalette.Warn),
+                new GuideLine(Th.MatchWarmLow, T($"{RunReport.F(Th.MatchWarmLow, 1)} much warmer", $"{RunReport.F(Th.MatchWarmLow, 1)} mult mai cald"), VerdictPalette.Bad),
             ];
         }
 

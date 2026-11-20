@@ -102,9 +102,9 @@ internal sealed record OverlapAtLevel(double LevelAdu, int DarkCount, int Both);
 /// <see cref="Th.TraceStrongFactor"/> x the noise.</param>
 /// <param name="DirectLow">The lower bound of the ratio's Direct band on these lights:
 /// <see cref="Th.MatchDirectLow"/> widened down to where the median trace reaches the limit,
-/// never under <see cref="Th.MatchOptLow"/>.</param>
+/// never under <see cref="Th.MatchNearLow"/>.</param>
 /// <param name="DirectHigh">The upper bound: <see cref="Th.MatchDirectHigh"/> widened up
-/// likewise, never over <see cref="Th.MatchOptHigh"/>.</param>
+/// likewise, never over <see cref="Th.MatchNearHigh"/>.</param>
 /// <param name="Relaxed">True when the night's ratio is outside the plain Direct band and
 /// inside the widened one: the verdict Direct stands on the traces, and its words say so.</param>
 internal sealed record TraceFigures(int Pixels, double PerUnit, double Median, int AboveNoise, int AboveStrong, double DirectLow, double DirectHigh, bool Relaxed)
@@ -210,7 +210,7 @@ internal sealed record LightsAnalysis(
 
     /// <summary>
     /// A verdict as it stands for a set at other settings than its master (ADR 0055):
-    /// <see cref="MatchVerdict.Direct"/> becomes <see cref="MatchVerdict.WithOpt"/>, since the
+    /// <see cref="MatchVerdict.Direct"/> becomes <see cref="MatchVerdict.Near"/>, since the
     /// master as it is does not have the set's hot pixels at their height in the files; every
     /// other verdict stays.
     /// </summary>
@@ -218,7 +218,7 @@ internal sealed record LightsAnalysis(
     /// <param name="otherSettings">True when the set is at other settings than the master.</param>
     /// <returns>The verdict to show.</returns>
     internal static MatchVerdict NeverDirect(MatchVerdict verdict, bool otherSettings) =>
-        otherSettings && verdict == MatchVerdict.Direct ? MatchVerdict.WithOpt : verdict;
+        otherSettings && verdict == MatchVerdict.Direct ? MatchVerdict.Near : verdict;
 
     /// <summary>
     /// How many decoded lights give an ISO or an exposure the darks lack (R-052, ADR 0053, ADR
@@ -548,8 +548,8 @@ internal static class LightsAnalyzer
         double k = Planes.Median([.. perUnit]);
         // the median trace is |ratio - 1| x k: under the limit while the ratio is within limit / k of 1
         double reach = k > 0 ? Th.TraceNoiseLimit / k : 0;
-        double low = Math.Max(Th.MatchOptLow, Math.Min(Th.MatchDirectLow, 1 - reach));
-        double high = Math.Min(Th.MatchOptHigh, Math.Max(Th.MatchDirectHigh, 1 + reach));
+        double low = Math.Max(Th.MatchNearLow, Math.Min(Th.MatchDirectLow, 1 - reach));
+        double high = Math.Min(Th.MatchNearHigh, Math.Max(Th.MatchDirectHigh, 1 + reach));
         if (double.IsNaN(ratio))
         {
             return new TraceFigures(perUnit.Count, k, double.NaN, 0, 0, low, high, false) { Centre = centre };
@@ -559,7 +559,7 @@ internal static class LightsAnalyzer
         // subtraction is the distance to the centre: |ratio - centre| x k is |the files' ratio - 1|
         // x the master's level over the light's noise, both as the files have them
         double off = Math.Abs(ratio - centre);
-        bool relaxed = !otherSettings && IndexAnalyzer.Judge(ratio) == MatchVerdict.WithOpt && IndexAnalyzer.Judge(ratio, low, high) == MatchVerdict.Direct;
+        bool relaxed = !otherSettings && IndexAnalyzer.Judge(ratio) == MatchVerdict.Near && IndexAnalyzer.Judge(ratio, low, high) == MatchVerdict.Direct;
         return new TraceFigures(perUnit.Count, k, off * k, perUnit.Count(x => off * x > 1), perUnit.Count(x => off * x > Th.TraceStrongFactor), low, high, relaxed) { Centre = centre };
     }
 

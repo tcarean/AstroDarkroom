@@ -203,13 +203,13 @@ internal static class WindowTexts
         ? T(
             "Each point is a light: how hot the master's hot pixels are in it, against the master (1 = the same), once ISO and exposure are taken into account. "
             + $"Green between {RunReport.F(band.DirectLow, 2)} and {RunReport.F(band.DirectHigh, 2)}: the dark can be subtracted as it is ({RunReport.F(Th.MatchDirectLow, 1)} .. {RunReport.F(Th.MatchDirectHigh, 1)}, widened to where what the subtraction leaves reaches the noise of a light). "
-            + $"Yellow from there to {RunReport.F(Th.MatchOptLow, 1)} and {RunReport.F(Th.MatchOptHigh, 1)}: subtract the dark with -opt (Siril multiplies it so that it matches the lights); "
-            + $"yellow too between {RunReport.F(Th.MatchCosmeticLow, 1)} and {RunReport.F(Th.MatchOptLow, 1)}: use the dark for the cosmetic correction only. "
+            + $"Yellow from there to {RunReport.F(Th.MatchNearLow, 1)} and {RunReport.F(Th.MatchNearHigh, 1)}: the dark is a few degrees off, subtract it as it is all the same; "
+            + $"yellow too between {RunReport.F(Th.MatchWarmLow, 1)} and {RunReport.F(Th.MatchNearLow, 1)}: the dark is much warmer, subtract it as it is, with the cosmetic correction on. "
             + "Red beyond: they do not match. The first lights of the night usually sit lower, because the camera is still cold.",
             "Fiecare punct e un light: cat de fierbinti sunt in el pixelii fierbinti ai masterului, fata de master (1 = la fel), dupa ce se tine cont de ISO si de expunere. "
             + $"Verde intre {RunReport.F(band.DirectLow, 2)} si {RunReport.F(band.DirectHigh, 2)}: dark-ul se poate scadea asa cum e ({RunReport.F(Th.MatchDirectLow, 1)} .. {RunReport.F(Th.MatchDirectHigh, 1)}, largit pana unde ce ramane dupa scadere ajunge cat zgomotul unui light). "
-            + $"Galben de acolo pana la {RunReport.F(Th.MatchOptLow, 1)} si {RunReport.F(Th.MatchOptHigh, 1)}: scade dark-ul cu -opt (Siril il inmulteste cat sa se potriveasca cu lights-urile); "
-            + $"tot galben intre {RunReport.F(Th.MatchCosmeticLow, 1)} si {RunReport.F(Th.MatchOptLow, 1)}: foloseste dark-ul doar pentru corectia cosmetica. "
+            + $"Galben de acolo pana la {RunReport.F(Th.MatchNearLow, 1)} si {RunReport.F(Th.MatchNearHigh, 1)}: dark-ul e la cateva grade de lights, scade-l tot asa cum e; "
+            + $"tot galben intre {RunReport.F(Th.MatchWarmLow, 1)} si {RunReport.F(Th.MatchNearLow, 1)}: dark-ul e mult mai cald, scade-l asa cum e, cu corectia cosmetica pornita. "
             + "Rosu mai departe: nu se potrivesc. Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.")
         : PlainLightsChartLead;
 
@@ -217,12 +217,12 @@ internal static class WindowTexts
     private static string PlainLightsChartLead => T(
         "Each point is a light: how hot the master's hot pixels are in it, against the master (1 = the same), once ISO and exposure are taken into account. "
         + $"Green between {RunReport.F(Th.MatchDirectLow, 1)} and {RunReport.F(Th.MatchDirectHigh, 1)}: the dark can be subtracted as it is. "
-        + $"Yellow between {RunReport.F(Th.MatchOptLow, 1)} and {RunReport.F(Th.MatchOptHigh, 1)}: subtract the dark with -opt (Siril multiplies it so that it matches the lights); "
-        + $"yellow too between {RunReport.F(Th.MatchCosmeticLow, 1)} and {RunReport.F(Th.MatchOptLow, 1)}: use the dark for the cosmetic correction only. "
+        + $"Yellow between {RunReport.F(Th.MatchNearLow, 1)} and {RunReport.F(Th.MatchNearHigh, 1)}: the dark is a few degrees off, subtract it as it is all the same; "
+        + $"yellow too between {RunReport.F(Th.MatchWarmLow, 1)} and {RunReport.F(Th.MatchNearLow, 1)}: the dark is much warmer, subtract it as it is, with the cosmetic correction on. "
         + "Red beyond: they do not match. The first lights of the night usually sit lower, because the camera is still cold.",
         "Fiecare punct e un light: cat de fierbinti sunt in el pixelii fierbinti ai masterului, fata de master (1 = la fel), dupa ce se tine cont de ISO si de expunere. "
         + $"Verde intre {RunReport.F(Th.MatchDirectLow, 1)} si {RunReport.F(Th.MatchDirectHigh, 1)}: dark-ul se poate scadea asa cum e. "
-        + $"Galben intre {RunReport.F(Th.MatchOptLow, 1)} si {RunReport.F(Th.MatchOptHigh, 1)}: scade dark-ul cu -opt (Siril il inmulteste cat sa se potriveasca cu lights-urile); "
-        + $"tot galben intre {RunReport.F(Th.MatchCosmeticLow, 1)} si {RunReport.F(Th.MatchOptLow, 1)}: foloseste dark-ul doar pentru corectia cosmetica. "
+        + $"Galben intre {RunReport.F(Th.MatchNearLow, 1)} si {RunReport.F(Th.MatchNearHigh, 1)}: dark-ul e la cateva grade de lights, scade-l tot asa cum e; "
+        + $"tot galben intre {RunReport.F(Th.MatchWarmLow, 1)} si {RunReport.F(Th.MatchNearLow, 1)}: dark-ul e mult mai cald, scade-l asa cum e, cu corectia cosmetica pornita. "
         + "Rosu mai departe: nu se potrivesc. Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.");
 }

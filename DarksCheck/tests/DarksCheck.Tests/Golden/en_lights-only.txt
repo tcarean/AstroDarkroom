@@ -27,7 +27,7 @@ Copyright (C) 2026 Tudor Carean
     what is left       : the subtraction takes too much: a hot pixel keeps on average a hole of 18.31 times the noise of a light; at 20 of 20 the hole is over the noise, at 20 over 3 times the noise (the light's noise on the pixel's colour; with dithering the traces spread, without it they stay in the same place in the stack)
     index partner      : idx241
     index lights       : idx121 (0.50 times the dark, that is 5.9 degrees colder than it)
-    verdict            : WARNING: use the dark for the cosmetic correction only (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); in the lights the hot pixels are 0.50 times what they are in the dark: the dark is warmer by 5.9 degrees, it sees them all, but subtracted it would take out too much and leave black dots
+    verdict            : WARNING: subtract the dark as it is, with the cosmetic correction on (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); in the lights the hot pixels are 0.50 times what they are in the dark: the dark is warmer by 5.9 degrees. In one light the subtraction takes too much at the hot pixels; with dithering this does not show in the stack
 
   3. LIGHT LEAKS AND DIFFERENCES ACROSS THE FRAME
     master dark        : centre 0.12, corners -0.01 / -0.04 / -0.11 / 0.00 (top-left / top-right / bottom-left / bottom-right), edges top -0.02 bottom 0.00 left -0.02 right -0.01  [the green pixels G1, ADU above the black, mean of 4 frames, in squares of 32 px]

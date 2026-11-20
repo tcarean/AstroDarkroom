@@ -104,7 +104,7 @@ public class MainViewModelTests
         // each point takes the colour of the core's verdict for its own ratio, and the green lines the band's ends
         Assert.Equal(l.Frames.Select(x => VerdictPalette.For(l.Judge(x.AmpRatioMedian))), vm.LightPoints.Select(p => p.Colour));
         Assert.Contains(VerdictPalette.Good, vm.LightPoints.Select(p => p.Colour));
-        Assert.Equal([t.DirectLow, t.DirectHigh, Th.MatchOptLow, Th.MatchOptHigh, Th.MatchCosmeticLow], vm.LightGuides.Select(g => g.Value));
+        Assert.Equal([t.DirectLow, t.DirectHigh, Th.MatchNearLow, Th.MatchNearHigh, Th.MatchWarmLow], vm.LightGuides.Select(g => g.Value));
         Assert.Equal(RunReport.F(t.DirectLow, 2) + " asa cum e", vm.LightGuides[0].Label);
         Assert.Equal(RunReport.F(t.DirectHigh, 2) + " asa cum e", vm.LightGuides[1].Label);
         Assert.Equal(WindowTexts.LightsChartLead(t), vm.LightsChartLead);
@@ -377,7 +377,7 @@ public class MainViewModelTests
         Assert.Equal(r.Darks.Noise.Curve.Select(p => p.Expected), vm.NoiseExpected.Select(p => p.Y));
         Assert.Equal(4, vm.LightPoints.Count);
         Assert.Equal(r.Lights!.Frames[1].AmpRatioMedian, vm.LightPoints[1].Y);
-        Assert.Equal([Th.MatchDirectLow, Th.MatchDirectHigh, Th.MatchOptLow, Th.MatchOptHigh, Th.MatchCosmeticLow], vm.LightGuides.Select(g => g.Value));
+        Assert.Equal([Th.MatchDirectLow, Th.MatchDirectHigh, Th.MatchNearLow, Th.MatchNearHigh, Th.MatchWarmLow], vm.LightGuides.Select(g => g.Value));
         Assert.Equal(VerdictPalette.Warn, vm.LightPoints[1].Colour);
 
         // the hot-pixel, lights and index rows are the sections' rows; the Rezumat's check 6 card keeps only the
@@ -494,9 +494,9 @@ public class MainViewModelTests
         Assert.NotNull(vm.Result!.Partner);
         Assert.Equal(p.Root, vm.Result.Partner!.Folder);
         Assert.Contains(vm.IndexRows, row => row.Label == "dark-uri / partener" && row.Value.StartsWith("pixelii fierbinti sunt in dark-urile sesiunii de 0.5", StringComparison.Ordinal));
-        // lights at 1.3 of darks that are 0.5 of the partner: 0.65, cosmetic correction only
+        // lights at 1.3 of darks that are 0.5 of the partner: 0.65, a much warmer partner
         Assert.Contains(vm.IndexRows, row => row.Label == "lights / partener" && row.Value.StartsWith("pixelii fierbinti sunt in lights de 0.6", StringComparison.Ordinal));
-        Assert.Contains(vm.IndexRows, row => row.Label == "verdict partener" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("foloseste partenerul doar pentru corectia cosmetica", StringComparison.Ordinal));
+        Assert.Contains(vm.IndexRows, row => row.Label == "verdict partener" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("scade partenerul asa cum e, cu corectia cosmetica pornita", StringComparison.Ordinal));
 
         // a choice after a run runs the folder again at once, no button to press (ADR 0048): clearing takes the
         // partner's rows away
@@ -721,8 +721,8 @@ public class MainViewModelTests
         Assert.Equal(4, vm.Lights.Count);
         Assert.Equal(s.LightsDir, vm.Result!.Inventory.Session.LightsDir);
         Assert.Contains(vm.SessionRows, row => row.Label == "lights" && row.Value == s.LightsDir + " (4 cadre .fit; alese de tine)");
-        // lights at 1.3 of darks that are 0.5 of the library: 0.65, cosmetic correction only
-        Assert.Contains(vm.LightRows, row => row.Label == "verdict" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("foloseste dark-ul doar pentru corectia cosmetica", StringComparison.Ordinal));
+        // lights at 1.3 of darks that are 0.5 of the library: 0.65, a much warmer dark
+        Assert.Contains(vm.LightRows, row => row.Label == "verdict" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("scade dark-ul asa cum e, cu corectia cosmetica pornita", StringComparison.Ordinal));
         Assert.Equal(Path.GetFileName(library.Root) + "-" + vm.Result.Index.Tag, vm.Label);
 
         // the export never writes into the folder the lights were chosen from (R-055, the rule "Read-only input")

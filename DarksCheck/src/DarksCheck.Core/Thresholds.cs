@@ -414,23 +414,25 @@ internal static class Th
     internal const double MatchDirectLow = 0.9, MatchDirectHigh = 1.1;
 
     /// <summary>
-    /// Within these bounds: subtract with Siril's -opt, which scales the dark (the owner's margin
-    /// rule of 2026-10-10: ±5 °C).
+    /// Within these bounds the dark is a few degrees off the lights: about 3 °C either way by
+    /// <see cref="DoublingCelsius"/> (-3.1 and +2.9; until 2026-11-20 this comment said ±5 °C). It
+    /// is subtracted as it is, with a warning: Siril's -opt, which the verdict named until then,
+    /// could not be carried out on the owner's frames (ADR 0070).
     /// </summary>
-    internal const double MatchOptLow = 0.7, MatchOptHigh = 1.4;
+    internal const double MatchNearLow = 0.7, MatchNearHigh = 1.4;
 
     /// <summary>
-    /// Down to here a colder set of lights can still take the warmer dark's hot-pixel positions,
-    /// cosmetic correction only (-cc=dark sees every hot pixel); under it, or above MatchOptHigh,
-    /// the dark is unmatched.
+    /// Down to here a dark much warmer than the lights is still subtracted as it is, with the
+    /// cosmetic correction on (-cc=dark sees every hot pixel; ADR 0070); under it, or above
+    /// MatchNearHigh, the dark is unmatched.
     /// </summary>
-    internal const double MatchCosmeticLow = 0.4;
+    internal const double MatchWarmLow = 0.4;
 
     // --- what the mismatch leaves (R-067, ADR 0044) ---
 
     /// <summary>
-    /// A set of lights takes its dark as it is, whatever the ratio inside MatchOptLow ..
-    /// MatchOptHigh, while the median trace a plain subtraction leaves at the master's hot pixels
+    /// A set of lights takes its dark as it is, whatever the ratio inside MatchNearLow ..
+    /// MatchNearHigh, while the median trace a plain subtraction leaves at the master's hot pixels
     /// does not pass this many times the noise of a light: under the noise of one frame, a trace
     /// is not told from it. Measured 2026-11-10: 0.73 for the Veil lights of 2026-11-08 against the
     /// -2 °C darks (ratio 0.85), 0.49 for a pair inside 0.9 .. 1.1 (Veil 2026-10-06, ratio 0.94),

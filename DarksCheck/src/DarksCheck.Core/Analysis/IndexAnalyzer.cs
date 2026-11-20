@@ -33,16 +33,16 @@ internal enum MatchVerdict
     Direct,
 
     /// <summary>
-    /// Within <see cref="Th.MatchOptLow"/> .. <see cref="Th.MatchOptHigh"/>: subtract with -opt,
-    /// which scales it.
+    /// Within <see cref="Th.MatchNearLow"/> .. <see cref="Th.MatchNearHigh"/>: the master is a few
+    /// degrees off; it is still subtracted as it is, and the words say it is off (ADR 0070).
     /// </summary>
-    WithOpt,
+    Near,
 
     /// <summary>
-    /// Down to <see cref="Th.MatchCosmeticLow"/>: the master is much warmer, good for the hot-pixel
-    /// positions only (-cc=dark).
+    /// Down to <see cref="Th.MatchWarmLow"/>: the master is much warmer; it is still subtracted as
+    /// it is, with the cosmetic correction on (-cc=dark; ADR 0070).
     /// </summary>
-    CosmeticOnly,
+    MuchWarmer,
 
     /// <summary>Too far either way.</summary>
     Unmatched,
@@ -266,9 +266,9 @@ internal static partial class IndexAnalyzer
     /// </summary>
     /// <param name="ratio">The median ratio.</param>
     /// <param name="directLow">The lower bound of the Direct band, inclusive; within
-    /// <see cref="Th.MatchOptLow"/> .. <see cref="Th.MatchDirectLow"/>.</param>
+    /// <see cref="Th.MatchNearLow"/> .. <see cref="Th.MatchDirectLow"/>.</param>
     /// <param name="directHigh">The upper bound of the Direct band, inclusive; within
-    /// <see cref="Th.MatchDirectHigh"/> .. <see cref="Th.MatchOptHigh"/>.</param>
+    /// <see cref="Th.MatchDirectHigh"/> .. <see cref="Th.MatchNearHigh"/>.</param>
     /// <returns>The verdict.</returns>
     internal static MatchVerdict Judge(double ratio, double directLow, double directHigh)
     {
@@ -287,12 +287,12 @@ internal static partial class IndexAnalyzer
             return MatchVerdict.Direct;
         }
 
-        if (ratio >= Th.MatchOptLow && ratio <= Th.MatchOptHigh)
+        if (ratio >= Th.MatchNearLow && ratio <= Th.MatchNearHigh)
         {
-            return MatchVerdict.WithOpt;
+            return MatchVerdict.Near;
         }
 
-        return ratio >= Th.MatchCosmeticLow && ratio < Th.MatchOptLow ? MatchVerdict.CosmeticOnly : MatchVerdict.Unmatched;
+        return ratio >= Th.MatchWarmLow && ratio < Th.MatchNearLow ? MatchVerdict.MuchWarmer : MatchVerdict.Unmatched;
     }
 
     /// <summary>

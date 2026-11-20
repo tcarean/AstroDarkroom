@@ -28,7 +28,7 @@ Copyright (C) 2026 Tudor Carean
   4. INCALZIREA CAMEREI IN TIMPUL SERIEI
     sfarsitul seriei   : aparatul s-a racit in timpul seriei: pixelii fierbinti scad de la 1.93 din master in primul cadru la 0.71 la sfarsitul seriei (media ultimelor 5 cadre), adica 8.7 grade in 22 min; masterul e cu 3.0 grade peste sfarsitul seriei
     de aruncat         : 7 cadre (1 .. 7) sunt la mai mult de 2.0 grade de sfarsitul seriei (pixelii fierbinti sub 0.56 sau peste 0.89 din master; sfarsitul seriei 0.71); fara ele masterul ar fi la nivelul sfarsitului seriei, dar cu 55 % mai mult zgomot
-    verdict            : REFA: 7 din 12 cadre sunt la peste 2.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi; aparatul a pornit mai cald decat locul in care a stat: refa seria dupa ce aparatul a stat vreo 40 min in locul unde se trag dark-urile (de trei ori cele 12 min ale seriei); 5 cadre (1 .. 3, 11, 12) sunt prea departe de master ca Siril sa le potriveasca cu -opt (in afara 0.7 .. 1.4; cel mai departe 1.93): seria a pornit calda; arunca-le
+    verdict            : REFA: 7 din 12 cadre sunt la peste 2.0 grade de sfarsitul seriei, deci masterul nu apartine niciunei temperaturi; aparatul a pornit mai cald decat locul in care a stat: refa seria dupa ce aparatul a stat vreo 40 min in locul unde se trag dark-urile (de trei ori cele 12 min ale seriei); 5 cadre (1 .. 3, 11, 12) sunt prea departe de master (pixelii lor fierbinti sunt in afara 0.7 .. 1.4 din ai masterului; cel mai departe 1.93): seria a pornit calda; arunca-le
 
   5. ZGOMOTUL FIECARUI CADRU
     fata de master     : R 2.90 .. 2.99; G1 2.88 .. 2.97 (in medie 2.94); G2 2.91 .. 2.96; B 2.88 .. 2.97  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]

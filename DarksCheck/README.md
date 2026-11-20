@@ -196,18 +196,22 @@ The verdict, on the lights / dark ratio:
 | Ratio | Verdict | What it means |
 | --- | --- | --- |
 | 0.9 to 1.1 | `OK: the dark can be subtracted as it is` | the dark is at the night's temperature |
-| 0.7 to 1.4 | `WARNING: subtract the dark with -opt` | Siril's `-opt` multiplies the dark until it matches the lights |
-| 0.4 to 0.7 | `WARNING: use the dark for the cosmetic correction only (-cc=dark: ...)` | the dark is much warmer: it finds every hot pixel, but subtracted it would take out too much and leave black dots |
+| 0.7 to 1.4 | `WARNING: subtract the dark as it is, though it is not at the same temperature` | the dark is a few degrees off; the verdict says how many, and how much the subtraction leaves at a hot pixel |
+| 0.4 to 0.7 | `WARNING: subtract the dark as it is, with the cosmetic correction on (-cc=dark: ...)` | the dark is much warmer: in one light the subtraction takes too much at the hot pixels, which does not show in a stack of dithered lights |
 | other | `WARNING: they do not match` | too cold or too warm |
+
+No verdict advises Siril's `-opt` (the option that multiplies the dark until it matches the
+lights): on the frames the tests were done on, Siril chose a factor near zero for it, which
+leaves the dark out.
 
 When the lights are at another ISO or another exposure than the darks (most of them, on a
 setting both sets state), the ratio still compares the two with both brought to one setting, so
 it still tells the temperatures apart, but the dark is never said to be subtracted as it is: in
 the files the hot pixels of the lights do not have the height they have in the dark. For a
-ratio between 0.7 and 1.4 the verdict then reads `WARNING: do not subtract the dark as it is`,
+ratio between 0.4 and 1.4 the verdict then reads `WARNING: do not subtract the dark as it is`,
 names both settings and how many times the dark's the hot pixels of the lights are in the
-files, and advises, in this order, darks made at the lights' settings, then `-opt` (which needs
-the biases too) or the cosmetic correction only; outside 0.7 to 1.4 the verdicts of the table
+files, and advises, in this order, darks made at the lights' settings, then the cosmetic
+correction only; outside 0.4 to 1.4 the verdicts of the table
 keep their words and say that the ratio is worked out for the same settings. The row `lights
 against dark` gives the ratio in the files beside the one worked out, and the row `what is
 left` is worked out on the files. A partner made at other settings gets the same verdict.
@@ -304,7 +308,7 @@ and the advice is to take the series again, after the camera has sat where it sh
 times the series' time constant when it was cooling, or as a longer series when it was
 warming. The verdict is `WARNING` when the master is more than 1 degree from the end of the
 series (the frames from the start pull it: discard them, or take a longer series) or when a
-frame leaves 0.7 to 1.4 of the master (the margin of Siril's `-opt`: the series started cold);
+frame leaves 0.7 to 1.4 of the master (too far from it: the series started cold or warm);
 the warm-up at the start is only stated. A series of 30 darks taken at 2 °C, right after the
 camera came out of the house, cooled 4 degrees in the hour: the master sat 1.4 degrees above
 the end and the first 10 frames were to discard. Under 6 frames the end is not measured and the
@@ -444,14 +448,14 @@ session's. `INDEX` then adds:
 - `partner verdict`: check 2's thresholds on that ratio (without lights, on the darks' ratio).
 
 Below, the session of the report above against a library of 30 darks: 0.42 on 434 pixels; the
-library ran 7.5 degrees warmer, so it is good for a cosmetic correction only.
+library ran 7.5 degrees warmer, so it is subtracted as it is, with the cosmetic correction on.
 
 ```
     partner            : D:\Astro\MyDarkLibrary\darks: idx67 (67.4 ADU-eq; frames read 30 of 30, ISO 1600, 120.2 s); label MyDarkLibrary-idx67
     darks / partner    : in the session's darks the hot pixels are 0.42 times what they are at the partner, at the same settings (half of them between 0.38 and 0.44; 434 pixels hot in both), that is the session's darks are 7.5 degrees colder than the partner
     shared pixels      : 111 of the session's 111 above 50 ADU-eq are above 50 at the partner too (100 %); 425 of the partner's 528 above 50 are above 20 in the session (80 %)
     lights / partner   : in the lights the hot pixels are 0.42 times what they are at the partner (worked out through the session's darks), that is the lights are 7.5 degrees colder than the partner
-    partner verdict    : WARNING: use the partner for the cosmetic correction only (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); in the lights the hot pixels are 0.42 times what they are at the partner: the partner is warmer by 7.5 degrees, it sees them all, but subtracted it would take out too much and leave black dots
+    partner verdict    : WARNING: subtract the partner as it is, with the cosmetic correction on (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); in the lights the hot pixels are 0.42 times what they are at the partner: the partner is warmer by 7.5 degrees. In one light the subtraction takes too much at the hot pixels; with dithering this does not show in the stack
 ```
 
 A partner folder that cannot be opened is refused with `ERROR` before anything is decoded. One
@@ -472,7 +476,7 @@ partner ... are used)` and its darks line `=== DARKS (the partner's, ...)`; the 
 left to compare the partner with; and `darkscheck-darks.csv` and the maps of `--out` describe
 the partner's darks. For example, a session of 87 lights and no darks, against a library of 30
 darks, reads lights / dark 0.43 over its 87 lights (every light is measured): the library ran
-7.2 degrees warmer than the night, good for a cosmetic correction only; its label reads
+7.2 degrees warmer than the night, to subtract as it is with the cosmetic correction on; its label reads
 `MySessionFolder-idx29`.
 
 ### The lights of another session: `--lights`
@@ -600,7 +604,7 @@ tabs:
   the open folder only and is dropped when you open another.
   Then the rows of check 2, the chart of every light against the dark (how hot the master's hot
   pixels are in it) with the bounds as lines (0.9 and 1.1 green, as it is; 0.7 and 1.4 amber,
-  with -opt; 0.4 red, cosmetic only), and the lights table. When what the subtraction leaves is
+  a few degrees off; 0.4 red, much warmer), and the lights table. When what the subtraction leaves is
   under the noise of a light further out, the two green lines stand at the ends of that wider
   band (0.80 and 1.20, say), the points inside it are green and the sentence above the chart
   says so.
