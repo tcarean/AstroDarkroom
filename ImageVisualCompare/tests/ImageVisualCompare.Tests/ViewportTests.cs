@@ -64,8 +64,8 @@ public class ViewportTests
     [Fact]
     public void R043_AnOverflowOfAHundredthOfAPhysicalPixel_StillScrolls()
     {
-        // The slack is for what rounding leaves, a millionth of a millionth of a pixel, not for
-        // an image that really is larger than the view, however little.
+        // The slack is for what rounding leaves, a millionth of a millionth of a pixel: an image
+        // larger than the view by more than the slack, here by a hundredth of a pixel, scrolls.
         Viewport viewport = Create(1000, 1000, 400, 400);
 
         viewport.ZoomTo(0.40001, 200, 200);

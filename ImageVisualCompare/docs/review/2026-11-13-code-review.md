@@ -83,8 +83,8 @@ numbers are those of 2026-11-13; a task finds its lines again by the names the e
 | CR-007 | 1 | rare | to measure | A float sample is quantised in double precision, Siril does it in single: 127 values differ by a level | fixed 5c65300a, 1f6223dc |
 | CR-008 | 1 | crafted | confirmed | A FITS card with no space after `=` loses the first character of its value | fixed 1b261833 |
 | CR-009 | 1 | crafted | confirmed | A `BZERO` or `BSCALE` that does not parse is read as 0 or 1 | fixed a21d59ab, a8f45631 |
-| CR-010 | 2 | some setups | to measure | A three-plane FITS not in the file cache is read with a seek per plane per row | fixed 54f7807a; measured, severity 4 |
-| CR-011 | 3 | common | confirmed | At fit, a rounding residue shows a scrollbar and the minimap's rectangle | fixed 71e02ddd |
+| CR-010 | 2 | some setups | to measure | A three-plane FITS not in the file cache is read with a seek per plane per row | fixed 54f7807a, a8f45631; measured, severity 4 |
+| CR-011 | 3 | common | confirmed | At fit, a rounding residue shows a scrollbar and the minimap's rectangle | fixed 71e02ddd, a8f45631 |
 | CR-012 | 3 | common | owner | The bottom-left corner of the image is always under the minimap at 100 % and above | fixed fb42836a, a8f45631 |
 | CR-013 | 3 | some setups | to measure | On a narrow window the status bar cuts B's read-out before the pair line | open |
 | CR-014 | 3 | slip | to measure | Up or Down on the surface moves the keyboard focus to the toolbar | open |
@@ -406,7 +406,9 @@ a defect: dead code, duplicates, small inaccuracies.
   bitmaps of the two real FITS in the three modes are the same bytes as before (SHA-256), and
   the six validation cases pass. A test counts the reads: 3 for a 200-row image of three planes,
   where there were 600. Not measured: the first open after a real restart, a fragmented file, a
-  USB disk, a network share. The figures are in `docs/design/imaging.md`.
+  USB disk, a network share. The figures are in `docs/design/imaging.md`. After the branch's
+  review, a8f45631: the note says the three bands are held during each pass (`Pass` makes a
+  decoder a pass), and the `stream` parameter of `Pass` no longer speaks of a row a read.
 - **Where:** `src/ImageVisualCompare.Wpf/Imaging/FitsImageLoader.cs:305-318` (`Pass`),
   `:330-331` (`OpenRead`: no buffer, `FileOptions.RandomAccess`);
   `src/ImageVisualCompare.Core/FitsRowDecoder.cs:59-65`, `:98-107`.
@@ -437,7 +439,9 @@ a defect: dead code, duplicates, small inaccuracies.
   Run with the real window off the desktop on the real FITS pair: `Fit` on 401 window heights,
   68 of them with a residue, showed no bar and no rectangle. The last sentence of the case, the
   top screen row reading no pixel, was already gone since CR-001: the read-out takes the centre
-  of the screen pixel; the test pins it.
+  of the screen pixel; the test pins it. After the branch's two reviews, a8f45631 and the commit
+  of the second review: the note and a test's comment said an overflow "however small" still scrolls,
+  where it is one above the slack that does.
 - **Where:** `src/ImageVisualCompare.Core/Viewport.cs:57-58`, `:67-78`, `:234-243`, `:317-327`;
   `src/ImageVisualCompare.Core/ScrollBarState.cs:52-56`, `:71-75`;
   `src/ImageVisualCompare.Core/MinimapGeometry.cs:80-82`; shown by
