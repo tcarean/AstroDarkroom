@@ -306,6 +306,31 @@ public class SeriesTests
         Assert.Equal(1, s.UnknownCount);
     }
 
+    /// <summary>
+    /// No line of the series report carries a minus on a figure that rounds to zero (R-092): the
+    /// classes session, whose change of the stars' width, halo, drift on Y and several table
+    /// cells are a hair under zero, in both languages.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R092_NoLineOfTheSeriesReportCarriesAMinusOnAZero(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        File.WriteAllBytes(Path.Combine(f.LightsDir, "DSC_0009.fit"), new byte[100]);   // the session of the golden series-classes.txt
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        string text = sw.ToString();
+
+        // A minus, a zero, any further zeros after a point, and then no other digit.
+        Assert.DoesNotMatch(@"-0(?:\.0+)?(?![\d.])", text);
+        Assert.Contains(english ? "3.22 px at the end (+0 %): the focus held" : "3.22 px la sfarsit (+0 %): focusul a tinut", text, StringComparison.Ordinal);
+        Assert.Contains(": 0.000 / 0.000; ", text, StringComparison.Ordinal);
+        Assert.Contains("Y +0.00 px/min = +1.8 / +0.0 \"/min", text, StringComparison.Ordinal);
+    }
+
     private static SeriesResult RunPattern(int biases = 0)
     {
         using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: biases);

@@ -94,7 +94,12 @@ could not be read. File names are cut at 20 characters.
 and the copyright of `Directory.Build.props`, read from the core assembly's attributes),
 before the arguments are parsed. `WarrantyLines` is the GPLv3 disclaimer `--help` prints, with the
 licence URL. `F(value, decimals)` is the one number formatter of the reports (invariant
-culture, fixed decimals) and `Duration(seconds)` prints `48 s`, `54 min` or `3 h 22 min`;
+culture, fixed decimals); it formats first and then drops the minus when no digit other than 0
+follows it, so a figure that rounds to zero reads `0.0` (R-092), and `Signed(value, decimals)`
+puts a `+` before whatever `F` wrote without a minus, `+0.00` for such a figure. The angle of a
+trail in a frame's flag (`SeriesAnalyzer`) and the tick labels of the window's charts
+(`ChartElement.Num`) are written by `F` too. `Duration(seconds)` prints `48 s`, `54 min` or
+`3 h 22 min`;
 `DurationToTheSecond(seconds)` rounds the same way and keeps the seconds: `38 s`, `45 min 12 s`,
 `2 h 54 min 30 s`. Every report in `Report/` uses them, so no text is formatted by a view-model
 or the console.

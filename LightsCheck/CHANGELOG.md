@@ -329,6 +329,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).
+- A small negative figure was written as a zero with a minus: `halo : -0.000`, `(-0 %): the
+  focus held`, `Y -0.00 px/min`, a cell `-0.0` in the frame table, `-0` on a chart's axis. A
+  figure that rounds to zero now has no minus (`0.000`, `0.0`), and reads `+0 %`, `+0.00` where
+  the sign is always written (R-092, ADR 0066; CR-021 of the review of 2026-11-13).
 
 ### Internal
 

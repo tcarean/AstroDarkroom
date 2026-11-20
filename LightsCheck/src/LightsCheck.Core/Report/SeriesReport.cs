@@ -1837,7 +1837,8 @@ internal static class SeriesReport
     /// <param name="v">The figure; null when unknown.</param>
     /// <param name="decimals">How many decimals to write.</param>
     /// <returns>
-    /// "+1.25" or "-1.25" ("+" also for zero), or "-" when <paramref name="v"/> is null.
+    /// "+1.25" or "-1.25", "+0.00" for a figure that rounds to zero whichever its sign was
+    /// (R-092), or "-" when <paramref name="v"/> is null.
     /// </returns>
-    private static string Signed(double? v, int decimals) => v is double d ? (d >= 0 ? "+" : "") + RunReport.F(d, decimals) : "-";
+    private static string Signed(double? v, int decimals) => v is double d ? RunReport.Signed(d, decimals) : "-";
 }

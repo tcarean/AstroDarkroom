@@ -36,7 +36,7 @@ Copyright (C) 2026 Tudor Carean
     ce inseamna        : shot/citire de la 10 in sus: cerul acopera zgomotul de citire, care adauga sub 5 %; sub 10: canalul sufera de zgomotul de citire, iar expuneri mai lungi ar ajuta
 
   ROUA
-    halo (lumina din jurul stelelor), primele / ultimele: -0.000 / -0.001; stele gasite 40 -> 40 (+0 %); latimea stelelor 3.22 / 3.22 px (+0 %)
+    halo (lumina din jurul stelelor), primele / ultimele: 0.000 / -0.001; stele gasite 40 -> 40 (+0 %); latimea stelelor 3.22 / 3.22 px (+0 %)
     verdict            : NU - latimea stelelor +0 %, lumina din jurul stelelor (halo) -0.001
 
   CADRE MISCATE
@@ -47,7 +47,7 @@ Copyright (C) 2026 Tudor Carean
   DRIFT SI ROTATIE
     drift intre cadre la rand, fara dithering: X +0.25 px/min, Y +0.03 px/min = +1.5 / +0.2 "/min (din 4 perechi de cadre fara pauza intre ele)
     drift intr-o expunere: 0.50 px = 3.0" in 120 s, pe DEC; dare de walking noise de pana la 0.5 px (cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px)
-    rotatie de camp    : imaginea s-a rotit cu -0.0' in total, -0.1' pe ora; din cauza asta, o stea din colt se misca 0.00 px intr-o expunere
+    rotatie de camp    : imaginea s-a rotit cu 0.0' in total, -0.1' pe ora; din cauza asta, o stea din colt se misca 0.00 px intr-o expunere
     aliniere polara    : axa monturii e deviata de la pol cu cel putin 5.7' (aflat din driftul pe DEC, 1.5"/min; fara plate solve nu se stie declinatia, deci nici cat poate fi cel mult); din cauza asta stelele se misca cel putin 0.50 px intr-o expunere de 120 s
     drift pe RA        : 0.2"/min (fara plate solve nu se stie cat din el vine din aliniere)
 
@@ -74,7 +74,7 @@ Copyright (C) 2026 Tudor Carean
      nr  fisier                ora       expunere  clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  dithering                                   acelasi loc     motive
       1  DSC_0001.fit          20:35:03   120.0 s  bun        1.01   3.22      40   2000      -      -     0.0     0.0  -                                           -               
       2  DSC_0002.fit          20:37:04   120.0 s  bun        1.01   3.22      40   2000    1 s    0.5     0.5     0.2  -                                           -               
-      3  DSC_0003.fit          20:39:34   120.0 s  SLAB       1.88   4.89      40   2000   30 s   11.5    12.0    -0.0  DEC 12 px                                   -               alungire 1.88 (de la 1.73 cadrul e slab), dara pe RA (-90 de grade)
+      3  DSC_0003.fit          20:39:34   120.0 s  SLAB       1.88   4.89      40   2000   30 s   11.5    12.0     0.0  DEC 12 px                                   -               alungire 1.88 (de la 1.73 cadrul e slab), dara pe RA (-90 de grade)
       4  DSC_0004.fit          20:41:35   120.0 s  bun        1.01   3.22      40   2000    1 s    0.6    12.5     0.3  -                                           -               
       5  DSC_0005.fit          20:44:05   120.0 s  bun        1.01   3.22      40   2000   30 s   15.3    12.0   -15.0  RA 15 px                                    -               
       6  DSC_0006.fit          20:46:06   120.0 s  SLAB       1.88   4.89      40   2001    1 s    0.5    12.5   -15.0  -                                           -               alungire 1.88 (de la 1.73 cadrul e slab), dara pe RA (-90 de grade)
