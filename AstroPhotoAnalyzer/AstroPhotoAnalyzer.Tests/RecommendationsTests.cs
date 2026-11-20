@@ -331,6 +331,48 @@ public class RecommendationsTests
         Assert.Contains("); 0.0 % din zone sunt sub 0.5 niveluri, unde zgomotul nu mai ascunde treptele; ", denoise.Because);
     }
 
+    /// <summary>
+    /// CR-015: one report said "no visible steps" in section 1 and warned of banding in section
+    /// 5, each on its own measurement (the reference image, V-001). Where section 1 measured the
+    /// flat areas and found no visible steps, section 5 says so and keeps its Attention for the
+    /// noise under the target; where section 1 found steps, or could not measure them, the
+    /// sentence is the one it was. The dark scene has a banding risk by its noise and visible
+    /// steps; the other two cases are the same analysis with the flat areas changed.
+    /// </summary>
+    [Fact]
+    public void R095_TheDenoiseLineDoesNotWarnOfBandingThatSectionOneMeasuredAndDidNotFind()
+    {
+        const string banding = "Denoise-ul e prea puternic pentru print: a ramas prea putin zgomot ca sa ascunda treptele dintre niveluri (banding). Pentru versiunea de print, un denoise mai slab pastreaza textura cerului si stelele slabe.";
+        const string noBanding = "Denoise-ul e mai puternic decat cere printul: zgomotul ramas e sub tinta. Sectiunea 1 n-a gasit trepte vizibile in cer, deci nu e risc de banding; totusi, pentru versiunea de print, un denoise mai slab pastreaza textura cerului si stelele slabe.";
+        var a = Run(Scenes.DarkSky(), new Parameters { TargetAspect = 50.0 / 35.0, ViewingDistanceM = 1.5 });
+        Assert.True(a.Noise.BandingRisk);
+        QuantizationResult measured = a.Quantization;
+        static Recommendation Denoise(AnalysisResult r) => Assert.Single(Recommendations.Build(r), x => x.Topic == Topic.Denoise);
+        static bool Has(AnalysisResult r, string start) => Recommendations.Build(r).Any(x => x.Topic == Topic.Format && x.Text.StartsWith(start));
+
+        // Section 1 found visible steps: both sections warn, as before.
+        Assert.True(Has(a, "Pe 8 biti pot aparea trepte vizibile in cer (banding)"));
+        Recommendation visible = Denoise(a);
+        Assert.Equal(banding, visible.Text);
+        Assert.Equal(Verdict.Attention, visible.Verdict);
+
+        // Section 1 measured the flat areas and none is wide enough to show.
+        a.Quantization = measured with { PlateauTilePx = measured.PlateauTilePx.Select(_ => 1.0).ToArray() };
+        Assert.True(Has(a, "Pe 8 biti nu apar trepte vizibile in cer"));
+        Recommendation clear = Denoise(a);
+        Assert.Equal(noBanding, clear.Text);
+        Assert.Equal(Verdict.Attention, clear.Verdict);
+        Assert.Equal(visible.Because, clear.Because);
+        using (Tr.Use(UiLanguage.English))
+            Assert.Equal("Denoise is stronger than print needs: the noise left is under the target. Section 1 found no visible steps in the sky, so there is no banding to fear; still, for the print version a weaker denoise keeps the sky's texture and the faint stars.", Denoise(a).Text);
+
+        // Section 1 could not measure the flat areas: the noise is all there is to go by.
+        a.Quantization = measured with { PlateauPx = double.NaN, PlateauTilePx = Array.Empty<double>() };
+        Assert.True(Has(a, "Pe 8 biti pot aparea trepte in cer (banding), desi zonele plate nu s-au putut masura"));
+        Assert.Equal(banding, Denoise(a).Text);
+        Assert.Equal(Verdict.Attention, Denoise(a).Verdict);
+    }
+
     [Fact]
     public void R093_MonoHasNoColourToJudge()
     {

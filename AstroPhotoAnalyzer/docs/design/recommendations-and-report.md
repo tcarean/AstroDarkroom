@@ -48,7 +48,7 @@ Background, Colour, Size, Denoise, Warnings.
 | Size | crop `Needed` | Attention | what the target cuts, each side named when they differ (`ReportWriter.CropCutText`) |
 | Size | any oversize row passes | Ok | above 100 cm glass/weight/transport are the limit |
 | Denoise | noise `Insufficient` | Attention | not enough flat sky |
-| Denoise | `BandingRisk` | Attention | denoise pressed too hard for print; target 0.8-1.5; sigma after the recommended re-stretch (x the curve's slope at the background) |
+| Denoise | `BandingRisk` | Attention | denoise pressed too hard for print; target 0.8-1.5; sigma after the recommended re-stretch (x the curve's slope at the background). When the plateau is known and not visible at the reference row's dpi (the Format row that says no visible steps), the sentence says the denoise is stronger than print needs and that section 1 found no visible steps, with no banding warning; the verdict and the evidence are the same (ADR 0117) |
 | Denoise | `UnderDenoised` | Attention | visible at 100 % on screen, not on paper |
 | Denoise | `GoodForPrint` | Ok | exactly where it should be |
 | Denoise | otherwise | Ok | acceptable |

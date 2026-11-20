@@ -288,6 +288,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- One report no longer says "no visible steps appear in the sky" in section 1 and warns of
+  banding in section 5. When section 1 measured the flat areas and found no visible steps,
+  section 5 now says `Denoise is stronger than print needs: the noise left is under the
+  target. Section 1 found no visible steps in the sky, so there is no banding to fear; ...`,
+  still a caution, with the same figures. When section 1 found steps, or could not measure
+  them, the sentence is the one it was (R-095, ADR 0117).
+
 - **Save the report...** becomes enabled when an analysis ends. The button stayed grey after
   every analysis, so the report could not be saved from the window at all (R-110, R-111, ADR
   0116).
