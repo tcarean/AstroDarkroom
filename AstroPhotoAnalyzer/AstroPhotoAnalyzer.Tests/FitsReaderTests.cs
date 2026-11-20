@@ -176,9 +176,61 @@ public class FitsReaderTests
     }
 
     /// <summary>
+    /// The review of CR-012's fix: an empty primary HDU (NAXIS = 0) has no data, so its BITPIX
+    /// is not asked, and the reader takes the file; the crop's walk still computed the bytes of
+    /// a sample for every HDU, and BITPIX = -2147483648 there threw the platform's overflow.
+    /// What the reader reads, the crop crops.
+    /// </summary>
+    [Fact]
+    public void R011_AnEmptyPrimaryWithAnImpossibleBitpixIsReadAndCroppedAlike()
+    {
+        byte[] primary = FitsTestData.HeaderOnly(
+            FitsTestData.Card("SIMPLE", "T"), FitsTestData.Card("BITPIX", "-2147483648"), FitsTestData.Card("NAXIS", "0"), FitsTestData.Card("EXTEND", "T"));
+        byte[] fits = primary.Concat(FitsTestData.Build2D(4, 4, (x, y) => 0.1 * x + 0.01 * y, bitpix: -32)).ToArray();
+        using var ws = new TempWorkspace();
+        string file = ws.WriteFile("primar.fit", fits);
+
+        Raster read = new FitsReader().Load(file);
+        Assert.Equal(4, read.W);
+
+        string crop = ws.PathTo("decupaj.fit");
+        FitsWriter.SaveCrop(file, new CropRect(1, 1, 2, 2), 4, 4, 1, Array.Empty<string>(), crop);
+        Raster cropped = new FitsReader().Load(crop);
+        Assert.Equal(2, cropped.W);
+        Assert.Equal(2, cropped.H);
+        Assert.Equal(read.At(0, 1, 1), cropped.At(0, 0, 0));
+    }
+
+    /// <summary>
+    /// The review of CR-012's fix: the writer's walks copy a skipped HDU up to the header's end
+    /// plus the data's blocks, and that sum can pass the largest offset though each term fits:
+    /// here 1073741843 x 2147483610 x 4 bytes, 1792 bytes more than the sum holds (NAXIS1 is
+    /// absent, so the HDU is no image). The wrapped end was negative, nothing was copied and the
+    /// same header was read for ever. The reader refuses such a file as cut short, so the writer
+    /// meets it only when the file changed after the analysis; it refuses it the same way.
+    /// </summary>
+    [Fact]
+    public void R011_ASkippedHduWhoseEndPassesTheLargestOffsetIsRefusedByTheWriterToo()
+    {
+        byte[] skipped = FitsTestData.HeaderOnly(
+            FitsTestData.Card("SIMPLE", "T"), FitsTestData.Card("BITPIX", "8"), FitsTestData.Card("NAXIS", "4"),
+            FitsTestData.Card("NAXIS2", "1073741843"), FitsTestData.Card("NAXIS3", "2147483610"), FitsTestData.Card("NAXIS4", "4"));
+        byte[] fits = skipped.Concat(FitsTestData.Build2D(4, 4, (x, y) => 0.5, bitpix: -32)).ToArray();
+        const string expected = "FITS: fisier trunchiat.";
+        using var ws = new TempWorkspace();
+        string file = ws.WriteFile("capat.fit", fits);
+
+        Assert.Equal(expected, RefusedInTime(() => FitsReader.LoadFrom(new MemoryStream(fits))).Message);
+        Assert.Equal(expected, RefusedInTime(() => FitsReader.ReadImageHeader(file)).Message);
+        Assert.Equal(expected, RefusedInTime(() => FitsWriter.SaveCrop(file, new CropRect(0, 0, 2, 2), 4, 4, 1, Array.Empty<string>(), ws.PathTo("decupaj.fit"))).Message);
+        Assert.Equal(expected, RefusedInTime(() => FitsWriter.Save(SyntheticRasters.Flat(4, 4, 0.5f, planes: 1), new ToneCurve([new CurvePoint(0, 0, null), new CurvePoint(0.5, 0.5, null), new CurvePoint(1, 1, null)]), file, Array.Empty<string>(), ws.PathTo("curba.fit"))).Message);
+    }
+
+    /// <summary>
     /// CR-012: a number that reads and is impossible refuses the file with a sentence that names
     /// it. NAXIS = 2000000000 looped two billion times; BITPIX = -2147483648 threw the platform's
-    /// overflow from Math.Abs.
+    /// overflow from Math.Abs. BITPIX = 64 and BITPIX = 12 were refused with this sentence
+    /// before the fix too, after the memory for the image was taken; they stay as guards.
     /// </summary>
     [Theory]
     [InlineData("NAXIS", "2000000000", "FITS: NAXIS din header nu e intre 0 si 999: 2000000000.")]

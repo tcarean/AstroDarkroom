@@ -204,17 +204,20 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         /// <param name="Bitpix">BITPIX: 8, 16, 32, 64, -32 or -64 when the HDU has axes; as written (0 when absent) when NAXIS is 0.</param>
         /// <param name="Naxis">NAXIS, 0 to 999.</param>
-        /// <param name="N1">NAXIS1, 0 when absent; not negative.</param>
-        /// <param name="N2">NAXIS2, 0 when absent; not negative.</param>
-        /// <param name="N3">NAXIS3 when NAXIS is 3 or more (1 when absent), else 1; not negative.</param>
+        /// <param name="N1">NAXIS1, 0 when absent; not negative when NAXIS is 1 or more (a card beyond NAXIS is as written).</param>
+        /// <param name="N2">NAXIS2, 0 when absent; not negative when NAXIS is 2 or more (a card beyond NAXIS is as written).</param>
+        /// <param name="N3">NAXIS3 when NAXIS is 3 or more (1 when absent; not negative), else 1.</param>
         /// <param name="DataBytes">The bytes of the HDU's data, before the padding to a block; 0 when NAXIS is 0.</param>
         internal readonly record struct HduShape(int Bitpix, int Naxis, int N1, int N2, int N3, long DataBytes)
         {
             /// <summary>Has the HDU an image the tool may read: two axes or more, the first two longer than 0?</summary>
             internal bool HasImage => Naxis >= 2 && N1 > 0 && N2 > 0;
 
-            /// <summary>The bytes of one sample; 0 when NAXIS is 0 and BITPIX is absent.</summary>
-            internal int BytesPer => Math.Abs(Bitpix) / 8;
+            /// <summary>
+            /// The bytes of one sample; 0 when NAXIS is 0: such an HDU has no samples, its BITPIX
+            /// is not checked and may be anything, the one value Math.Abs throws on included.
+            /// </summary>
+            internal int BytesPer => Naxis == 0 ? 0 : Math.Abs(Bitpix) / 8;
 
             /// <summary>The bytes the data take in the file, padded to whole blocks of 2880.</summary>
             internal long DataBlocks => (DataBytes + 2879) / 2880 * 2880;

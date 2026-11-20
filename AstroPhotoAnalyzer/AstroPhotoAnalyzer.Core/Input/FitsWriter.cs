@@ -94,8 +94,9 @@ namespace AstroPhotoAnalyzer
         /// set to the rectangle's size, CRPIX1 and CRPIX2 (and their lettered alternates), when
         /// present, moved by the columns and the file's rows cut before the first kept, every
         /// other card as it is, then the HISTORY cards; the HDUs before and after copied.
-        /// Throws when the source has no image, no longer has the given geometry or is cut short
-        /// before the image's data ends, or when the rectangle is not inside the image.
+        /// Throws when the source has no image, no longer has the given geometry, is cut short
+        /// before the image's data ends or holds an HDU with an impossible size
+        /// (<see cref="FitsReader.Shape"/>), or when the rectangle is not inside the image.
         /// </summary>
         /// <param name="sourceFits">The FITS the image was read from, opened for reading only.</param>
         /// <param name="rect">
@@ -324,8 +325,9 @@ namespace AstroPhotoAnalyzer
         /// The FITS of a FITS source: the HDUs before the image copied as they are, the image's
         /// cards with the HISTORY cards before END, the data written from the raster through the
         /// curve in the source's encoding and row order, and what follows the image copied as it
-        /// is. Throws when the source has no image, no longer has the raster's geometry, or is
-        /// cut short before the image's data; a tail cut short after them is copied as it is.
+        /// is. Throws when the source has no image, no longer has the raster's geometry, is
+        /// cut short before the image's data or holds an HDU with an impossible size
+        /// (<see cref="FitsReader.Shape"/>); a tail cut short after them is copied as it is.
         /// </summary>
         /// <param name="r">The raster read from <paramref name="sourceFits"/>, 0..1.</param>
         /// <param name="curve">The curve applied to every sample.</param>
@@ -402,7 +404,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Copies the source's bytes from <paramref name="from"/> up to <paramref name="to"/>,
-        /// excluded; throws when the source ends before <paramref name="to"/>.
+        /// excluded; throws when the source ends before <paramref name="to"/>, or when
+        /// <paramref name="to"/> is before <paramref name="from"/>, which is what an end past
+        /// the largest offset wraps to.
         /// </summary>
         /// <param name="s">The source, seekable.</param>
         /// <param name="o">The output.</param>
@@ -410,7 +414,10 @@ namespace AstroPhotoAnalyzer
         /// <param name="to">The byte after the last, an offset in the source.</param>
         static void Copy(Stream s, Stream o, long from, long to)
         {
-            if (to > s.Length) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
+            // An end before the start is a sum that wrapped: a skipped HDU whose data's blocks,
+            // added to its header's end, pass the largest offset. It passed the test of the
+            // length, nothing was copied, and the walk read the same header for ever.
+            if (to < from || to > s.Length) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
             s.Position = from;
             var buf = new byte[1 << 16];
             long left = to - from;
