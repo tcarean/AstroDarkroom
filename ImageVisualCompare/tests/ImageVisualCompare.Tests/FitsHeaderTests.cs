@@ -278,6 +278,34 @@ public class FitsHeaderTests
         Assert.Equal("FITS: the header is not valid.", ex.Message);
     }
 
+    [Fact]
+    public void R014_ReadLayout_ReadsALowerCaseE_WhichIsANumber_UnlikeALowerCaseD()
+    {
+        // FITS writes E or D in capitals, but cfitsio's strtod reads 3.2768e4 too, so Siril
+        // does; only the Fortran letter has to be the capital one (ADR 0058).
+        FitsImageLayout layout = Read(FitsFixture.Image(16, 1, 1, 1, [0], FitsFixture.Card("BZERO", "3.2768e4")));
+
+        Assert.Equal(32768, layout.BZero);
+    }
+
+    [Theory]
+    [InlineData("BZERO", "3.2768d4")]
+    [InlineData("BZERO", "32768,0")]
+    [InlineData("BZERO", "")]
+    [InlineData("BSCALE", "1.0d0")]
+    [InlineData("BSCALE", "0,5")]
+    [InlineData("BSCALE", "one")]
+    public void R019_ABZeroOrBScaleThatDoesNotParse_IsAnInvalidHeader(string key, string value)
+    {
+        // Text that is not a number is not a missing keyword: read as its default, a BZERO of
+        // 32768 became 0 and the image was shown 32,768 too low, its dark half black, in silence
+        // (ADR 0058). The Fortran exponent letter is a capital D only.
+        Exception? ex = Failure(FitsFixture.Image(16, 1, 1, 1, [0], FitsFixture.Card(key, value)));
+
+        Assert.IsType<NotSupportedException>(ex);
+        Assert.Equal("FITS: the header is not valid.", ex.Message);
+    }
+
     [Theory]
     [InlineData(1)]
     [InlineData(5000)]
@@ -457,6 +485,64 @@ public class FitsHeaderTests
         Assert.Equal(32768, layout.BZero);
         Assert.Equal(1, layout.BScale);
         Assert.Equal(1, layout.DisplayRow(0));
+    }
+
+    [Fact]
+    public void R014_ReadLayout_ReadsAValueWrittenRightAfterTheEqualsSign()
+    {
+        // The standard puts a space after the "="; cfitsio, and so Siril, reads a card written
+        // without it from right after the "=" (ADR 0057). Skipping the tenth character unseen
+        // made this width 938 and this BITPIX 32, with no message.
+        byte[] file =
+        [
+            .. FitsFixture.Header(
+            [
+                "SIMPLE  =T".PadRight(80),
+                "BITPIX  =-32".PadRight(80),
+                "NAXIS   =2".PadRight(80),
+                "NAXIS1  =5938".PadRight(80),
+                "NAXIS2  =1".PadRight(80),
+                "BZERO   =1.5 / right after the sign, and a comment after it".PadRight(80),
+                "BSCALE  =2".PadRight(80),
+            ]),
+            .. FitsFixture.Data(-32, new double[5938]),
+        ];
+
+        FitsImageLayout layout = Read(file);
+
+        Assert.Equal(5938, layout.Width);
+        Assert.Equal(1, layout.Height);
+        Assert.Equal(-32, layout.BitPix);
+        Assert.Equal(1.5, layout.BZero);
+        Assert.Equal(2, layout.BScale);
+    }
+
+    [Fact]
+    public void R014_ReadLayout_ReadsAStringWrittenRightAfterTheEqualsSign()
+    {
+        // The extension's type decides whether its unit can hold the image: read a character
+        // late, 'IMAGE   ' kept its closing quote and the file had no image.
+        byte[] file =
+        [
+            .. FitsFixture.Header(
+            [
+                FitsFixture.Card("SIMPLE", "T"), FitsFixture.Card("BITPIX", 8), FitsFixture.Card("NAXIS", 0),
+            ]),
+            .. FitsFixture.Header(
+            [
+                "XTENSION='IMAGE   '".PadRight(80),
+                .. FitsFixture.ImageCards(16, 2, 2, 1),
+                FitsFixture.Card("PCOUNT", 0),
+                FitsFixture.Card("GCOUNT", 1),
+            ]),
+            .. FitsFixture.Data(16, [1, 2, 3, 4]),
+        ];
+
+        FitsImageLayout layout = Read(file);
+
+        Assert.Equal(2, layout.Width);
+        Assert.Equal(2, layout.Height);
+        Assert.Equal(2 * 2880, layout.DataOffset);
     }
 
     [Fact]

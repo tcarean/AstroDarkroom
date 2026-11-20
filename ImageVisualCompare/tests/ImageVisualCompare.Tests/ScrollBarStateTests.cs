@@ -62,6 +62,24 @@ public class ScrollBarStateTests
         Assert.Equal(0, ScrollBarStates.Horizontal(viewport).Maximum, 6);
     }
 
+    [Theory]
+    [InlineData(973)]
+    [InlineData(604)]
+    public void R043_AtFit_ARoundingResidueShowsNoBar(double height)
+    {
+        // CR-011: on these heights the visible height of a 5938 x 3888 image at fit comes out
+        // 4.5e-13 under or over 3888, and the vertical bar showed with a thumb as long as its track.
+        Viewport viewport = Create(contentWidth: 5938, contentHeight: 3888, viewportWidth: 1920, viewportHeight: height);
+        viewport.ZoomToFit();
+
+        ScrollBarState vertical = ScrollBarStates.Vertical(viewport);
+
+        Assert.False(vertical.IsVisible);
+        Assert.Equal(0.0, vertical.Maximum);
+        Assert.Equal(0.0, vertical.Value);
+        Assert.False(ScrollBarStates.Horizontal(viewport).IsVisible);
+    }
+
     [Fact]
     public void R043_OnlyTheOverflowingAxisGetsABar()
     {

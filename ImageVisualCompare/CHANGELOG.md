@@ -8,6 +8,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The `M` key hides the minimap and the zoom badge, and shows them again: from 100 % up the
+  bottom-left corner of the image could only be brought under the minimap, and the top-right
+  corner under the badge, with no way to see what was there. The choice holds for the next pair;
+  the status bar's key reminder names the key, `M minimap` (R-067, ADR 0059).
+
 - `Help` (`Ajutor`) in the toolbar, between `Open…` and `About`, and the `F1` key: they open the
   window's manual in the wiki at the section of the view on screen, the window, Histogram or
   False colours, or opening a pair while one loads. The status bar's key reminder ends with
@@ -56,6 +61,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- A FITS that Windows does not have in its file cache, as at the first open after a restart,
+  loads faster from a hard disk: each plane is read in bands of 4 MiB, not a row at a time from
+  three places in turn. Measured on a 277 MB file of three float planes: 2.3 to 2.4 s where it
+  took 4 to 5 s; the image decoded is the same, byte for byte.
 - Every toolbar and dialog button has the 10-pixel padding its style always declared; the
   border hugged the text before.
 - `About` opens a window laid out as the About windows of the suite's other tools, in this
@@ -78,6 +87,17 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- At `Fit`, on some window sizes, a scrollbar with a thumb as long as its track and the minimap's
+  rectangle around the whole thumbnail were shown, though the whole image was on screen: a
+  rounding residue of a millionth of a millionth of a pixel counted as an image larger than the
+  view. With a 5938 × 3888 image it happened at 85 of the 900 view heights from 600 to 1499
+  (R-043, R-041).
+- A FITS whose `BZERO` or `BSCALE` is not a number (`3.2768d4`, `32768,0`) was shown with the
+  default, 0 or 1, in silence: with a `BZERO` of 32768 lost, 32,768 too low and its dark half
+  black. Such a file now gives `FITS: the header is not valid.` (R-019, ADR 0058).
+- A FITS card written with no space after its `=` (`NAXIS1  =5938`) lost the first character of
+  its value: a width of 938, or `BITPIX` 32 for -32, shown with no message. The value is now read
+  from right after the `=`, as Siril reads it (R-014, ADR 0057).
 - A switch of display mode gave the outgoing pair's memory back only at the next load, not after
   its first render as intended, so the process carried two pairs in between: on the real FITS pair
   the release left 665.9 MiB where it now leaves 403.8 MiB (R-081, R-113, ADR 0047).

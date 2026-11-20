@@ -318,10 +318,11 @@ public static class FitsHeader
     /// True for the file's first header, which needs no XTENSION keyword.
     /// </param>
     /// <returns>
-    /// The cards of one header up to END, keyword to value without its comment, or null when no
-    /// header starts here: at the end of the stream, or, after the primary, at a block that is
-    /// cut short or does not start with XTENSION (some programs leave padding or their own data
-    /// after the last unit).
+    /// The cards of one header up to END, keyword to value without its comment (a card has a
+    /// value when its ninth character is <c>=</c>, and the value starts right after it), or
+    /// null when no header starts here: at the end of the stream, or, after the primary, at a
+    /// block that is cut short or does not start with XTENSION (some programs leave padding or
+    /// their own data after the last unit).
     /// </returns>
     /// <exception cref="EndOfStreamException">
     /// The stream ends inside the primary header, or inside any header after its first block.
@@ -360,9 +361,13 @@ public static class FitsHeader
                     return cards;
                 }
 
+                // The value from right after the "=", not from the column after it: the standard
+                // puts a space there, but a card written without one is read by cfitsio, and so
+                // by Siril, from the "=" on, and skipping a character unseen would cut the first
+                // digit of such a value (ADR 0057).
                 if (key.Length > 0 && card[8] == '=')
                 {
-                    cards[key] = Value(card[10..]);
+                    cards[key] = Value(card[9..]);
                 }
             }
         }
@@ -373,7 +378,8 @@ public static class FitsHeader
     /// without the spaces FITS pads it with; a slash inside the quotes is not a comment.
     /// </summary>
     /// <param name="field">
-    /// The card from column 11 on: the value, then any comment after a slash.
+    /// The card from column 10 on, right after its <c>=</c>: the space the standard puts
+    /// there, if the file has it, then the value, then any comment after a slash.
     /// </param>
     /// <returns>The value, trimmed.</returns>
     private static string Value(string field)
@@ -433,26 +439,35 @@ public static class FitsHeader
         return parsed;
     }
 
-    // FITS allows a Fortran exponent, 1.0D3.
-    /// <summary>Reads a real-valued keyword, such as BZERO or BSCALE.</summary>
+    /// <summary>
+    /// Reads a real-valued keyword, BZERO or BSCALE. Like <see cref="Count"/>, it never reads a
+    /// value it cannot make out as the default: a BZERO of 32768 taken for 0 would show the
+    /// image 32,768 too low, with nothing to say why (ADR 0058).
+    /// </summary>
     /// <param name="cards">The header, keyword to value.</param>
     /// <param name="key">The keyword, in capitals.</param>
-    /// <param name="fallback">The value when the keyword is missing or does not parse.</param>
-    /// <returns>The number, read with an E or a D exponent; always finite.</returns>
+    /// <param name="fallback">The value when the header has no such keyword.</param>
+    /// <returns>
+    /// The number, read with an E or, as FITS also writes one, a capital D exponent; always
+    /// finite.
+    /// </returns>
     /// <exception cref="NotSupportedException">
-    /// The value parses to NaN or an infinity, as "NaN", "Infinity" and an exponent too large
-    /// (1D999) do: the header is not valid.
+    /// The header is not valid: the value is not a number (text, an empty value, a lower-case
+    /// <c>d</c> as the exponent letter, a decimal comma), or it parses to NaN or an infinity, as
+    /// "NaN", "Infinity" and an exponent too large (1D999) do.
     /// </exception>
     private static double Number(Dictionary<string, string> cards, string key, double fallback)
     {
-        if (!cards.TryGetValue(key, out string? value)
-            || !double.TryParse(value.Replace('D', 'E'), NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed))
+        if (!cards.TryGetValue(key, out string? value))
         {
             return fallback;
         }
 
-        // A scale or an offset that is not finite would make every level black or white, with
-        // nothing to say why; it is refused like any other header that cannot be trusted.
-        return double.IsFinite(parsed) ? parsed : throw InvalidHeader();
+        // FITS allows a Fortran exponent, 1.0D3. A scale or an offset that is not finite would
+        // make every level black or white; it is refused like text that is no number at all.
+        return double.TryParse(value.Replace('D', 'E'), NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed)
+            && double.IsFinite(parsed)
+            ? parsed
+            : throw InvalidHeader();
     }
 }

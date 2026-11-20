@@ -196,6 +196,7 @@ the one the Romanian interface shows.
 | fit the whole image | `Ctrl+0`, or the `Fit` button (`Încadrează`) |
 | actual size | `Ctrl+1`, or the `100%` button; about the centre of the view |
 | jump to another area | click or drag in the minimap, bottom left |
+| see the corner under the minimap | `M` hides the minimap and the zoom badge, `M` again shows them; held down, the key acts once |
 | histogram (FITS, float TIFF) | `H`, or the `Histogram` button (`Histogramă`); once more goes back to linear; held down, the key switches once |
 | false colours (FITS, float TIFF) | `F`, or the `False colours` button (`Culori false`); once more goes back to linear; held down, the key switches once |
 | open another pair | `Ctrl+O`, or the `Open…` button (`Deschide…`); not while a pair is opening |
@@ -204,8 +205,13 @@ the one the Romanian interface shows.
 
 The keyboard shortcuts work while the comparison area has the keyboard focus. It takes the focus
 when a pair loads and at any click in it, and gets it back after a click on a toolbar button, so
-the keys work right after `Fit`, `100%`, `+` or `−`. `Ctrl+O`, `H`, `F` and `F1` work wherever
-the focus is.
+the keys work right after `Fit`, `100%`, `+` or `−`. `Ctrl+O`, `H`, `F`, `M` and `F1` work
+wherever the focus is.
+
+From 100 % up the image stops at the edges of the window, so its bottom-left corner ends up
+under the minimap and its top-right corner under the zoom badge. `M` takes both off the image;
+they stay hidden for the next pair too, until `M` is pressed again or the program is started
+again. The zoom is still shown in the toolbar.
 The arrows move the line in device-independent pixels, like everything about the line: at 100 %
 Windows scaling that is one screen pixel, at 150 % the line moves 1.5 screen pixels, or 15 with
 `Shift`.
@@ -272,7 +278,7 @@ canvas alone would be half the truth, since one of the images does not have that
 
 `managed` is the memory .NET manages and `process` the process's private memory, in megabytes,
 read every 2 seconds. After them comes a hint,
-`wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open · H histogram · F false colours · F1 help`, cut short
+`wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open · H histogram · F false colours · M minimap · F1 help`, cut short
 when the window narrows; on the right, always, the version and the copyright (there is no
 `--version` option). `About` opens a window with the version, the licence notice and the
 components written by others.

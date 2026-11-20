@@ -102,8 +102,8 @@ public sealed class UiText
 
     // The status bar's hint (R-054): what each gesture does, shortest first to go when trimmed.
     public string Hint => Pick(
-        "wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open · H histogram · F false colours · F1 help",
-        "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide · H: histogramă · F: culori false · F1: ajutor");
+        "wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open · H histogram · F false colours · M minimap · F1 help",
+        "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide · H: histogramă · F: culori false · M: minimap · F1: ajutor");
 
     // The dialog titles of a pair that failed to load (R-005) and of the padding question (R-003).
     public string CannotCompareTitle => Pick("Cannot compare these files", "Fișierele nu pot fi comparate");

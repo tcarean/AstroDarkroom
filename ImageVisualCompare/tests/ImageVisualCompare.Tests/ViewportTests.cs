@@ -33,6 +33,48 @@ public class ViewportTests
         return viewport;
     }
 
+    // CR-011 of the review of 2026-11-13: the fit scale is the view over the image and the
+    // visible extent the view over the scale, and v / (v / c) is not always c in doubles. At a
+    // width of 1920, 85 of the heights from 600 to 1499 leave the visible height of a
+    // 5938 x 3888 image 4.5e-13 short of 3888, and 85 leave it that much over.
+    [Theory]
+    [InlineData(973)]
+    [InlineData(601)]
+    [InlineData(604)]
+    public void R043_AtFit_ARoundingResidueIsNoOverflow(double height)
+    {
+        Viewport viewport = Create(5938, 3888, 1920, height);
+
+        viewport.ZoomToFit();
+
+        // The residue is there: these heights are the ones the division does not give back.
+        Assert.NotEqual(3888.0, viewport.VisibleContentHeight);
+        Assert.Equal(3888.0, viewport.VisibleContentHeight, 9);
+
+        Assert.False(viewport.CanScrollVertically);
+        Assert.False(viewport.CanScrollHorizontally);
+        Assert.Equal(0.0, viewport.MaxOffsetY);
+        Assert.Equal(0.0, viewport.OffsetY);
+
+        // The first and the last screen row both show the image, at the middle of the view.
+        Assert.NotNull(viewport.PixelAt(960, 0));
+        Assert.NotNull(viewport.PixelAt(960, height - 1));
+    }
+
+    [Fact]
+    public void R043_AnOverflowOfAHundredthOfAPhysicalPixel_StillScrolls()
+    {
+        // The slack is for what rounding leaves, a millionth of a millionth of a pixel: an image
+        // larger than the view by more than the slack, here by a hundredth of a pixel, scrolls.
+        Viewport viewport = Create(1000, 1000, 400, 400);
+
+        viewport.ZoomTo(0.40001, 200, 200);
+
+        Assert.True(viewport.CanScrollVertically);
+        Assert.True(viewport.CanScrollHorizontally);
+        Assert.Equal(1000 - (400 / 0.40001), viewport.MaxOffsetY, 9);
+    }
+
     [Fact]
     public void R024_ZoomOut_StepsDownTheLadder()
     {
