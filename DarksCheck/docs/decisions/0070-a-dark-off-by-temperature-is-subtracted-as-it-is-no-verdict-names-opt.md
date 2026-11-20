@@ -2,7 +2,7 @@
 
 Date: 2026-11-20
 Status: accepted 2026-11-20
-Supersedes: 0004 in part (what a ratio outside 0.9 .. 1.1 and inside 0.4 .. 1.4 tells the owner to do); 0030 in part (the words of the -opt and cosmetic-only verdicts); 0034 in part (the chart's yellow and red lines and the sentence above them); 0055 in part (the advice with darks at other settings, and a much warmer dark at other settings)
+Supersedes: 0004 in part (what a ratio outside 0.9 .. 1.1 and inside 0.4 .. 1.4 tells the owner to do); 0030 in part (the words of the -opt and cosmetic-only verdicts); 0034 in part (the chart's yellow and red lines and the sentence above them); 0055 in part (the advice, the verdict's word and the chart with darks at other settings)
 
 ## Context
 
@@ -81,11 +81,18 @@ The owner decided in chat on 2026-11-20, each from options with these figures:
    its own would say to subtract a dark of another ISO as it is.
 6. **Check 4** says of a frame outside 0.7 .. 1.4 of the master that it is too far from the
    master and gives the band; it no longer says what Siril could match.
-7. **The sentence above the window's chart**, for lights at other settings than the darks,
-   says that no point is green, that the dark is not subtracted as it is, to make darks at
-   the lights' settings, and that yellow between 0.4 and 1.4 means the temperatures are close
-   (the owner's answers of the same day to a finding of the review: the plain sentence would
-   say "subtract it as it is all the same" beside a red verdict that says not to).
+7. **Darks at other settings are `REFA`** (`REDO`), not `ATENTIE`: with `-opt` and "cosmetic
+   only" gone, the one advice left is to make the darks again, and the owner asked that the
+   verdict say so in red. A ratio that would read `Direct`, `Near` or `MuchWarmer` is
+   `MatchVerdict.OtherSettings` (`LightsAnalysis.AtOtherSettings`, which was `NeverDirect`),
+   and every measured ratio takes the `REFA` words, a ratio under 0.4 or over 1.4 included:
+   a dark at another ISO would otherwise be `REFA` when the temperatures are close and only
+   `ATENTIE` when they are far. In the window every point of the lights' chart is red, the
+   chart draws no guide line (`0.9 as it is` would say the opposite of the verdict) and the
+   sentence above it says that every point is red, that the dark is not subtracted as it is
+   and to make darks at the lights' settings (the review had found the plain sentence saying
+   "subtract it as it is all the same" beside a verdict that says not to). Check 1's row
+   on the settings stays `ATENTIE`: it states the difference; the `REFA` is said once.
 
 The texts are R-052's, R-062's, R-063's, R-023's and R-086's, shown to the owner original
 beside proposal in the plan of 2026-11-20.

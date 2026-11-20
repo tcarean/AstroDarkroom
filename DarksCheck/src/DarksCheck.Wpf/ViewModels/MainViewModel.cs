@@ -343,8 +343,8 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>
     /// The sentence above the lights' chart; its green band is the open result's (R-067), the plain
-    /// one before a result, and for lights at other settings than the darks it says that no point
-    /// is green (ADR 0070).
+    /// one before a result, and for lights at other settings than the darks it says that every
+    /// point is red (ADR 0070).
     /// </summary>
     public string LightsChartLead => WindowTexts.LightsChartLead(_result?.Lights?.Traces ?? TraceFigures.None, _result?.Lights?.Other is not null);
 
@@ -885,10 +885,11 @@ public sealed class MainViewModel : ObservableObject
         if (r.Lights is LightsAnalysis l)
         {
             LightPoints = l.Frames.Select(f => new ChartPoint(f.Info.Index, f.Error is null ? f.AmpRatioMedian : double.NaN, f.Info.Index.ToString(CultureInfo.InvariantCulture), VerdictPalette.For(l.Judge(f.AmpRatioMedian)))).ToList();
-            // the green lines stand at the ends of the band the core found for these lights (R-067); two decimals when it is wider
+            // the green lines stand at the ends of the band the core found for these lights (R-067); two decimals when it is wider.
+            // For lights at other settings than the darks every point is red and no line says what to do with the dark (ADR 0070)
             TraceFigures band = l.Traces;
             int digits = band.Widened ? 2 : 1;
-            LightGuides =
+            LightGuides = l.Other is not null ? [] :
             [
                 new GuideLine(band.DirectLow, T($"{RunReport.F(band.DirectLow, digits)} as it is", $"{RunReport.F(band.DirectLow, digits)} asa cum e"), VerdictPalette.Good),
                 new GuideLine(band.DirectHigh, T($"{RunReport.F(band.DirectHigh, digits)} as it is", $"{RunReport.F(band.DirectHigh, digits)} asa cum e"), VerdictPalette.Good),

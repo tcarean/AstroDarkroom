@@ -34,9 +34,7 @@ internal enum MatchVerdict
 
     /// <summary>
     /// Within <see cref="Th.MatchNearLow"/> .. <see cref="Th.MatchNearHigh"/>: the master is a few
-    /// degrees off; it is still subtracted as it is, and the words say it is off (ADR 0070). Also
-    /// what <see cref="Direct"/> becomes for a master made at other settings than the set, which
-    /// is never subtracted as it is (<see cref="LightsAnalysis.NeverDirect"/>, ADR 0055).
+    /// degrees off; it is still subtracted as it is, and the words say it is off (ADR 0070).
     /// </summary>
     Near,
 
@@ -51,6 +49,15 @@ internal enum MatchVerdict
 
     /// <summary>No pixel to measure on, or no ratio at all.</summary>
     Unmeasured,
+
+    /// <summary>
+    /// The master is made at another ISO or exposure than the set, whose ratio would otherwise
+    /// read <see cref="Direct"/>, <see cref="Near"/> or <see cref="MuchWarmer"/>: it is never
+    /// subtracted as it is and the darks are to be made again at the set's settings
+    /// (<see cref="LightsAnalysis.AtOtherSettings"/>, ADR 0055, ADR 0070). Never given by
+    /// <see cref="IndexAnalyzer.Judge(double)"/>, which knows no settings.
+    /// </summary>
+    OtherSettings,
 }
 
 /// <summary>

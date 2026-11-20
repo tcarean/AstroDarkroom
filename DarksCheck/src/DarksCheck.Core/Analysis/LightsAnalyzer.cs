@@ -197,7 +197,7 @@ internal sealed record LightsAnalysis(
     /// </summary>
     /// <param name="ratio">The amplitude ratio; NaN for unmeasured.</param>
     /// <returns>The verdict.</returns>
-    internal MatchVerdict Judge(double ratio) => NeverDirect(IndexAnalyzer.Judge(ratio, Traces.DirectLow, Traces.DirectHigh), Other is not null);
+    internal MatchVerdict Judge(double ratio) => AtOtherSettings(IndexAnalyzer.Judge(ratio, Traces.DirectLow, Traces.DirectHigh), Other is not null);
 
     /// <summary>
     /// The lights' settings against the darks', when the lights are at other settings (R-052, ADR
@@ -209,16 +209,18 @@ internal sealed record LightsAnalysis(
     internal SettingsMismatch? Other { get; init; }
 
     /// <summary>
-    /// A verdict as it stands for a set at other settings than its master (ADR 0055):
-    /// <see cref="MatchVerdict.Direct"/> becomes <see cref="MatchVerdict.Near"/>, since the
-    /// master as it is does not have the set's hot pixels at their height in the files; every
-    /// other verdict stays.
+    /// A verdict as it stands for a set at other settings than its master (ADR 0055, ADR 0070):
+    /// <see cref="MatchVerdict.Direct"/>, <see cref="MatchVerdict.Near"/> and
+    /// <see cref="MatchVerdict.MuchWarmer"/>, which all say to subtract the master, become
+    /// <see cref="MatchVerdict.OtherSettings"/>, since the master as it is does not have the
+    /// set's hot pixels at their height in the files; <see cref="MatchVerdict.Unmatched"/> and
+    /// <see cref="MatchVerdict.Unmeasured"/> stay.
     /// </summary>
     /// <param name="verdict">The verdict of the ratio brought to one setting.</param>
     /// <param name="otherSettings">True when the set is at other settings than the master.</param>
     /// <returns>The verdict to show.</returns>
-    internal static MatchVerdict NeverDirect(MatchVerdict verdict, bool otherSettings) =>
-        otherSettings && verdict == MatchVerdict.Direct ? MatchVerdict.Near : verdict;
+    internal static MatchVerdict AtOtherSettings(MatchVerdict verdict, bool otherSettings) =>
+        otherSettings && verdict is MatchVerdict.Direct or MatchVerdict.Near or MatchVerdict.MuchWarmer ? MatchVerdict.OtherSettings : verdict;
 
     /// <summary>
     /// How many decoded lights give an ISO or an exposure the darks lack (R-052, ADR 0053, ADR
@@ -410,7 +412,7 @@ internal static class LightsAnalyzer
             match = match with { Verdict = MatchVerdict.Direct };
         }
 
-        match = match with { Verdict = LightsAnalysis.NeverDirect(match.Verdict, other is not null) };
+        match = match with { Verdict = LightsAnalysis.AtOtherSettings(match.Verdict, other is not null) };
 
         // the lights that give a setting the darks lack: the darks took it from them, and the report says so
         int darksSilent = darkSettings is null ? 0 : frames.Count(f => f.Error is null && Normalisation.Lacks(darkSettings, f.Info));

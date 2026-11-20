@@ -195,7 +195,7 @@ internal static class WindowTexts
     /// The sentence above the lights' chart: what a point is and what each colour means. The green
     /// band is the one the core found for the open lights (R-067): 0.9 .. 1.1, or wider while what a
     /// plain subtraction leaves stays under the noise of a light, and then the sentence says so.
-    /// For lights at other settings than the darks no point is green and the dark is never
+    /// For lights at other settings than the darks every point is red and the dark is never
     /// subtracted as it is (ADR 0055), so the sentence says that instead (ADR 0070).
     /// </summary>
     /// <param name="band">The traces of the open result, whose band the sentence names;
@@ -206,13 +206,11 @@ internal static class WindowTexts
     internal static string LightsChartLead(TraceFigures band, bool otherSettings = false) => otherSettings
         ? T(
             "Each point is a light: how hot the master's hot pixels are in it, against the master (1 = the same), once ISO and exposure are taken into account. "
-            + "The darks are made at other settings than the lights, so no point is green: the dark is not subtracted as it is. Make darks at the lights' settings. "
-            + $"Yellow between {RunReport.F(Th.MatchWarmLow, 1)} and {RunReport.F(Th.MatchNearHigh, 1)}: the temperatures are close. "
-            + "Red beyond: they do not match. The first lights of the night usually sit lower, because the camera is still cold.",
+            + "The darks are made at other settings than the lights, so every point is red: the dark is not subtracted as it is. Make darks at the lights' settings. "
+            + "The first lights of the night usually sit lower, because the camera is still cold.",
             "Fiecare punct e un light: cat de fierbinti sunt in el pixelii fierbinti ai masterului, fata de master (1 = la fel), dupa ce se tine cont de ISO si de expunere. "
-            + "Dark-urile sunt facute la alte setari decat lights-urile, asa ca niciun punct nu e verde: dark-ul nu se scade asa cum e. Fa dark-uri la setarile lights-urilor. "
-            + $"Galben intre {RunReport.F(Th.MatchWarmLow, 1)} si {RunReport.F(Th.MatchNearHigh, 1)}: temperaturile sunt apropiate. "
-            + "Rosu mai departe: nu se potrivesc. Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.")
+            + "Dark-urile sunt facute la alte setari decat lights-urile, asa ca toate punctele sunt rosii: dark-ul nu se scade asa cum e. Fa dark-uri la setarile lights-urilor. "
+            + "Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.")
         : band.Widened
         ? T(
             "Each point is a light: how hot the master's hot pixels are in it, against the master (1 = the same), once ISO and exposure are taken into account. "

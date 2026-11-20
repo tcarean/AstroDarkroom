@@ -142,3 +142,10 @@ Order: requirements, tests, code, docs (the kit's rule "Requirements first").
   darks at the lights' settings` / `Fa dark-uri la setarile lights-urilor` (`Use darks made at
   the lights' settings` / `Foloseste dark-uri facute la setarile lights-urilor` for a partner),
   and text 9's yellow reads `the temperatures are close` / `temperaturile sunt apropiate`.
+- The owner then asked whether such darks should not simply be made again, and approved, texts
+  side by side: at other settings the verdict's word is `REFA` / `REDO` at every measured
+  ratio (the far ones took `nu se potrivesc` before), every point of the chart is red, the
+  chart has no lines, and text 9 reads `... asa ca toate punctele sunt rosii: dark-ul nu se
+  scade asa cum e. Fa dark-uri la setarile lights-urilor.` / `... so every point is red: the
+  dark is not subtracted as it is. Make darks at the lights' settings.` A new verdict,
+  `MatchVerdict.OtherSettings`; check 1's row on the settings stays `ATENTIE`.

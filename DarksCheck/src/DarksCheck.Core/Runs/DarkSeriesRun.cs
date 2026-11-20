@@ -510,7 +510,7 @@ internal static class DarkSeriesRun
         if (ownFirst is not null && !FrameStack.SameSettings(ownFirst, first))
         {
             other = new SettingsMismatch(first, ownFirst, match.Ratio * own.Norm / partnerNorm);
-            match = match with { Verdict = LightsAnalysis.NeverDirect(match.Verdict, true) };
+            match = match with { Verdict = LightsAnalysis.AtOtherSettings(match.Verdict, true) };
         }
 
         // The lights against the partner (R-064, ADR 0060): on the settings those two give, a setting
@@ -553,7 +553,7 @@ internal static class DarkSeriesRun
                 double lightsInFiles = lights.Other?.RatioInFiles ?? lights.LightsOverDark.Ratio;
                 // multiplied in the order of ever, so the printed figure of a session that gives every setting keeps its last digit
                 lightsOther = new SettingsMismatch(partnerAt, others[0].At, lightsInFiles * match.Ratio * own.Norm / partnerNorm);
-                lightsOverPartner = lightsOverPartner with { Verdict = LightsAnalysis.NeverDirect(lightsOverPartner.Verdict, true) };
+                lightsOverPartner = lightsOverPartner with { Verdict = LightsAnalysis.AtOtherSettings(lightsOverPartner.Verdict, true) };
             }
         }
 

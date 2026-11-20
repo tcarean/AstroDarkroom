@@ -86,7 +86,7 @@ internal static class VerdictPalette
 
     /// <summary>
     /// The colour of a match verdict (R-062): direct is good, a few degrees off and much warmer are attention,
-    /// unmatched is bad, unmeasured neutral.
+    /// unmatched and a master at other settings are bad, unmeasured neutral.
     /// </summary>
     /// <param name="v">The match verdict of the core.</param>
     /// <returns>One of the palette's colours.</returns>
@@ -96,6 +96,7 @@ internal static class VerdictPalette
         MatchVerdict.Near => Warn,
         MatchVerdict.MuchWarmer => Warn,
         MatchVerdict.Unmatched => Bad,
+        MatchVerdict.OtherSettings => Bad,
         _ => Neutral,
     };
 

@@ -53,9 +53,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   subtracted as it is. A lights / dark ratio of 0.7 to 1.4 outside the green band now reads
   `WARNING: subtract the dark as it is, though it is not at the same temperature`; 0.4 to 0.7
   reads `subtract the dark as it is, with the cosmetic correction on (-cc=dark)` instead of
-  `cosmetic correction only`; no limit moved. Darks made at other settings than the lights are
-  advised one thing, darks made at the lights' settings, also when the ratio is 0.4 to 0.7:
-  Siril's `calibrate` cannot repair hot pixels with a dark without subtracting it. Check 4 says a frame outside 0.7 to 1.4 of the master is too far from it, without
+  `cosmetic correction only`; no limit moved. Darks made at other settings than the lights now read
+  `REDO` instead of `WARNING`, at any ratio, with one advice, darks made at the lights'
+  settings (Siril's `calibrate` cannot repair hot pixels with a dark without subtracting it);
+  in the window every point of the lights' chart is then red, the chart draws no lines and the
+  sentence above it says so. Check 4 says a frame outside 0.7 to 1.4 of the master is too far from it, without
   naming `-opt`. The window's chart lines read `0.7 a few degrees off` and `0.4 much warmer`.
   In the validation record the verdict of V-005 and V-012 is named `MuchWarmer` (was
   `CosmeticOnly`); no figure moved.

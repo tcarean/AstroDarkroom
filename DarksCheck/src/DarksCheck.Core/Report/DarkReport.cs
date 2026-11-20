@@ -884,11 +884,9 @@ internal static class DarkReport
             : T(
                 $"{master} is {(m.DeltaCelsius < 0 ? "warmer" : "colder")} by {F(Math.Abs(m.DeltaCelsius), 1)} degrees",
                 $"{master} e {(m.DeltaCelsius < 0 ? "mai cald" : "mai rece")} cu {F(Math.Abs(m.DeltaCelsius), 1)} grade");
-        // at other settings the ratio is not what the files have, and the words say so
-        string same = other is null ? "" : T(", worked out for the same settings", ", socotiti pentru aceleasi setari");
         string ratio = T(
-            $"{where} the hot pixels are {F(m.Ratio, 2)} times what they are {atMaster}{same}",
-            $"{where} pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat {atMaster}{same}");
+            $"{where} the hot pixels are {F(m.Ratio, 2)} times what they are {atMaster}",
+            $"{where} pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat {atMaster}");
         // what is left after a plain subtraction, when it was measured: said after the band of a master a few degrees off
         string left = traces is { Pixels: > 0 } t && !double.IsNaN(t.Median)
             ? T(
@@ -898,16 +896,16 @@ internal static class DarkReport
         return m.Verdict switch
         {
             MatchVerdict.Unmeasured => T("UNMEASURED", "NEMASURAT"),
-            // a master made at other settings is never subtracted as it is, however well the temperatures fit (ADR 0055);
-            // a much warmer one neither, whose own words would say to subtract it. The one advice is darks made at the
-            // lights' settings: Siril has no switch that repairs with a dark without subtracting it (ADR 0070)
-            MatchVerdict.Direct or MatchVerdict.Near or MatchVerdict.MuchWarmer when other is not null => partner
+            // a master made at other settings is never subtracted as it is, however well or badly the temperatures fit
+            // (ADR 0055): every measured ratio reads REDO, and the one advice is darks made at the lights' settings,
+            // since Siril has no switch that repairs with a dark without subtracting it (ADR 0070)
+            _ when other is not null => partner
                 ? T(
-                    $"WARNING: do not subtract the partner as it is: it is made at other settings than {other.Than} ({other.MasterSettings} against {other.SetSettings}), so in the files the hot pixels {other.OfSet} are {F(other.RatioInFiles, 2)} times what they are at the partner. Use darks made at the lights' settings; worked out for the same settings, the hot pixels are {F(m.Ratio, 2)} times what they are at the partner: {temperature}",
-                    $"ATENTIE: nu scadea partenerul asa cum e: e facut la alte setari decat {other.Than} ({other.MasterSettings} fata de {other.SetSettings}), asa ca in fisiere pixelii fierbinti {other.OfSet} sunt de {F(other.RatioInFiles, 2)} ori cat la partener. Foloseste dark-uri facute la setarile lights-urilor; socotiti pentru aceleasi setari, pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat la partener: {temperature}")
+                    $"REDO: do not subtract the partner as it is: it is made at other settings than {other.Than} ({other.MasterSettings} against {other.SetSettings}), so in the files the hot pixels {other.OfSet} are {F(other.RatioInFiles, 2)} times what they are at the partner. Use darks made at the lights' settings; worked out for the same settings, the hot pixels are {F(m.Ratio, 2)} times what they are at the partner: {temperature}",
+                    $"REFA: nu scadea partenerul asa cum e: e facut la alte setari decat {other.Than} ({other.MasterSettings} fata de {other.SetSettings}), asa ca in fisiere pixelii fierbinti {other.OfSet} sunt de {F(other.RatioInFiles, 2)} ori cat la partener. Foloseste dark-uri facute la setarile lights-urilor; socotiti pentru aceleasi setari, pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat la partener: {temperature}")
                 : T(
-                    $"WARNING: do not subtract the dark as it is: the darks are made at other settings than the lights ({other.MasterSettings} against {other.SetSettings}), so in the files the hot pixels of the lights are {F(other.RatioInFiles, 2)} times what they are in the dark. Make darks at the lights' settings; worked out for the same settings, the hot pixels are {F(m.Ratio, 2)} times what they are in the dark: {temperature}",
-                    $"ATENTIE: nu scadea dark-ul asa cum e: dark-urile sunt facute la alte setari decat lights-urile ({other.MasterSettings} fata de {other.SetSettings}), asa ca in fisiere pixelii fierbinti din lights sunt de {F(other.RatioInFiles, 2)} ori cat in dark. Fa dark-uri la setarile lights-urilor; socotiti pentru aceleasi setari, pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat in dark: {temperature}"),
+                    $"REDO: do not subtract the dark as it is: the darks are made at other settings than the lights ({other.MasterSettings} against {other.SetSettings}), so in the files the hot pixels of the lights are {F(other.RatioInFiles, 2)} times what they are in the dark. Make darks at the lights' settings; worked out for the same settings, the hot pixels are {F(m.Ratio, 2)} times what they are in the dark: {temperature}",
+                    $"REFA: nu scadea dark-ul asa cum e: dark-urile sunt facute la alte setari decat lights-urile ({other.MasterSettings} fata de {other.SetSettings}), asa ca in fisiere pixelii fierbinti din lights sunt de {F(other.RatioInFiles, 2)} ori cat in dark. Fa dark-uri la setarile lights-urilor; socotiti pentru aceleasi setari, pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat in dark: {temperature}"),
             // inside the band the traces widened (R-067): outside 0.9 .. 1.1, and the words say why it is still as it is
             MatchVerdict.Direct when traces is { Relaxed: true } r => T(
                 $"OK: {master} can be subtracted as it is; {ratio}, outside {F(Th.MatchDirectLow, 1)} .. {F(Th.MatchDirectHigh, 1)}, but what the subtraction leaves is on average under the noise of a light ({F(r.Median, 2)} of it; on these lights that holds between {F(r.DirectLow, 2)} and {F(r.DirectHigh, 2)}): {temperature}",

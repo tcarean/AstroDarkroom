@@ -86,8 +86,8 @@ public class MainViewModelTests
     }
 
     /// <summary>
-    /// ADR 0070: for lights at another ISO than the darks every point from 0.4 to 1.4 is yellow and the verdict
-    /// says not to subtract the dark as it is; the sentence above the chart said "subtract it as it is all the same".
+    /// ADR 0070: for lights at another ISO than the darks the verdict is REFA and says not to subtract the dark as it
+    /// is; every point of the chart is red, no line is drawn, and the sentence above the chart says the same.
     /// </summary>
     [Fact]
     public async Task R086_TheChartSentenceForLightsAtOtherSettingsSaysWhatTheVerdictSays()
@@ -99,22 +99,24 @@ public class MainViewModelTests
         await vm.OpenAsync(f.Root);
         LightsAnalysis l = vm.Result!.Lights!;
         Assert.NotNull(l.Other);
-        // at the same temperature, and still no point is green
-        Assert.All(vm.LightPoints, p => Assert.Equal(VerdictPalette.Warn, p.Colour));
+        // at the same temperature, and still every point is red and no line says what to do with the dark
+        Assert.All(vm.LightPoints, p => Assert.Equal(VerdictPalette.Bad, p.Colour));
+        Assert.Empty(vm.LightGuides);
+        Assert.Equal("REFA", vm.LightRows[^1].Verdict);
         Assert.StartsWith("nu scadea dark-ul asa cum e", vm.LightRows[^1].Rest, StringComparison.Ordinal);
-        Assert.Contains("Dark-urile sunt facute la alte setari decat lights-urile, asa ca niciun punct nu e verde: dark-ul nu se scade asa cum e. Fa dark-uri la setarile lights-urilor. Galben intre 0.4 si 1.4: temperaturile sunt apropiate. Rosu mai departe: nu se potrivesc.", vm.LightsChartLead, StringComparison.Ordinal);
+        Assert.Contains("Dark-urile sunt facute la alte setari decat lights-urile, asa ca toate punctele sunt rosii: dark-ul nu se scade asa cum e. Fa dark-uri la setarile lights-urilor. Primele lights", vm.LightsChartLead, StringComparison.Ordinal);
         Assert.DoesNotContain("scade-l", vm.LightsChartLead, StringComparison.Ordinal);
         Assert.DoesNotMatch(PlainWords.RomanianTabWords(), vm.LightsChartLead);
         using (Ui.Use(UiLanguage.English))
         {
             string english = WindowTexts.LightsChartLead(l.Traces, otherSettings: true);
-            Assert.Contains("The darks are made at other settings than the lights, so no point is green: the dark is not subtracted as it is. Make darks at the lights' settings. Yellow between 0.4 and 1.4: the temperatures are close. Red beyond: they do not match.", english, StringComparison.Ordinal);
+            Assert.Contains("The darks are made at other settings than the lights, so every point is red: the dark is not subtracted as it is. Make darks at the lights' settings. The first lights", english, StringComparison.Ordinal);
             Assert.DoesNotContain("subtract it as it is", english, StringComparison.Ordinal);
             Assert.DoesNotMatch(PlainWords.EnglishTabWords(), english);
         }
 
         // the same lights at the darks' ISO keep the plain sentence
-        Assert.DoesNotContain("niciun punct nu e verde", WindowTexts.LightsChartLead(l.Traces), StringComparison.Ordinal);
+        Assert.DoesNotContain("toate punctele sunt rosii", WindowTexts.LightsChartLead(l.Traces), StringComparison.Ordinal);
     }
 
     [Fact]

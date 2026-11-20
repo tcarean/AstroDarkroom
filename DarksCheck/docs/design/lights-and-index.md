@@ -167,7 +167,8 @@ other than 1, the median of the lights' `ToDarks`: the level and the noise in `k
 one setting, so `|ratio - centre| x k` is the files' `|ratio - 1|` times the master's level over
 the light's noise as the files have them; `TraceFigures.Centre` carries it, and the report's
 `TraceRow` says "too much" under it. With a mismatch `Relaxed` is never set, and
-`LightsAnalysis.NeverDirect` turns a `Direct` into `Near`, in `Analyze` for the night and in
+`LightsAnalysis.AtOtherSettings` turns a `Direct`, a `Near` or a `MuchWarmer` into
+`OtherSettings` (the darks are to be made again, ADR 0070), in `Analyze` for the night and in
 `LightsAnalysis.Judge` for each light. `MatchPartner` does the same for the partner
 (`PartnerAnalysis.Other`, the session's first stacked dark against the partner's first decoded
 one, the ratio in the files being the ratio times the session's factor over the partner's) and
