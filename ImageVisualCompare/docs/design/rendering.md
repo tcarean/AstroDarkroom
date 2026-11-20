@@ -133,7 +133,8 @@ and `ClampOffsets` puts such an axis at 0, not at half the residue. The bars
 neither shows at the fit. Measured on 2026-11-20: at a width of 1920, 85 of the heights from 600
 to 1499 leave that image 4.5e-13 over at the fit and 85 leave it as much under; over 1.9 million
 random images (to 100,000 pixels) and views (to 8,000, whole and not) the largest residue was
-1.3e-12 of a physical pixel. A real overflow, however small, still scrolls.
+1.3e-12 of a physical pixel. An overflow above the slack, a hundredth of a pixel say, still
+scrolls.
 
 **`M` takes the minimap and the zoom badge off the image.** From 100 % up the pan stops at the
 image's edges (`Viewport.ClampOffsets`), so the bottom-left corner of the image can only be

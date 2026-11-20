@@ -781,9 +781,12 @@ public class MainWindowTests
             var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
 
             Assert.True(Press(window.Compare, Key.M));
-            Assert.True(Press(window.Compare, Key.M, isRepeat: true));
-            Assert.True(Press(window.Compare, Key.M, isRepeat: true));
+            Assert.True(window.Compare.OverlaysHidden);
 
+            // After each repeat, not at the end only: two repeats that acted would cancel out.
+            Assert.True(Press(window.Compare, Key.M, isRepeat: true));
+            Assert.True(window.Compare.OverlaysHidden);
+            Assert.True(Press(window.Compare, Key.M, isRepeat: true));
             Assert.True(window.Compare.OverlaysHidden);
         });
     }

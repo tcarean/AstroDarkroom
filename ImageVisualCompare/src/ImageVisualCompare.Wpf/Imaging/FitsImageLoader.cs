@@ -272,7 +272,7 @@ public sealed class FitsImageLoader : IImageLoader
     /// it belongs in the image.
     /// </summary>
     /// <param name="layout">Where the image's samples are and how they are stored.</param>
-    /// <param name="stream">The open file; each row is read from where it is.</param>
+    /// <param name="stream">The open file, which the decoder reads a band of each plane at a time.</param>
     /// <param name="renderer">Counts or renders the rows, in the mode asked for.</param>
     /// <param name="fullScale">
     /// The value shown as white (<see cref="FitsScale.FullScale"/>).

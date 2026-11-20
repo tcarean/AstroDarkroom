@@ -448,12 +448,13 @@ public static class FitsHeader
     /// <param name="key">The keyword, in capitals.</param>
     /// <param name="fallback">The value when the header has no such keyword.</param>
     /// <returns>
-    /// The number, read with a capital E or D exponent, as FITS writes one; always finite.
+    /// The number, read with an E or, as FITS also writes one, a capital D exponent; always
+    /// finite.
     /// </returns>
     /// <exception cref="NotSupportedException">
     /// The header is not valid: the value is not a number (text, an empty value, a lower-case
-    /// exponent letter, a decimal comma), or it parses to NaN or an infinity, as "NaN",
-    /// "Infinity" and an exponent too large (1D999) do.
+    /// <c>d</c> as the exponent letter, a decimal comma), or it parses to NaN or an infinity, as
+    /// "NaN", "Infinity" and an exponent too large (1D999) do.
     /// </exception>
     private static double Number(Dictionary<string, string> cards, string key, double fallback)
     {

@@ -278,6 +278,16 @@ public class FitsHeaderTests
         Assert.Equal("FITS: the header is not valid.", ex.Message);
     }
 
+    [Fact]
+    public void R014_ReadLayout_ReadsALowerCaseE_WhichIsANumber_UnlikeALowerCaseD()
+    {
+        // FITS writes E or D in capitals, but cfitsio's strtod reads 3.2768e4 too, so Siril
+        // does; only the Fortran letter has to be the capital one (ADR 0058).
+        FitsImageLayout layout = Read(FitsFixture.Image(16, 1, 1, 1, [0], FitsFixture.Card("BZERO", "3.2768e4")));
+
+        Assert.Equal(32768, layout.BZero);
+    }
+
     [Theory]
     [InlineData("BZERO", "3.2768d4")]
     [InlineData("BZERO", "32768,0")]
@@ -289,7 +299,7 @@ public class FitsHeaderTests
     {
         // Text that is not a number is not a missing keyword: read as its default, a BZERO of
         // 32768 became 0 and the image was shown 32,768 too low, its dark half black, in silence
-        // (ADR 0058). FITS writes the exponent with a capital E or D only.
+        // (ADR 0058). The Fortran exponent letter is a capital D only.
         Exception? ex = Failure(FitsFixture.Image(16, 1, 1, 1, [0], FitsFixture.Card(key, value)));
 
         Assert.IsType<NotSupportedException>(ex);

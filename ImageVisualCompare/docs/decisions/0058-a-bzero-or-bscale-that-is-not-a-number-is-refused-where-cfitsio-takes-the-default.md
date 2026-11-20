@@ -29,12 +29,15 @@ on a file no program writes. The owner chose on 2026-11-20, of the two: refuse t
 ## Decision
 
 The default of `BZERO` or `BSCALE` is taken only when the header has no such keyword. A value
-that is there and is not a finite number (text, an empty value, a lower-case exponent letter, a
-decimal comma, NaN, an infinity) makes the header invalid: `FITS: the header is not valid.`
-(R-019), at the probe, before anything is decoded. The exponent letter stays a capital `E` or
-`D`, as the standard writes it and as cfitsio accepts it. The tests are
-`FitsHeaderTests.R019_ABZeroOrBScaleThatDoesNotParse_IsAnInvalidHeader` and
-`R019_ABZeroOrBScaleThatIsNotFinite_IsAnInvalidHeader`.
+that is there and is not a finite number (text, an empty value, a lower-case `d` as the
+exponent letter, a decimal comma, NaN, an infinity) makes the header invalid:
+`FITS: the header is not valid.` (R-019), at the probe, before anything is decoded. The Fortran
+exponent letter stays the capital `D`, the only one cfitsio replaces; a lower-case `e`
+(`3.2768e4`) is a number for cfitsio's `strtod` and for this reader alike, and is read. The
+tests are
+`FitsHeaderTests.R019_ABZeroOrBScaleThatDoesNotParse_IsAnInvalidHeader`,
+`R019_ABZeroOrBScaleThatIsNotFinite_IsAnInvalidHeader` and
+`R014_ReadLayout_ReadsALowerCaseE_WhichIsANumber_UnlikeALowerCaseD`.
 
 ## Alternatives rejected
 
@@ -42,9 +45,9 @@ decimal comma, NaN, an infinity) makes the header invalid: `FITS: the header is 
   not the image the file stores, and nothing says so. This program exists to show a difference
   of one level; a silent offset of 32,768 is the opposite. cfitsio itself notes the error on its
   message stack; a display has nowhere to put such a note but a message.
-- **Accepting a lower-case exponent letter or a decimal comma.** It would read what was meant
-  in those two cases, and then show another image than Siril does for the same file, again in
-  silence. A refusal says what is wrong and leaves the file to be fixed.
+- **Accepting a lower-case `d` or a decimal comma.** It would read what was meant in those two
+  cases, and then show another image than Siril does for the same file, again in silence. A
+  refusal says what is wrong and leaves the file to be fixed.
 
 ## Consequences
 
