@@ -42,7 +42,8 @@ Copyright (C) 2026 Tudor Carean
 
   CADRE MISCATE
     slabe (alungire de cel putin 1.73): 7
-    la limita (alungire intre 1.45 si 1.73): 3, 4, 5
+    la limita (alungire intre 1.45 si 1.73): 3
+    la limita din alt motiv: 4, 5 (stele late sau prea putine stele)
     dara sau dublura   : 14 (miezul stelei e bun; stiva cu respingere le repara pe cele mai multe)
     directia darelor   : nu se stie (prea putine cadre slabe, cu expunere destul de lunga, cu dare in aceeasi directie); nu se stie care axa e RA
 

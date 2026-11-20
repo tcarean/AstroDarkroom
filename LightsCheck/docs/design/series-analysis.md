@@ -240,7 +240,10 @@ was probably still settling (R-090, ADR 0057). A frame without a cores' figure, 
 measurement, is read as stretched, and a frame too short to stack is never a tail: it is bad
 by its exposure, and the tail's reason would say it stays. `Tail` takes the trail's axis as the two trailing flags do,
 and `SeriesReport.Reason` words it; `TrailRows` adds its row only when a frame has the flag,
-and keeps those frames off the `marginal` row (`MarginalWithoutTail`).
+and keeps those frames off the two `marginal` rows. `MarginalFrames` gives both of those: the
+marginal frames flagged `MarginalTrail` for the row that names the elongation bounds, and the
+marginal frames with neither that flag nor a tail (`Soft`, `Clouds`) for the row `marginal for
+another reason`, which is added only when it has a frame (R-094, ADR 0068).
 
 Two passes: the classes that need no session figure (trailing, as above)
 and the session medians (FWHM over the good frames, stars over all), then the flags against

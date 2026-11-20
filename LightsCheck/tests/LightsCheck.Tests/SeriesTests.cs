@@ -176,13 +176,15 @@ public class SeriesTests
         PlainWords.AssertPlain(reason, "the reason of a tail");
 
         IReadOnlyList<ReportRow> rows = SeriesReport.TrailRows(r);
-        Assert.Equal(4, rows.Count);
-        Assert.Equal(english ? "tail or double" : "dara sau dublura", rows[2].Label);
-        Assert.Equal(english ? "14 (the star's core is sharp; a stack with rejection repairs most of them)" : "14 (miezul stelei e bun; stiva cu respingere le repara pe cele mai multe)", rows[2].Value);
+        Assert.Equal(5, rows.Count);
+        ReportRow tail = rows[3];   // after the two marginal rows (R-094)
+        Assert.Equal(english ? "tail or double" : "dara sau dublura", tail.Label);
+        Assert.Equal(english ? "14 (the star's core is sharp; a stack with rejection repairs most of them)" : "14 (miezul stelei e bun; stiva cu respingere le repara pe cele mai multe)", tail.Value);
         Assert.DoesNotContain("14", rows[0].Value, StringComparison.Ordinal);
         // The frame reads past the marginal row's upper bound and has its own row: not listed twice.
-        Assert.Equal("3, 4, 5", rows[1].Value);
-        PlainWords.AssertPlain(rows[2].Label + " " + rows[2].Value, "the tail row of TRAILED FRAMES");
+        Assert.DoesNotContain("14", rows[1].Value, StringComparison.Ordinal);
+        Assert.DoesNotContain("14", rows[2].Value, StringComparison.Ordinal);
+        PlainWords.AssertPlain(tail.Label + " " + tail.Value, "the tail row of TRAILED FRAMES");
 
         IReadOnlyList<ReportParagraph> why = SeriesReport.RejectedExplanation;
         Assert.Equal(6, why.Count);
@@ -190,7 +192,66 @@ public class SeriesTests
         Assert.EndsWith(english ? "These frames are on the 'tail or double' row of TRAILED FRAMES." : "Aceste cadre sunt pe randul 'dara sau dublura' din CADRE MISCATE.", why[2].Text, StringComparison.Ordinal);
         using StringWriter sw = new();
         SeriesReport.Write(r, sw);
-        Assert.Contains(rows[2].Value, sw.ToString(), StringComparison.Ordinal);
+        Assert.Contains(tail.Value, sw.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// TRAILED FRAMES lists the marginal frames by what makes them marginal (R-094, ADR 0068,
+    /// CR-020): on the classes session frame 3, marginal by its elongation, is on the row whose
+    /// label names the elongation bounds, and frames 4 (wide stars, elongation 1.01) and 5 (too
+    /// few stars) on the row under it; the explanation of the Rejected tab points at both.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R094_TheMarginalFramesAreListedByWhatMakesThemMarginal(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        Assert.Equal(FlagKind.MarginalTrail, Assert.Single(r.Series.Flags[2]).Kind);
+        Assert.Equal(FlagKind.Soft, Assert.Single(r.Series.Flags[3]).Kind);
+        Assert.Equal(FlagKind.Clouds, Assert.Single(r.Series.Flags[4]).Kind);
+
+        IReadOnlyList<ReportRow> rows = SeriesReport.TrailRows(r);
+
+        Assert.Equal(english ? "marginal (elongation between 1.45 and 1.73)" : "la limita (alungire intre 1.45 si 1.73)", rows[1].Label);
+        Assert.Equal("3", rows[1].Value);
+        Assert.Equal(english ? "marginal for another reason" : "la limita din alt motiv", rows[2].Label);
+        Assert.Equal(english ? "4, 5 (wide stars or too few stars)" : "4, 5 (stele late sau prea putine stele)", rows[2].Value);
+        PlainWords.AssertPlain(rows[2].Label + " " + rows[2].Value, "the row of the frames marginal for another reason");
+
+        string second = SeriesReport.RejectedExplanation[1].Text;
+        Assert.Equal(
+            english
+                ? "Between 1.45 and 1.73 the frame is marginal and stays in the stack unless you decide otherwise. These frames are on the 'marginal' row of TRAILED FRAMES, on the Summary tab; a frame that is marginal for wide stars or too few stars is on the row under it, 'marginal for another reason'. On the Frames tab every marginal frame has a yellow class."
+                : "Intre 1.45 si 1.73 cadrul e la limita si ramane in stiva, daca nu hotarasti altfel. Aceste cadre sunt pe randul 'la limita' din CADRE MISCATE, pe tabul Rezumat; un cadru la limita din cauza stelelor late sau a stelelor prea putine e pe randul de sub el, 'la limita din alt motiv'. Pe tabul Cadre, orice cadru la limita are clasa galbena.",
+            second);
+        PlainWords.AssertPlain(second, "the second paragraph of the Rejected explanation");
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        Assert.Contains($"    {rows[2].Label,-19}: {rows[2].Value}", sw.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A session whose marginal frames are all marginal by their elongation, or that has none,
+    /// has no row for another reason (R-094): the pattern session, and the four frames of the
+    /// short-exposure fixture, whose marginally trailed frame is bad by its exposure.
+    /// </summary>
+    [Fact]
+    public void R094_WithoutAFrameMarginalForAnotherReasonThereIsNoSuchRow()
+    {
+        SeriesResult pattern = RunPattern();
+        Assert.DoesNotContain(SeriesReport.TrailRows(pattern), x => x.Label == "la limita din alt motiv");
+
+        (AnalyzedFrame[] frames, DitherAnalysis d, Cadence c) = SeriesAnalyzerTests.ShortAndTrailed();
+        frames[0] = frames[0] with { Measurement = frames[0].Measurement! with { ElongationMedian = 1.5, CoreElongationMedian = 1.5 } };
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+        Assert.Equal(FrameClass.Marginal, s.Classes[0]);
+        IReadOnlyList<ReportRow> rows = SeriesReport.TrailRows(pattern with { Frames = frames, Cadence = c, Dither = d, Series = s });
+
+        Assert.Equal(3, rows.Count);
+        Assert.Equal("1", rows[1].Value);
     }
 
     /// <summary>The pattern session, none of whose frames has a tail, keeps the three rows (R-090).</summary>

@@ -345,6 +345,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   frame` (`first / last good frames` when nothing is compared), `1 dark` and `1 frame`; and the
   Romanian warning of 20 or more unread frames takes its `de`, `20 de cadre nu s-au putut citi`
   (R-093; CR-019 of the review of 2026-11-13).
+- The row `marginal (elongation between 1.45 and 1.73)` of TRAILED FRAMES listed every marginal
+  frame, also those marginal for wide stars or too few stars, whose elongation is nowhere near
+  those bounds. It now lists the frames marginal by their elongation, and the others have a row
+  under it, shown only when there are any: `marginal for another reason: 4, 5 (wide stars or too
+  few stars)`. The Rejected tab's explanation points at both rows (R-094, ADR 0068; CR-020 of
+  the review of 2026-11-13).
 
 ### Internal
 
