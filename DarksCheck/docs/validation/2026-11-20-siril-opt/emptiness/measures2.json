@@ -1,0 +1,524 @@
+{
+ "Q_per_pair": {
+  "V1108_D13": {
+   "Q_med": 14.3,
+   "Q_min": 9.88,
+   "Q_max": 21.37,
+   "k_within_med": 0.817,
+   "r_med": 0.974,
+   "k_within_over_r_med": 0.861,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 28,
+   "lights": 28,
+   "lights_Q_gt_1": 28
+  },
+  "V1108_D18": {
+   "Q_med": 14.95,
+   "Q_min": 11.45,
+   "Q_max": 20.43,
+   "k_within_med": 0.776,
+   "r_med": 0.786,
+   "k_within_over_r_med": 1.007,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 28,
+   "lights": 28,
+   "lights_Q_gt_1": 28
+  },
+  "V1108_D20": {
+   "Q_med": 13.12,
+   "Q_min": 10.46,
+   "Q_max": 19.34,
+   "k_within_med": 0.655,
+   "r_med": 0.728,
+   "k_within_over_r_med": 0.893,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 28,
+   "lights": 28,
+   "lights_Q_gt_1": 28
+  },
+  "V1108_D33": {
+   "Q_med": 7.38,
+   "Q_min": 5.18,
+   "Q_max": 9.75,
+   "k_within_med": 0.454,
+   "r_med": 0.446,
+   "k_within_over_r_med": 1.103,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 28,
+   "lights": 28,
+   "lights_Q_gt_1": 28
+  },
+  "V1108_D47": {
+   "Q_med": 4.02,
+   "Q_min": 2.72,
+   "Q_max": 5.47,
+   "k_within_med": 0.346,
+   "r_med": 0.317,
+   "k_within_over_r_med": 1.16,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 28,
+   "lights": 28,
+   "lights_Q_gt_1": 28
+  },
+  "V1108_D67": {
+   "Q_med": 0.88,
+   "Q_min": 0.64,
+   "Q_max": 1.42,
+   "k_within_med": 0.28,
+   "r_med": 0.227,
+   "k_within_over_r_med": 1.261,
+   "k0_med": 0.047,
+   "lights_k0_0.002": 1,
+   "lights": 28,
+   "lights_Q_gt_1": 5
+  },
+  "V1106_D13": {
+   "Q_med": 13.66,
+   "Q_min": 9.38,
+   "Q_max": 18.08,
+   "k_within_med": 0.897,
+   "r_med": 1.195,
+   "k_within_over_r_med": 0.764,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 28,
+   "lights": 28,
+   "lights_Q_gt_1": 28
+  },
+  "V1106_D18": {
+   "Q_med": 15.2,
+   "Q_min": 9.89,
+   "Q_max": 22.57,
+   "k_within_med": 0.824,
+   "r_med": 0.974,
+   "k_within_over_r_med": 0.876,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 28,
+   "lights": 28,
+   "lights_Q_gt_1": 28
+  },
+  "V1106_D20": {
+   "Q_med": 13.47,
+   "Q_min": 8.53,
+   "Q_max": 17.48,
+   "k_within_med": 0.71,
+   "r_med": 0.897,
+   "k_within_over_r_med": 0.823,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 28,
+   "lights": 28,
+   "lights_Q_gt_1": 28
+  },
+  "V1106_D33": {
+   "Q_med": 7.22,
+   "Q_min": 4.66,
+   "Q_max": 10.63,
+   "k_within_med": 0.502,
+   "r_med": 0.534,
+   "k_within_over_r_med": 0.95,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 28,
+   "lights": 28,
+   "lights_Q_gt_1": 28
+  },
+  "V1106_D47": {
+   "Q_med": 3.88,
+   "Q_min": 2.42,
+   "Q_max": 5.29,
+   "k_within_med": 0.401,
+   "r_med": 0.381,
+   "k_within_over_r_med": 1.059,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 28,
+   "lights": 28,
+   "lights_Q_gt_1": 28
+  },
+  "V1106_D67": {
+   "Q_med": 0.86,
+   "Q_min": 0.58,
+   "Q_max": 1.29,
+   "k_within_med": 0.317,
+   "r_med": 0.274,
+   "k_within_over_r_med": 1.201,
+   "k0_med": 0.047,
+   "lights_k0_0.002": 0,
+   "lights": 28,
+   "lights_Q_gt_1": 5
+  },
+  "V1006_D13": {
+   "Q_med": 6.67,
+   "Q_min": 5.87,
+   "Q_max": 9.71,
+   "k_within_med": 1.171,
+   "r_med": 2.324,
+   "k_within_over_r_med": 0.51,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 29,
+   "lights": 29,
+   "lights_Q_gt_1": 29
+  },
+  "V1006_D18": {
+   "Q_med": 7.27,
+   "Q_min": 6.15,
+   "Q_max": 10.64,
+   "k_within_med": 1.11,
+   "r_med": 1.826,
+   "k_within_over_r_med": 0.613,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 29,
+   "lights": 29,
+   "lights_Q_gt_1": 29
+  },
+  "V1006_D20": {
+   "Q_med": 6.39,
+   "Q_min": 5.34,
+   "Q_max": 10.33,
+   "k_within_med": 0.967,
+   "r_med": 1.658,
+   "k_within_over_r_med": 0.579,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 29,
+   "lights": 29,
+   "lights_Q_gt_1": 29
+  },
+  "V1006_D33": {
+   "Q_med": 3.11,
+   "Q_min": 2.59,
+   "Q_max": 4.89,
+   "k_within_med": 0.736,
+   "r_med": 0.978,
+   "k_within_over_r_med": 0.755,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 29,
+   "lights": 29,
+   "lights_Q_gt_1": 29
+  },
+  "V1006_D47": {
+   "Q_med": 1.56,
+   "Q_min": 1.22,
+   "Q_max": 2.38,
+   "k_within_med": 0.613,
+   "r_med": 0.682,
+   "k_within_over_r_med": 0.892,
+   "k0_med": 0.002,
+   "lights_k0_0.002": 29,
+   "lights": 29,
+   "lights_Q_gt_1": 29
+  },
+  "V1006_D67": {
+   "Q_med": 0.33,
+   "Q_min": 0.26,
+   "Q_max": 0.52,
+   "k_within_med": 0.495,
+   "r_med": 0.483,
+   "k_within_over_r_med": 1.009,
+   "k0_med": 0.336,
+   "lights_k0_0.002": 0,
+   "lights": 29,
+   "lights_Q_gt_1": 0
+  }
+ },
+ "Q_check_exact": {
+  "D18": {
+   "exact_vs_1_minus_kstar_over_kwithin": [
+    [
+     8.158,
+     7.939
+    ],
+    [
+     6.703,
+     6.529
+    ],
+    [
+     6.856,
+     6.678
+    ]
+   ],
+   "max_rel_diff": 0.0268,
+   "var_site_over_var_within": 0.0314
+  },
+  "D33": {
+   "exact_vs_1_minus_kstar_over_kwithin": [
+    [
+     4.858,
+     4.829
+    ],
+    [
+     5.14,
+     5.107
+    ],
+    [
+     4.691,
+     4.663
+    ]
+   ],
+   "max_rel_diff": 0.0064,
+   "var_site_over_var_within": 0.0078
+  },
+  "D67": {
+   "exact_vs_1_minus_kstar_over_kwithin": [
+    [
+     0.609,
+     0.61
+    ],
+    [
+     0.584,
+     0.585
+    ],
+    [
+     0.579,
+     0.58
+    ],
+    [
+     0.627,
+     0.628
+    ],
+    [
+     0.619,
+     0.62
+    ]
+   ],
+   "max_rel_diff": 0.0017,
+   "var_site_over_var_within": 0.0026
+  }
+ },
+ "Q_separation": {
+  "lights_Q_gt_1": 435,
+  "of_which_k0_0.002": 426,
+  "of_which_k0_le_0.02": 435,
+  "max_k0_when_Q_gt_1": 0.014,
+  "lights_Q_le_1": 75,
+  "of_which_k0_0.002_when_Q_le_1": 0,
+  "min_k0_when_Q_le_1": 0.006,
+  "smallest_Q_on_the_15_pairs": 1.22,
+  "largest_Q_on_D67": 1.42
+ },
+ "fixed_dots_by_r": [
+  {
+   "pair": "V1108_D67",
+   "r": 0.227,
+   "abs_r_minus_1": 0.773,
+   "dots_opt": 1274,
+   "dots_stk": 569,
+   "dots_fix": 1127,
+   "best": "stk",
+   "stk_minus_fix": -558,
+   "opt_over_stk": 2.24,
+   "r067": null
+  },
+  {
+   "pair": "V1106_D67",
+   "r": 0.274,
+   "abs_r_minus_1": 0.726,
+   "dots_opt": 1405,
+   "dots_stk": 577,
+   "dots_fix": 1186,
+   "best": "stk",
+   "stk_minus_fix": -609,
+   "opt_over_stk": 2.44,
+   "r067": null
+  },
+  {
+   "pair": "V1108_D47",
+   "r": 0.317,
+   "abs_r_minus_1": 0.683,
+   "dots_opt": 7052,
+   "dots_stk": 3271,
+   "dots_fix": 6111,
+   "best": "stk",
+   "stk_minus_fix": -2840,
+   "opt_over_stk": 2.16,
+   "r067": null
+  },
+  {
+   "pair": "V1106_D47",
+   "r": 0.381,
+   "abs_r_minus_1": 0.619,
+   "dots_opt": 8130,
+   "dots_stk": 3532,
+   "dots_fix": 6637,
+   "best": "stk",
+   "stk_minus_fix": -3105,
+   "opt_over_stk": 2.3,
+   "r067": null
+  },
+  {
+   "pair": "V1108_D33",
+   "r": 0.446,
+   "abs_r_minus_1": 0.554,
+   "dots_opt": 4914,
+   "dots_stk": 2677,
+   "dots_fix": 4192,
+   "best": "stk",
+   "stk_minus_fix": -1515,
+   "opt_over_stk": 1.84,
+   "r067": 4.05
+  },
+  {
+   "pair": "V1006_D67",
+   "r": 0.483,
+   "abs_r_minus_1": 0.517,
+   "dots_opt": 3026,
+   "dots_stk": 1588,
+   "dots_fix": 2696,
+   "best": "stk",
+   "stk_minus_fix": -1108,
+   "opt_over_stk": 1.91,
+   "r067": 3.85
+  },
+  {
+   "pair": "V1106_D33",
+   "r": 0.534,
+   "abs_r_minus_1": 0.466,
+   "dots_opt": 5614,
+   "dots_stk": 2777,
+   "dots_fix": 4335,
+   "best": "stk",
+   "stk_minus_fix": -1558,
+   "opt_over_stk": 2.02,
+   "r067": 3.35
+  },
+  {
+   "pair": "V1006_D47",
+   "r": 0.682,
+   "abs_r_minus_1": 0.318,
+   "dots_opt": 20303,
+   "dots_stk": 10396,
+   "dots_fix": 14218,
+   "best": "stk",
+   "stk_minus_fix": -3822,
+   "opt_over_stk": 1.95,
+   "r067": 1.93
+  },
+  {
+   "pair": "V1108_D20",
+   "r": 0.728,
+   "abs_r_minus_1": 0.272,
+   "dots_opt": 796,
+   "dots_stk": 465,
+   "dots_fix": 648,
+   "best": "stk",
+   "stk_minus_fix": -183,
+   "opt_over_stk": 1.71,
+   "r067": 2.4
+  },
+  {
+   "pair": "V1108_D18",
+   "r": 0.786,
+   "abs_r_minus_1": 0.214,
+   "dots_opt": 275,
+   "dots_stk": 175,
+   "dots_fix": 198,
+   "best": "stk",
+   "stk_minus_fix": -23,
+   "opt_over_stk": 1.57,
+   "r067": 2.07
+  },
+  {
+   "pair": "V1106_D20",
+   "r": 0.897,
+   "abs_r_minus_1": 0.103,
+   "dots_opt": 971,
+   "dots_stk": 497,
+   "dots_fix": 648,
+   "best": "stk",
+   "stk_minus_fix": -151,
+   "opt_over_stk": 1.95,
+   "r067": 1.57
+  },
+  {
+   "pair": "V1108_D13",
+   "r": 0.974,
+   "abs_r_minus_1": 0.026,
+   "dots_opt": 179,
+   "dots_stk": 72,
+   "dots_fix": 139,
+   "best": "stk",
+   "stk_minus_fix": -67,
+   "opt_over_stk": 2.49,
+   "r067": 0.72
+  },
+  {
+   "pair": "V1106_D18",
+   "r": 0.974,
+   "abs_r_minus_1": 0.026,
+   "dots_opt": 335,
+   "dots_stk": 198,
+   "dots_fix": 222,
+   "best": "stk",
+   "stk_minus_fix": -24,
+   "opt_over_stk": 1.69,
+   "r067": null
+  },
+  {
+   "pair": "V1006_D33",
+   "r": 0.978,
+   "abs_r_minus_1": 0.022,
+   "dots_opt": 14546,
+   "dots_stk": 8661,
+   "dots_fix": 9630,
+   "best": "stk",
+   "stk_minus_fix": -969,
+   "opt_over_stk": 1.68,
+   "r067": 0.52
+  },
+  {
+   "pair": "V1106_D13",
+   "r": 1.195,
+   "abs_r_minus_1": 0.195,
+   "dots_opt": 228,
+   "dots_stk": 139,
+   "dots_fix": 139,
+   "best": "stk",
+   "stk_minus_fix": 0,
+   "opt_over_stk": 1.64,
+   "r067": 0.29
+  },
+  {
+   "pair": "V1006_D20",
+   "r": 1.658,
+   "abs_r_minus_1": 0.658,
+   "dots_opt": 3734,
+   "dots_stk": 2300,
+   "dots_fix": 1854,
+   "best": "fix",
+   "stk_minus_fix": 446,
+   "opt_over_stk": 1.62,
+   "r067": 3.94
+  },
+  {
+   "pair": "V1006_D18",
+   "r": 1.826,
+   "abs_r_minus_1": 0.826,
+   "dots_opt": 1985,
+   "dots_stk": 1018,
+   "dots_fix": 794,
+   "best": "fix",
+   "stk_minus_fix": 224,
+   "opt_over_stk": 1.95,
+   "r067": 4.74
+  },
+  {
+   "pair": "V1006_D13",
+   "r": 2.324,
+   "abs_r_minus_1": 1.324,
+   "dots_opt": 2294,
+   "dots_stk": 899,
+   "dots_fix": 497,
+   "best": "fix",
+   "stk_minus_fix": 402,
+   "opt_over_stk": 2.55,
+   "r067": null
+  }
+ ],
+ "correlations": {
+  "spearman_r_vs_stk_minus_fix_dots": 0.759,
+  "spearman_r067_vs_stk_minus_fix_dots_12_pairs": 0.021,
+  "spearman_r067_vs_abs_stk_minus_fix_dots_12_pairs": 0.441,
+  "pairs_where_fix_beats_stk": [
+   "V1006_D20",
+   "V1006_D18",
+   "V1006_D13"
+  ],
+  "pairs_where_opt_is_worst": 18
+ }
+}

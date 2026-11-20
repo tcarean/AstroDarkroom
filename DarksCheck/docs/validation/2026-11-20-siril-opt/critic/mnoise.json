@@ -1,0 +1,35 @@
+{
+ "D18": {
+  "frames_in_master": 40,
+  "frames_sampled": 14,
+  "frame_noise_per_pixel_median_sd": 3.61,
+  "master_noise_var_expected": 0.326,
+  "master_within_site_var_plain": 2.477,
+  "master_within_site_var_robust": 1.068,
+  "noise_share_of_plain_var": 0.132,
+  "noise_share_of_robust_var": 0.305,
+  "dilution_factor_plain": 0.868
+ },
+ "D33": {
+  "frames_in_master": 30,
+  "frames_sampled": 10,
+  "frame_noise_per_pixel_median_sd": 4.088,
+  "master_noise_var_expected": 0.557,
+  "master_within_site_var_plain": 5.221,
+  "master_within_site_var_robust": 3.918,
+  "noise_share_of_plain_var": 0.107,
+  "noise_share_of_robust_var": 0.142,
+  "dilution_factor_plain": 0.893
+ },
+ "D67": {
+  "frames_in_master": 30,
+  "frames_sampled": 10,
+  "frame_noise_per_pixel_median_sd": 5.27,
+  "master_noise_var_expected": 0.926,
+  "master_within_site_var_plain": 12.221,
+  "master_within_site_var_robust": 0.116,
+  "noise_share_of_plain_var": 0.076,
+  "noise_share_of_robust_var": 7.958,
+  "dilution_factor_plain": 0.924
+ }
+}

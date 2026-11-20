@@ -170,6 +170,7 @@ each pair has the same defect unless the entry says otherwise.
 | CR-080 | 2 | rare | confirmed | Links are followed on the output's side only, and not past the 260th character: the files can still land among the frames | fixed 50a2230e |
 | CR-081 | 2 | rare | confirmed | A link that leads nowhere is not followed, nor are the subfolders beside a library opened as `name\darks`: the files can land in the session through the link | open |
 | CR-082 | 3 | rare | confirmed | A `darks\`, `biases\` or `lights\` link that leads nowhere ends the run with the system's own English line | open |
+| CR-083 | 3 | common | owner | The frames table's note opens with the plane (`the green pixels G1`), but its `mean` column is taken over the whole mosaic, every colour and the hot pixels included | open |
 
 The files copied from LightsCheck have their own entries, CP-1 to CP-12, in their own section;
 five of them are of severity 1.
@@ -1739,6 +1740,29 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
   leads to. The text is shown to the owner first (the rule "Plain words").
 - Test: none.
 - Evidence: confirmed (run by both reviews).
+- Status: open
+
+### CR-083 The frames table's note opens with the plane, but its `mean` column is taken over the whole mosaic
+
+- Found: 2026-11-20, while the figures of the -opt investigation were checked
+  (`docs/validation/2026-11-20-siril-opt/`); the same on `main`.
+- Where: `Analysis/DarkSeriesAnalyzer.cs` (the frame's `meanAbove`: the sum of every pixel of
+  the mosaic over their count, minus the black); `Report/DarkReport.cs` (the frames table's row
+  prints it as `F(f.MeanAboveBlack, 2)`; the table's note opens with
+  `ScaleReport.PlaneWords(...)` and goes on `; mean = how far the frame is above the black,
+  ADU; noise = ...`).
+- Case: every frames table. The note reads `[the green pixels G1; mean = how far the frame is
+  above the black, ADU; noise = the noise of the frame, ADU; ...` (`pixelii verzi G1; medie =
+  ...`), so the plane it opens with reads as holding for every column. The noise, the
+  difference from the master and the bands are of that plane; the mean is of the whole frame,
+  red, both greens and blue together, the hot pixels included.
+- Should: the owner's call. Either the note says which columns are of the plane and that the
+  mean is of all pixels, or the mean is taken on the plane like its neighbours (a figure
+  would then move: the rule "Measured on the sessions"). A changed text is shown to the owner
+  first (the rule "Plain words").
+- Test: none.
+- Evidence: owner (the lines were read; whether the wording or the figure is the defect is
+  the owner's to say).
 - Status: open
 
 ## How the list is used

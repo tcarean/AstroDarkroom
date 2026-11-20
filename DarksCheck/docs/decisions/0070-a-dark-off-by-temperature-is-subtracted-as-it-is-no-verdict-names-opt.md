@@ -35,7 +35,12 @@ factor on the other three. The one pair DarksCheck itself sent to `-opt` (Veil 2
 idx20, 0.72 by DarksCheck) got 0.002. Read in Siril's source: the factor is the one that leaves
 the smallest spread of values in the central 512 x 512 pixels of the raw frame, all colours
 together; on these frames the difference between the colours of the sky decides it, not the
-hot pixels.
+hot pixels. (Added 2026-11-20, later: more exactly, the master's red pixels sit highest where
+the red sky is lowest, so light and dark vary against each other and Siril's search ends at
+its lower end; a measure written again apart from Siril gave Siril's factor on 390 of 390
+lights. This, what Siril's own FAQ and manual advise, the D3300's dark as measured, the other
+ways of running `-opt` that were tried and a lower threshold for the cosmetic correction are
+in `docs/validation/2026-11-20-siril-opt/conclusions.md`.)
 
 **What the factor is worth in the stack.** Two stacks of 28 lights, one shared registration,
 the cosmetic correction from the dark on in each, the dark subtracted three ways: as it is

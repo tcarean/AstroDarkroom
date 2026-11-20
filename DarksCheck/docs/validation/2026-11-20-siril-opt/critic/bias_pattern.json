@@ -1,0 +1,95 @@
+{
+ "bias_V1106": {
+  "pattern_rms": 0.287,
+  "box_floor_share_per_site": [
+   0.079,
+   0.132,
+   0.127,
+   0.071
+  ]
+ },
+ "D13": {
+  "slope_on_bias": 0.987,
+  "corr_with_bias": 0.954,
+  "pattern_rms": 0.297,
+  "dark_minus_bias_rms": 0.089,
+  "box_floor_share_per_site": [
+   0.098,
+   0.108,
+   0.062,
+   0.073
+  ]
+ },
+ "D18": {
+  "slope_on_bias": 0.966,
+  "corr_with_bias": 0.939,
+  "pattern_rms": 0.295,
+  "dark_minus_bias_rms": 0.102,
+  "box_floor_share_per_site": [
+   0.106,
+   0.141,
+   0.068,
+   0.096
+  ]
+ },
+ "D20": {
+  "slope_on_bias": 0.941,
+  "corr_with_bias": 0.938,
+  "pattern_rms": 0.288,
+  "dark_minus_bias_rms": 0.102,
+  "box_floor_share_per_site": [
+   0.124,
+   0.142,
+   0.08,
+   0.108
+  ]
+ },
+ "D33": {
+  "slope_on_bias": 0.832,
+  "corr_with_bias": 0.816,
+  "pattern_rms": 0.293,
+  "dark_minus_bias_rms": 0.176,
+  "box_floor_share_per_site": [
+   0.213,
+   0.235,
+   0.186,
+   0.25
+  ]
+ },
+ "D34": {
+  "slope_on_bias": 0.83,
+  "corr_with_bias": 0.801,
+  "pattern_rms": 0.298,
+  "dark_minus_bias_rms": 0.185,
+  "box_floor_share_per_site": [
+   0.226,
+   0.241,
+   0.185,
+   0.242
+  ]
+ },
+ "D47": {
+  "slope_on_bias": 0.806,
+  "corr_with_bias": 0.685,
+  "pattern_rms": 0.338,
+  "dark_minus_bias_rms": 0.252,
+  "box_floor_share_per_site": [
+   0.301,
+   0.277,
+   0.268,
+   0.356
+  ]
+ },
+ "D67": {
+  "slope_on_bias": 0.647,
+  "corr_with_bias": 0.484,
+  "pattern_rms": 0.384,
+  "dark_minus_bias_rms": 0.351,
+  "box_floor_share_per_site": [
+   0.391,
+   0.388,
+   0.4,
+   0.465
+  ]
+ }
+}
