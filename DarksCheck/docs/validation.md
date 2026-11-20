@@ -335,4 +335,8 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   Smida with its 32 lights 5.4 to 5.8 % at 20 darks, 11 to 12 darks needed at 10 % and 22 to 24
   at 5 %; the library with the Veil lights of 2026-10-06 12.8 to 15.8 % at 30, 39 to 49 and 80
   to 100 needed, still `WARNING`; the -2 °C darks with the Veil lights of 2026-11-08 3.1 to
-  3.0 % at 35, 11 and 22 needed as before. No verdict of any check changed.
+  3.0 % at 35, 11 and 22 needed as before. No verdict of any check changed. All eleven cases
+  then run on the branch's last code commit (b9c7411d, the five fixes of CR-016 to CR-020) with
+  `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 11`, `Passed: 11`, `Total
+  time: 9.2026 Minutes`; every session was present, and no other recorded figure was changed.
+
