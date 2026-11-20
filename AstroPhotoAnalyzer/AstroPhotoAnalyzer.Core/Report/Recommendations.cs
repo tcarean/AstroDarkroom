@@ -57,7 +57,8 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Section 1, the format to send: the 8-bit LZW TIFF (with the rounding on a source over 8
         /// bits), JPEG q100 when the lab accepts only JPEG (the qualities under it that fail are a
-        /// fact of the Export tab, ADR 0061), and the banding risk, from the share of the frame
+        /// fact of the Export tab, ADR 0061), or that a JPEG cannot hold the image when a side
+        /// is over <see cref="Thresholds.JpegMaxSidePx"/> (ADR 0113), and the banding risk, from the share of the frame
         /// with a visible plateau at the reference row's dpi (ADR 0060) or from the noise alone.
         /// </summary>
         /// <param name="r">The analysis.</param>
@@ -77,7 +78,16 @@ namespace AstroPhotoAnalyzer
                     Tr.Pick($"Send the lab an 8-bit TIFF with LZW compression, which loses nothing ({Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}). The file is already 8-bit; there is nothing to convert.", $"Trimite laboratorului un TIFF pe 8 biti, cu compresie LZW, fara pierderi ({Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}). Fisierul e deja pe 8 biti; nu e nimic de convertit."),
                     Tr.Pick($"the file has {r.File.BitDepth} bits on each channel", $"fisierul are {r.File.BitDepth} biti pe fiecare canal")));
 
-            if (q100 != null)
+            if (r.Jpeg.TooLarge)
+            {
+                // No JPEG can be made of it, so there is no q100 line; the TIFF of the first
+                // line is what the lab gets (ADR 0113).
+                o.Add(new Recommendation(Topic.Format, Verdict.Ok,
+                    Tr.Pick("A JPEG cannot hold this image: send the TIFF.", "Un JPEG nu poate tine imaginea asta: trimite TIFF-ul."),
+                    Tr.Pick($"the image is {Fmt.Dim(r.Raster.W, r.Raster.H)} px, and a JPEG holds at most {Fmt.Int(Thresholds.JpegMaxSidePx)} px on a side",
+                            $"imaginea are {Fmt.Dim(r.Raster.W, r.Raster.H)} px, iar un JPEG tine cel mult {Fmt.Int(Thresholds.JpegMaxSidePx)} px pe o latura")));
+            }
+            else if (q100 != null)
             {
                 Verdict v = q100.Acceptable ? (q100.PctOverThreshold > Thresholds.JpegOverThresholdWarnPct ? Verdict.Attention : Verdict.Ok) : Verdict.Attention;
                 o.Add(new Recommendation(Topic.Format, v,

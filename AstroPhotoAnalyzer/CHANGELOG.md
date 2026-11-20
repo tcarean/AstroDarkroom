@@ -288,6 +288,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- An image with a side over 65535 px (a wide panorama) is analysed to the end. A JPEG cannot
+  hold such an image, and the measurement of the JPEG qualities stopped the whole analysis
+  with `Image is too large to encode ... for JPEG format`, after everything else was measured.
+  The JPEG rows are now left out: section 1 says `A JPEG cannot hold this image: send the
+  TIFF.`, and Appendix C and the Export tab have one line in place of the table (R-083, R-091,
+  R-114, ADR 0113).
+
 - A TIFF exported from Lightroom Classic with Content Credentials opens. Lightroom adds them
   after the image as a second "page" that holds no image, and the tool refused the whole file
   with `The number of samples in the TIFF BitsPerSample entry is not supported`. It now reads

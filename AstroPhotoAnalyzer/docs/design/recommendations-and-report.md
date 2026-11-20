@@ -26,6 +26,7 @@ Background, Colour, Size, Denoise, Warnings.
 | Format | source > 8 bits | Ok | send TIFF 8-bit LZW (size); 16 -> 8 is rounding (mean/max) |
 | Format | source 8 bits | Ok | send TIFF 8-bit LZW; nothing to convert |
 | Format | q100 row exists | Ok, or Attention when not `Acceptable` or > `JpegOverThresholdWarnPct` (5 %) samples over 2 | if only JPEG: q100 4:4:4 (size, errors, where they sit; "in the dark sky" when the mean level of affected samples < 64) |
+| Format | `JpegResult.TooLarge` (a side over `JpegMaxSidePx`, ADR 0113) | Ok | in place of the q100 line: a JPEG cannot hold the image, send the TIFF (the image's size and the format's limit) |
 | Format | plateau known and the share of the frame with a visible step at the reference row's dpi over `PlateauFlatFrameWarnPct` (0.1 %, ADR 0060) | Attention | banding risk: send 16-bit or dither (the share and the threshold in `Fmt.Strong` marks, then the average plateau, ADR 0087, and where it was measured) |
 | Format | plateau known and the share at or under it | Ok | no visible banding: flat steps on too little of the frame (the same because) |
 | Format | plateau unknown and `BandingRisk` | Attention | banding risk from sigma alone |

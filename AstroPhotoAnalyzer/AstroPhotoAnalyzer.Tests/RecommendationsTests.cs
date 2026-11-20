@@ -289,6 +289,37 @@ public class RecommendationsTests
         Assert.DoesNotContain("mai ales", jpeg.Because);
     }
 
+    /// <summary>
+    /// CR-011: an image with a side over 65 535 px ended the whole analysis in the JPEG stage
+    /// (the encoder refuses it). It is analysed to the end; section 1 says a JPEG cannot hold
+    /// it, with the size and the format's limit, and Appendix C has one line for the table.
+    /// </summary>
+    [Fact]
+    public void R091_AnImageAJpegCannotHoldIsAnalysedAndToldToSendTheTiff()
+    {
+        Raster wide = SyntheticRasters.AddNoise(SyntheticRasters.Flat(128, 65536, 0.25f, planes: 1), 1.0 / 255, 24);
+
+        var a = Run(wide);
+
+        Assert.True(a.Jpeg.TooLarge);
+        Recommendation jpeg = Assert.Single(Of(a, Topic.Format), r => r.Text.Contains("JPEG"));
+        Assert.Equal(Verdict.Ok, jpeg.Verdict);
+        Assert.Equal("Un JPEG nu poate tine imaginea asta: trimite TIFF-ul.", jpeg.Text);
+        Assert.Equal("imaginea are 65536 x 128 px, iar un JPEG tine cel mult 65535 px pe o latura", jpeg.Because);
+        Assert.Contains(Of(a, Topic.Format), r => r.Text.StartsWith("Trimite laboratorului un TIFF pe 8 biti"));
+        Assert.Contains("  JPEG: nemasurat (imaginea are 65536 x 128 px; un JPEG tine cel mult 65535 px pe o latura)", a.ReportBody);
+        Assert.DoesNotContain("JPEG 4:4:4", a.ReportBody);
+
+        using (Tr.Use(UiLanguage.English))
+        {
+            var e = Run(wide);
+            jpeg = Assert.Single(Of(e, Topic.Format), r => r.Text.Contains("JPEG"));
+            Assert.Equal("A JPEG cannot hold this image: send the TIFF.", jpeg.Text);
+            Assert.Equal("the image is 65536 x 128 px, and a JPEG holds at most 65535 px on a side", jpeg.Because);
+            Assert.Contains("  JPEG: not measured (the image is 65536 x 128 px; a JPEG holds at most 65535 px on a side)", e.ReportBody);
+        }
+    }
+
     [Fact]
     public void R095_TheDenoiseBecauseAlwaysTellsTheShareOfTilesUnderTheBandingSigma()
     {

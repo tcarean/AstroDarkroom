@@ -618,13 +618,23 @@ namespace AstroPhotoAnalyzer.Wpf
         internal override void Populate(AnalysisResult r)
         {
             QuantizationResult q = r.Quantization;
-            // The report's header without its indent; each English column title ends where the Romanian one does.
-            JpegRows = new[] { Tr.Pick("JPEG 4:4:4     size      mean err   max err   p99    p99.9   > 2 lev    mean level",
-                                       "JPEG 4:4:4   marime     err medie   err max   p99    p99.9   > 2 niv   nivel mediu") }
-                .Concat(r.Jpeg.Rows.Select(j =>
-                    $"q{j.Quality,-3}         {Fmt.Mb(j.Megabytes),8}   {Fmt.F3(j.MeanAbsError),9}   {Fmt.F1(j.MaxError),7}   {Fmt.F2(j.P99),4}   {Fmt.F2(j.P999),5}   {Fmt.Pct(j.PctOverThreshold),7}   {Fmt.F0(j.MeanLevelOverThreshold),11}"))
-                .ToList();
-            JpegGuide = JpegGuideParagraphs(r.Jpeg);
+            if (r.Jpeg.TooLarge)
+            {
+                // An image a JPEG cannot hold (ADR 0113): the core's line in place of the table,
+                // the one Appendix C prints, and no guide to a table that is not there.
+                JpegRows = new[] { ReportWriter.JpegNotMeasured(r) };
+                JpegGuide = Array.Empty<GuideParagraph>();
+            }
+            else
+            {
+                // The report's header without its indent; each English column title ends where the Romanian one does.
+                JpegRows = new[] { Tr.Pick("JPEG 4:4:4     size      mean err   max err   p99    p99.9   > 2 lev    mean level",
+                                           "JPEG 4:4:4   marime     err medie   err max   p99    p99.9   > 2 niv   nivel mediu") }
+                    .Concat(r.Jpeg.Rows.Select(j =>
+                        $"q{j.Quality,-3}         {Fmt.Mb(j.Megabytes),8}   {Fmt.F3(j.MeanAbsError),9}   {Fmt.F1(j.MaxError),7}   {Fmt.F2(j.P99),4}   {Fmt.F2(j.P999),5}   {Fmt.Pct(j.PctOverThreshold),7}   {Fmt.F0(j.MeanLevelOverThreshold),11}"))
+                    .ToList();
+                JpegGuide = JpegGuideParagraphs(r.Jpeg);
+            }
 
             // The descriptions: what the row measures, with the thresholds from Thresholds, not
             // typed in.
