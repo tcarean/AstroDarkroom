@@ -83,6 +83,60 @@ public class WcsMetadataKeysTests
         Assert.DoesNotContain("ABC_1_2", selected);
     }
 
+    /// <summary>
+    /// The SIP convention's largest corrections, A_DMAX and B_DMAX, are WCS keys: copied when the
+    /// source has them, after the orders (R-007; CR-020 of the review of 2026-11-16: neither list
+    /// held them).
+    /// </summary>
+    [Fact]
+    public void R007_SelectKeysToCopy_TheSipLargestCorrections_AreCopied()
+    {
+        var header = Header(FitsTestData.Card("A_ORDER", "2"), FitsTestData.Card("A_DMAX", "1.5"), FitsTestData.Card("B_DMAX", "1.2"));
+
+        var selected = WcsMetadataKeys.SelectKeysToCopy(header, includeOptical: false);
+
+        Assert.Equal(["A_ORDER", "A_DMAX", "B_DMAX"], selected);
+    }
+
+    /// <summary>
+    /// A plate-solve key is a WCS key of the list or a SIP coefficient whose two indices are ASCII
+    /// digits with nothing after them: a line feed after them, which a keyword may hold (R-010),
+    /// or a digit of another script makes no SIP coefficient (R-007; CR-021 of the review of
+    /// 2026-11-16: the pattern's <c>$</c> matched before a final line feed, its <c>\d</c> any
+    /// decimal digit).
+    /// </summary>
+    /// <param name="keyword">The keyword, as a header's Keywords give it.</param>
+    /// <param name="expected">Whether it is a plate-solve key.</param>
+    [Theory]
+    [InlineData("A_0_2", true)]
+    [InlineData("BP_1_1", true)]
+    [InlineData("AP_10_0", true)]
+    [InlineData("A_ORDER", true)]
+    [InlineData("A_DMAX", true)]
+    [InlineData("CD1_1", true)]
+    [InlineData("WCSAXES", true)]
+    [InlineData("ABC_1_2", false)]
+    [InlineData("A_1_2\n", false)]
+    [InlineData("A_1_2\r", false)]
+    [InlineData("A_\u0661_2", false)]
+    [InlineData("OBJECT", false)]
+    [InlineData("SITELAT", false)]
+    [InlineData("", false)]
+    public void R007_IsPlateSolveKey_IsAWcsKeyOrASipCoefficientWithAsciiDigitsAndNothingAfter(string keyword, bool expected)
+    {
+        Assert.Equal(expected, WcsMetadataKeys.IsPlateSolveKey(keyword));
+    }
+
+    /// <summary>A card whose keyword field holds <c>A_1_2</c> and a line feed is no SIP coefficient: not selected (R-007; CR-021).</summary>
+    [Fact]
+    public void R007_SelectKeysToCopy_AKeywordWithALineFeedAfterItsDigits_IsNoSipCoefficient()
+    {
+        var header = Header(FitsTestData.Pad("A_1_2\n  = 1.0e-05"));
+        Assert.Contains("A_1_2\n", header.Keywords);
+
+        Assert.Empty(WcsMetadataKeys.SelectKeysToCopy(header, includeOptical: true));
+    }
+
     [Fact]
     public void R007_SelectKeysToCopy_OpticalKeyIncludedOnlyWhenIncludeOpticalTrue()
     {
@@ -147,6 +201,28 @@ public class WcsMetadataKeysTests
         Assert.DoesNotContain("A_0_2", drop);
         Assert.DoesNotContain("OBJECT", drop);
         Assert.DoesNotContain("ABC_1_2", drop);
+    }
+
+    /// <summary>A destination's own A_DMAX and B_DMAX, an old solve's, are dropped when the plate-solved source lacks them (R-016; CR-020).</summary>
+    [Fact]
+    public void R016_SelectKeysToDrop_TheDestinationsOldSipLargestCorrections_AreDropped()
+    {
+        var source = Read(FitsTestData.PlateSolvedCards());
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards.AddRange([FitsTestData.Card("A_DMAX", "1.5"), FitsTestData.Card("B_DMAX", "1.2")]);
+
+        Assert.Equal(["A_DMAX", "B_DMAX"], WcsMetadataKeys.SelectKeysToDrop(source, Read(destCards)));
+    }
+
+    /// <summary>A destination's card whose keyword field holds <c>A_1_2</c> and a line feed is no plate-solve key: it is not dropped, and stays as it is (R-016; CR-021).</summary>
+    [Fact]
+    public void R016_SelectKeysToDrop_AKeywordWithALineFeedAfterItsDigits_IsNotDropped()
+    {
+        var source = Read(FitsTestData.PlateSolvedCards());
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards.Add(FitsTestData.Pad("A_1_2\n  = 1.0e-05"));
+
+        Assert.Empty(WcsMetadataKeys.SelectKeysToDrop(source, Read(destCards)));
     }
 
     [Fact]

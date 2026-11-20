@@ -111,52 +111,53 @@ internal sealed class Options
         return o;
     }
 
+    /// <summary>The English usage, its columns aligned by hand; its line ends are this file's, written as the writer's own (<see cref="PrintUsage"/>).</summary>
+    private const string EnglishUsage = """
+        Copies the WCS and the optical metadata from a source FITS into a destination one.
+
+          copywcs <source.fit> <destination.fit> [options]
+
+        Options:
+          -o, --output <file>    Write a new file instead of changing the destination in place
+              --dry-run          Show what would be copied, without writing anything
+              --force            Continue even when the dimensions differ or the image is mirrored
+              --no-optical       Copy only the WCS keys, not the optical metadata
+              --lang en|ro       The language of the texts: en (English, the default) or ro (Romanian)
+          -h, --help             Show this message
+        """;
+
+    /// <summary>The Romanian usage, its columns aligned by hand; its line ends are this file's, written as the writer's own (<see cref="PrintUsage"/>).</summary>
+    private const string RomanianUsage = """
+        Copiaza WCS + metadate optice dintr-un FITS sursa in unul destinatie.
+
+          copywcs <sursa.fit> <destinatie.fit> [optiuni]
+
+        Optiuni:
+          -o, --output <fisier>  Scrie intr-un fisier nou in loc sa modifice destinatia in loc
+              --dry-run          Arata ce s-ar copia, fara sa scrie nimic
+              --force            Continua chiar daca dimensiunile difera sau imaginea e oglindita
+              --no-optical       Copiaza doar cheile WCS, fara metadatele optice
+              --lang en|ro       Limba textelor: en (engleza, implicit) sau ro (romana)
+          -h, --help             Afiseaza acest mesaj
+        """;
+
     /// <summary>
     /// Writes the usage in the run's language, each language whole since its columns are
-    /// aligned by hand, then the warranty notice GPLv3 section 5(d) asks for. The notice
-    /// lives here and not under the banner on purpose: five lines on top of every run would
-    /// drown the actual output, and the person who reads the usage reads it too.
+    /// aligned by hand, every line ending in the writer's own line end, then the warranty notice
+    /// GPLv3 section 5(d) asks for. The notice lives here and not under the banner on purpose:
+    /// five lines on top of every run would drown the actual output, and the person who reads
+    /// the usage reads it too.
     /// </summary>
     /// <param name="writer">Where the usage goes; stdout.</param>
     public static void PrintUsage(TextWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
 
-        if (Current == UiLanguage.Romanian)
-        {
-            writer.WriteLine("""
-                Copiaza WCS + metadate optice dintr-un FITS sursa in unul destinatie.
-
-                  copywcs <sursa.fit> <destinatie.fit> [optiuni]
-
-                Optiuni:
-                  -o, --output <fisier>  Scrie intr-un fisier nou in loc sa modifice destinatia in loc
-                      --dry-run          Arata ce s-ar copia, fara sa scrie nimic
-                      --force            Continua chiar daca dimensiunile difera sau imaginea e oglindita
-                      --no-optical       Copiaza doar cheile WCS, fara metadatele optice
-                      --lang en|ro       Limba textelor: en (engleza, implicit) sau ro (romana)
-                  -h, --help             Afiseaza acest mesaj
-                """);
-
-            writer.WriteLine();
-            PrintWarranty(writer);
-            return;
-        }
-
-        writer.WriteLine("""
-            Copies the WCS and the optical metadata from a source FITS into a destination one.
-
-              copywcs <source.fit> <destination.fit> [options]
-
-            Options:
-              -o, --output <file>    Write a new file instead of changing the destination in place
-                  --dry-run          Show what would be copied, without writing anything
-                  --force            Continue even when the dimensions differ or the image is mirrored
-                  --no-optical       Copy only the WCS keys, not the optical metadata
-                  --lang en|ro       The language of the texts: en (English, the default) or ro (Romanian)
-              -h, --help             Show this message
-            """);
-
+        // A raw string holds the line ends of this file, LF in the repository: each is written as
+        // the writer's own, CR LF on Windows, as every other line of the console (R-003; CR-023 of
+        // the review of 2026-11-16).
+        string usage = Current == UiLanguage.Romanian ? RomanianUsage : EnglishUsage;
+        writer.WriteLine(usage.ReplaceLineEndings(writer.NewLine));
         writer.WriteLine();
         PrintWarranty(writer);
     }

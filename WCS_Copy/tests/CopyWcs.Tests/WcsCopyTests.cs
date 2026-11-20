@@ -1375,4 +1375,142 @@ public class WcsCopyTests
         Assert.Equal(LongObject, outcome.Cards[obj]);
         Assert.Equal(LongObjectEnd, outcome.Cards[obj + 1]);
     }
+
+    /// <summary>The default plate-solved header with a WCSAXES card where astrometry.net writes it, right under the image size.</summary>
+    private static List<string> SourceWithWcsaxes()
+    {
+        var cards = FitsTestData.PlateSolvedCards();
+        cards.Insert(cards.FindIndex(c => c.StartsWith("NAXIS2", StringComparison.Ordinal)) + 1, FitsTestData.Card("WCSAXES", "2"));
+        return cards;
+    }
+
+    /// <summary>
+    /// Into a destination with no plate solve, the keys the copy sets follow the destination's
+    /// cards in the order of R-007, a card the destination has (OBJECT) staying where it was, and
+    /// WCSAXES is already first of the plate solve: nothing moves (R-061).
+    /// </summary>
+    [Fact]
+    public void R061_Run_IntoADestinationWithoutAPlateSolve_TheKeysFollowItsCardsInTheListsOrder()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(SourceWithWcsaxes()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest)).Kind);
+
+        Assert.Equal(
+            ["SIMPLE", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2", "OBJECT", "WCSAXES", "CTYPE1", "CTYPE2", "CRPIX1", "CRPIX2",
+             "CRVAL1", "CRVAL2", "CDELT1", "CDELT2", "PLTSOLVD", "A_0_2", "BP_1_1", "FOCALLEN", "XPIXSZ", "TELESCOP", "HISTORY"],
+            FitsHeader.ReadPrimary(dest).Keywords);
+    }
+
+    /// <summary>
+    /// A source's WCSAXES goes right above the first card of the destination's own plate solve,
+    /// as the FITS standard asks (4.0, section 8.2), where it was appended after every card of the
+    /// destination, below the WCS cards the copy replaces where they stand (R-061; CR-019 of the
+    /// review of 2026-11-16).
+    /// </summary>
+    [Fact]
+    public void R061_Run_ACopiedWcsaxes_GoesRightAboveTheDestinationsPlateSolve()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(SourceWithWcsaxes()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards()));
+
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest)).Kind);
+
+        // Card 7, where the old CTYPE1 stood, and CTYPE1 under it.
+        Assert.Equal(["SIMPLE", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2", "OBJECT", "WCSAXES", "CTYPE1"],
+            FitsHeader.ReadPrimary(dest).Keywords.Take(8));
+    }
+
+    /// <summary>
+    /// A copy that sets no WCSAXES, from a source with neither WCSAXES nor CTYPE1, which drops
+    /// nothing (R-016), leaves a destination's own WCSAXES where it stands, below its plate solve:
+    /// only a WCSAXES the copy set moves (R-061; the review of the branch of CR-019: a move asked
+    /// whatever the source held passed every test).
+    /// </summary>
+    [Fact]
+    public void R061_Run_ACopyThatSetsNoWcsaxes_LeavesTheDestinationsOwnWhereItStands()
+    {
+        using var ws = new TempWorkspace();
+        List<string> sourceCards = FitsTestData.ProcessedCards();
+        sourceCards.Add(FitsTestData.Card("FOCALLEN", "700.0"));
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(sourceCards));
+        List<string> destCards = FitsTestData.OldSolveCards();
+        destCards.Add(FitsTestData.Card("WCSAXES", "2"));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards));
+
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest)).Kind);
+
+        List<string> keys = FitsHeader.ReadPrimary(dest).Keywords.ToList();
+        Assert.Equal(keys.IndexOf("SITELAT") + 1, keys.IndexOf("WCSAXES"));
+        Assert.True(keys.IndexOf("CTYPE1") < keys.IndexOf("WCSAXES"));
+    }
+
+    /// <summary>
+    /// A destination written in alphabetical order without SIP, its plate solve beginning with
+    /// CDELT1, a WCS key other than CTYPE1, gets the copied WCSAXES right above CDELT1 (R-061; the
+    /// second review of the branch of CR-019: a move above CTYPE1 or a SIP coefficient passed
+    /// every other test).
+    /// </summary>
+    [Fact]
+    public void R061_Run_ADestinationWhoseSolveBeginsWithCdelt1_GetsWcsaxesRightAboveIt()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(SourceWithWcsaxes()));
+        List<string> destCards = FitsTestData.ProcessedCards().Take(5).ToList();
+        destCards.AddRange(
+        [
+            FitsTestData.Card("CDELT1", "-0.000305"), FitsTestData.Card("CDELT2", "0.000305"),
+            FitsTestData.Card("CRPIX1", "51.0"), FitsTestData.Card("CRPIX2", "41.0"),
+            FitsTestData.Card("CRVAL1", "83.6"), FitsTestData.Card("CRVAL2", "22.0"),
+            FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"),
+            FitsTestData.Card("OBJECT", "'M42'"),
+        ]);
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards));
+
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest)).Kind);
+
+        Assert.Equal(["SIMPLE", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2", "WCSAXES", "CDELT1"],
+            FitsHeader.ReadPrimary(dest).Keywords.Take(7));
+    }
+
+    /// <summary>
+    /// A source with WCSAXES but no CTYPE1, whose copy drops nothing (R-016), still sets WCSAXES,
+    /// and it goes right above the destination's plate solve: the move follows the WCSAXES the
+    /// copy set, not the source's CTYPE1 (R-061; the second review of the branch of CR-019).
+    /// </summary>
+    [Fact]
+    public void R061_Run_ASourceWithWcsaxesButNoCtype1_StillPutsItAboveTheDestinationsSolve()
+    {
+        using var ws = new TempWorkspace();
+        List<string> sourceCards = FitsTestData.ProcessedCards();
+        sourceCards.Add(FitsTestData.Card("WCSAXES", "2"));
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(sourceCards));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards()));
+
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest)).Kind);
+
+        Assert.Equal(["SIMPLE", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2", "OBJECT", "WCSAXES", "CTYPE1"],
+            FitsHeader.ReadPrimary(dest).Keywords.Take(8));
+    }
+
+    /// <summary>A destination's own WCSAXES that stands below its plate solve, which the copy replaces where it stands, is moved above that solve too (R-061; CR-019).</summary>
+    [Fact]
+    public void R061_Run_ADestinationsOwnWcsaxesBelowItsSolve_IsMovedAboveIt()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(SourceWithWcsaxes()));
+        List<string> destCards = FitsTestData.OldSolveCards();
+        destCards.Add(FitsTestData.Card("WCSAXES", "2", "an old solve's own"));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(destCards));
+
+        Assert.Equal(WcsCopyKind.Copied, WcsCopy.Run(Request(source, dest)).Kind);
+
+        FitsHeader written = FitsHeader.ReadPrimary(dest);
+        Assert.Equal(["SIMPLE", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2", "OBJECT", "WCSAXES", "CTYPE1"], written.Keywords.Take(8));
+        Assert.Equal(FitsTestData.Card("WCSAXES", "2"), written.GetCard("WCSAXES"));
+        Assert.Single(written.Keywords, k => k == "WCSAXES");
+    }
 }

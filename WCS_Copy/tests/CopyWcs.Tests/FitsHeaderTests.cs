@@ -307,6 +307,40 @@ public class FitsHeaderTests
         Assert.Equal(["SIMPLE", "A"], header.Keywords);
     }
 
+    /// <summary>
+    /// A keyword's cards, the CONTINUE cards under its first one with it, move up right above the
+    /// first card the predicate accepts, the other cards keeping their order (R-061).
+    /// </summary>
+    [Fact]
+    public void R061_MoveAbove_TheCardsGoRightAboveTheFirstCardAccepted_WithTheirContinueCards()
+    {
+        var header = ReadHeader(
+            FitsTestData.Card("A", "1"),
+            FitsTestData.Card("B", "2"),
+            FitsTestData.Card("C", "3"),
+            FitsTestData.Card("OBJECT", "'NGC 6960 &'"),
+            FitsTestData.Continue("'Veil'"),
+            FitsTestData.Card("D", "4"));
+
+        header.MoveAbove("OBJECT", k => k is "B" or "C" or "OBJECT");
+
+        Assert.Equal(["SIMPLE", "A", "OBJECT", "CONTINUE", "B", "C", "D"], header.Keywords);
+        Assert.Equal([FitsTestData.Card("OBJECT", "'NGC 6960 &'"), FitsTestData.Continue("'Veil'")], header.ValueCards("OBJECT"));
+    }
+
+    /// <summary>Nothing moves when the keyword is missing, when no card the predicate accepts stands above it, or when it is itself the first accepted (R-061).</summary>
+    [Fact]
+    public void R061_MoveAbove_NothingAcceptedAboveTheCards_OrNoSuchKeyword_MovesNothing()
+    {
+        var header = ReadHeader(FitsTestData.Card("A", "1"), FitsTestData.Card("B", "2"), FitsTestData.Card("C", "3"));
+
+        header.MoveAbove("B", k => k == "C");
+        header.MoveAbove("B", k => k is "B" or "C");
+        header.MoveAbove("Z", _ => true);
+
+        Assert.Equal(["SIMPLE", "A", "B", "C"], header.Keywords);
+    }
+
     [Fact]
     public void SetCard_ShortCard_PadsTo80Chars()
     {
@@ -424,6 +458,21 @@ public class FitsHeaderTests
         header.AddHistory("WCS copied from " + char.ConvertFromUtf32(0x1F30C) + ".fit");
 
         Assert.Equal("HISTORY WCS copied from ?.fit".PadRight(80), header.GetCard("HISTORY"));
+    }
+
+    /// <summary>
+    /// A control character, a tab, the 0x7F a Windows file name may hold, a NUL, is one <c>?</c>
+    /// in the card, the space staying a space: a header holds the bytes 0x20 to 0x7E only (R-011,
+    /// ADR 0034; CR-022 of the review of 2026-11-16: the bytes 0x09 and 0x7F reached the card).
+    /// </summary>
+    [Fact]
+    public void R011_AddHistory_AControlCharacter_IsOneQuestionMark()
+    {
+        var header = ReadHeader();
+
+        header.AddHistory("WCS copied from a\tb" + (char)0x7F + "c" + (char)0x00 + " d.fit");
+
+        Assert.Equal("HISTORY WCS copied from a?b?c? d.fit".PadRight(80), header.GetCard("HISTORY"));
     }
 
     /// <summary>The cut at 72 counts the ASCII characters written, after the transliteration (ADR 0010).</summary>

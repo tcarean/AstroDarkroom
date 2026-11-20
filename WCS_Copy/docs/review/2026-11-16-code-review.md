@@ -101,11 +101,11 @@ original and proposal side by side.
 | CR-016 | 3 | slip | owner | A read-only destination is refused only after its whole copy is written, and the copy is left | fixed f7d27425 |
 | CR-017 | 3 | rare | confirmed | The window draws the warnings under the refusal; R-033 says above | fixed c171e264 |
 | CR-018 | 4 | rare | confirmed | The in-place replace is a plain move: creation time, attributes and links are lost, an existing `.tmp` is overwritten | fixed 04143b47 |
-| CR-019 | 4 | some files | shown | `WCSAXES` can be written after the WCS cards it must precede | open |
-| CR-020 | 4 | some files | owner | The SIP keys `A_DMAX` and `B_DMAX` are in neither list | open |
-| CR-021 | 4 | crafted | shown | A keyword ending in a line feed passes for a SIP coefficient and splits a log line | open |
-| CR-022 | 4 | rare | shown | Control characters reach the HISTORY card | open |
-| CR-023 | 4 | common | shown | The usage block is written with LF line ends inside CRLF output | open |
+| CR-019 | 4 | some files | shown | `WCSAXES` can be written after the WCS cards it must precede | fixed ff02a559 |
+| CR-020 | 4 | some files | owner | The SIP keys `A_DMAX` and `B_DMAX` are in neither list | fixed 6a7e9529 |
+| CR-021 | 4 | crafted | shown | A keyword ending in a line feed passes for a SIP coefficient and splits a log line | fixed 8b67f05d |
+| CR-022 | 4 | rare | shown | Control characters reach the HISTORY card | fixed fc24bc0d |
+| CR-023 | 4 | common | shown | The usage block is written with LF line ends inside CRLF output | fixed f965fa3d |
 | CR-024 | 4 | rare | confirmed | At `COPYWCS_LOG=warn` or higher the process's first and last lines are not written | open |
 | CR-025 | 4 | slip | confirmed | `Copy` is enabled with two quote characters as the new file's path | open |
 | CR-026 | 4 | slip | owner | A path that starts with a dash cannot be given; flags are case-sensitive, `--lang` is not | open |
@@ -478,6 +478,7 @@ write through a temporary file.
   precede all other WCS keywords. The prototype wrote the same order.
 - **Evidence:** shown. Whether a reader minds was not measured; if one does, this is a
   severity 1.
+- **Status:** fixed ff02a559 (a copied `WCSAXES` is moved right above the first card of the target's plate solve, a WCS key of R-007 or a SIP coefficient, when one stands above it, a destination's own `WCSAXES` the copy replaced too; otherwise no card moves. Measured on 2026-11-19: astropy 8.0.1 reads `WCSAXES` the same before or after the other WCS cards (`NAXIS = 2` with `WCSAXES = 3` gives 3 axes in both places, `NAXIS = 3` with `WCSAXES = 4` gives 4), so no reader measured minds and the entry stays severity 4; Siril was not measured; none of the owner's 5,206 FITS files under `E:\Photografie` holds `WCSAXES`; the review of the branch found that the standard's Table 22 counts the date cards (`DATE`, `DATE-OBS`, `MJD-OBS`), `PVi_m` and `WCSNAME` among the WCS keywords too, which the move does not look at, so in a Siril header `WCSAXES` stands under `DATE-OBS`: the owner chose on 2026-11-19 to keep the code and say so, and the SyQon CLI's alphabetical header, whose plate solve begins with `AP_0_0`, joined the tests, e05a556b; its second review added the real Siril header, a plate solve beginning with `CDELT1` and a source with `WCSAXES` but no `CTYPE1` to the tests, and said that `DATE-OBS` is an optical key the copy sets where it stands, 132f404f; R-061, ADR 0032).
 
 ### CR-020 The SIP keys `A_DMAX` and `B_DMAX` are in neither list
 
@@ -487,6 +488,7 @@ write through a temporary file.
 - **Evidence:** owner: R-016 and ADR 0011 leave "a plate-solve card outside both lists" alone
   on purpose, naming `RADECSYS` and `PVi_m`; these two belong to the convention the lists
   cover. Neither fixture holds them.
+- **Status:** fixed 6a7e9529 (`A_DMAX` and `B_DMAX` join the WCS list, 32 keys: copied when the source has them, dropped from the destination when a plate-solved source lacks them, as the orders are, the owner's answer of 2026-11-19; none of the owner's 5,206 FITS files under `E:\Photografie` holds either, 257 of them a SIP solve; R-007, R-016, ADR 0033).
 
 ### CR-021 A keyword ending in a line feed passes for a SIP coefficient
 
@@ -500,6 +502,7 @@ write through a temporary file.
   time or level (area 4's probe), where R-042 says a control character is logged as `\xNN`.
 - **Direction:** `\z` and `[0-9]` in the pattern.
 - **Evidence:** shown.
+- **Status:** fixed 8b67f05d (the pattern is `^(A|B|AP|BP)_[0-9]+_[0-9]+\z`: a keyword with a line feed after its digits is no SIP coefficient, so it is neither copied nor dropped, and no `card` or `drop` line of the log, nor the drop line on screen, names it raw; `[0-9]` changes nothing a Latin-1 card can hold and says what the pattern means; none of the owner's 5,206 FITS files holds a keyword with a control character; R-007).
 
 ### CR-022 Control characters reach the HISTORY card
 
@@ -509,6 +512,7 @@ write through a temporary file.
   `a<tab>b<0x7F>c`: the card's bytes are `... 61 09 62 7F 63`. A FITS header may hold 0x20 to
   0x7E only, and R-011 and ADR 0010 mean the one card the tool composes to be a standard one.
 - **Evidence:** shown.
+- **Status:** fixed fc24bc0d (a control character, below 0x20 or 0x7F, is one `?` in the HISTORY card, as a character with no ASCII form, the owner's answer of 2026-11-19, the card shown before and after; a source file named `Veil` + 0x7F + `1.fit`, which Windows allowed, gives `HISTORY WCS copied from Veil?1.fit`; R-011, ADR 0034).
 
 ### CR-023 The usage block is written with LF line ends
 
@@ -519,6 +523,7 @@ write through a temporary file.
 - **Direction:** the usage written line by line, as the warranty is.
 - **Test:** none can see it; the tests' `Lines()` normalise the line ends first.
 - **Evidence:** shown.
+- **Status:** fixed f965fa3d (each language's usage is written with its line ends replaced by the writer's own, and a test writes into a CR LF writer; the branch's Release console's `--help` redirected to a file gives 19 lines, each ending in CR LF, in both languages; R-003).
 
 ### CR-024 At `COPYWCS_LOG=warn` the process's first and last lines are not written
 
@@ -647,6 +652,7 @@ that next touches the file.
 - `WcsCopy.cs:160`, `218`: `source.Contains("CTYPE1")` twice.
 - `LanguageArgument.cs:31`: `Given` has no reader in `src/`.
 - `Options.cs:137-139`, `156-157`: the same two closing lines in both language branches.
+  (Done with CR-023's fix, f965fa3d: the two branches are one, which picks the language's text.)
 - `Options.cs:129`, `102`: Romanian wording, the owner's: "in loc sa modifice destinatia in
   loc" uses "in loc" for both "instead" and "in place"; "sursa si destinatie" against "the
   source and the destination".

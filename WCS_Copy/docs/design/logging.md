@@ -150,7 +150,11 @@ what the destination held (`none`, `same`, or its cards), a long string's cards 
 replaced, identical, dropped)`, then one `drop <key>: <card>` line per card of each key the copy
 drops (R-016), every card of a keyword the destination holds twice, while `dropped` counts the
 keys, and one `drop CHECKSUM: <card>` for the destination's checksum (R-018), which `dropped`
-does not count; in a dry run too. The four counts are always written, `dropped 0` included: the version
+does not count; in a dry run too. The key at the head of a `card` or `drop` line is written as it
+is, not through `LogText.Card`: every such key is a literal of the lists or matches the SIP
+pattern of `WcsMetadataKeys`, which ends at the keyword's end, so none holds a control character
+that could split the line (a keyword with a line feed after a coefficient's digits did, CR-021).
+The four counts are always written, `dropped 0` included: the version
 does not change with a fix, so that count is what tells a log of a build that drops from one of
 a build that does not.
 

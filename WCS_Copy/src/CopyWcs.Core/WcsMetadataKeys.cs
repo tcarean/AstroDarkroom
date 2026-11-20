@@ -26,7 +26,11 @@ namespace CopyWcs;
 /// </summary>
 internal static class WcsMetadataKeys
 {
-    /// <summary>The keys that describe the astrometric solution itself.</summary>
+    /// <summary>
+    /// The keys that describe the astrometric solution itself, 32: the SIP convention's orders
+    /// and its largest corrections (<c>A_DMAX</c>, <c>B_DMAX</c>, ADR 0033) among them; the SIP
+    /// coefficients themselves are <see cref="SipCoefficient"/>'s.
+    /// </summary>
     internal static readonly string[] WcsKeys =
     {
         "WCSAXES", "CTYPE1", "CTYPE2", "CUNIT1", "CUNIT2",
@@ -36,6 +40,7 @@ internal static class WcsMetadataKeys
         "PC1_1", "PC1_2", "PC2_1", "PC2_2",
         "EQUINOX", "RADESYS", "LONPOLE", "LATPOLE",
         "A_ORDER", "B_ORDER", "AP_ORDER", "BP_ORDER",
+        "A_DMAX", "B_DMAX",
         "PLTSOLVD"
     };
 
@@ -50,9 +55,14 @@ internal static class WcsMetadataKeys
         "SITELAT", "SITELONG", "SITEELEV", "DATE-OBS", "INSTRUME", "TELESCOP"
     };
 
-    /// <summary>The SIP coefficients have variable names: A_0_2, B_1_1, AP_2_0 and so on.</summary>
+    /// <summary>
+    /// The SIP coefficients have variable names: A_0_2, B_1_1, AP_2_0 and so on, the two indices in
+    /// ASCII digits with nothing after them. <c>\z</c>, not <c>$</c>, which also matches before a
+    /// final line feed, a byte a keyword keeps (R-010): <c>A_1_2</c> and a line feed is no SIP
+    /// coefficient (R-007; CR-021 of the review of 2026-11-16).
+    /// </summary>
     private static readonly Regex SipCoefficient =
-        new(@"^(A|B|AP|BP)_\d+_\d+$", RegexOptions.Compiled);
+        new(@"^(A|B|AP|BP)_[0-9]+_[0-9]+\z", RegexOptions.Compiled);
 
     /// <summary>
     /// The keys to copy: every WCS key, every SIP coefficient the source has, and the optical
@@ -75,6 +85,16 @@ internal static class WcsMetadataKeys
 
         return wanted.Distinct().Where(source.Contains).ToList();
     }
+
+    /// <summary>
+    /// Whether a keyword is part of a plate solve as the two lists see it: one of
+    /// <see cref="WcsKeys"/> or a SIP coefficient. The keys a copy drops from the destination are
+    /// such keys (R-016), and a copied WCSAXES goes above the first of them (R-061).
+    /// </summary>
+    /// <param name="keyword">The keyword, as <see cref="FitsHeader.Keywords"/> gives it; not null.</param>
+    /// <returns>True for a WCS key or a SIP coefficient; false for any other keyword, an optical key included.</returns>
+    internal static bool IsPlateSolveKey(string keyword)
+        => WcsKeys.Contains(keyword) || SipCoefficient.IsMatch(keyword);
 
     /// <summary>
     /// The orientation of a header's plate solve (R-017): the sign of the determinant of its
@@ -148,7 +168,7 @@ internal static class WcsMetadataKeys
 
     /// <summary>
     /// The destination's old plate-solve keys a copy drops (R-016): every keyword of the
-    /// destination that is one of <see cref="WcsKeys"/> or a SIP coefficient and that the source
+    /// destination that is a plate-solve key (<see cref="IsPlateSolveKey"/>) and that the source
     /// does not have, each once, in the order the destination holds them. Never an optical key.
     /// Whether to drop at all, only when the source has <c>CTYPE1</c>, is the run's rule.
     /// </summary>
@@ -161,7 +181,7 @@ internal static class WcsMetadataKeys
         ArgumentNullException.ThrowIfNull(dest);
 
         return dest.Keywords
-            .Where(k => (WcsKeys.Contains(k) || SipCoefficient.IsMatch(k)) && !source.Contains(k))
+            .Where(k => IsPlateSolveKey(k) && !source.Contains(k))
             .Distinct()
             .ToList();
     }

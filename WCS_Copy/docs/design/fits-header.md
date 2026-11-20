@@ -60,17 +60,31 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
   order; `RemoveCards(key)` takes them all out, the other cards keeping their order, and returns
   them (R-016, R-018). The run logs a dropped key's cards through `CardsOf` before anything
   changes, and drops them through `RemoveCards` before the first `SetValueCards`.
+- `MoveAbove(key, below)` moves a keyword's value cards, its `CONTINUE` cards with it, right
+  above the first card whose keyword the predicate accepts, when that card stands above them,
+  the other cards keeping their order; a predicate that accepts the moved keyword itself leaves
+  it where it is when it is the first accepted. After the last `SetValueCards` the run moves a
+  copied `WCSAXES` this way, with `WcsMetadataKeys.IsPlateSolveKey` as the predicate (R-061,
+  ADR 0032): `SetValueCards` replaces the destination's own cards of the plate solve where they
+  stand and appends a `WCSAXES` the destination lacks after them, where the FITS standard wants
+  it above them (CR-019). The predicate is the plate solve of the lists and nothing else, so
+  the standard's other WCS keywords, the date cards among them (`DATE-OBS` an optical key the
+  copy sets where the destination's card stands), may stay above the copied `WCSAXES`; ADR 0032
+  says where it lands in a Siril header and in the SyQon CLI's.
 - `AddHistory(text)` appends `HISTORY ` plus at most 72 characters of `AsciiText.Of(text)`
-  (R-011): the text is made ASCII first, then cut, so the cut counts the characters written.
+  (R-011): the text is made printable ASCII first, then cut, so the cut counts the characters
+  written.
 
 ## The ASCII of a card the tool composes
 
 `AsciiText.Of` is the one place a text the tool composes (today the source's file name in the
-HISTORY card) becomes ASCII. It walks the text by runes: a rune below 0x80 is itself; one the
-table `BaseCharacters` holds becomes its base character; a combining mark standing alone
+HISTORY card) becomes printable ASCII, the bytes 0x20 to 0x7E a header may hold. It walks the
+text by runes: a printable ASCII rune is itself; a control character, below 0x20 or 0x7F, is one
+`?` (ADR 0034; CR-022: a Windows file name may hold 0x7F, which reached the card); one the table
+`BaseCharacters` holds becomes its base character; a combining mark standing alone
 (`Rune.GetUnicodeCategory` is `NonSpacingMark`, a name already in decomposed form) is dropped;
 any other rune becomes one `?`, an emoji's two UTF-16 units included. A text that is already
-ASCII is returned as the same instance.
+printable ASCII (`IsPrintable`, every character) is returned as the same instance.
 
 The table is a `const string` of pairs, the character then its base, read once into a
 `Dictionary<char, char>`: the 495 characters of the Basic Multilingual Plane whose FormD
@@ -113,8 +127,9 @@ once, as the write begins, and the temporary file, the data read and the rename 
 so a working folder that moves during the write (a file dialog of the window, CR-006) changes
 neither file; the review of the branch found the target looked up again at the rename, which
 `WorkingFolderTests` shows by moving the working folder at the write's first log line. The header may have grown past its original
-number of blocks (a copy adds up to 47 fixed keys, the SIP coefficients and a HISTORY card; 72
-on V-001), so an in-place write could not patch the destination anyway. `TemporaryBeside` names
+number of blocks (a copy adds up to 49 fixed keys, the 32 WCS and the 17 optical ones, the SIP
+coefficients and a HISTORY card; 72 on V-001), so an in-place write could not patch the
+destination anyway. `TemporaryBeside` names
 the temporary file after the target, `<name>.copywcs-<8 random hex digits>.tmp`, in the target's
 folder so the rename stays on one volume, `<name>` cut, never inside a surrogate pair, when it is
 too long to take the 21-character suffix within `NameLimit`, the 255 characters NTFS, FAT and
@@ -164,28 +179,34 @@ no length.
 
 `WcsMetadataKeys` holds two literal lists and a pattern:
 
-- `WcsKeys`, 30 keys: the axis and projection (`WCSAXES`, `CTYPE`, `CUNIT`), the reference
+- `WcsKeys`, 32 keys: the axis and projection (`WCSAXES`, `CTYPE`, `CUNIT`), the reference
   pixel and value (`CRPIX`, `CRVAL`), the scale and rotation in their three forms (`CDELT`
   with `CROTA`, the `CD` matrix, the `PC` matrix), the frame (`EQUINOX`, `RADESYS`, `LONPOLE`,
-  `LATPOLE`), the SIP orders and Siril's `PLTSOLVD`. A header carries one of the three scale
-  forms; the list has all three so that any solver's output is copied whole.
+  `LATPOLE`), the SIP orders, the SIP convention's largest corrections (`A_DMAX`, `B_DMAX`; ADR
+  0033, CR-020) and Siril's `PLTSOLVD`. A header carries one of the three scale forms; the list
+  has all three so that any solver's output is copied whole.
 - `OpticalKeys`, 17 keys: the focal length and pixel size a later re-solve needs as a starting
   scale, the binning, the pointing (`OBJCTRA`, `OBJCTDEC`, `RA`, `DEC`, `OBJECT`), the site,
   the date and the instrument.
-- `SipCoefficient`, `^(A|B|AP|BP)_\d+_\d+$`: the distortion coefficients, whose names vary
-  with the polynomial degree; `ABC_1_2` does not match, nor does `A_ORDER`.
+- `SipCoefficient`, `^(A|B|AP|BP)_[0-9]+_[0-9]+\z`: the distortion coefficients, whose names
+  vary with the polynomial degree; `ABC_1_2` does not match, nor does `A_ORDER`, nor `A_1_2`
+  followed by a line feed, a byte `KeywordOf` keeps in a keyword: `\z` ends the match at the
+  keyword's end, where `$` also matched before a final line feed, and `[0-9]` says the indices
+  are ASCII digits, where `\d` took any script's (CR-021; a Latin-1 card holds no other digit).
 
 `SelectKeysToCopy(source, includeOptical)` builds the wanted list in that order, the SIP
 coefficients in the source's own order between the WCS keys and the optical ones, drops
 duplicates and keeps only the keys the source has (R-007). V-001 in `docs/validation.md`
 shows what this yields on a real Siril header: 61 WCS and SIP keys, 11 optical ones.
 
-`SelectKeysToDrop(source, dest)` walks the destination's `Keywords` in order and keeps each one
-that is in `WcsKeys` or matches `SipCoefficient` and that the source does not have, each once
-(R-016). It is the same two lists that decide what a plate solve is, read from the other side, so
-no card of those keys is left in the target but the source's, save a second card of a keyword the
-source has, which `SetValueCards` does not reach; a plate-solve card outside both lists (`RADECSYS`,
-`PVi_m`, `CTYPE1A`) is neither copied nor dropped. `OpticalKeys` never take part, so a
+`IsPlateSolveKey(keyword)` is that one test, a keyword in `WcsKeys` or matching
+`SipCoefficient`: what the lists call a plate solve, for the drop and for the place of a copied
+`WCSAXES` (R-061). `SelectKeysToDrop(source, dest)` walks the destination's `Keywords` in order
+and keeps each plate-solve key the source does not have, each once (R-016). It is the same two
+lists that decide what a plate solve is, read from the other side, so no card of those keys is
+left in the target but the source's, save a second card of a keyword the source has, which
+`SetValueCards` does not reach; a plate-solve card outside both lists (`RADECSYS`, `PVi_m`,
+`CTYPE1A`) is neither copied nor dropped. `OpticalKeys` never take part, so a
 destination's own `OBJECT` or `SITELAT` stays when the source lacks it. The selector itself does
 not look at `CTYPE1`: the run asks for it only when the source has one (ADR 0011). V-002 shows it
 on a real destination: the 4 `CD` keys the SyQon CLI wrote beside Siril's `PC`.

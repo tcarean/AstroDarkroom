@@ -1,7 +1,7 @@
 # 0010. The header is read and written byte for byte through Latin-1, the HISTORY card stays ASCII through a frozen decomposition table, and the log writes a byte above 0x7F as `\xNN`
 
 Date: 2026-10-31
-Status: accepted 2026-10-31
+Status: accepted 2026-10-31; a control character kept in the HISTORY card superseded by 0034
 
 ## Context
 

@@ -39,7 +39,7 @@ the destination's keys to drop (`WcsMetadataKeys.SelectKeysToDrop`, R-016, ADR 0
 run return the cards, the heading and the drop line (R-009); else remove the dropped keys' cards
 and the destination's `CHECKSUM`, which the changed header would no longer match, whatever the
 source holds (R-018, ADR 0021; `DATASUM` stays, the data being untouched, and no line says it),
-set each selected key's value cards verbatim (`SetValueCards`, a long string whole, R-010), append the HISTORY card, write through the header engine (a
+set each selected key's value cards verbatim (`SetValueCards`, a long string whole, R-010), move a copied `WCSAXES` right above the first card of the plate solve when one stands above it (`FitsHeader.MoveAbove`, R-061, ADR 0032), append the HISTORY card, write through the header engine (a
 write failure is a refusal, R-014, its message through `FitsHeader.WriteErrorMessage`, which
 names the target where the system named the temporary file) and return the count, the reminder and the drop line (R-012); the heading's count and the closing line's count are of keys, not of cards.
 The keys dropped and the keys set never overlap: a dropped key is one the source lacks. A
@@ -72,9 +72,14 @@ stderr)` once, which the tests drive with string writers, and closes the log (`l
 in any position, `-h` stopping the parse at once, the value after `-o` refused when it starts
 with a dash as a path is (ADR 0030); a parse error is one line on stderr, the
 usage on stdout and exit 2 (R-002); `--help` is the usage and exit 0 (R-003). The usage is
-written whole per language because its columns are aligned by hand; the warranty paragraph
-of GPLv3 section 5(d) follows it, there and not under the banner so that it does not weigh on
-every run. Then the run, and the printing of the outcome as the table above says. Exit codes:
+written whole per language because its columns are aligned by hand, one raw string each
+(`EnglishUsage`, `RomanianUsage`), its line ends, LF in the repository, replaced by the
+writer's own (`ReplaceLineEndings(writer.NewLine)`), so its lines end in CR LF on Windows as
+every other line of the console (CR-023: one `WriteLine` of the raw string left 10 bare LF
+inside the CRLF output; the tests' `Lines()` normalise line ends and could not see it, and
+`R003_EveryLineOfTheUsageEndsInTheConsolesLineEnd` writes into a CR LF writer); the warranty
+paragraph of GPLv3 section 5(d) follows it, there and not under the banner so that it does not
+weigh on every run. Then the run, and the printing of the outcome as the table above says. Exit codes:
 0 success or preview, 1 refused or a bad `--lang`, 2 usage.
 
 ## The language (`Ui`, `LanguageArgument`)

@@ -655,6 +655,30 @@ public class LoggingTests
     }
 
     /// <summary>
+    /// A keyword that holds a line feed after a SIP coefficient's digits is no key of the lists, so
+    /// no log line names it raw: it split the source's <c>card</c> line and the destination's
+    /// <c>drop</c> line in two, the second half without time or level, and the drop line on
+    /// screen too (R-042, R-007; CR-021 of the review of 2026-11-16).
+    /// </summary>
+    [Fact]
+    public void R042_AKeywordWithALineFeedAfterItsDigitsSplitsNoLine()
+    {
+        using var ws = new TempWorkspace();
+        List<string> source = FitsTestData.PlateSolvedCards();
+        source.Add(FitsTestData.Pad("A_1_2\n  = 1.0e-05"));
+        List<string> dest = FitsTestData.ProcessedCards();
+        dest.Add(FitsTestData.Pad("B_2_0\n  = 2.0e-05"));
+        var (src, dst) = Pair(ws, source, dest);
+        using var capture = LogCapture.Start();
+
+        var outcome = WcsCopy.Run(new WcsCopyRequest(src, dst, null, IncludeOptical: true, Force: false, DryRun: false));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.Null(outcome.Dropped);
+        Assert.DoesNotContain(capture.Messages, m => m.Contains('\n', StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// A header read from a stream that cannot seek (a named pipe) has no length to tell: the
     /// read line says so instead of throwing, and the run goes on as it did before the log
     /// (R-041, R-042; the review of 2026-10-30 found <c>FileStream.Length</c> ending such a run

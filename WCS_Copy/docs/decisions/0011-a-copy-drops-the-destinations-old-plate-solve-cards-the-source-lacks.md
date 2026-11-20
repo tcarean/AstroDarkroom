@@ -1,7 +1,7 @@
 # 0011. A copy drops the destination's old plate-solve cards that the source lacks, so the target holds one plate solve
 
 Date: 2026-11-06
-Status: accepted 2026-11-06
+Status: accepted 2026-11-06; the list of 30 WCS keys superseded by 0033
 
 ## Context
 

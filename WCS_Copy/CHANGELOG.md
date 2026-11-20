@@ -59,6 +59,23 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- `copywcs --help`, and the usage after a wrong command line, end every line in CR LF on
+  Windows, as the rest of the console's output, where the usage's own lines ended in a bare LF
+  (R-003; CR-023 of the review of 2026-11-16).
+- The `HISTORY` card writes a control character of the source's name, the 0x7F a Windows file
+  name may hold, as `?`, where it wrote the byte itself, which a FITS header may not hold (R-011,
+  ADR 0034; CR-022 of the review of 2026-11-16).
+- A keyword such as `A_1_2` followed by a line feed, which only a damaged or crafted file holds,
+  is no longer taken for a SIP coefficient: a copy neither copies nor drops it, and its line feed
+  no longer splits a line of the log or the line naming the dropped keys (R-007; CR-021 of the
+  review of 2026-11-16).
+- A copy takes the SIP distortion's largest corrections, `A_DMAX` and `B_DMAX`, with the rest of
+  the plate solve, and drops the destination's old ones the source does not have, where it left
+  both alone (ADR 0033; CR-020 of the review of 2026-11-16).
+- A copy writes `WCSAXES` above the destination's other plate-solve cards, where they stayed
+  above the copied `WCSAXES`. The FITS standard wants it above every WCS card, and counts the
+  date cards (`DATE-OBS`) among them, which a copy leaves where they are; astropy reads either
+  order the same (R-061, ADR 0032; CR-019 of the review of 2026-11-16).
 - A file a copy replaces, the destination in place or an existing file given to `-o`, keeps its
   creation date, its attributes (Hidden, for one) and its permissions, where it got the copy's
   date and lost them; the copy is flushed to the disk before it takes the file's place, so a

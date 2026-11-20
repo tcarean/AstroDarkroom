@@ -18,7 +18,8 @@ It is free software under the GNU General Public License v3 or later; see `LICEN
 - The astrometric solution: `CTYPE`, `CUNIT`, `CRPIX`, `CRVAL`, the scale and rotation in
   whichever form the solver wrote (`CDELT` and `CROTA`, the `CD` matrix or the `PC` matrix),
   `EQUINOX`, `RADESYS`, `LONPOLE`, `LATPOLE`, `WCSAXES`, Siril's `PLTSOLVD`, and every SIP
-  distortion coefficient (`A_i_j`, `B_i_j`, `AP_i_j`, `BP_i_j`) with its order.
+  distortion coefficient (`A_i_j`, `B_i_j`, `AP_i_j`, `BP_i_j`) with its order and, when the
+  solver wrote them, the largest corrections `A_DMAX` and `B_DMAX`.
 - Unless `--no-optical`, the optical and observation metadata a later re-solve needs as a
   starting point: `FOCALLEN`, `XPIXSZ`, `YPIXSZ`, the binning, the pointing (`OBJCTRA`,
   `OBJCTDEC`, `RA`, `DEC`, `OBJECT`), the site, `DATE-OBS`, `INSTRUME`, `TELESCOP`.
@@ -157,7 +158,8 @@ the console and in the window alike; a `--lang` value that is not `en` or `ro` s
 console with exit 1 and opens the window in English with a message saying so. The `HISTORY`
 card written into the file is English in both languages: it is data other programs read, not
 interface text; it is also plain ASCII, as the FITS standard asks, so a letter with a diacritic
-in the source's name appears in it as its base letter (`Nebula.fit` for a name with a-breve).
+in the source's name appears in it as its base letter (`Nebula.fit` for a name with a-breve), and
+a character it cannot write, an emoji or a control character, as `?`.
 Numbers never change with the language.
 
 ## Logs
