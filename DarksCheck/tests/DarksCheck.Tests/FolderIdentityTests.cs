@@ -146,6 +146,134 @@ public class FolderIdentityTests
         Assert.Empty(Directory.GetFileSystemEntries(Path.Combine(root, "reports")));
     }
 
+    /// <summary>
+    /// CR-080: a folder was opened by its path as typed, which Windows refuses from 260 characters on unless
+    /// long paths are switched on, so a link that far down the path was taken for a folder that does not exist
+    /// yet, and a session that deep had no identity.
+    /// </summary>
+    [Fact]
+    public void R026_ALinkFarDownALongPathIsFollowedAndADeepFolderHasItsIdentity()
+    {
+        using TempWorkspace ws = new();
+        string root = Path.Combine(ws.Dir, "Session");
+        Directory.CreateDirectory(Path.Combine(root, "darks"));
+        string[] chain = [.. Enumerable.Range(0, 6).Select(i => new string((char)('b' + i), 50))];
+        string deep = Path.Combine([ws.Dir, .. chain]);
+        Directory.CreateDirectory(deep);
+
+        // a junction made at a short path (mklink takes no long one), then moved to the end of the chain
+        string shortParent = Path.Combine(ws.Dir, "a");
+        Directory.CreateDirectory(shortParent);
+        Junction(Path.Combine(shortParent, "J"), Path.Combine(root, "darks"));
+        string moved = Path.Combine(deep, "a");
+        Directory.Move(shortParent, moved);
+        string link = Path.Combine(moved, "J");
+        Assert.True(link.Length > 300, "the link's path is long: " + link.Length);
+
+        // the other way round: the protected folder is the deep one, and the output reaches it through a
+        // short link to the top of the chain
+        string deepSession = Path.Combine(deep, "DeepSession");
+        Directory.CreateDirectory(Path.Combine(deepSession, "darks"));
+        string up = Path.Combine(ws.Dir, "Up");
+        Junction(up, Path.Combine(ws.Dir, chain[0]));
+        string through = Path.Combine([up, .. chain[1..], "DeepSession"]);
+        Assert.True(through.Length > 300 && deepSession.Length > 300);
+        try
+        {
+            Assert.True(FolderIdentity.IsOrInside(link, root));
+            Assert.True(FolderIdentity.IsOrInside(Path.Combine(link, "reports"), root));
+            // a folder that far down which is no link stays outside
+            Assert.False(FolderIdentity.IsOrInside(Path.Combine(moved, "reports"), root));
+
+            Assert.True(FolderIdentity.IsOrInside(Path.Combine(through, "reports"), deepSession));
+            Assert.Equal(FolderIdentity.Real(deepSession), FolderIdentity.Real(through), ignoreCase: true);
+            Assert.False(FolderIdentity.IsOrInside(Path.Combine(up, "reports"), deepSession));
+        }
+        finally
+        {
+            Directory.Delete(link);
+            Directory.Delete(up);
+        }
+
+        Assert.True(Directory.Exists(Path.Combine(root, "darks")));
+        Assert.True(Directory.Exists(Path.Combine(deepSession, "darks")));
+    }
+
+    /// <summary>CR-080: the form a long path is opened in; a short path, and one already in a device form, stay as they are.</summary>
+    [Fact]
+    public void R026_ALongPathIsOpenedInTheFormThatTakesIt()
+    {
+        string tail = string.Concat(Enumerable.Repeat(@"\" + new string('x', 40), 6));
+        Assert.Equal(@"E:\S\darks", FolderIdentity.Extended(@"E:\S\darks"));
+        Assert.Equal(@"\\?\E:\S" + tail, FolderIdentity.Extended(@"E:\S" + tail));
+        Assert.Equal(@"\\?\UNC\server\share" + tail, FolderIdentity.Extended(@"\\server\share" + tail));
+        Assert.Equal(@"\\?\E:\S" + tail, FolderIdentity.Extended(@"\\?\E:\S" + tail));
+        Assert.Equal(@"\\.\pipe" + tail, FolderIdentity.Extended(@"\\.\pipe" + tail));
+        // the limit is Windows' old one for a folder's plain path: 248 characters
+        Assert.Equal(@"E:\" + new string('x', 244), FolderIdentity.Extended(@"E:\" + new string('x', 244)));
+        Assert.Equal(@"\\?\E:\" + new string('x', 245), FolderIdentity.Extended(@"E:\" + new string('x', 245)));
+    }
+
+    /// <summary>
+    /// The second review of CR-080: the list of folders nothing is written into, held on its own. A folder is
+    /// told from another by what the system says of it, and where the system says nothing (a volume that
+    /// cannot name a link's target, a file system without a file index) only the paths in the list are left:
+    /// each folder and each of its session subfolders is in it by its own path and by the path it really
+    /// has. Neither failure can be made in a test, so the list is what is held.
+    /// </summary>
+    [Fact]
+    public void R026_TheListHoldsEachFolderAndItsSubfoldersByTheirOwnPathsAndTheirRealOnes()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 100 + i });
+        using SessionFixture cal = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 400 + i }, biases: 2);
+        using SessionFixture lib = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 200 + i }, inSubfolder: false);
+        using SessionFixture other = new SessionFixture().WithLights(2, i => new SyntheticLight { Seed = 300 + i });
+        using SessionFixture partner = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 500 + i });
+        using TempWorkspace ws = new();
+        using TempWorkspace linked = new();
+        string biases = Path.Combine(s.Root, "biases"), libLink = Path.Combine(ws.Dir, "biblioteca"), lightsLink = Path.Combine(ws.Dir, "luminile");
+        string linkedDarks = Path.Combine(linked.Dir, "darks");
+        Junction(biases, cal.BiasesDir);
+        Junction(libLink, lib.Root);
+        Junction(lightsLink, other.LightsDir);
+        Junction(linkedDarks, partner.DarksDir);
+        try
+        {
+            static bool Same(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+
+            // a session: its subfolders by their own paths, a link among them or not
+            IReadOnlyList<(string Folder, DarkOutputs.OutFolder Which)> session = DarkOutputs.ReadOnlyFolders(SessionFolder.Open(s.Root), null);
+            Assert.Equal(s.Root, session[0].Folder);
+            Assert.Contains(session, f => Same(f.Folder, FolderIdentity.Real(s.DarksDir)));
+            Assert.Contains(session, f => Same(f.Folder, FolderIdentity.Real(cal.BiasesDir)));
+            Assert.All(session, f => Assert.Equal(DarkOutputs.OutFolder.Session, f.Which));
+
+            // the biases stand for no folder around them: the session they were linked from is not in the list
+            Assert.DoesNotContain(session, f => Same(f.Folder, FolderIdentity.Real(cal.Root)));
+
+            // a library, a partner and a bare folder of lights reached through a link: the folder each really is
+            Assert.NotEqual(FolderIdentity.Real(libLink), libLink, StringComparer.OrdinalIgnoreCase);
+            Assert.Contains(DarkOutputs.ReadOnlyFolders(SessionFolder.Open(libLink), null), f => Same(f.Folder, FolderIdentity.Real(lib.Root)) && f.Which == DarkOutputs.OutFolder.Session);
+            Assert.Contains(DarkOutputs.ReadOnlyFolders(SessionFolder.Open(s.Root), libLink), f => Same(f.Folder, FolderIdentity.Real(lib.Root)) && f.Which == DarkOutputs.OutFolder.Partner);
+            IReadOnlyList<(string Folder, DarkOutputs.OutFolder Which)> chosen = DarkOutputs.ReadOnlyFolders(SessionFolder.Open(s.Root, lightsFrom: lightsLink), null);
+            Assert.Contains(chosen, f => Same(f.Folder, FolderIdentity.Real(other.LightsDir)) && f.Which == DarkOutputs.OutFolder.ChosenLights);
+            Assert.Contains(chosen, f => Same(f.Folder, FolderIdentity.Real(other.Root)) && f.Which == DarkOutputs.OutFolder.ChosenLights);
+
+            // the folders as they were given come first, so a refusal names the folder that was typed: a
+            // session whose darks\ leads into the partner's is refused there as the partner's folder
+            IReadOnlyList<(string Folder, DarkOutputs.OutFolder Which)> shared = DarkOutputs.ReadOnlyFolders(SessionFolder.Open(linked.Dir), partner.Root);
+            Assert.Equal(DarkOutputs.OutFolder.Partner, shared.First(f => Same(f.Folder, partner.Root)).Which);
+            Assert.Equal(1, shared.Count(f => Same(f.Folder, partner.Root)));
+        }
+        finally
+        {
+            foreach (string link in new[] { biases, libLink, lightsLink, linkedDarks })
+            {
+                Directory.Delete(link);
+            }
+        }
+    }
+
     [Fact]
     public void R026_AFolderNamedDarksOrLightsStandsForTheFolderAroundIt()
     {

@@ -168,6 +168,8 @@ each pair has the same defect unless the entry says otherwise.
 | CR-078 | 1 | some setups | to measure | On a short clean series whose frames scatter more than the 0.1 ADU-eq floor, check 3 names a frame as lit in a few series in a hundred | open |
 | CR-079 | 1 | slip | owner | The first frame that decodes sets the size and the scale: a stray first file of another size or bit depth leaves the whole series out | open |
 | CR-080 | 2 | rare | confirmed | Links are followed on the output's side only, and not past the 260th character: the files can still land among the frames | open |
+| CR-081 | 2 | rare | confirmed | A link that leads nowhere is not followed, nor are the subfolders beside a library opened as `name\darks`: the files can land in the session through the link | open |
+| CR-082 | 3 | rare | confirmed | A `darks\`, `biases\` or `lights\` link that leads nowhere ends the run with the system's own English line | open |
 
 The files copied from LightsCheck have their own entries, CP-1 to CP-12, in their own section;
 five of them are of severity 1.
@@ -1702,6 +1704,41 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
   takes long paths.
 - Test: none. `R026_AJunctionToAFolderInsideIsInsideToo` has the links on the output's side.
 - Evidence: confirmed (both run by the review on the console built from c052d918).
+- Status: open
+
+### CR-081 A link that leads nowhere is not followed, nor are the subfolders beside a library opened as `name\darks`
+
+- Found: 2026-11-20, by the second review of the fix of CR-080, which ran both cases; the same
+  on `main`.
+- Where: `Report/DarkOutputs.cs` (`AddResolved`: a subfolder is resolved by opening it, and it
+  is looked for under the folder opened only, never under the folder around it);
+  `Session/FolderIdentity.cs` (`Real` gives the typed path back for a folder that cannot be
+  opened).
+- Case 1: `S\flats` is a junction whose target no longer exists. `darkscheck S --out <that
+  target>` makes the folder and writes its seven files, which then sit in `S\flats` through
+  the link.
+- Case 2: a library opened as `N\darks`, or lights given as `N2\lights`. `N` and `N2` are
+  kept clear (R-026), but a link `N\flats` or `N2\flats` (any session subfolder beside the
+  one given) is not followed, though it is when `N` itself is opened.
+- Should: the folder a link names kept clear whether it exists or not; the folder around a
+  `darks` or `lights` folder treated as the folder opened is.
+- Test: none.
+- Evidence: confirmed (both run by the review on the console built from the branch that fixed CR-080).
+- Status: open
+
+### CR-082 A `darks\`, `biases\` or `lights\` link that leads nowhere ends the run with the system's own English line
+
+- Found: 2026-11-20, by the reviews of the fix of CR-080; the same on `main`.
+- Where: `Session/SessionFolder.cs` (`Open`: `Directory.Exists` is true for a junction whose
+  target is gone, and `FramesIn` then throws .NET's `DirectoryNotFoundException`).
+- Case: a session, or a partner, whose `biases\` (or `darks\`, `lights\`) is a junction to a
+  folder that was deleted or sits on a drive that is not connected. The run ends with
+  `ERROR: Could not find a part of the path '...'`, in English whatever `--lang` says, and
+  without saying that a link is what failed.
+- Should: the program's own sentence, in both languages, naming the link and the folder it
+  leads to. The text is shown to the owner first (the rule "Plain words").
+- Test: none.
+- Evidence: confirmed (run by both reviews).
 - Status: open
 
 ## How the list is used
