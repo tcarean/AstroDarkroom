@@ -129,9 +129,10 @@ internal static class DarkOutputs
 
     /// <summary>
     /// The folders nothing is written into, each with whose it is: the folder opened, the
-    /// partner's and the chosen lights' (R-055), and for each of them that was given as a
-    /// session's subfolder, the folder around it (<see cref="Around"/>): a library opened as
-    /// <c>name\darks</c>, a partner given so, and lights given as <c>name\lights</c> (ADR 0069).
+    /// partner's and the chosen lights' (R-055), and for each of them that is a session's
+    /// subfolder, the folders around it (<see cref="AroundBoth"/>): a library opened as
+    /// <c>name\darks</c>, a partner given so, and lights given as <c>name\lights</c>, by the name
+    /// given and by the folder it really is (ADR 0069).
     /// </summary>
     /// <param name="session">The session or library opened; not null.</param>
     /// <param name="partner">The partner's folder as it was given; null or blank without one. A
@@ -143,10 +144,9 @@ internal static class DarkOutputs
         List<(string, OutFolder)> folders = [(session.Root, OutFolder.Session)];
 
         // the darks listed in the folder opened, and that folder named darks: the library around it
-        // (by the folder it really is, so a link to a darks folder names the library around the darks)
-        if (session.DarksDir == session.Root && Around(FolderIdentity.Real(session.Root), SessionFolder.DarksName) is string library)
+        if (session.DarksDir == session.Root)
         {
-            folders.Add((library, OutFolder.Session));
+            folders.AddRange(AroundBoth(session.Root, SessionFolder.DarksName).Select(f => (f, OutFolder.Session)));
         }
 
         if (!string.IsNullOrWhiteSpace(partner))
@@ -155,10 +155,7 @@ internal static class DarkOutputs
             {
                 string full = FolderIdentity.Full(partner);
                 folders.Add((full, OutFolder.Partner));
-                if (Around(FolderIdentity.Real(full), SessionFolder.DarksName) is string partnerLibrary)
-                {
-                    folders.Add((partnerLibrary, OutFolder.Partner));
-                }
+                folders.AddRange(AroundBoth(full, SessionFolder.DarksName).Select(f => (f, OutFolder.Partner)));
             }
             catch (Exception e) when (e is ArgumentException or NotSupportedException or IOException)
             {
@@ -171,9 +168,9 @@ internal static class DarkOutputs
             folders.Add((lights, OutFolder.ChosenLights));
 
             // the lights listed in the folder given, and that folder named lights: the session around it
-            if (session.LightsDir == lights && Around(FolderIdentity.Real(lights), SessionFolder.LightsName) is string lightsSession)
+            if (session.LightsDir == lights)
             {
-                folders.Add((lightsSession, OutFolder.ChosenLights));
+                folders.AddRange(AroundBoth(lights, SessionFolder.LightsName).Select(f => (f, OutFolder.ChosenLights)));
             }
         }
 
@@ -213,9 +210,8 @@ internal static class DarkOutputs
     /// lights given as <c>name\lights</c> are the session <c>name</c>'s, so nothing is written
     /// into <c>name</c> either, as when <c>name</c> itself is given.
     /// </summary>
-    /// <param name="folder">The folder given, by the path it really has
-    /// (<see cref="FolderIdentity.Real"/>) when another name of it must count too; not null or
-    /// blank.</param>
+    /// <param name="folder">The folder, by the path whose last name is to be read: as given, or
+    /// as it really is (<see cref="FolderIdentity.Real"/>); not null or blank.</param>
     /// <param name="subfolder">The name that makes it a session's subfolder, <c>darks</c> or
     /// <c>lights</c>, compared without case.</param>
     /// <returns>The full path of the folder around it; null when the folder has another name, or
@@ -230,6 +226,32 @@ internal static class DarkOutputs
 
         string? parent = Path.GetDirectoryName(full);
         return parent is null || string.Equals(Path.GetPathRoot(parent), parent, StringComparison.OrdinalIgnoreCase) ? null : parent;
+    }
+
+    /// <summary>
+    /// The folders around a folder that is a session's subfolder, by both of its names: the one it
+    /// was given by (a link named <c>darks</c> in a session's layout stands for that session, as
+    /// R-061 labels it) and the one it really has (a library's <c>darks</c> folder reached through
+    /// a link of another name still stands for the library). One took the other's place for a
+    /// commit, and each time the folder left out was written into.
+    /// </summary>
+    /// <param name="folder">The folder given; not null or blank.</param>
+    /// <param name="subfolder">The name that makes it a session's subfolder, <c>darks</c> or
+    /// <c>lights</c>.</param>
+    /// <returns>None, one or two full paths, the one around the name as given first.</returns>
+    private static IEnumerable<string> AroundBoth(string folder, string subfolder)
+    {
+        string? typed = Around(folder, subfolder);
+        string? real = Around(FolderIdentity.Real(folder), subfolder);
+        if (typed is not null)
+        {
+            yield return typed;
+        }
+
+        if (real is not null && !string.Equals(real, typed, StringComparison.OrdinalIgnoreCase))
+        {
+            yield return real;
+        }
     }
 
     /// <summary>Whose folder <see cref="CheckOutDir"/> refuses to write into; it names the folder in the refusal.</summary>

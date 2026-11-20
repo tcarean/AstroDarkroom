@@ -386,6 +386,61 @@ public class AcceptanceTests
         Assert.False(Directory.Exists(Path.Combine(s.Root, "rapoarte")));
     }
 
+    /// <summary>
+    /// The second review of the branch: a link named darks or lights (a library's darks linked into another
+    /// folder) stands for the folder around the link, as its name says, and for the folder around the place it
+    /// leads to; taking the second in place of the first let the files into the first again.
+    /// </summary>
+    [Fact]
+    public void R026_OutBesideALinkNamedDarksOrLightsIsRefused_Exit1()
+    {
+        using SessionFixture lib = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 100 + i });
+        using SessionFixture s = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 200 + i });
+        using SessionFixture other = new SessionFixture().WithLights(2, i => new SyntheticLight { Seed = 300 + i });
+        using TempWorkspace y = new();
+        using TempWorkspace z = new();
+        string linkedDarks = Path.Combine(y.Dir, "darks"), linkedLights = Path.Combine(z.Dir, "lights");
+        FolderIdentityTests.Junction(linkedDarks, lib.DarksDir);
+        FolderIdentityTests.Junction(linkedLights, other.LightsDir);
+        try
+        {
+            // opened through the link: the folder around the link, and the library around the real darks
+            foreach (string dir in new[] { Path.Combine(y.Dir, "rapoarte"), Path.Combine(lib.Root, "rapoarte") })
+            {
+                (int code, string stdout, string stderr) = Cli.Run(linkedDarks, "--threads", "2", "--out", dir);
+                Assert.Equal(1, code);
+                Assert.Contains("EROARE: --out nu poate fi folderul sesiunii sau unul din el (", stderr, StringComparison.Ordinal);
+                Assert.DoesNotContain("=== DARK-URI", stdout, StringComparison.Ordinal);
+            }
+
+            // the same link given as the partner
+            foreach (string dir in new[] { Path.Combine(y.Dir, "rapoarte"), Path.Combine(lib.Root, "rapoarte") })
+            {
+                (int code, _, string stderr) = Cli.Run(s.Root, "--threads", "2", "--against", linkedDarks, "--out", dir);
+                Assert.Equal(1, code);
+                Assert.Contains("EROARE: --out nu poate fi folderul partenerului sau unul din el (", stderr, StringComparison.Ordinal);
+            }
+
+            // and a link named lights given as the lights
+            foreach (string dir in new[] { Path.Combine(z.Dir, "rapoarte"), Path.Combine(other.Root, "rapoarte") })
+            {
+                (int code, _, string stderr) = Cli.Run(s.Root, "--threads", "2", "--lights", linkedLights, "--out", dir);
+                Assert.Equal(1, code);
+                Assert.Contains("EROARE: --out nu poate fi folderul lights-urilor alese sau unul din el (", stderr, StringComparison.Ordinal);
+            }
+        }
+        finally
+        {
+            Directory.Delete(linkedDarks);
+            Directory.Delete(linkedLights);
+        }
+
+        foreach (string folder in new[] { y.Dir, z.Dir, lib.Root, other.Root })
+        {
+            Assert.False(Directory.Exists(Path.Combine(folder, "rapoarte")));
+        }
+    }
+
     [Fact]
     public void R026_TheBiasesCsvHasOneRowPerBiasAndTheRawColumns()
     {

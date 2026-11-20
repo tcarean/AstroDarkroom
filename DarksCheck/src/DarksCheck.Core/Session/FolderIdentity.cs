@@ -194,7 +194,8 @@ internal static partial class FolderIdentity
 
     /// <summary>
     /// The path Windows resolves an existing folder to: every link, <c>subst</c> drive and short
-    /// name on the way followed, the volume by its drive letter, in the <c>\\?\</c> form.
+    /// name on the way followed, the volume by its drive letter (a share as
+    /// <c>\\?\UNC\server\share</c>), in the <c>\\?\</c> form.
     /// </summary>
     /// <param name="path">The folder's path.</param>
     /// <returns>The final path; null when the folder does not exist or cannot be opened, or when

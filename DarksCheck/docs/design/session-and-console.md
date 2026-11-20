@@ -143,7 +143,8 @@ puts the folders that do not exist yet back on, and that path's folders, from th
 held against the protected folder's pair. So a junction, a link, a `subst` drive and a short
 8.3 name of the session, or of a folder inside it, are all inside the session. `Real` is the
 same resolved path without its `\\?\` prefix, which `DarkOutputs.ReadOnlyFolders` hands to
-`Around`, so a folder reached by another name still names the folder around it. A folder that
+`Around` beside the path as given, so a folder reached by another name names the folder around
+it both ways. A folder that
 cannot be opened has no identity and is told by its path alone. The exceptions
 a bad folder or a frame can raise, the `AggregateException` of a parallel loop included, are
 turned into `ERROR:` on stderr and exit 1. `Main` runs `Program.Run` between the diagnostic log's

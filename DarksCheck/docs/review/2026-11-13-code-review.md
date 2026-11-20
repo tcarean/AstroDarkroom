@@ -167,6 +167,7 @@ each pair has the same defect unless the entry says otherwise.
 | CR-077 | 1 | rare | confirmed | Darks without an ISO between lights and a partner at two ISOs: the chained verdict can read `as it is`, and two rows take the darks' ISO two ways | fixed 581dd50a |
 | CR-078 | 1 | some setups | to measure | On a short clean series whose frames scatter more than the 0.1 ADU-eq floor, check 3 names a frame as lit in a few series in a hundred | open |
 | CR-079 | 1 | slip | owner | The first frame that decodes sets the size and the scale: a stray first file of another size or bit depth leaves the whole series out | open |
+| CR-080 | 2 | rare | confirmed | Links are followed on the output's side only, and not past the 260th character: the files can still land among the frames | open |
 
 The files copied from LightsCheck have their own entries, CP-1 to CP-12, in their own section;
 five of them are of severity 1.
@@ -524,7 +525,7 @@ five of them are of severity 1.
 - Also: `--out \\?\E:\S\out` passes too, since `Path.GetFullPath` leaves such a path as it is.
 - Test: `R026_OutInsideTheSessionIsRefused_Exit1` uses the session root only.
 - Evidence: confirmed.
-- Status: fixed 27df0814 (the folder around a `darks` or `lights` folder is kept clear too, and two paths that Windows says are one folder are one folder; a `subst` drive and an 8.3 name were not tried, the `\\?\` prefix and junctions were, to the session and to a folder inside it, the second after the branch's review; ADR 0069)
+- Status: fixed 27df0814 (the folder around a `darks` or `lights` folder is kept clear too, and two paths that Windows says are one folder are one folder; a `subst` drive was not tried, an 8.3 name only by the second review, the `\\?\` prefix and junctions were, to the session and to a folder inside it, the second after the branch's review; what the second review left is CR-080; ADR 0069)
 
 ### CR-020 After a partner that failed, the window's export can write into the partner's folder
 
@@ -1682,6 +1683,25 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
 - Test: `R027_AFrameOfAnotherSizeIsLeftOutWithItsError` and
   `R020_AFrameWithAnotherWhiteIsLeftOutWithItsError` have the odd frame after the series' first.
 - Evidence: owner (read, not run).
+- Status: open
+
+### CR-080 Links are followed on the output's side only, and not past the 260th character
+
+- Found: 2026-11-20, by the second review of the fixes of CR-019, which ran both cases.
+- Where: `Report/DarkOutputs.cs` (`ReadOnlyFolders` lists `session.Root`, the partner's and the
+  chosen lights' folder, never the real folder of `DarksDir`, `BiasesDir` or `LightsDir`);
+  `Session/FolderIdentity.cs` (`Open`: `CreateFileW` gets the path as typed, without `\\?\`).
+- Case 1: a session `S` whose `darks\` is a junction to `Lib\idx67\darks`. `darkscheck S --out
+  Lib\idx67\darks` is not refused, and the report, the CSV and the maps land beside the frames.
+  The same on `main`.
+- Case 2: with Windows' long paths off, a junction that sits past the 260th character of the
+  output path and leads to `Session\darks`: the folder cannot be opened as typed, so the link
+  is taken for a folder that does not exist yet, and the files are written into `Session\darks`.
+  A protected folder of 260 characters or more has no identity either (read, not run).
+- Should: the real folders of the frames kept clear too; the folders opened in the form that
+  takes long paths.
+- Test: none. `R026_AJunctionToAFolderInsideIsInsideToo` has the links on the output's side.
+- Evidence: confirmed (both run by the review on the console built from c052d918).
 - Status: open
 
 ## How the list is used

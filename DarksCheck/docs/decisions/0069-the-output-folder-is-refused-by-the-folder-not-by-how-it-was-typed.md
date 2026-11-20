@@ -37,8 +37,10 @@ entry is of severity 2 and not 1.
    leads to a folder inside it, its `darks\` included, has neither the session's identity nor
    the session above it (found by the review of the branch, which wrote the files among the
    frames that way). The folder around a `darks` or `lights` folder (point 1) is taken from the
-   resolved path too, so a library opened through another name of its `darks` folder keeps the
-   library clear. The full paths are compared first, without case and without a `\\?\` prefix
+   name as given and from the resolved path, both: a library opened through another name of its
+   `darks` folder keeps the library clear, and a link named `darks` keeps the folder around the
+   link clear (the second review of the branch: the resolved name had taken the given name's
+   place, and the folder around the link was written into again). The full paths are compared first, without case and without a `\\?\` prefix
    before a drive letter, which also answers for an output folder that does not exist yet.
 3. **One list of folders, used twice.** `DarkOutputs.ReadOnlyFolders` gives the folders,
    `CheckOut` refuses the output folder in any of them; the console calls it before the run and
@@ -65,12 +67,15 @@ refused where it was accepted: the files go to a folder outside. A folder named 
 `lights` that is no part of a session (`Desktop\darks`) keeps the folder around it clear too,
 which is the same answer the folder around it gives when opened. On a file system that gives no
 file index, and anywhere but Windows, the paths alone are compared, as before. A `subst` drive
-and an 8.3 name were not tried: making either changes the machine; the same resolved path
-answers for them as for the junctions the tests make. A path of 260 characters or more was not
-tried either: if the system does not open it as typed, the folder has no identity and the paths
-alone are compared, as before. Guarded by
+was not tried: making one changes the machine. A short 8.3 name was run by the second review
+on a folder that already had one, and refused both ways. Two holes are left, both run by that
+review and entered in the review list as CR-080: the links are followed on the output's side
+only, so a session whose own `darks\` is a link to a folder elsewhere does not keep that folder
+clear; and a link that sits past the 260th character of the output path is not followed where
+Windows' long paths are off, since the folder is opened by its path as typed. Guarded by
 `R026_OutBesideTheDarksOfALibraryKeptAsNameDarksIsRefused_Exit1`,
 `R026_OutThroughAnotherNameOfTheSessionIsRefused_Exit1`,
+`R026_OutBesideALinkNamedDarksOrLightsIsRefused_Exit1`,
 `R026_AFolderIsHeldAgainstAnotherByItsFullPathWhateverItsSpelling`,
 `R026_AJunctionToAFolderIsThatFolder`, `R026_AJunctionToAFolderInsideIsInsideToo` and
 `R026_AFolderNamedDarksOrLightsStandsForTheFolderAroundIt`.

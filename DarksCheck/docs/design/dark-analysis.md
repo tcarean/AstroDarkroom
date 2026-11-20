@@ -239,8 +239,10 @@ words; `DarkOutputs` writes the report, two CSV files and three grey PNG maps of
 reference plane, refuses a folder inside the session (the console checks that before the
 decoding starts) and skips the PNG of a map without blocks. The refusal is one list,
 `DarkOutputs.ReadOnlyFolders`: the folder opened, the partner's and the chosen lights', each
-with the folder around it when it was given as a session's subfolder (`Around`: a library
-opened as `name\darks`, lights given as `name\lights`; ADR 0069). `CheckOut` holds the output
+with the folders around it when it is a session's subfolder (`AroundBoth`: a library opened as
+`name\darks`, lights given as `name\lights`, read both from the name given and from the folder
+it really is, `FolderIdentity.Real`, since a link has two names and each stands for a folder;
+ADR 0069). `CheckOut` holds the output
 folder against each of them with `FolderIdentity.IsOrInside`
 (`docs/design/session-and-console.md`); the console calls it before the run and `WriteAll`
 again, so the window's export refuses what `--out` refuses. A frame the cap skipped, dark or
