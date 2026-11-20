@@ -186,6 +186,7 @@ public partial class CompareView : UserControl
             pair.PixelWidth,
             pair.PixelHeight,
             Viewport);
+        ApplyOverlaysHidden();
 
         Sync(pairChanged: true);
         LogView("pair set");
@@ -215,9 +216,48 @@ public partial class CompareView : UserControl
             pair.PixelWidth,
             pair.PixelHeight,
             Viewport);
+        ApplyOverlaysHidden();
 
         Sync(pairChanged: true);
         LogView("pair replaced, the view kept");
+    }
+
+    /// <summary>
+    /// Whether the minimap and the zoom badge, the two things drawn over the corners of the
+    /// image, are hidden (R-067). It holds through <see cref="SetPair"/> and
+    /// <see cref="ReplacePair"/>.
+    /// </summary>
+    public bool OverlaysHidden { get; private set; }
+
+    /// <summary>
+    /// Hides the minimap and the zoom badge, or shows them again when they are hidden (R-067):
+    /// from 100% up the image's bottom-left corner can only be brought under the one and its
+    /// top-right corner under the other (ADR 0059). The scrollbars and the divider stay.
+    /// </summary>
+    public void ToggleOverlays()
+    {
+        OverlaysHidden = !OverlaysHidden;
+        ApplyOverlaysHidden();
+    }
+
+    /// <summary>
+    /// Puts <see cref="OverlaysHidden"/> on the minimap and the zoom badge. Called at every
+    /// toggle, and after <c>MinimapView.Show</c>, which makes the minimap visible for the pair it
+    /// is given. With no pair on the surface the minimap is left as it is, hidden: it has no
+    /// thumbnail to show.
+    /// </summary>
+    private void ApplyOverlaysHidden()
+    {
+        Visibility visibility = OverlaysHidden ? Visibility.Collapsed : Visibility.Visible;
+        ZoomBadge.Visibility = visibility;
+
+        if (BeforeImage.Source is not null)
+        {
+            Minimap.Visibility = visibility;
+
+            // Its rectangle was not laid out while it had no size.
+            Minimap.Refresh();
+        }
     }
 
     /// <summary>

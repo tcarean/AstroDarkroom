@@ -685,12 +685,139 @@ public class MainWindowTests
         });
     }
 
+    /// <summary>
+    /// CR-012 of the review of 2026-11-13: from 100 % up the image's bottom-left corner can only
+    /// be brought under the minimap, and its top-right corner under the zoom badge. M takes both
+    /// off the image and puts them back (R-067, ADR 0059); what is not over a corner stays.
+    /// </summary>
+    [Fact]
+    public async Task R067_M_HidesTheMinimapAndTheZoomBadge_AndShowsThemAgain()
+    {
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new ModeLoader(shownAsStored: true)));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.Equal(Visibility.Visible, window.Compare.Minimap.Visibility);
+            Assert.Equal(Visibility.Visible, window.Compare.ZoomBadge.Visibility);
+
+            Assert.True(Press(window.Compare, Key.M));
+
+            Assert.True(window.Compare.OverlaysHidden);
+            Assert.Equal(Visibility.Collapsed, window.Compare.Minimap.Visibility);
+            Assert.Equal(Visibility.Collapsed, window.Compare.ZoomBadge.Visibility);
+            Assert.Equal(Visibility.Visible, window.Compare.DividerLine.Visibility);
+            Assert.Equal(Visibility.Visible, window.Compare.DividerHandle.Visibility);
+
+            Assert.True(Press(window.Compare, Key.M));
+
+            Assert.False(window.Compare.OverlaysHidden);
+            Assert.Equal(Visibility.Visible, window.Compare.Minimap.Visibility);
+            Assert.Equal(Visibility.Visible, window.Compare.ZoomBadge.Visibility);
+        });
+    }
+
+    /// <summary>
+    /// A mode switch and a new pair both show the minimap anew with another thumbnail
+    /// (<c>MinimapView.Show</c>); what M hid stays hidden through both (R-067).
+    /// </summary>
+    [Fact]
+    public async Task R067_TheHiddenOverlays_StayHiddenThroughAModeSwitchAndANewPair()
+    {
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new ModeLoader(shownAsStored: true)));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        Task switched = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window.OnOverlaysKey(isRepeat: false);
+            switched = window.ToggleModeAsync(DisplayMode.Histogram);
+        });
+        await switched;
+
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.True(window.HistogramButton.IsChecked);
+            Assert.Equal(Visibility.Collapsed, window.Compare.Minimap.Visibility);
+            Assert.Equal(Visibility.Collapsed, window.Compare.ZoomBadge.Visibility);
+
+            window.StatusPair.Text = string.Empty;
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.Equal(Visibility.Collapsed, window.Compare.Minimap.Visibility);
+            Assert.Equal(Visibility.Collapsed, window.Compare.ZoomBadge.Visibility);
+
+            window.OnOverlaysKey(isRepeat: false);
+
+            Assert.Equal(Visibility.Visible, window.Compare.Minimap.Visibility);
+            Assert.Equal(Visibility.Visible, window.Compare.ZoomBadge.Visibility);
+        });
+    }
+
+    /// <summary>
+    /// A held M hides once: its repeats, some thirty a second, would flicker the minimap and
+    /// leave it shown or hidden by chance (R-067). The repeats go through the window's key
+    /// handler, as the keyboard's would.
+    /// </summary>
+    [Fact]
+    public async Task R067_AHeldM_ActsOnce()
+    {
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
+
+            Assert.True(Press(window.Compare, Key.M));
+            Assert.True(Press(window.Compare, Key.M, isRepeat: true));
+            Assert.True(Press(window.Compare, Key.M, isRepeat: true));
+
+            Assert.True(window.Compare.OverlaysHidden);
+        });
+    }
+
+    /// <summary>
+    /// With no pair on the surface there is no minimap to show: M pressed twice then leaves it
+    /// as it was, not shown empty (R-067).
+    /// </summary>
+    [Fact]
+    public async Task R067_WithNoPair_MShowsNoEmptyMinimap()
+    {
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
+
+            window.OnOverlaysKey(isRepeat: false);
+            window.OnOverlaysKey(isRepeat: false);
+
+            Assert.False(window.Compare.OverlaysHidden);
+            Assert.Equal(Visibility.Collapsed, window.Compare.Minimap.Visibility);
+        });
+    }
+
     /// <summary>Raises a key-down of F1, without a modifier, on <paramref name="target"/>, as the
     /// keyboard would with the focus there, a repeat of a held key when asked; returns whether
     /// something handled it.</summary>
-    private static bool PressF1(UIElement target, bool isRepeat = false)
+    private static bool PressF1(UIElement target, bool isRepeat = false) => Press(target, Key.F1, isRepeat);
+
+    /// <summary>Raises a key-down of <paramref name="key"/>, without a modifier, on
+    /// <paramref name="target"/>, as the keyboard would with the focus there, a repeat of a held
+    /// key when asked; returns whether something handled it.</summary>
+    private static bool Press(UIElement target, Key key, bool isRepeat = false)
     {
-        var e = new KeyEventArgs(Keyboard.PrimaryDevice, new KeySource(), 0, Key.F1) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+        var e = new KeyEventArgs(Keyboard.PrimaryDevice, new KeySource(), 0, key) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
         if (isRepeat)
         {
             // WPF marks a repeat from the keyboard's state, through a member of its own; the test

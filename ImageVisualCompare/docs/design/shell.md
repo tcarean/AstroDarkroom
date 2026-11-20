@@ -149,7 +149,10 @@ on screen staying.
 does nothing there, so a held key switches once (R-114, ADR 0044); it does not pass on a repeat of
 `Ctrl+O` while a pair is being opened, which the open would ignore and log for each. `F1` goes to
 `OnHelpKey` the same way, so a held F1 opens the manual once, and `ShowHelp` writes
-`Help opened: <address>`. `ShowPair`
+`Help opened: <address>`. `M` goes to `OnOverlaysKey`, which has the surface hide or show its
+minimap and zoom badge (`CompareView.ToggleOverlays`, R-067, described in `rendering.md`) and
+writes `M: the minimap and the zoom badge are hidden|shown`; a repeat of the held key does
+nothing. `ShowPair`
 writes the pair on screen and the memory, reading the process's memory once more before the outgoing
 pair is released.
 `DarkTitleBar` writes the HRESULTs of the DWM calls it does not act on, for a report of a white

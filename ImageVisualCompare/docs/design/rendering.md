@@ -135,6 +135,18 @@ to 1499 leave that image 4.5e-13 over at the fit and 85 leave it as much under; 
 random images (to 100,000 pixels) and views (to 8,000, whole and not) the largest residue was
 1.3e-12 of a physical pixel. A real overflow, however small, still scrolls.
 
+**`M` takes the minimap and the zoom badge off the image.** From 100 % up the pan stops at the
+image's edges (`Viewport.ClampOffsets`), so the bottom-left corner of the image can only be
+brought to the bottom-left corner of the surface, where the minimap lies over it, and the
+top-right corner to where the zoom badge is (ADR 0059). `CompareView.ToggleOverlays` flips
+`OverlaysHidden` and `ApplyOverlaysHidden` collapses or shows the two; nothing else is touched,
+neither the scrollbars (ADR 0019) nor the divider. `MinimapView.Show` makes the minimap visible
+for every pair it is given, so `SetPair` and `ReplacePair` apply the choice again right after
+it, and it holds through a mode switch and a new pair. With no pair on the surface the minimap
+stays collapsed whatever the choice: it has no thumbnail. A collapsed minimap takes no click,
+and its rectangle is laid out again when it comes back (`MinimapView.Refresh`). The key itself
+is the window's (`MainWindow.OnOverlaysKey`, in `shell.md`).
+
 **The minimap measures on its thumbnail, inside its border.** `MinimapView` wraps the thumbnail
 and the `Overlay` canvas the rectangle is drawn on in a 1-DIP border, so the minimap's own size
 and position are not the thumbnail's. It lays the rectangle out in the overlay's size, and maps

@@ -8,6 +8,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The `M` key hides the minimap and the zoom badge, and shows them again: from 100 % up the
+  bottom-left corner of the image could only be brought under the minimap, and the top-right
+  corner under the badge, with no way to see what was there. The choice holds for the next pair;
+  the status bar's key reminder names the key, `M minimap` (R-067, ADR 0059).
+
 - `Help` (`Ajutor`) in the toolbar, between `Open…` and `About`, and the `F1` key: they open the
   window's manual in the wiki at the section of the view on screen, the window, Histogram or
   False colours, or opening a pair while one loads. The status bar's key reminder ends with
