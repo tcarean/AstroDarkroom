@@ -79,3 +79,48 @@ Windows' long paths are off, since the folder is opened by its path as typed. Gu
 `R026_AFolderIsHeldAgainstAnotherByItsFullPathWhateverItsSpelling`,
 `R026_AJunctionToAFolderIsThatFolder`, `R026_AJunctionToAFolderInsideIsInsideToo` and
 `R026_AFolderNamedDarksOrLightsStandsForTheFolderAroundIt`.
+
+## Note of 2026-11-20
+
+The two holes the Consequences name as left are closed (CR-080 of the review list). The frames'
+own folders are kept clear by the paths they really have: the session's `darks\`, `biases\`
+and `lights\` and a partner's `darks\`, each resolved, with the folder around a real `darks`
+or `lights` folder (`DarkOutputs.AddFrames`), so a session whose `darks\` is a link to a folder
+elsewhere refuses `--out` into that folder. And a folder is opened in the `\\?\` form from 248
+characters on (`FolderIdentity.Extended`), so a link past the 260th character of the output
+path is followed, and a session that deep has its identity, whether Windows' long paths are on
+or off. Guarded by `R026_OutIntoTheFolderASessionsLinkedFramesReallySitInIsRefused_Exit1`,
+`R026_ALinkFarDownALongPathIsFollowedAndADeepFolderHasItsIdentity` and
+`R026_ALongPathIsOpenedInTheFormThatTakesIt`. A `subst` drive is still not tried, nor a share.
+
+The review of that fix (the same day) found the list one step short: only the folders the run
+read frames from were followed, so a session's own `lights\` link with the lights chosen from
+another folder, its `flats\` link, and a `biases\` link without a frame still left the folder
+they lead to open. From the review's fix on, every session subfolder (`lights\`, `darks\`,
+`biases\`, `flats\`) of the folder opened, of the partner's and of the chosen lights' folder
+is followed, read or not (`DarkOutputs.AddSubfolders`, which took the place of `AddFrames`);
+guarded by `R026_OutIntoTheFolderALinkedSubfolderLeadsToIsRefusedReadOrNot_Exit1` and
+`R026_OutIntoALinkedFolderOfAnotherNameIsRefusedForWhoseItIs_Exit1`. Left as it is: a link
+named `darks` in the middle of a chain (`S\darks` to `M\darks` to `N\x`) keeps `N\x` clear
+and not `M`, where no frame sits. The review ran a share through `\\localhost\C$` (refused
+by the plain form and by the `\\?\UNC\` form of a long path); a `subst` drive is still not
+tried. The length of 248 characters is Windows' old limit for making a folder by its plain
+path, not one .NET's file calls share (those switch at 260), as this note first had it in the
+design note.
+
+A second review, of that fix alone, found it had dropped two fallbacks the first fix of CR-080
+had, both shown only with the system's answer stubbed: a subfolder whose real path came back as
+the typed one was skipped, so a link whose target the system cannot name was no longer told by
+its identity; and the real path of a library or of a bare folder of chosen lights reached
+through a link was no longer listed, so on a file system without a file index nothing told it.
+Both entries are back (`DarkOutputs.AddResolved`: each of the three folders and each of its
+session subfolders by its real path, link or not), and the folders as they were given come
+first in the list again, so a refusal names the folder that was typed (a session whose
+`darks\` leads into the partner's folder is refused there as the partner's). Guarded by
+`R026_TheListHoldsEachFolderAndItsSubfoldersByTheirOwnPathsAndTheirRealOnes`, which holds the
+list itself, since neither failure of the system can be made in a test. That review measured
+the lengths with Windows' long paths off: a folder is made by its plain path at 247 characters
+and not at 248, an existing one opens plainly up to 259, and .NET's file calls add the prefix
+at 260. Two things it ran are the same on `main` and are entered in the review list as CR-081
+(a link that leads nowhere; the subfolders beside a library opened as `name\darks`) and
+CR-082 (the message of a link that leads nowhere).

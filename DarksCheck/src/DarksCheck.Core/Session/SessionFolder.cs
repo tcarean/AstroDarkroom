@@ -33,6 +33,12 @@ internal sealed class SessionFolder
     internal const string LightsName = "lights";
     internal const string FlatsName = "flats";
 
+    /// <summary>
+    /// The names that make a folder a session: a folder with one of these subfolders keeps its
+    /// frames in them and its stacked results at its root.
+    /// </summary>
+    internal static IReadOnlyList<string> SubfolderNames { get; } = [LightsName, DarksName, BiasesName, FlatsName];
+
     internal string Root { get; }
     internal string DarksDir { get; }
     internal string? BiasesDir { get; }
@@ -190,8 +196,7 @@ internal sealed class SessionFolder
         // A session keeps its lights in lights\ and its stacked results at its root: with a
         // session subfolder the root's own files are never lights (ADR 0067), as Open never
         // takes a session's root for its darks.
-        string[] session = [LightsName, DarksName, BiasesName, FlatsName];
-        bool isSession = session.Any(n => Directory.Exists(Path.Combine(root, n)));
+        bool isSession = SubfolderNames.Any(n => Directory.Exists(Path.Combine(root, n)));
         IReadOnlyList<string> own = isSession ? [] : FramesIn(root);
         if (own.Count == 0)
         {
