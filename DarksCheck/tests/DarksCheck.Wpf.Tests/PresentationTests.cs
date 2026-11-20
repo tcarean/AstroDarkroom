@@ -89,6 +89,7 @@ public class VerdictPaletteTests
         Assert.Equal(VerdictPalette.Warn, VerdictPalette.For(MatchVerdict.Near));
         Assert.Equal(VerdictPalette.Warn, VerdictPalette.For(MatchVerdict.MuchWarmer));
         Assert.Equal(VerdictPalette.Bad, VerdictPalette.For(MatchVerdict.Unmatched));
+        Assert.Equal(VerdictPalette.Bad, VerdictPalette.For(MatchVerdict.OtherSettings));
         Assert.Equal(VerdictPalette.Neutral, VerdictPalette.For(MatchVerdict.Unmeasured));
     }
 

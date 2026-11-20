@@ -236,6 +236,9 @@ public class LightsAndIndexTests
         // each light's point on the window's chart is judged the same way: never as it is
         Assert.Equal(MatchVerdict.OtherSettings, l.Judge(1.0));
         Assert.Equal(MatchVerdict.OtherSettings, l.Judge(0.5));
+        // a few degrees off either way too: every point from 0.4 to 1.4 is red
+        Assert.Equal(MatchVerdict.OtherSettings, l.Judge(0.75));
+        Assert.Equal(MatchVerdict.OtherSettings, l.Judge(1.35));
 
         // "the lights are at other settings" needs more than half of them: with two of four the lights are judged as before
         using SessionFixture half = new SessionFixture().WithDarkSeries(6, Dark).WithLights(2, i => Light(i));

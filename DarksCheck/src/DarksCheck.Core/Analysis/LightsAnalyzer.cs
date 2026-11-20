@@ -169,7 +169,8 @@ internal sealed record SettingsMismatch(FrameInfo Master, FrameInfo Set, double 
 /// on.</param>
 /// <param name="LightsOverDark">The lights' ratios over the master, one per light, as a
 /// match; its verdict is the ratio's with <paramref name="Traces"/>' wider Direct band
-/// (R-067), and never Direct for lights at other settings than the darks (ADR 0055).</param>
+/// (R-067), and OtherSettings in place of Direct, Near or MuchWarmer for lights at other
+/// settings than the darks (ADR 0055, ADR 0070).</param>
 /// <param name="RatioFirst">The first measured light's ratio; NaN when none.</param>
 /// <param name="RatioLast">The last measured light's ratio; NaN when none.</param>
 /// <param name="Traces">What a plain subtraction leaves at the master's hot pixels.</param>
@@ -191,9 +192,9 @@ internal sealed record LightsAnalysis(
 {
     /// <summary>
     /// The verdict of a ratio of these lights over their dark, the night's or one light's: R-062's
-    /// bounds with the Direct band of <see cref="Traces"/> (R-067), and never
-    /// <see cref="MatchVerdict.Direct"/> for lights at other settings than the darks
-    /// (<see cref="Other"/>, ADR 0055).
+    /// bounds with the Direct band of <see cref="Traces"/> (R-067), and
+    /// <see cref="MatchVerdict.OtherSettings"/> in place of Direct, Near or MuchWarmer for lights
+    /// at other settings than the darks (<see cref="Other"/>, <see cref="AtOtherSettings"/>).
     /// </summary>
     /// <param name="ratio">The amplitude ratio; NaN for unmeasured.</param>
     /// <returns>The verdict.</returns>
@@ -203,8 +204,8 @@ internal sealed record LightsAnalysis(
     /// The lights' settings against the darks', when the lights are at other settings (R-052, ADR
     /// 0055): more than half of the measured lights have another ISO or exposure than the darks
     /// (<see cref="LightFigures.OtherSettings"/>), each setting compared when both give it (ADR
-    /// 0060). Null for lights at the darks' settings. With it no ratio is
-    /// <see cref="MatchVerdict.Direct"/>.
+    /// 0060). Null for lights at the darks' settings. With it a ratio that would be Direct, Near
+    /// or MuchWarmer is <see cref="MatchVerdict.OtherSettings"/>.
     /// </summary>
     internal SettingsMismatch? Other { get; init; }
 

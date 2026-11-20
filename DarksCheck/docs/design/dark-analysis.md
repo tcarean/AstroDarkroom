@@ -369,8 +369,8 @@ every match verdict, the lights' and the partner's, from where the set's hot pix
 lights`, `in dark-urile sesiunii`) against the master (`in dark`, `la partener`), the lights'
 with their `TraceFigures`: a verdict the traces relaxed says the ratio is outside 0.9 .. 1.1 and
 why the dark is still taken as it is, one left a few degrees off (`Near`) how much is left
-(R-067), and a master at other settings takes the `REFA` words of ADR 0055 at every measured ratio
-(ADR 0070); `TraceRow` words
+(R-067), and a master at other settings takes the `REFA` words at every measured ratio (ADR 0055,
+ADR 0070), a set that shows none of the master's hot pixels keeping its own text; `TraceRow` words
 the `ce ramane` row of section 2, a hole for a ratio under 1 and a rest for one over it, and
 gives none when the ratio is unmeasured or sits around zero; and `Warmth`
 turns a match's degrees into the clause of the INDEX rows (`adica cu 7.5 grade mai reci decat

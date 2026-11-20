@@ -70,7 +70,7 @@ The owner decided in chat on 2026-11-20, each from options with these figures:
    stack. The verdict is `MatchVerdict.MuchWarmer` (was `CosmeticOnly`).
 4. **No limit moves**: 0.9 .. 1.1, 0.7 .. 1.4, 0.4, the widening of ADR 0044 and check 4's
    band for the frames of a series are as they were; under 0.4 and over 1.4 still read `they
-   do not match`. `Th.MatchOptLow`, `MatchOptHigh` and `MatchCosmeticLow` are renamed
+   do not match` at the lights' settings. `Th.MatchOptLow`, `MatchOptHigh` and `MatchCosmeticLow` are renamed
    `MatchNearLow`, `MatchNearHigh` and `MatchWarmLow`.
 5. **Darks at other settings than the lights** (ADR 0055) are still never subtracted as they
    are, and the one advice is darks made at the lights' settings. "The cosmetic correction
@@ -115,7 +115,8 @@ beside proposal in the plan of 2026-11-20.
 
 ## Consequences
 
-R-023, R-052, R-054, R-055, R-062, R-063, R-064, R-067, R-086, R-101 and R-122 amended; ten
+R-023, R-025, R-052, R-054, R-055, R-062, R-063, R-064, R-067, R-086, R-101, R-122 and R-124
+amended; ten
 lines of eight golden files changed, each one of the texts above. No formula and no constant's
 value changed. `docs/validation.json` recorded the verdict's name in two cases (V-005 and
 V-012, `CosmeticOnly`); at the owner's word of 2026-11-20 the two read `MuchWarmer`, the name
@@ -123,7 +124,9 @@ alone, and `/validate` was run after it (`docs/validation.md`, History).
 Guarded by `R052_TheAmplitudeRatioOfTheLightsOverTheMasterGivesTheVerdict`,
 `R052_ADarkMuchWarmerThanLightsAtOtherSettingsIsNotSubtractedAsItIs`,
 `R052_LightsAtOtherSettingsThanTheDarksAreNeverSubtractedAsTheyAre`,
-`R064_TheLightsAreComparedWithThePartnerOnTheSettingsThoseTwoGive` and
+`R063_APartnerAtOtherSettingsThanTheSessionIsNeverSubtractedAsItIs`,
+`R064_TheLightsAreComparedWithThePartnerOnTheSettingsThoseTwoGive`,
+`R086_TheChartSentenceForLightsAtOtherSettingsSaysWhatTheVerdictSays` and
 `R082_Check2AndTheIndexAreInPlainWords`, which also holds that no text of check 2 or of the
 index names `-opt`.
 

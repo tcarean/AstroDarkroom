@@ -39,7 +39,8 @@ internal static class VerdictPalette
 
     /// <summary>
     /// Severity of a verdict word, in either language (ADR 0021): 0 good (OK), 2 attention
-    /// (ATENTIE, WARNING), 3 bad (REFA, REDO, the series to take again, ADR 0038; EROARE, ERROR),
+    /// (ATENTIE, WARNING), 3 bad (REFA, REDO, the series to take again, ADR 0038, or darks at other settings than the
+    /// lights, ADR 0070; EROARE, ERROR),
     /// -1 neutral (NEMASURAT, UNMEASURED, empty), 1 anything else. The word is read by its start,
     /// case-insensitively.
     /// </summary>

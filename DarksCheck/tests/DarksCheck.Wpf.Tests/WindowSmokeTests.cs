@@ -202,6 +202,9 @@ public class WindowSmokeTests
             // the verdict word of an alert row sits on the red chip, 14 px
             TextBlock chip = texts.First(t => t.Text == "ATENTIE" && t.FontSize == 14);
             Assert.Equal(bad, ((SolidColorBrush)((Border)VisualTreeHelper.GetParent(chip)).Background).Color);
+            // check 2's verdict at other settings opens with REFA, on the same red chip (ADR 0070)
+            TextBlock redo = texts.First(t => t.Text == "REFA" && t.FontSize == 14);
+            Assert.Equal(bad, ((SolidColorBrush)((Border)VisualTreeHelper.GetParent(redo)).Background).Color);
 
             // an ordinary row keeps the theme's text
             RowVm plain = vm.SessionRows.First(r => !r.Alert && !r.HasVerdict);

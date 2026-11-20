@@ -122,7 +122,8 @@ exactly that many, from the first file to the last at even distances, and lists 
 light, one by one, without keeping them, so the cap does not apply to them. It prints the session's lines (check 1: the frames, their
 settings and whether the darks match the lights), one section per check, from check 2, how well
 the dark fits the lights, to check 9, each with its figures and a `verdict` row that starts with `OK`, `WARNING`, `REDO`
-(check 4 only: the series is to be taken again) or `UNMEASURED`, then `INDEX`, the frames
+(check 4: the series is to be taken again; check 2 and the partner's verdict: the darks are
+made at other settings than the lights) or `UNMEASURED`, then `INDEX`, the frames
 table, the lights table and `ADU SCALE EXPLAINED`.
 
 A session of 20 darks, 30 biases and 32 lights of 24 MP takes about a minute and up to 6 GB of
@@ -603,7 +604,8 @@ tabs:
   the open folder only and is dropped when you open another.
   Then the rows of check 2, the chart of every light against the dark (how hot the master's hot
   pixels are in it) with the bounds as lines (0.9 and 1.1 green, as it is; 0.7 and 1.4 amber,
-  a few degrees off; 0.4 red, much warmer), and the lights table. When what the subtraction leaves is
+  a few degrees off; 0.4 red, much warmer; no lines when the darks are made at other settings
+  than the lights, where every point is red), and the lights table. When what the subtraction leaves is
   under the noise of a light further out, the two green lines stand at the ends of that wider
   band (0.80 and 1.20, say), the points inside it are green and the sentence above the chart
   says so.
