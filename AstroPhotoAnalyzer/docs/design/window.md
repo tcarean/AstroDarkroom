@@ -54,7 +54,8 @@ view-model subscribes to `Parameters`' `Profile` change and writes the settings 
 The parameterless constructor passes `WindowSettings.None`.
 
 **`WindowSettings`** (`ViewModels/WindowSettings.cs`, R-156): one JSON object, today the key
-`iccProfile`; `Read(path)` tolerates a missing, unreadable or malformed file (no profile),
+`iccProfile`; `Read(path)` tolerates a missing, unreadable or malformed file, and a value the
+parser lets through that is no text (a `\ud800` escape alone, ADR 0115), as no profile;
 `Write()` goes through `<file>.tmp` and one move and swallows IO and access errors, both writing
 the exception to the diagnostic log at Warn; a null path reads and writes nothing.
 `InLocalAppData()` is the user's file, passed by `App`.

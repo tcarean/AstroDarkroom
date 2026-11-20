@@ -193,6 +193,23 @@ public class ProfileBarTests
         Assert.False(new MainViewModel(WindowSettings.Read(settingsPath)).Parameters.HasProfile);
     }
 
+    /// <summary>
+    /// CR-013: the JSON parser lets through a string whose \ud800 escape has no second half, and
+    /// reading it as text then throws an exception the catch did not name; thrown while the
+    /// window starts, it stopped every start until the file was deleted by hand.
+    /// </summary>
+    [Fact]
+    public void R156_ASettingsFileWithABrokenEscapeMeansNoProfile()
+    {
+        using var ws = new TempWorkspace();
+        string file = ws.WriteFile("escape.json", Encoding.ASCII.GetBytes("{\"iccProfile\": \"C:/profiles/\\ud800.icc\"}"));
+
+        WindowSettings settings = WindowSettings.Read(file);
+
+        Assert.Null(settings.IccProfilePath);
+        Assert.False(new MainViewModel(settings).Parameters.HasProfile);
+    }
+
     [Fact]
     public async Task R156_AMissingOrBrokenSettingsFileMeansNoProfileAndAFailedWriteThrowsNothing()
     {

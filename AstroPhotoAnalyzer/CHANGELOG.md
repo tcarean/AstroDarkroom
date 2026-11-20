@@ -288,6 +288,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The window starts whatever its settings file holds. One damaged shape of the file (a text
+  with a broken `\ud800` escape) stopped the window at every start, before anything showed,
+  until the file was deleted by hand; it now means "no profile remembered", like every other
+  damaged file (R-156, ADR 0115).
+
 - A FITS whose header holds an impossible size is refused with a sentence that names it,
   instead of being followed. A negative axis length in a part of the file that is skipped
   made the tool read the same header for ever (the console never returned, the window's run
