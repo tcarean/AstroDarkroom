@@ -124,4 +124,14 @@ Order: requirements, tests, code, docs (the kit's rule "Requirements first").
 - Status lines: ADRs 0004, 0030, 0034 and 0055 name 0070; ADR 0044's decision stands and was not
   touched; ADR 0017's "±5 °C" got a dated correction.
 - `R067_TheTracesOnlyRelaxTheOptBandAndAMatchedDarkLeavesNothing` was renamed `...TheNearBand...`.
-- `/validate` was not run: no formula and no constant's value changed.
+- The plan was wrong that no recorded figure holds a verdict word: `docs/validation.json` holds
+  `CosmeticOnly` in V-005 and V-012, and `ValidationTests` compares it with the verdict's name
+  (found by the review). The record is not touched until the owner decides.
+- The review also found that, for lights at other settings, the chart's sentence said "subtract
+  it as it is all the same" beside a verdict that says not to. The owner approved a sentence of
+  its own for that case (text 9: `The darks are made at other settings than the lights, so no
+  point is green: the dark is not subtracted as it is. Yellow between 0.4 and 1.4: use the dark
+  for the cosmetic correction only.` / `Dark-urile sunt facute la alte setari decat
+  lights-urile, asa ca niciun punct nu e verde: dark-ul nu se scade asa cum e. Galben intre 0.4
+  si 1.4: foloseste dark-ul doar pentru corectia cosmetica.`), R-086.
+- ADR 0017's body keeps the old constant names; only its "±5 °C" got a dated correction.

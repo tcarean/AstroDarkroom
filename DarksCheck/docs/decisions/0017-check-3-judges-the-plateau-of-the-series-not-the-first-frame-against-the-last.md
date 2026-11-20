@@ -28,7 +28,7 @@ plateau (least squares of the two linear coefficients for each time constant on 
 fiftieth of the span to three times it; at least `Th.WarmingFitMinFrames` = 6 frames) and
 judges three things: the series has settled when the fitted curve is within
 `Th.SettledCelsius` = 1 °C of the plateau at the last frame; every frame's ratio stays in the
-`-opt` band of the master, `Th.MatchNearLow` .. `Th.MatchNearHigh` (0.7 .. 1.4); and the frames
+`-opt` band of the master, `Th.MatchOptLow` .. `Th.MatchOptHigh` (0.7 .. 1.4); and the frames
 more than `Th.OffPlateauCelsius` = 2 °C from the plateau, measured against the plateau and not
 against the master (the owner's choice of 2026-10-21), are listed as the ones to discard, in
 the `de aruncat` row with the noise the master would gain without them (the square root of

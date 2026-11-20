@@ -343,9 +343,10 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>
     /// The sentence above the lights' chart; its green band is the open result's (R-067), the plain
-    /// one before a result.
+    /// one before a result, and for lights at other settings than the darks it says that no point
+    /// is green (ADR 0070).
     /// </summary>
-    public string LightsChartLead => WindowTexts.LightsChartLead(_result?.Lights?.Traces ?? TraceFigures.None);
+    public string LightsChartLead => WindowTexts.LightsChartLead(_result?.Lights?.Traces ?? TraceFigures.None, _result?.Lights?.Other is not null);
 
     public string HotHeader => WindowTexts.HotHeader;
 

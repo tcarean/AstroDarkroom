@@ -403,7 +403,7 @@ internal static class LightsAnalyzer
         SettingsMismatch? other = OtherOf(frames, ok, darkSettings, used);
         double centre = other is null || ok.Length == 0 ? 1 : Planes.Median(ok.Select(f => (float)f.ToDarks).ToArray());
         // what the mismatch leaves, and the verdict it relaxes (R-067): inside the widened band a
-        // ratio the plain bounds call WithOpt is Direct
+        // ratio the plain bounds call Near is Direct
         TraceFigures traces = TracesOf(frames, darks, excess, ampIdx, w, match.Ratio, centre, other is not null);
         if (traces.Relaxed)
         {

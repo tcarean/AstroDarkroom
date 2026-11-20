@@ -17,4 +17,4 @@ D3300, ISO 1600, 120 s, L-eNhance filter; every third light of the Veil nights o
 - `darkscheck-on-the-copies.csv` - what DarksCheck itself read on twelve of the pairs: ratio,
   degrees, what the subtraction leaves and the verdict as it was worded then.
 
-Nothing here is read by a test.
+The pictures the stack files name (`png/...`) were not kept. Nothing here is read by a test.

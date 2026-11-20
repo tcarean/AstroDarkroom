@@ -148,7 +148,7 @@ The trace of any ratio is then `|ratio - 1| x k`, so the band inside which it st
 MatchNearHigh`, the plain band when `k` is large (`Widened` says which). For the night's ratio:
 `Median` (`|ratio - 1| x k`), `AboveNoise` and `AboveStrong` (the pixels whose own trace passes
 1 and `Th.TraceStrongFactor` times the noise), and `Relaxed`, true when the plain `Judge` says
-`WithOpt` and the band says `Direct`; `Analyze` then sets `LightsOverDark.Verdict` to `Direct`,
+`Near` and the band says `Direct`; `Analyze` then sets `LightsOverDark.Verdict` to `Direct`,
 so every reader of the verdict (the report, the validation, the window's chip) sees it, and the
 report takes its wording from `Relaxed`. `LightsAnalysis.Judge(ratio)` judges any ratio with
 the band: the window colours each light's point with it. `Chain` and `EquivalentIndex` read
@@ -167,7 +167,7 @@ other than 1, the median of the lights' `ToDarks`: the level and the noise in `k
 one setting, so `|ratio - centre| x k` is the files' `|ratio - 1|` times the master's level over
 the light's noise as the files have them; `TraceFigures.Centre` carries it, and the report's
 `TraceRow` says "too much" under it. With a mismatch `Relaxed` is never set, and
-`LightsAnalysis.NeverDirect` turns a `Direct` into `WithOpt`, in `Analyze` for the night and in
+`LightsAnalysis.NeverDirect` turns a `Direct` into `Near`, in `Analyze` for the night and in
 `LightsAnalysis.Judge` for each light. `MatchPartner` does the same for the partner
 (`PartnerAnalysis.Other`, the session's first stacked dark against the partner's first decoded
 one, the ratio in the files being the ratio times the session's factor over the partner's) and

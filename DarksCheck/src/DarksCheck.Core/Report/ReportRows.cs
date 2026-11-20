@@ -125,7 +125,7 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
 
     /// <summary>
     /// A text cut into its statements: at every "; " that stands outside round and square
-    /// brackets, so "(outside 0.7 .. 1.4; the farthest 1.93)" stays whole.
+    /// brackets, so "(their hot pixels are outside 0.7 .. 1.4 of the master's; the farthest 1.93)" stays whole.
     /// </summary>
     /// <param name="text">The text; not null.</param>
     /// <returns>The statements in order, without their separators; the text alone when it has no

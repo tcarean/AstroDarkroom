@@ -85,6 +85,38 @@ public class MainViewModelTests
         Assert.DoesNotContain("plato", vm.WarmingNote, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// ADR 0070: for lights at another ISO than the darks every point from 0.4 to 1.4 is yellow and the verdict
+    /// says not to subtract the dark as it is; the sentence above the chart said "subtract it as it is all the same".
+    /// </summary>
+    [Fact]
+    public async Task R086_TheChartSentenceForLightsAtOtherSettingsSaysWhatTheVerdictSays()
+    {
+        using SessionFixture f = new SessionFixture()
+            .WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice })
+            .WithLights(3, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 2 }, iso: 800);
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        LightsAnalysis l = vm.Result!.Lights!;
+        Assert.NotNull(l.Other);
+        // at the same temperature, and still no point is green
+        Assert.All(vm.LightPoints, p => Assert.Equal(VerdictPalette.Warn, p.Colour));
+        Assert.StartsWith("nu scadea dark-ul asa cum e", vm.LightRows[^1].Rest, StringComparison.Ordinal);
+        Assert.Contains("Dark-urile sunt facute la alte setari decat lights-urile, asa ca niciun punct nu e verde: dark-ul nu se scade asa cum e. Galben intre 0.4 si 1.4: foloseste dark-ul doar pentru corectia cosmetica. Rosu mai departe: nu se potrivesc.", vm.LightsChartLead, StringComparison.Ordinal);
+        Assert.DoesNotContain("scade-l", vm.LightsChartLead, StringComparison.Ordinal);
+        Assert.DoesNotMatch(PlainWords.RomanianTabWords(), vm.LightsChartLead);
+        using (Ui.Use(UiLanguage.English))
+        {
+            string english = WindowTexts.LightsChartLead(l.Traces, otherSettings: true);
+            Assert.Contains("The darks are made at other settings than the lights, so no point is green: the dark is not subtracted as it is. Yellow between 0.4 and 1.4: use the dark for the cosmetic correction only. Red beyond: they do not match.", english, StringComparison.Ordinal);
+            Assert.DoesNotContain("subtract it as it is", english, StringComparison.Ordinal);
+            Assert.DoesNotMatch(PlainWords.EnglishTabWords(), english);
+        }
+
+        // the same lights at the darks' ISO keep the plain sentence
+        Assert.DoesNotContain("niciun punct nu e verde", WindowTexts.LightsChartLead(l.Traces), StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task R067_TheLightsChartFollowsTheBandTheTracesAllow()
     {
@@ -107,8 +139,10 @@ public class MainViewModelTests
         Assert.Equal([t.DirectLow, t.DirectHigh, Th.MatchNearLow, Th.MatchNearHigh, Th.MatchWarmLow], vm.LightGuides.Select(g => g.Value));
         Assert.Equal(RunReport.F(t.DirectLow, 2) + " asa cum e", vm.LightGuides[0].Label);
         Assert.Equal(RunReport.F(t.DirectHigh, 2) + " asa cum e", vm.LightGuides[1].Label);
+        // the other three say how far the dark is, never what Siril could do with it (R-086, ADR 0070)
+        Assert.Equal(["0.7 la cateva grade", "1.4 la cateva grade", "0.4 mult mai cald"], vm.LightGuides.Skip(2).Select(g => g.Label));
         Assert.Equal(WindowTexts.LightsChartLead(t), vm.LightsChartLead);
-        Assert.Contains($"Verde intre {RunReport.F(t.DirectLow, 2)} si {RunReport.F(t.DirectHigh, 2)}: dark-ul se poate scadea asa cum e (0.9 .. 1.1, largit pana unde ce ramane dupa scadere ajunge cat zgomotul unui light). Galben de acolo pana la 0.7 si 1.4: ", vm.LightsChartLead, StringComparison.Ordinal);
+        Assert.Contains($"Verde intre {RunReport.F(t.DirectLow, 2)} si {RunReport.F(t.DirectHigh, 2)}: dark-ul se poate scadea asa cum e (0.9 .. 1.1, largit pana unde ce ramane dupa scadere ajunge cat zgomotul unui light). Galben de acolo pana la 0.7 si 1.4: dark-ul e la cateva grade de lights, scade-l tot asa cum e; tot galben intre 0.4 si 0.7: dark-ul e mult mai cald, scade-l asa cum e, cu corectia cosmetica pornita. Rosu mai departe: nu se potrivesc.", vm.LightsChartLead, StringComparison.Ordinal);
 
         Assert.DoesNotMatch(PlainWords.RomanianTabWords(), vm.LightsChartLead);
         // the verdict's chip is green and the new row is on the Lights tab
@@ -118,10 +152,10 @@ public class MainViewModelTests
 
         // a plain result keeps the plain band and its words
         Assert.DoesNotContain("largit", WindowTexts.LightsChartLead(TraceFigures.None), StringComparison.Ordinal);
-        Assert.Contains("Verde intre 0.9 si 1.1: dark-ul se poate scadea asa cum e. Galben intre 0.7 si 1.4: ", WindowTexts.LightsChartLead(TraceFigures.None), StringComparison.Ordinal);
+        Assert.Contains("Verde intre 0.9 si 1.1: dark-ul se poate scadea asa cum e. Galben intre 0.7 si 1.4: dark-ul e la cateva grade de lights, scade-l tot asa cum e; tot galben intre 0.4 si 0.7: dark-ul e mult mai cald, scade-l asa cum e, cu corectia cosmetica pornita. Rosu mai departe: nu se potrivesc.", WindowTexts.LightsChartLead(TraceFigures.None), StringComparison.Ordinal);
         using (Ui.Use(UiLanguage.English))
         {
-            Assert.Contains($"Green between {RunReport.F(t.DirectLow, 2)} and {RunReport.F(t.DirectHigh, 2)}: the dark can be subtracted as it is (0.9 .. 1.1, widened to where what the subtraction leaves reaches the noise of a light). Yellow from there to 0.7 and 1.4: ", WindowTexts.LightsChartLead(t), StringComparison.Ordinal);
+            Assert.Contains($"Green between {RunReport.F(t.DirectLow, 2)} and {RunReport.F(t.DirectHigh, 2)}: the dark can be subtracted as it is (0.9 .. 1.1, widened to where what the subtraction leaves reaches the noise of a light). Yellow from there to 0.7 and 1.4: the dark is a few degrees off, subtract it as it is all the same; yellow too between 0.4 and 0.7: the dark is much warmer, subtract it as it is, with the cosmetic correction on. Red beyond: they do not match.", WindowTexts.LightsChartLead(t), StringComparison.Ordinal);
             Assert.DoesNotMatch(PlainWords.EnglishTabWords(), WindowTexts.LightsChartLead(t));
         }
     }

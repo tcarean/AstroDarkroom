@@ -300,6 +300,9 @@ public partial class LanguageWindowTests
                 Assert.DoesNotContain(english ? "Analyse again" : "Analizeaza din nou", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "The first lights of the night usually sit lower, because the camera is still cold." : "Primele lights ale noptii ies de obicei mai jos, pentru ca aparatul e inca rece.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "0.4 much warmer" : "0.4 mult mai cald", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "0.7 a few degrees off" : "0.7 la cateva grade", all, StringComparison.Ordinal);
+                // no text of the tab names Siril's -opt (ADR 0070)
+                Assert.DoesNotContain("-opt", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "how bright the sky is in the light: the average value of the pixels, above the black, in ADU" : "cat de luminos e cerul in light: valoarea medie a pixelilor, peste negru, in ADU", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "stars and hot pixels" : "stele si pixeli fierbinti", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "half of the hot pixels of the master are, in this light, between low and high" : "jumatate din pixelii fierbinti ai masterului sunt, in acest light, intre jos si sus", all, StringComparison.Ordinal);

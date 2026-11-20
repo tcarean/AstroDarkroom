@@ -2,7 +2,7 @@
 
 Date: 2026-11-20
 Status: accepted 2026-11-20
-Supersedes: 0004 in part (what a ratio outside 0.9 .. 1.1 and inside 0.4 .. 1.4 tells the owner to do); 0030 in part (the words of those two verdicts); 0034 in part (the chart's yellow and red lines and the sentence above them); 0055 in part (the advice with darks at other settings, and a much warmer dark at other settings)
+Supersedes: 0004 in part (what a ratio outside 0.9 .. 1.1 and inside 0.4 .. 1.4 tells the owner to do); 0030 in part (the words of the -opt and cosmetic-only verdicts); 0034 in part (the chart's yellow and red lines and the sentence above them); 0055 in part (the advice with darks at other settings, and a much warmer dark at other settings)
 
 ## Context
 
@@ -78,6 +78,11 @@ The owner decided in chat on 2026-11-20, each from options with these figures:
    say to subtract a dark of another ISO as it is.
 6. **Check 4** says of a frame outside 0.7 .. 1.4 of the master that it is too far from the
    master and gives the band; it no longer says what Siril could match.
+7. **The sentence above the window's chart**, for lights at other settings than the darks,
+   says that no point is green, that the dark is not subtracted as it is, and that yellow
+   between 0.4 and 1.4 means the cosmetic correction only (the owner's answer of the same day
+   to a finding of the review: the plain sentence would say "subtract it as it is all the
+   same" beside a red verdict that says not to).
 
 The texts are R-052's, R-062's, R-063's, R-023's and R-086's, shown to the owner original
 beside proposal in the plan of 2026-11-20.
@@ -102,7 +107,9 @@ beside proposal in the plan of 2026-11-20.
 
 R-023, R-052, R-054, R-055, R-062, R-063, R-064, R-067, R-086, R-101 and R-122 amended; ten
 lines of eight golden files changed, each one of the texts above. No formula and no constant's
-value changed, so no figure of `docs/validation.json` can move and `/validate` was not due.
+value changed. `docs/validation.json` records the verdict's name in two cases (V-005 and
+V-012, `CosmeticOnly`), which the rename makes `/validate` fail on; what the record says there
+is the owner's to decide and was open when this was written.
 Guarded by `R052_TheAmplitudeRatioOfTheLightsOverTheMasterGivesTheVerdict`,
 `R052_ADarkMuchWarmerThanLightsAtOtherSettingsIsNotSubtractedAsItIs`,
 `R052_LightsAtOtherSettingsThanTheDarksAreNeverSubtractedAsTheyAre`,

@@ -34,7 +34,9 @@ internal enum MatchVerdict
 
     /// <summary>
     /// Within <see cref="Th.MatchNearLow"/> .. <see cref="Th.MatchNearHigh"/>: the master is a few
-    /// degrees off; it is still subtracted as it is, and the words say it is off (ADR 0070).
+    /// degrees off; it is still subtracted as it is, and the words say it is off (ADR 0070). Also
+    /// what <see cref="Direct"/> becomes for a master made at other settings than the set, which
+    /// is never subtracted as it is (<see cref="LightsAnalysis.NeverDirect"/>, ADR 0055).
     /// </summary>
     Near,
 
