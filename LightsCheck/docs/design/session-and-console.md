@@ -98,7 +98,9 @@ culture, fixed decimals); it formats first and then drops the minus when no digi
 follows it, so a figure that rounds to zero reads `0.0` (R-092), and `Signed(value, decimals)`
 puts a `+` before whatever `F` wrote without a minus, `+0.00` for such a figure. The angle of a
 trail in a frame's flag (`SeriesAnalyzer`) and the tick labels of the window's charts
-(`ChartElement.Num`) are written by `F` too. `Duration(seconds)` prints `48 s`, `54 min` or
+(`ChartElement.Num`) are written by `F` too. `Shown(value, decimals)` is the figure as the
+user reads it, the text of `F` read back, for a word that is decided beside its figure (ADR
+0067). `Duration(seconds)` prints `48 s`, `54 min` or
 `3 h 22 min`;
 `DurationToTheSecond(seconds)` rounds the same way and keeps the seconds: `38 s`, `45 min 12 s`,
 `2 h 54 min 30 s`. Every report in `Report/` uses them, so no text is formatted by a view-model

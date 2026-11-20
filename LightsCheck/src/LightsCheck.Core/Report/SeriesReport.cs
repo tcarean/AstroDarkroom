@@ -479,10 +479,11 @@ internal static class SeriesReport
             }))));
         }
 
-        string ok = RunReport.F(Th.SwampingRatioOk, 0);
+        // What the read noise adds at the threshold, 4.88 % at 10, said as the first whole percent above it.
+        string ok = RunReport.F(Th.SwampingRatioOk, 0), under = RunReport.F(Math.Floor(NoiseAnalyzer.PenaltyPct(Th.SwampingRatioOk)) + 1, 0);
         rows.Add(new(T("what it means", "ce inseamna"), T(
-            $"shot/read from {ok} up: the sky covers the read noise, which adds under 5 %; under {ok}: the channel suffers from the read noise, and longer exposures would help",
-            $"shot/citire de la {ok} in sus: cerul acopera zgomotul de citire, care adauga sub 5 %; sub {ok}: canalul sufera de zgomotul de citire, iar expuneri mai lungi ar ajuta")));
+            $"shot/read from {ok} up: the sky covers the read noise, which adds under {under} %; under {ok}: the channel suffers from the read noise, and longer exposures would help",
+            $"shot/citire de la {ok} in sus: cerul acopera zgomotul de citire, care adauga sub {under} %; sub {ok}: canalul sufera de zgomotul de citire, iar expuneri mai lungi ar ajuta")));
         return rows;
     }
 
@@ -1489,9 +1490,11 @@ internal static class SeriesReport
     /// <param name="s">The series analysis.</param>
     /// <param name="r">The result of the series run (not read).</param>
     /// <returns>
-    /// GOOD (BUNA) when that ratio reaches <see cref="Th.SwampingRatioOk"/>, MARGINAL (LA LIMITA)
-    /// under it, NOT MEASURED (NEMASURAT) without biases or without a finite ratio; the text opens
-    /// with the sky on green of the first and last good frames in ADU.
+    /// GOOD (BUNA) when that ratio, as the text shows it with one decimal, reaches
+    /// <see cref="Th.SwampingRatioOk"/>, MARGINAL (LA LIMITA) under it (ADR 0067), NOT MEASURED
+    /// (NEMASURAT) without biases or without a finite ratio; the text opens with the sky on
+    /// green of the first and last good frames in ADU and ends with what the read noise adds,
+    /// in percent with one decimal.
     /// </returns>
     private static (string Verdict, string Text) Exposure(SeriesAnalysis s, SeriesResult r)
     {
@@ -1509,8 +1512,9 @@ internal static class SeriesReport
             return (T("NOT MEASURED", "NEMASURAT"), bg + T("; the shot/read ratio could not be measured (the measured area is too small)", "; raportul shot/citire nu s-a putut masura (zona masurata e prea mica)"));
         }
 
-        string ratio = RunReport.F(worst.SwampingRatio, 1), extra = RunReport.F(worst.PenaltyPct, 0), ok = RunReport.F(Th.SwampingRatioOk, 0);
-        return (worst.SwampingRatio >= Th.SwampingRatioOk ? T("GOOD", "BUNA") : T("MARGINAL", "LA LIMITA"), T(
+        string ratio = RunReport.F(worst.SwampingRatio, 1), extra = RunReport.F(worst.PenaltyPct, 1), ok = RunReport.F(Th.SwampingRatioOk, 0);
+        // Judged on the ratio as written, so `10.0 (good from 10)` never stands under MARGINAL.
+        return (RunReport.Shown(worst.SwampingRatio, 1) >= Th.SwampingRatioOk ? T("GOOD", "BUNA") : T("MARGINAL", "LA LIMITA"), T(
             $"{bg}; the weakest is channel {worst.Name}: shot/read {ratio} (good from {ok}), the read noise adds {extra} %",
             $"{bg}; cel mai slab e canalul {worst.Name}: shot/citire {ratio} (bine e de la {ok}), zgomotul de citire adauga {extra} %"));
     }

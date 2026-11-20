@@ -54,4 +54,17 @@ public class RunReportTests
     [InlineData(-1.25, 2, "-1.25")]
     public void R092_ASignedFigureThatRoundsToZeroReadsPlusZero(double value, int decimals, string expected)
         => Assert.Equal(expected, RunReport.Signed(value, decimals));
+
+    /// <summary>
+    /// A figure as it is shown is its written digits read back, so a word decided on it cannot
+    /// stand against the digits beside it (R-024, ADR 0067).
+    /// </summary>
+    [Theory]
+    [InlineData(9.96, 1, 10.0)]
+    [InlineData(9.94, 1, 9.9)]
+    [InlineData(10.04, 1, 10.0)]
+    [InlineData(1.597, 2, 1.6)]
+    [InlineData(-0.04, 1, 0.0)]
+    public void R024_AFigureAsShownIsItsWrittenDigitsReadBack(double value, int decimals, double expected)
+        => Assert.Equal(expected, RunReport.Shown(value, decimals));
 }

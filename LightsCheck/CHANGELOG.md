@@ -333,6 +333,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   focus held`, `Y -0.00 px/min`, a cell `-0.0` in the frame table, `-0` on a chart's axis. A
   figure that rounds to zero now has no minus (`0.000`, `0.0`), and reads `+0 %`, `+0.00` where
   the sign is always written (R-092, ADR 0066; CR-021 of the review of 2026-11-13).
+- The `exposure` row of SUMMARY could give a verdict against its own figure: a shot/read ratio
+  of 9.96 read `MARGINAL - ... shot/read 10.0 (good from 10)`. The verdict is now taken on the
+  ratio as it is shown, so that session reads `GOOD`. The row also said `the read noise adds
+  5 %` at a ratio of 10.0, beside `adds under 5 %` in EXPOSURE AND NOISE; it now gives the
+  figure with one decimal, `adds 4.9 %` (R-024, ADR 0067; CR-017 of the review of 2026-11-13).
 
 ### Internal
 

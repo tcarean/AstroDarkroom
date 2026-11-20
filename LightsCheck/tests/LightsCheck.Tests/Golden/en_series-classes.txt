@@ -15,7 +15,7 @@ Copyright (C) 2026 Tudor Carean
 
   SUMMARY
     focus              : GOOD - the stars' width (FWHM) is on average 3.22 px = 19.3" on the good frames; 3.22 px at the start and 3.22 px at the end (+0 %): the focus held the whole session
-    exposure           : GOOD - the sky on green: 2000 -> 2001 ADU; the weakest is channel B: shot/read 10.0 (good from 10), the read noise adds 5 %
+    exposure           : GOOD - the sky on green: 2000 -> 2001 ADU; the weakest is channel B: shot/read 10.0 (good from 10), the read noise adds 4.9 %
     dew                : NO - the stars' width +0 %, the light around the stars (halo) +0.000
     trailed frames     : 2 bad, 4 marginal, 7 good, 1 unread (of 14); it is not known which axis is RA
     dithering          : NO walking noise, OK for hot pixels - walking-noise streaks of at most 1.2 px (under 3 px they do not show): the drift is 0.62 px over one exposure; frames 11-13, 3 frames in a row in the same spot, within 10 px; the pattern adds up in place: 17.2 % of one frame's pattern stays in the stack (ideal 7.7 %, fine up to 11.5 %); 5 moves over 13 frames, 6 different spots (within 10 px), 1 frame alone, 0 moves on both axes

@@ -101,6 +101,15 @@ internal static class RunReport
         return text.StartsWith('-') || double.IsNaN(v) ? text : "+" + text;
     }
 
+    /// <summary>
+    /// A figure as the user reads it: the digits <see cref="F"/> writes, read back. A word
+    /// decided on it, a verdict beside the figure, cannot stand against those digits (ADR 0067).
+    /// </summary>
+    /// <param name="v">The figure as measured; a number.</param>
+    /// <param name="decimals">How many decimals the text shows; 0 or more.</param>
+    /// <returns>The value of the written text: 10.0 for 9.96 at one decimal.</returns>
+    internal static double Shown(double v, int decimals) => double.Parse(F(v, decimals), NumberStyles.Float, CultureInfo.InvariantCulture);
+
     /// <summary>A duration as "3 h 22 min", "54 min" or "48 s".</summary>
     /// <param name="seconds">The duration in seconds; rounded to the whole second first.</param>
     /// <returns>

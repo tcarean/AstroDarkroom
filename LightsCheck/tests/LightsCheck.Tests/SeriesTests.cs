@@ -782,6 +782,57 @@ public class SeriesTests
         Assert.Contains("darelor", s.AxisSource, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The exposure verdict of SUMMARY is taken on the ratio as the row shows it, with one
+    /// decimal, so the word never stands against its figure (R-024, ADR 0067, CR-017): a
+    /// measured 9.96 reads `10.0 (good from 10)` and GOOD, 9.94 reads `9.9` and MARGINAL. The
+    /// row gives what the read noise adds with one decimal. The pattern session's result with
+    /// a noise sample of one frame whose blue channel carries the ratio.
+    /// </summary>
+    [Theory]
+    [InlineData(9.96, "10.0", true, true)]
+    [InlineData(9.96, "10.0", true, false)]
+    [InlineData(9.94, "9.9", false, true)]
+    [InlineData(9.94, "9.9", false, false)]
+    [InlineData(10.04, "10.0", true, true)]
+    public void R024_TheExposureVerdictIsTakenOnTheRatioAsItIsShown(double ratio, string shown, bool good, bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        SeriesResult pattern = RunPattern();
+        static ChannelNoise Channel(string name, double r) => new(name, 2000, 40, 38, 1.4, r, 100 * (Math.Sqrt(1 + 1 / r) - 1));
+        IReadOnlyList<IReadOnlyList<ChannelNoise>> sample = [[Channel("R", 14.2), Channel("G1", 31.0), Channel("G2", 30.5), Channel("B", ratio)]];
+        SeriesResult r = pattern with { Series = pattern.Series with { Swamping = sample, SwampingFrames = [1] } };
+
+        ReportRow row = Assert.Single(SeriesReport.SummaryRows(r), x => x.Label == (english ? "exposure" : "expunere"));
+
+        Assert.Equal(good ? (english ? "GOOD" : "BUNA") : (english ? "MARGINAL" : "LA LIMITA"), row.Verdict);
+        Assert.EndsWith(
+            english
+                ? $"; the weakest is channel B: shot/read {shown} (good from 10), the read noise adds 4.9 %"
+                : $"; cel mai slab e canalul B: shot/citire {shown} (bine e de la 10), zgomotul de citire adauga 4.9 %",
+            row.Value, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The `what it means` row says what the read noise adds from the threshold up with a
+    /// figure worked out from the threshold: the first whole percent above it (R-024).
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R024_TheWhatItMeansRowTakesItsPercentFromTheThreshold(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        double atThreshold = NoiseAnalyzer.PenaltyPct(Th.SwampingRatioOk);
+        Assert.InRange(atThreshold, 4.85, 4.9);
+        string percent = (Math.Floor(atThreshold) + 1).ToString(CultureInfo.InvariantCulture);
+
+        string value = Assert.Single(SeriesReport.NoiseRows(RunPattern(biases: 2)), x => x.Label == (english ? "what it means" : "ce inseamna")).Value;
+
+        Assert.Equal("5", percent);
+        Assert.Contains(english ? $", which adds under {percent} %; under 10: " : $", care adauga sub {percent} %; sub 10: ", value, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R024_ReadNoiseFromTheBiasesGivesTheSwampingRatios()
     {

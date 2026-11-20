@@ -311,8 +311,11 @@ cancels); the lights' total noise per position is the clipped standard deviation
 pixel minus its 5 x 5 median in the same window, which overestimates sigma by a few percent,
 so it is corrected by the ratio of the pair sigma to the same estimator on the bias. The shot
 variance is total minus read; the swamping ratio shot over read variance; the penalty
-`sqrt(1 + 1/ratio) - 1`. On Veil: 9 to 11 in red, 40 to 60 in green and blue, as the hand
-report found. `SeriesAnalyzer` takes the sample: the first, the middle and the last of the
+`sqrt(1 + 1/ratio) - 1` (`PenaltyPct`, in percent). On Veil: 9 to 11 in red, 40 to 60 in green
+and blue, as the hand report found. The report's `Exposure` takes its verdict on the lowest
+ratio as the row writes it (`RunReport.Shown`, the written digits read back), so the word
+cannot stand against the figure beside it, and `NoiseRows` works the `5` of `adds under 5 %`
+out of `PenaltyPct(Th.SwampingRatioOk)`, the first whole percent above it (ADR 0067). `SeriesAnalyzer` takes the sample: the first, the middle and the last of the
 measured frames, those flagged `ShortExposure` left out (unless every measured frame is,
 when they are sampled all the same), since a frame with almost no sky
 reads a ratio near zero that the summary's verdict, the weakest channel of the sample, would
