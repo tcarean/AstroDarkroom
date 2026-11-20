@@ -166,13 +166,50 @@ internal static partial class FolderIdentity
         return full;
     }
 
-    /// <summary>Opens an existing folder for its identity alone: nothing is created, read or written through the handle.</summary>
-    /// <param name="path">The folder's path.</param>
+    /// <summary>
+    /// The length from which a folder's path is opened in the <c>\\?\</c> form: 248, the length
+    /// from which Windows with its long paths off no longer makes a folder by its plain path
+    /// (260 less the 12 characters of a short file name). A folder that exists opens plainly up
+    /// to 259 characters; the form does no harm below that.
+    /// </summary>
+    private const int LongPath = 248;
+
+    /// <summary>
+    /// Opens an existing folder for its identity alone: nothing is created, read or written
+    /// through the handle. A long path is opened in the form that takes one
+    /// (<see cref="Extended"/>): opened as typed it would fail where Windows' long paths are off,
+    /// and a link that far down a path would pass for a folder that does not exist yet (CR-080).
+    /// </summary>
+    /// <param name="path">The folder's full path.</param>
     /// <returns>The handle, invalid when the folder does not exist or cannot be opened; the caller
     /// disposes it.</returns>
     [SupportedOSPlatform("windows")]
     private static SafeFileHandle Open(string path) =>
-        CreateFileW(path, ReadAttributes, ShareAll, IntPtr.Zero, OpenExisting, BackupSemantics, IntPtr.Zero);
+        CreateFileW(Extended(path), ReadAttributes, ShareAll, IntPtr.Zero, OpenExisting, BackupSemantics, IntPtr.Zero);
+
+    /// <summary>
+    /// A full path in the form Windows takes at any length: <c>\\?\C:\...</c> for a drive's,
+    /// <c>\\?\UNC\server\share\...</c> for a share's. A path under <see cref="LongPath"/>
+    /// characters, one already in a device form, and one that is neither a drive's nor a share's
+    /// are returned as they are.
+    /// </summary>
+    /// <param name="path">A full path, as <see cref="Full"/> or the system gives it.</param>
+    /// <returns>The path to hand to <c>CreateFileW</c>.</returns>
+    internal static string Extended(string path)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+        if (path.Length < LongPath || path.StartsWith(@"\\?\", StringComparison.Ordinal) || path.StartsWith(@"\\.\", StringComparison.Ordinal))
+        {
+            return path;
+        }
+
+        if (path.StartsWith(@"\\", StringComparison.Ordinal))
+        {
+            return @"\\?\UNC\" + path[2..];
+        }
+
+        return path.Length >= 2 && char.IsAsciiLetter(path[0]) && path[1] == ':' ? @"\\?\" + path : path;
+    }
 
     /// <summary>The volume serial number and the file index Windows gives a folder.</summary>
     /// <param name="path">The folder's path.</param>

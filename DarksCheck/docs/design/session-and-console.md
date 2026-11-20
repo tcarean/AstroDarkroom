@@ -145,7 +145,11 @@ held against the protected folder's pair. So a junction, a link, a `subst` drive
 same resolved path without its `\\?\` prefix, which `DarkOutputs.ReadOnlyFolders` hands to
 `Around` beside the path as given, so a folder reached by another name names the folder around
 it both ways. A folder that
-cannot be opened has no identity and is told by its path alone. The exceptions
+cannot be opened has no identity and is told by its path alone. `Open` hands `CreateFileW` a
+path of 248 characters or more in the `\\?\` form (`Extended`; 248 is the length from which
+Windows with its long paths off no longer makes a folder by its plain path, and the form does
+no harm to a shorter one that would still open): opened as typed it fails where Windows' long
+paths are off, and a link that far down the output path then passed for a folder that does not exist yet (CR-080). The exceptions
 a bad folder or a frame can raise, the `AggregateException` of a parallel loop included, are
 turned into `ERROR:` on stderr and exit 1. `Main` runs `Program.Run` between the diagnostic log's
 first and last lines (`LogSetup.Apply` and `LogSetup.Close`, each guarded, so a log that cannot be

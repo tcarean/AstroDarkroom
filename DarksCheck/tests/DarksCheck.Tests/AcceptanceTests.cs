@@ -441,6 +441,207 @@ public class AcceptanceTests
         }
     }
 
+    /// <summary>
+    /// CR-080: the links were followed on the output's side only. A session whose darks\, biases\ or lights\ is
+    /// itself a link to a folder elsewhere did not keep that folder clear, so --out into it wrote among the frames.
+    /// </summary>
+    [Fact]
+    public void R026_OutIntoTheFolderASessionsLinkedFramesReallySitInIsRefused_Exit1()
+    {
+        // the frames live in three folders elsewhere; the session holds only links to them
+        using SessionFixture lib = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 100 + i }, biases: 2);
+        using SessionFixture other = new SessionFixture().WithLights(2, i => new SyntheticLight { Seed = 300 + i });
+        using TempWorkspace s = new();
+        using TempWorkspace p = new();
+        string darks = Path.Combine(s.Dir, "darks"), biases = Path.Combine(s.Dir, "biases"), lights = Path.Combine(s.Dir, "lights"), partnerDarks = Path.Combine(p.Dir, "darks");
+        FolderIdentityTests.Junction(darks, lib.DarksDir);
+        FolderIdentityTests.Junction(biases, lib.BiasesDir);
+        FolderIdentityTests.Junction(lights, other.LightsDir);
+        FolderIdentityTests.Junction(partnerDarks, lib.DarksDir);
+        try
+        {
+            // the real folder of each group, a folder inside it, and the folder around the real darks and lights
+            string[] refused =
+            [
+                lib.DarksDir, Path.Combine(lib.DarksDir, "rapoarte"), Path.Combine(lib.Root, "rapoarte"),
+                lib.BiasesDir, Path.Combine(lib.BiasesDir, "rapoarte"),
+                other.LightsDir, Path.Combine(other.LightsDir, "rapoarte"), Path.Combine(other.Root, "rapoarte"),
+            ];
+            foreach (string dir in refused)
+            {
+                (int code, string stdout, string stderr) = Cli.Run(s.Dir, "--threads", "2", "--out", dir);
+                Assert.True(code == 1, "not refused: " + dir);
+                Assert.Contains("EROARE: --out nu poate fi folderul sesiunii sau unul din el (", stderr, StringComparison.Ordinal);
+                Assert.DoesNotContain("=== DARK-URI", stdout, StringComparison.Ordinal);
+            }
+
+            // a partner whose darks\ is a link: the folder its darks really sit in
+            using SessionFixture own = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 200 + i });
+            foreach (string dir in new[] { lib.DarksDir, Path.Combine(lib.Root, "rapoarte") })
+            {
+                (int code, _, string stderr) = Cli.Run(own.Root, "--threads", "2", "--against", p.Dir, "--out", dir);
+                Assert.True(code == 1, "not refused for the partner: " + dir);
+                Assert.Contains("EROARE: --out nu poate fi folderul partenerului sau unul din el (", stderr, StringComparison.Ordinal);
+            }
+
+            // a folder that is none of these is written, the linked session read as any other
+            using TempWorkspace outDir = new();
+            (int ok, string written, _) = Cli.Run(s.Dir, "--threads", "2", "--out", outDir.Dir);
+            Assert.Equal(0, ok);
+            Assert.Contains("=== DARK-URI: cadre citite 2 din 2", written, StringComparison.Ordinal);
+            Assert.Contains("    -> scris: " + Path.Combine(outDir.Dir, "darkscheck-lights.csv"), written, StringComparison.Ordinal);
+        }
+        finally
+        {
+            foreach (string link in new[] { darks, biases, lights, partnerDarks })
+            {
+                Directory.Delete(link);
+            }
+        }
+
+        // nothing was written among the frames, and no folder was made beside them
+        Assert.Equal(2, Directory.GetFileSystemEntries(lib.DarksDir).Length);
+        Assert.Equal(2, Directory.GetFileSystemEntries(lib.BiasesDir).Length);
+        Assert.Equal(2, Directory.GetFileSystemEntries(other.LightsDir).Length);
+        Assert.False(Directory.Exists(Path.Combine(lib.Root, "rapoarte")));
+        Assert.False(Directory.Exists(Path.Combine(other.Root, "rapoarte")));
+    }
+
+    /// <summary>
+    /// The review of CR-080: lines of that fix no test held. The darks linked from a folder of another name (a
+    /// library kept under its label), so only the folder itself can refuse; the biases linked from a folder of
+    /// their own, which stands for no folder around it; and a chosen folder whose lights\ is a link, refused as
+    /// the chosen lights'.
+    /// </summary>
+    [Fact]
+    public void R026_OutIntoALinkedFolderOfAnotherNameIsRefusedForWhoseItIs_Exit1()
+    {
+        using SessionFixture lib = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 100 + i }, inSubfolder: false);
+        using SessionFixture cal = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 400 + i }, biases: 2);
+        using SessionFixture other = new SessionFixture().WithLights(2, i => new SyntheticLight { Seed = 300 + i });
+        using TempWorkspace s = new();
+        using TempWorkspace chosen = new();
+        string darks = Path.Combine(s.Dir, "darks"), biases = Path.Combine(s.Dir, "biases"), chosenLights = Path.Combine(chosen.Dir, "lights");
+        FolderIdentityTests.Junction(darks, lib.Root);
+        FolderIdentityTests.Junction(biases, cal.BiasesDir);
+        FolderIdentityTests.Junction(chosenLights, other.LightsDir);
+        try
+        {
+            foreach (string dir in new[] { lib.Root, Path.Combine(lib.Root, "rapoarte"), cal.BiasesDir, Path.Combine(cal.BiasesDir, "rapoarte") })
+            {
+                (int code, string stdout, string stderr) = Cli.Run(s.Dir, "--threads", "2", "--out", dir);
+                Assert.True(code == 1, "not refused: " + dir);
+                Assert.Contains("EROARE: --out nu poate fi folderul sesiunii sau unul din el (", stderr, StringComparison.Ordinal);
+                Assert.DoesNotContain("=== DARK-URI", stdout, StringComparison.Ordinal);
+            }
+
+            // the refusal names the folder the biases really sit in
+            (_, _, string biasErr) = Cli.Run(s.Dir, "--threads", "2", "--out", cal.BiasesDir);
+            Assert.Contains(Path.DirectorySeparatorChar + "biases): ", biasErr, StringComparison.Ordinal);
+
+            foreach (string dir in new[] { other.LightsDir, Path.Combine(other.LightsDir, "rapoarte"), Path.Combine(other.Root, "rapoarte") })
+            {
+                (int code, _, string stderr) = Cli.Run(s.Dir, "--threads", "2", "--lights", chosen.Dir, "--out", dir);
+                Assert.True(code == 1, "not refused for the chosen lights: " + dir);
+                Assert.Contains("EROARE: --out nu poate fi folderul lights-urilor alese sau unul din el (", stderr, StringComparison.Ordinal);
+            }
+        }
+        finally
+        {
+            foreach (string link in new[] { darks, biases, chosenLights })
+            {
+                Directory.Delete(link);
+            }
+        }
+
+        Assert.Equal(2, Directory.GetFileSystemEntries(lib.Root).Length);
+        Assert.Equal(2, Directory.GetFileSystemEntries(cal.BiasesDir).Length);
+        Assert.Equal(2, Directory.GetFileSystemEntries(other.LightsDir).Length);
+        Assert.False(Directory.Exists(Path.Combine(other.Root, "rapoarte")));
+    }
+
+    /// <summary>
+    /// The review of CR-080: only the folders the run read frames from were followed. A session's own lights\
+    /// when the lights are chosen from another folder, its flats\, a biases\ without a frame, and the same
+    /// subfolders of the partner and of the chosen lights' folder are theirs all the same: a link among them
+    /// keeps the folder it leads to clear.
+    /// </summary>
+    [Fact]
+    public void R026_OutIntoTheFolderALinkedSubfolderLeadsToIsRefusedReadOrNot_Exit1()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 100 + i });
+        using SessionFixture mine = new SessionFixture().WithLights(2, i => new SyntheticLight { Seed = 300 + i });
+        using SessionFixture taken = new SessionFixture().WithLights(2, i => new SyntheticLight { Seed = 500 + i });
+        using SessionFixture partner = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 200 + i });
+        using TempWorkspace flats = new();
+        using TempWorkspace noBiases = new();
+        using TempWorkspace partnerFlats = new();
+        using TempWorkspace takenFlats = new();
+        using TempWorkspace gone = new();
+        string[] links =
+        [
+            Path.Combine(s.Root, "lights"), Path.Combine(s.Root, "flats"), Path.Combine(s.Root, "biases"),
+            Path.Combine(partner.Root, "flats"), Path.Combine(taken.Root, "flats"), Path.Combine(taken.Root, "biases"),
+        ];
+        FolderIdentityTests.Junction(links[0], mine.LightsDir);
+        FolderIdentityTests.Junction(links[1], flats.Dir);
+        FolderIdentityTests.Junction(links[2], noBiases.Dir);
+        FolderIdentityTests.Junction(links[3], partnerFlats.Dir);
+        FolderIdentityTests.Junction(links[4], takenFlats.Dir);
+
+        // a link that leads nowhere any more, in a subfolder the run does not list: no folder to keep clear, and it stops nothing
+        FolderIdentityTests.Junction(links[5], gone.Dir);
+        Directory.Delete(gone.Dir);
+        try
+        {
+            // the session's own lights\, not read in this run: the folder it leads to, one inside it, the one around it
+            foreach (string dir in new[] { mine.LightsDir, Path.Combine(mine.LightsDir, "rapoarte"), Path.Combine(mine.Root, "rapoarte") })
+            {
+                (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2", "--lights", taken.Root, "--out", dir);
+                Assert.True(code == 1, "not refused: " + dir);
+                Assert.Contains("EROARE: --out nu poate fi folderul sesiunii sau unul din el (", stderr, StringComparison.Ordinal);
+                Assert.DoesNotContain("=== DARK-URI", stdout, StringComparison.Ordinal);
+            }
+
+            // its flats\, which the program never reads, and a biases\ without a frame
+            foreach (string dir in new[] { flats.Dir, Path.Combine(flats.Dir, "rapoarte"), noBiases.Dir })
+            {
+                (int code, _, string stderr) = Cli.Run(s.Root, "--threads", "2", "--out", dir);
+                Assert.True(code == 1, "not refused: " + dir);
+                Assert.Contains("EROARE: --out nu poate fi folderul sesiunii sau unul din el (", stderr, StringComparison.Ordinal);
+            }
+
+            // the same subfolders of the partner and of the chosen lights' folder
+            (int forPartner, _, string partnerErr) = Cli.Run(s.Root, "--threads", "2", "--against", partner.Root, "--out", partnerFlats.Dir);
+            Assert.Equal(1, forPartner);
+            Assert.Contains("EROARE: --out nu poate fi folderul partenerului sau unul din el (", partnerErr, StringComparison.Ordinal);
+            (int forTaken, _, string takenErr) = Cli.Run(s.Root, "--threads", "2", "--lights", taken.Root, "--out", takenFlats.Dir);
+            Assert.Equal(1, forTaken);
+            Assert.Contains("EROARE: --out nu poate fi folderul lights-urilor alese sau unul din el (", takenErr, StringComparison.Ordinal);
+
+            // a folder that is none of these is written, with all the links in place
+            using TempWorkspace outDir = new();
+            (int ok, string written, _) = Cli.Run(s.Root, "--threads", "2", "--against", partner.Root, "--lights", taken.Root, "--out", outDir.Dir);
+            Assert.Equal(0, ok);
+            Assert.Contains("=== DARK-URI: cadre citite 2 din 2", written, StringComparison.Ordinal);
+            Assert.Contains("    -> scris: " + Path.Combine(outDir.Dir, "darkscheck-report.txt"), written, StringComparison.Ordinal);
+        }
+        finally
+        {
+            foreach (string link in links)
+            {
+                Directory.Delete(link);
+            }
+        }
+
+        Assert.Equal(2, Directory.GetFileSystemEntries(mine.LightsDir).Length);
+        Assert.False(Directory.Exists(Path.Combine(mine.Root, "rapoarte")));
+        foreach (string folder in new[] { flats.Dir, noBiases.Dir, partnerFlats.Dir, takenFlats.Dir })
+        {
+            Assert.Empty(Directory.GetFileSystemEntries(folder));
+        }
+    }
+
     [Fact]
     public void R026_TheBiasesCsvHasOneRowPerBiasAndTheRawColumns()
     {

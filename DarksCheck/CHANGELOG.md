@@ -366,6 +366,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The files of `--out`, and of the window's `Write the files...`, could still be written among
+  the frames in two rare cases. When a subfolder `lights\`, `darks\`, `biases\` or `flats\`
+  of the session, of the partner or of the chosen lights' folder is itself a link to a folder
+  elsewhere, the folder it leads to was not kept clear. And a link past the 260th character of
+  the output path was not followed on a Windows with long paths off. Both are refused now
+  (R-026; CR-080 of the code review).
+
 - After a partner that could not be used (darks of another size, a folder without darks), the
   window's `Write the files...` could write the report, the CSV files and the maps into the
   partner's folder: the refusal knew the partner only when it had been matched. The partner's

@@ -132,16 +132,22 @@ internal static class DarkOutputs
     /// partner's and the chosen lights' (R-055), and for each of them that is a session's
     /// subfolder, the folders around it (<see cref="AroundBoth"/>): a library opened as
     /// <c>name\darks</c>, a partner given so, and lights given as <c>name\lights</c>, by the name
-    /// given and by the folder it really is (ADR 0069).
+    /// given and by the folder it really is (ADR 0069). After those come the same three folders
+    /// and their session subfolders by the paths they really have (<see cref="AddResolved"/>): a
+    /// <c>darks\</c>, <c>biases\</c>, <c>lights\</c> or <c>flats\</c> may be a link to a
+    /// folder elsewhere, which the folder itself does not cover.
     /// </summary>
     /// <param name="session">The session or library opened; not null.</param>
     /// <param name="partner">The partner's folder as it was given; null or blank without one. A
     /// path that cannot be made full names no folder and is left out.</param>
-    /// <returns>The folders as full paths, the session's first.</returns>
+    /// <returns>The folders as full paths: first as they were given, the session's first, so a
+    /// refusal names a folder that was typed (these may repeat: a partner that is the session's
+    /// own folder); then the resolved ones that are not in the list yet.</returns>
     internal static IReadOnlyList<(string Folder, OutFolder Which)> ReadOnlyFolders(SessionFolder session, string? partner)
     {
         ArgumentNullException.ThrowIfNull(session);
-        List<(string, OutFolder)> folders = [(session.Root, OutFolder.Session)];
+        List<(string Folder, OutFolder Which)> folders = [(session.Root, OutFolder.Session)];
+        List<(string Folder, OutFolder Which)> resolved = [];
 
         // the darks listed in the folder opened, and that folder named darks: the library around it
         if (session.DarksDir == session.Root)
@@ -149,6 +155,7 @@ internal static class DarkOutputs
             folders.AddRange(AroundBoth(session.Root, SessionFolder.DarksName).Select(f => (f, OutFolder.Session)));
         }
 
+        AddResolved(resolved, session.Root, OutFolder.Session);
         if (!string.IsNullOrWhiteSpace(partner))
         {
             try
@@ -156,6 +163,7 @@ internal static class DarkOutputs
                 string full = FolderIdentity.Full(partner);
                 folders.Add((full, OutFolder.Partner));
                 folders.AddRange(AroundBoth(full, SessionFolder.DarksName).Select(f => (f, OutFolder.Partner)));
+                AddResolved(resolved, full, OutFolder.Partner);
             }
             catch (Exception e) when (e is ArgumentException or NotSupportedException or IOException)
             {
@@ -171,6 +179,17 @@ internal static class DarkOutputs
             if (session.LightsDir == lights)
             {
                 folders.AddRange(AroundBoth(lights, SessionFolder.LightsName).Select(f => (f, OutFolder.ChosenLights)));
+            }
+
+            AddResolved(resolved, lights, OutFolder.ChosenLights);
+        }
+
+        // after the folders as they were given, so a refusal names a folder that was typed
+        foreach ((string folder, OutFolder which) in resolved)
+        {
+            if (!folders.Exists(f => string.Equals(f.Folder, folder, StringComparison.OrdinalIgnoreCase)))
+            {
+                folders.Add((folder, which));
             }
         }
 
@@ -226,6 +245,45 @@ internal static class DarkOutputs
 
         string? parent = Path.GetDirectoryName(full);
         return parent is null || string.Equals(Path.GetPathRoot(parent), parent, StringComparison.OrdinalIgnoreCase) ? null : parent;
+    }
+
+    /// <summary>
+    /// Adds a folder and its session subfolders by the paths they really have (CR-080): the
+    /// folder itself, each of <see cref="SessionFolder.SubfolderNames"/> that exists under it
+    /// (<see cref="FolderIdentity.Real"/>, every link followed), and for a <c>darks</c> or
+    /// <c>lights</c> subfolder that really has that name the folder around it. Every subfolder
+    /// counts, whether the run reads frames from it or not: a session's own <c>lights\</c> with
+    /// the lights chosen elsewhere, its <c>flats\</c> and a <c>biases\</c> without a frame are
+    /// the session's all the same. A subfolder that is no link is added by its own path too: where
+    /// the system cannot name the folder a link leads to, the real path is the typed one, and the
+    /// entry still tells that folder by its identity; and where a folder has no identity, the
+    /// path is all that tells it.
+    /// </summary>
+    /// <param name="resolved">The list to add to, which may come to hold a folder twice; not
+    /// null.</param>
+    /// <param name="root">The full path of the folder opened, the partner's or the chosen
+    /// lights'.</param>
+    /// <param name="which">Whose folder it is, for the refusal.</param>
+    private static void AddResolved(List<(string Folder, OutFolder Which)> resolved, string root, OutFolder which)
+    {
+        resolved.Add((FolderIdentity.Real(root), which));
+        foreach (string name in SessionFolder.SubfolderNames)
+        {
+            string sub = Path.Combine(root, name);
+            if (!Directory.Exists(sub))
+            {
+                continue;
+            }
+
+            string real = FolderIdentity.Real(sub);
+            resolved.Add((real, which));
+
+            // the biases and the flats stand for no folder around them (ADR 0069)
+            if ((name is SessionFolder.DarksName or SessionFolder.LightsName) && Around(real, name) is string around)
+            {
+                resolved.Add((around, which));
+            }
+        }
     }
 
     /// <summary>

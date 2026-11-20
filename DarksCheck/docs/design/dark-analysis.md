@@ -242,7 +242,17 @@ decoding starts) and skips the PNG of a map without blocks. The refusal is one l
 with the folders around it when it is a session's subfolder (`AroundBoth`: a library opened as
 `name\darks`, lights given as `name\lights`, read both from the name given and from the folder
 it really is, `FolderIdentity.Real`, since a link has two names and each stands for a folder;
-ADR 0069). `CheckOut` holds the output
+ADR 0069). Those are given as they were typed, so that a refusal names a folder the user
+typed. After them come the same three folders and their session subfolders by the paths they
+really have (`AddResolved`, `FolderIdentity.Real`): the folder itself, each of `lights\`,
+`darks\`, `biases\` and `flats\` that exists under it, and for a `darks` or `lights`
+subfolder that really has that name the folder around it; a session whose own `darks\` is a
+link to a folder elsewhere would otherwise leave that folder open to `--out` (CR-080). Every
+subfolder counts, read in the run or not (a session's own `lights\` with the lights chosen
+elsewhere, its `flats\`, a `biases\` without a frame), and one that is no link is listed by
+its own path all the same: where the system cannot name the folder a link leads to, the entry
+still tells that folder by its identity, and where a folder has no identity the path is all
+that tells it. A path already in the list is not listed again. `CheckOut` holds the output
 folder against each of them with `FolderIdentity.IsOrInside`
 (`docs/design/session-and-console.md`); the console calls it before the run and `WriteAll`
 again, so the window's export refuses what `--out` refuses. A frame the cap skipped, dark or
