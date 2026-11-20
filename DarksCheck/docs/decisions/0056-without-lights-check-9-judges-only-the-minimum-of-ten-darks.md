@@ -51,3 +51,11 @@ which no case records. `/validate` was run with the change (the plan
 each on check 9's rows of a set without lights. A dark set that is noisy for its lights is no
 longer flagged when opened alone: the report says to open it with the lights. Guarded by
 `R024_WithoutLightsOnlyTheMinimumOfTenDarksIsJudged`.
+
+## Note of 2026-11-19
+
+The figures above that follow from the noise from one frame to the next are those of the first
+pair of frames, as it was read until 2026-11-19. Since ADR 0068 that noise is the median over
+every pair of consecutive frames: 1.48, 5.41, 4.70, 4.19 and 6.79 ADU on the five sets, where
+this record says 1.43, 4.83, 4.42, 3.99 and 6.26. The rule decided here does not depend on
+them.

@@ -1545,6 +1545,40 @@ public partial class DarkSeriesTests
     }
 
     /// <summary>
+    /// CR-018: the noise from one frame to the next, and with it the master's noise and the frames needed, rested
+    /// on the first two decoded frames alone; it is the median over every pair of consecutive frames.
+    /// </summary>
+    [Fact]
+    public void R024_OneNoisyFirstFrameDoesNotSetTheMastersNoise()
+    {
+        // twelve darks of noise 3, the first of noise 9: the first pair reads sqrt((81 + 9) / 2) = 6.7
+        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Noise = i == 0 ? 9 : 3 });
+        NoiseVsN nv = Run(s).Darks.Noise;
+        Assert.InRange(nv.TemporalSigma, 2.8, 3.2);
+        // the median master of twelve frames of noise 3: 1.25 x 3 / sqrt(12) = 1.09 (2.42 from the first pair)
+        Assert.InRange(nv.MasterNoise, 1.0, 1.17);
+        // the measured curve is not touched: its first point is still the first frame against the second
+        Assert.Equal(1, nv.Curve[0].N);
+        Assert.InRange(nv.Curve[0].Measured, 6.2, 7.2);
+
+        // the same with the noisy frame last, and in the middle, where it sits in two pairs of eleven
+        foreach (int odd in new[] { 11, 5 })
+        {
+            using SessionFixture t = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Noise = i == odd ? 9 : 3 });
+            Assert.InRange(Run(t).Darks.Noise.TemporalSigma, 2.8, 3.2);
+        }
+
+        // two frames have one pair: the figure is that pair's, as before
+        using SessionFixture two = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 100 + i, Noise = 3 });
+        NoiseVsN pair = Run(two).Darks.Noise;
+        Assert.Equal(pair.Curve[0].Measured, pair.TemporalSigma, 12);
+
+        // one frame has none: no figure from one frame to the next
+        using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 3 });
+        Assert.True(double.IsNaN(Run(one).Darks.Noise.TemporalSigma));
+    }
+
+    /// <summary>
     /// CR-007: without lights check 9 asked for a master noise under one value step, so on a camera whose values
     /// go 1 by 1 twelve darks of noise 9 read WARNING with 128 needed; the same darks with their lights are judged
     /// on the stack. Without lights only the minimum of ten is judged, and the words say where the answer is.
@@ -1895,6 +1929,106 @@ public partial class DarkSeriesTests
         Assert.Equal(3, r.Darks.Used);
         Assert.Contains("dimensiune diferita: 128 x 96 fata de 256 x 192", r.Darks.Frames[2].Error, StringComparison.Ordinal);
         Assert.True(r.HasErrors);
+    }
+
+    /// <summary>
+    /// CR-016: a frame was checked against the first frame's size and settings, never against its black and
+    /// white, so files of another bit depth were measured on the first frame's scale.
+    /// </summary>
+    [Fact]
+    public void R020_AFrameWithAnotherWhiteIsLeftOutWithItsError()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, Plain);
+        // an 8-bit file of the series' size and settings: its white is 255, the others' 65535
+        string[] cards = [.. SessionFixture.Cards(SessionFixture.FirstStart.AddSeconds(480), 120, 400), .. FitsTestData.BayerCards("RGGB")];
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0005.fit"), FitsTestData.BuildFits(256, 192, (x, y) => 100 + ((x + y) % 3), bitpix: 8, extraCards: cards));
+        DarkSeriesResult r = Run(s);
+        Assert.Equal(4, r.Darks.Used);
+        Assert.Equal("alb diferit: 255 fata de 65535", r.Darks.Frames[4].Error);
+        Assert.All(r.Darks.Frames.Take(4), f => Assert.Null(f.Error));
+        Assert.True(r.HasErrors);
+        Assert.Equal(65535, r.Darks.White);
+        // the four darks read what they read alone
+        Assert.Equal([5, 4, 3, 2, 1], Enumerable.Range(0, 5).Select(k => r.Darks.Master.Sum(m => m.Above[k])).ToArray());
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("different white: 255 instead of 65535", Run(s).Darks.Frames[4].Error);
+        }
+    }
+
+    /// <summary>CR-016: the rule behind the row, with a raw's black, which no test file carries.</summary>
+    [Fact]
+    public void R020_ABlackOrWhiteWithinOnePercentOfTheWhiteIsTheSameScale()
+    {
+        // 12-bit files among 14-bit ones
+        Assert.False(FrameStack.SameScale(150, 4095, 600, 16383));
+        // the same white, a black 450 ADU off (over 1 % of 16383, which is 164)
+        Assert.False(FrameStack.SameScale(150, 16383, 600, 16383));
+        // a black the camera measures per frame moves by a few ADU: the same scale
+        Assert.True(FrameStack.SameScale(2046, 15000, 2049, 15000));
+        Assert.True(FrameStack.SameScale(600, 16383, 600, 16383));
+        // exactly at the limit is still the same; just over it is not
+        Assert.True(FrameStack.SameScale(100, 10000, 200, 10000));
+        Assert.False(FrameStack.SameScale(100, 10000, 200.5, 10000));
+        Assert.False(FrameStack.SameScale(0, 10100.5, 0, 10000));
+        // a FITS carries no black: only the white is compared
+        Assert.True(FrameStack.SameScale(double.NaN, 65535, double.NaN, 65535));
+        Assert.False(FrameStack.SameScale(double.NaN, 255, double.NaN, 65535));
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("different black and white: 150 and 4095 instead of 600 and 16383", FrameStack.ScaleError(150, 4095, 600, 16383));
+        }
+
+        Assert.Equal("negru si alb diferite: 150 si 4095 fata de 600 si 16383", FrameStack.ScaleError(150, 4095, 600, 16383));
+    }
+
+    /// <summary>
+    /// CR-016: a float frame was read as "0 .. 1" only when its largest value was at most 1, so one value just
+    /// over 1 made the whole frame read as ADU and round to zeros.
+    /// </summary>
+    [Fact]
+    public void R020_AFloatFrameWithOneValueOverOneIsStillReadOnZeroToOne()
+    {
+        using TempWorkspace ws = new();
+        List<string> paths = [];
+        for (int i = 0; i < 3; i++)
+        {
+            int k = i;
+            string[] cards = [.. SessionFixture.Cards(SessionFixture.FirstStart.AddSeconds(i * 120), 120, 400), .. FitsTestData.BayerCards("RGGB")];
+            // 200 ADU of 65535 with a ripple; the second frame has one pixel just over 1
+            double Pixel(int x, int y) => k == 1 && x == 7 && y == 5 ? 1.0001 : (200 + ((x + (2 * y) + k) % 5)) / 65535.0;
+            string path = Path.Combine(ws.Dir, $"DSC_{i + 1:0000}.fit");
+            File.WriteAllBytes(path, FitsTestData.BuildFits(64, 48, Pixel, bitpix: -32, extraCards: cards));
+            paths.Add(path);
+        }
+
+        FrameStack stack = FrameStack.Load(paths, 2, maxFrames: 60);
+        Assert.Equal(3, stack.Decoded.Count);
+        Assert.Equal(65535, stack.White);
+        foreach (StackFrame f in stack.Frames)
+        {
+            // every frame on 0 .. 65535: a frame taken as ADU would hold zeros and one 1
+            Assert.InRange(Planes.Median([.. f.Pixels!.Select(v => (float)v)]), 200, 204);
+        }
+
+        // the value over 1 clips at the white
+        Assert.Equal(65535, stack.Frames[1].Pixels![(5 * 64) + 7]);
+
+        // the limit itself: of 3072 values 0.1 % is 3.07, so three over 1 are still a frame on 0 .. 1 and four
+        // make it a frame in ADU, whose 200 / 65535 round to zero
+        foreach ((int over, int median) in new[] { (3, 200), (4, 0) })
+        {
+            string limit = Path.Combine(ws.Dir, $"limit_{over}.fit");
+            File.WriteAllBytes(limit, FitsTestData.BuildFits(64, 48, (x, y) => y == 0 && x < over ? 1.0001 : 200 / 65535.0, bitpix: -32, extraCards: FitsTestData.BayerCards("RGGB")));
+            FrameStack one = FrameStack.Load([limit], 1, maxFrames: 60);
+            Assert.Equal(median, Planes.Median([.. one.Frames[0].Pixels!.Select(v => (float)v)]));
+        }
+
+        // a float frame in ADU is still kept as it is: nearly every value is over 1
+        string adu = Path.Combine(ws.Dir, "adu.fit");
+        File.WriteAllBytes(adu, FitsTestData.BuildFits(64, 48, (x, y) => 200 + ((x + y) % 5), bitpix: -32, extraCards: FitsTestData.BayerCards("RGGB")));
+        FrameStack kept = FrameStack.Load([adu], 1, maxFrames: 60);
+        Assert.InRange(Planes.Median([.. kept.Frames[0].Pixels!.Select(v => (float)v)]), 200, 204);
     }
 
     [Fact]

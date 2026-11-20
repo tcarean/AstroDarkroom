@@ -1567,6 +1567,45 @@ public class LightsAndIndexTests
         Assert.Null(shared.Table);
     }
 
+    /// <summary>
+    /// CR-020: the writer refused the partner's folder only through the partner it had matched, so after a
+    /// partner that failed (the window's export; the console checks before the run) the files could be
+    /// written into the partner's folder.
+    /// </summary>
+    [Fact]
+    public void R026_AfterAPartnerThatFailedItsFolderIsStillRefused()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, Dark);
+
+        // a partner whose darks have another size: the run ends with the partner's error and no partner
+        using SessionFixture small = new SessionFixture().WithDarks(3, inSubfolder: false);
+        DarkSeriesResult r = Run(s, small.Root);
+        Assert.Null(r.Partner);
+        Assert.NotNull(r.PartnerError);
+        Assert.Equal(small.Root, r.PartnerFolder);
+        foreach (string dir in new[] { small.Root, Path.Combine(small.Root, "rapoarte") })
+        {
+            InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => DarkOutputs.WriteAll(r, dir));
+            Assert.StartsWith("--out nu poate fi folderul partenerului sau unul din el (", e.Message, StringComparison.Ordinal);
+        }
+
+        Assert.False(Directory.Exists(Path.Combine(small.Root, "rapoarte")));
+        Assert.DoesNotContain(Directory.GetFiles(small.Root), f => Path.GetFileName(f).StartsWith("darkscheck", StringComparison.Ordinal));
+
+        // a library kept as name\darks that fails: the folder around it too
+        using SessionFixture kept = new SessionFixture().WithDarks(3);
+        DarkSeriesResult k = Run(s, kept.DarksDir);
+        Assert.NotNull(k.PartnerError);
+        Assert.Throws<InvalidOperationException>(() => DarkOutputs.WriteAll(k, Path.Combine(kept.Root, "rapoarte")));
+        Assert.False(Directory.Exists(Path.Combine(kept.Root, "rapoarte")));
+
+        // a folder outside is written, the partner's error in its report; a run without a partner names none
+        using TempWorkspace outDir = new();
+        Assert.Contains(Path.Combine(outDir.Dir, DarkOutputs.ReportName), DarkOutputs.WriteAll(r, outDir.Dir));
+        Assert.Contains("    partener           : ATENTIE: ", File.ReadAllText(Path.Combine(outDir.Dir, DarkOutputs.ReportName)), StringComparison.Ordinal);
+        Assert.Null(Run(s).PartnerFolder);
+    }
+
     [Fact]
     public void R063_APartnerThatCannotBeUsedIsAnAttentionLineAndExit1()
     {
@@ -1824,6 +1863,61 @@ public class LightsAndIndexTests
         // a session with lights and no darks still needs its partner, whichever lights it is given
         InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => Run(other, lightsFrom: cold.Root));
         Assert.Equal(RunReport.LightsOnlyNeedsPartner(other.Root), e.Message);
+    }
+
+    /// <summary>
+    /// CR-017: a session given as the lights' folder fell back to its own FITS files when its lights\ was empty,
+    /// so the stacked result.fit at its root was measured as the one light.
+    /// </summary>
+    [Fact]
+    public void R055_ASessionWithoutLightsIsRefusedNotReadFromItsRoot()
+    {
+        using SessionFixture library = new SessionFixture().WithDarkSeries(3, Dark, inSubfolder: false);
+
+        // a session whose lights\ is empty (the raws archived), with a stacked result at its root
+        using SessionFixture emptied = new SessionFixture().WithDarkSeries(2, Dark);
+        Directory.CreateDirectory(emptied.LightsDir);
+        File.WriteAllBytes(Path.Combine(emptied.Root, "result.fit"), Light(0).Build(SessionFixture.FirstStart.AddSeconds(-3600)));
+        InvalidOperationException none = Assert.Throws<InvalidOperationException>(() => Run(library, lightsFrom: emptied.Root));
+        Assert.StartsWith($"lights-urile alese: niciun light in {emptied.LightsDir} (raw: ", none.Message, StringComparison.Ordinal);
+
+        // a session with no lights\ at all: its darks\ says it is a session, so its root is not read either
+        using SessionFixture darksOnly = new SessionFixture().WithDarkSeries(2, Dark);
+        File.WriteAllBytes(Path.Combine(darksOnly.Root, "result.fit"), Light(0).Build(SessionFixture.FirstStart.AddSeconds(-3600)));
+        InvalidOperationException noFolder = Assert.Throws<InvalidOperationException>(() => Run(library, lightsFrom: darksOnly.Root));
+        Assert.StartsWith($"lights-urile alese: niciun light in {darksOnly.LightsDir} (raw: ", noFolder.Message, StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            InvalidOperationException en = Assert.Throws<InvalidOperationException>(() => Run(library, lightsFrom: darksOnly.Root));
+            Assert.StartsWith($"the chosen lights: no light in {darksOnly.LightsDir} (raw: ", en.Message, StringComparison.Ordinal);
+        }
+
+        // the same for biases\ and flats\ alone
+        foreach (string sub in new[] { "biases", "flats" })
+        {
+            using TempWorkspace ws = new();
+            Directory.CreateDirectory(Path.Combine(ws.Dir, sub));
+            File.WriteAllBytes(Path.Combine(ws.Dir, "result.fit"), Light(0).Build(SessionFixture.FirstStart.AddSeconds(-3600)));
+            Assert.Throws<InvalidOperationException>(() => Run(library, lightsFrom: ws.Dir));
+        }
+
+        // through the console: refused before anything is decoded
+        (int code, string stdout, string stderr) = Cli.Run(library.Root, "--threads", "2", "--lights", emptied.Root);
+        Assert.Equal(1, code);
+        Assert.Contains($"EROARE: lights-urile alese: niciun light in {emptied.LightsDir} (raw: ", stderr, StringComparison.Ordinal);
+        Assert.DoesNotContain("Se citesc", stderr, StringComparison.Ordinal);
+        Assert.DoesNotContain("=== DARK-URI", stdout, StringComparison.Ordinal);
+
+        // a folder with no session subfolder still gives its own frames
+        using TempWorkspace bare = new();
+        for (int i = 0; i < 2; i++)
+        {
+            File.WriteAllBytes(Path.Combine(bare.Dir, $"light_{i + 1:0000}.fit"), Light(i).Build(SessionFixture.FirstStart.AddSeconds(-3600 + (i * 150))));
+        }
+
+        DarkSeriesResult r = Run(library, lightsFrom: bare.Dir);
+        Assert.Equal(2, r.Inventory.Session.Lights.Count);
+        Assert.Equal(bare.Dir, r.Inventory.Session.LightsDir);
     }
 
     [Fact]

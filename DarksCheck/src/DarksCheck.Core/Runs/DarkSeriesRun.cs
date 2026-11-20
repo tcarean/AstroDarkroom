@@ -83,6 +83,10 @@ internal sealed record RunProgress(string Phase, int Done, int Total);
 /// <param name="LabelTag">The tag <paramref name="Label"/> ends with: the darks' index tag, or
 /// the lights' equivalent index tag for a session whose darks are the partner's (R-066); the
 /// window shows it beside the label without deciding it.</param>
+/// <param name="PartnerFolder">The partner's folder as the run was given it, whatever became of
+/// the partner: matched, standing in for the session's darks, or failed with
+/// <paramref name="PartnerError"/>; null for a run without a partner. Nothing is written into it
+/// either way (R-074).</param>
 internal sealed record DarkSeriesResult(
     Inventory Inventory,
     DarkSeriesAnalysis Darks,
@@ -100,7 +104,8 @@ internal sealed record DarkSeriesResult(
     string? PartnerError,
     string? DarksFromPartner = null,
     string? DarksFromPartnerLabel = null,
-    string LabelTag = "")
+    string LabelTag = "",
+    string? PartnerFolder = null)
 {
     /// <summary>
     /// A frame that could not be read or decoded, in any group, or a partner that could not be
@@ -361,9 +366,37 @@ internal static class DarkSeriesRun
             Log.Info("the session's label is its lights' (R-066): " + label);
         }
 
-        DarkSeriesResult result = new(inv, darks, biases, biasError, dc, verdicts, refPlane, index, label, lightsIndex, lights, lightsError, partner, partnerError, darksFromPartner, partnerLabel, labelTag);
+        // The partner's folder goes with the result whether the partner could be used or not: an
+        // export after a partner that failed must still keep out of its folder (R-074).
+        string? partnerFolder = PartnerFolderOf(options.Against);
+        DarkSeriesResult result = new(inv, darks, biases, biasError, dc, verdicts, refPlane, index, label, lightsIndex, lights, lightsError, partner, partnerError, darksFromPartner, partnerLabel, labelTag, partnerFolder);
         clock.Done(Outcome(result));
         return result;
+    }
+
+    /// <summary>
+    /// The partner's folder as the result carries it (<see cref="DarkSeriesResult.PartnerFolder"/>):
+    /// the folder given, made full now, so a relative one still names the same folder when the
+    /// files are written later.
+    /// </summary>
+    /// <param name="against">The partner as the run was given it; null or blank without one.</param>
+    /// <returns>The full path; the text as given when it is no path that can be made full (such
+    /// a partner failed, and names no folder); null without a partner.</returns>
+    private static string? PartnerFolderOf(string? against)
+    {
+        if (string.IsNullOrWhiteSpace(against))
+        {
+            return null;
+        }
+
+        try
+        {
+            return Path.GetFullPath(against);
+        }
+        catch (Exception e) when (e is ArgumentException or NotSupportedException or IOException)
+        {
+            return against;
+        }
     }
 
     /// <summary>

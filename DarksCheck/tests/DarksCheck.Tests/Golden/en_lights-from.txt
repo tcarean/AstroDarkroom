@@ -64,10 +64,10 @@ Copyright (C) 2026 Tudor Carean
 
   9. HOW MANY DARKS ARE ENOUGH
     noise when averaged: the average of 2 frames has 2.16 ADU of noise; from the noise of a single frame (3.01 ADU), 2.13 was expected  [the green pixels G1, the central 192 px, ADU; measured from one frame to the next]
-    master             : 4 frames give a master with 1.87 ADU of noise per pixel (from the noise from one frame to the next, 2.99); a master of 2 frames made with the median and one of the other 2 made with the mean differ by 3.06 ADU
-    with n frames      : 4 frames (now): 1.87 ADU (the stack 11.1 % noisier; too few); 5 frames: 1.67 ADU (-11 % against the master of now; the stack 9.0 % noisier; too few); 10 frames: 1.18 ADU (-37 % against the master of now; the stack 4.6 % noisier; enough)  [against the stack made with an ideal dark master, that is, one made from very many frames, with no noise of its own; it is the stack of the 3 lights (6.7 ADU of noise each), counted without dithering; with dithering the difference is smaller]
+    master             : 4 frames give a master with 1.89 ADU of noise per pixel (from the noise from one frame to the next, 3.01); a master of 2 frames made with the median and one of the other 2 made with the mean differ by 3.06 ADU
+    with n frames      : 4 frames (now): 1.89 ADU (the stack 11.3 % noisier; too few); 5 frames: 1.69 ADU (-11 % against the master of now; the stack 9.1 % noisier; too few); 10 frames: 1.19 ADU (-37 % against the master of now; the stack 4.7 % noisier; enough)  [against the stack made with an ideal dark master, that is, one made from very many frames, with no noise of its own; it is the stack of the 3 lights (6.7 ADU of noise each), counted without dithering; with dithering the difference is smaller]
     enough from        : 10 frames for a stack at most 10 % noisier than with an ideal dark master; 10 for at most 5 %
-    verdict            : WARNING: only 4 frames; at least 10 are needed, so that one odd frame does not spoil the master (the master's noise would be 1.87 ADU)
+    verdict            : WARNING: only 4 frames; at least 10 are needed, so that one odd frame does not spoil the master (the master's noise would be 1.89 ADU)
 
   INDEX
     darks              : idx121 (121.0 ADU-eq: the average value of the hot pixels at places 2 .. 2, counting from the hottest, that is 5-20 per Mpx of 0.05 Mpx; worked out for ISO 400 and 120 s)
@@ -94,7 +94,7 @@ Copyright (C) 2026 Tudor Carean
     electrons          : at ISO 400, 1 ADU = 2.07 electrons (the sensor turns light into electrons, and the camera counts them in ADU); 1 ADU-eq = 1.00 ADU = 2.1 electrons; a pixel holds 34446 electrons (full well), and it catches 56 % of the light that falls on it (QE). Figures for Nikon D3300 from photonstophotos.net, worked out from DxOMark's measurements, read on 2026-10-20; on small sensors the method gives too many electrons per ADU.
     read noise         : UNMEASURED: the session has no biases (the source gives 2.0 electrons for Nikon D3300)
     noise on one dark  : one dark has 3.01 ADU of noise per pixel; the dark current (what a pixel gathers from the sensor's heat) can be measured only with biases
-    master noise       : the dark master, made of 4 frames, still has 1.87 ADU of noise per pixel; the stack of the 3 lights has 4.1 ADU per pixel if you make it with the mean and 5.0 if you make it with the median (the dark master's noise included)
+    master noise       : the dark master, made of 4 frames, still has 1.89 ADU of noise per pixel; the stack of the 3 lights has 4.2 ADU per pixel if you make it with the mean and 5.0 if you make it with the median (the dark master's noise included)
     this set's limits  : hot pixel: above 20 ADU-eq (20 ADU in the file); light leak on the map: above 1.0 ADU-eq (1.0 ADU); constant light on a side: above 0.15 ADU-eq (0.15 ADU); light on a single frame: above 0.1 ADU-eq (0.10 ADU)
     what was found     : nothing over the thresholds
     sky                : on a light, the sky is at 500.0 ADU above the black, with 6.4 ADU of noise per pixel (the green pixels G1, from 3 lights)
@@ -110,7 +110,7 @@ Copyright (C) 2026 Tudor Carean
     An error in the dark master is not noise. For example: light that got into the camera, or a
     black level moved a little. The master is subtracted from every light, so the error reaches
     the stack whole, however many frames you add. The noise, on the other hand, falls as you add
-    frames: 4 times more frames halve it. The dark master, made of 4 frames, still has 1.87 ADU
+    frames: 4 times more frames halve it. The dark master, made of 4 frames, still has 1.89 ADU
     of noise per pixel; that is what you compare an error with, not the noise of a single frame.
     On a single pixel, the 3.0 ADU of noise of one dark hides any error below 1 ADU. But the eye
     sees areas, not pixels: on an area of 50 x 50 pixels the noise evens out, and the error
@@ -119,9 +119,9 @@ Copyright (C) 2026 Tudor Carean
 
     Against the sky: on a light of this session the sky is at 500.0 ADU above the black, so 1
     ADU is 0.20 % of the sky, about as much as a flat is off on average. In the stack of the 3
-    lights the noise per pixel falls to 4.15 ADU if you make it with the mean (5.00 with the
+    lights the noise per pixel falls to 4.16 ADU if you make it with the mean (5.01 with the
     median). Two noises go into this figure. The lights' noise (6.4 ADU on one light) falls the
-    more lights you add. The dark master's noise (1.87 ADU) does not fall, because the same
+    more lights you add. The dark master's noise (1.89 ADU) does not fall, because the same
     master is subtracted from every light. And an error of 1 ADU in the master stays 1 ADU in
     the stack.
 

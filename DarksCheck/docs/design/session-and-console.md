@@ -1,6 +1,6 @@
 # The session folder, the inventory and the console
 
-**Covers:** `src/DarksCheck.Core/Session/SessionFolder.cs`, `src/DarksCheck.Core/Session/FrameInfo.cs`, `src/DarksCheck.Core/Analysis/CadenceAnalyzer.cs`, `src/DarksCheck.Core/Analysis/MatchAnalyzer.cs`, `src/DarksCheck.Core/Thresholds.cs`, `src/DarksCheck.Core/Runs/InventoryRun.cs`, `src/DarksCheck.Core/Report/InventoryReport.cs`, `src/DarksCheck.Core/Report/RunReport.cs`, `src/DarksCheck.Core/Version.cs`, `src/DarksCheck.Cli/Options.cs`, `src/DarksCheck.Cli/Program.cs`, `src/DarksCheck.Core/Language/Ui.cs`, `src/DarksCheck.Core/Language/LanguageArgument.cs`.
+**Covers:** `src/DarksCheck.Core/Session/SessionFolder.cs`, `src/DarksCheck.Core/Session/FolderIdentity.cs`, `src/DarksCheck.Core/Session/FrameInfo.cs`, `src/DarksCheck.Core/Analysis/CadenceAnalyzer.cs`, `src/DarksCheck.Core/Analysis/MatchAnalyzer.cs`, `src/DarksCheck.Core/Thresholds.cs`, `src/DarksCheck.Core/Runs/InventoryRun.cs`, `src/DarksCheck.Core/Report/InventoryReport.cs`, `src/DarksCheck.Core/Report/RunReport.cs`, `src/DarksCheck.Core/Version.cs`, `src/DarksCheck.Cli/Options.cs`, `src/DarksCheck.Cli/Program.cs`, `src/DarksCheck.Core/Language/Ui.cs`, `src/DarksCheck.Core/Language/LanguageArgument.cs`.
 
 The behaviour is R-001 to R-007; the shapes of the input are ADR 0002. This note says how the
 pieces fit.
@@ -36,6 +36,9 @@ partner is `RunReport.LightsOnlyNeedsPartner`, the same in the console and the w
 (R-055). `ChosenLights` resolves `lightsFrom` first, before the darks are even listed, so a bad
 folder is refused at once and once: the full path must exist (`DirectoryNotFoundException`),
 its `lights\` is taken when that holds frames, else the folder itself, which must hold frames
+and have no session subfolder (`lights`, `darks`, `biases`, `flats`): a session's root holds
+its stacked results, so a session whose `lights\` gives no frame is refused with that folder
+named, and its root is never listed (ADR 0067)
 (`InvalidOperationException`); both messages open with `lights-urile alese: ` / `the chosen
 lights: `, as the partner's open with `partenerul: `. The result replaces `LightsDir` and
 `Lights` whatever the folder's own `lights\` holds, and `ChosenLightsRoot` keeps the folder as
@@ -126,7 +129,23 @@ and `--lights` are passed through (`DarkOptions.LightsFrom` for the last; neithe
 `--against` goes with `--inventory`); before the run the partner folder is opened, the session
 is opened with the chosen lights when `--lights` is given (a bad lights folder fails here), and
 `--out` is checked against the session's root, the partner's and the chosen lights' folder
-(`DarkOutputs.OutFolder`), so a wrong folder costs no decoding. The exceptions
+(`DarkOutputs.CheckOut`, each named by `DarkOutputs.OutFolder`), so a wrong folder costs no
+decoding. Whether the output folder is one of those folders or lies inside it is
+`FolderIdentity.IsOrInside`'s answer (ADR 0069). First the full paths, without case and without
+a `\\?\` prefix before a drive letter, which also settles a folder that does not exist yet.
+Then the folders themselves: `Id` opens a folder for nothing but its attributes
+(`CreateFileW` with `FILE_FLAG_BACKUP_SEMANTICS`) and reads the volume's serial number and the
+file index (`GetFileInformationByHandle`). The output folder is not walked as it was typed: the
+folder above a link is not above the place the link leads to, so a junction beside the session
+that leads to its `darks\` would pass. `Resolved` takes the deepest folder of the output path
+that exists by the path the system resolves it to (`FinalPath`, `GetFinalPathNameByHandleW`),
+puts the folders that do not exist yet back on, and that path's folders, from the last up, are
+held against the protected folder's pair. So a junction, a link, a `subst` drive and a short
+8.3 name of the session, or of a folder inside it, are all inside the session. `Real` is the
+same resolved path without its `\\?\` prefix, which `DarkOutputs.ReadOnlyFolders` hands to
+`Around` beside the path as given, so a folder reached by another name names the folder around
+it both ways. A folder that
+cannot be opened has no identity and is told by its path alone. The exceptions
 a bad folder or a frame can raise, the `AggregateException` of a parallel loop included, are
 turned into `ERROR:` on stderr and exit 1. `Main` runs `Program.Run` between the diagnostic log's
 first and last lines (`LogSetup.Apply` and `LogSetup.Close`, each guarded, so a log that cannot be

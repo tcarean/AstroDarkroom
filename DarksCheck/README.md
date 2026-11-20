@@ -137,10 +137,11 @@ short series or a low ISO does not count noise as hot pixels; the dead-pixel thr
 black - 50 ADU) and the figures of the biases are in raw ADU, since they do not depend on the
 exposure.
 
-A frame whose size differs from the first frame's, or whose ISO or exposure is not the one most
-frames have (the exposure by more than 2 %), is left out of the figures and listed as an error
-(`error: different size: ...`, `error: other settings than most frames: ...`), so the exit
-code is `1`. A single dark is not a series: checks 4, 5 and 9 and the stability of check 6 stay
+A frame whose size differs from the first frame's, or whose black or white is not the first
+frame's (12-bit files among 14-bit ones), or whose ISO or exposure is not the one most frames
+have (the exposure by more than 2 %), is left out of the figures and listed as an error
+(`error: different size: ...`, `error: different black and white: ...`, `error: other settings
+than most frames: ...`), so the exit code is `1`. A single dark is not a series: checks 4, 5 and 9 and the stability of check 6 stay
 `UNMEASURED`.
 
 The start of a report, on a session of 20 darks, 30 biases and 32 lights:
@@ -272,7 +273,7 @@ The three need at least 6 frames with hot pixels, and the split also needs a ser
 (an amplitude ratio that spans at least 0.1; the test series span 0.24 to 0.38);
 otherwise they say why they cannot. Every light found is also given in raw ADU as a fraction of
 the dark master's noise per pixel (check 9), and of the lights stack's when there are lights:
-`+0.79 ADU is 0.55 times the dark master's noise per pixel (1.43 ADU)`. In the tests the glow
+`+0.79 ADU is 0.51 times the dark master's noise per pixel (1.55 ADU)`. In the tests the glow
 was at the top-left, 0.05 to 0.22 ADU-eq. A test series taken with the eyepiece uncovered and a
 lamp aimed at the camera reads 5 frames at +0.17 to +0.47 ADU-eq and a top side at +0.20, which
 the verdict on the master alone had read as `OK`.
@@ -333,7 +334,8 @@ its row.
 - **9. How many darks are enough**: first the rule, measured: the noise of the mean of n frames
   beside the noise of a single frame over sqrt(n) (the frames are independent when the two
   agree), and the predicted noise of the median master, 1.25 x the frame-against-frame noise /
-  sqrt(N). Then the row `with n frames`: what the master would be with 5, 10, 15, ... frames, to
+  sqrt(N); that noise is read on every pair of neighbouring frames and the middle value taken,
+  so one odd frame does not move it. Then the row `with n frames`: what the master would be with 5, 10, 15, ... frames, to
   two rows past the frames read: its noise, how that compares with the master of now
   and, when there are lights, how much noisier their stack comes out than with an ideal dark
   master, one made from very many frames, with no noise of its own. A master of few frames keeps some
@@ -353,7 +355,7 @@ its row.
   tells whether the frames check 4 lists as `to discard` can go. With more darks than
   `--max-frames` reads, the table speaks of the frames read, not of the folder's, and the
   verdict leaves that count out. As an example of what to
-  expect, 35 darks under 83 lights of two minutes gave a stack 3.1 % noisier, 11 darks were
+  expect, 35 darks under 83 lights of two minutes gave a stack 3.0 % noisier, 11 darks were
   enough at 10 % and 22 at 5 %.
 
 #### The index and the label
@@ -485,7 +487,9 @@ the `lights` row of `INDEX` says what dark they are like; the darks' index and l
 open folder's and do not change. The figures are the ones the same lights give from the
 folder's own `lights\`: the library of the example above, given those 87 lights, reads the same
 0.43, on the same 3933 pixels. A lights folder that does not exist or holds no frame is refused
-with `ERROR` before anything is decoded, and `--out` cannot point inside it. A folder with
+with `ERROR` before anything is decoded, and `--out` cannot point inside it. A session whose
+`lights\` holds no frame is refused too: the files beside it (a stacked `result.fit`) are never
+taken as lights. A folder with
 lights and no darks still needs its partner, whichever lights it is given.
 
 ### FITS frames
@@ -506,7 +510,9 @@ PNG files (`darkscheck-map-dark.png`, `darkscheck-map-bias.png`,
 `darkscheck-map-dark-minus-bias.png`; one block is a 4 x 4 square, and each map is stretched
 between its own 1st and 99th percentiles). It prints `-> written: <path>` for each file. The
 names are the same in both languages. Nothing is written into the session: a DIR that is the
-session folder, or a folder inside it, is refused with `ERROR` before the analysis starts.
+session folder, or a folder inside it, is refused with `ERROR` before the analysis starts,
+whichever way the folder was typed: beside the darks of a library kept as `<name>\darks`, or
+through another name of the same folder (a junction, a `subst` drive).
 
 ### Only the metadata: `--inventory`
 

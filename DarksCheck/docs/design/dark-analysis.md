@@ -40,10 +40,17 @@ one at a time, in order, until one decodes with that setting (`SameSettings`: th
 exposure each on its own, within `Th.ExposureTolerance`; the frame's settings are those its
 metadata read gave, the reading the group's setting came from, and the decoder's only when
 that read failed) and sets the geometry and the scale;
-the others decode in parallel and must match that setting and that size. A frame at another
+the others decode in parallel and must match that setting, that size and that scale
+(`SameScale`: the white, and the black when the files carry one, within `Th.ScaleTolerance` of
+the stack's white, so files of another bit depth are left out and a black the camera measures
+per frame is not; ADR 0066). The first reason that holds names the frame's error: its settings,
+its size, then its black and white (`ScaleError`). A frame at another
 setting sets nothing and is left out wherever it stands; when no file's metadata can be read
 the first decoded frame's settings decide. A float FITS on 0 .. 1 is brought to 0 ..
-65535, one already in ADU is kept with 65535 as the presumed white. A FITS carries no black
+65535, one already in ADU is kept with 65535 as the presumed white; `ToUshort` takes a float
+frame as in ADU when more than `Th.FloatAduMinShare` of its values are over 1, each frame on
+its own, the lights' through `DecodeOne` too, so one value just over 1 does not turn a frame on
+0 .. 1 into zeros. A FITS carries no black
 level, so the black of a FITS stack is the median of
 the first decoded frame's reference plane, or the black the biases' stack established when
 `DarkSeriesRun` read the biases first (a dark's median would overstate the pedestal by the
@@ -103,7 +110,12 @@ against the next n on the central crop, hot pixels masked out, and compares with
 sigma / sqrt(n). The mask (`NoiseCurve`'s `quietMask`) keeps a pixel of the crop when the
 median master has it less than the hot threshold above the crop's own median level, so it never
 empties: half the crop lies at or under that level (ADR 0054). `MeanDiff` and the half against
-half read only those pixels. `Planes.ClippedSigma` answers NaN, not 0, for an empty array, so a
+half read only those pixels. The noise from one frame to the next (`NoiseVsN.TemporalSigma`),
+from which the master's noise, check 9's table and frames needed and check 5's noise above the
+read noise follow, is not the curve's first point: `NoiseCurve` reads `MeanDiff` on every pair
+of consecutive frames and takes the median of their sigmas (ADR 0068), so neither the cold
+first pair of a series that warms nor one odd frame sets it; with two frames it is that one
+pair's, the curve's first point. `Planes.ClippedSigma` answers NaN, not 0, for an empty array, so a
 figure read on nothing can only come out unmeasured.
 
 ## The biases and the dark current
@@ -225,7 +237,15 @@ the dead and saturated counts; and whether the frames are enough, the next secti
 limit is raw, and the biases' plane figures are not normalised. `DarkReport` prints the
 words; `DarkOutputs` writes the report, two CSV files and three grey PNG maps of the
 reference plane, refuses a folder inside the session (the console checks that before the
-decoding starts) and skips the PNG of a map without blocks. A frame the cap skipped, dark or
+decoding starts) and skips the PNG of a map without blocks. The refusal is one list,
+`DarkOutputs.ReadOnlyFolders`: the folder opened, the partner's and the chosen lights', each
+with the folders around it when it is a session's subfolder (`AroundBoth`: a library opened as
+`name\darks`, lights given as `name\lights`, read both from the name given and from the folder
+it really is, `FolderIdentity.Real`, since a link has two names and each stands for a folder;
+ADR 0069). `CheckOut` holds the output
+folder against each of them with `FolderIdentity.IsOrInside`
+(`docs/design/session-and-console.md`); the console calls it before the run and `WriteAll`
+again, so the window's export refuses what `--out` refuses. A frame the cap skipped, dark or
 bias, is listed as `sarit`, not as an error, and the exit code ignores it; a bias that failed
 is counted in an `ATENTIE` line of the darks header, since the darks run prints no bias table.
 With a single frame the residual, the stability, the warming and the noise curve have nothing
@@ -317,7 +337,9 @@ darks as `darkPaths`, recomputes check 1's match with the partner darks' metadat
 camera), records the partner's root in `Inventory.DarksFromPartner` and
 `DarkSeriesResult.DarksFromPartner` (which `DarkOutputs.WriteAll` refuses as an export folder,
 like the session and the chosen lights' folder, each named by `DarkOutputs.OutFolder` in the
-refusal), keeps the partner's own label in `DarkSeriesResult.DarksFromPartnerLabel` for the
+refusal; the writer reads the partner's folder from `DarkSeriesResult.PartnerFolder`, the
+folder as the run was given it, set whenever a partner was given, so that a partner that failed
+and left `Partner` null is still kept clear), keeps the partner's own label in `DarkSeriesResult.DarksFromPartnerLabel` for the
 `dark-uri (partener)` row, labels the session on its lights' index once the lights are measured
 (R-066, `lights-and-index.md`, "The index") and skips `MatchPartner` (the
 darks are the partner's); a partner that does not open fails the run with its own message

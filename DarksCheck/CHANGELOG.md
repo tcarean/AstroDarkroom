@@ -350,6 +350,45 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- After a partner that could not be used (darks of another size, a folder without darks), the
+  window's `Write the files...` could write the report, the CSV files and the maps into the
+  partner's folder: the refusal knew the partner only when it had been matched. The partner's
+  folder is now refused whatever became of the partner (R-074; CR-020 of the code review).
+
+- `--out`, and the window's `Write the files...`, are refused by the folder, not by how it was
+  typed. A library opened as `<name>\darks` could be given `--out <name>\reports`, and lights
+  given as `<session>\lights` allowed `--out <session>\reports`, though both are refused when
+  `<name>` or `<session>` itself is given; a partner given as `<name>\darks` likewise. And
+  another name of the session's folder passed: a `\\?\` prefix, a junction or a link, a
+  `subst` drive, a short 8.3 name. Now the folder around a `darks` or `lights` folder is kept
+  clear too, and two paths that Windows says are one folder are one folder (R-026, ADR 0069;
+  CR-019 of the code review).
+
+- The master's noise of check 9 is worked out from the noise between every two neighbouring
+  darks, the middle value taken, no longer from the first two darks alone. One odd first frame
+  moved the figure whole, and on a series in which the camera warms the first two frames are
+  the quietest: on five of the six test series the figure was 3 to 12 % too small. The master's
+  noise, the table `with n frames`, the frames needed and check 5's noise added during the
+  exposure follow; a series that warms now needs a few more darks (39 became 49 on a warm
+  library against a long night of lights). The row `noise after averaging` keeps its points
+  (R-024, ADR 0068; CR-018 of the code review).
+
+- `--lights DIR`, and the lights folder chosen in the window, no longer take the files at the
+  root of a session: when DIR has a session subfolder (`lights`, `darks`, `biases` or `flats`)
+  its lights come from `DIR\lights` alone, and a session whose `lights\` holds no frame is
+  refused with `the chosen lights: no light in DIR\lights`. Until now the stacked `result.fit`
+  at the root was measured as the one light. A folder with the lights directly in it works as
+  before (R-055, ADR 0067; CR-017 of the code review).
+
+- A frame whose black or white is not the first frame's is left out and listed, like a frame of
+  another size (`different black and white: 150 and 4095 instead of 600 and 16383`; `different
+  white: 255 instead of 65535` for a FITS). Until now 12-bit files among 14-bit ones of the same
+  size, ISO and exposure were measured against the first frame's black and white. A black that
+  the camera measures in each frame, and that moves by a few ADU, stays within the limit of 1 %
+  of the white. A FITS with decimals on 0 .. 1 that holds a value just over 1 is no longer read
+  as a file in ADU, which turned the whole frame to zeros: such a file is in ADU only when more
+  than 0.1 % of its values are over 1 (R-020, ADR 0066; CR-016 of the code review).
+
 - The `+/-` beside each side's constant light in check 3 is worked out from the line the value
   itself comes from. When the warming of the series rested on one cold frame the error shown
   was several times too small (about 0.04 where the value really scattered by 0.28), and a

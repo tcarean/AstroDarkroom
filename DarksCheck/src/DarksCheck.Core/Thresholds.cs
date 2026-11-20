@@ -66,6 +66,21 @@ internal static class Th
     /// </summary>
     internal const int MaxFramesInMemory = 60;
 
+    /// <summary>
+    /// A frame's white, and its black, may differ from the stack's by this fraction of the stack's
+    /// white and still be the same scale (R-020, ADR 0066). Some cameras write a black measured
+    /// in each frame, which moves by a few ADU; files of another bit depth differ by far more
+    /// (12-bit against 14-bit: 450 ADU in black, four times in white).
+    /// </summary>
+    internal const double ScaleTolerance = 0.01;
+
+    /// <summary>
+    /// A float FITS is taken as already in ADU when more than this share of its values are over 1
+    /// (R-020, ADR 0066): a frame on 0 .. 1 has at most a few values over 1, a frame in ADU nearly
+    /// all of them.
+    /// </summary>
+    internal const double FloatAduMinShare = 0.001;
+
     // --- hot pixels (R-030) ---
 
     /// <summary>

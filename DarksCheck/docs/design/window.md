@@ -196,8 +196,10 @@ they only set it. The `Partner` and `LightsFrom` setters alone run nothing.
 The problem card has a second button, `Alege partener...` (R-077): the Index tab's
 `MainWindow.ChoosePartner`, the partner dialog and, when a folder was chosen, `ChoosePartnerAsync`,
 which runs the folder again; a cancelled dialog does nothing. So a session with lights and no darks goes from the refusal
-to its run without choosing the folder again. `Export(dir)` calls `DarkOutputs.WriteAll`, which refuses a folder inside the session or the
-partner as `--out` does, and shows the paths or the error in `Status`. `LabelCopied` sets the
+to its run without choosing the folder again. `Export(dir)` calls `DarkOutputs.WriteAll`, which refuses a folder inside the session, the
+partner or the chosen lights' folder as `--out` does (the same list, `DarkOutputs.CheckOut`; the
+partner's from `DarkSeriesResult.PartnerFolder`, so also after a partner that failed), and shows
+the paths or the error in `Status`. `LabelCopied` sets the
 status line after the window put the label in the clipboard.
 
 The Potrivire cu lights tab's first card, `LIGHTS-URI DIN ALT FOLDER` (R-122, ADR 0039), is

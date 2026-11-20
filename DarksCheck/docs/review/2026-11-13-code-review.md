@@ -103,11 +103,11 @@ each pair has the same defect unless the entry says otherwise.
 | CR-013 | 1 | rare | owner | Frames are taken in file-name order as if it were shooting order | fixed edb0fd48 |
 | CR-014 | 1 | rare | to measure | When about a third of the frames at one end carry light, no frame is named and check 3 can read OK | fixed 256afe32 |
 | CR-015 | 1 | rare | to measure | A warming that rests on one cold frame gives the constant light an error several times too small | fixed 457500f5 |
-| CR-016 | 1 | rare | confirmed | A frame is checked against the first frame's size, ISO and exposure, never against its black and white | open |
-| CR-017 | 1 | rare | owner | `--lights DIR` falls back to DIR's own FITS, so a stacked `result.fit` is measured as the one light | open |
-| CR-018 | 1 | rare | owner | The master's noise rests on the first two decoded frames alone | open |
-| CR-019 | 2 | slip | confirmed | `--out` is refused by the spelling of the folder given, not by the folder | open |
-| CR-020 | 2 | rare | confirmed | After a partner that failed, the window's export can write into the partner's folder | open |
+| CR-016 | 1 | rare | confirmed | A frame is checked against the first frame's size, ISO and exposure, never against its black and white | fixed c07751ea |
+| CR-017 | 1 | rare | owner | `--lights DIR` falls back to DIR's own FITS, so a stacked `result.fit` is measured as the one light | fixed ccc5fe2f |
+| CR-018 | 1 | rare | owner | The master's noise rests on the first two decoded frames alone | fixed 92309d5e |
+| CR-019 | 2 | slip | confirmed | `--out` is refused by the spelling of the folder given, not by the folder | fixed 27df0814 |
+| CR-020 | 2 | rare | confirmed | After a partner that failed, the window's export can write into the partner's folder | fixed b9c7411d |
 | CR-021 | 2 | rare | to measure | "Write the files..." can close the window when the session folder is unreachable or relative | open |
 | CR-022 | 3 | common | confirmed | Stop shows nothing, and the measuring steps ignore it | open |
 | CR-023 | 3 | common | to measure | The Lights tab cannot scroll: the lower rows of check 2 and the lights table are cut off | open |
@@ -166,6 +166,8 @@ each pair has the same defect unless the entry says otherwise.
 | CR-076 | 1 | some setups | owner | Sets that give the exposure and no ISO are compared as made at the same settings, though their exposures are known to differ | fixed 91508347 |
 | CR-077 | 1 | rare | confirmed | Darks without an ISO between lights and a partner at two ISOs: the chained verdict can read `as it is`, and two rows take the darks' ISO two ways | fixed 581dd50a |
 | CR-078 | 1 | some setups | to measure | On a short clean series whose frames scatter more than the 0.1 ADU-eq floor, check 3 names a frame as lit in a few series in a hundred | open |
+| CR-079 | 1 | slip | owner | The first frame that decodes sets the size and the scale: a stray first file of another size or bit depth leaves the whole series out | open |
+| CR-080 | 2 | rare | confirmed | Links are followed on the output's side only, and not past the 260th character: the files can still land among the frames | open |
 
 The files copied from LightsCheck have their own entries, CP-1 to CP-12, in their own section;
 five of them are of severity 1.
@@ -476,7 +478,7 @@ five of them are of severity 1.
   which one frame holds a value just over 1: that frame is "kept in ADU" and rounds to zeros.
 - Should: such a frame listed as "another scale", like another size.
 - Evidence: confirmed on the code; the camera case is plausible only.
-- Status: open
+- Status: fixed c07751ea (a frame whose white, or whose black, is more than 1 % of the white away from the first frame's is left out with its error; a float FITS is in ADU only when more than 0.1 % of its values are over 1; ADR 0066; the raw case rests on the rule's own test, since no test decodes a raw)
 
 ### CR-017 `--lights DIR` falls back to DIR's own FITS, so a stacked `result.fit` is measured as the one light
 
@@ -492,7 +494,7 @@ five of them are of severity 1.
 - Test: `R055_*` cover a folder with `lights\` and a bare folder, not a session root with an
   empty `lights\`.
 - Evidence: owner. Kin to LightsCheck's CR-003.
-- Status: open
+- Status: fixed ccc5fe2f (the owner chose to refuse a folder with a session subfolder whose `lights\` holds no frame; a folder with the lights directly in it as before; stacks told by their header, as in LightsCheck, were not taken; ADR 0067)
 
 ### CR-018 The master's noise rests on the first two decoded frames alone
 
@@ -504,7 +506,7 @@ five of them are of severity 1.
   pairs for the read noise.
 - Deliberate: R-024 ("the n = 1 point is the temporal sigma") and the prototype.
 - Evidence: owner.
-- Status: open
+- Status: fixed 92309d5e (the owner chose the median over every pair of consecutive frames, as for the biases' read noise; measured first: the first pair is the quietest of a series that warms, so the master's noise grows by 3 to 12 % on five of the six real sets, and the figures that follow were recorded again; ADR 0068)
 
 ## Severity 2: a crash, a hang, or a file written where it must not be
 
@@ -523,7 +525,7 @@ five of them are of severity 1.
 - Also: `--out \\?\E:\S\out` passes too, since `Path.GetFullPath` leaves such a path as it is.
 - Test: `R026_OutInsideTheSessionIsRefused_Exit1` uses the session root only.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed 27df0814 (the folder around a `darks` or `lights` folder is kept clear too, and two paths that Windows says are one folder are one folder; a `subst` drive was not tried, an 8.3 name only by the second review, the `\\?\` prefix and junctions were, to the session and to a folder inside it, the second after the branch's review; what the second review left is CR-080; ADR 0069)
 
 ### CR-020 After a partner that failed, the window's export can write into the partner's folder
 
@@ -537,7 +539,7 @@ five of them are of severity 1.
 - Should: the `--out` refusal.
 - Test: `R074_ExportWritesTheFilesIntoTheChosenFolderOnly` covers the session only.
 - Evidence: confirmed on the code path; not run.
-- Status: open
+- Status: fixed b9c7411d (the result carries the partner's folder whatever became of the partner, and the writer refuses it)
 
 ### CR-021 "Write the files..." can close the window when the session folder is unreachable or relative
 
@@ -1659,6 +1661,47 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
   series of eight at a scatter of about 0.014.
 - Evidence: to measure (the figures are the copy's; a run on generated darks at such a scatter
   shows them on the real code).
+- Status: open
+
+### CR-079 The first frame that decodes sets the size and the scale: a stray first file of another size or bit depth leaves the whole series out
+
+- Found: 2026-11-19, while CR-016 was fixed.
+- Where: `Analysis/FrameStack.cs` (`Load`: `geometry ??=`, set by the first frame that decodes
+  with the group's setting; `SameScale`, the size test beside it).
+- What happens: the setting a group's frames must have is the one most of them have, read from
+  every file's metadata first (ADR 0062, CR-012). The size and, since CR-016, the black and the
+  white are still the first decoded frame's: they are known only once a file is decoded.
+- Case: `darks\` holds one frame of another crop or bit depth, listed first, with the series'
+  ISO and exposure, then twenty darks. `frames read 1 of 21`, twenty rows of `different size`
+  (or `different black and white`), every check, the index and the label from that one frame,
+  exit 1. Check 1 reads `OK` on the twenty-one.
+- Should: the owner's call. The size and the scale most frames have, which costs holding every
+  decoded frame until all are read (the frames are held anyway, up to the cap); or the rule as
+  it is, the rows and the exit code saying what happened.
+- Deliberate: R-020 ("the first file that decodes with the group's setting sets the size") and
+  ADR 0066, which names this limit.
+- Test: `R027_AFrameOfAnotherSizeIsLeftOutWithItsError` and
+  `R020_AFrameWithAnotherWhiteIsLeftOutWithItsError` have the odd frame after the series' first.
+- Evidence: owner (read, not run).
+- Status: open
+
+### CR-080 Links are followed on the output's side only, and not past the 260th character
+
+- Found: 2026-11-20, by the second review of the fixes of CR-019, which ran both cases.
+- Where: `Report/DarkOutputs.cs` (`ReadOnlyFolders` lists `session.Root`, the partner's and the
+  chosen lights' folder, never the real folder of `DarksDir`, `BiasesDir` or `LightsDir`);
+  `Session/FolderIdentity.cs` (`Open`: `CreateFileW` gets the path as typed, without `\\?\`).
+- Case 1: a session `S` whose `darks\` is a junction to `Lib\idx67\darks`. `darkscheck S --out
+  Lib\idx67\darks` is not refused, and the report, the CSV and the maps land beside the frames.
+  The same on `main`.
+- Case 2: with Windows' long paths off, a junction that sits past the 260th character of the
+  output path and leads to `Session\darks`: the folder cannot be opened as typed, so the link
+  is taken for a folder that does not exist yet, and the files are written into `Session\darks`.
+  A protected folder of 260 characters or more has no identity either (read, not run).
+- Should: the real folders of the frames kept clear too; the folders opened in the form that
+  takes long paths.
+- Test: none. `R026_AJunctionToAFolderInsideIsInsideToo` has the links on the output's side.
+- Evidence: confirmed (both run by the review on the console built from c052d918).
 - Status: open
 
 ## How the list is used
