@@ -331,6 +331,83 @@ public class SeriesTests
         Assert.Contains("Y +0.00 px/min = +1.8 / +0.0 \"/min", text, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// SUMMARY's row of the classes agrees its Romanian words with their counts, singular for
+    /// one and with `de` from 20 (R-093, R-082); the English words have no plural.
+    /// </summary>
+    [Fact]
+    public void R093_TheSummaryRowOfTheClassesCountsOneFrameInTheSingular()
+    {
+        SeriesResult pattern = RunPattern();
+        SeriesResult one = pattern with { Series = pattern.Series with { BadCount = 1, MarginalCount = 3, GoodCount = 1, UnknownCount = 1 } };
+        SeriesResult many = pattern with { Series = pattern.Series with { BadCount = 2, MarginalCount = 1, GoodCount = 22, UnknownCount = 2 } };
+        static string Row(SeriesResult r) => SeriesReport.SummaryRows(r)[3].Value;
+
+        Assert.StartsWith("1 slab, 3 la limita, 1 bun, 1 necitit (din 8); ", Row(one), StringComparison.Ordinal);
+        Assert.StartsWith("2 slabe, 1 la limita, 22 de bune, 2 necitite (din 8); ", Row(many), StringComparison.Ordinal);
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        Assert.StartsWith("1 bad, 3 marginal, 1 good, 1 unread (of 8); ", Row(one), StringComparison.Ordinal);
+        Assert.StartsWith("2 bad, 1 marginal, 22 good, 2 unread (of 8); ", Row(many), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The second row of FOCUS is labelled by how many good frames each end compares: singular
+    /// for one, no count when fewer than two good frames leave nothing to compare (R-093).
+    /// </summary>
+    [Theory]
+    [InlineData(10, true, "first / last 10 good frames")]
+    [InlineData(10, false, "primele / ultimele 10 cadre bune")]
+    [InlineData(20, false, "primele / ultimele 20 de cadre bune")]
+    [InlineData(1, true, "first / last good frame")]
+    [InlineData(1, false, "primul / ultimul cadru bun")]
+    [InlineData(0, true, "first / last good frames")]
+    [InlineData(0, false, "primele / ultimele cadre bune")]
+    public void R093_TheFocusRowNamesOneGoodFrameInTheSingular(int count, bool english, string label)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        SeriesResult pattern = RunPattern();
+        SeriesResult r = pattern with { Series = pattern.Series with { Fwhm = pattern.Series.Fwhm with { Count = count } } };
+
+        Assert.Equal(label, SeriesReport.FocusRows(r)[1].Label);
+    }
+
+    /// <summary>The `fixed pattern` row counts one dark in the singular, in both languages (R-093).</summary>
+    [Theory]
+    [InlineData(1, true, "1 dark in darks\\, with which Siril takes the pattern out")]
+    [InlineData(1, false, "1 dark in darks\\, cu care Siril scoate pattern-ul")]
+    [InlineData(3, true, "3 darks in darks\\, with which Siril takes the pattern out")]
+    [InlineData(3, false, "3 dark-uri in darks\\, cu care Siril scoate pattern-ul")]
+    public void R093_TheFixedPatternRowCountsOneDarkInTheSingular(int darks, bool english, string ending)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(3).ToList(), darks: darks);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        Assert.Equal(darks, r.Session.Darks.Count);
+
+        string value = Assert.Single(SeriesReport.DitherRows(r), x => x.Label == (english ? "fixed pattern" : "pattern fix")).Value;
+
+        Assert.EndsWith("; " + ending, value, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// `--frame N` past the end of the session says how many frames it has, one frame in the
+    /// singular (R-093).
+    /// </summary>
+    [Theory]
+    [InlineData(1, true, "frame 5 does not exist: the session has 1 frame in ")]
+    [InlineData(1, false, "cadrul 5 nu exista: sesiunea are 1 cadru in ")]
+    [InlineData(2, true, "frame 5 does not exist: the session has 2 frames in ")]
+    [InlineData(2, false, "cadrul 5 nu exista: sesiunea are 2 cadre in ")]
+    public void R093_AFrameIndexPastTheSessionSaysOneFrameInTheSingular(int lights, bool english, string start)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture f = new SessionFixture().WithLights(lights);
+
+        InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => FrameRun.Run(f.Root, 5));
+
+        Assert.StartsWith(start, e.Message, StringComparison.Ordinal);
+    }
+
     private static SeriesResult RunPattern(int biases = 0)
     {
         using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: biases);
@@ -416,7 +493,7 @@ public class SeriesTests
 
         Assert.Equal("2, 3", rows[0].Value);
         Assert.Equal("niciunul", rows[1].Value);
-        Assert.StartsWith("3 slabe, 0 la limita, 1 bune (din 4)", Assert.Single(SeriesReport.SummaryRows(r), x => x.Label == "cadre miscate").Value, StringComparison.Ordinal);
+        Assert.StartsWith("3 slabe, 0 la limita, 1 bun (din 4)", Assert.Single(SeriesReport.SummaryRows(r), x => x.Label == "cadre miscate").Value, StringComparison.Ordinal);
     }
 
     /// <summary>

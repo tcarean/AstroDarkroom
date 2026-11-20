@@ -338,6 +338,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   ratio as it is shown, so that session reads `GOOD`. The row also said `the read noise adds
   5 %` at a ratio of 10.0, beside `adds under 5 %` in EXPOSURE AND NOISE; it now gives the
   figure with one decimal, `adds 4.9 %` (R-024, ADR 0067; CR-017 of the review of 2026-11-13).
+- A count of one was written with a plural word in a few places: `1 slabe`, `1 bune`,
+  `1 necitite` in the Romanian SUMMARY, `first / last 1 good frames` in FOCUS (`first / last 0
+  good frames` with under two good frames), `1 darks in darks\`, and `the session has 1 frames`
+  after `--frame` past the end. They now read `1 slab`, `1 bun`, `1 necitit`, `first / last good
+  frame` (`first / last good frames` when nothing is compared), `1 dark` and `1 frame`; and the
+  Romanian warning of 20 or more unread frames takes its `de`, `20 de cadre nu s-au putut citi`
+  (R-093; CR-019 of the review of 2026-11-13).
 
 ### Internal
 

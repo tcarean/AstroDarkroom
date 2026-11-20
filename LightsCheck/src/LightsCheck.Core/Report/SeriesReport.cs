@@ -371,12 +371,41 @@ internal static class SeriesReport
             new(T("dew", "roua"), dt, dv),
             new(T("trailed frames", "cadre miscate"), T(
                 $"{s.BadCount.ToString(Inv)} bad, {s.MarginalCount.ToString(Inv)} marginal, {s.GoodCount.ToString(Inv)} good{(s.UnknownCount > 0 ? ", " + s.UnknownCount.ToString(Inv) + " unread" : "")} (of {r.Frames.Count.ToString(Inv)}); {AxisLine(s)}",
-                $"{RoCount(s.BadCount)}slabe, {s.MarginalCount.ToString(Inv)} la limita, {RoCount(s.GoodCount)}bune{(s.UnknownCount > 0 ? ", " + RoCount(s.UnknownCount) + "necitite" : "")} (din {r.Frames.Count.ToString(Inv)}); {AxisLine(s)}")),
+                $"{RoAgreed(s.BadCount, "slab", "slabe")}, {s.MarginalCount.ToString(Inv)} la limita, {RoAgreed(s.GoodCount, "bun", "bune")}{(s.UnknownCount > 0 ? ", " + RoAgreed(s.UnknownCount, "necitit", "necitite") : "")} (din {r.Frames.Count.ToString(Inv)}); {AxisLine(s)}")),
             new("dithering", ditherText, dither),
             new(T("polar alignment", "aliniere polara"), polarText, polarVerdict),
             new(T("leave out of stack", "de scos din stiva"), Keep(r)),
         ];
     }
+
+    /// <summary>
+    /// A Romanian count with a word that agrees with it, for the class words of SUMMARY, which
+    /// stand without the noun they describe (R-093).
+    /// </summary>
+    /// <param name="n">The count; 0 or more.</param>
+    /// <param name="one">The word for a count of one: `slab`.</param>
+    /// <param name="many">The word for any other count: `slabe`.</param>
+    /// <returns>`1 slab`, `2 slabe`, `22 de slabe` (the count as <see cref="Ui.RoCount(long)"/> writes it).</returns>
+    private static string RoAgreed(int n, string one, string many) => RoCount(n) + (n == 1 ? one : many);
+
+    /// <summary>
+    /// The label of the second row of FOCUS (R-093): how many good frames each end of the
+    /// session compares, singular for one, and no count when there is nothing to compare.
+    /// </summary>
+    /// <param name="count">
+    /// The good frames at each end, <see cref="Trend.Count"/>; 0 with fewer than two good frames.
+    /// </param>
+    /// <returns>
+    /// `first / last 10 good frames`, `first / last good frame`, or `first / last good frames`
+    /// for 0 (`primele / ultimele 10 cadre bune`, `primul / ultimul cadru bun`, `primele /
+    /// ultimele cadre bune`).
+    /// </returns>
+    private static string FirstLastLabel(int count) => count switch
+    {
+        0 => T("first / last good frames", "primele / ultimele cadre bune"),
+        1 => T("first / last good frame", "primul / ultimul cadru bun"),
+        _ => T($"first / last {count.ToString(Inv)} good frames", $"primele / ultimele {RoCount(count)}cadre bune"),
+    };
 
     /// <summary>
     /// The FOCUS section, in plain words (R-078): the stars' width on the good frames, the first
@@ -395,7 +424,7 @@ internal static class SeriesReport
         return
         [
             new(T("the stars' width (FWHM)", "latimea stelelor (FWHM)"), $"{Px(s.SessionFwhm, r)} {average}"),
-            new(T($"first / last {s.Fwhm.Count.ToString(Inv)} good frames", $"primele / ultimele {RoCount(s.Fwhm.Count)}cadre bune"), $"{Opt(s.Fwhm.First, 2)} px / {Opt(s.Fwhm.Last, 2)} px{ChangeWord(s.Fwhm)}: {held}"),
+            new(FirstLastLabel(s.Fwhm.Count), $"{Opt(s.Fwhm.First, 2)} px / {Opt(s.Fwhm.Last, 2)} px{ChangeWord(s.Fwhm)}: {held}"),
             new(T("in the centre / in the middle / at the edge", "in centru / la mijloc / la margine"), T($"the stars' width {ZoneMedians(r)} {average}", $"latimea stelelor {ZoneMedians(r)} {average}")),
             new("verdict", ft, fv),
         ];
@@ -1003,7 +1032,7 @@ internal static class SeriesReport
         SensorPattern p = r.Pattern;
         string darks = r.Session.DarksDir is null
             ? T("no darks in the session, the pattern stays in the frames", "fara dark-uri in sesiune, pattern-ul ramane in cadre")
-            : T($"{r.Session.Darks.Count.ToString(Inv)} darks in {SessionFolder.DarksName}\\, with which Siril takes the pattern out", $"{RoCount(r.Session.Darks.Count)}dark-uri in {SessionFolder.DarksName}\\, cu care Siril scoate pattern-ul");
+            : Count(r.Session.Darks.Count, ("dark", "dark"), ("darks", "dark-uri")) + T($" in {SessionFolder.DarksName}\\, with which Siril takes the pattern out", $" in {SessionFolder.DarksName}\\, cu care Siril scoate pattern-ul");
         string value = p.Status switch
         {
             PatternStatus.Measured => MeasuredPattern(p),

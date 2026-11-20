@@ -178,6 +178,33 @@ public class InventoryReportTests
         }
     }
 
+    /// <summary>
+    /// The warning of unread lights counts them as Romanian counts are written, with `de` from
+    /// 20 (R-082), and one in the singular in both languages (R-093).
+    /// </summary>
+    [Theory]
+    [InlineData(1, true, "    WARNING            : 1 frame could not be read (see the list of frames)")]
+    [InlineData(1, false, "    ATENTIE            : 1 cadru nu s-a putut citi (vezi lista cadrelor)")]
+    [InlineData(19, false, "    ATENTIE            : 19 cadre nu s-au putut citi (vezi lista cadrelor)")]
+    [InlineData(20, true, "    WARNING            : 20 frames could not be read (see the list of frames)")]
+    [InlineData(20, false, "    ATENTIE            : 20 de cadre nu s-au putut citi (vezi lista cadrelor)")]
+    public void R093_TheWarningOfUnreadLightsCountsThemAsRomanianDoes(int unread, bool english, string line)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        List<FrameInfo> frames = Shots(Enumerable.Repeat(120.0, unread + 1).ToArray());
+        for (int i = 0; i < unread; i++)
+        {
+            frames[i] = frames[i] with { Error = "x" };
+        }
+
+        using SessionFixture s = new SessionFixture().WithLights(1);
+        var inv = new Inventory(SessionFolder.Open(s.Root), frames, CadenceAnalyzer.Analyze(frames));
+        using var w = new StringWriter();
+        InventoryReport.WriteHeader(inv, w);
+
+        Assert.Contains(line + Environment.NewLine, w.ToString(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R086_WithoutAFrameWithATimeAndAnExposure_TheTotalIsUnknown()
     {

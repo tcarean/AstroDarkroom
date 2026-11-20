@@ -331,7 +331,11 @@ therefore has one label column; a label longer than the field pushes its colon r
 `FrameRows` formats the table's cells once for the console and the window (`SpotCell` the
 `k/n from f` cell of a run, `-` outside one), `RejectedRows` and `RejectedHeading` the
 REJECTED block (the heading counts the bad and the unread frames through `Count`, singular for
-one, R-081), `CropCaption` the caption of a star cut-out (`StarCrops` cuts, this file
+one, R-081). A count is written with its word wherever one follows it (R-093): `Count` for a
+noun in both languages (the darks of the `fixed pattern` row too), `RoAgreed` for the Romanian
+class words of SUMMARY, which stand without their noun (`1 slab`, `2 slabe`), and
+`FirstLastLabel` for the label of FOCUS's second row, which drops the count when no frames are
+compared. `CropCaption` is the caption of a star cut-out (`StarCrops` cuts, this file
 words). `Reason` words a flag in plain words (R-079), a trailing one as `elongation v (from t
 the frame is bad)`, or `is marginal`, plus `TrailSuffix`: `, trail on RA (a degrees)` when the
 flag has an axis (`AxisWord`), `, trail at a degrees` when it has only the angle; the satellite

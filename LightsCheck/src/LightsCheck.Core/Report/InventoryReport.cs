@@ -82,7 +82,7 @@ internal static class InventoryReport
             int n = inv.Lights.Count(f => f.Error is not null);
             w.WriteLine(T(
                 $"    WARNING            : {n} {(n == 1 ? "frame could not be read" : "frames could not be read")} (see the list of frames)",
-                $"    ATENTIE            : {n} {(n == 1 ? "cadru nu s-a putut citi" : "cadre nu s-au putut citi")} (vezi lista cadrelor)"));
+                $"    ATENTIE            : {RoCount(n)}{(n == 1 ? "cadru nu s-a putut citi" : "cadre nu s-au putut citi")} (vezi lista cadrelor)"));
         }
     }
 
