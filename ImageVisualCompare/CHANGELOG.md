@@ -56,6 +56,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- A FITS that Windows does not have in its file cache, as at the first open after a restart,
+  loads faster from a hard disk: each plane is read in bands of 4 MiB, not a row at a time from
+  three places in turn. Measured on a 277 MB file of three float planes: 2.3 to 2.4 s where it
+  took 4 to 5 s; the image decoded is the same, byte for byte.
 - Every toolbar and dialog button has the 10-pixel padding its style always declared; the
   border hugged the text before.
 - `About` opens a window laid out as the About windows of the suite's other tools, in this

@@ -171,6 +171,110 @@ public class FitsRowDecoderTests
         Assert.Equal("FITS: the file ends before the image data does.", ex.Message);
     }
 
+    /// <summary>A file in memory that counts how many times it is read from.</summary>
+    private sealed class CountingStream(byte[] file) : MemoryStream(file)
+    {
+        public int Reads { get; set; }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            Reads++;
+            return base.Read(buffer, offset, count);
+        }
+    }
+
+    // CR-010 of the review of 2026-11-13: a row a read, from one place per plane, was 11,664
+    // reads at three offsets 92 MB apart for a 5938 x 3888 file, and twice the time of a read in
+    // bands when the file was not in the cache (docs/design/imaging.md).
+    [Fact]
+    public void ReadFileRow_ReadsEachPlaneABandOfRowsAtATime_NotARowAtATime()
+    {
+        // 4 x 200 in three planes: each plane is 3200 bytes, well inside one band.
+        byte[] file = FitsFixture.Image(-32, 4, 200, 3, new double[4 * 200 * 3]);
+        var stream = new CountingStream(file);
+        FitsImageLayout layout = FitsHeader.ReadLayout(stream);
+        var decoder = new FitsRowDecoder(layout, stream, 1);
+        ushort[] row = new ushort[decoder.RowSamples];
+        stream.Reads = 0;
+
+        for (int fileRow = 0; fileRow < layout.Height; fileRow++)
+        {
+            decoder.ReadFileRow(fileRow, row);
+        }
+
+        Assert.Equal(3, stream.Reads);
+    }
+
+    [Fact]
+    public void ReadFileRow_GivesTheSameRowsAcrossBandEdges_InAnyOrder()
+    {
+        // 2 x 10 in three planes of 16 bits, each sample its own number: plane, row, column.
+        // A band of 12 bytes is 3 rows, so the last band holds one row only.
+        double[] samples = new double[2 * 10 * 3];
+        for (int i = 0; i < samples.Length; i++)
+        {
+            samples[i] = 100 + i;
+        }
+
+        var stream = new CountingStream(FitsFixture.Image(16, 2, 10, 3, samples));
+        FitsImageLayout layout = FitsHeader.ReadLayout(stream);
+        var decoder = new FitsRowDecoder(layout, stream, FitsScale.FullScale(16), bandBytes: 12);
+        ushort[] row = new ushort[decoder.RowSamples];
+        stream.Reads = 0;
+
+        // A 16-bit sample on its own full scale is its own value.
+        void AssertRow(int fileRow)
+        {
+            decoder.ReadFileRow(fileRow, row);
+            int first = 100 + (fileRow * 2);
+            Assert.Equal([first, first + 1, first + 20, first + 21, first + 40, first + 41], row.Select(s => (int)s));
+        }
+
+        for (int fileRow = 0; fileRow < 10; fileRow++)
+        {
+            AssertRow(fileRow);
+        }
+
+        // Four bands a plane, the last of one row.
+        Assert.Equal(12, stream.Reads);
+
+        for (int fileRow = 9; fileRow >= 0; fileRow--)
+        {
+            AssertRow(fileRow);
+        }
+
+        // Backwards costs a read a band too: the band of row 9 is in hand, three more a plane.
+        Assert.Equal(21, stream.Reads);
+
+        AssertRow(7);
+        AssertRow(2);
+        AssertRow(9);
+    }
+
+    [Fact]
+    public void R019_ARowTheCutFileStillHolds_IsRead_AndTheFirstOneItDoesNotIsTheMessage()
+    {
+        // 4 x 4 floats, of which the file holds two rows: both are in the one band the file
+        // ends inside.
+        var layout = new FitsImageLayout(4, 4, 1, -32, 0, 1, DataOffset: 2880);
+        var decoder = new FitsRowDecoder(layout, new MemoryStream(new byte[2880 + 32]), 1);
+
+        decoder.ReadFileRow(0, new byte[16]);
+        decoder.ReadFileRow(1, new byte[16]);
+        var ex = Assert.Throws<EndOfStreamException>(() => decoder.ReadFileRow(2, new byte[16]));
+
+        Assert.Equal("FITS: the file ends before the image data does.", ex.Message);
+    }
+
+    [Fact]
+    public void ABandOfLessThanOneByte_IsRefused()
+    {
+        var layout = new FitsImageLayout(4, 4, 1, -32, 0, 1, DataOffset: 2880);
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => new FitsRowDecoder(layout, new MemoryStream(new byte[2880 + 64]), 1, bandBytes: 0));
+    }
+
     /// <summary>One row of every plane, as sixteen-bit samples, on the full scale of the type.</summary>
     private static ushort[] PlanesRow(byte[] file, int fileRow)
     {

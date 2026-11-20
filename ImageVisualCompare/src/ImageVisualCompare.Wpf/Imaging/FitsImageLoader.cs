@@ -301,7 +301,8 @@ public sealed class FitsImageLoader : IImageLoader
         int stride = layout.Width * 4;
         byte[] row = new byte[stride];
 
-        // In the order of the file, whichever way up the image is, so the disk is read forwards.
+        // In the order of the file, whichever way up the image is, so each plane is read
+        // forwards, a band at a time.
         for (int fileRow = 0; fileRow < layout.Height; fileRow++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -320,13 +321,16 @@ public sealed class FitsImageLoader : IImageLoader
         return decoder.SamplesAboveThreshold;
     }
 
-    // No buffer of the stream's own: the decoder reads one whole row at each of three places
-    // in turn, and a buffer would be filled past the row and thrown away at every seek.
     /// <summary>
-    /// Opens a file for reads here and there in it, sharing it with other readers.
+    /// Opens a file for the decoder's reads, a band of megabytes from each plane in turn
+    /// (<see cref="FitsRowDecoder"/>), sharing it with other readers. The stream has no buffer of
+    /// its own, since each read is far larger than one and goes straight into the band; and no
+    /// hint to Windows about the order of the reads: <see cref="FileOptions.RandomAccess"/>
+    /// would turn its read-ahead off, and the bands measured the same with and without
+    /// <see cref="FileOptions.SequentialScan"/> (<c>docs/design/imaging.md</c>).
     /// </summary>
     /// <param name="path">The file.</param>
     /// <returns>The open stream, with no buffer of its own.</returns>
     private static FileStream OpenRead(string path) =>
-        new(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1, FileOptions.RandomAccess);
+        new(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1, FileOptions.None);
 }

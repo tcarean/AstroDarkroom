@@ -89,17 +89,21 @@ Added on 2026-10-05 (ADR 0029). The path of a FITS file, from the dialog to the 
    samples fits one array. The first version had none of this, and a negative axis sent the
    walk back to the header it had just read, for ever.
 3. `FitsRowDecoder.ReadFileRow` fills one row of 16-bit samples, the planes one after another.
-   FITS is plane-sequential (all of red, then all of green, then all of blue), so the row is
-   read from one place per plane (`ReadPlaneRow`); the decoder seeks, reads `Width` samples
-   into its one row buffer, and `Convert` writes each through `FitsScale.SixteenBit`, or
-   `SixteenBitOfFloat` for a float sample, in one loop per sample type so that nothing is
-   decided per sample. For float files it also counts
-   the finite samples above `FitsScale.RescaleThreshold`. The stream has no buffer of its own
-   (`FitsImageLoader.OpenRead`): each read is a whole row, and a buffer would be filled past
-   the row and thrown away at the next seek. The overload that fills a Bgra32 row is the same
+   FITS is plane-sequential (all of red, then all of green, then all of blue), so the row
+   lies in one place per plane (`ReadPlaneRow`). The decoder does not read it from there a
+   row at a time: it holds a band of each plane, `DefaultBandBytes` (4 MiB) of consecutive
+   rows starting at a multiple of the band's rows, filled by one seek and one read
+   (`FillBand`) when a row outside it is asked for, so three bands, 12 MiB, are held while a
+   three-plane file decodes. `Convert` writes each sample of the row through
+   `FitsScale.SixteenBit`, or `SixteenBitOfFloat` for a float sample, in one loop per sample
+   type so that nothing is decided per sample. For float files it also counts
+   the finite samples above `FitsScale.RescaleThreshold`. A band the file ends inside keeps
+   the whole rows it got, and only a row past them is the "file ends" message. The stream has
+   no buffer of its own (`FitsImageLoader.OpenRead`): each read is megabytes and goes straight
+   into the band. The overload that fills a Bgra32 row is the same
    read followed by the linear renderer, for the tests and for anything that wants levels.
-4. `FitsImageLoader.Load` walks the rows in the order of the file, so the disk is read
-   forwards three times over (`Pass`), each row through a `DisplayRenderer` of the mode asked
+4. `FitsImageLoader.Load` walks the rows in the order of the file, so each plane is read
+   forwards, a band at a time (`Pass`), each row through a `DisplayRenderer` of the mode asked
    for (the section "Display modes" below) into a `WriteableBitmap` at
    `FitsImageLayout.DisplayRow`, counted from the bottom, which is the one place the row order
    is applied; the cancellation token is checked at every row. Then it asks
@@ -166,6 +170,22 @@ MB private once loaded, the same as a 16-bit PNG of that size through WIC, and a
 peak of one more buffer during the load (peak working set 227 MB against WIC's 139 MB). The
 managed alternative and the figures of a pair are in ADR 0029 and in `../validation.md`,
 V-003 and V-004.
+
+The same file when Windows does not have it in its file cache, as at the first open after a
+restart, on the hard disk it lives on (measured on 2026-11-20 with a throw-away program that
+dropped the file from the cache before each run, by opening it once without buffering; a read
+of the whole file from start to end then took 1.4 to 1.5 s, against 0.2 s from the cache). The
+decoder first read a row at a time from each plane in turn, 11,664 reads of 23,752 bytes at
+three places 92 MB apart, on a stream opened with `FileOptions.RandomAccess`: `Load` took 3.95
+and 4.87 s in `Linear` (1.67 s from the cache) and 4.33 s in `Histogram` (2.10 s). The reads
+alone, without the decode: 3.34 s that way and 3.78 s without `RandomAccess`; in bands of 1 MiB
+a plane 2.31 s, of 4 MiB 1.68 s (1.76 s with `SequentialScan`), of 8 MiB 1.64 s. With bands of
+4 MiB and no hint, `Load` takes 2.33 and 2.38 s in `Linear` and 3.04 s in `Histogram`, and from
+the cache what it took before (1.35 to 1.71 s, and 1.64 s); the six bitmaps of the two real
+files in the three modes are the same bytes as before (SHA-256). So the row-at-a-time reads
+cost about two seconds a file on this disk and never read as a hang: the drive's own read-ahead
+hid most of the seeks (CR-010 of `../review/2026-11-13-code-review.md`). Not measured: a
+fragmented file, a USB disk, a network share.
 ## Float samples in a TIFF
 
 Added on 2026-10-22 (ADR 0035). WIC decodes a float TIFF, but its conversion to Bgra32 takes
