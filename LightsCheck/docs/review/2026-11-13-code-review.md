@@ -139,6 +139,7 @@ rule "Golden files").
 | CR-060 | 4 | - | confirmed | Window tests that cannot fail or do not check what their name says | open |
 | CR-061 | 4 | - | confirmed | Design notes and comments that describe other code | open |
 | CR-062 | 4 | - | confirmed | The fixtures' star grid repeats, so frames with no shift register one column over | open |
+| CR-063 | 3 | some setups | confirmed | A long file name pushes its reasons out of line in the REJECTED block | open |
 
 After the entries: the six findings in the files copied from FlatCheck (CP-1 to CP-6), fixed
 there first, and the cleanup list, which holds what is not a defect.
@@ -507,7 +508,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Should: the singular for one, and `de` from twenty.
 - Test: `SeriesTests.cs:179` pins `1 bune`.
 - Evidence: confirmed.
-- Status: fixed d32b8e2f (the texts the entry lists take the singular for one, and the Romanian warning of unread frames its `de`: R-093; the label of FOCUS's second row has no count when fewer than two good frames leave nothing to compare; four more counts written with a plural word only were found by a search and left for the owner, as texts not yet shown: `1 stars kept` in `--frame`, `1 hot pixels per million pixels`, `1 move over 1 frames` and `in 1 frames of 20` in DITHERING)
+- Status: fixed d32b8e2f (the texts the entry lists take the singular for one, and the Romanian warning of unread frames its `de`: R-093; the label of FOCUS's second row has no count when fewer than two good frames leave nothing to compare; more counts written with a plural word only were found by a search and by the review of the branch, and left for the owner as texts not yet shown: in `--frame`, the Romanian `1 detectate, 1 luminoase, 1 saturate; 1 masurate` and `1 stars kept` (`1 stele retinute`); `1 hot pixels per million pixels` (`1 pixeli calzi la un milion de pixeli`) in the `fixed pattern` row; an angle that rounds to one, `trail at 1 degrees` (`dara la 1 grade`) in a reason and `angle 1 degrees` under a cut-out; and `0 moves over 1 frames` when a single frame was aligned, CR-041's case)
 
 ### CR-020 The `marginal (elongation between ...)` row lists frames that are not
 
@@ -536,7 +537,7 @@ there first, and the cleanup list, which holds what is not a defect.
   `SeriesTests.cs:356` and `:639` assert it; FlatCheck settled the same question for itself in
   its ADR 0092.
 - Evidence: owner.
-- Status: fixed d3230f6f (a figure that rounds to zero is written without a minus, and as `+0` where the sign is always written, FlatCheck's rule, the owner's answer of 2026-11-20: ADR 0066, R-092; the trail's angle and the charts' tick labels go through the same formatter; the CSV keeps its numbers as they are)
+- Status: fixed d3230f6f (a figure that rounds to zero is written without a minus, and as `+0` where the sign is always written, FlatCheck's rule, the owner's answer of 2026-11-20: ADR 0066, R-092; the trail's angle and the labels of the charts' value axis go through the same formatter; the CSV keeps its numbers as they are)
 
 ### CR-022 Stop shows nothing until the frames in flight finish
 
@@ -870,6 +871,24 @@ there first, and the cleanup list, which holds what is not a defect.
 - Should: the time the camera wrote.
 - Test: none. A raw whose time is in the gap (a copy edited with exiftool).
 - Evidence: to measure.
+- Status: open
+
+### CR-063 A long file name pushes its reasons out of line in the REJECTED block
+
+- Added 2026-11-20 by the task that fixed CR-017 to CR-021, from the review of its branch; not
+  one of the 61 entries of the review.
+- Where: `src/LightsCheck.Core/Report/SeriesReport.cs` (`Write`, the loop over `RejectedRows`).
+- What happens: each row of the block is written as the frame's number in 3 columns, its file
+  name padded to 20 and its reasons. The name is not cut, as it is in the two tables, and the
+  widths are fixed.
+- Case: lights named as a capture program names them, `Light_Veil_120.0s_Bin1_0001.fit` (31
+  letters): every row's reasons start 11 columns further right than under a 20-letter name,
+  and at a different column for each name's length. A session of 1000 frames or more shifts
+  the rows of frames 1000 and up by one column.
+- Should: the reasons in one column, as the two tables are written since CR-018 (`TextTable`,
+  R-095), with the name whole, since it is what the user needs in Siril.
+- Test: none; every fixture's names have 12 letters.
+- Evidence: confirmed (by reading; not run).
 - Status: open
 
 ## Severity 4: robustness and cleanliness

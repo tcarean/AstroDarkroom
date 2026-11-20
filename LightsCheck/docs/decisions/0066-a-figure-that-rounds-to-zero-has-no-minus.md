@@ -11,10 +11,10 @@ keeps the minus of a negative number even when every digit it writes is 0. The r
 "/min`, `the image turned by -0.0' in all`, a table cell `-0.0`; the review of 2026-11-13
 listed them as CR-021, evidence `owner`, because two requirements then quoted `(-0 %)` in
 their examples and two tests asserted it (by 2026-11-20 only the golden files held it). The
-trail's angle, written in `SeriesAnalyzer` with a format of its own, and the tick labels of
-the window's charts had the same minus. FlatCheck met the question on 2026-11-06 and its
-owner, the same, chose there that a difference that rounds to zero reads `+0.00` (FlatCheck's
-ADR 0092).
+trail's angle, written in `SeriesAnalyzer` with a format of its own, and the labels along the
+value axis of the window's charts had the same minus. FlatCheck met the question on
+2026-11-06 and its owner, the same, chose there that a difference that rounds to zero reads
+`+0.00` (FlatCheck's ADR 0092).
 
 ## Decision
 
@@ -27,8 +27,9 @@ precedent. R-092 states it.
 
 The sign is decided on the digits as written: `RunReport.F` formats first and drops the minus
 when no digit other than 0 follows it; `RunReport.Signed` puts a `+` before whatever `F` wrote
-without a minus. The trail's angle and the charts' tick labels go through `F`. The CSV keeps
-its numbers as they are: programs read it, and it writes every digit a number needs.
+without a minus. The trail's angle and the labels of the charts' value axis go through `F`.
+The CSV keeps its numbers as they are: programs read it, and it writes every digit a number
+needs.
 
 ## Alternatives rejected
 

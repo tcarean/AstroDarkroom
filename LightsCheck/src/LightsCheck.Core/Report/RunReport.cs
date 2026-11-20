@@ -94,7 +94,7 @@ internal static class RunReport
     /// </summary>
     /// <param name="v">The number.</param>
     /// <param name="decimals">How many decimals to write; 0 or more.</param>
-    /// <returns>`+1.25`, `-1.25`, `+0.00`; a number that is not one is written without a sign.</returns>
+    /// <returns>`+1.25`, `-1.25`, `+0.00`; NaN is written as it is, without a sign.</returns>
     internal static string Signed(double v, int decimals)
     {
         string text = F(v, decimals);

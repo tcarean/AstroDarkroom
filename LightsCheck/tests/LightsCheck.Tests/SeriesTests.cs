@@ -236,7 +236,9 @@ public class SeriesTests
     /// <summary>
     /// A session whose marginal frames are all marginal by their elongation, or that has none,
     /// has no row for another reason (R-094): the pattern session, and the four frames of the
-    /// short-exposure fixture, whose marginally trailed frame is bad by its exposure.
+    /// short-exposure fixture, whose marginally trailed short frame is bad by its exposure and
+    /// whose first frame is made marginally trailed with too few stars as well: a frame with
+    /// both flags is on the elongation row alone.
     /// </summary>
     [Fact]
     public void R094_WithoutAFrameMarginalForAnotherReasonThereIsNoSuchRow()
@@ -245,9 +247,10 @@ public class SeriesTests
         Assert.DoesNotContain(SeriesReport.TrailRows(pattern), x => x.Label == "la limita din alt motiv");
 
         (AnalyzedFrame[] frames, DitherAnalysis d, Cadence c) = SeriesAnalyzerTests.ShortAndTrailed();
-        frames[0] = frames[0] with { Measurement = frames[0].Measurement! with { ElongationMedian = 1.5, CoreElongationMedian = 1.5 } };
+        frames[0] = frames[0] with { Measurement = frames[0].Measurement! with { ElongationMedian = 1.5, CoreElongationMedian = 1.5, Detected = 100 } };
         SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
         Assert.Equal(FrameClass.Marginal, s.Classes[0]);
+        Assert.Equal([FlagKind.MarginalTrail, FlagKind.Clouds], s.Flags[0].Select(f => f.Kind));
         IReadOnlyList<ReportRow> rows = SeriesReport.TrailRows(pattern with { Frames = frames, Cadence = c, Dither = d, Series = s });
 
         Assert.Equal(3, rows.Count);
@@ -473,7 +476,7 @@ public class SeriesTests
     /// The frame table of the series report sits under its header in both languages (R-095,
     /// CR-018): the classes session, whose Romanian `la limita` is wider than the class column,
     /// with a wait of 1500 s before one frame and a `same spot` cell of a run that began at
-    /// frame 100, both wider than their columns' least widths.
+    /// frame 1000, both wider than their columns' least widths in either language.
     /// </summary>
     [Theory]
     [InlineData(true)]
@@ -487,7 +490,7 @@ public class SeriesTests
         double?[] pauses = [.. r.Cadence.PauseSeconds];
         pauses[5] = 1500;
         SpotRun?[] runs = [.. r.Dither.SpotRun];
-        runs[7] = new SpotRun(10, 10, 100);
+        runs[7] = new SpotRun(10, 10, 1000);
         r = r with { Cadence = r.Cadence with { PauseSeconds = pauses }, Dither = r.Dither with { SpotRun = runs } };
         using StringWriter sw = new();
         SeriesReport.Write(r, sw);
@@ -497,7 +500,7 @@ public class SeriesTests
 
         Assert.Equal(1 + 14, table.Length);
         Assert.Contains(table, l => l.Contains(" 1500 s ", StringComparison.Ordinal));
-        Assert.Contains(table, l => l.Contains(english ? " 10/10 from 100 " : " 10/10 de la 100 ", StringComparison.Ordinal));
+        Assert.Contains(table, l => l.Contains(english ? "  10/10 from 1000  " : "  10/10 de la 1000  ", StringComparison.Ordinal));
         if (english)
         {
             TextTableTests.AssertUnderHeader(table, ("no", true), ("file", false), ("time", false), ("exposure", true), ("class", false), ("elong", true), ("FWHM", true), ("stars", true),
@@ -994,8 +997,10 @@ public class SeriesTests
     }
 
     /// <summary>
-    /// The `what it means` row says what the read noise adds from the threshold up with a
-    /// figure worked out from the threshold: the first whole percent above it (R-024).
+    /// The `what it means` row says what the read noise adds from the threshold up as the first
+    /// whole percent above what it adds at the threshold (R-024). This pins the text against
+    /// the constant: it fails when `Th.SwampingRatioOk` changes and the text does not follow,
+    /// and cannot tell a figure worked out in the code from one typed there.
     /// </summary>
     [Theory]
     [InlineData(true)]
