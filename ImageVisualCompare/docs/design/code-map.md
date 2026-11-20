@@ -104,7 +104,7 @@
   - `Controls/PairLabelPanel.cs` — the row of the toolbar's pair label, whose two names take the
     widths `PairLabelLayout` gives them. See `shell.md`.
   - `MainWindow.xaml(.cs)` — shell: toolbar, status bar, open/error/retry flow, pixel readout,
-    Help and F1.
+    Help and F1, and the keys that work wherever the focus is (`Ctrl+O`, `H`, `F`, `M`).
   - `MessageDialog.xaml(.cs)` — the application's own message box: `Show` to say something,
     `Confirm` to ask yes or no.
   - `AboutWindow.xaml(.cs)` and `AboutViewModel.cs` — the About window, FlatCheck's in this
