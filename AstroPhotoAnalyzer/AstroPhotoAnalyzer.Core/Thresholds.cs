@@ -456,6 +456,14 @@ namespace AstroPhotoAnalyzer
         internal const double JpegOverThresholdWarnPct = 5;
 
         /// <summary>
+        /// The longest side, in pixels, a JPEG can hold: the format stores a dimension in 16
+        /// bits. The format's own limit, not a rule of thumb: ImageSharp 3.1.11 refuses one
+        /// pixel more ("Image is too large to encode at 65536x8 for JPEG format", measured on
+        /// 2026-11-20). An image over it gets no JPEG rows (R-083, ADR 0113).
+        /// </summary>
+        internal const int JpegMaxSidePx = 65535;
+
+        /// <summary>
         /// The gamma of the shadow-lift stress test (x^(1/g)): a typical lab auto-correct.
         /// </summary>
         internal const double ShadowLiftGamma = 1.9;

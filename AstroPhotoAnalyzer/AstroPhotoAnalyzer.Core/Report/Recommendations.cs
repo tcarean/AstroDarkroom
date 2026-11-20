@@ -57,7 +57,8 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Section 1, the format to send: the 8-bit LZW TIFF (with the rounding on a source over 8
         /// bits), JPEG q100 when the lab accepts only JPEG (the qualities under it that fail are a
-        /// fact of the Export tab, ADR 0061), and the banding risk, from the share of the frame
+        /// fact of the Export tab, ADR 0061), or that a JPEG cannot hold the image when a side
+        /// is over <see cref="Thresholds.JpegMaxSidePx"/> (ADR 0113), and the banding risk, from the share of the frame
         /// with a visible plateau at the reference row's dpi (ADR 0060) or from the noise alone.
         /// </summary>
         /// <param name="r">The analysis.</param>
@@ -77,7 +78,16 @@ namespace AstroPhotoAnalyzer
                     Tr.Pick($"Send the lab an 8-bit TIFF with LZW compression, which loses nothing ({Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}). The file is already 8-bit; there is nothing to convert.", $"Trimite laboratorului un TIFF pe 8 biti, cu compresie LZW, fara pierderi ({Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}). Fisierul e deja pe 8 biti; nu e nimic de convertit."),
                     Tr.Pick($"the file has {r.File.BitDepth} bits on each channel", $"fisierul are {r.File.BitDepth} biti pe fiecare canal")));
 
-            if (q100 != null)
+            if (r.Jpeg.TooLarge)
+            {
+                // No JPEG can be made of it, so there is no q100 line; the TIFF of the first
+                // line is what the lab gets (ADR 0113).
+                o.Add(new Recommendation(Topic.Format, Verdict.Ok,
+                    Tr.Pick("A JPEG cannot hold this image: send the TIFF.", "Un JPEG nu poate tine imaginea asta: trimite TIFF-ul."),
+                    Tr.Pick($"the image is {Fmt.Dim(r.Raster.W, r.Raster.H)} px, and a JPEG holds at most {Fmt.Int(Thresholds.JpegMaxSidePx)} px on a side",
+                            $"imaginea are {Fmt.Dim(r.Raster.W, r.Raster.H)} px, iar un JPEG tine cel mult {Fmt.Int(Thresholds.JpegMaxSidePx)} px pe o latura")));
+            }
+            else if (q100 != null)
             {
                 Verdict v = q100.Acceptable ? (q100.PctOverThreshold > Thresholds.JpegOverThresholdWarnPct ? Verdict.Attention : Verdict.Ok) : Verdict.Attention;
                 o.Add(new Recommendation(Topic.Format, v,
@@ -477,7 +487,9 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Section 5, the denoise for the print version: too little smooth sky, or the noise
         /// against the print target (pressed too hard, visible on screen only, right, or
-        /// acceptable), with the noise after the recommended re-stretch in the "because".
+        /// acceptable), with the noise after the recommended re-stretch in the "because". The
+        /// "pressed too hard" sentence warns of banding only when section 1 did not measure
+        /// the flat areas or found visible steps (ADR 0117).
         /// </summary>
         /// <param name="r">The analysis.</param>
         /// <param name="o">The list the one recommendation is added to.</param>
@@ -510,9 +522,20 @@ namespace AstroPhotoAnalyzer
                 $"zgomotul ramas in cer e de {Fmt.F2(n.SigmaMedianLsb)} niveluri (sigma; valoarea din mijloc pe {Fmt.RoCount(Fmt.Int(n.SmoothTiles))}zone mici de cer neted; in cele mai netede 10 % sub {Fmt.F2(n.Sigma10thLsb)}, cel mai mic {Fmt.F2(n.SigmaMinLsb)}); {Fmt.Pct(n.PctTilesBelowBanding)} din zone sunt sub {Fmt.F1(Thresholds.NoiseBandingLsb)} niveluri, unde zgomotul nu mai ascunde treptele; {target}{after}");
 
             if (n.BandingRisk)
+            {
+                // The noise is a sign that steps may show; section 1 measures the steps
+                // themselves. Where it measured them and found none wide enough to show (the
+                // condition of its Ok line), this section does not warn of banding beside it:
+                // one report said "no visible steps" and "banding" at once (ADR 0117). The
+                // noise is still under the target, so the verdict and the evidence stay.
+                SizeRow size = r.Size.ReferenceRow;
+                bool noVisibleSteps = r.Quantization.PlateauKnown && size != null && !r.Quantization.PlateauVisibleAt(size.Dpi);
                 o.Add(new Recommendation(Topic.Denoise, Verdict.Attention,
-                    Tr.Pick("Denoise is too strong for print: too little noise is left to hide the steps between levels (banding). For the print version, a weaker denoise keeps the sky's texture and the faint stars.", "Denoise-ul e prea puternic pentru print: a ramas prea putin zgomot ca sa ascunda treptele dintre niveluri (banding). Pentru versiunea de print, un denoise mai slab pastreaza textura cerului si stelele slabe."),
+                    noVisibleSteps
+                        ? Tr.Pick("Denoise is stronger than print needs: the noise left is under the target. Section 1 found no visible steps in the sky, so there is no banding to fear; still, for the print version a weaker denoise keeps the sky's texture and the faint stars.", "Denoise-ul e mai puternic decat cere printul: zgomotul ramas e sub tinta. Sectiunea 1 n-a gasit trepte vizibile in cer, deci nu e risc de banding; totusi, pentru versiunea de print, un denoise mai slab pastreaza textura cerului si stelele slabe.")
+                        : Tr.Pick("Denoise is too strong for print: too little noise is left to hide the steps between levels (banding). For the print version, a weaker denoise keeps the sky's texture and the faint stars.", "Denoise-ul e prea puternic pentru print: a ramas prea putin zgomot ca sa ascunda treptele dintre niveluri (banding). Pentru versiunea de print, un denoise mai slab pastreaza textura cerului si stelele slabe."),
                     because));
+            }
             else if (n.UnderDenoised)
                 o.Add(new Recommendation(Topic.Denoise, Verdict.Attention,
                     Tr.Pick("The noise shows on screen at 100 %; on paper, at the sizes of the table, it does not. Denoise only if you also want a clean version for the screen.", "Zgomotul se vede pe ecran la 100 %; pe hartie, la marimile din tabel, nu se vede. Fa denoise doar daca vrei si o versiune curata pentru ecran."),

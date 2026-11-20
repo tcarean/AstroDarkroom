@@ -62,8 +62,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Reads the settings of a file: missing, not readable, not a JSON object, without the
-        /// key, or with a value that is not a string or is blank all mean no profile, never an
-        /// exception.
+        /// key, or with a value that is not a string, is blank or cannot be read as text (a
+        /// broken escape) all mean no profile, never an exception.
         /// </summary>
         /// <param name="path">The file's full path; it need not exist; null remembers nothing.</param>
         /// <returns>The settings, bound to that path for the writes to come.</returns>
@@ -83,9 +83,12 @@ namespace AstroPhotoAnalyzer.Wpf
                     && !string.IsNullOrWhiteSpace(value.GetString()))
                     settings.IccProfilePath = value.GetString();
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
             {
-                // No setting: the window starts as if the file were absent.
+                // No setting: the window starts as if the file were absent. The last of the
+                // four is what GetString throws for a string the parser let through and that
+                // is no text: an escape \ud800 with no second half (ADR 0115). Thrown from the
+                // window's start, it stopped every start until the file was deleted by hand.
                 Log.Warn(e, "the settings file " + path + " cannot be read; nothing is remembered");
             }
             return settings;

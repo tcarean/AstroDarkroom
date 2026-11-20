@@ -508,6 +508,9 @@ Some limits you may meet on your own images:
   the suggested curves by less than 1 L\*.
 - The JPEG figures are those of the tool's own JPEG encoder: another program's JPEG at quality
   100 differs by tenths of a level.
+- A JPEG cannot hold an image with a side over 65535 px (a wide panorama). The tool analyses
+  such an image all the same; the JPEG table is left out, with a line that says why, and the
+  report recommends the TIFF.
 - On an 8-bit file the sky's colour is measured in whole levels, so its chroma can differ by up
   to about 0.7 from that of the 16-bit version of the same image, and a cast near the threshold
   of 3 can fall on either side of it.

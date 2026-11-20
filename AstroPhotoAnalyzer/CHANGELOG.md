@@ -288,6 +288,36 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- One report no longer says "no visible steps appear in the sky" in section 1 and warns of
+  banding in section 5. When section 1 measured the flat areas and found no visible steps,
+  section 5 now says `Denoise is stronger than print needs: the noise left is under the
+  target. Section 1 found no visible steps in the sky, so there is no banding to fear; ...`,
+  still a caution, with the same figures. When section 1 found steps, or could not measure
+  them, the sentence is the one it was (R-095, ADR 0117).
+
+- **Save the report...** becomes enabled when an analysis ends. The button stayed grey after
+  every analysis, so the report could not be saved from the window at all (R-110, R-111, ADR
+  0116).
+
+- The window starts whatever its settings file holds. One damaged shape of the file (a text
+  with a broken `\ud800` escape) stopped the window at every start, before anything showed,
+  until the file was deleted by hand; it now means "no profile remembered", like every other
+  damaged file (R-156, ADR 0115).
+
+- A FITS whose header holds an impossible size is refused with a sentence that names it,
+  instead of being followed. A negative axis length in a part of the file that is skipped
+  made the tool read the same header for ever (the console never returned, the window's run
+  never ended, and saving a crop or a curve hung the same way); other values looped for
+  minutes, overflowed, or took gigabytes of memory for an image that was not in the file. Such
+  a header comes from a damaged file, not from Siril (R-011, ADR 0114).
+
+- An image with a side over 65535 px (a wide panorama) is analysed to the end. A JPEG cannot
+  hold such an image, and the measurement of the JPEG qualities stopped the whole analysis
+  with `Image is too large to encode ... for JPEG format`, after everything else was measured.
+  The JPEG rows are now left out: section 1 says `A JPEG cannot hold this image: send the
+  TIFF.`, and Appendix C and the Export tab have one line in place of the table (R-083, R-091,
+  R-114, ADR 0113).
+
 - A TIFF exported from Lightroom Classic with Content Credentials opens. Lightroom adds them
   after the image as a second "page" that holds no image, and the tool refused the whole file
   with `The number of samples in the TIFF BitsPerSample entry is not supported`. It now reads

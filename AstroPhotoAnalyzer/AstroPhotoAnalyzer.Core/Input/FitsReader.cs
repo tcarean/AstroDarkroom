@@ -74,8 +74,9 @@ namespace AstroPhotoAnalyzer
         /// ROWORDER says; a TOP-DOWN keyword is noted as ignored), and the WCS attached when the
         /// header has one.
         /// Throws, with a message for the user, on a file with no image, cut short, with a
-        /// BITPIX it does not know, with more than 3 axes or planes other than 1 or 3, or with
-        /// a size, a BZERO or a BSCALE that cannot be read as a number; a file that does not
+        /// BITPIX it does not know, with more than 3 axes or planes other than 1 or 3, with
+        /// a size, a BZERO or a BSCALE that cannot be read as a number, or with a size that is
+        /// impossible (<see cref="Shape"/>) or larger than one array holds; a file that does not
         /// open throws the platform's exception.
         /// </summary>
         /// <param name="path">The FITS file.</param>
@@ -106,7 +107,7 @@ namespace AstroPhotoAnalyzer
         /// Only the header of the first HDU with an image, without its data: for a FITS whose WCS
         /// is lent to another file (R-027). Also returns the width and the height, so that the
         /// geometry can be checked. Throws on a file with no image, cut short, or with a size
-        /// that cannot be read as a number.
+        /// that cannot be read as a number or is impossible (<see cref="Shape"/>).
         /// </summary>
         /// <param name="path">The FITS file.</param>
         /// <returns>The header (keyword -> value) and the width and height in pixels.</returns>
@@ -118,18 +119,14 @@ namespace AstroPhotoAnalyzer
             {
                 var hdr = ReadHeader(fs, block);
                 if (hdr == null) throw new Exception(Tr.Pick("FITS: no HDU with an image found.", "FITS: niciun HDU cu imagine gasit."));
-                int naxis = HInt(hdr, "NAXIS", 0);
-                int n1 = HInt(hdr, "NAXIS1", 0), n2 = HInt(hdr, "NAXIS2", 0);
-                if (naxis >= 2 && n1 > 0 && n2 > 0)
+                HduShape shape = Shape(hdr);
+                if (shape.HasImage)
                 {
                     if (Log.IsDebugEnabled) Log.Debug("header of " + path + ": " + LogText.FitsKeys(hdr));
-                    return (hdr, n1, n2);
+                    return (hdr, shape.N1, shape.N2);
                 }
 
-                long npix = naxis == 0 ? 0 : 1;
-                for (int ax = 1; ax <= naxis; ax++) npix *= HInt(hdr, "NAXIS" + ax, 1);
-                long dataBytes = npix * (Math.Abs(HInt(hdr, "BITPIX", 0)) / 8);
-                if (!SkipExact(fs, (dataBytes + 2879) / 2880 * 2880)) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
+                if (!SkipExact(fs, shape.DataBlocks)) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
             }
         }
 
@@ -153,28 +150,22 @@ namespace AstroPhotoAnalyzer
                 var hdr = ReadHeader(s, block);
                 if (hdr == null) throw new Exception(Tr.Pick("FITS: no HDU with an image found.", "FITS: niciun HDU cu imagine gasit."));
 
-                int bitpix = HInt(hdr, "BITPIX", 0);
-                int naxis = HInt(hdr, "NAXIS", 0);
+                HduShape shape = Shape(hdr);
+                int bitpix = shape.Bitpix, naxis = shape.Naxis, n1 = shape.N1, n2 = shape.N2, n3 = shape.N3;
 
-                // An HDU with NAXIS = 0 (the empty primary of a file with extensions) has NO data
-                // AT ALL - not "one pixel". The empty product would give 1, a block of 2880 that
-                // does not exist would be skipped, and the next header would be read from the
-                // middle of the image.
-                long npix = naxis == 0 ? 0 : 1;
-                for (int ax = 1; ax <= naxis; ax++) npix *= HInt(hdr, "NAXIS" + ax, 1);
-                int bytesPer = Math.Abs(bitpix) / 8;
-                if (bytesPer == 0 && naxis > 0) throw new Exception(Tr.Pick("unsupported BITPIX: ", "BITPIX neacceptat: ") + bitpix);
-                long dataBytes = npix * bytesPer;
-                long dataBlocks = (dataBytes + 2879) / 2880 * 2880;
-
-                int n1 = HInt(hdr, "NAXIS1", 0);
-                int n2 = HInt(hdr, "NAXIS2", 0);
-                int n3 = naxis >= 3 ? HInt(hdr, "NAXIS3", 1) : 1;
-
-                if (naxis >= 2 && n1 > 0 && n2 > 0)
+                if (shape.HasImage)
                 {
                     if (naxis > 3) throw new Exception(Tr.Pick($"a FITS with {naxis} axes; 2D images or images with 3 planes are accepted.", $"FITS cu {naxis} axe; se accepta imagini 2D sau cu 3 planuri."));
                     if (n3 != 1 && n3 != 3) throw new Exception(Tr.Pick($"a FITS with {n3} planes; 1 or 3 are accepted.", $"FITS cu {n3} planuri; se accepta 1 sau 3."));
+
+                    // The image is checked before memory is taken for it (ADR 0114): a BITPIX the
+                    // reader decodes (64 is one an HDU may have and this reader does not read),
+                    // pixels that fit one array, and the data in the file. A header of 40000 x
+                    // 40000 x 3 in a file of 3 KB took 19 GB before the first read failed.
+                    if (bitpix == 64) throw new Exception(Tr.Pick("unsupported BITPIX: ", "BITPIX neacceptat: ") + bitpix);
+                    if ((long)n1 * n2 > Array.MaxLength)
+                        throw new Exception(Tr.Pick($"FITS: the image is too large to read: {Fmt.Dim(n1, n2)} px.", $"FITS: imaginea e prea mare ca sa fie citita: {Fmt.Dim(n1, n2)} px."));
+                    if (s.CanSeek && s.Length - s.Position < shape.DataBytes) throw new Exception(Tr.Pick("FITS: truncated data.", "FITS: date trunchiate."));
 
                     double bzero = HDbl(hdr, "BZERO", 0.0);
                     double bscale = HDbl(hdr, "BSCALE", 1.0);
@@ -204,8 +195,76 @@ namespace AstroPhotoAnalyzer
                 }
 
                 // An HDU without a usable image: skip its data blocks and go on.
-                if (!SkipExact(s, dataBlocks)) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
+                if (!SkipExact(s, shape.DataBlocks)) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
             }
+        }
+
+        /// <summary>
+        /// The sizes of one HDU, as <see cref="Shape"/> read and checked them.
+        /// </summary>
+        /// <param name="Bitpix">BITPIX: 8, 16, 32, 64, -32 or -64 when the HDU has axes; as written (0 when absent) when NAXIS is 0.</param>
+        /// <param name="Naxis">NAXIS, 0 to 999.</param>
+        /// <param name="N1">NAXIS1, 0 when absent; not negative when NAXIS is 1 or more (a card beyond NAXIS is as written).</param>
+        /// <param name="N2">NAXIS2, 0 when absent; not negative when NAXIS is 2 or more (a card beyond NAXIS is as written).</param>
+        /// <param name="N3">NAXIS3 when NAXIS is 3 or more (1 when absent; not negative), else 1.</param>
+        /// <param name="DataBytes">The bytes of the HDU's data, before the padding to a block; 0 when NAXIS is 0.</param>
+        internal readonly record struct HduShape(int Bitpix, int Naxis, int N1, int N2, int N3, long DataBytes)
+        {
+            /// <summary>Has the HDU an image the tool may read: two axes or more, the first two longer than 0?</summary>
+            internal bool HasImage => Naxis >= 2 && N1 > 0 && N2 > 0;
+
+            /// <summary>
+            /// The bytes of one sample; 0 when NAXIS is 0: such an HDU has no samples, its BITPIX
+            /// is read and its value not checked, so it may be any whole number, the one Math.Abs
+            /// throws on included.
+            /// </summary>
+            internal int BytesPer => Naxis == 0 ? 0 : Math.Abs(Bitpix) / 8;
+
+            /// <summary>The bytes the data take in the file, padded to whole blocks of 2880.</summary>
+            internal long DataBlocks => (DataBytes + 2879) / 2880 * 2880;
+        }
+
+        /// <summary>The largest NAXIS the FITS standard allows.</summary>
+        const int MaxAxes = 999;
+
+        /// <summary>
+        /// The sizes of an HDU from its header, checked before any walk of the file uses them
+        /// (ADR 0114): the reader, the --wcs header walk and the writer's two walks all skip or
+        /// read by these numbers, and an impossible one made them walk for ever (a negative
+        /// data size seeks back to the header just read), loop two billion times, or overflow.
+        /// Throws, with a message for the user, on a NAXIS outside 0 to 999, a negative NAXISn,
+        /// a BITPIX that is none of 8, 16, 32, 64, -32 and -64 in an HDU with axes, a data size
+        /// no 64-bit count holds, and on a number that cannot be read (<see cref="HInt"/>).
+        /// </summary>
+        /// <param name="hdr">The HDU's header, keyword -> value.</param>
+        /// <returns>The sizes; the data's bytes are not negative.</returns>
+        internal static HduShape Shape(IReadOnlyDictionary<string, string> hdr)
+        {
+            int bitpix = HInt(hdr, "BITPIX", 0);
+            int naxis = HInt(hdr, "NAXIS", 0);
+            if (naxis < 0 || naxis > MaxAxes)
+                throw new Exception(Tr.Pick($"FITS: the header's NAXIS is not between 0 and {MaxAxes}: {naxis}.", $"FITS: NAXIS din header nu e intre 0 si {MaxAxes}: {naxis}."));
+            // Asked by value, not as Math.Abs(bitpix) / 8, which throws the platform's overflow
+            // on int.MinValue and takes 12 for one byte a sample.
+            if (naxis > 0 && bitpix != 8 && bitpix != 16 && bitpix != 32 && bitpix != 64 && bitpix != -32 && bitpix != -64)
+                throw new Exception(Tr.Pick("unsupported BITPIX: ", "BITPIX neacceptat: ") + bitpix);
+
+            // An HDU with NAXIS = 0 (the empty primary of a file with extensions) has NO data
+            // AT ALL - not "one pixel". The empty product would give 1, a block of 2880 that
+            // does not exist would be skipped, and the next header would be read from the
+            // middle of the image.
+            long bytes = naxis == 0 ? 0 : Math.Abs(bitpix) / 8;
+            for (int ax = 1; ax <= naxis; ax++)
+            {
+                string key = "NAXIS" + ax;
+                int n = HInt(hdr, key, 1);
+                if (n < 0) throw new Exception(Tr.Pick($"FITS: the header's {key} is negative: {n}.", $"FITS: {key} din header e negativ: {n}."));
+                // More bytes than a 64-bit count holds are in no file: told as the cut-short
+                // file it is, before the product wraps to a small or a negative number.
+                if (n != 0 && bytes > (long.MaxValue - 2879) / n) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
+                bytes *= n;
+            }
+            return new HduShape(bitpix, naxis, HInt(hdr, "NAXIS1", 0), HInt(hdr, "NAXIS2", 0), naxis >= 3 ? HInt(hdr, "NAXIS3", 1) : 1, bytes);
         }
 
         /// <summary>
@@ -412,7 +471,8 @@ namespace AstroPhotoAnalyzer
             if (count == 0) return true;
             if (s.CanSeek)
             {
-                if (s.Position + count > s.Length) return false;
+                // Written as a difference: the sum with a large count wraps and passes.
+                if (count > s.Length - s.Position) return false;
                 s.Seek(count, SeekOrigin.Current);
                 return true;
             }

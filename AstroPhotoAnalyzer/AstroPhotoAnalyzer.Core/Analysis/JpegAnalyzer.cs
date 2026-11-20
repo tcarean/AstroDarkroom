@@ -79,6 +79,13 @@ namespace AstroPhotoAnalyzer
         internal IReadOnlyList<JpegRow> Rows { get; init; }
 
         /// <summary>
+        /// True when a side of the image is over <see cref="Thresholds.JpegMaxSidePx"/>: a JPEG
+        /// cannot hold it, nothing was encoded and <see cref="Rows"/> is empty (R-083, ADR
+        /// 0113). The TIFF size is measured all the same.
+        /// </summary>
+        internal bool TooLarge { get; init; }
+
+        /// <summary>
         /// The highest quality under 100 whose maximum error passes
         /// <see cref="Thresholds.JpegMaxErrorReject"/>: the row the Export tab names, with its
         /// maximum error, as the evidence for "do not go below q100" (ADR 0061); null when every
@@ -104,30 +111,36 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Quantises the image to 8 bits, encodes it as JPEG at each quality, in memory, decodes
         /// it back and measures the error against the unrounded image; and its size as an 8-bit
-        /// TIFF LZW.
+        /// TIFF LZW. An image with a side over <see cref="Thresholds.JpegMaxSidePx"/> is not
+        /// encoded as JPEG, which cannot hold it: it gets no rows and
+        /// <see cref="JpegResult.TooLarge"/> (ADR 0113).
         /// </summary>
         /// <param name="r">The image, 0..1.</param>
         /// <param name="qualities">The JPEG qualities, 1..100, in the rows' order.</param>
         /// <returns>
-        /// One row per quality, in the given order, and the 8-bit TIFF LZW size, in bytes.
+        /// One row per quality, in the given order (none for an image a JPEG cannot hold), and
+        /// the 8-bit TIFF LZW size, in bytes.
         /// </returns>
         internal static JpegResult Analyze(Raster r, int[] qualities)
         {
+            // The encoder throws on such an image, and its exception ended the whole analysis
+            // with every earlier stage measured (CR-011); the size is asked first.
+            bool tooLarge = r.W > Thresholds.JpegMaxSidePx || r.H > Thresholds.JpegMaxSidePx;
             var rows = new List<JpegRow>();
             long tiffBytes;
             if (r.IsColor)
             {
                 using Image<Rgb24> img = ToRgb24(r);
-                foreach (int q in qualities) rows.Add(MeasureColor(r, img, q));
+                if (!tooLarge) foreach (int q in qualities) rows.Add(MeasureColor(r, img, q));
                 tiffBytes = TiffBytes(img);
             }
             else
             {
                 using Image<L8> img = ToL8(r);
-                foreach (int q in qualities) rows.Add(MeasureMono(r, img, q));
+                if (!tooLarge) foreach (int q in qualities) rows.Add(MeasureMono(r, img, q));
                 tiffBytes = TiffBytes(img);
             }
-            return new JpegResult { Rows = rows, Tiff8LzwBytes = tiffBytes };
+            return new JpegResult { Rows = rows, Tiff8LzwBytes = tiffBytes, TooLarge = tooLarge };
         }
 
         /// <summary>A colour raster quantised to 8 bits, as an ImageSharp image.</summary>

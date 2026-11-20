@@ -119,6 +119,31 @@ public class JpegAnalyzerTests
     }
 
     /// <summary>
+    /// CR-011: a JPEG stores a side in 16 bits, and ImageSharp 3.1.11 refuses one pixel more
+    /// ("Image is too large to encode at 65536x8 for JPEG format", measured 2026-11-20), which
+    /// ended the whole analysis in its last stage but one. Such an image has no JPEG rows and
+    /// keeps its TIFF size; one of exactly 65 535 px is still measured.
+    /// </summary>
+    [Theory]
+    [InlineData(8, 65536, 3)]
+    [InlineData(8, 65536, 1)]
+    [InlineData(65536, 8, 3)]
+    [InlineData(65536, 8, 1)]
+    public void R083_AnImageWithASideAJpegCannotHoldHasNoJpegRowsAndKeepsItsTiffSize(int h, int w, int planes)
+    {
+        JpegResult j = JpegAnalyzer.Analyze(SyntheticRasters.Flat(h, w, 0.3f, planes));
+
+        Assert.True(j.TooLarge);
+        Assert.Empty(j.Rows);
+        Assert.Null(j.HighestFailingBelow100);
+        Assert.True(j.Tiff8LzwBytes > 0);
+
+        JpegResult atTheLimit = JpegAnalyzer.Analyze(SyntheticRasters.Flat(Math.Min(h, Thresholds.JpegMaxSidePx), Math.Min(w, Thresholds.JpegMaxSidePx), 0.3f, planes));
+        Assert.False(atTheLimit.TooLarge);
+        Assert.Equal(Thresholds.JpegQualities, atTheLimit.Rows.Select(r => r.Quality));
+    }
+
+    /// <summary>
     /// CR-003: the reference level was a single-precision product, so on an 8-bit source an
     /// error of exactly 2 levels counted as "over 2", and one of exactly 10 made the quality
     /// not acceptable, at the levels 1, 2, 4, 8, 16, 32, 64 and 128 (measured 2026-11-14).

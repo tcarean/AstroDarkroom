@@ -458,7 +458,19 @@ namespace AstroPhotoAnalyzer
             => $"{c.Name,-28} {Fmt.Int(c.Patches),4}   {Fmt.F1(c.Lstar),4}   {TargetText(c.ExactTarget)}";
 
         /// <summary>
-        /// Appendix C: the 8-bit LZW TIFF's size, the JPEG table, and when
+        /// The line that stands for the JPEG table of an image a JPEG cannot hold
+        /// (<see cref="JpegResult.TooLarge"/>, ADR 0113), in Appendix C and on the Export tab:
+        /// that it was not measured, the image's size and the format's limit.
+        /// </summary>
+        /// <param name="r">The analysis, with its raster.</param>
+        /// <returns>The line, without an indent, in the interface language.</returns>
+        internal static string JpegNotMeasured(AnalysisResult r)
+            => Tr.Pick($"JPEG: not measured (the image is {Fmt.Dim(r.Raster.W, r.Raster.H)} px; a JPEG holds at most {Fmt.Int(Thresholds.JpegMaxSidePx)} px on a side)",
+                       $"JPEG: nemasurat (imaginea are {Fmt.Dim(r.Raster.W, r.Raster.H)} px; un JPEG tine cel mult {Fmt.Int(Thresholds.JpegMaxSidePx)} px pe o latura)");
+
+        /// <summary>
+        /// Appendix C: the 8-bit LZW TIFF's size, the JPEG table (one line in its place for an
+        /// image a JPEG cannot hold, <see cref="JpegNotMeasured"/>), and when
         /// <see cref="QuantizationResult.Applicable"/> the 16 -> 8 rounding and the shadow-lift
         /// stress; then the plateau, or that no clean sky tile was found.
         /// </summary>
@@ -470,10 +482,15 @@ namespace AstroPhotoAnalyzer
             w.WriteLine();
             w.WriteLine(Tr.Pick("Appendix C. Export", "Anexa C. Export"));
             w.WriteLine(Tr.Pick("  8-bit TIFF, LZW: ", "  TIFF pe 8 biti, LZW: ") + Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes));
-            w.WriteLine(Tr.Pick("  JPEG 4:4:4     size      mean err   max err   p99    p99.9   > 2 lev    mean level",
-                                "  JPEG 4:4:4   marime     err medie   err max   p99    p99.9   > 2 niv   nivel mediu"));
-            foreach (JpegRow j in r.Jpeg.Rows)
-                w.WriteLine($"  q{j.Quality,-3}         {Fmt.Mb(j.Megabytes),8}   {Fmt.F3(j.MeanAbsError),9}   {Fmt.F1(j.MaxError),7}   {Fmt.F2(j.P99),4}   {Fmt.F2(j.P999),5}   {Fmt.Pct(j.PctOverThreshold),7}   {Fmt.F0(j.MeanLevelOverThreshold),11}");
+            if (r.Jpeg.TooLarge)
+                w.WriteLine("  " + JpegNotMeasured(r));
+            else
+            {
+                w.WriteLine(Tr.Pick("  JPEG 4:4:4     size      mean err   max err   p99    p99.9   > 2 lev    mean level",
+                                    "  JPEG 4:4:4   marime     err medie   err max   p99    p99.9   > 2 niv   nivel mediu"));
+                foreach (JpegRow j in r.Jpeg.Rows)
+                    w.WriteLine($"  q{j.Quality,-3}         {Fmt.Mb(j.Megabytes),8}   {Fmt.F3(j.MeanAbsError),9}   {Fmt.F1(j.MaxError),7}   {Fmt.F2(j.P99),4}   {Fmt.F2(j.P999),5}   {Fmt.Pct(j.PctOverThreshold),7}   {Fmt.F0(j.MeanLevelOverThreshold),11}");
+            }
             if (q.Applicable)
             {
                 w.WriteLine(Tr.Pick($"  rounding from 16 to 8 bits: on average {Fmt.F3(q.RoundingMeanAbs)}, at most {Fmt.F3(q.RoundingMax)}, p99.9 {Fmt.F3(q.RoundingP999)} levels",

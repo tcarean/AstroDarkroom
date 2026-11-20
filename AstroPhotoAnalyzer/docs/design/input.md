@@ -44,7 +44,7 @@ stack, before the user's exception, which carries no inner one, is thrown (`logg
 
 | reader | extensions | what it reads |
 |---|---|---|
-| `FitsReader` (hand-written, streaming) | `.fit .fits .fts` | first HDU with NAXIS 2 or 3; BITPIX 8/16/32 int (BZERO/BSCALE applied) and -32/-64 float; a header number goes through `TryNumber` (E or D exponent, nothing .NET's wider styles accept), and one that is present and unreadable throws from `HInt` / `HDbl` (a size, BZERO, BSCALE) or, through `TryHDbl`, makes `Wcs.TryFrom` return null (ADR 0104); NAXIS3 = 1 or 3, anything else refused; rows always flipped, the file's first row last, as Siril shows every FITS whatever `ROWORDER` says (ADR 0049; a `TOP-DOWN` keyword is noted as ignored); empty primary HDUs skipped |
+| `FitsReader` (hand-written, streaming) | `.fit .fits .fts` | first HDU with NAXIS 2 or 3; BITPIX 8/16/32 int (BZERO/BSCALE applied) and -32/-64 float; a header number goes through `TryNumber` (E or D exponent, nothing .NET's wider styles accept), and one that is present and unreadable throws from `HInt` / `HDbl` (a size, BZERO, BSCALE) or, through `TryHDbl`, makes `Wcs.TryFrom` return null (ADR 0104); an HDU's sizes come from `Shape`, which refuses an impossible one before it is used (a `NAXIS` outside 0 to 999, a negative `NAXISn`, a `BITPIX` that is none of 8, 16, 32, 64, -32, -64 in an HDU with axes, more bytes than a 64-bit count holds; `HduShape.BytesPer` is 0 for an HDU without axes, whose `BITPIX` is read and not checked for its value), and the image is then checked before memory is taken for it: a `BITPIX` the reader decodes, pixels that fit one array, the data in the file (ADR 0114); NAXIS3 = 1 or 3, anything else refused; rows always flipped, the file's first row last, as Siril shows every FITS whatever `ROWORDER` says (ADR 0049; a `TOP-DOWN` keyword is noted as ignored); empty primary HDUs skipped |
 | `ImageSharpReader` | `.tif .tiff .png .jpg .jpeg` | colour decoded as `Rgb48`, mono as `L16`; bit depth and channel count from the format's own metadata (PNG `BitDepth`/`ColorType`, TIFF `BitsPerSample`/`PhotometricInterpretation`, JPEG always 8); compression name; ICC profile from the **decoded** image (`Metadata.IccProfile` or `Frames[0].Metadata.IccProfile`); only the first page is decoded, and a TIFF's directory that holds no image (Lightroom's Content Credentials) is neither read nor counted as a page (ADR 0112) |
 
 ### The writer (`Input/FitsWriter.cs`, R-145, ADR 0032)
@@ -60,7 +60,8 @@ card stays, in order; a full last block grows by one), and the data are written 
 raster in memory through the curve's table, with the source's `BITPIX`, `BZERO`, `BSCALE` and
 row order (`WriteData` is `FitsReader.ReadData` inverted: integers are rounded and clamped to
 their type). HDUs before and after the image pass unchanged. `FitsReader.ReadHeader` is shared
-for the dictionary; the raw header bytes are re-read between the two stream positions it
+for the dictionary, and `FitsReader.Shape` for the sizes each HDU is skipped or read by, checked
+(the crop's walk shares both; `Copy` refuses a negative end, a sum that wrapped, and copies nothing when the end is not past the start, as after the image of a file whose last block is not padded; ADR 0114); the raw header bytes are re-read between the two stream positions it
 leaves. From any other source the file is a 32-bit float FITS with a minimal header and
 `ROWORDER = 'BOTTOM-UP'`. Either way the raster is written from its last row to its first, the
 inverse of the reader's flip, so the file's order is the source's, or the one Siril shows the

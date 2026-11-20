@@ -405,6 +405,11 @@ sort), `PctOverThreshold` (error > `JpegErrorCountLevels` = 2) and
 float holds a hair off. `Tiff8LzwBytes` = the same 8-bit image as TIFF LZW with the
 horizontal predictor (without it ImageSharp gave 38.6 MB where ImageMagick gives 20).
 
+The size is asked before anything is encoded: an image with a side over `JpegMaxSidePx`
+(65 535, what the format's 16-bit dimension holds) gets no rows and `TooLarge`, and only its
+TIFF size is measured. The encoder throws on such an image, and since the stage is called
+unguarded from `AnalysisRun`, its exception ended the whole run (ADR 0113).
+
 Measured and relied upon: mean error is **not** monotone in quality this close to
 lossless (integer YCbCr costs 1-2 levels at q100); max error and the count over 2 levels
 are, and only those feed a verdict. The numbers are this encoder's, not libjpeg's.

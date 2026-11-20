@@ -67,6 +67,29 @@ public class ExportTabTests
     }
 
     /// <summary>
+    /// CR-011: an image a JPEG cannot hold (a side over 65 535 px) has no JPEG rows; the tab
+    /// shows the core's one line in place of the table, no guide under it, and its other rows.
+    /// </summary>
+    [Fact]
+    public void R114_AnImageAJpegCannotHoldShowsTheCoresNoteInPlaceOfTheTable()
+    {
+        Raster wide = SyntheticRasters.AddNoise(SyntheticRasters.Flat(128, 65536, 0.25f, planes: 1), 1.0 / 255, 24);
+        AnalysisResult result = Result(wide);
+        var export = new ExportTabViewModel();
+        export.Populate(result);
+
+        Assert.Equal(new[] { "JPEG: nemasurat (imaginea are 65536 x 128 px; un JPEG tine cel mult 65535 px pe o latura)" }, export.JpegRows);
+        Assert.Empty(export.JpegGuide);
+        Assert.Contains(export.Rows, x => x.Label == "TIFF pe 8 biti, LZW");
+
+        using (Tr.Use(UiLanguage.English))
+        {
+            export.Populate(result);
+            Assert.Equal(new[] { "JPEG: not measured (the image is 65536 x 128 px; a JPEG holds at most 65535 px on a side)" }, export.JpegRows);
+        }
+    }
+
+    /// <summary>
     /// R-114 (ADR 0074): the Export tab's texts and Appendix C of the text report are in plain
     /// words, in both languages, on the dark scene (16 bits, flat areas measured, the 16-bit
     /// original to keep) and on the mono sky: the rows' names, notes and descriptions, the guide's
