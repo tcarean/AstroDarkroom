@@ -78,6 +78,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A FITS card written with no space after its `=` (`NAXIS1  =5938`) lost the first character of
+  its value: a width of 938, or `BITPIX` 32 for -32, shown with no message. The value is now read
+  from right after the `=`, as Siril reads it (R-014, ADR 0057).
 - A switch of display mode gave the outgoing pair's memory back only at the next load, not after
   its first render as intended, so the process carried two pairs in between: on the real FITS pair
   the release left 665.9 MiB where it now leaves 403.8 MiB (R-081, R-113, ADR 0047).

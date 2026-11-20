@@ -318,10 +318,11 @@ public static class FitsHeader
     /// True for the file's first header, which needs no XTENSION keyword.
     /// </param>
     /// <returns>
-    /// The cards of one header up to END, keyword to value without its comment, or null when no
-    /// header starts here: at the end of the stream, or, after the primary, at a block that is
-    /// cut short or does not start with XTENSION (some programs leave padding or their own data
-    /// after the last unit).
+    /// The cards of one header up to END, keyword to value without its comment (a card has a
+    /// value when its ninth character is <c>=</c>, and the value starts right after it), or
+    /// null when no header starts here: at the end of the stream, or, after the primary, at a
+    /// block that is cut short or does not start with XTENSION (some programs leave padding or
+    /// their own data after the last unit).
     /// </returns>
     /// <exception cref="EndOfStreamException">
     /// The stream ends inside the primary header, or inside any header after its first block.
@@ -360,9 +361,13 @@ public static class FitsHeader
                     return cards;
                 }
 
+                // The value from right after the "=", not from the column after it: the standard
+                // puts a space there, but a card written without one is read by cfitsio, and so
+                // by Siril, from the "=" on, and skipping a character unseen would cut the first
+                // digit of such a value (ADR 0057).
                 if (key.Length > 0 && card[8] == '=')
                 {
-                    cards[key] = Value(card[10..]);
+                    cards[key] = Value(card[9..]);
                 }
             }
         }
@@ -373,7 +378,8 @@ public static class FitsHeader
     /// without the spaces FITS pads it with; a slash inside the quotes is not a comment.
     /// </summary>
     /// <param name="field">
-    /// The card from column 11 on: the value, then any comment after a slash.
+    /// The card from column 10 on, right after its <c>=</c>: the space the standard puts
+    /// there, if the file has it, then the value, then any comment after a slash.
     /// </param>
     /// <returns>The value, trimmed.</returns>
     private static string Value(string field)

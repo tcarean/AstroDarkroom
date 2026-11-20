@@ -460,6 +460,64 @@ public class FitsHeaderTests
     }
 
     [Fact]
+    public void R014_ReadLayout_ReadsAValueWrittenRightAfterTheEqualsSign()
+    {
+        // The standard puts a space after the "="; cfitsio, and so Siril, reads a card written
+        // without it from right after the "=" (ADR 0057). Skipping the tenth character unseen
+        // made this width 938 and this BITPIX 32, with no message.
+        byte[] file =
+        [
+            .. FitsFixture.Header(
+            [
+                "SIMPLE  =T".PadRight(80),
+                "BITPIX  =-32".PadRight(80),
+                "NAXIS   =2".PadRight(80),
+                "NAXIS1  =5938".PadRight(80),
+                "NAXIS2  =1".PadRight(80),
+                "BZERO   =1.5 / right after the sign, and a comment after it".PadRight(80),
+                "BSCALE  =2".PadRight(80),
+            ]),
+            .. FitsFixture.Data(-32, new double[5938]),
+        ];
+
+        FitsImageLayout layout = Read(file);
+
+        Assert.Equal(5938, layout.Width);
+        Assert.Equal(1, layout.Height);
+        Assert.Equal(-32, layout.BitPix);
+        Assert.Equal(1.5, layout.BZero);
+        Assert.Equal(2, layout.BScale);
+    }
+
+    [Fact]
+    public void R014_ReadLayout_ReadsAStringWrittenRightAfterTheEqualsSign()
+    {
+        // The extension's type decides whether its unit can hold the image: read a character
+        // late, 'IMAGE   ' kept its closing quote and the file had no image.
+        byte[] file =
+        [
+            .. FitsFixture.Header(
+            [
+                FitsFixture.Card("SIMPLE", "T"), FitsFixture.Card("BITPIX", 8), FitsFixture.Card("NAXIS", 0),
+            ]),
+            .. FitsFixture.Header(
+            [
+                "XTENSION='IMAGE   '".PadRight(80),
+                .. FitsFixture.ImageCards(16, 2, 2, 1),
+                FitsFixture.Card("PCOUNT", 0),
+                FitsFixture.Card("GCOUNT", 1),
+            ]),
+            .. FitsFixture.Data(16, [1, 2, 3, 4]),
+        ];
+
+        FitsImageLayout layout = Read(file);
+
+        Assert.Equal(2, layout.Width);
+        Assert.Equal(2, layout.Height);
+        Assert.Equal(2 * 2880, layout.DataOffset);
+    }
+
+    [Fact]
     public void R014_ReadLayout_ReadsAHeaderLongerThanOneBlock()
     {
         // 36 cards fill a block: with 50 HISTORY cards BZERO and END are in the second.

@@ -71,7 +71,9 @@ Added on 2026-10-05 (ADR 0029). The path of a FITS file, from the dialog to the 
    that does not start with `XTENSION` is not a header, and the search ends there with "no
    image": programs leave padding after the last unit. The result is a `FitsImageLayout`:
    size, planes, `BITPIX`, `BZERO`, `BSCALE`, and the offset of the first sample; `ROWORDER`
-   is not read (ADR 0039). The length of the stream is checked here, so a file cut short fails
+   is not read (ADR 0039). `ReadCards` takes a card as a value card when its ninth character
+   is `=` and hands `Value` everything after it, so the space the standard puts in column 10
+   is trimmed when it is there and not missed when it is not (ADR 0057). The length of the stream is checked here, so a file cut short fails
    at the probe, before the padding question and before any decode.
 
    The header is input from outside and is not trusted. `Count` reads every keyword the
