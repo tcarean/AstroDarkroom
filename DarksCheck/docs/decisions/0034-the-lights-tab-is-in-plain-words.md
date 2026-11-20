@@ -1,7 +1,7 @@
 # 0034. The Lights tab is in plain words
 
 Date: 2026-11-06
-Status: accepted 2026-11-06
+Status: accepted 2026-11-06; the chart's yellow and red lines and the sentence above them superseded by 0070
 
 ## Context
 

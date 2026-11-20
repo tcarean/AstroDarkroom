@@ -16,7 +16,8 @@ series moved 2.2 .. 3.6 °C first to last. No series of this camera could pass t
 so the verdict said nothing. The lights of the Smida night themselves spanned 3.4 °C
 (0.72 → 1.07 → 0.94 of the dark master, the drop in the last twenty minutes from pauses of up
 to four minutes), and check 9 gave them `OK` at a ratio of 1.00; the `-opt` margin absorbs
-±5 °C. What the master needs is a series that has settled, so that its median belongs to a
+±5 °C. (Corrected 2026-11-20: the band 0.7 .. 1.4 is about ±3 °C by the 6-degree doubling, and
+Siril's `-opt` could not be carried out on the owner's Veil frames; ADR 0070.) What the master needs is a series that has settled, so that its median belongs to a
 temperature, and a list of the frames still in the warm-up, for the owner to move to
 `aruncate` by hand (ADR 0002).
 

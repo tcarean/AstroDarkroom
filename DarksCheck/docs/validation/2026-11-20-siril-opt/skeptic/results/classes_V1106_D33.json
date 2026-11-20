@@ -1,0 +1,79 @@
+{
+ "session": "V1106",
+ "master": "D33",
+ "lights": 28,
+ "classes": [
+  {
+   "class_ADU": "1-2",
+   "pixels_in_frame": 3815407,
+   "sampled": 40000,
+   "master_excess_median": 1.44,
+   "slope_ls": 0.272,
+   "ratio_median": 0.218,
+   "ratio_of_means": 0.273
+  },
+  {
+   "class_ADU": "2-4",
+   "pixels_in_frame": 2916269,
+   "sampled": 40000,
+   "master_excess_median": 2.64,
+   "slope_ls": 0.229,
+   "ratio_median": 0.218,
+   "ratio_of_means": 0.228
+  },
+  {
+   "class_ADU": "4-8",
+   "pixels_in_frame": 494042,
+   "sampled": 40000,
+   "master_excess_median": 4.57,
+   "slope_ls": 0.455,
+   "ratio_median": 0.247,
+   "ratio_of_means": 0.374
+  },
+  {
+   "class_ADU": "8-16",
+   "pixels_in_frame": 115714,
+   "sampled": 40000,
+   "master_excess_median": 9.45,
+   "slope_ls": 2.216,
+   "ratio_median": 2.069,
+   "ratio_of_means": 2.3
+  },
+  {
+   "class_ADU": "16-30",
+   "pixels_in_frame": 1790,
+   "sampled": 1790,
+   "master_excess_median": 20.53,
+   "slope_ls": 0.737,
+   "ratio_median": 0.564,
+   "ratio_of_means": 0.753
+  },
+  {
+   "class_ADU": "30-60",
+   "pixels_in_frame": 2403,
+   "sampled": 2403,
+   "master_excess_median": 48.84,
+   "slope_ls": 0.495,
+   "ratio_median": 0.414,
+   "ratio_of_means": 0.503
+  },
+  {
+   "class_ADU": "60-200",
+   "pixels_in_frame": 1710,
+   "sampled": 1710,
+   "master_excess_median": 71.21,
+   "slope_ls": 0.445,
+   "ratio_median": 0.413,
+   "ratio_of_means": 0.444
+  },
+  {
+   "class_ADU": "200-1e+09",
+   "pixels_in_frame": 152,
+   "sampled": 152,
+   "master_excess_median": 277.1,
+   "slope_ls": 0.408,
+   "ratio_median": 0.477,
+   "ratio_of_means": 0.424
+  }
+ ]
+}

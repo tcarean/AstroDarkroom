@@ -170,6 +170,8 @@ each pair has the same defect unless the entry says otherwise.
 | CR-080 | 2 | rare | confirmed | Links are followed on the output's side only, and not past the 260th character: the files can still land among the frames | fixed 50a2230e |
 | CR-081 | 2 | rare | confirmed | A link that leads nowhere is not followed, nor are the subfolders beside a library opened as `name\darks`: the files can land in the session through the link | open |
 | CR-082 | 3 | rare | confirmed | A `darks\`, `biases\` or `lights\` link that leads nowhere ends the run with the system's own English line | open |
+| CR-083 | 3 | common | owner | The frames table's note opens with the plane (`the green pixels G1`), but its `mean` column is taken over the whole mosaic, every colour and the hot pixels included | open |
+| CR-084 | 4 | some setups | owner | Darks at other settings, temperatures far apart: the analysis says `Unmatched`, the verdict row says `REFA` | open |
 
 The files copied from LightsCheck have their own entries, CP-1 to CP-12, in their own section;
 five of them are of severity 1.
@@ -851,6 +853,10 @@ five of them are of severity 1.
   between 0.70 and ...". Lights at three times the dark: the labels at 0.7, 0.9 and 1.1 are
   about 12 px apart and clip each other. A steady series whose end is within 0.03 of the
   master: `the master` and `end of series 1.02` are under 7 px apart.
+  (Noted 2026-11-20, at the owner's word: ADR 0070 renamed `Th.MatchOptLow` to
+  `Th.MatchNearLow` and the yellow label `0.7 with -opt` to `0.7 a few degrees off`, `0.7 la
+  cateva grade`. The case stands with the new names, and the longer label covers more of the
+  green one. For lights at other settings than the darks the chart now draws no guides.)
 - Should: labels moved apart, or coincident guides under one label.
 - Evidence: to measure (the coincident 0.70 case follows from the code; the near cases need a
   screenshot). Same as LightsCheck's CR-035.
@@ -1739,6 +1745,55 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
   leads to. The text is shown to the owner first (the rule "Plain words").
 - Test: none.
 - Evidence: confirmed (run by both reviews).
+- Status: open
+
+### CR-083 The frames table's note opens with the plane, but its `mean` column is taken over the whole mosaic
+
+- Found: 2026-11-20, while the figures of the -opt investigation were checked
+  (`docs/validation/2026-11-20-siril-opt/`); the same on `main`.
+- Where: `Analysis/DarkSeriesAnalyzer.cs` (the frame's `meanAbove`: the sum of every pixel of
+  the mosaic over their count, minus the black); `Report/DarkReport.cs` (the frames table's row
+  prints it as `F(f.MeanAboveBlack, 2)`; the table's note opens with
+  `ScaleReport.PlaneWords(...)` and goes on `; mean = how far the frame is above the black,
+  ADU; noise = ...`).
+- Case: every frames table. The note reads `[the green pixels G1; mean = how far the frame is
+  above the black, ADU; noise = the noise of the frame, ADU; ...` (`pixelii verzi G1; medie =
+  ...`), so the plane it opens with reads as holding for every column. The noise, the
+  difference from the master and the bands are of that plane; the mean is of the whole frame,
+  red, both greens and blue together, the hot pixels included. So are the `light` column,
+  which is worked out from that mean (`Analysis/LeakAnalyzer.cs`), and the `hot` column, read
+  at the master's hot pixels of every colour.
+- Should: the owner's call. Either the note says which columns are of the plane and that the
+  mean is of all pixels, or the mean is taken on the plane like its neighbours (a figure
+  would then move: the rule "Measured on the sessions"). A changed text is shown to the owner
+  first (the rule "Plain words").
+- Test: none.
+- Evidence: owner (the lines were read; whether the wording or the figure is the defect is
+  the owner's to say).
+- Status: open
+
+### CR-084 Darks at other settings, temperatures far apart: the analysis says `Unmatched`, the verdict row says `REFA`
+
+- Found: 2026-11-20, by the task that made darks at other settings read `REFA` (ADR 0070), in
+  its own change.
+- Where: `Analysis/LightsAnalyzer.cs` (`LightsAnalysis.AtOtherSettings` turns `Direct`, `Near`
+  and `MuchWarmer` into `MatchVerdict.OtherSettings` and leaves `Unmatched` as it is);
+  `Report/DarkReport.cs` (`MatchText`: the arm `_ when other is not null` gives `REDO` /
+  `REFA` to every measured ratio, from the settings alone).
+- What happens: for a ratio under 0.4 or over 1.4 at other settings the analysis keeps
+  `Unmatched`, so that `MatchFigures.Absent` (the set shows none of the master's hot pixels),
+  which reads that verdict, stays as it was; the report then opens the row with `REFA`. The
+  word of the verdict is chosen by the text, not carried by the verdict: the diagnostic log,
+  which writes a verdict by its name (R-101), reads `Unmatched` where the row reads `REFA`.
+  The chart's points are red either way.
+- Case: lights at ISO 800 at 3.4 times darks at ISO 400, 1.7 once both are brought to one
+  setting: `LightsOverDark.Verdict` is `Unmatched`, and the row reads `REFA: nu scadea dark-ul
+  asa cum e ...`.
+- Should: the owner's call. Either the analysis gives one verdict to every measured ratio at
+  other settings and `Absent` is read another way, or it stays. One more case of CR-071.
+- Test: `R052_ADarkMuchWarmerThanLightsAtOtherSettingsIsNotSubtractedAsItIs` pins both as they
+  are.
+- Evidence: owner (the task's own choice, stated here so that it is not met by surprise).
 - Status: open
 
 ## How the list is used

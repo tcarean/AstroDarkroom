@@ -85,6 +85,40 @@ public class MainViewModelTests
         Assert.DoesNotContain("plato", vm.WarmingNote, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// ADR 0070: for lights at another ISO than the darks the verdict is REFA and says not to subtract the dark as it
+    /// is; every point of the chart is red, no line is drawn, and the sentence above the chart says the same.
+    /// </summary>
+    [Fact]
+    public async Task R086_TheChartSentenceForLightsAtOtherSettingsSaysWhatTheVerdictSays()
+    {
+        using SessionFixture f = new SessionFixture()
+            .WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice })
+            .WithLights(3, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 2 }, iso: 800);
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        LightsAnalysis l = vm.Result!.Lights!;
+        Assert.NotNull(l.Other);
+        // at the same temperature, and still every point is red and no line says what to do with the dark
+        Assert.All(vm.LightPoints, p => Assert.Equal(VerdictPalette.Bad, p.Colour));
+        Assert.Empty(vm.LightGuides);
+        Assert.Equal("REFA", vm.LightRows[^1].Verdict);
+        Assert.StartsWith("nu scadea dark-ul asa cum e", vm.LightRows[^1].Rest, StringComparison.Ordinal);
+        Assert.Contains("Dark-urile sunt facute la alte setari decat lights-urile, asa ca toate punctele sunt rosii: dark-ul nu se scade asa cum e. Fa dark-uri la setarile lights-urilor. Primele lights", vm.LightsChartLead, StringComparison.Ordinal);
+        Assert.DoesNotContain("scade-l", vm.LightsChartLead, StringComparison.Ordinal);
+        Assert.DoesNotMatch(PlainWords.RomanianTabWords(), vm.LightsChartLead);
+        using (Ui.Use(UiLanguage.English))
+        {
+            string english = WindowTexts.LightsChartLead(l.Traces, otherSettings: true);
+            Assert.Contains("The darks are made at other settings than the lights, so every point is red: the dark is not subtracted as it is. Make darks at the lights' settings. The first lights", english, StringComparison.Ordinal);
+            Assert.DoesNotContain("subtract it as it is", english, StringComparison.Ordinal);
+            Assert.DoesNotMatch(PlainWords.EnglishTabWords(), english);
+        }
+
+        // the same lights at the darks' ISO keep the plain sentence
+        Assert.DoesNotContain("toate punctele sunt rosii", WindowTexts.LightsChartLead(l.Traces), StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task R067_TheLightsChartFollowsTheBandTheTracesAllow()
     {
@@ -104,11 +138,13 @@ public class MainViewModelTests
         // each point takes the colour of the core's verdict for its own ratio, and the green lines the band's ends
         Assert.Equal(l.Frames.Select(x => VerdictPalette.For(l.Judge(x.AmpRatioMedian))), vm.LightPoints.Select(p => p.Colour));
         Assert.Contains(VerdictPalette.Good, vm.LightPoints.Select(p => p.Colour));
-        Assert.Equal([t.DirectLow, t.DirectHigh, Th.MatchOptLow, Th.MatchOptHigh, Th.MatchCosmeticLow], vm.LightGuides.Select(g => g.Value));
+        Assert.Equal([t.DirectLow, t.DirectHigh, Th.MatchNearLow, Th.MatchNearHigh, Th.MatchWarmLow], vm.LightGuides.Select(g => g.Value));
         Assert.Equal(RunReport.F(t.DirectLow, 2) + " asa cum e", vm.LightGuides[0].Label);
         Assert.Equal(RunReport.F(t.DirectHigh, 2) + " asa cum e", vm.LightGuides[1].Label);
+        // the other three say how far the dark is, never what Siril could do with it (R-086, ADR 0070)
+        Assert.Equal(["0.7 la cateva grade", "1.4 la cateva grade", "0.4 mult mai cald"], vm.LightGuides.Skip(2).Select(g => g.Label));
         Assert.Equal(WindowTexts.LightsChartLead(t), vm.LightsChartLead);
-        Assert.Contains($"Verde intre {RunReport.F(t.DirectLow, 2)} si {RunReport.F(t.DirectHigh, 2)}: dark-ul se poate scadea asa cum e (0.9 .. 1.1, largit pana unde ce ramane dupa scadere ajunge cat zgomotul unui light). Galben de acolo pana la 0.7 si 1.4: ", vm.LightsChartLead, StringComparison.Ordinal);
+        Assert.Contains($"Verde intre {RunReport.F(t.DirectLow, 2)} si {RunReport.F(t.DirectHigh, 2)}: dark-ul se poate scadea asa cum e (0.9 .. 1.1, largit pana unde ce ramane dupa scadere ajunge cat zgomotul unui light). Galben de acolo pana la 0.7 si 1.4: dark-ul e la cateva grade de lights, scade-l tot asa cum e; tot galben intre 0.4 si 0.7: dark-ul e mult mai cald, scade-l asa cum e, cu corectia cosmetica pornita. Rosu mai departe: nu se potrivesc.", vm.LightsChartLead, StringComparison.Ordinal);
 
         Assert.DoesNotMatch(PlainWords.RomanianTabWords(), vm.LightsChartLead);
         // the verdict's chip is green and the new row is on the Lights tab
@@ -118,10 +154,10 @@ public class MainViewModelTests
 
         // a plain result keeps the plain band and its words
         Assert.DoesNotContain("largit", WindowTexts.LightsChartLead(TraceFigures.None), StringComparison.Ordinal);
-        Assert.Contains("Verde intre 0.9 si 1.1: dark-ul se poate scadea asa cum e. Galben intre 0.7 si 1.4: ", WindowTexts.LightsChartLead(TraceFigures.None), StringComparison.Ordinal);
+        Assert.Contains("Verde intre 0.9 si 1.1: dark-ul se poate scadea asa cum e. Galben intre 0.7 si 1.4: dark-ul e la cateva grade de lights, scade-l tot asa cum e; tot galben intre 0.4 si 0.7: dark-ul e mult mai cald, scade-l asa cum e, cu corectia cosmetica pornita. Rosu mai departe: nu se potrivesc.", WindowTexts.LightsChartLead(TraceFigures.None), StringComparison.Ordinal);
         using (Ui.Use(UiLanguage.English))
         {
-            Assert.Contains($"Green between {RunReport.F(t.DirectLow, 2)} and {RunReport.F(t.DirectHigh, 2)}: the dark can be subtracted as it is (0.9 .. 1.1, widened to where what the subtraction leaves reaches the noise of a light). Yellow from there to 0.7 and 1.4: ", WindowTexts.LightsChartLead(t), StringComparison.Ordinal);
+            Assert.Contains($"Green between {RunReport.F(t.DirectLow, 2)} and {RunReport.F(t.DirectHigh, 2)}: the dark can be subtracted as it is (0.9 .. 1.1, widened to where what the subtraction leaves reaches the noise of a light). Yellow from there to 0.7 and 1.4: the dark is a few degrees off, subtract it as it is all the same; yellow too between 0.4 and 0.7: the dark is much warmer, subtract it as it is, with the cosmetic correction on. Red beyond: they do not match.", WindowTexts.LightsChartLead(t), StringComparison.Ordinal);
             Assert.DoesNotMatch(PlainWords.EnglishTabWords(), WindowTexts.LightsChartLead(t));
         }
     }
@@ -377,7 +413,7 @@ public class MainViewModelTests
         Assert.Equal(r.Darks.Noise.Curve.Select(p => p.Expected), vm.NoiseExpected.Select(p => p.Y));
         Assert.Equal(4, vm.LightPoints.Count);
         Assert.Equal(r.Lights!.Frames[1].AmpRatioMedian, vm.LightPoints[1].Y);
-        Assert.Equal([Th.MatchDirectLow, Th.MatchDirectHigh, Th.MatchOptLow, Th.MatchOptHigh, Th.MatchCosmeticLow], vm.LightGuides.Select(g => g.Value));
+        Assert.Equal([Th.MatchDirectLow, Th.MatchDirectHigh, Th.MatchNearLow, Th.MatchNearHigh, Th.MatchWarmLow], vm.LightGuides.Select(g => g.Value));
         Assert.Equal(VerdictPalette.Warn, vm.LightPoints[1].Colour);
 
         // the hot-pixel, lights and index rows are the sections' rows; the Rezumat's check 6 card keeps only the
@@ -494,9 +530,9 @@ public class MainViewModelTests
         Assert.NotNull(vm.Result!.Partner);
         Assert.Equal(p.Root, vm.Result.Partner!.Folder);
         Assert.Contains(vm.IndexRows, row => row.Label == "dark-uri / partener" && row.Value.StartsWith("pixelii fierbinti sunt in dark-urile sesiunii de 0.5", StringComparison.Ordinal));
-        // lights at 1.3 of darks that are 0.5 of the partner: 0.65, cosmetic correction only
+        // lights at 1.3 of darks that are 0.5 of the partner: 0.65, a much warmer partner
         Assert.Contains(vm.IndexRows, row => row.Label == "lights / partener" && row.Value.StartsWith("pixelii fierbinti sunt in lights de 0.6", StringComparison.Ordinal));
-        Assert.Contains(vm.IndexRows, row => row.Label == "verdict partener" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("foloseste partenerul doar pentru corectia cosmetica", StringComparison.Ordinal));
+        Assert.Contains(vm.IndexRows, row => row.Label == "verdict partener" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("scade partenerul asa cum e, cu corectia cosmetica pornita", StringComparison.Ordinal));
 
         // a choice after a run runs the folder again at once, no button to press (ADR 0048): clearing takes the
         // partner's rows away
@@ -721,8 +757,8 @@ public class MainViewModelTests
         Assert.Equal(4, vm.Lights.Count);
         Assert.Equal(s.LightsDir, vm.Result!.Inventory.Session.LightsDir);
         Assert.Contains(vm.SessionRows, row => row.Label == "lights" && row.Value == s.LightsDir + " (4 cadre .fit; alese de tine)");
-        // lights at 1.3 of darks that are 0.5 of the library: 0.65, cosmetic correction only
-        Assert.Contains(vm.LightRows, row => row.Label == "verdict" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("foloseste dark-ul doar pentru corectia cosmetica", StringComparison.Ordinal));
+        // lights at 1.3 of darks that are 0.5 of the library: 0.65, a much warmer dark
+        Assert.Contains(vm.LightRows, row => row.Label == "verdict" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("scade dark-ul asa cum e, cu corectia cosmetica pornita", StringComparison.Ordinal));
         Assert.Equal(Path.GetFileName(library.Root) + "-" + vm.Result.Index.Tag, vm.Label);
 
         // the export never writes into the folder the lights were chosen from (R-055, the rule "Read-only input")

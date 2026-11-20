@@ -88,8 +88,8 @@ internal sealed record LeakVerdict(Verdict Verdict, double OffsetAdu, MapRegion 
 /// <summary>
 /// Check 4: the warming of the series against its end (R-023, ADR 0043): whether the master is
 /// near the end of the series (within <see cref="Th.MasterNearEndCelsius"/>; true without an
-/// end), the frames whose ratio to the master is outside <see cref="Th.MatchOptLow"/> ..
-/// <see cref="Th.MatchOptHigh"/> and, of those, the ratio farthest from 1 (NaN when none).
+/// end), the frames whose ratio to the master is outside <see cref="Th.MatchNearLow"/> ..
+/// <see cref="Th.MatchNearHigh"/> and, of those, the ratio farthest from 1 (NaN when none).
 /// </summary>
 /// <param name="Verdict">Redo when <paramref name="MostlyOff"/>; else Ok when the master is
 /// near the end and no frame is outside; Unmeasured without a first ratio (under two frames
@@ -283,7 +283,7 @@ internal static class DarkVerdictAnalyzer
         // 3. drift
         Warming wm = d.Warming;
         DarkFrameFigures[] withRatio = d.Frames.Where(f => f.Error is null && !double.IsNaN(f.AmpRatioMedian)).ToArray();
-        DarkFrameFigures[] outside = withRatio.Where(f => f.AmpRatioMedian < Th.MatchOptLow || f.AmpRatioMedian > Th.MatchOptHigh).ToArray();
+        DarkFrameFigures[] outside = withRatio.Where(f => f.AmpRatioMedian < Th.MatchNearLow || f.AmpRatioMedian > Th.MatchNearHigh).ToArray();
         double farthest = outside.Length == 0 ? double.NaN : outside.Select(f => f.AmpRatioMedian).MaxBy(x => x > 0 ? Math.Abs(Math.Log(x)) : double.PositiveInfinity);
         // the master against where the series ended, not against where a curve says it would settle (ADR 0043)
         bool nearEnd = !wm.HasEnd || Math.Abs(wm.MasterCelsius) <= Th.MasterNearEndCelsius;
@@ -291,7 +291,7 @@ internal static class DarkVerdictAnalyzer
         bool mostlyOff = wm.HasEnd && wm.OffEndFrames.Count > Th.RedoOffEndFraction * withRatio.Length;
         DriftVerdict drift = new(
             // unmeasured only without ratios to read (R-023); a last frame whose hot pixels do not show has no
-            // first-to-last degrees, and is judged as a frame outside the -opt band
+            // first-to-last degrees, and is judged as a frame too far from the master
             double.IsNaN(wm.FirstRatio) ? Verdict.Unmeasured : mostlyOff ? Verdict.Redo : nearEnd && outside.Length == 0 ? Verdict.Ok : Verdict.Warning,
             wm, nearEnd, mostlyOff, withRatio.Length, outside.Select(f => f.Info.Index).ToArray(), farthest);
 

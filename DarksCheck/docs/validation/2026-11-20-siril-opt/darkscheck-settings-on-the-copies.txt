@@ -1,0 +1,61 @@
+What check 1 of DarksCheck read on the copies, per pair (three lines of each console output of 2026-11-19; the outputs themselves were not kept):
+
+V1006_D18
+    darks exposure     : 120.2 s at ISO 1600 (all frames)
+    lights exposure    : 120.2 s at ISO 1600 (all frames)
+    match              : OK: the darks have the same exposure (120.2 s) and the same ISO (1600) as the lights
+
+V1006_D20
+    darks exposure     : 120.2 s at ISO 1600 (all frames)
+    lights exposure    : 120.2 s at ISO 1600 (all frames)
+    match              : OK: the darks have the same exposure (120.2 s) and the same ISO (1600) as the lights
+
+V1006_D33
+    darks exposure     : 120.2 s at ISO 1600 (all frames)
+    lights exposure    : 120.2 s at ISO 1600 (all frames)
+    match              : OK: the darks have the same exposure (120.2 s) and the same ISO (1600) as the lights
+
+V1006_D47
+    darks exposure     : 120.2 s at ISO 1600 (all frames)
+    lights exposure    : 120.2 s at ISO 1600 (all frames)
+    match              : OK: the darks have the same exposure (120.2 s) and the same ISO (1600) as the lights
+
+V1006_D67
+    darks exposure     : 120.2 s at ISO 1600 (all frames)
+    lights exposure    : 120.2 s at ISO 1600 (all frames)
+    match              : OK: the darks have the same exposure (120.2 s) and the same ISO (1600) as the lights
+
+V1106_D13
+    darks exposure     : 120.2 s at ISO 1600 (all frames)
+    lights exposure    : 120.2 s at ISO 1600 (all frames)
+    match              : OK: the darks have the same exposure (120.2 s) and the same ISO (1600) as the lights
+
+V1106_D20
+    darks exposure     : 120.2 s at ISO 1600 (all frames)
+    lights exposure    : 120.2 s at ISO 1600 (all frames)
+    match              : OK: the darks have the same exposure (120.2 s) and the same ISO (1600) as the lights
+
+V1106_D33
+    darks exposure     : 120.2 s at ISO 1600 (all frames)
+    lights exposure    : 120.2 s at ISO 1600 (all frames)
+    match              : OK: the darks have the same exposure (120.2 s) and the same ISO (1600) as the lights
+
+V1108_D13
+    darks exposure     : 120.2 s at ISO 1600 (all frames)
+    lights exposure    : 120.2 s at ISO 1600 (all frames)
+    match              : OK: the darks have the same exposure (120.2 s) and the same ISO (1600) as the lights
+
+V1108_D18
+    darks exposure     : 120.2 s at ISO 1600 (all frames)
+    lights exposure    : 120.2 s at ISO 1600 (all frames)
+    match              : OK: the darks have the same exposure (120.2 s) and the same ISO (1600) as the lights
+
+V1108_D20
+    darks exposure     : 120.2 s at ISO 1600 (all frames)
+    lights exposure    : 120.2 s at ISO 1600 (all frames)
+    match              : OK: the darks have the same exposure (120.2 s) and the same ISO (1600) as the lights
+
+V1108_D33
+    darks exposure     : 120.2 s at ISO 1600 (all frames)
+    lights exposure    : 120.2 s at ISO 1600 (all frames)
+    match              : OK: the darks have the same exposure (120.2 s) and the same ISO (1600) as the lights

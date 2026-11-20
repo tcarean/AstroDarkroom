@@ -47,6 +47,22 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- No verdict advises Siril's `-opt` any more (R-062, R-052, R-063, R-023, ADR 0070). Tried on
+  real frames, Siril chose a factor near zero for it on 15 of 18 pairs of lights and darks,
+  which leaves the dark out, and in two stacks a dark several degrees off gave the same picture
+  subtracted as it is. A lights / dark ratio of 0.7 to 1.4 outside the green band now reads
+  `WARNING: subtract the dark as it is, though it is not at the same temperature`; 0.4 to 0.7
+  reads `subtract the dark as it is, with the cosmetic correction on (-cc=dark)` instead of
+  `cosmetic correction only`; no limit moved. Darks made at other settings than the lights now read
+  `REDO` instead of `WARNING`, at any ratio, with one advice, darks made at the lights'
+  settings (Siril's `calibrate` cannot repair hot pixels with a dark without subtracting it);
+  in the window every point of the lights' chart is then red, the chart draws no lines and the
+  sentence above it says so. Check 4 says a frame outside 0.7 to 1.4 of the master is too far from it, without
+  naming `-opt`. The window's chart lines read `0.7 a few degrees off` and `0.4 much warmer`.
+  In the validation record the verdict of V-012 is named `MuchWarmer` (was `CosmeticOnly`), no
+  figure moved; V-005 keeps the Smida session's own lights and loses its partner, the library
+  made at another ISO, which is no case the owner would use.
+
 - F1 no longer opens About, which opens from its button alone; the window is at least 1180 px
   wide instead of 960, so the whole top bar shows with Help in both languages (R-125, ADR 0061).
 

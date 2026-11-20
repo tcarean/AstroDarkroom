@@ -1,0 +1,113 @@
+{
+ "V1006": {
+  "D13": {
+   "lights": 29,
+   "right_median": 2.324,
+   "split_k0_median_per_channel": [
+    1.366,
+    1.147,
+    0.877,
+    1.696
+   ],
+   "split_k0_over_right_median_per_channel": [
+    0.587,
+    0.502,
+    0.384,
+    0.749
+   ],
+   "split_k0_mean_of_channels_over_right_median": 0.545,
+   "k0_16bit_median_predicted_only": 0.499
+  },
+  "D18": {
+   "lights": 29,
+   "right_median": 1.826,
+   "split_k0_median_per_channel": [
+    1.271,
+    1.034,
+    0.855,
+    1.422
+   ],
+   "split_k0_over_right_median_per_channel": [
+    0.693,
+    0.581,
+    0.467,
+    0.777
+   ],
+   "split_k0_mean_of_channels_over_right_median": 0.636,
+   "k0_16bit_median_predicted_only": 0.499
+  },
+  "D20": {
+   "lights": 29,
+   "right_median": 1.658,
+   "split_k0_median_per_channel": [
+    1.116,
+    0.902,
+    0.726,
+    1.307
+   ],
+   "split_k0_over_right_median_per_channel": [
+    0.674,
+    0.555,
+    0.435,
+    0.786
+   ],
+   "split_k0_mean_of_channels_over_right_median": 0.613,
+   "k0_16bit_median_predicted_only": 0.499
+  },
+  "D33": {
+   "lights": 29,
+   "right_median": 0.978,
+   "split_k0_median_per_channel": [
+    0.821,
+    0.701,
+    0.559,
+    0.916
+   ],
+   "split_k0_over_right_median_per_channel": [
+    0.859,
+    0.731,
+    0.576,
+    0.927
+   ],
+   "split_k0_mean_of_channels_over_right_median": 0.779,
+   "k0_16bit_median_predicted_only": 0.499
+  },
+  "D47": {
+   "lights": 29,
+   "right_median": 0.682,
+   "split_k0_median_per_channel": [
+    0.679,
+    0.642,
+    0.464,
+    0.737
+   ],
+   "split_k0_over_right_median_per_channel": [
+    1.009,
+    0.935,
+    0.687,
+    1.08
+   ],
+   "split_k0_mean_of_channels_over_right_median": 0.924,
+   "k0_16bit_median_predicted_only": 0.071
+  },
+  "D67": {
+   "lights": 29,
+   "right_median": 0.483,
+   "split_k0_median_per_channel": [
+    0.549,
+    0.537,
+    0.393,
+    0.431
+   ],
+   "split_k0_over_right_median_per_channel": [
+    1.135,
+    1.144,
+    0.814,
+    0.891
+   ],
+   "split_k0_mean_of_channels_over_right_median": 0.995,
+   "k0_16bit_median_predicted_only": 0.3
+  }
+ },
+ "source": "logs/predict_split_all.out (run stopped after V1006; 16-bit column predicted only, never run in Siril)"
+}

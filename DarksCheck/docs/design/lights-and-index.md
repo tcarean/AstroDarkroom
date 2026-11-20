@@ -121,9 +121,9 @@ above `Th.MatchMinAdu` (20 ADU-eq, each at the normalisation the caller passes f
 under `Th.AmplitudeMaxFraction` of white, returning the per-pixel ratio of normalised excesses.
 `Match` reduces any list of ratios to a `MatchFigures`: the median, the quartiles, the degrees
 `Th.DoublingCelsius x log2(median)` and the verdict `Judge`: `Direct` within
-`Th.MatchDirectLow .. MatchDirectHigh` (0.9 .. 1.1), `WithOpt` within `Th.MatchOptLow ..
-MatchOptHigh` (0.7 .. 1.4), `CosmeticOnly` from `Th.MatchCosmeticLow` (0.4) up to 0.7 (the
-reference is much warmer: it sees every hot pixel, subtraction would over-correct), `Unmatched`
+`Th.MatchDirectLow .. MatchDirectHigh` (0.9 .. 1.1), `Near` within `Th.MatchNearLow ..
+MatchNearHigh` (0.7 .. 1.4; the reference is a few degrees off), `MuchWarmer` from
+`Th.MatchWarmLow` (0.4) up to 0.7 (both are still subtracted as they are, ADR 0070), `Unmatched`
 beyond either side, `Unmeasured` for no pixel or a ratio that is not positive. The same `Match`
 serves the lights (their per-light medians) and the partner (the per-pixel ratios). Why the
 pixels hot in both and not the reference's alone is measured in ADR 0008. `Judge(ratio, low,
@@ -144,11 +144,11 @@ per unit of `|ratio - 1|`; the position of mosaic index `i` is `(((i / w) & 1) <
 & 1)`, the order `LocalSigma` is filled in. `TraceFigures.PerUnit` is the median of those, `k`.
 The trace of any ratio is then `|ratio - 1| x k`, so the band inside which it stays under
 `Th.TraceNoiseLimit` is `1 -/+ Th.TraceNoiseLimit / k`: `DirectLow` and `DirectHigh` are
-`Th.MatchDirectLow` and `MatchDirectHigh` widened to it and clamped to `Th.MatchOptLow ..
-MatchOptHigh`, the plain band when `k` is large (`Widened` says which). For the night's ratio:
+`Th.MatchDirectLow` and `MatchDirectHigh` widened to it and clamped to `Th.MatchNearLow ..
+MatchNearHigh`, the plain band when `k` is large (`Widened` says which). For the night's ratio:
 `Median` (`|ratio - 1| x k`), `AboveNoise` and `AboveStrong` (the pixels whose own trace passes
 1 and `Th.TraceStrongFactor` times the noise), and `Relaxed`, true when the plain `Judge` says
-`WithOpt` and the band says `Direct`; `Analyze` then sets `LightsOverDark.Verdict` to `Direct`,
+`Near` and the band says `Direct`; `Analyze` then sets `LightsOverDark.Verdict` to `Direct`,
 so every reader of the verdict (the report, the validation, the window's chip) sees it, and the
 report takes its wording from `Relaxed`. `LightsAnalysis.Judge(ratio)` judges any ratio with
 the band: the window colours each light's point with it. `Chain` and `EquivalentIndex` read
@@ -167,7 +167,8 @@ other than 1, the median of the lights' `ToDarks`: the level and the noise in `k
 one setting, so `|ratio - centre| x k` is the files' `|ratio - 1|` times the master's level over
 the light's noise as the files have them; `TraceFigures.Centre` carries it, and the report's
 `TraceRow` says "too much" under it. With a mismatch `Relaxed` is never set, and
-`LightsAnalysis.NeverDirect` turns a `Direct` into `WithOpt`, in `Analyze` for the night and in
+`LightsAnalysis.AtOtherSettings` turns a `Direct`, a `Near` or a `MuchWarmer` into
+`OtherSettings` (the darks are to be made again, ADR 0070), in `Analyze` for the night and in
 `LightsAnalysis.Judge` for each light. `MatchPartner` does the same for the partner
 (`PartnerAnalysis.Other`, the session's first stacked dark against the partner's first decoded
 one, the ratio in the files being the ratio times the session's factor over the partner's) and

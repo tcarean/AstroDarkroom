@@ -160,7 +160,7 @@ exp(-t / tau)` by least squares for each and keeps the smallest residual sum of 
 tau is `TauMinutes` only when the plateau and the fitted last frame are positive, the curve
 moves the way the series did (it falls when the drop is negative) and tau is under the top of
 the grid, NaN otherwise. `DarkVerdictAnalyzer` adds the frames whose ratio leaves
-`Th.MatchOptLow` .. `Th.MatchOptHigh` of the master and the ratio farthest from 1 among them;
+`Th.MatchNearLow` .. `Th.MatchNearHigh` of the master and the ratio farthest from 1 among them;
 the master is near the end (`MasterNearEnd`) when there is no end or `|MasterCelsius|` is
 within `Th.MasterNearEndCelsius`.
 
@@ -230,7 +230,7 @@ frame is lit, and the words of the brighter case from the cause of the split; th
 `REFA` (`Verdict.Redo`, `DriftVerdict.MostlyOff`) when more than `Th.RedoOffEndFraction` of
 the frames with a ratio are off the end of the series, since the median master is then made of
 them (ADR 0038, ADR 0043), else `ATENTIE` only when the master is not near the end or a frame
-leaves the `-opt` band of the master (the frames off the end are otherwise information, in the
+leaves 0.7 .. 1.4 of the master (the frames off the end are otherwise information, in the
 `de aruncat` row, the table's `sfarsit` column and a note on their rows); the noise from the residual sigma outliers, with the temporal noise
 over the read noise beside it; the pattern from the worst structured banding and the glow;
 the dead and saturated counts; and whether the frames are enough, the next section. The hot levels have a floor of `Th.MinHotAdu` raw ADU, the dead
@@ -378,7 +378,9 @@ lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; one `Mat
 every match verdict, the lights' and the partner's, from where the set's hot pixels are (`in
 lights`, `in dark-urile sesiunii`) against the master (`in dark`, `la partener`), the lights'
 with their `TraceFigures`: a verdict the traces relaxed says the ratio is outside 0.9 .. 1.1 and
-why the dark is still taken as it is, an `-opt` one how much is left (R-067); `TraceRow` words
+why the dark is still taken as it is, one left a few degrees off (`Near`) how much is left
+(R-067), and a master at other settings takes the `REFA` words at every measured ratio (ADR 0055,
+ADR 0070), a set that shows none of the master's hot pixels keeping its own text; `TraceRow` words
 the `ce ramane` row of section 2, a hole for a ratio under 1 and a rest for one over it, and
 gives none when the ratio is unmeasured or sits around zero; and `Warmth`
 turns a match's degrees into the clause of the INDEX rows (`adica cu 7.5 grade mai reci decat

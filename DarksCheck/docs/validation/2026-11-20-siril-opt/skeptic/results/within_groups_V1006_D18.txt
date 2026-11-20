@@ -1,0 +1,8 @@
+pixels per group in the 512 box: {'bulk |ex|<4': 257272, 'pile-up 4..16': 1599, 'hot >=16': 46, 'cold ex<=-4': 3227}
+within-site var(D) total 2.477 ADU^2; by group: {'bulk |ex|<4': 1.72, 'pile-up 4..16': 0.319, 'hot >=16': 0.288, 'cold ex<=-4': 0.15}
+within-site cov(D, master bias) 0.647, var(bias) 1.507 ADU^2 (bias pattern shared by dark and light at factor 1)
+light 1: k_within 0.922; (cov part, slope) by group: {'bulk |ex|<4': (0.416, 0.24), 'pile-up 4..16': (1.342, 4.2), 'hot >=16': (0.474, 1.65), 'cold ex<=-4': (0.053, 0.35)}
+light 2: k_within 1.025; (cov part, slope) by group: {'bulk |ex|<4': (0.622, 0.36), 'pile-up 4..16': (1.348, 4.22), 'hot >=16': (0.501, 1.74), 'cold ex<=-4': (0.068, 0.45)}
+light 3: k_within 1.052; (cov part, slope) by group: {'bulk |ex|<4': (0.55, 0.32), 'pile-up 4..16': (1.425, 4.46), 'hot >=16': (0.542, 1.88), 'cold ex<=-4': (0.089, 0.59)}
+light 15: k_within 1.092; (cov part, slope) by group: {'bulk |ex|<4': (0.621, 0.36), 'pile-up 4..16': (1.471, 4.61), 'hot >=16': (0.544, 1.89), 'cold ex<=-4': (0.068, 0.45)}
+light 29: k_within 0.948; (cov part, slope) by group: {'bulk |ex|<4': (0.641, 0.37), 'pile-up 4..16': (1.286, 4.03), 'hot >=16': (0.351, 1.22), 'cold ex<=-4': (0.072, 0.48)}

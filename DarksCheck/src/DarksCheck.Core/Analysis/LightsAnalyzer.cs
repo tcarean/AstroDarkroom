@@ -102,9 +102,9 @@ internal sealed record OverlapAtLevel(double LevelAdu, int DarkCount, int Both);
 /// <see cref="Th.TraceStrongFactor"/> x the noise.</param>
 /// <param name="DirectLow">The lower bound of the ratio's Direct band on these lights:
 /// <see cref="Th.MatchDirectLow"/> widened down to where the median trace reaches the limit,
-/// never under <see cref="Th.MatchOptLow"/>.</param>
+/// never under <see cref="Th.MatchNearLow"/>.</param>
 /// <param name="DirectHigh">The upper bound: <see cref="Th.MatchDirectHigh"/> widened up
-/// likewise, never over <see cref="Th.MatchOptHigh"/>.</param>
+/// likewise, never over <see cref="Th.MatchNearHigh"/>.</param>
 /// <param name="Relaxed">True when the night's ratio is outside the plain Direct band and
 /// inside the widened one: the verdict Direct stands on the traces, and its words say so.</param>
 internal sealed record TraceFigures(int Pixels, double PerUnit, double Median, int AboveNoise, int AboveStrong, double DirectLow, double DirectHigh, bool Relaxed)
@@ -169,7 +169,8 @@ internal sealed record SettingsMismatch(FrameInfo Master, FrameInfo Set, double 
 /// on.</param>
 /// <param name="LightsOverDark">The lights' ratios over the master, one per light, as a
 /// match; its verdict is the ratio's with <paramref name="Traces"/>' wider Direct band
-/// (R-067), and never Direct for lights at other settings than the darks (ADR 0055).</param>
+/// (R-067), and OtherSettings in place of Direct, Near or MuchWarmer for lights at other
+/// settings than the darks (ADR 0055, ADR 0070).</param>
 /// <param name="RatioFirst">The first measured light's ratio; NaN when none.</param>
 /// <param name="RatioLast">The last measured light's ratio; NaN when none.</param>
 /// <param name="Traces">What a plain subtraction leaves at the master's hot pixels.</param>
@@ -191,34 +192,36 @@ internal sealed record LightsAnalysis(
 {
     /// <summary>
     /// The verdict of a ratio of these lights over their dark, the night's or one light's: R-062's
-    /// bounds with the Direct band of <see cref="Traces"/> (R-067), and never
-    /// <see cref="MatchVerdict.Direct"/> for lights at other settings than the darks
-    /// (<see cref="Other"/>, ADR 0055).
+    /// bounds with the Direct band of <see cref="Traces"/> (R-067), and
+    /// <see cref="MatchVerdict.OtherSettings"/> in place of Direct, Near or MuchWarmer for lights
+    /// at other settings than the darks (<see cref="Other"/>, <see cref="AtOtherSettings"/>).
     /// </summary>
     /// <param name="ratio">The amplitude ratio; NaN for unmeasured.</param>
     /// <returns>The verdict.</returns>
-    internal MatchVerdict Judge(double ratio) => NeverDirect(IndexAnalyzer.Judge(ratio, Traces.DirectLow, Traces.DirectHigh), Other is not null);
+    internal MatchVerdict Judge(double ratio) => AtOtherSettings(IndexAnalyzer.Judge(ratio, Traces.DirectLow, Traces.DirectHigh), Other is not null);
 
     /// <summary>
     /// The lights' settings against the darks', when the lights are at other settings (R-052, ADR
     /// 0055): more than half of the measured lights have another ISO or exposure than the darks
     /// (<see cref="LightFigures.OtherSettings"/>), each setting compared when both give it (ADR
-    /// 0060). Null for lights at the darks' settings. With it no ratio is
-    /// <see cref="MatchVerdict.Direct"/>.
+    /// 0060). Null for lights at the darks' settings. With it a ratio that would be Direct, Near
+    /// or MuchWarmer is <see cref="MatchVerdict.OtherSettings"/>.
     /// </summary>
     internal SettingsMismatch? Other { get; init; }
 
     /// <summary>
-    /// A verdict as it stands for a set at other settings than its master (ADR 0055):
-    /// <see cref="MatchVerdict.Direct"/> becomes <see cref="MatchVerdict.WithOpt"/>, since the
-    /// master as it is does not have the set's hot pixels at their height in the files; every
-    /// other verdict stays.
+    /// A verdict as it stands for a set at other settings than its master (ADR 0055, ADR 0070):
+    /// <see cref="MatchVerdict.Direct"/>, <see cref="MatchVerdict.Near"/> and
+    /// <see cref="MatchVerdict.MuchWarmer"/>, which all say to subtract the master, become
+    /// <see cref="MatchVerdict.OtherSettings"/>, since the master as it is does not have the
+    /// set's hot pixels at their height in the files; <see cref="MatchVerdict.Unmatched"/> and
+    /// <see cref="MatchVerdict.Unmeasured"/> stay.
     /// </summary>
     /// <param name="verdict">The verdict of the ratio brought to one setting.</param>
     /// <param name="otherSettings">True when the set is at other settings than the master.</param>
     /// <returns>The verdict to show.</returns>
-    internal static MatchVerdict NeverDirect(MatchVerdict verdict, bool otherSettings) =>
-        otherSettings && verdict == MatchVerdict.Direct ? MatchVerdict.WithOpt : verdict;
+    internal static MatchVerdict AtOtherSettings(MatchVerdict verdict, bool otherSettings) =>
+        otherSettings && verdict is MatchVerdict.Direct or MatchVerdict.Near or MatchVerdict.MuchWarmer ? MatchVerdict.OtherSettings : verdict;
 
     /// <summary>
     /// How many decoded lights give an ISO or an exposure the darks lack (R-052, ADR 0053, ADR
@@ -403,14 +406,14 @@ internal static class LightsAnalyzer
         SettingsMismatch? other = OtherOf(frames, ok, darkSettings, used);
         double centre = other is null || ok.Length == 0 ? 1 : Planes.Median(ok.Select(f => (float)f.ToDarks).ToArray());
         // what the mismatch leaves, and the verdict it relaxes (R-067): inside the widened band a
-        // ratio the plain bounds call WithOpt is Direct
+        // ratio the plain bounds call Near is Direct
         TraceFigures traces = TracesOf(frames, darks, excess, ampIdx, w, match.Ratio, centre, other is not null);
         if (traces.Relaxed)
         {
             match = match with { Verdict = MatchVerdict.Direct };
         }
 
-        match = match with { Verdict = LightsAnalysis.NeverDirect(match.Verdict, other is not null) };
+        match = match with { Verdict = LightsAnalysis.AtOtherSettings(match.Verdict, other is not null) };
 
         // the lights that give a setting the darks lack: the darks took it from them, and the report says so
         int darksSilent = darkSettings is null ? 0 : frames.Count(f => f.Error is null && Normalisation.Lacks(darkSettings, f.Info));
@@ -548,8 +551,8 @@ internal static class LightsAnalyzer
         double k = Planes.Median([.. perUnit]);
         // the median trace is |ratio - 1| x k: under the limit while the ratio is within limit / k of 1
         double reach = k > 0 ? Th.TraceNoiseLimit / k : 0;
-        double low = Math.Max(Th.MatchOptLow, Math.Min(Th.MatchDirectLow, 1 - reach));
-        double high = Math.Min(Th.MatchOptHigh, Math.Max(Th.MatchDirectHigh, 1 + reach));
+        double low = Math.Max(Th.MatchNearLow, Math.Min(Th.MatchDirectLow, 1 - reach));
+        double high = Math.Min(Th.MatchNearHigh, Math.Max(Th.MatchDirectHigh, 1 + reach));
         if (double.IsNaN(ratio))
         {
             return new TraceFigures(perUnit.Count, k, double.NaN, 0, 0, low, high, false) { Centre = centre };
@@ -559,7 +562,7 @@ internal static class LightsAnalyzer
         // subtraction is the distance to the centre: |ratio - centre| x k is |the files' ratio - 1|
         // x the master's level over the light's noise, both as the files have them
         double off = Math.Abs(ratio - centre);
-        bool relaxed = !otherSettings && IndexAnalyzer.Judge(ratio) == MatchVerdict.WithOpt && IndexAnalyzer.Judge(ratio, low, high) == MatchVerdict.Direct;
+        bool relaxed = !otherSettings && IndexAnalyzer.Judge(ratio) == MatchVerdict.Near && IndexAnalyzer.Judge(ratio, low, high) == MatchVerdict.Direct;
         return new TraceFigures(perUnit.Count, k, off * k, perUnit.Count(x => off * x > 1), perUnit.Count(x => off * x > Th.TraceStrongFactor), low, high, relaxed) { Centre = centre };
     }
 

@@ -86,9 +86,10 @@ public class VerdictPaletteTests
     public void TheMatchVerdictsFollowTheSameOrder()
     {
         Assert.Equal(VerdictPalette.Good, VerdictPalette.For(MatchVerdict.Direct));
-        Assert.Equal(VerdictPalette.Warn, VerdictPalette.For(MatchVerdict.WithOpt));
-        Assert.Equal(VerdictPalette.Warn, VerdictPalette.For(MatchVerdict.CosmeticOnly));
+        Assert.Equal(VerdictPalette.Warn, VerdictPalette.For(MatchVerdict.Near));
+        Assert.Equal(VerdictPalette.Warn, VerdictPalette.For(MatchVerdict.MuchWarmer));
         Assert.Equal(VerdictPalette.Bad, VerdictPalette.For(MatchVerdict.Unmatched));
+        Assert.Equal(VerdictPalette.Bad, VerdictPalette.For(MatchVerdict.OtherSettings));
         Assert.Equal(VerdictPalette.Neutral, VerdictPalette.For(MatchVerdict.Unmeasured));
     }
 

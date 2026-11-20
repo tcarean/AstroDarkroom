@@ -39,7 +39,8 @@ internal static class VerdictPalette
 
     /// <summary>
     /// Severity of a verdict word, in either language (ADR 0021): 0 good (OK), 2 attention
-    /// (ATENTIE, WARNING), 3 bad (REFA, REDO, the series to take again, ADR 0038; EROARE, ERROR),
+    /// (ATENTIE, WARNING), 3 bad (REFA, REDO, the series to take again, ADR 0038, or darks at other settings than the
+    /// lights, ADR 0070; EROARE, ERROR),
     /// -1 neutral (NEMASURAT, UNMEASURED, empty), 1 anything else. The word is read by its start,
     /// case-insensitively.
     /// </summary>
@@ -85,17 +86,18 @@ internal static class VerdictPalette
     };
 
     /// <summary>
-    /// The colour of a match verdict (R-062): direct is good, -opt and cosmetic are attention,
-    /// unmatched is bad, unmeasured neutral.
+    /// The colour of a match verdict (R-062): direct is good, a few degrees off and much warmer are attention,
+    /// unmatched and a master at other settings are bad, unmeasured neutral.
     /// </summary>
     /// <param name="v">The match verdict of the core.</param>
     /// <returns>One of the palette's colours.</returns>
     internal static Color For(MatchVerdict v) => v switch
     {
         MatchVerdict.Direct => Good,
-        MatchVerdict.WithOpt => Warn,
-        MatchVerdict.CosmeticOnly => Warn,
+        MatchVerdict.Near => Warn,
+        MatchVerdict.MuchWarmer => Warn,
         MatchVerdict.Unmatched => Bad,
+        MatchVerdict.OtherSettings => Bad,
         _ => Neutral,
     };
 

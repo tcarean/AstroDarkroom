@@ -1,7 +1,7 @@
 # 0055. A dark made at other settings than the lights is never subtracted as it is, and the window says so in red
 
 Date: 2026-11-14
-Status: accepted 2026-11-14; other settings needing both settings on both sides, and where a set stands in the chained row superseded by 0060
+Status: accepted 2026-11-14; other settings needing both settings on both sides, and where a set stands in the chained row superseded by 0060; the advice, the verdict's word and the chart with darks at other settings superseded by 0070
 
 ## Context
 

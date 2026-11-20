@@ -93,7 +93,6 @@
       "id": "V-005",
       "kind": "match",
       "session": "Milkyway-Core/2026-08-12-Smida",
-      "against": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius-idx67/darks",
       "measuredOn": "2026-10-16",
       "expected": {
         "index": 25.2, "rankLow": 121, "rankHigh": 483, "label": "2026-08-12-Smida-idx25",
@@ -104,11 +103,7 @@
           "ampPixels": 443, "ratio": 1.00, "ratioFirst": 0.72, "ratioLast": 0.94, "verdict": "Direct",
           "traceMedian": 0.00, "traceAboveNoise": 0, "traceAboveStrong": 0, "directLow": 0.805, "directHigh": 1.195
         },
-        "partner": {
-          "frames": 30, "used": 30, "norm": 4.0067, "index": 67.4, "label": "2026-10-10-ISO1600-120s-15.8celsius-idx67",
-          "pixels": 434, "ratio": 0.422, "q25": 0.381, "q75": 0.443, "deltaCelsius": -7.5, "verdict": "CosmeticOnly",
-          "ownHot50": 111, "ownHot50InPartner50": 111, "partnerHot50": 528, "partnerHot50InOwn20": 425
-        }
+        "partner": null
       },
       "tolerance": { "index": 0.2, "ratio": 0.01, "counts": 2, "celsius": 0.1 }
     },
@@ -203,7 +198,7 @@
           "used": 87, "persistentThreshold": 70, "persistent": 237,
           "overlapLevels": [10, 20, 50, 100], "overlapBoth": [226, 225, 212, 117], "overlapDark": [5608, 3940, 528, 176],
           "missed": 12, "missedMedian": 3,
-          "ampPixels": 3933, "ratio": 0.43, "ratioFirst": 0.41, "ratioLast": 0.37, "verdict": "CosmeticOnly",
+          "ampPixels": 3933, "ratio": 0.43, "ratioFirst": 0.41, "ratioLast": 0.37, "verdict": "MuchWarmer",
           "traceMedian": 3.86, "traceAboveNoise": 3933, "traceAboveStrong": 3333, "directLow": 0.853, "directHigh": 1.147
         },
         "partner": null
