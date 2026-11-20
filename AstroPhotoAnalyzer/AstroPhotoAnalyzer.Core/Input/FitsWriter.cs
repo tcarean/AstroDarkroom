@@ -404,9 +404,11 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Copies the source's bytes from <paramref name="from"/> up to <paramref name="to"/>,
-        /// excluded; throws when the source ends before <paramref name="to"/>, or when
-        /// <paramref name="to"/> is before <paramref name="from"/>, which is what an end past
-        /// the largest offset wraps to.
+        /// excluded, and nothing when <paramref name="to"/> is not past
+        /// <paramref name="from"/> (what follows the image in a file whose last block is not
+        /// padded starts past the file's end); throws when the source ends before
+        /// <paramref name="to"/>, or when <paramref name="to"/> is negative, which is what an
+        /// end past the largest offset wraps to.
         /// </summary>
         /// <param name="s">The source, seekable.</param>
         /// <param name="o">The output.</param>
@@ -414,10 +416,13 @@ namespace AstroPhotoAnalyzer
         /// <param name="to">The byte after the last, an offset in the source.</param>
         static void Copy(Stream s, Stream o, long from, long to)
         {
-            // An end before the start is a sum that wrapped: a skipped HDU whose data's blocks,
-            // added to its header's end, pass the largest offset. It passed the test of the
-            // length, nothing was copied, and the walk read the same header for ever.
-            if (to < from || to > s.Length) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
+            // A negative end is a sum that wrapped: a skipped HDU whose data's blocks, added to
+            // its header's end, pass the largest offset (two terms that are not negative wrap
+            // to a negative one). It passed the test of the length, nothing was copied, and the
+            // walk read the same header for ever. Asked as "negative", not as "before the
+            // start": the copy of what follows the image starts past the end of a file whose
+            // last block is not padded, and copies nothing, as it should.
+            if (to < 0 || to > s.Length) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
             s.Position = from;
             var buf = new byte[1 << 16];
             long left = to - from;

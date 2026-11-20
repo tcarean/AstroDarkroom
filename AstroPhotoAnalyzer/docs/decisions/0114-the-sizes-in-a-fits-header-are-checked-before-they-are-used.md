@@ -21,13 +21,15 @@ looked at; `BITPIX = -2147483648` throws the platform's overflow from `Math.Abs`
 One member, `FitsReader.Shape`, reads an HDU's sizes and checks them, and the four walks read
 them through it: `NAXIS` is between 0 and 999 (the standard's range), no `NAXISn` is negative,
 `BITPIX` is one of 8, 16, 32, 64, -32, -64 when the HDU has axes (`NAXIS` over 0; an HDU
-without axes has no samples, and its `BITPIX` is not asked), and the data's byte count fits a
-64-bit integer. Each failure refuses the file with a sentence that names the keyword and
+without axes has no samples: its `BITPIX` is read, and its value is not checked), and the
+data's byte count fits a 64-bit integer. Each failure refuses the file with a sentence that names the keyword and
 its value. The reader then checks the image itself before memory is taken for it: its `BITPIX`
 is one the reader decodes, its pixels fit one array of the platform (`Array.MaxLength`), and,
 when the stream can tell its length, the data are in the file. The writer's walks, which copy a
-skipped HDU up to its header's end plus its data's blocks, refuse an end that lies before its
-start, which is what a sum past the largest offset wraps to (the review of this fix, 2026-11-20).
+skipped HDU up to its header's end plus its data's blocks, refuse a negative end, which is what
+a sum past the largest offset wraps to (the two reviews of this fix, 2026-11-20: the first
+form, an end before its start, also refused a file whose last block is not padded, where the
+copy of what follows the image starts past the file's end and rightly copies nothing).
 
 ## Alternatives rejected
 
@@ -53,4 +55,5 @@ start, which is what a sum past the largest offset wraps to (the review of this 
   `R011_AnImageLargerThanTheToolCanHoldIsRefusedByItsSize`,
   `R011_TheDataAreLookedForInTheFileBeforeMemoryIsTakenForThem`,
   `R011_AnEmptyPrimaryWithAnImpossibleBitpixIsReadAndCroppedAlike`,
-  `R011_ASkippedHduWhoseEndPassesTheLargestOffsetIsRefusedByTheWriterToo`.
+  `R011_ASkippedHduWhoseEndPassesTheLargestOffsetIsRefusedByTheWriterToo`,
+  `R145_ASourceWhoseLastBlockIsNotPaddedIsStillCroppedAndSaved`.

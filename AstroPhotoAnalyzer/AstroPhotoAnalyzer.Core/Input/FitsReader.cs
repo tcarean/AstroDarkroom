@@ -215,7 +215,8 @@ namespace AstroPhotoAnalyzer
 
             /// <summary>
             /// The bytes of one sample; 0 when NAXIS is 0: such an HDU has no samples, its BITPIX
-            /// is not checked and may be anything, the one value Math.Abs throws on included.
+            /// is read and its value not checked, so it may be any whole number, the one Math.Abs
+            /// throws on included.
             /// </summary>
             internal int BytesPer => Naxis == 0 ? 0 : Math.Abs(Bitpix) / 8;
 

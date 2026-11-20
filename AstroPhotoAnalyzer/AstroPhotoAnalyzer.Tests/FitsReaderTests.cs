@@ -204,8 +204,9 @@ public class FitsReaderTests
     /// <summary>
     /// The review of CR-012's fix: the writer's walks copy a skipped HDU up to the header's end
     /// plus the data's blocks, and that sum can pass the largest offset though each term fits:
-    /// here 1073741843 x 2147483610 x 4 bytes, 1792 bytes more than the sum holds (NAXIS1 is
-    /// absent, so the HDU is no image). The wrapped end was negative, nothing was copied and the
+    /// here 1073741843 x 2147483610 x 4 bytes of data, which fit; padded to whole blocks and
+    /// added to the header's 2880 bytes they make 2^63 + 1792, past the largest offset, 2^63 - 1
+    /// (NAXIS1 is absent, so the HDU is no image). The wrapped end was negative, nothing was copied and the
     /// same header was read for ever. The reader refuses such a file as cut short, so the writer
     /// meets it only when the file changed after the analysis; it refuses it the same way.
     /// </summary>
@@ -224,6 +225,38 @@ public class FitsReaderTests
         Assert.Equal(expected, RefusedInTime(() => FitsReader.ReadImageHeader(file)).Message);
         Assert.Equal(expected, RefusedInTime(() => FitsWriter.SaveCrop(file, new CropRect(0, 0, 2, 2), 4, 4, 1, Array.Empty<string>(), ws.PathTo("decupaj.fit"))).Message);
         Assert.Equal(expected, RefusedInTime(() => FitsWriter.Save(SyntheticRasters.Flat(4, 4, 0.5f, planes: 1), new ToneCurve([new CurvePoint(0, 0, null), new CurvePoint(0.5, 0.5, null), new CurvePoint(1, 1, null)]), file, Array.Empty<string>(), ws.PathTo("curba.fit"))).Message);
+        Assert.False(File.Exists(ws.PathTo("decupaj.fit")));
+        Assert.False(File.Exists(ws.PathTo("curba.fit")));
+    }
+
+    /// <summary>
+    /// The second review of CR-012's fix: a FITS whose data are not padded to a whole block (a
+    /// header and 64 bytes here) is one the reader takes, and the writers wrote from it, the
+    /// copy of "what follows the image" starting past the file's end and copying nothing. The
+    /// guard against a wrapped end, written as "an end before its start", refused that copy as
+    /// a cut-short file. The file is cropped and saved as before.
+    /// </summary>
+    [Fact]
+    public void R145_ASourceWhoseLastBlockIsNotPaddedIsStillCroppedAndSaved()
+    {
+        byte[] padded = FitsTestData.Build2D(4, 4, (x, y) => 0.1 * x + 0.01 * y, bitpix: -32);
+        byte[] fits = padded.Take(FitsTestData.BlockSize + 4 * 4 * 4).ToArray();
+        using var ws = new TempWorkspace();
+        string file = ws.WriteFile("fara-umplutura.fit", fits);
+        Raster read = new FitsReader().Load(file);
+        Assert.Equal(4, read.W);
+
+        string crop = ws.PathTo("decupaj.fit");
+        FitsWriter.SaveCrop(file, new CropRect(1, 1, 2, 2), 4, 4, 1, Array.Empty<string>(), crop);
+        Raster cropped = new FitsReader().Load(crop);
+        Assert.Equal(2, cropped.W);
+        Assert.Equal(read.At(0, 1, 1), cropped.At(0, 0, 0));
+
+        string curve = ws.PathTo("curba.fit");
+        FitsWriter.Save(read, new ToneCurve([new CurvePoint(0, 0, null), new CurvePoint(0.5, 0.5, null), new CurvePoint(1, 1, null)]), file, Array.Empty<string>(), curve);
+        Raster saved = new FitsReader().Load(curve);
+        Assert.Equal(4, saved.W);
+        Assert.Equal(read.At(0, 2, 3), saved.At(0, 2, 3), 5);
     }
 
     /// <summary>
