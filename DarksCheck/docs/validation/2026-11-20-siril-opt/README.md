@@ -6,7 +6,7 @@ D3300, ISO 1600, 120 s, L-eNhance filter; every third light of the Veil nights o
 (V1006), 2026-11-06 (V1106) and 2026-11-08 (V1108) against the library masters idx13 to idx67
 (D13 .. D67).
 
-- `pairs.json` - the measurement's `results/summary.json` under another name, byte for byte:
+- `pairs.json` - the measurement's `results/summary.json` under another name, its content unchanged:
   the 18 pairs: the right factor (median, lowest, highest over the lights), the
   factor Siril's `-opt` printed (`k0_*`), and what is left at the master's hot pixels per light,
   by class of the master's level in ADU, for `opt` (Siril's factor), `stk` (the dark as it is)
@@ -21,7 +21,9 @@ D3300, ISO 1600, 120 s, L-eNhance filter; every third light of the Veil nights o
 `conclusions.md` is what the investigation found beyond ADR 0070: what Siril itself advises, the
 D3300's dark as measured, why Siril chose 0.002, the other flows tried and a lower threshold for
 the cosmetic correction. The files it cites were copied on 2026-11-20 from the measurement's
-working folder, a temporary one, under the paths they had there, byte for byte:
+working folder, a temporary one, under the paths they had there, their content unchanged (git
+stores the text files with its own line endings, so a hash of the originals would differ by
+that alone):
 
 - `critic/bias_pattern.json` - per master, how its smooth pattern follows the 1/6 s master
   bias's (`slope_on_bias`, `corr_with_bias`) and the share of its central pixels exactly at
