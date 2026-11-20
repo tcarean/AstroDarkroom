@@ -86,11 +86,11 @@ entry gives. Paths are relative to the project folder.
 | CR-008 | 1 | rare | confirmed | An 8-bit image saved as 16 bits by a shift passes as real 16 bits | fixed 5d00aa35 |
 | CR-009 | 1 | rare | confirmed | A second image chosen from the keyboard during a run gets the running image's result | fixed c075e9ae |
 | CR-010 | 2 | slip | confirmed | `-o` naming the analysed image replaces the image with the report | fixed de089c54 |
-| CR-011 | 2 | rare | to measure | An image over 65 535 px on a side ends the whole analysis in the JPEG stage | open |
-| CR-012 | 2 | crafted | confirmed | A FITS header with a negative axis length hangs the reader | open |
-| CR-013 | 2 | crafted | confirmed | A settings file with a broken escape stops the window at every start | open |
-| CR-014 | 3 | common | confirmed | "Save the report..." never becomes enabled | open |
-| CR-015 | 3 | common | owner | One report says "no visible steps" in section 1 and warns of banding in section 5 | open |
+| CR-011 | 2 | rare | to measure | An image over 65 535 px on a side ends the whole analysis in the JPEG stage | fixed e22e1b3e |
+| CR-012 | 2 | crafted | confirmed | A FITS header with a negative axis length hangs the reader | fixed 6c337bac |
+| CR-013 | 2 | crafted | confirmed | A settings file with a broken escape stops the window at every start | fixed a89cd4f0 |
+| CR-014 | 3 | common | confirmed | "Save the report..." never becomes enabled | fixed a0814fa8 |
+| CR-015 | 3 | common | owner | One report says "no visible steps" in section 1 and warns of banding in section 5 | fixed da3c1fc0 |
 | CR-016 | 3 | common | confirmed | One of something is written as a plural, and the tab's star counts are not the report's | open |
 | CR-017 | 3 | common | owner | "shrinks by ~0.82 times" says the opposite of the factor | open |
 | CR-018 | 3 | common | confirmed | Three texts predate the files the tool now writes | open |
@@ -156,13 +156,15 @@ entry gives. Paths are relative to the project folder.
 | CR-078 | 1 | rare | confirmed | A frame more than half pure black is called an 8-bit upscale | fixed 336c3970 |
 | CR-079 | 4 | rare | to measure | A test of the Help key fails on some runs | open |
 | CR-080 | 4 | some setups | to measure | At a tone the paper fit's target cannot reach, the landing is coarser and the soft knees step back | open |
+| CR-081 | 4 | rare | to measure | A table's heap is not counted when its HDU is skipped | open |
 
 9 entries of severity 1, 4 of severity 2, 39 of severity 3, 15 of severity 4; 45 confirmed, 14
 to measure, 8 for the owner. (As counted on 2026-11-13; CR-068 and CR-069 were added on 2026-11-14, CR-070 to
 CR-074 on 2026-11-16 with the dust move of the suggested curves (ADR 0101), CR-075 to CR-077
 on 2026-11-16 by the reviews of the fixes of CR-006 to CR-010, CR-078 on 2026-11-17 by the
 review of the fixes of CR-075 and CR-076, CR-079 on 2026-11-17 by the fix of CR-078, CR-080
-on 2026-11-17 by the reviews of the paper fit's target (ADR 0109), and the
+on 2026-11-17 by the reviews of the paper fit's target (ADR 0109), CR-081 on 2026-11-20 by the
+fix of CR-012, and the
 Status column says what has been closed since.) After the entries: what the owner may want to
 look at though no rule is broken, then the cleanup list (dead code, duplicates, work done twice).
 
@@ -429,7 +431,7 @@ the rule is R-031's first clause, as it was before ADR 0105.
 - Evidence: to measure. The format's limit is certain; that ImageSharp 3.1.11 throws rather than
   writes a broken file was not run (a flat `Raster` of 65 536 x 8 through `JpegAnalyzer.Analyze`
   settles it).
-- Status: open
+- Status: fixed e22e1b3e (ADR 0113; measured on 2026-11-20: the encoder throws from 65 536 px on; the image is analysed without the JPEG rows, the owner's answer of that day; what the window's own bitmaps do with an image that wide was not looked at)
 
 ### CR-012 A FITS header with a negative axis length hangs the reader
 
@@ -448,7 +450,7 @@ the rule is R-031's first clause, as it was before ADR 0105.
   in the one place the three walks share.
 - Test: none; `ATruncatedFileIsAnErrorNotGarbage` cuts the data of a sound header.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed 6c337bac (ADR 0114; the sizes of every HDU are checked in one place, `FitsReader.Shape`, for the four walks)
 
 ### CR-013 A settings file with a broken escape stops the window at every start
 
@@ -464,7 +466,7 @@ the rule is R-031's first clause, as it was before ADR 0105.
 - Should: no profile and the Warn line, as `Read`'s summary and R-156 say ("never an exception").
 - Test: `ProfileBarTests.R156_AMissingOrBrokenSettingsFile...` covers other broken shapes.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed a89cd4f0 (ADR 0115)
 
 ## Severity 3: a wrong text or a wrong display
 
@@ -485,7 +487,7 @@ the rule is R-031's first clause, as it was before ADR 0105.
   calls `SaveReport` directly; no test reads the button or listens for the change.
 - Evidence: confirmed (read, and reproduced on a replica; not seen in the real window, where one
   look settles it).
-- Status: open
+- Status: fixed a0814fa8 (ADR 0116; confirmed on the real window's button before the fix)
 
 ### CR-015 One report says "no visible steps" in section 1 and warns of banding in section 5
 
@@ -504,7 +506,7 @@ the rule is R-031's first clause, as it was before ADR 0105.
   things.
 - Test: none on the pair.
 - Evidence: owner.
-- Status: open
+- Status: fixed da3c1fc0 (ADR 0117; a new sentence when section 1 found no visible steps, still Attention, the owner's answer of 2026-11-20)
 
 ### CR-016 One of something is written as a plural, and the tab's star counts are not the report's
 
@@ -1510,6 +1512,32 @@ change: before it such a pixel went through the search around the table's edge l
 - Test: `R187_AToneTheTargetCannotReachIsStillBroughtInsideTheWarning` accepts a hard landing
   within 0.15 of the edge and a soft one anywhere under it.
 - Evidence: to measure (the landing's step follows from the lines; the knee's step was not run).
+- Status: open
+
+### CR-081 A table's heap is not counted when its HDU is skipped
+
+Added on 2026-11-20 by the fix of CR-012. Older than that fix: an HDU's data size has always
+been the sample's bytes times the axes.
+
+- Where: `Input/FitsReader.cs` (`Shape`, the data's byte count), which the reader, the `--wcs`
+  header walk and the two walks of `Input/FitsWriter.cs` skip by.
+- What happens: the size of an HDU's data is taken as |BITPIX| / 8 x NAXIS1 x ... x NAXISn. The
+  standard's size of an extension is |BITPIX| / 8 x GCOUNT x (PCOUNT + NAXIS1 x ... x NAXISn),
+  and a binary table with columns of variable length has a PCOUNT over 0, its heap. Neither
+  keyword is read.
+- Case (read, not run): a FITS with a binary table that has a heap in an HDU skipped before
+  the image (one of `NAXIS = 1`, or with an axis of 0). The skip stops short of the next
+  header by the heap's blocks, and the walk reads a "header" out of the heap's bytes. What
+  the user is told then was not established (most likely `FITS: incomplete header.` or `no HDU
+  with an image found`). A table with `NAXIS = 2` and both axes over 0 is not skipped at all:
+  it is taken for the image, as the class comment of `FitsReader` says ("XTENSION is not
+  checked").
+- Reach: Siril writes the image in the primary HDU, so a table before the image takes a file
+  from another writer.
+- Should: `PCOUNT` and `GCOUNT` in the size; whether `XTENSION` is asked before an HDU is taken
+  for an image is the larger question, and the owner's.
+- Test: none.
+- Evidence: to measure.
 - Status: open
 
 ## For the owner's look
