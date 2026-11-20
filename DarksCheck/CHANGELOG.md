@@ -59,8 +59,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   in the window every point of the lights' chart is then red, the chart draws no lines and the
   sentence above it says so. Check 4 says a frame outside 0.7 to 1.4 of the master is too far from it, without
   naming `-opt`. The window's chart lines read `0.7 a few degrees off` and `0.4 much warmer`.
-  In the validation record the verdict of V-005 and V-012 is named `MuchWarmer` (was
-  `CosmeticOnly`); no figure moved.
+  In the validation record the verdict of V-012 is named `MuchWarmer` (was `CosmeticOnly`), no
+  figure moved; V-005 keeps the Smida session's own lights and loses its partner, the library
+  made at another ISO, which is no case the owner would use.
 
 - F1 no longer opens About, which opens from its button alone; the window is at least 1180 px
   wide instead of 960, so the whole top bar shows with Help in both languages (R-125, ADR 0061).

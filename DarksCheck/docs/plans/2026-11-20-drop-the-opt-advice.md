@@ -149,3 +149,8 @@ Order: requirements, tests, code, docs (the kit's rule "Requirements first").
   scade asa cum e. Fa dark-uri la setarile lights-urilor.` / `... so every point is red: the
   dark is not subtracted as it is. Make darks at the lights' settings.` A new verdict,
   `MatchVerdict.OtherSettings`; check 1's row on the settings stays `ATENTIE`.
+- I told the owner that no real session has darks at other settings; the second review showed
+  that V-005's partner is one (Smida at ISO 400 against the library at ISO 1600), so its
+  recorded verdict no longer held. The owner called the pair no real case and had it taken out
+  of the validation; V-005 keeps the Smida lights against their own darks. The README's
+  `--against` example, which showed that pair, was replaced by a real run at the same settings.

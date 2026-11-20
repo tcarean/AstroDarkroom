@@ -447,15 +447,16 @@ session's. `INDEX` then adds:
 - `lights / partner`: the lights against the partner, through the session's darks;
 - `partner verdict`: check 2's thresholds on that ratio (without lights, on the darks' ratio).
 
-Below, the session of the report above against a library of 30 darks: 0.42 on 434 pixels; the
-library ran 7.5 degrees warmer, so it is subtracted as it is, with the cosmetic correction on.
+Below, a session of 35 darks and 82 lights against a library of 30 darks made at the same ISO
+and exposure: 0.45 on 183 pixels; the library ran 6.9 degrees warmer than the session's darks
+and 6.4 warmer than its lights, so it is subtracted as it is, with the cosmetic correction on.
 
 ```
-    partner            : D:\Astro\MyDarkLibrary\darks: idx67 (67.4 ADU-eq; frames read 30 of 30, ISO 1600, 120.2 s); label MyDarkLibrary-idx67
-    darks / partner    : in the session's darks the hot pixels are 0.42 times what they are at the partner, at the same settings (half of them between 0.38 and 0.44; 434 pixels hot in both), that is the session's darks are 7.5 degrees colder than the partner
-    shared pixels      : 111 of the session's 111 above 50 ADU-eq are above 50 at the partner too (100 %); 425 of the partner's 528 above 50 are above 20 in the session (80 %)
-    lights / partner   : in the lights the hot pixels are 0.42 times what they are at the partner (worked out through the session's darks), that is the lights are 7.5 degrees colder than the partner
-    partner verdict    : WARNING: subtract the partner as it is, with the cosmetic correction on (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); in the lights the hot pixels are 0.42 times what they are at the partner: the partner is warmer by 7.5 degrees. In one light the subtraction takes too much at the hot pixels; with dithering this does not show in the stack
+    partner            : D:\Astro\MyDarkLibrary\darks: idx33 (32.9 ADU-eq; frames read 30 of 30, ISO 1600, 120.2 s); label MyDarkLibrary-idx33
+    darks / partner    : in the session's darks the hot pixels are 0.45 times what they are at the partner, at the same settings (half of them between 0.43 and 0.47; 183 pixels hot in both), that is the session's darks are 6.9 degrees colder than the partner
+    shared pixels      : 32 of the session's 32 above 50 ADU-eq are above 50 at the partner too (100 %); 152 of the partner's 174 above 50 are above 20 in the session (87 %)
+    lights / partner   : in the lights the hot pixels are 0.48 times what they are at the partner (worked out through the session's darks), that is the lights are 6.4 degrees colder than the partner
+    partner verdict    : WARNING: subtract the partner as it is, with the cosmetic correction on (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); in the lights the hot pixels are 0.48 times what they are at the partner: the partner is warmer by 6.4 degrees. In one light the subtraction takes too much at the hot pixels; with dithering this does not show in the stack
 ```
 
 A partner folder that cannot be opened is refused with `ERROR` before anything is decoded. One

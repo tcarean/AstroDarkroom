@@ -118,9 +118,14 @@ beside proposal in the plan of 2026-11-20.
 R-023, R-025, R-052, R-054, R-055, R-062, R-063, R-064, R-067, R-086, R-101, R-122 and R-124
 amended; ten
 lines of eight golden files changed, each one of the texts above. No formula and no constant's
-value changed. `docs/validation.json` recorded the verdict's name in two cases (V-005 and
-V-012, `CosmeticOnly`); at the owner's word of 2026-11-20 the two read `MuchWarmer`, the name
-alone, and `/validate` was run after it (`docs/validation.md`, History).
+value changed. `docs/validation.json` recorded the verdict's name `CosmeticOnly` in two cases.
+At the owner's word of 2026-11-20 V-012 reads `MuchWarmer`, the name alone. V-005's partner,
+the Smida darks (ISO 400) against the library (ISO 1600), is a pair at other settings, which
+item 7 turns into `REFA`: the owner called it no real case and took the pair out of the
+validation, V-005 keeping the Smida lights against their own darks. `/validate` was run after
+it (`docs/validation.md`, History). The measurement in Context does not lean on that pair:
+its eighteen pairs are all ISO 1600 at 120.2 s on both sides
+(`darkscheck-on-the-copies.csv`, where check 1 reads `OK` on the settings).
 Guarded by `R052_TheAmplitudeRatioOfTheLightsOverTheMasterGivesTheVerdict`,
 `R052_ADarkMuchWarmerThanLightsAtOtherSettingsIsNotSubtractedAsItIs`,
 `R052_LightsAtOtherSettingsThanTheDarksAreNeverSubtractedAsTheyAre`,
