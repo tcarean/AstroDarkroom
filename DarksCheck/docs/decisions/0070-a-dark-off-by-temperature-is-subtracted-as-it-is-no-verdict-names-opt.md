@@ -17,8 +17,8 @@ idx67), with the flow `-opt` needs (the level 150 taken out of the stacked maste
 lights, no master bias). The result files are in `docs/validation/2026-11-20-siril-opt/`.
 
 **Siril's factor.** "Right factor" is the median over the lights of the hot pixels' ratio,
-measured apart from DarksCheck (`pairs.json`); DarksCheck read 5 to 20 % lower on the same
-copies (`darkscheck-on-the-copies.csv`). `-opt` prints the factor it chose for each light:
+measured apart from DarksCheck (`pairs.json`); DarksCheck, run on twelve of the pairs, read 5 to
+20 % lower on the same copies (`darkscheck-on-the-copies.csv`). `-opt` prints the factor it chose for each light:
 
 | Lights | idx13 | idx18 | idx20 | idx33 | idx47 | idx67 |
 |---|---|---|---|---|---|---|
@@ -31,14 +31,14 @@ copies (`darkscheck-on-the-copies.csv`). `-opt` prints the factor it chose for e
 
 0.002 is the lower end of Siril's search: the dark is in effect not subtracted. It is the
 answer on every light of 15 of the 18 pairs, the matched ones included, and under the right
-factor on the other three. The one pair DarksCheck itself sent to `-opt` (Veil 2026-11-06 with
+factor on the other three. Of those twelve, the one pair DarksCheck itself sent to `-opt` (Veil 2026-11-06 with
 idx20, 0.72 by DarksCheck) got 0.002. Read in Siril's source: the factor is the one that leaves
 the smallest spread of values in the central 512 x 512 pixels of the raw frame, all colours
 together; on these frames the difference between the colours of the sky decides it, not the
 hot pixels. (Added 2026-11-20, later: more exactly, the master's red pixels sit highest where
 the red sky is lowest, so light and dark vary against each other and Siril's search ends at
-its lower end; a measure written again apart from Siril gave Siril's factor on 390 of 390
-lights. This, what Siril's own FAQ and manual advise, the D3300's dark as measured, the other
+its lower end; a measure written again apart from Siril gave Siril's factor in 390 of 390
+comparisons (57 lights of two nights, some run several ways). This, what Siril's own FAQ and manual advise, the D3300's dark as measured, the other
 ways of running `-opt` that were tried and a lower threshold for the cosmetic correction are
 in `docs/validation/2026-11-20-siril-opt/conclusions.md`.)
 
@@ -54,8 +54,9 @@ stack made with the right factor, on the sky, per colour:
 
 With the dark 7 degrees warmer, subtracting it as it is left no more dark dots than the right
 factor did: the black dots the verdict warned of did not show. A single light does keep holes
-at its hottest pixels (of the master's pixels above 50 ADU, 0.4 % are left more than 5 times
-the noise floor away, against 0.06 % with the right factor, `pairs.json`); dithering and the
+at its hottest pixels (of the 3,101 pixels that stand 50 ADU or more above their neighbours in
+the idx34 master, the pixels the measurement followed for every pair, 0.4 % are left more than
+5 times the noise floor away, against 0.06 % with the right factor, `pairs.json`); dithering and the
 stack's rejection take them out.
 
 Also found: the band 0.7 .. 1.4 is -3.1 and +2.9 degrees by the rule of 6 degrees per doubling
@@ -90,7 +91,8 @@ The owner decided in chat on 2026-11-20, each from options with these figures:
    only" gone, the one advice left is to make the darks again, and the owner asked that the
    verdict say so in red. A ratio that would read `Direct`, `Near` or `MuchWarmer` is
    `MatchVerdict.OtherSettings` (`LightsAnalysis.AtOtherSettings`, which was `NeverDirect`),
-   and every measured ratio takes the `REFA` words, a ratio under 0.4 or over 1.4 included:
+   and every measured ratio takes the `REFA` words, a ratio under 0.4 or over 1.4 included (a
+   set that shows none of the master's hot pixels keeps its own words):
    a dark at another ISO would otherwise be `REFA` when the temperatures are close and only
    `ATENTIE` when they are far. In the window every point of the lights' chart is red, the
    chart draws no guide line (`0.9 as it is` would say the opposite of the verdict) and the
@@ -129,8 +131,11 @@ the Smida darks (ISO 400) against the library (ISO 1600), is a pair at other set
 item 7 turns into `REFA`: the owner called it no real case and took the pair out of the
 validation, V-005 keeping the Smida lights against their own darks. `/validate` was run after
 it (`docs/validation.md`, History). The measurement in Context does not lean on that pair:
-its eighteen pairs are all ISO 1600 at 120.2 s on both sides
-(`darkscheck-on-the-copies.csv`, where check 1 reads `OK` on the settings).
+the three sets of lights and the six masters are all ISO 1600 at 120.2 s
+(`darkscheck-settings-on-the-copies.txt`: check 1 of DarksCheck's own runs on twelve of the
+pairs, which between them hold every set of lights and every master). With the pair gone no
+case of the record runs `--against` any more: a partner's figures are held by the tests on
+generated frames only.
 Guarded by `R052_TheAmplitudeRatioOfTheLightsOverTheMasterGivesTheVerdict`,
 `R052_ADarkMuchWarmerThanLightsAtOtherSettingsIsNotSubtractedAsItIs`,
 `R052_LightsAtOtherSettingsThanTheDarksAreNeverSubtractedAsTheyAre`,

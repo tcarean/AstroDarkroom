@@ -209,7 +209,8 @@ When the lights are at another ISO or another exposure than the darks (most of t
 setting both sets state), the ratio still compares the two with both brought to one setting, so
 it still tells the temperatures apart, but the dark is never said to be subtracted as it is: in
 the files the hot pixels of the lights do not have the height they have in the dark. The
-verdict then reads `REDO: do not subtract the dark as it is`, in red, whatever the ratio:
+verdict then reads `REDO: do not subtract the dark as it is`, in red, whatever the ratio
+(unless the lights show none of the dark's hot pixels, which keeps its own verdict):
 it names both settings and how many times the dark's the hot pixels of the lights are in the
 files, and advises darks made at the lights' settings. In the window every point of the
 lights' chart is then red and the chart has no lines. The row `lights

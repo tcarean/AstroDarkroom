@@ -863,8 +863,9 @@ internal static class DarkReport
     /// left; null for a partner, whose verdict is the ratio's alone.</param>
     /// <param name="other">The two settings in words, when the set is at other settings than the
     /// master (ADR 0055, ADR 0070): every measured ratio then reads REDO, the master is never said
-    /// to be subtracted as it is, and the ratio is said to be worked out for the same settings; null
-    /// at the same settings.</param>
+    /// to be subtracted as it is, and the ratio is said to be worked out for the same settings; a
+    /// set that shows none of the master's hot pixels keeps its own WARNING. Null at the same
+    /// settings.</param>
     /// <returns>The verdict's words, opening with OK, WARNING, REDO or UNMEASURED (OK, ATENTIE,
     /// REFA or NEMASURAT in Romanian); REDO only for a master at other settings.</returns>
     internal static string MatchText(MatchFigures m, bool partner, string where, TraceFigures? traces = null, OtherWords? other = null)

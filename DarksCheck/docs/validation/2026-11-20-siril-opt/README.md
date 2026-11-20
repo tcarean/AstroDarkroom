@@ -8,15 +8,19 @@ D3300, ISO 1600, 120 s, L-eNhance filter; every third light of the Veil nights o
 
 - `pairs.json` - the measurement's `results/summary.json` under another name, its content unchanged:
   the 18 pairs: the right factor (median, lowest, highest over the lights), the
-  factor Siril's `-opt` printed (`k0_*`), and what is left at the master's hot pixels per light,
-  by class of the master's level in ADU, for `opt` (Siril's factor), `stk` (the dark as it is)
-  and `fix` (the dark multiplied by the right factor); `*_beyond5` is the share (0 to 1) of a
-  class's pixels left more than 5 times the noise floor (`floor`, in ADU) away.
+  factor Siril's `-opt` printed (`k0_*`), and what is left per light at one fixed set of pixels,
+  for `opt` (Siril's factor), `stk` (the dark as it is) and `fix` (the dark multiplied by the
+  right factor). The pixels are those of a seventh master, idx34, grouped by how far they stand
+  above the median of their eight neighbours of the same colour (`class_pixels_in_frame`, in
+  ADU; not a level above 150), the same set for every pair; `*_beyond5` is the share (0 to 1)
+  of a class's pixels left more than 5 times the noise floor (`floor`, in ADU) away.
 - `stack-veil-2026-11-06-idx33.json`, `stack-veil-2026-10-06-idx18.json` - the two stacks of 28
   lights on one shared registration, the three ways compared: the stack's noise, the difference
   of `stk` and `opt` from `fix`, the dots left, per colour.
 - `darkscheck-on-the-copies.csv` - what DarksCheck itself read on twelve of the pairs: ratio,
   degrees, what the subtraction leaves and the verdict as it was worded then.
+  `darkscheck-settings-on-the-copies.txt` - from the same twelve console outputs, check 1's
+  lines on the darks' and the lights' exposure and ISO (the outputs themselves were not kept).
 
 `conclusions.md` is what the investigation found beyond ADR 0070: what Siril itself advises, the
 D3300's dark as measured, why Siril chose 0.002, the other flows tried and a lower threshold for
@@ -33,7 +37,8 @@ that alone):
   measurement's three `V*_ratios.json`, which were not copied whole: for every light and every
   master, the light's own hot-pixel ratio (`ratio`, the right factor), the factor Siril's
   measure asks for (`k_siril_criterion`) and the same with each colour's average taken out
-  first (`k_sites_removed`).
+  first (`k_sites_removed`). It numbers the lights from 0 where
+  `skeptic/results/all_pairs_opt_k0.json` numbers them from 1; the two are in the same order.
 - `emptiness/measures.json`, `measures2.json` - figures another session worked out the same day
   from the measurement's saved files alone, to see what could predict Siril's factor and the
   stack: per master (`emptiness`: its median and colour averages above 150, the share of pixels

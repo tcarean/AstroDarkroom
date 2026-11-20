@@ -154,3 +154,7 @@ Order: requirements, tests, code, docs (the kit's rule "Requirements first").
   recorded verdict no longer held. The owner called the pair no real case and had it taken out
   of the validation; V-005 keeps the Smida lights against their own darks. The README's
   `--against` example, which showed that pair, was replaced by a real run at the same settings.
+- At the owner's two notes of the same evening the rest of what the investigation found was
+  recorded, docs only: `docs/validation/2026-11-20-siril-opt/conclusions.md` with the files it
+  cites, a dated note in ADR 0070, and the review list's CR-083. A third review, of the whole
+  branch, found no defect in the code and six in that record and the ADR, corrected.

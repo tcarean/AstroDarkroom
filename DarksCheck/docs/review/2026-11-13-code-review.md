@@ -1755,7 +1755,9 @@ Entries added after the review, by the task that met them (ADR 0052, point 7).
   above the black, ADU; noise = the noise of the frame, ADU; ...` (`pixelii verzi G1; medie =
   ...`), so the plane it opens with reads as holding for every column. The noise, the
   difference from the master and the bands are of that plane; the mean is of the whole frame,
-  red, both greens and blue together, the hot pixels included.
+  red, both greens and blue together, the hot pixels included. So are the `light` column,
+  which is worked out from that mean (`Analysis/LeakAnalyzer.cs`), and the `hot` column, read
+  at the master's hot pixels of every colour.
 - Should: the owner's call. Either the note says which columns are of the plane and that the
   mean is of all pixels, or the mean is taken on the plane like its neighbours (a figure
   would then move: the rule "Measured on the sessions"). A changed text is shown to the owner

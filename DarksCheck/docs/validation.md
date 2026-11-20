@@ -355,6 +355,8 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   out of `validation.json`: `against`, and the partner's figures (30 frames, norm 4.0067, index
   67.4, 0.422 with quartiles 0.381 .. 0.443 on 434 pixels, -7.5 degrees, 111 of 111 and 425 of
   528). V-005 keeps the Smida lights against their own darks, every figure as it was. V-006
-  still holds the library alone. All eleven cases then run on 786e5206 with
+  still holds the library alone. With the pair gone no case of the record runs `--against`:
+  a partner's figures are held by the tests on generated frames only. All eleven cases then run
+  on 786e5206 with
   `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 11`, `Passed: 11`, `Total
   time: 12.6083 Minutes`; every session was present, and no other recorded figure was changed.

@@ -11,7 +11,8 @@ again for this record. "Research" is `research-older-vs-newer-excerpt.md`, whose
 each re-checked by a second reader; this task re-read only the two FAQ pages and the manual page.
 The pairs are named as in the files: V1006, V1106 and V1108 are the Veil lights of 2026-10-06,
 2026-11-06 and 2026-11-08, D13 .. D67 the library masters idx13 .. idx67, all at ISO 1600 and
-120.2 s.
+120.2 s. D34 is a seventh library master, idx34 (9.2 °C by its folder's name), in which the
+measurement picked the pixels it followed.
 
 ## 1. What Siril itself advises
 
@@ -42,8 +43,8 @@ The pairs are named as in the files: V1006, V1106 and V1108 are the Veil lights 
     (https://discuss.pixls.us/t/stacking-error-mentioning-fwhm-when-not-relevant/46849/2).
   The two remarks of 2024 give no reason, and in the second thread he says he does not know
   modern cameras well.
-- **Adrian Knagg-Baugh** (Siril developer), 2025-11-26: the automatic estimate is meant for
-  uncooled DSLRs whose temperature drifts (https://gitlab.com/free-astro/siril/-/issues/1861;
+- **Adrian Knagg-Baugh** (Siril developer), 2025-11-26, with a hedge: the automatic estimate is
+  meant for uncooled DSLRs whose temperature drifts (https://gitlab.com/free-astro/siril/-/issues/1861;
   research).
 
 So by its type, an uncooled DSLR taking 120 s frames, the D3300 is the camera this advice is
@@ -63,8 +64,8 @@ By the sources, what decides is what the dark holds, not the camera's year (rese
     https://clarkvision.com/articles/dark-current-suppression-technology/). Nikon filters long
     exposures and cuts values under black: the darks of a D5300 are cut at 588 against a black
     of 600 (Iliah Borg, LibRaw, 2018-04-17, https://libraw.org/node/2362).
-- Newer sensors have these traits more often, but not by year: measured the same way, newer
-  cameras are not reliably lower (Mark Shelley, 2018-01-13,
+- These traits do not go by the camera's year: measured the same way, newer cameras are not
+  reliably lower (Mark Shelley, 2018-01-13,
   https://stargazerslounge.com/blogs/entry/2004-d7500-has-high-thermal-pattern-noise/).
 
 ## 3. The D3300's dark of 120 s at ISO 1600, as measured
@@ -90,8 +91,9 @@ their neighbours, and such a count cannot see a level that is even across the fr
 not say "how empty the dark is", and reads 97 to 99.5 % on every master measured. What the
 rows do say together: few pixels stand out, and by little against the 22 to 25 ADU of one
 light's noise; the camera cuts the frame at 147; and the master's level sinks as the camera
-warms, which a heat signal would not do. But the hot pixels do follow the temperature, by a
-factor of ten across the library. There is something to scale, and it is small.
+warms, which a heat signal would not do. But the hot pixels do follow the temperature: the
+right factor changes four to five times across the library on one night, ten times over the 18
+pairs. There is something to scale, and it is small.
 
 ## 4. Why Siril chose 0.002
 
@@ -117,9 +119,11 @@ ADR 0070 says the colours of the sky decide Siril's factor. More exactly:
 - Within the colours alone, the same first light would give 0.92 (`k_within`; `k_sites_removed`
   in `results/ratios_extract.json`), against a right factor of 1.69.
 - The measure was written again apart from Siril (`skeptic/tools/crit.py`, `repro.py`) and run
-  on the files Siril read. It gave the factor Siril logged on 390 of 390 lights: 261 in
-  `skeptic/results/flows_V1006_D18.json` and 112 in `g5_V1106_D33_split.json` (both list no
-  mismatch), 3 in `b_V1106_D33.json` and 14 in `b_V1106_D67_interior.json`.
+  on the files Siril read. It gave the factor Siril logged in 390 of 390 comparisons: 261 in
+  `skeptic/results/flows_V1006_D18.json` (29 lights, nine ways of running) and 112 in
+  `g5_V1106_D33_split.json` (28 lights, four colours), both listing no mismatch, 3 in
+  `b_V1106_D33.json` and 14 in `b_V1106_D67_interior.json`. That is 57 lights of two nights
+  against three masters, not 390 lights.
 
 So 0.002 does not say that the dark holds nothing to scale. It says that Siril's estimate
 cannot be used on colour frames where one colour of the sky is far from the others.
@@ -174,8 +178,8 @@ the right factor, or with Siril's 0.002, which leaves it out.
 `-cc=dark 0 2` makes Siril repair the pixels that stand 2 times the master's spread above its
 median, instead of 3. On each light it took out nearly all of the pixels that are bright in the
 lights and not in the darks (from the notes). In the stack it changed nothing to see
-(`impact/cc2/analysis_D18.json`, `analysis_D33.json`: V1006 with D18 and with its own D33, 28
-lights, the dark subtracted as it is):
+(`impact/cc2/analysis_D18.json`, `analysis_D33.json`: V1006 with D18 and with D33, the master
+that matches it, 28 lights, the dark subtracted as it is):
 
 | | V1006 with D18 | V1006 with D33 |
 |---|---|---|
@@ -183,7 +187,7 @@ lights, the dark subtracted as it is):
 | Noise of the stack's sky | 0.02 to 0.03 % lower | 0.10 to 0.14 % lower |
 | Bright dots above 5 times the local noise | 13,598 then 13,585 | 13,588 then 13,531 |
 | Dark dots above 5 times the local noise | 322 then 314 | 313 then 294 |
-| The two stacks apart, on the sky | 0.005 to 0.03 ADU, noise 3.7 | 0.02 to 0.07 ADU, noise 3.7 |
+| The two stacks apart, on the sky, as in section 6 | 0.05 to 0.09 of the noise | 0.08 to 0.11 of the noise |
 | Stars whose peak fell by more than 1 % | 58 to 79 of 2,748 | 146 to 180 of 2,785 |
 
 Not advised: a quarter to a third more pixels are replaced in every light for a stack that looks the same,
