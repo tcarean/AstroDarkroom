@@ -79,9 +79,12 @@ Added on 2026-10-05 (ADR 0029). The path of a FITS file, from the dialog to the 
    The header is input from outside and is not trusted. `Count` reads every keyword the
    layout is computed from: an integer, never negative except `BITPIX`, and a value that is
    neither makes the header invalid instead of falling back to a default. `Number` reads
-   `BZERO` and `BSCALE`, and refuses NaN and the infinities in the same way: they parse as
-   numbers ("NaN", "Infinity", an overflowing 1D999), and either would make every level black
-   or white. The size of a unit's data is multiplied in a `checked` block, the number of axes
+   `BZERO` and `BSCALE` in the same way: the default only when the keyword is absent, and an
+   invalid header for a value that is not a number (`3.2768d4`, `32768,0`: the exponent letter
+   is a capital E or D, the decimal sign a point) and for NaN and the infinities, which parse
+   as numbers ("NaN", "Infinity", an overflowing 1D999) and would make every level black or
+   white. cfitsio takes the default for a value it cannot convert, so Siril opens such a file;
+   this reader does not (ADR 0058). The size of a unit's data is multiplied in a `checked` block, the number of axes
    is capped at the standard's 999, and an image's width is capped so that a row of its
    samples fits one array. The first version had none of this, and a negative axis sent the
    walk back to the header it had just read, for ever.

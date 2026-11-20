@@ -279,6 +279,24 @@ public class FitsHeaderTests
     }
 
     [Theory]
+    [InlineData("BZERO", "3.2768d4")]
+    [InlineData("BZERO", "32768,0")]
+    [InlineData("BZERO", "")]
+    [InlineData("BSCALE", "1.0d0")]
+    [InlineData("BSCALE", "0,5")]
+    [InlineData("BSCALE", "one")]
+    public void R019_ABZeroOrBScaleThatDoesNotParse_IsAnInvalidHeader(string key, string value)
+    {
+        // Text that is not a number is not a missing keyword: read as its default, a BZERO of
+        // 32768 became 0 and the image was shown 32,768 too low, its dark half black, in silence
+        // (ADR 0058). FITS writes the exponent with a capital E or D only.
+        Exception? ex = Failure(FitsFixture.Image(16, 1, 1, 1, [0], FitsFixture.Card(key, value)));
+
+        Assert.IsType<NotSupportedException>(ex);
+        Assert.Equal("FITS: the header is not valid.", ex.Message);
+    }
+
+    [Theory]
     [InlineData(1)]
     [InlineData(5000)]
     public void R014_ReadLayout_AnEmptyPrimaryWithAPCount_IsSteppedOverToTheImage(int pcount)

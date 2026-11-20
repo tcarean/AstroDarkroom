@@ -78,6 +78,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A FITS whose `BZERO` or `BSCALE` is not a number (`3.2768d4`, `32768,0`) was shown with the
+  default, 0 or 1, in silence: with a `BZERO` of 32768 lost, 32,768 too low and its dark half
+  black. Such a file now gives `FITS: the header is not valid.` (R-019, ADR 0058).
 - A FITS card written with no space after its `=` (`NAXIS1  =5938`) lost the first character of
   its value: a width of 938, or `BITPIX` 32 for -32, shown with no message. The value is now read
   from right after the `=`, as Siril reads it (R-014, ADR 0057).
