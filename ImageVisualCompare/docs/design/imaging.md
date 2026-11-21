@@ -261,6 +261,15 @@ the same. Both methods end through `Done`, the done line and the success result,
 the R-005 message beside the exception (`IsExpectedLoadFailure` says which exceptions are the
 file's and not the program's).
 
+The canvas is settled from headers, and each decode reads its file again, perhaps minutes
+later, after the padding question, or hours later for a kept image decoded again. So after each
+of the four decodes `EnsureSize` compares the decoded `ImageInfo` with the one the canvas was
+settled from, the probed one or, for the kept image, the one on screen, and on another width or
+height throws an `IOException` whose message is `UiText.FileChangedOnDisk`; it leaves through
+`Failed` like any file that cannot be read, so nothing in the window knows of it (ADR 0063).
+Only the size is compared: it is what the canvas, the backdrops and the padding question rest
+on.
+
 ## In the diagnostic log
 
 The loaders write what a bug report needs about a file (ADR 0043): `ImagePairLoader` the load's

@@ -474,6 +474,102 @@ public class ImagePairLoaderTests : IDisposable
         Assert.StartsWith("Could not read broken.png.", result.Error);
     }
 
+    /// <summary>
+    /// CR-017 of the review of 2026-11-13. The canvas is settled from the two headers, before
+    /// anything is decoded and, when the sizes differ, before a question that can stay open for
+    /// minutes; the images were then decoded and put on that canvas whatever size they came out
+    /// at. A file saved again in between, cropped, gave an image layer of one size on a
+    /// backdrop of another, with no padding question.
+    /// </summary>
+    [Theory]
+    [InlineData("a.fit", "a.fit")]
+    [InlineData("b.fit", "a.fit,b.fit")]
+    public async Task R005_AFileWhoseSizeChangedSinceItsHeaderWasRead_IsRefused(string changed, string decoded)
+    {
+        var loader = new ChangingLoader(changed);
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader).LoadAsync("a.fit", "b.fit");
+
+        Assert.False(result.IsSuccess);
+        Assert.False(result.WasDeclined);
+        Assert.Equal(
+            $"Could not read {changed}.{Environment.NewLine}"
+                + "The file has changed on disk: it was 4 × 4, it is now 3 × 2. Open the pair again.",
+            result.Error);
+
+        // A changed image A ends the load: B is not decoded for a pair that will not be shown.
+        Assert.Equal(decoded.Split(','), loader.Loaded);
+    }
+
+    /// <summary>
+    /// CR-017, the case the review gave: a pair of FITS in <c>Histogram</c>, file A saved again
+    /// from Siril, cropped, under the same name, and B then changed to a PNG. The mode falls to
+    /// <c>Linear</c>, so the kept A is decoded again, at its new size, while the canvas was
+    /// settled from the size A had when it was opened.
+    /// </summary>
+    [Fact]
+    public async Task R009_AKeptFileWhoseSizeChangedOnDisk_IsRefused_NotShownOnTheOldCanvas()
+    {
+        var loader = new ChangingLoader("a.fit");
+        ImagePair shown = Shown(loader.Probe("a.fit"), loader.Probe("b.fit"), DisplayMode.Histogram);
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader)
+            .ReplaceAsync(shown, ImageSide.B, "c.png", mode: DisplayMode.Histogram);
+
+        Assert.Equal(["c.png", "a.fit"], loader.Loaded);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(
+            $"Could not read a.fit.{Environment.NewLine}"
+                + "The file has changed on disk: it was 4 × 4, it is now 3 × 2. Open the pair again.",
+            result.Error);
+    }
+
+    [Fact]
+    public async Task R009_ANewFileWhoseSizeChangedSinceItsHeaderWasRead_IsRefused()
+    {
+        var loader = new ChangingLoader("c.fit");
+        ImagePair shown = Shown(loader.Probe("a.fit"), loader.Probe("b.fit"));
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader).ReplaceAsync(shown, ImageSide.B, "c.fit");
+
+        Assert.Equal(["c.fit"], loader.Loaded);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(
+            $"Could not read c.fit.{Environment.NewLine}"
+                + "The file has changed on disk: it was 4 × 4, it is now 3 × 2. Open the pair again.",
+            result.Error);
+    }
+
+    /// <summary>
+    /// Probes every file as a 4 x 4 image, a <c>.fit</c> shown as stored and any other not, and
+    /// decodes the files named as 3 x 2: files saved again, cropped, after their header was read.
+    /// </summary>
+    private sealed class ChangingLoader(params string[] changed) : IImageLoader
+    {
+        public List<string> Loaded { get; } = [];
+
+        public ImageInfo Probe(string path)
+        {
+            bool stored = path.EndsWith(".fit", StringComparison.Ordinal);
+            return new ImageInfo(path, 4, 4, 32, ColorChannels.Rgb, IsFloat: stored, ShownAsStored: stored);
+        }
+
+        public Task<LoadedImage> LoadAsync(
+            string path, DisplayMode mode = DisplayMode.Linear, CancellationToken cancellationToken = default)
+        {
+            Loaded.Add(path);
+            ImageInfo info = Probe(path);
+            if (changed.Contains(path))
+            {
+                info = info with { PixelWidth = 3, PixelHeight = 2 };
+            }
+
+            var bitmap = BitmapSource.Create(1, 1, 96, 96, PixelFormats.Bgra32, null, new byte[4], 4);
+            bitmap.Freeze();
+            return Task.FromResult(new LoadedImage(info, bitmap, mode));
+        }
+    }
+
     /// <summary>A pair as if on screen: both images decoded, each a 1 x 1 bitmap, in one mode.</summary>
     private static ImagePair Shown(ImageInfo before, ImageInfo after, DisplayMode mode = DisplayMode.Linear)
     {

@@ -103,6 +103,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   rectangle, all but invisible on the dark buttons, and the same rectangle was drawn around the
   image. In a question, the lit button is now the one Enter answers with: after Tab to `No` the
   border stayed on `Yes` (R-068, ADR 0062).
+- A file saved again at another size while its pair was being opened, or while the pair was on
+  screen and the file had to be read again (a FITS pair in `Histogram` whose B is changed to a
+  PNG), was shown on the canvas of its old size, with no padding question. It is now refused:
+  `The file has changed on disk: it was 5938 × 3888, it is now 4000 × 3000. Open the pair
+  again.` (R-005, R-009, ADR 0063).
 - At `Fit`, on some window sizes, a scrollbar with a thumb as long as its track and the minimap's
   rectangle around the whole thumbnail were shown, though the whole image was on screen: a
   rounding residue of a millionth of a millionth of a pixel counted as an image larger than the

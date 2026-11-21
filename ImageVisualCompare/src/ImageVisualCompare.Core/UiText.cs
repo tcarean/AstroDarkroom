@@ -281,6 +281,20 @@ public sealed class UiText
         $"An image of {width} × {height} is too large to show.",
         $"O imagine de {width} × {height} este prea mare ca să fie afișată.");
 
+    /// <summary>
+    /// Words the refusal of a file whose image, once decoded, is not of the size its header gave
+    /// when the pair's canvas was settled: the file changed on disk in between (R-005, ADR 0063).
+    /// It is the second line of the message, under <see cref="CouldNotRead"/>.
+    /// </summary>
+    /// <param name="wasWidth">The width the canvas was settled from, in pixels.</param>
+    /// <param name="wasHeight">The height the canvas was settled from, in pixels.</param>
+    /// <param name="width">The width of the image decoded, in pixels.</param>
+    /// <param name="height">The height of the image decoded, in pixels.</param>
+    /// <returns>The sentence with both sizes, and what to do.</returns>
+    public string FileChangedOnDisk(int wasWidth, int wasHeight, int width, int height) => Pick(
+        $"The file has changed on disk: it was {wasWidth} × {wasHeight}, it is now {width} × {height}. Open the pair again.",
+        $"Fișierul s-a schimbat pe disc: era {wasWidth} × {wasHeight}, acum este {width} × {height}. Deschide din nou perechea.");
+
     /// <summary>Words the FITS reader's refusal of an image too large to decode (R-019).</summary>
     /// <param name="width">The image's width, as its header gives it.</param>
     /// <param name="height">The image's height, as its header gives it.</param>

@@ -169,6 +169,17 @@ ot-here.png"]);
     }
 
     [Fact]
+    public void R005_AFileThatChangedOnDisk_IsSaidWithBothSizes_InBothLanguages()
+    {
+        Assert.Equal(
+            "The file has changed on disk: it was 5938 × 3888, it is now 4000 × 3000. Open the pair again.",
+            UiText.English.FileChangedOnDisk(5938, 3888, 4000, 3000));
+        Assert.Equal(
+            "Fișierul s-a schimbat pe disc: era 5938 × 3888, acum este 4000 × 3000. Deschide din nou perechea.",
+            UiText.Romanian.FileChangedOnDisk(5938, 3888, 4000, 3000));
+    }
+
+    [Fact]
     public async Task R101_AFileThatCannotBeRead_InRomanian()
     {
         string huge = _images.WritePngWithHeaderSize("huge.png", 40000, 30000);
