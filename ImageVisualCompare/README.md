@@ -68,7 +68,8 @@ or too large to decode) gives a message with its name and the reason, such as
 `Could not read broken.png.` followed by the codec's own words, in the dialog
 `Cannot compare these files`; then the open dialogs come back. The application does not close.
 A file saved again at another size while it was being opened, or while its pair is on screen
-and it has to be read again, is refused the same way:
+and it has to be read again, is refused with a message of the same kind, and a pair that was
+on screen stays as it was:
 `The file has changed on disk: it was 5938 × 3888, it is now 4000 × 3000. Open the pair again.`
 
 ### FITS files

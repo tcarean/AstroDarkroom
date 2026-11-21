@@ -187,9 +187,10 @@ public class MainWindowTests
 
         await WpfThread.RunAsync(() => bar = LayOutTheStatusBar(1920));
 
-        // Every item whole, from the left: the pair line, the coordinates, A, B, the memory and
-        // the hint, each starting 16 after the end of the one before it, the margin of the
-        // status bar's texts; the version and the copyright at the right edge.
+        // No item cut, from the left: the pair line, the coordinates, A, B, the memory and the
+        // hint, each starting 16 after the end of the one before it, the margin of the status
+        // bar's texts; the version and the copyright at the right edge. The hint fills what is
+        // left and trims itself there (R-054), which its width here does not tell from whole.
         StatusItem[] items = [bar.Pair, bar.Cursor, bar.Before, bar.After, bar.Memory, bar.Hint, bar.Legal];
         Assert.All(items, item => Assert.Equal(item.Full, item.Visible, 3));
         Assert.All(items, item => Assert.True(item.Full > 0));
@@ -1024,7 +1025,8 @@ public class MainWindowTests
         Assert.Null(before);
         Assert.Same(surface, after);
 
-        // The minimap and the thumbs do handle their own press: the case the fix is for.
+        // The minimap and the thumbs do handle their own press: the case the fix is for. The
+        // image is the control: its press reached the surface's own handler before the fix too.
         if (where != "the image")
         {
             Assert.True(pressHandledInside);

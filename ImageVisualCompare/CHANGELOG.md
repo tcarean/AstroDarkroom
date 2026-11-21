@@ -89,8 +89,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - On a narrow window the status bar keeps the coordinates and the two pixel values whole and
   shortens the pair's line with `…` instead. The bar was cut from the right: on a window 960
-  wide with a padded pair, B's value was not shown at all and A's read `A 255 2`
-  (R-054, ADR 0060).
+  wide with a padded pair, B's value was not shown at all and A's had lost its third number,
+  `A 255 255` (R-054, ADR 0060).
 - `↑` and `↓` no longer take the keyboard from the image: they moved the focus to a toolbar
   button, after which `+`, `−`, `Ctrl+0` and `Ctrl+1` did nothing and `←` and `→` walked the
   buttons until the image was clicked. A click or a drag in the minimap or on a scrollbar now

@@ -160,10 +160,15 @@ their templates light the `Chrome` border in the accent on `IsKeyboardFocused`, 
 `DialogButton` adds a style trigger on `IsDefaulted`, the property WPF keeps true on a default
 button while the keyboard focus is in its window and on no button: it sets the button's own
 `BorderBrush`, which the template's border is bound to, so in a dialog the lit button is the
-one Enter answers with. The `Hyperlink` style underlines a link on `IsKeyboardFocused` as on
-`IsMouseOver`, and `CompareView.xaml` sets `FocusVisualStyle` to null on the surface, which is
-focusable for its shortcuts. `ThemeFocusTests` set the two read-only properties through their
-keys, since no window of a test has the keyboard, and read the border and the decoration back.
+one Enter answers with; the one exception is About, where a link that has the focus takes
+Enter itself and `Close` stays lit, a link not being something WPF knows to take Enter. The
+`Hyperlink` style underlines a link on `IsKeyboardFocused` as on `IsMouseOver`, and
+`CompareView.xaml` sets `FocusVisualStyle` to null on the surface, which is focusable for its
+shortcuts. About's `ComponentList` is not focusable: WPF makes an `ItemsControl` a tab stop,
+and it was the one stop left with WPF's rectangle. `ThemeFocusTests` set the two read-only
+properties through their keys, since no window of a test has the keyboard, and read the border
+and the decoration back; one of them walks the three windows' own trees and finds no tab stop
+that kept a `FocusVisualStyle`.
 
 ## In the diagnostic log
 

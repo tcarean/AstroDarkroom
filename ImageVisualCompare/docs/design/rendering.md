@@ -12,6 +12,7 @@
 > `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml.cs`,
 > `src/ImageVisualCompare.Core/MinimapGeometry.cs`,
 > `src/ImageVisualCompare.Wpf/app.manifest`,
+> `src/ImageVisualCompare.Wpf/Theme.xaml` (the two thin scrollbar styles),
 > and, for its two bars' layout rounding, `src/ImageVisualCompare.Wpf/MainWindow.xaml`.
 > A change to the code this describes means this note is updated in the same task, or
 > deleted with the decision it explains.

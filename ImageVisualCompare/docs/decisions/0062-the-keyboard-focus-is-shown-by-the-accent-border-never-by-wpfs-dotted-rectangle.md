@@ -42,6 +42,10 @@ The keyboard focus is shown in the palette, and WPF's dotted rectangle is drawn 
   no focus visual.
 - The comparison surface has `FocusVisualStyle` null: nothing is drawn over the image for
   having the focus.
+- About's list of components, an `ItemsControl`, is not focusable. WPF makes an `ItemsControl`
+  a tab stop, and with the focus it had WPF's mark; it has nothing of its own to focus. The
+  branch's review pointed at it, and at the message area of the dialog, a `ScrollViewer`,
+  which was read and is no tab stop.
 
 ## Alternatives rejected
 
@@ -70,7 +74,9 @@ The keyboard focus is shown in the palette, and WPF's dotted rectangle is drawn 
   a link does not declare that it takes Enter. `Close` was lit always before.
 - Guards: `ThemeFocusTests.R068_...` set WPF's read-only `IsKeyboardFocused` and `IsDefaulted`
   through their keys, by reflection, on controls with the theme's styles, and read the
-  template's border, the link's decoration and the `FocusVisualStyle`s. They do not show what
+  template's border, the link's decoration and the `FocusVisualStyle`s;
+  `R068_NoTabStopOfAnyWindow_KeepsWpfsDottedRectangle` walks the three windows' own trees,
+  without the parts the controls' templates add. They do not show what
   a Tab in a live dialog draws: that is for a run on screen with the keyboard (ADR 0026), not
   made on 2026-11-21.
 

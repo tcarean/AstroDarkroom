@@ -173,7 +173,8 @@
     <!-- Roomier than a toolbar button, because a dialog is read before it is clicked. The
          accent border shows the keyboard's answer (R-068, ADR 0062): the button that has the
          focus has it, by ToolButton's template, and the default button has it while the focus
-         is in the dialog and on no button, which is when Enter answers with it. That is WPF's
+         is in the dialog and on no button, which is when Enter answers with it (but for a link
+         of About, which takes Enter itself and leaves Close lit; ADR 0062). That is WPF's
          IsDefaulted, not IsDefault, which would keep the border on Yes with the focus, and
          Enter's answer, on No. -->
     <Style x:Key="DialogButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">

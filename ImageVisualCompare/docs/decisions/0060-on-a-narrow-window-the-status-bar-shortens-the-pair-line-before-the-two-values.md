@@ -26,7 +26,8 @@ of each item, of its full width, in device-independent pixels, in English:
 | 784 (800) | same size | 214 of 214 | 96 of 96 | 99 of 128 | 0 of 128 | 0 | 0 |
 
 So on a window 960 wide, half of a 1920 screen, a padded pair showed no pixel of B's value and
-`A 255 2` of A's; a pair of one size lost B at 800. In Romanian the pair line is 24 to 33
+`A 255 255` of A's, its third number cut off (nine characters of Consolas 11 are 54.4 wide,
+measured); a pair of one size lost B at 800. In Romanian the pair line is 24 to 33
 longer and the cut comes that much sooner. The version and the copyright take 303, and the
 three read-outs with their margins 400.
 

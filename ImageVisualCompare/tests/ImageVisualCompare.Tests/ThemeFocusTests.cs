@@ -20,8 +20,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
+using System.Windows.Input;
 using System.Windows.Media;
+using ImageVisualCompare.Core;
+using ImageVisualCompare.Wpf;
 using ImageVisualCompare.Wpf.Controls;
+using ImageVisualCompare.Wpf.Imaging;
+using ImageVisualCompare.Wpf.Services;
 
 namespace ImageVisualCompare.Tests;
 
@@ -157,6 +162,91 @@ public class ThemeFocusTests
         // instance WPF keeps as TextDecorations.Underline.
         Assert.Equal(TextDecorationLocation.Underline, Assert.Single(focused!).Location);
         Assert.Null(dotted);
+    }
+
+    /// <summary>
+    /// Everything Tab can reach in the three windows, read from each window's own tree: a tab
+    /// stop that kept a <c>FocusVisualStyle</c> would get WPF's dotted rectangle. The review of
+    /// this fix found one the fix had missed, the list of components in About, an
+    /// <c>ItemsControl</c>, which WPF makes a tab stop though nothing in it is its own to focus.
+    /// </summary>
+    [Fact]
+    public async Task R068_NoTabStopOfAnyWindow_KeepsWpfsDottedRectangle()
+    {
+        var dotted = new List<string>();
+        var stops = new List<string>();
+
+        await WpfThread.RunAsync(() =>
+        {
+            var windows = new (string Name, Window Window)[]
+            {
+                ("MainWindow", new MainWindow(new NoDialogs(), new ImagePairLoader(new NoLoader()))),
+                ("MessageDialog", (Window)Activator.CreateInstance(typeof(MessageDialog), nonPublic: true)!),
+                ("AboutWindow", new AboutWindow()),
+            };
+
+            foreach ((string name, Window window) in windows)
+            {
+                foreach (DependencyObject node in LogicalTree(window))
+                {
+                    (bool stop, Style? visual, string what) = node switch
+                    {
+                        FrameworkElement e => (e.Focusable && KeyboardNavigation.GetIsTabStop(e), e.FocusVisualStyle, e.Name.Length > 0 ? e.Name : e.GetType().Name),
+                        FrameworkContentElement c => (c.Focusable, c.FocusVisualStyle, c.GetType().Name),
+                        _ => (false, null, string.Empty),
+                    };
+
+                    if (stop)
+                    {
+                        stops.Add($"{name}.{what}");
+                        if (visual is not null)
+                        {
+                            dotted.Add($"{name}.{what}");
+                        }
+                    }
+                }
+            }
+        });
+
+        // The walk does see the tab stops: the toolbar's, the dialog's two buttons, About's.
+        Assert.Contains("MainWindow.OpenButton", stops);
+        Assert.Contains("MessageDialog.PrimaryButton", stops);
+        Assert.Contains("MessageDialog.SecondaryButton", stops);
+        Assert.Contains("AboutWindow.CloseButton", stops);
+        Assert.Contains("AboutWindow.Hyperlink", stops);
+        Assert.Empty(dotted);
+    }
+
+    /// <summary>A window's logical tree, the window first: what its XAML and its code put in it,
+    /// without the parts the controls' templates add.</summary>
+    private static IEnumerable<DependencyObject> LogicalTree(DependencyObject node)
+    {
+        yield return node;
+        foreach (DependencyObject child in LogicalTreeHelper.GetChildren(node).OfType<DependencyObject>())
+        {
+            foreach (DependencyObject below in LogicalTree(child))
+            {
+                yield return below;
+            }
+        }
+    }
+
+    /// <summary>Dialogs that are never asked: the window is built, not loaded.</summary>
+    private sealed class NoDialogs : IFileDialogService
+    {
+        public ImagePairSelection? PickImagePair(string? initialDirectory = null) => null;
+
+        public string? PickImage(ImageSide side, string? initialDirectory = null) => null;
+    }
+
+    /// <summary>A loader that is never asked.</summary>
+    private sealed class NoLoader : IImageLoader
+    {
+        public ImageInfo Probe(string path) => throw new NotSupportedException();
+
+        public Task<LoadedImage> LoadAsync(
+            string path, DisplayMode mode = DisplayMode.Linear, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 
     /// <summary>A brush of the theme, by its key.</summary>
