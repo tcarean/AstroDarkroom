@@ -730,8 +730,17 @@ public class GamutFitTests
             Assert.Equal(32, v.Preview.H);
             Assert.Equal(1600 * 32, v.Outside.Length);
         });
-        // The evidence is measured on the tonal subsample either way: the step does not move it.
-        Assert.Equal(whole.Variants[0].Evidence.PctOutsideBefore, reduced.Variants[0].Evidence.PctOutsideBefore);
+        // Pixel for pixel the reduction's mask and its fitted image are the whole image's at
+        // every second pixel.
+        Raster wholeFit = whole.Variants[0].Preview, reducedFit = reduced.Variants[0].Preview;
+        for (int y = 0; y < 32; y++)
+            for (int x = 0; x < 1600; x++)
+            {
+                Assert.True(whole.OriginalOutside[2 * y * 3200 + 2 * x] == reduced.OriginalOutside[y * 1600 + x], $"the mask at ({x}, {y}) of the reduction");
+                Assert.True(wholeFit.Planes[0][2 * y * 3200 + 2 * x] == reducedFit.Planes[0][y * 1600 + x], $"the fitted red at ({x}, {y}) of the reduction");
+            }
+        Assert.True(reduced.OriginalOutside[10]);      // source column 20, saturated
+        Assert.False(reduced.OriginalOutside[1590]);   // source column 3180, grey
     }
 
     static Dictionary<ushort, (ushort Type, uint Count, uint Value, int Offset)> ReadTags(byte[] b)

@@ -78,6 +78,8 @@ namespace AstroPhotoAnalyzer
         /// <returns>The step, 1 or more.</returns>
         internal static int WholeImageStride(int w, int h, int maxPixels = Thresholds.WholeImageMaxPixels)
         {
+            // Under 1 no step would ever fit, and the search below would not end.
+            if (maxPixels < 1) throw new ArgumentOutOfRangeException(nameof(maxPixels), maxPixels, "the cap is 1 pixel or more");
             int stride = 1;
             // The subsample's own size, rounded up as Subsample rounds it.
             while ((long)((w + stride - 1) / stride) * ((h + stride - 1) / stride) > maxPixels) stride++;

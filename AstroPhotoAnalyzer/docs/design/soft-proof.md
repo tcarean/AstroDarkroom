@@ -75,7 +75,9 @@ clipped channel is clipped silently in `Display`.
 ## The run (`Runs/ProofRun.cs`)
 
 The third run after `AnalysisRun` and `CurveRun`, called by the window alone, never by the
-console. `Prepare(AnalysisResult)` gives a `ProofSet`: the profile (or the `Problem`: no profile
+console. `Prepare(AnalysisResult, maxPixels)` gives a `ProofSet` (the cap is
+`WholeImageMaxPixels` unless a test lowers it, through the tab's `MaxPixels`, to reach a reduced
+copy with a small frame): the profile (or the `Problem`: no profile
 behind the Dmax, `ProofTexts.NoProfile`, which names the "From ICC profile..." button; an
 unusable one, the core's reason), the image itself (`Reduced` is the analysed raster, the
 set's `Stride` 1) or, over `WholeImageMaxPixels`, its subsample at the smallest step that
@@ -94,7 +96,8 @@ message, with a warning in the log. The overload that takes a raster, which the 
 then refuses another size (`ProofTexts.SizeMismatch`, compared on the whole images, so two
 sizes over the limit that would reduce alike are still refused) and a linear image (`RasterOps.LooksLinear`,
 the sentence `AnalysisRun.LinearRefusal` gives both runs), and otherwise calls `Reduce`, the
-reduction and the mask loop `Prepare` uses too. The set it gives holds `first.Profile` itself,
+reduction and the mask loop `Prepare` uses too, at the first set's `Stride`: the two images
+have the same size, so the same step, and the sides line up pixel for pixel. The set it gives holds `first.Profile` itself,
 not a profile opened again: `ProofProfile.Table(intent)` is kept on that object, so each
 intent's table is built once and serves both images, and "the same settings" holds by sharing,
 not by convention. `Render` takes either set. A `RunClock` named `proof-other` (`load`, `mask`).

@@ -219,10 +219,12 @@ public class SoftProofTests
         using var ws = new TempWorkspace();
         Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(Profile(ws), out string error) ?? throw new Exception(error);
         // The cap lowered so that a small frame is over it: 2401 x 64 is 153 664 pixels, and a
-        // step of 2 leaves 1201 x 32.
+        // step of 2 leaves 1201 x 32. The left half is saturated, which this paper cannot hold.
         const int cap = 100_000;
-        Raster wide = SyntheticRasters.Flat(64, 2401, 0.3f);
-        ProofSet set = ProofRun.Prepare(AnalysisRun.Execute(wide, "memorie", p), cap);
+        Raster wide = SyntheticRasters.From(64, 2401, 3, (x, y, c) => x < 1200 ? (c == 0 ? 0.6f : 0.2f) : 0.3f);
+        AnalysisResult analysis = AnalysisRun.Execute(wide, "memorie", p);
+        ProofSet whole = ProofRun.Prepare(analysis);
+        ProofSet set = ProofRun.Prepare(analysis, cap);
         Assert.Null(set.Problem);
         Assert.Equal(2, set.Stride);
         Assert.Equal(1201, set.Reduced.W);
@@ -230,16 +232,30 @@ public class SoftProofTests
         Assert.Equal(1201 * 32, set.PaperOutside.Length);   // the mask is the reduction's
         Assert.Equal(2401, set.SourceW);                    // and the image's own size is kept
         Assert.Equal(64, set.SourceH);
+        // Pixel for pixel the mask is the whole image's at every second pixel, both kinds in it.
+        Assert.Contains(true, set.PaperOutside);
+        Assert.Contains(false, set.PaperOutside);
+        for (int y = 0; y < 32; y++)
+            for (int x = 0; x < 1201; x++)
+                Assert.True(whole.PaperOutside[2 * y * 2401 + 2 * x] == set.PaperOutside[y * 1201 + x], $"the mask at ({x}, {y}) of the reduction");
+        Assert.InRange(set.PctPaper, 49.9, 50.0);   // 600 of 1201 columns
         SoftProofResult proof = ProofRun.Render(set, ProofIntent.Perceptual, simulate: true);
         Assert.Equal(1201, proof.Image.W);
         Assert.Equal(32, proof.Image.H);
 
         // The other image of a comparison is taken at the first one's step, so the sides line up.
-        ProofSet other = ProofRun.PrepareOther(set, SyntheticRasters.Flat(64, 2401, 0.5f), "alta");
+        // Saturated on the right this time: its mask is its own, not the first image's.
+        Raster mirrored = SyntheticRasters.From(64, 2401, 3, (x, y, c) => x >= 1200 ? (c == 0 ? 0.6f : 0.2f) : 0.3f);
+        ProofSet other = ProofRun.PrepareOther(set, mirrored, "alta");
         Assert.Null(other.Problem);
         Assert.Equal(2, other.Stride);
         Assert.Equal(1201, other.Reduced.W);
         Assert.Equal(1201 * 32, other.PaperOutside.Length);
+        Assert.False(other.PaperOutside[10]);     // source column 20, grey
+        Assert.True(other.PaperOutside[1190]);    // source column 2380, saturated
+
+        // A cap under one pixel is refused: no step would ever fit.
+        Assert.Throws<ArgumentOutOfRangeException>(() => RasterOps.WholeImageStride(10, 10, 0));
     }
 
     [Theory]

@@ -253,7 +253,8 @@ public class GamutFitTabTests
         Assert.False(tab.HasGallery);
         Assert.False(tab.IsBusy);
 
-        // The synchronous computation supersedes a wait too, and leaves the tab not busy.
+        // The synchronous computation supersedes a wait too, and leaves the tab not busy: the
+        // core runs once more, for it, and never for the wait it overtook.
         var pending = new TaskCompletionSource();
         Task waiting = tab.ComputeAfterAsync(pending.Task);
         Assert.True(tab.IsBusy);
@@ -264,6 +265,7 @@ public class GamutFitTabTests
         await waiting;
         Assert.False(tab.IsBusy);
         Assert.True(tab.HasGallery);
+        Assert.Equal(2, capture.Messages.Count(m => m.StartsWith("gamutfit start")));
     }
 
     [Fact]
