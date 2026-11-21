@@ -998,9 +998,10 @@ public class SeriesTests
 
     /// <summary>
     /// The `what it means` row says what the read noise adds from the threshold up as the first
-    /// whole percent above what it adds at the threshold (R-024). This pins the text against
-    /// the constant: it fails when `Th.SwampingRatioOk` changes and the text does not follow,
-    /// and cannot tell a figure worked out in the code from one typed there.
+    /// whole percent above what it adds at the threshold (R-024). This pins the text and the
+    /// constant at today's values, a threshold of 10 and `under 5 %`: it fails on any change of
+    /// `Th.SwampingRatioOk`, and cannot tell a figure worked out in the code from one typed
+    /// there.
     /// </summary>
     [Theory]
     [InlineData(true)]

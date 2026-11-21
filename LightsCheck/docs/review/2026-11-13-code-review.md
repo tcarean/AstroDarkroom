@@ -140,6 +140,7 @@ rule "Golden files").
 | CR-061 | 4 | - | confirmed | Design notes and comments that describe other code | open |
 | CR-062 | 4 | - | confirmed | The fixtures' star grid repeats, so frames with no shift register one column over | open |
 | CR-063 | 3 | some setups | confirmed | A long file name pushes its reasons out of line in the REJECTED block | open |
+| CR-064 | 3 | common | confirmed | The Romanian tip of the thread field has two spaces before `nuclee` | open |
 
 After the entries: the six findings in the files copied from FlatCheck (CP-1 to CP-6), fixed
 there first, and the cleanup list, which holds what is not a defect.
@@ -508,7 +509,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Should: the singular for one, and `de` from twenty.
 - Test: `SeriesTests.cs:179` pins `1 bune`.
 - Evidence: confirmed.
-- Status: fixed d32b8e2f (the texts the entry lists take the singular for one, and the Romanian warning of unread frames its `de`: R-093; the label of FOCUS's second row has no count when fewer than two good frames leave nothing to compare; more counts written with a plural word only were found by a search and by the review of the branch, and left for the owner as texts not yet shown: in `--frame`, the Romanian `1 detectate, 1 luminoase, 1 saturate; 1 masurate` and `1 stars kept` (`1 stele retinute`); `1 hot pixels per million pixels` (`1 pixeli calzi la un milion de pixeli`) in the `fixed pattern` row; an angle that rounds to one, `trail at 1 degrees` (`dara la 1 grade`) in a reason and `angle 1 degrees` under a cut-out; and `0 moves over 1 frames` when a single frame was aligned, CR-041's case)
+- Status: fixed d32b8e2f (the texts the entry lists take the singular for one, and the Romanian warning of unread frames its `de`: R-093; the label of FOCUS's second row has no count when fewer than two good frames leave nothing to compare; more counts written with a plural word only were found by a search and by the two reviews of the branch, and left for the owner as texts not yet shown: in `--frame`, the Romanian `1 detectate, 1 luminoase, 1 saturate; 1 masurate` and `1 stars kept` (`1 stele retinute`); and an angle that rounds to one degree, in five places: a frame's reason, `trail at 1 degrees` (`dara la 1 grade`) and `trail on RA (1 degrees)` (`dara pe RA (1 grade)`), the `trail direction` row, `1 degrees from the horizontal` (`1 grade fata de orizontala`), the caption of a cut-out and the elongation line of `--frame`, `angle 1 degrees` (`unghi 1 grade`))
 
 ### CR-020 The `marginal (elongation between ...)` row lists frames that are not
 
@@ -873,24 +874,6 @@ there first, and the cleanup list, which holds what is not a defect.
 - Evidence: to measure.
 - Status: open
 
-### CR-063 A long file name pushes its reasons out of line in the REJECTED block
-
-- Added 2026-11-20 by the task that fixed CR-017 to CR-021, from the review of its branch; not
-  one of the 61 entries of the review.
-- Where: `src/LightsCheck.Core/Report/SeriesReport.cs` (`Write`, the loop over `RejectedRows`).
-- What happens: each row of the block is written as the frame's number in 3 columns, its file
-  name padded to 20 and its reasons. The name is not cut, as it is in the two tables, and the
-  widths are fixed.
-- Case: lights named as a capture program names them, `Light_Veil_120.0s_Bin1_0001.fit` (31
-  letters): every row's reasons start 11 columns further right than under a 20-letter name,
-  and at a different column for each name's length. A session of 1000 frames or more shifts
-  the rows of frames 1000 and up by one column.
-- Should: the reasons in one column, as the two tables are written since CR-018 (`TextTable`,
-  R-095), with the name whole, since it is what the user needs in Siril.
-- Test: none; every fixture's names have 12 letters.
-- Evidence: confirmed (by reading; not run).
-- Status: open
-
 ## Severity 4: robustness and cleanliness
 
 ### CR-045 Options that do not apply are dropped in silence; `--out` takes an option as its folder
@@ -1241,6 +1224,44 @@ In `tests/LightsCheck.Wpf.Tests/`:
 - Evidence: confirmed on the fixtures (a console run and a test's own output, 2026-11-13). No
   defect on a sky, which does not repeat: the recorded sessions align every frame on 62 % of
   the stars or more.
+- Status: open
+
+### CR-063 A long file name pushes its reasons out of line in the REJECTED block
+
+- Added 2026-11-20 by the task that fixed CR-017 to CR-021, from the review of its branch (ADR
+  0046, point 7); not one of the 61 entries of the review. Severity 3, reach `some setups`: it
+  stands here, at the end, as a new entry does, and is taken in the table's order.
+- Where: `src/LightsCheck.Core/Report/SeriesReport.cs` (`Write`, the loop over `RejectedRows`).
+- What happens: each row of the block is written as the frame's number in 3 columns, its file
+  name padded to 20 and its reasons. The name is not cut, as it is in the two tables, and the
+  widths are fixed. The same text is the window's Report tab and the file
+  `lightscheck-report.txt`.
+- Case: lights named as a capture program names them, `Light_Veil_120.0s_Bin1_0001.fit` (31
+  letters): every row's reasons start 11 columns further right than under a 20-letter name,
+  and at a different column for each name's length. A session of 1000 frames or more shifts
+  the rows of frames 1000 and up by one column.
+- Should: the reasons in one column, as the two tables are written since CR-018 (`TextTable`,
+  R-095), with the name whole, since it is what the user needs in Siril. The window's Rejected
+  tab is another matter: its columns are fixed, so its reasons are in line, and what happens to
+  a long name there is CR-055's.
+- Test: none; no test light has a name over 20 letters.
+- Evidence: confirmed (by reading; not run).
+- Status: open
+
+### CR-064 The Romanian tip of the thread field has two spaces before `nuclee`
+
+- Added 2026-11-21 by the same task, from the second review of its branch (ADR 0046, point 7);
+  not one of the 61 entries of the review. Severity 3, reach `common` in Romanian.
+- Where: `src/LightsCheck.Wpf/ViewModels/WindowTexts.cs` (`ThreadsTip`).
+- What happens: the Romanian sentence is `jumatate din cele {RoCount(cores)} nuclee`, and
+  `Ui.RoCount` already ends with a space (it is written to stand right before the word it
+  counts).
+- Case: a computer with 8 cores, `--lang ro`: the tip of the thread field reads `Gol: 4,
+  jumatate din cele 8  nuclee ale acestui calculator.`, with two spaces. With 20 cores or more
+  it reads `cele 20 de  nuclee`. R-083 quotes the sentence with one.
+- Should: one space.
+- Test: none holds the Romanian sentence.
+- Evidence: confirmed (by reading; not run).
 - Status: open
 
 ## The files copied from FlatCheck
