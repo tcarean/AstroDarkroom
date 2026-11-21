@@ -220,8 +220,8 @@ where the rows above it count by the warning.
 
 ## The run (`Runs/GamutFitRun.cs`)
 
-The fourth run after `AnalysisRun`, started by the window beside the curves' and the proof's
-(ADR 0051), never by the console. `Execute(a)`: no profile behind the Dmax
+The fourth run after `AnalysisRun`, started by the window after the analysis without a press
+(ADR 0051), once the proof's has ended (ADR 0118), never by the console. `Execute(a)`: no profile behind the Dmax
 gives `ProofTexts.NoProfile` as the set's `Problem`; `GamutAnalyzer.Build` (the run's own table;
 its `Problem` is the set's); the fit's table from its `ExactLab`, built at the target, with the
 two pairs of judges of the section above; the original itself, the set's `Stride` 1, or over
@@ -234,8 +234,8 @@ figures are the evidence, `GamutFitEvidence.Of`); the recipe on the subsample. T
 `RunClock` named `gamutfit` (`profile`, `table`, each variant's name, `recipe`),
 each variant's figures at Debug, the done line with the share outside, the fit's target, the
 recipe and the profile's name. The set keeps the table and the variants' knees for the save; the window drops
-the previews once drawn. On the whole 22.6 MP reference image the run takes about 11 s and
-holds 0.9 GB while it lasts (ADR 0118).
+the previews once drawn. On the whole 22.6 MP reference image the run with the tab's bitmaps
+takes about 12 s and holds 0.9 GB while it lasts (ADR 0118).
 
 `GamutFitExport.Save(a, set, v, target)` runs under `CurveExport.Guarded`, the guards of R-145
 lifted out of `CurveExport.Save` so both exports share them (the input gone, the same path, the

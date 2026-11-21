@@ -224,7 +224,8 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   figures past the tolerance, and, inside it, the six means: `proof.Perceptual.meanLstar`
   16.9678 -> 16.968, `.simulated` 18.0342 -> 18.0345, `proof.Relative.meanLstar` 19.6904 ->
   19.6912, `.simulated` 20.3998 -> 20.4005, `proof.RelativeNoBpc.meanLstar` 18.1787 -> 18.1797,
-  `.simulated` 19.0818 -> 19.0827. Its other eight figures are identical. The run before the
+  `.simulated` 19.0818 -> 19.0827. Its other eight figures are identical, a second run gave
+  the same sixteen, and its `measuredOn` is set to this day. The run before the
   record: 28 tests, 27 passed, V-015 alone drifted; no other case's figure moved past the
   tolerance, V-016 included, whose figures are measured on the tonal subsample.
 - 2026-11-17 (ADR 0111, CR-078 of the code review of 2026-11-13: the share of samples of the

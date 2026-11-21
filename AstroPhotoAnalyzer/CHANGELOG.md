@@ -44,7 +44,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   reduced copy, so their zoom, up to 8:1, shows the image's real pixels (R-188, ADR 0118). The
   fit is computed once per image, in the background, after the proof and no longer beside it,
   and never again when the window grows: on a 23 MP image the proof is shown about 3 s after
-  the analysis and the fit about 15 s after it. The two tabs hold about 0.65 GB for such an
+  the analysis and the fit about 16 s after it. The two tabs hold about 0.65 GB for such an
   image, and about 2.6 GB are needed while they are computed. An image over 64 MP is still
   shown as a reduced copy, and the texts under it say so. V-015 was recorded again on the
   whole image (`docs/validation.md`).

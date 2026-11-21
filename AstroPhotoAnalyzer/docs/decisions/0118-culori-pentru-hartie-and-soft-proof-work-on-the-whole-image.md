@@ -52,8 +52,9 @@ Consequences), and the owner chose the whole image, with the two choices below.
 - **A cap of 32 MP.** The peak would stay under 4 GB, and the cameras of 45 to 61 MP would be
   shown at every second pixel, which is what this decision is meant to end.
 - **No cap.** The memory grows with the image, about 40 MB held for each megapixel by the two
-  tabs together as first measured (some 30 MB as built, 115 MB while the runs last), and the runs start with every image opened, whether the tabs are looked at or
-  not: a 150 MP mosaic would ask for about 6 GB where today it works. 64 MP covers the cameras
+  tabs together as first measured (some 30 MB as built, about 115 MB while the runs last), and the runs start with every image opened, whether the tabs are looked at or
+  not: a 150 MP mosaic would hold about 4.5 GB and need about 17 GB while the runs last, where
+  today it works. 64 MP covers the cameras
   of up to 61 MP; it is a presumption about the images and the PC, not a measurement.
 
 ## Consequences
@@ -61,7 +62,11 @@ Consequences), and the owner chose the whole image, with the two choices below.
 - R-188 says so; R-160, R-163, R-165, R-178 and R-179 point to it. `SoftProofTests` checks
   that a 2401 pixel wide image is proofed whole and the step of five sizes around the cap;
   `GamutFitTests`, `GamutFitTabTests` and `SoftProofTabTests` that the images shown have the
-  image's size and that the sentences call it a copy only when it is reduced.
+  image's size and that the sentences call it a copy only when it is reduced; `GamutFitTabTests`
+  also that the fit waits for the task it is handed and is abandoned while it waits, and, through
+  `MainViewModel`, that the fit's run starts after the proof was rendered (decision 5). The
+  reduced path itself is checked only by its step and its sentences: no test builds an image
+  over 64 MP.
 - Measured 2026-11-21 on the plate-solved FITS (5837 x 3867, 22.6 MP) through the lab's baryta
   profile (`Hahnemuhle PRBaryta.icm`), a scratchpad program over the branch's core and window
   assemblies, 8 logical cores, one run each; the memory is the process's private bytes after a
@@ -93,9 +98,9 @@ Consequences), and the owner chose the whole image, with the two choices below.
   still complete, in the same times, peaking at 2.6 to 2.7 GB: about 115 MB for each megapixel
   are needed while the runs last, the rest of the peak being memory not yet collected. An
   image at the cap, 64 MP, would therefore need about 7 GB while the runs last and hold about
-  2.6 GB afterwards.
-- The fit's computation ends about 10 s later than before, in the background; a tab opened
-  sooner shows "computing".
+  2.6 GB afterwards (about 1.9 GB as built, the last point below).
+- The fit is shown about 14 s later than before (15.5 to 16.3 s after the analysis, where
+  it took 1.9 s), in the background; a tab opened sooner shows "computing".
 - How smoothly the window zooms and pans bitmaps of 22.6 MP was not measured: it shows only in
   the running window, and the owner tries it on the branch's build before the merge.
 - `/validate`'s paper fit case (V-016) now computes whole-image previews it does not read,

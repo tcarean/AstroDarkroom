@@ -226,7 +226,7 @@
   small image stays at its own size. This is the Editare Curbe tab's alone since ADR 0118.
 - Culori pentru hartie and Soft proof work on the whole image (R-188, ADR 0118), and both runs
   start with every image opened, whether the tabs are looked at or not: on a 22.6 MP image the
-  proof is shown about 3 s after the analysis and the fit, which waits for it, about 15 s after
+  proof is shown about 3 s after the analysis and the fit, which waits for it, about 16 s after
   (the tab shows "computing" until then); the two tabs then hold some 30 MB for each megapixel,
   and while the runs last about 115 MB for each are needed, 2.6 GB on that image and about
   7 GB on one at the limit; a comparison in Soft proof holds the second image too. An image

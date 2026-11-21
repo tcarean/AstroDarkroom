@@ -207,8 +207,8 @@ proof** tab paints in red, the colours the paper cannot reproduce, and lowers th
 each along its own hue and at its own tone, to the most the paper holds there: the tone and the
 hue of every pixel stay what they were. The fit stops a little inside the paper's limit, so the
 colours just under the limit are eased too: that way the gamut warning of other programs,
-Lightroom's for one, has almost nothing left to mark in the saved file. It is computed right
-after the analysis, like the curves.
+Lightroom's for one, has almost nothing left to mark in the saved file. It is computed after
+the analysis without a press, once the soft proof is ready.
 
 - The image is a comparison: left of a vertical line is the image as it is, labelled
   **Before**, right of it the fitted one, labelled **After**. Drag the line, or the handle in
@@ -217,7 +217,7 @@ after the analysis, like the curves.
 - The mouse wheel zooms around the cursor, up to 8:1 on the image itself, so you see its real
   pixels; hold the left button and drag to move the image; a double click fits it again. The two
   sides zoom and move together, and the line stays where you put it. The tab works on the whole
-  image, which takes some seconds after the analysis (about 15 on a 23 MP image, the tab saying
+  image, which takes some seconds after the analysis (about 16 on a 23 MP image, the tab saying
   so meanwhile); only an image over 64 MP is shown as a reduced copy.
 - There are three variants: **Exact** changes only the colours the paper cannot hold, or holds
   just barely, each losing just enough saturation to sit a little inside the paper's limit;

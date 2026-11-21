@@ -214,6 +214,32 @@ public class GamutFitTabTests
     }
 
     [Fact]
+    public async Task R188_TheWindowStartsTheFitWhenTheProofIsShownNotBesideIt()
+    {
+        using var ws = new TempWorkspace();
+        string icc = ws.WriteFile("hartie.icc", IccPrinterTestData.V2Lut16("Hartie de test", 20));
+        string tif = WindowSmokeTests.DarkTiff(ws);
+        using LogCapture capture = LogCapture.Start();
+        var vm = new MainViewModel();
+        Assert.True(vm.Parameters.UseProfile(new IccProfileRow(IccPaperBlack.Read(icc))));
+
+        await vm.OpenAsync(tif);
+        Assert.True(vm.HasResult, vm.Error);
+        await vm.GamutFitComputation;
+        Assert.True(vm.ProofComputation.IsCompleted);   // the fit's task holds the wait for the proof
+        Assert.True(vm.SoftProof.HasProof, vm.SoftProof.Message);
+        Assert.True(vm.GamutFit.HasGallery, vm.GamutFit.Message);
+
+        // The core's fit starts after the proof was rendered: started beside it, its start line
+        // would come first, the proof's table taking far longer than a log line.
+        List<string> log = capture.Messages.ToList();
+        int rendered = log.FindIndex(m => m.StartsWith("proof rendered"));
+        int fit = log.FindIndex(m => m.StartsWith("gamutfit start"));
+        Assert.True(rendered >= 0, "the proof was rendered");
+        Assert.True(fit > rendered, $"the fit started at line {fit}, the proof was rendered at line {rendered}");
+    }
+
+    [Fact]
     public void R178_SaveAsProposesTheInputsKindAndWritesTheCoresFile()
     {
         using var ws = new TempWorkspace();
