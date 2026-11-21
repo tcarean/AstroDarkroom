@@ -351,8 +351,23 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
-    /// Takes the keyboard focus and, once a pair is shown, starts a drag: of the divider when the
-    /// press is on it, otherwise a pan.
+    /// Takes the keyboard focus at a press of the left button anywhere on the surface, the
+    /// minimap and the scrollbars included (R-063). On the press's way down to the part under
+    /// the pointer, not in <see cref="OnMouseLeftButtonDown"/>: the minimap handles its own
+    /// press and a scrollbar's thumb its own, and WPF does not call that method for a press
+    /// already handled, so a drag in either left the focus where it was, on a toolbar button
+    /// reached by Tab for instance.
+    /// </summary>
+    /// <param name="e">The press; not read, and not marked handled.</param>
+    protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
+    {
+        base.OnPreviewMouseLeftButtonDown(e);
+        Focus();
+    }
+
+    /// <summary>
+    /// Once a pair is shown, starts a drag: of the divider when the press is on it, otherwise a
+    /// pan. The focus was taken on the press's way down (<see cref="OnPreviewMouseLeftButtonDown"/>).
     /// </summary>
     /// <param name="e">
     /// The press; its position decides which drag, and once a pair is shown it is marked
@@ -361,7 +376,6 @@ public partial class CompareView : UserControl
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonDown(e);
-        Focus();
 
         if (!Viewport.HasContent)
         {
@@ -466,7 +480,8 @@ public partial class CompareView : UserControl
 
     /// <summary>
     /// Handles the surface's own keys: the fit and 100% shortcuts, the zoom steps, and the
-    /// divider nudge (<see cref="DividerModel.NudgeBy"/>); any other key is left to the window.
+    /// divider nudge (<see cref="DividerModel.NudgeBy"/>); Up and Down are taken and do nothing
+    /// (R-063); any other key is left to the window.
     /// </summary>
     /// <param name="e">The key; marked handled when it is one of these.</param>
     protected override void OnKeyDown(KeyEventArgs e)
@@ -500,6 +515,13 @@ public partial class CompareView : UserControl
                 case Key.Right:
                     Divider.NudgeBy(nudge, ActualWidth);
                     Sync();
+                    break;
+                case Key.Up or Key.Down:
+                    // Nothing to do, but taken: WPF's arrow-key navigation runs for an arrow
+                    // nothing handled and moves the keyboard focus from the surface to a toolbar
+                    // button, where Left and Right then walk the buttons and the surface's
+                    // shortcuts are dead until the image is clicked. They sit beside Left and
+                    // Right, so they are pressed by a slip (CR-014 of the review of 2026-11-13).
                     break;
                 default:
                     return;
@@ -585,8 +607,8 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
-    /// Pans to where the user scrolled a scrollbar: by dragging its thumb, clicking it, or its
-    /// context menu.
+    /// Pans to where the user scrolled a scrollbar, by dragging its thumb: the thin bars have
+    /// neither a track to click nor a context menu (R-043).
     /// </summary>
     private void OnScrollBarMoved()
     {

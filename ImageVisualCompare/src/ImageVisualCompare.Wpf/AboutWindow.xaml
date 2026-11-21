@@ -59,7 +59,11 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource Heading}" Text="{Binding ThirdPartyHeading}" />
                 <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,12" Text="{Binding ThirdPartyLead}" />
+                <!-- Not focusable: WPF makes an ItemsControl a tab stop, and with the focus it
+                     would get WPF's dotted rectangle (R-068). The list has nothing of its own to
+                     focus; the links in its rows are tab stops themselves. -->
                 <ItemsControl x:Name="ComponentList"
+                              Focusable="False"
                               ItemsSource="{Binding Components}"
                               ItemTemplate="{StaticResource ComponentRowTemplate}" />
             </StackPanel>

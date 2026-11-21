@@ -5,6 +5,7 @@
              Background="{StaticResource CanvasBrush}"
              ClipToBounds="True"
              Focusable="True"
+             FocusVisualStyle="{x:Null}"
              SnapsToDevicePixels="False"
              UseLayoutRounding="False">
 

@@ -124,7 +124,8 @@ public sealed class ImagePairLoader(IImageLoader loader)
     /// cancelled there still asks, and can come back declined or as the mismatch.
     /// </param>
     /// <returns>
-    /// The pair; or a failure whose message names the file that could not be read, or the
+    /// The pair; or a failure whose message names the file that could not be read, a file
+    /// decoded at another size than its header gave included (<see cref="EnsureSize"/>), or the
     /// mismatch when there was no one to ask; or <see cref="ImagePairLoadResult.Declined"/>.
     /// An exception <see cref="IsExpectedLoadFailure"/> does not accept reaches the caller
     /// instead: the loaders turn their decoders' failures into accepted types, so such an
@@ -179,12 +180,14 @@ public sealed class ImagePairLoader(IImageLoader loader)
             LoadedImage before = await loader.LoadAsync(beforePath, mode, cancellationToken).ConfigureAwait(false);
             clock.Lap("decode A");
             Log.Info("decoded A: " + LogText.Decoded(before.Info, before.Mode));
+            EnsureSize(beforeInfo, before);
 
             currentPath = afterPath;
             progress?.Report(new ImageLoadProgress(0.5, afterInfo.FileName));
             LoadedImage after = await loader.LoadAsync(afterPath, mode, cancellationToken).ConfigureAwait(false);
             clock.Lap("decode B");
             Log.Info("decoded B: " + LogText.Decoded(after.Info, after.Mode));
+            EnsureSize(afterInfo, after);
 
             progress?.Report(new ImageLoadProgress(1, null));
             return Done(new ImagePair(before, after, pad), clock);
@@ -228,7 +231,9 @@ public sealed class ImagePairLoader(IImageLoader loader)
     /// <returns>
     /// The new pair, in which the kept image is the very <see cref="LoadedImage"/> of
     /// <paramref name="current"/> unless it had to be decoded again; or a failure naming the
-    /// file that could not be read, or the mismatch when there was no one to ask; or
+    /// file that could not be read, the new file or the kept one decoded at another size than
+    /// the canvas was settled from included (<see cref="EnsureSize"/>), or the mismatch when
+    /// there was no one to ask; or
     /// <see cref="ImagePairLoadResult.Declined"/>.
     /// </returns>
     public async Task<ImagePairLoadResult> ReplaceAsync(
@@ -275,6 +280,7 @@ public sealed class ImagePairLoader(IImageLoader loader)
             LoadedImage changed = await loader.LoadAsync(path, mode, cancellationToken).ConfigureAwait(false);
             clock.Lap("decode " + side);
             Log.Info("decoded " + side + ": " + LogText.Decoded(changed.Info, changed.Mode));
+            EnsureSize(info, changed);
 
             // A pair is in one mode (R-110): a kept image equalised beside a new file that can
             // only be linear, or the other way round, would compare nothing.
@@ -283,9 +289,14 @@ public sealed class ImagePairLoader(IImageLoader loader)
                 currentPath = kept.Info.Path;
                 Log.Info("the kept " + keptSide + " was rendered in " + kept.Mode + ", so it is decoded again in " + mode);
                 progress?.Report(new ImageLoadProgress(0.5, kept.Info.FileName));
+
+                // The canvas was settled from the kept image as it is on screen; its file may
+                // have been saved again since it was opened.
+                ImageInfo onScreen = kept.Info;
                 kept = await loader.LoadAsync(kept.Info.Path, mode, cancellationToken).ConfigureAwait(false);
                 clock.Lap("decode " + keptSide);
                 Log.Info("decoded " + keptSide + ": " + LogText.Decoded(kept.Info, kept.Mode));
+                EnsureSize(onScreen, kept);
             }
 
             progress?.Report(new ImageLoadProgress(1, null));
@@ -299,6 +310,33 @@ public sealed class ImagePairLoader(IImageLoader loader)
         catch (Exception ex) when (IsExpectedLoadFailure(ex))
         {
             return Failed(ex, currentPath, clock);
+        }
+    }
+
+    /// <summary>
+    /// Refuses an image that was decoded at another size than the one the pair's canvas was
+    /// settled from (R-005, ADR 0063). The canvas, and the padding question, come from the
+    /// headers read before any decode, and for a kept image from the image on screen; a file
+    /// saved again in between, cropped say, would otherwise be shown on a canvas that is not
+    /// its pair's, with no question asked.
+    /// </summary>
+    /// <param name="planned">
+    /// The image the canvas was settled from: as probed, or, for the kept image of a change, as
+    /// on screen.
+    /// </param>
+    /// <param name="decoded">The same file, just decoded.</param>
+    /// <exception cref="IOException">
+    /// The two differ in width or in height. Its message is the user's second line
+    /// (<see cref="UiText.FileChangedOnDisk"/>); the callers' catch words the first, logs both
+    /// and returns the failure.
+    /// </exception>
+    private static void EnsureSize(ImageInfo planned, LoadedImage decoded)
+    {
+        ImageInfo now = decoded.Info;
+        if (now.PixelWidth != planned.PixelWidth || now.PixelHeight != planned.PixelHeight)
+        {
+            throw new IOException(UiText.Current.FileChangedOnDisk(
+                planned.PixelWidth, planned.PixelHeight, now.PixelWidth, now.PixelHeight));
         }
     }
 

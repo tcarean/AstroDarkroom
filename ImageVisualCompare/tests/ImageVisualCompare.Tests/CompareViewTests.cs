@@ -16,6 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ImageVisualCompare.Core;
@@ -288,6 +290,55 @@ public class CompareViewTests
 
         Assert.Equal(430 * 361, compared);
         Assert.True(wrong.Count == 0, $"{wrong.Count} of {compared} screen pixels; the first: {string.Join("; ", wrong.Take(3))}");
+    }
+
+    /// <summary>
+    /// CR-015 of the review of 2026-11-13. A right click on a scrollbar opened WPF's own menu
+    /// (<c>Scroll Here</c>, <c>Top</c>, <c>Page Up</c> and four more): light over the dark image,
+    /// in English whatever the interface's language, its <c>Page Down</c> a step of one image
+    /// pixel and its <c>Scroll Down</c> of a tenth of one. WPF gives a scrollbar that menu as its
+    /// menu is about to open, when nothing has set the bar's <c>ContextMenu</c>.
+    /// </summary>
+    [Fact]
+    public async Task R043_ARightClickOnAScrollbar_OpensNoMenu()
+    {
+        var bars = new List<string>();
+        var menus = new List<string>();
+
+        await WpfThread.RunAsync(() =>
+        {
+            var view = new CompareView();
+            view.Measure(new Size(SurfaceWidth, SurfaceHeight));
+            view.Arrange(new Rect(0, 0, SurfaceWidth, SurfaceHeight));
+            view.UpdateLayout();
+            view.SetPair(CodedPair(1854, 800));
+            view.ZoomToActualSize();
+
+            foreach (ScrollBar bar in new[] { view.VerticalBar, view.HorizontalBar })
+            {
+                bars.Add($"{bar.Name} {bar.Visibility}");
+
+                // What WPF raises on the element under a right click before it opens that
+                // element's menu; the event's arguments have no public constructor.
+                var opening = (ContextMenuEventArgs)Activator.CreateInstance(
+                    typeof(ContextMenuEventArgs),
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+                    null,
+                    [bar, true],
+                    null)!;
+                opening.RoutedEvent = ContextMenuService.ContextMenuOpeningEvent;
+                bar.RaiseEvent(opening);
+
+                if (bar.ContextMenu is { } menu)
+                {
+                    menus.Add($"{bar.Name}: {string.Join(", ", menu.Items.OfType<MenuItem>().Select(item => item.Header))}");
+                }
+            }
+        });
+
+        // Both bars are on screen at 100 %: the image overflows the surface on both axes.
+        Assert.Equal(["VerticalBar Visible", "HorizontalBar Visible"], bars);
+        Assert.Empty(menus);
     }
 
     /// <summary>

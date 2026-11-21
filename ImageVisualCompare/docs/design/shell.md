@@ -10,6 +10,7 @@
 > `src/ImageVisualCompare.Wpf/ImageVisualCompare.Wpf.csproj`,
 > `src/ImageVisualCompare.Wpf/Interop/DarkTitleBar.cs`,
 > `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`,
+> `src/ImageVisualCompare.Wpf/MainWindow.xaml` (the status bar's layout),
 > `src/ImageVisualCompare.Wpf/Controls/PairLabelPanel.cs`,
 > `src/ImageVisualCompare.Core/PairLabelLayout.cs`,
 > `src/ImageVisualCompare.Core/Manual.cs`,
@@ -120,6 +121,22 @@ so a name last measured at its own width could never grow, and the names, empty 
 toolbar is first laid out, stayed invisible (`PairLabelPanelTests` sets the text after the
 first layout). The buttons leave the clip only at the floor, where both names are at 48 DIPs.
 
+## The status bar on a narrow window
+
+`BottomBar` holds a `DockPanel` whose children get their room in the order they are written:
+`StatusLegal`, docked right, first, so the version and the copyright are never trimmed; then an
+inner `DockPanel`, docked left, with the pair line and the three read-outs; then `StatusMemory`,
+docked left; and `HintText` last, which fills what is left and trims itself. Inside the inner
+panel the order of writing is the order of keeping: `StatusAfter`, `StatusBefore` and
+`StatusCursor`, each docked right, then `StatusPair`, which fills and trims with an ellipsis.
+Docked right in that order, the three stand as coordinates, A, B from the left, after the pair
+line, so the order on screen is the one a row would give; and since the inner panel asks only
+for the width of its four texts, on a window wide enough nothing differs from a row. On a
+narrow one the hint is the first to lose its room, then the memory, then the pair line, and
+only then the coordinates, A and B (R-054, ADR 0060, where the widths measured are).
+`MainWindowTests` lays the window out, never shown, at four client widths and reads each
+text's place, its width and how much of it the layout clips leave.
+
 ## The focus after a toolbar click
 
 Every toolbar button, the two toggles and the two change buttons included, is a `ButtonBase` and
@@ -133,6 +150,28 @@ focuses the surface once more when the pair is shown (`ShowPair`). The buttons s
 clicks each button but `About` on the WPF test thread, `Help` with the window's `OpenAddress`
 replaced so that no browser starts, and reads the window's logical focus, the
 part of `Focus()` that works without a window handle (ADR 0032).
+
+## The keyboard focus on screen
+
+`Theme.xaml` shows the keyboard focus itself (R-068, ADR 0062). `ToolButton` and
+`ToolToggleButton` set `FocusVisualStyle` to null, which takes WPF's dotted rectangle away, and
+their templates light the `Chrome` border in the accent on `IsKeyboardFocused`, as on
+`IsMouseOver`; `ChangeButton` and `DialogButton` are built on `ToolButton` and get both.
+`DialogButton` adds a style trigger on `IsDefaulted`, the property WPF keeps true on a default
+button while the keyboard focus is in its window and on no button: it sets the button's own
+`BorderBrush`, which the template's border is bound to, so in a dialog the lit button is the
+one Enter answers with; the one exception is About, where a link that has the focus takes
+Enter itself and `Close` stays lit, a link not being something WPF knows to take Enter. The
+`Hyperlink` style underlines a link on `IsKeyboardFocused` as on `IsMouseOver`, and
+`CompareView.xaml` sets `FocusVisualStyle` to null on the surface, which is focusable for its
+shortcuts. About's `ComponentList` is not focusable: WPF makes an `ItemsControl` a tab stop,
+and it had WPF's rectangle. The `ScrollViewer` around the dialog's message is no tab stop, but
+a click on the message gives it the focus, so `MessageDialog.xaml` sets its `FocusVisualStyle`
+to null and leaves it focusable, for the keys to scroll a long message. `ThemeFocusTests` set the two read-only
+properties through their keys, since no window of a test has the keyboard, and read the border
+and the decoration back; one of them walks the three windows' own trees, without the parts
+the controls' templates add, and finds nothing focusable but the window itself that kept a
+`FocusVisualStyle`.
 
 ## In the diagnostic log
 

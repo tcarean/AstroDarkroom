@@ -12,6 +12,7 @@
 > `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml.cs`,
 > `src/ImageVisualCompare.Core/MinimapGeometry.cs`,
 > `src/ImageVisualCompare.Wpf/app.manifest`,
+> `src/ImageVisualCompare.Wpf/Theme.xaml` (the two thin scrollbar styles),
 > and, for its two bars' layout rounding, `src/ImageVisualCompare.Wpf/MainWindow.xaml`.
 > A change to the code this describes means this note is updated in the same task, or
 > deleted with the decision it explains.
@@ -156,3 +157,22 @@ a click through `TranslatePoint` onto the overlay before `MinimapGeometry.Conten
 2026-10-22 both used the minimap's own size and position (R-041, R-042). `MinimapGeometry.Layout`
 floors the rectangle at 2 DIPs after clamping it, then moves it in by what the floor added, so
 by the right or bottom edge it stays on the thumbnail.
+
+**The surface keeps the keyboard focus.** Its shortcuts work while it has the focus (R-063), and
+two things took it away or failed to give it back (CR-014 of the review of 2026-11-13).
+`CompareView.OnKeyDown` left Up and Down unhandled, and WPF's arrow-key navigation, which runs
+for an arrow nothing handled, moved the focus to a toolbar button: `Change A…`, by
+`PredictFocus` from the surface on the real window. The two keys are now taken there and do
+nothing. And the surface took the focus in `OnMouseLeftButtonDown`, which WPF does not call for
+a press something inside has already handled, as the minimap and a scrollbar's thumb do with
+theirs; `Focus()` is now in `OnPreviewMouseLeftButtonDown`, on the press's way down, before
+either sees it. `MainWindowTests.R063_...` raise the two keys on the surface, and a press on the
+image, the minimap and each thumb, on a window never shown. How a toolbar click hands the focus
+back is in `shell.md`.
+
+**The scrollbars are a thumb and nothing else.** The two thin styles of `Theme.xaml` have a
+`Track` with a `Thumb` and no repeat buttons, so there is no arrow and no track to click, and
+they set `ContextMenu` to null, so a right click opens nothing: WPF gives a `ScrollBar` its own
+menu, light and in English, wherever that property is still at its default (ADR 0061).
+`CompareView.OnScrollBarMoved` therefore hears of a thumb's drag only. The bars' `SmallChange`
+and `LargeChange` are WPF's, 0.1 and 1 image pixel, and nothing reaches them.

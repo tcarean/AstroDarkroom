@@ -67,6 +67,10 @@ an image does not reach, so the padding never passes for a black area of the pic
 or too large to decode) gives a message with its name and the reason, such as
 `Could not read broken.png.` followed by the codec's own words, in the dialog
 `Cannot compare these files`; then the open dialogs come back. The application does not close.
+A file saved again at another size while it was being opened, or while its pair is on screen
+and it has to be read again, is refused with a message of the same kind, and a pair that was
+on screen stays as it was:
+`The file has changed on disk: it was 5938 × 3888, it is now 4000 × 3000. Open the pair again.`
 
 ### FITS files
 
@@ -280,7 +284,9 @@ canvas alone would be half the truth, since one of the images does not have that
 read every 2 seconds. After them comes a hint,
 `wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open · H histogram · F false colours · M minimap · F1 help`, cut short
 when the window narrows; on the right, always, the version and the copyright (there is no
-`--version` option). `About` opens a window with the version, the licence notice and the
+`--version` option). On a window too narrow for the whole bar the hint goes first, then the
+memory, then the pair's line is shortened with `…`; the coordinates and the two values stay
+whole. `About` opens a window with the version, the licence notice and the
 components written by others.
 
 In the Romanian interface the same bar reads `A RGB pe 16 biți` (or `gri float pe 32 de biți`,

@@ -87,6 +87,27 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- On a narrow window the status bar keeps the coordinates and the two pixel values whole and
+  shortens the pair's line with `…` instead. The bar was cut from the right: on a window 960
+  wide with a padded pair, B's value was not shown at all and A's had lost its third number,
+  `A 255 255` (R-054, ADR 0060).
+- `↑` and `↓` no longer take the keyboard from the image: they moved the focus to a toolbar
+  button, after which `+`, `−`, `Ctrl+0` and `Ctrl+1` did nothing and `←` and `→` walked the
+  buttons until the image was clicked. A click or a drag in the minimap or on a scrollbar now
+  gives the image the focus, as a click on the image does (R-063).
+- A right click on a scrollbar opens nothing. It opened a menu of Windows' own (`Scroll Here`,
+  `Top`, `Page Up`…): light over the dark image, in English in the Romanian interface too, and
+  its `Page Down` moved the image by one pixel (R-043, ADR 0061).
+- The keyboard focus can be seen: the button that has it has the turquoise border, in the
+  toolbar and in the dialogs, and a link of `About` is underlined. It was Windows' dotted black
+  rectangle, all but invisible on the dark buttons, and the same rectangle was drawn around the
+  image. In a question, the lit button is now the one Enter answers with: after Tab to `No` the
+  border stayed on `Yes` (R-068, ADR 0062).
+- A file saved again at another size while its pair was being opened, or while the pair was on
+  screen and the file had to be read again (a FITS pair in `Histogram` whose B is changed to a
+  PNG), was shown on the canvas of its old size, with no padding question. It is now refused:
+  `The file has changed on disk: it was 5938 × 3888, it is now 4000 × 3000. Open the pair
+  again.` (R-005, R-009, ADR 0063).
 - At `Fit`, on some window sizes, a scrollbar with a thumb as long as its track and the minimap's
   rectangle around the whole thumbnail were shown, though the whole image was on screen: a
   rounding residue of a millionth of a millionth of a pixel counted as an image larger than the

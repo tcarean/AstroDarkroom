@@ -105,13 +105,24 @@
                            Style="{StaticResource StatusText}"
                            Margin="16,0,0,0" />
 
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                    <TextBlock x:Name="StatusPair" Style="{StaticResource StatusText}" />
-                    <TextBlock x:Name="StatusCursor" Style="{StaticResource StatusValue}" MinWidth="96" />
-                    <TextBlock x:Name="StatusBefore" Style="{StaticResource StatusValue}" MinWidth="128" />
-                    <TextBlock x:Name="StatusAfter" Style="{StaticResource StatusValue}" MinWidth="128" />
-                    <TextBlock x:Name="StatusMemory" Style="{StaticResource StatusText}" />
-                </StackPanel>
+                <!-- The pair line and the three read-outs, on screen in that order. A DockPanel
+                     gives its children their room in the order they are written, and the last
+                     one what is left: B's value first, then A's, then the coordinates, each
+                     docked right, and the pair line last, trimmed with an ellipsis when the
+                     window is too narrow for all four. So the two values the tool exists for
+                     are the last to go, and the pair line the first of the four (R-054,
+                     ADR 0060). On a window wide enough the panel is as wide as its four texts,
+                     and they stand as they would in a row. -->
+                <DockPanel DockPanel.Dock="Left">
+                    <TextBlock x:Name="StatusAfter" DockPanel.Dock="Right" Style="{StaticResource StatusValue}" MinWidth="128" />
+                    <TextBlock x:Name="StatusBefore" DockPanel.Dock="Right" Style="{StaticResource StatusValue}" MinWidth="128" />
+                    <TextBlock x:Name="StatusCursor" DockPanel.Dock="Right" Style="{StaticResource StatusValue}" MinWidth="96" />
+                    <TextBlock x:Name="StatusPair" Style="{StaticResource StatusText}" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+
+                <!-- After the four above, so it gets only the room they leave, and before the
+                     hint, which gets what the memory leaves. -->
+                <TextBlock x:Name="StatusMemory" DockPanel.Dock="Left" Style="{StaticResource StatusText}" />
 
                 <!-- Last child, so it takes whatever width is left over and trims with an
                      ellipsis instead of being cut off mid-word. Of everything on this bar
