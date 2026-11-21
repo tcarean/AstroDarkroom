@@ -91,6 +91,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   shortens the pair's line with `…` instead. The bar was cut from the right: on a window 960
   wide with a padded pair, B's value was not shown at all and A's read `A 255 2`
   (R-054, ADR 0060).
+- `↑` and `↓` no longer take the keyboard from the image: they moved the focus to a toolbar
+  button, after which `+`, `−`, `Ctrl+0` and `Ctrl+1` did nothing and `←` and `→` walked the
+  buttons until the image was clicked. A click or a drag in the minimap or on a scrollbar now
+  gives the image the focus, as a click on the image does (R-063).
 - At `Fit`, on some window sizes, a scrollbar with a thumb as long as its track and the minimap's
   rectangle around the whole thumbnail were shown, though the whole image was on screen: a
   rounding residue of a millionth of a millionth of a pixel counted as an image larger than the

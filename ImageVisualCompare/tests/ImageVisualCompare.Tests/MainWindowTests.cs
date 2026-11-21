@@ -948,6 +948,107 @@ public class MainWindowTests
         });
     }
 
+    /// <summary>
+    /// CR-014 of the review of 2026-11-13. The surface left Up and Down to WPF, whose arrow-key
+    /// navigation, which runs for a key-down nothing handled, then moved the keyboard focus from
+    /// the surface to a toolbar button (<c>Change A…</c>, by <c>PredictFocus</c> on the real
+    /// window, 2026-11-21), where the surface's shortcuts no longer work. Tab is still WPF's,
+    /// so the buttons can be reached.
+    /// </summary>
+    [Theory]
+    [InlineData(Key.Up)]
+    [InlineData(Key.Down)]
+    public async Task R063_UpAndDown_AreTakenByTheSurface_SoTheFocusStaysOnIt(Key key)
+    {
+        bool arrowHandled = false;
+        bool tabHandled = true;
+
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
+
+            arrowHandled = KeyDown(window.Compare, key);
+            tabHandled = KeyDown(window.Compare, Key.Tab);
+        });
+
+        Assert.True(arrowHandled);
+        Assert.False(tabHandled);
+    }
+
+    /// <summary>
+    /// CR-014, its second half. The surface took the focus in its handler of a press, which WPF
+    /// does not call for a press something inside has handled: the minimap handles its own, and
+    /// a scrollbar's thumb its own. With the focus on a toolbar button, reached by Tab, a drag
+    /// in the minimap or of a thumb left it there.
+    /// </summary>
+    [Theory]
+    [InlineData("the image")]
+    [InlineData("the minimap")]
+    [InlineData("the vertical scrollbar's thumb")]
+    [InlineData("the horizontal scrollbar's thumb")]
+    public async Task R063_APressAnywhereOnTheSurface_GivesItTheFocus(string where)
+    {
+        object? surface = null;
+        object? before = "not read";
+        object? after = null;
+        bool pressHandledInside = false;
+
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
+            UIElement target = where switch
+            {
+                "the image" => window.Compare,
+                "the minimap" => window.Compare.Minimap,
+                "the vertical scrollbar's thumb" => ThumbOf(window.Compare.VerticalBar),
+                _ => ThumbOf(window.Compare.HorizontalBar),
+            };
+
+            surface = window.Compare;
+            before = FocusManager.GetFocusedElement(window);
+
+            // As the mouse does it: the press goes from the window down to the element under the
+            // pointer, then back up, and each element on the way sees it as a left press.
+            target.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left) { RoutedEvent = Mouse.PreviewMouseDownEvent });
+            var down = new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left) { RoutedEvent = Mouse.MouseDownEvent };
+            target.RaiseEvent(down);
+            pressHandledInside = down.Handled;
+
+            // The window has no handle, so this is the logical focus of the window's scope, which
+            // Focus() sets only while nothing has it; the keyboard focus follows it in the
+            // running application (ADR 0032).
+            after = FocusManager.GetFocusedElement(window);
+            (target as Thumb)?.CancelDrag();
+        });
+
+        Assert.Null(before);
+        Assert.Same(surface, after);
+
+        // The minimap and the thumbs do handle their own press: the case the fix is for.
+        if (where != "the image")
+        {
+            Assert.True(pressHandledInside);
+        }
+    }
+
+    /// <summary>The thumb of one of the surface's scrollbars, whose template is applied first: a
+    /// bar never laid out has none yet.</summary>
+    private static Thumb ThumbOf(ScrollBar bar)
+    {
+        bar.ApplyTemplate();
+        return ((Track)bar.Template.FindName("PART_Track", bar)).Thumb;
+    }
+
+    /// <summary>Raises a key-down of <paramref name="key"/>, without a modifier, on
+    /// <paramref name="target"/>, on its way back up from the element, where a control's own
+    /// handler takes it; returns whether something handled it.</summary>
+    private static bool KeyDown(UIElement target, Key key)
+    {
+        var e = new KeyEventArgs(Keyboard.PrimaryDevice, new KeySource(), 0, key) { RoutedEvent = Keyboard.KeyDownEvent };
+        target.RaiseEvent(e);
+        return e.Handled;
+    }
+
     /// <summary>Raises a key-down of F1, without a modifier, on <paramref name="target"/>, as the
     /// keyboard would with the focus there, a repeat of a held key when asked; returns whether
     /// something handled it.</summary>
