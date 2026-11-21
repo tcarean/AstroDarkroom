@@ -98,6 +98,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - A right click on a scrollbar opens nothing. It opened a menu of Windows' own (`Scroll Here`,
   `Top`, `Page Up`…): light over the dark image, in English in the Romanian interface too, and
   its `Page Down` moved the image by one pixel (R-043, ADR 0061).
+- The keyboard focus can be seen: the button that has it has the turquoise border, in the
+  toolbar and in the dialogs, and a link of `About` is underlined. It was Windows' dotted black
+  rectangle, all but invisible on the dark buttons, and the same rectangle was drawn around the
+  image. In a question, the lit button is now the one Enter answers with: after Tab to `No` the
+  border stayed on `Yes` (R-068, ADR 0062).
 - At `Fit`, on some window sizes, a scrollbar with a thumb as long as its track and the minimap's
   rectangle around the whole thumbnail were shown, though the whole image was on screen: a
   rounding residue of a millionth of a millionth of a pixel counted as an image larger than the

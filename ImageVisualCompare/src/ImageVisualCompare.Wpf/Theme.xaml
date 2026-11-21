@@ -64,6 +64,10 @@
         <Setter Property="Margin" Value="3,0" />
         <Setter Property="Padding" Value="10,0" />
         <Setter Property="Cursor" Value="Hand" />
+        <!-- The keyboard focus is the accent border of the template's trigger below, as under
+             the pointer; WPF's own mark, a dotted rectangle stroked black, is all but lost on
+             this chrome (R-068, ADR 0062). -->
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <!-- Bound through the control rather than hard-coded in the template so a style built
              on this one can pick a different resting border, which DialogButton does. -->
         <Setter Property="BorderBrush" Value="{StaticResource ChromeBorderBrush}" />
@@ -82,6 +86,9 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Chrome" Property="Background" Value="{StaticResource ChromeHoverBrush}" />
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
@@ -105,6 +112,8 @@
         <Setter Property="Margin" Value="3,0" />
         <Setter Property="Padding" Value="10,0" />
         <Setter Property="Cursor" Value="Hand" />
+        <!-- As ToolButton: the focus is the accent border, never the dotted rectangle (R-068). -->
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="BorderBrush" Value="{StaticResource ChromeBorderBrush}" />
         <Setter Property="Template">
             <Setter.Value>
@@ -121,6 +130,9 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Chrome" Property="Background" Value="{StaticResource ChromeHoverBrush}" />
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
@@ -159,14 +171,18 @@
     </Style>
 
     <!-- Roomier than a toolbar button, because a dialog is read before it is clicked. The
-         default button carries the accent border so the keyboard answer is visible. -->
+         accent border shows the keyboard's answer (R-068, ADR 0062): the button that has the
+         focus has it, by ToolButton's template, and the default button has it while the focus
+         is in the dialog and on no button, which is when Enter answers with it. That is WPF's
+         IsDefaulted, not IsDefault, which would keep the border on Yes with the focus, and
+         Enter's answer, on No. -->
     <Style x:Key="DialogButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">
         <Setter Property="FontSize" Value="13" />
         <Setter Property="MinWidth" Value="92" />
         <Setter Property="Height" Value="30" />
         <Setter Property="Margin" Value="8,0,0,0" />
         <Style.Triggers>
-            <Trigger Property="IsDefault" Value="True">
+            <Trigger Property="IsDefaulted" Value="True">
                 <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
             </Trigger>
         </Style.Triggers>
@@ -258,12 +274,17 @@
     </Style>
 
     <!-- WPF draws a link dark blue, unreadable on this chrome: the accent, underlined only while
-         the pointer is over it. The About window's links are the only ones. -->
+         the pointer is over it or the keyboard focus on it, in place of WPF's dotted rectangle
+         (R-068). The About window's links are the only ones. -->
     <Style TargetType="Hyperlink">
         <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
         <Setter Property="TextDecorations" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="TextDecorations" Value="Underline" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
                 <Setter Property="TextDecorations" Value="Underline" />
             </Trigger>
         </Style.Triggers>

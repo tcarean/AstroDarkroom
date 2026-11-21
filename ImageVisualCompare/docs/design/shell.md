@@ -151,6 +151,20 @@ clicks each button but `About` on the WPF test thread, `Help` with the window's 
 replaced so that no browser starts, and reads the window's logical focus, the
 part of `Focus()` that works without a window handle (ADR 0032).
 
+## The keyboard focus on screen
+
+`Theme.xaml` shows the keyboard focus itself (R-068, ADR 0062). `ToolButton` and
+`ToolToggleButton` set `FocusVisualStyle` to null, which takes WPF's dotted rectangle away, and
+their templates light the `Chrome` border in the accent on `IsKeyboardFocused`, as on
+`IsMouseOver`; `ChangeButton` and `DialogButton` are built on `ToolButton` and get both.
+`DialogButton` adds a style trigger on `IsDefaulted`, the property WPF keeps true on a default
+button while the keyboard focus is in its window and on no button: it sets the button's own
+`BorderBrush`, which the template's border is bound to, so in a dialog the lit button is the
+one Enter answers with. The `Hyperlink` style underlines a link on `IsKeyboardFocused` as on
+`IsMouseOver`, and `CompareView.xaml` sets `FocusVisualStyle` to null on the surface, which is
+focusable for its shortcuts. `ThemeFocusTests` set the two read-only properties through their
+keys, since no window of a test has the keyboard, and read the border and the decoration back.
+
 ## In the diagnostic log
 
 The main window's constructor writes how WPF renders, its tier and the process's render mode.
