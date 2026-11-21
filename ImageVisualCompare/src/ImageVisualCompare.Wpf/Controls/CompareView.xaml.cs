@@ -607,8 +607,8 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
-    /// Pans to where the user scrolled a scrollbar: by dragging its thumb, clicking it, or its
-    /// context menu.
+    /// Pans to where the user scrolled a scrollbar, by dragging its thumb: the thin bars have
+    /// neither a track to click nor a context menu (R-043).
     /// </summary>
     private void OnScrollBarMoved()
     {

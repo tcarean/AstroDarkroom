@@ -168,3 +168,10 @@ theirs; `Focus()` is now in `OnPreviewMouseLeftButtonDown`, on the press's way d
 either sees it. `MainWindowTests.R063_...` raise the two keys on the surface, and a press on the
 image, the minimap and each thumb, on a window never shown. How a toolbar click hands the focus
 back is in `shell.md`.
+
+**The scrollbars are a thumb and nothing else.** The two thin styles of `Theme.xaml` have a
+`Track` with a `Thumb` and no repeat buttons, so there is no arrow and no track to click, and
+they set `ContextMenu` to null, so a right click opens nothing: WPF gives a `ScrollBar` its own
+menu, light and in English, wherever that property is still at its default (ADR 0061).
+`CompareView.OnScrollBarMoved` therefore hears of a thumb's drag only. The bars' `SmallChange`
+and `LargeChange` are WPF's, 0.1 and 1 image pixel, and nothing reaches them.

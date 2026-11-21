@@ -184,9 +184,14 @@
         </Setter>
     </Style>
 
+    <!-- No context menu on either bar (R-043, ADR 0061). A scrollbar whose ContextMenu nothing
+         has set is given WPF's own as it is about to open: light, in English, and stepping by
+         the bar's SmallChange and LargeChange, which nothing sets here. A value from a style,
+         null included, is a value set, so the right click opens nothing. -->
     <Style x:Key="ThinVerticalScrollBar" TargetType="ScrollBar">
         <Setter Property="Width" Value="9" />
         <Setter Property="Background" Value="Transparent" />
+        <Setter Property="ContextMenu" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
@@ -203,6 +208,7 @@
     <Style x:Key="ThinHorizontalScrollBar" TargetType="ScrollBar">
         <Setter Property="Height" Value="9" />
         <Setter Property="Background" Value="Transparent" />
+        <Setter Property="ContextMenu" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">

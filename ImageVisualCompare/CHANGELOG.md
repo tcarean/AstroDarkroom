@@ -95,6 +95,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   button, after which `+`, `−`, `Ctrl+0` and `Ctrl+1` did nothing and `←` and `→` walked the
   buttons until the image was clicked. A click or a drag in the minimap or on a scrollbar now
   gives the image the focus, as a click on the image does (R-063).
+- A right click on a scrollbar opens nothing. It opened a menu of Windows' own (`Scroll Here`,
+  `Top`, `Page Up`…): light over the dark image, in English in the Romanian interface too, and
+  its `Page Down` moved the image by one pixel (R-043, ADR 0061).
 - At `Fit`, on some window sizes, a scrollbar with a thumb as long as its track and the minimap's
   rectangle around the whole thumbnail were shown, though the whole image was on screen: a
   rounding residue of a millionth of a millionth of a pixel counted as an image larger than the
