@@ -73,6 +73,39 @@ public class SoftProofTabTests
     }
 
     [Fact]
+    public void R188_TheProofShownIsTheWholeImageAndItsSentencesSaySo()
+    {
+        using var ws = new TempWorkspace();
+        Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(Profile(ws), out string error) ?? throw new Exception(error);
+        var tab = new SoftProofTabViewModel();
+        // One pixel wider than the 2400 the proof was reduced to until R-188.
+        tab.Populate(AnalysisRun.Execute(SyntheticRasters.Flat(64, 2401, 0.3f), "memorie", p));
+        tab.Compute();
+        Assert.True(tab.HasProof, tab.Message);
+        Assert.Equal(2401, tab.Width);
+        Assert.Equal(64, tab.Height);
+        Assert.Equal(2401, tab.Image.PixelWidth);
+        Assert.Equal(2401, tab.PaperLayer.PixelWidth);
+        Assert.False(tab.IsReducedCopy);
+
+        // A whole image is not called a copy, in the tab or in the full-screen window.
+        string max = $"{ZoomPanViewer.MaxScale:0}";
+        Assert.StartsWith("E imaginea trecuta prin profilul hartiei, doar pentru privit; programul presupune ca pixelii si ecranul sunt sRGB.", tab.ViewerHelp);
+        Assert.Contains($"pana la {max}:1 (un pixel al imaginii devine un patrat de {max} x {max} pixeli pe ecran", tab.ViewerHelp);
+        Assert.Contains($"pana la {max}:1 (un pixel al imaginii devine un patrat de {max} x {max} pixeli pe ecran", tab.WindowHelp);
+        Assert.EndsWith("dublu-clic o potriveste din nou. Programul presupune ca pixelii si ecranul sunt sRGB.", tab.WindowHelp);
+        Assert.DoesNotContain("copie", tab.ViewerHelp + tab.WindowHelp);
+        Assert.Equal(tab.ViewerHelp, SoftProofTabViewModel.ViewerHelpFor(reduced: false));
+        Assert.Equal(tab.WindowHelp, SoftProofTabViewModel.WindowHelpFor(reduced: false));
+
+        // An image over WholeImageMaxPixels is a reduced copy, and both sentences say it, as before.
+        Assert.StartsWith("E o copie micsorata a imaginii, trecuta prin profilul hartiei, doar pentru privit;", SoftProofTabViewModel.ViewerHelpFor(reduced: true));
+        Assert.Contains("un pixel al copiei devine", SoftProofTabViewModel.ViewerHelpFor(reduced: true));
+        Assert.Contains("un pixel al copiei devine", SoftProofTabViewModel.WindowHelpFor(reduced: true));
+        Assert.EndsWith("E o copie micsorata; programul presupune ca pixelii si ecranul sunt sRGB.", SoftProofTabViewModel.WindowHelpFor(reduced: true));
+    }
+
+    [Fact]
     public async Task R163_TheProofFollowsTheControlsAndTheMarginIsThePaperWhiteUnlessChosen()
     {
         using var ws = new TempWorkspace();

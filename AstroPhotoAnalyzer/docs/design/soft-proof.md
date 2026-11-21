@@ -48,7 +48,7 @@ NaN anywhere (no usable table) makes a table with a `Problem`. `RelativeNoBpc` s
 compensation, so every tone darker than the paper's black lands on the device black and prints
 as that black: the Tonuri tab's model (ADR 0025), which is why it exists beyond Lightroom's two.
 
-`SoftProof.Render(profile, table, raster, simulate)` proofs a reduced image: for
+`SoftProof.Render(profile, table, raster, simulate)` proofs an image: for
 each pixel the paper colour read trilinearly from the table (`Trilinear.Corners`, the one read
 `GamutAnalyzer.Interpolated` uses too), then the display step `SoftProof.Display`: with
 `simulate` true, what the window always asks for, the absolute scaling by the media white,
@@ -67,7 +67,7 @@ point compensation, over `CurveGamutDeltaE`, ADR 0081, the exact trip near the t
 0042; the compensation is `ProofProfile.Compensate` and `Uncompensate`, the scalings the
 `Relative` table and the unsimulated display step make, and the black `NeutralBlack`, the one
 `Open` reads, so the figure and the proof cannot drift apart), decided once per
-image in `ProofRun.Prepare` on the source pixels of the reduction, since it does not depend on
+image in `ProofRun.Prepare` on the image's own pixels (its reduction's, over the limit of R-188), since it does not depend on
 the intent; the share equals the Editare Curbe tab's figure for the original. There is no
 screen-gamut warning: with an sRGB source nothing can leave the screen's gamut (ADR 0066); a
 clipped channel is clipped silently in `Display`.
@@ -77,11 +77,12 @@ clipped channel is clipped silently in `Display`.
 The third run after `AnalysisRun` and `CurveRun`, called by the window alone, never by the
 console. `Prepare(AnalysisResult)` gives a `ProofSet`: the profile (or the `Problem`: no profile
 behind the Dmax, `ProofTexts.NoProfile`, which names the "From ICC profile..." button; an
-unusable one, the core's reason), the image reduced so that its long side is at most
-`ProofMaxSide` (`RasterOps.Subsample` at the integer stride), the gamut table of R-144 and the
-paper mask with its share. `Render(set, intent, simulate)` builds the intent's table on its first
-use and renders. The reduction is larger than the preview's (`PreviewMaxSide`, 1600) because the
-proof is shown full screen on a 4K screen too. `Prepare` is timed in the diagnostic log by a
+unusable one, the core's reason), the image itself (`Reduced` is the analysed raster, the
+set's `Stride` 1) or, over `WholeImageMaxPixels`, its subsample at the smallest step that
+brings it within (`RasterOps.WholeImageStride`, R-188, ADR 0118), the gamut table of R-144 and
+the paper mask with its share. `Render(set, intent, simulate)` builds the intent's table on its
+first use and renders. Until 2026-11-21 the proof was made on a copy of at most 2400 pixels on
+its long side, and a zoom showed that copy's pixels. `Prepare` is timed in the diagnostic log by a
 `RunClock` named `proof` (`profile`, `gamut`, `mask`), a refusal as its done line; `Render`
 writes one Debug line per render (`logging.md`).
 
@@ -91,7 +92,7 @@ image before the reduction (`SourceW`, `SourceH`). The file is read by `ImageLoa
 the analysed image is; whatever the loader or a reader throws becomes the set's `Problem`, its
 message, with a warning in the log. The overload that takes a raster, which the tests use,
 then refuses another size (`ProofTexts.SizeMismatch`, compared on the whole images, so two
-sizes that would reduce alike are still refused) and a linear image (`RasterOps.LooksLinear`,
+sizes over the limit that would reduce alike are still refused) and a linear image (`RasterOps.LooksLinear`,
 the sentence `AnalysisRun.LinearRefusal` gives both runs), and otherwise calls `Reduce`, the
 reduction and the mask loop `Prepare` uses too. The set it gives holds `first.Profile` itself,
 not a profile opened again: `ProofProfile.Table(intent)` is kept on that object, so each
@@ -113,10 +114,14 @@ of the line is which image. The window writes none of them.
 `ProofIntent`, the two boxes, the margin choice) and what is shown: the proof bitmap and the
 original's (`RasterBitmaps.Region` of the core's rasters), the warning's overlay
 (`RasterBitmaps.Overlay`, red over the set's mask, made once per set like the original), the
-margin brush, the core's sentences. `Populate` keeps the result; `MainViewModel`
+margin brush, the core's sentences, and the two sentences of its own under the image and in
+the full-screen panel (`ViewerHelp`, `WindowHelp`), which call the image a reduced copy only
+when the set's `Stride` is over 1 (`IsReducedCopy`) and read the zoom's maximum from
+`ZoomPanViewer.MaxScale`. Of a proof the tab keeps its size and intent alone (`Shown`): the
+proofed raster, 271 MB on 22.6 MP, is dropped once its bitmap exists. `Populate` keeps the result; `MainViewModel`
 starts `ComputeAsync` beside the curves' computation once every tab is filled (ADR 0051), which
 prepares, renders and makes the frozen bitmaps on a pool thread (an `Outcome` record handed
-back; an overlay over 2.7 MP would stall the window if made on its thread) with
+back; the bitmaps of a whole image take 0.4 s on 22.6 MP and would stall the window if made on its thread) with
 "computing" shown meanwhile; a change of intent renders again the same way
 (`RenderAsync`, the cached set, a new table only on a new intent), and one made while the first
 computation runs is rendered right after it; the other controls raise properties, and each change
@@ -246,8 +251,8 @@ canvas, L\* 95.5 on the P900 baryta; relative without BPC on the canvas sends ev
 E76 1.0 of the exact per-pixel proof at the 99th percentile on both lab profiles (max 1.4 on the
 canvas), where 33 nodes reach 5.2; a 65-grid builds in 1.6 to 2.2 s with the rows in parallel. The
 figures on the plate-solved FITS through the baryta profile are V-015 (`../validation.md`): the
-paper white L\* 97.2, b\* +1.1 (sRGB 248, 247, 245), 1.90 % of the proof outside the paper's gamut
-(2026-11-05, ADR 0081; 1.37 % under the chroma rule), and a mean L\* of 17.0, 19.7 and 18.2 on the
+paper white L\* 97.2, b\* +1.1 (sRGB 248, 247, 245), 1.92 % of the proof outside the paper's gamut
+(on the whole image since 2026-11-21, 1.90 % on every third pixel before; ADR 0081; 1.37 % under the chroma rule), and a mean L\* of 17.0, 19.7 and 18.2 on the
 three intents.
 
 ## The hand-built profile of the tests

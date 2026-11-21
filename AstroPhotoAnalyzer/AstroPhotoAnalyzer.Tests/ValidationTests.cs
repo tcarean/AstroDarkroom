@@ -290,7 +290,7 @@ public class ValidationTests
         string profile = TestData.Large(parameters.GetProperty("icc").GetString()!) ?? throw new FileNotFoundException("the case's profile is absent: " + parameters.GetProperty("icc").GetString());
         p = p.WithDmaxFromProfile(profile, out string error) ?? throw new Exception(error);
         AnalysisResult a = AnalysisRun.Execute(image, p);
-        GamutFitSet set = GamutFitRun.Execute(a, Thresholds.CurvePreviewDefaultWidth, Thresholds.CurvePreviewDefaultHeight);
+        GamutFitSet set = GamutFitRun.Execute(a);
         var f = new Dictionary<string, object>(StringComparer.Ordinal)
         {
             ["gamutfit.problem"] = set.Problem ?? "none",

@@ -26,8 +26,9 @@
 // (ADR 0051), a change of intent renders again on a pool thread, and the other controls only
 // choose what is shown. The proof is always the paper and ink simulated (ADR 0066: the box
 // Lightroom has was dropped, nothing in this tool needed its other state). The bitmaps are made
-// on the pool thread too, frozen: an overlay over the reduction (2.7 MP on the reference image,
-// up to 2400 px on the long side) would stall the window for a visible moment.
+// on the pool thread too, frozen: those of a whole image (R-188; 0.4 s on the 22.6 MP reference
+// image) would stall the window for a visible moment. The proofed raster is dropped once its
+// bitmap exists: the tab keeps the proof's size and intent alone (Shown).
 //
 // On request the tab compares the proof with another image's (R-166, ADR 0091): a second file
 // goes through the same profile, by the core (ProofRun.PrepareOther, R-165), and is shown beside
@@ -73,16 +74,26 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// One image of the tab, the analysed one or the one it is compared with, as a
-        /// computation or a render hands it back from the pool thread: the set, the proof and the
-        /// frozen bitmaps made from them (null bitmaps with a problem). The original and the
+        /// computation or a render hands it back from the pool thread: the set, what is left of
+        /// the proof once drawn and the frozen bitmaps made from them (null bitmaps with a problem). The original and the
         /// paper layer belong to the set and are made once for it.
         /// </summary>
         /// <param name="Set">The prepared set, with or without a problem.</param>
-        /// <param name="Proof">The proof; null when the set has a problem.</param>
-        /// <param name="Original">The reduced original's bitmap; null with a problem.</param>
+        /// <param name="Proof">The proof's size and intent; null when the set has a problem.</param>
+        /// <param name="Original">The original's bitmap, at the set's step; null with a problem.</param>
         /// <param name="Image">The proof's bitmap; null with a problem.</param>
         /// <param name="Paper">The paper-gamut layer; null with a problem.</param>
-        sealed record Side(ProofSet Set, SoftProofResult Proof, BitmapSource Original, BitmapSource Image, BitmapSource Paper);
+        sealed record Side(ProofSet Set, Shown Proof, BitmapSource Original, BitmapSource Image, BitmapSource Paper);
+
+        /// <summary>
+        /// What the tab keeps of a proof once its bitmap is made. The proofed raster itself is
+        /// not kept: on a whole image it would hold 12 bytes a pixel, 271 MB on 22.6 MP, for
+        /// nothing the tab reads (R-188).
+        /// </summary>
+        /// <param name="W">The proof's width, in pixels.</param>
+        /// <param name="H">The proof's height, in pixels.</param>
+        /// <param name="Intent">The intent it was rendered with.</param>
+        sealed record Shown(int W, int H, ProofIntent Intent);
 
         /// <summary>What one computation or render hands back: the analysed image and, with a comparison, the other one.</summary>
         /// <param name="Main">The analysed image's side.</param>
@@ -91,7 +102,7 @@ namespace AstroPhotoAnalyzer.Wpf
 
         AnalysisResult _result;
         ProofSet _set;
-        SoftProofResult _proof;
+        Shown _proof;
         BitmapSource _original, _proofImage, _paperLayer;
         int _run;
         bool _busy, _isProblem;
@@ -188,8 +199,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>The proof, or the original when <see cref="ShowOriginal"/> is on; null before a proof.</summary>
         public BitmapSource Image => _showOriginal ? _original : _proofImage;
-        public int Width => _proof?.Image.W ?? 0;
-        public int Height => _proof?.Image.H ?? 0;
+        public int Width => _proof?.W ?? 0;
+        public int Height => _proof?.H ?? 0;
 
         /// <summary>The pixels outside the paper's gamut, in red (R-161).</summary>
         public BitmapSource PaperLayer => _paperLayer;
@@ -303,6 +314,63 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>The legend with the share of the analysed image; in a comparison it starts with the image's file name (R-166).</summary>
         public string PaperGamutLegend
             => !HasControls ? "" : IsComparing ? ProofTexts.PaperGamutLegend(ImageName, _set.PctPaper) : ProofTexts.PaperGamutLegend(_set.PctPaper);
+
+        /// <summary>
+        /// The image shown is a reduced copy: the image is over the core's limit for the whole
+        /// image (R-188). False for the whole image, and without a proof.
+        /// </summary>
+        public bool IsReducedCopy => _set != null && _set.Stride > 1;
+
+        /// <summary>The sentence under the tab's image: what is shown and how to zoom and move it (R-163, R-188).</summary>
+        public string ViewerHelp => ViewerHelpFor(IsReducedCopy);
+
+        /// <summary>The sentence of the full-screen window's panel: its keys, the zoom, what is shown (R-163, R-164, R-188).</summary>
+        public string WindowHelp => WindowHelpFor(IsReducedCopy);
+
+        /// <summary>
+        /// How the zoom is explained, the maximum being the viewer's own: it enlarges a pixel of
+        /// the image, or of the reduced copy when that is what is shown.
+        /// </summary>
+        /// <param name="reduced">Whether the image shown is a reduced copy.</param>
+        /// <returns>The sentences, in the interface language.</returns>
+        static string ZoomHelp(bool reduced)
+        {
+            string max = Fmt.F0(ZoomPanViewer.MaxScale);
+            string ofEn = reduced ? "copy" : "image", ofRo = reduced ? "copiei" : "imaginii";
+            return Tr.Pick(
+                $"The mouse wheel zooms around the cursor, up to {max}:1 (one pixel of the {ofEn} becomes a square of {max} x {max} screen pixels, with Windows display scaling at 100 %); hold the left button and drag to move the image; a double click fits it again.",
+                $"Rotita mouse-ului mareste in jurul cursorului, pana la {max}:1 (un pixel al {ofRo} devine un patrat de {max} x {max} pixeli pe ecran, cu scalarea Windows la 100 %); tii apasat butonul stang si tragi ca sa muti imaginea; dublu-clic o potriveste din nou.");
+        }
+
+        /// <summary>
+        /// The tab's sentence for a whole image or for a reduced copy of one over the core's
+        /// limit (R-188).
+        /// </summary>
+        /// <param name="reduced">Whether the image shown is a reduced copy.</param>
+        /// <returns>The sentence, in the interface language.</returns>
+        internal static string ViewerHelpFor(bool reduced)
+            => (reduced
+                    ? Tr.Pick("A reduced copy of the image, put through the paper profile, for viewing only;", "E o copie micsorata a imaginii, trecuta prin profilul hartiei, doar pentru privit;")
+                    : Tr.Pick("The image, put through the paper profile, for viewing only;", "E imaginea trecuta prin profilul hartiei, doar pentru privit;"))
+                + Tr.Pick(
+                    " the program assumes the pixels and the screen are sRGB. The white and the black of the paper show as they are, like a printed photo laid beside a white sheet. The third mode, without black point compensation, shows the shadows the way the Tones tab judges them. ",
+                    " programul presupune ca pixelii si ecranul sunt sRGB. Albul si negrul hartiei se vad asa cum sunt, ca o poza tiparita pusa langa o foaie alba. Al treilea mod, fara compensarea negrului, arata umbrele asa cum le judeca tabul Tonuri. ")
+                + ZoomHelp(reduced);
+
+        /// <summary>
+        /// The full-screen window's sentence for a whole image or for a reduced copy of one
+        /// over the core's limit (R-188).
+        /// </summary>
+        /// <param name="reduced">Whether the image shown is a reduced copy.</param>
+        /// <returns>The sentence, in the interface language.</returns>
+        internal static string WindowHelpFor(bool reduced)
+            => Tr.Pick(
+                    "Keys: G shows the colours the paper cannot reproduce, O shows the original, I moves to the next rendering mode; Esc or Close leaves the full screen. This panel shows while the mouse is over it. ",
+                    "Taste: G arata culorile pe care hartia nu le poate reda, O arata originalul, I trece la urmatorul mod de redare; Esc sau Inchide iese din ecranul intreg. Panoul acesta se vede cat timp mouse-ul e deasupra lui. ")
+                + ZoomHelp(reduced)
+                + (reduced
+                    ? Tr.Pick(" A reduced copy; the program assumes the pixels and the screen are sRGB.", " E o copie micsorata; programul presupune ca pixelii si ecranul sunt sRGB.")
+                    : Tr.Pick(" The program assumes the pixels and the screen are sRGB.", " Programul presupune ca pixelii si ecranul sunt sRGB."));
 
         public string PerceptualName => ProofTexts.IntentName(ProofIntent.Perceptual);
         public string RelativeName => ProofTexts.IntentName(ProofIntent.Relative);
@@ -524,7 +592,7 @@ namespace AstroPhotoAnalyzer.Wpf
             Raster img = proof.Image;
             int w = img.W, h = img.H;
             bool[] outside = set.PaperOutside;
-            return new Side(set, proof,
+            return new Side(set, new Shown(w, h, proof.Intent),
                 original ?? RasterBitmaps.Region(set.Reduced, 0, 0, w, h),
                 RasterBitmaps.Region(img, 0, 0, w, h),
                 paper ?? RasterBitmaps.Overlay(w, h, (x, y) => outside[y * w + x], PaperColour));
@@ -687,6 +755,7 @@ namespace AstroPhotoAnalyzer.Wpf
             Raise(nameof(PaperLayer));
             Raise(nameof(Caption)); Raise(nameof(ProfileLine)); Raise(nameof(PaperWhiteLine)); Raise(nameof(PaperBlackLine));
             Raise(nameof(PaperGamutLegend));
+            Raise(nameof(IsReducedCopy)); Raise(nameof(ViewerHelp)); Raise(nameof(WindowHelp));
             Raise(nameof(MarginBrush)); Raise(nameof(PaperWhiteColour));
             Raise(nameof(IsComparing)); Raise(nameof(CanCompare)); Raise(nameof(OtherImage)); Raise(nameof(OtherName));
             Raise(nameof(OtherPaperGamutLegend)); Raise(nameof(CompareSides));

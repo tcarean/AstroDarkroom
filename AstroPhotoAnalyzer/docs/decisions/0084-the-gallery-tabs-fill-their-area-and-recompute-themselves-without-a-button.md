@@ -1,7 +1,7 @@
 # 0084. The gallery tabs fill their area and recompute themselves, without a button
 
 Date: 2026-11-06
-Status: accepted 2026-11-06; decision 3 superseded by 0090 (the original as the gallery's first position with its own figures under it)
+Status: accepted 2026-11-06; decision 3 superseded by 0090 (the original as the gallery's first position with its own figures under it); for the Culori pentru hartie tab, the step by the area, the cap, the recompute for a larger area and the enlarging superseded by 0118
 Supersedes: 0051 in part (the `Calculeaza` button that recomputed the gallery at the area's size, and the rule that the view never enlarges a preview, which now holds except for a preview held under the cap)
 
 ## Context

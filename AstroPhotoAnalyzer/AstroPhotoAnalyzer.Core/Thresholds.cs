@@ -805,14 +805,16 @@ namespace AstroPhotoAnalyzer
         internal const int CurvePreviewDefaultHeight = 900;
 
         /// <summary>
-        /// The most pixels a gallery preview may have (R-146, R-178, ADR 0084): the reduction
-        /// step never goes under the one that keeps a preview within this, and the view enlarges
-        /// such a preview to fill the area instead. Measured 2026-11-06 on the plate-solved FITS
+        /// The most pixels a preview of the Editare Curbe gallery and of the crop may have
+        /// (R-146, R-183, ADR 0084): the reduction step never goes under the one that keeps a
+        /// preview within this, and the view enlarges such a preview to fill the area instead.
+        /// Measured 2026-11-06 on the plate-solved FITS
         /// (22.6 MP) through the lab's baryta profile: at a 4K area the uncapped step would be 1,
         /// the whole image, 889 MB held by the curves' set and 1 626 MB by the fit's, the process
         /// peaking at 3.5 GB, the fit's run 8.0 s; at a step of 2 (5.6 MP previews) 348 MB and
         /// 526 MB, 1.3 s and 2.8 s; at the presumed Full HD area (step 4, 1.4 MP) 147 MB and
-        /// 159 MB, 1.6 s and 1.7 s. 8 MP keeps a 23 MP image at a step of 2.
+        /// 159 MB, 1.6 s and 1.7 s. 8 MP keeps a 23 MP image at a step of 2. The paper fit, which
+        /// this cap also held until 2026-11-21, now follows WholeImageMaxPixels (ADR 0118).
         /// </summary>
         internal const int CurvePreviewMaxPixels = 8_000_000;
 
@@ -874,12 +876,21 @@ namespace AstroPhotoAnalyzer
         internal const int ProofGrid = 65;
 
         /// <summary>
-        /// The longest side of the reduced copy the soft proof is made on (R-160). The preview's
-        /// PreviewMaxSide (1600) fits a Full HD render; the proof is shown full screen on a 4K
-        /// screen too, so a long side under the screen's would be enlarged there. 2400 is a presumption
-        /// about the screen, not a measurement; a 23 MP image reduces to 2.7 MP.
+        /// The most pixels of an image the Culori pentru hartie and Soft proof tabs work on
+        /// whole (R-188, ADR 0118): up to it the two tabs show and zoom the image itself, over it
+        /// the smallest whole reduction step that brings it within. Until 2026-11-21 the proof
+        /// was made on a copy of at most 2400 pixels on its long side and the fit on one made
+        /// for its area, never over CurvePreviewMaxPixels, so a zoom showed the copy's pixels.
+        /// Measured that day on the plate-solved FITS (22.6 MP) through the lab's baryta
+        /// profile: a change of the proof's intent takes 0.8 s for 0.1 to 0.2 s; the fit whole
+        /// takes 12.0 s for 1.9 s and holds 943 MB while it runs for 82 MB. The two tabs
+        /// together hold 655 MB afterwards for about 150 MB, some 30 MB for each megapixel, and
+        /// while the runs last the process needs 2.6 GB, about 115 MB for each megapixel; the
+        /// runs start with every image opened, so an image of any size could not be taken
+        /// whole. 64 MP covers the cameras of up to 61 MP, at about 7 GB while the runs last: a
+        /// presumption about the images and the PC, not a measurement.
         /// </summary>
-        internal const int ProofMaxSide = 2400;
+        internal const int WholeImageMaxPixels = 64_000_000;
 
         /// <summary>
         /// The nodes of the paper fit's table over L* (R-175, ADR 0083): the largest chroma the

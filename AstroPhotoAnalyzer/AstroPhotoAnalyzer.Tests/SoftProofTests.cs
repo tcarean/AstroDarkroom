@@ -199,14 +199,30 @@ public class SoftProofTests
     }
 
     [Fact]
-    public void R160_TheProofIsMadeOnAReductionWithinProofMaxSide()
+    public void R188_TheProofIsMadeOnTheWholeImage()
     {
         using var ws = new TempWorkspace();
         Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(Profile(ws), out string error) ?? throw new Exception(error);
-        Raster wide = SyntheticRasters.Flat(64, Thresholds.ProofMaxSide + 1, 0.3f);
+        // One pixel wider than the 2400 the proof was reduced to until R-188.
+        Raster wide = SyntheticRasters.Flat(64, 2401, 0.3f);
         ProofSet set = ProofRun.Prepare(AnalysisRun.Execute(wide, "memorie", p));
-        Assert.Equal((Thresholds.ProofMaxSide + 1) / 2 + 1, set.Reduced.W);   // stride 2
-        Assert.Equal(32, set.Reduced.H);
+        Assert.Equal(1, set.Stride);
+        Assert.Equal(2401, set.Reduced.W);
+        Assert.Equal(64, set.Reduced.H);
+        Assert.Equal(2401 * 64, set.PaperOutside.Length);
+        Assert.Equal(2401, ProofRun.Render(set, ProofIntent.Perceptual, simulate: true).Image.W);
+    }
+
+    [Theory]
+    [InlineData(5837, 3867, 1)]     // the plate-solved FITS, 22.6 MP
+    [InlineData(8000, 8000, 1)]     // exactly WholeImageMaxPixels
+    [InlineData(8001, 8000, 2)]     // one column more
+    [InlineData(10000, 8000, 2)]    // 80 MP: shown at 5000 x 4000
+    [InlineData(20000, 16000, 3)]   // 320 MP: a step of 2 would leave 80 MP
+    public void R188_AnImageOverTheCapIsReducedByTheSmallestWholeStep(int w, int h, int stride)
+    {
+        Assert.Equal(64_000_000, Thresholds.WholeImageMaxPixels);
+        Assert.Equal(stride, RasterOps.WholeImageStride(w, h));
     }
 
     [Fact]

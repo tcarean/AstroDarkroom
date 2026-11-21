@@ -171,10 +171,11 @@ the view shows them, the image's aspect fitted into the area (`CurveRun.PreviewS
 largest step that still covers the fitted size, never over `CurvePreviewMaxPixels`, ADR 0084),
 and the view shrinks them to fit, with the bitmaps scaled at high quality, so the image fills
 the area; only when the core says the preview was held under the cap (`CurveSet.PreviewCapped`,
-`GamutFitSet.PreviewCapped`, the tab's `PreviewCapped`) may the view enlarge it, so an image
+the tab's `PreviewCapped`) may the view enlarge it, so an image
 smaller than the area stays at its own size: in `CurvesView` a `Viewbox` that is `DownOnly`
-unless a style trigger says otherwise, in `GamutFitView` the comparison's `FitEnlarges`
-(`paper-fit.md`). `SetGallerySize`, called at
+unless a style trigger says otherwise. The Culori pentru hartie tab followed the same rule
+until ADR 0118; it now shows the whole image and reports no size (`paper-fit.md`).
+`SetGallerySize`, called at
 every layout pass, compares the step the new size allows with the step the last computation was
 asked for (`_askedWidth` x `_askedHeight`) and runs `ComputeAsync` again by itself when the new
 one is finer (`Computation` holds it for the tests); the gallery shown stays until the new one

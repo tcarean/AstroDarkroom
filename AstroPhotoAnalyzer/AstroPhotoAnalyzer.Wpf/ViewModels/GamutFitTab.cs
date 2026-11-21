@@ -23,8 +23,8 @@
 // come from GamutFitRun; the saving is GamutFitExport's. Here are only the position in the
 // gallery, the box, the commands and the bitmaps; the place of the comparison's line and the
 // zoom are the view's, held nowhere here (ADR 0090). Like Editare Curbe, the content is a run
-// after the analysis: MainViewModel starts it once the other tabs are filled (ADR 0051), and
-// the tab runs it again by itself when the gallery's area allows a finer preview (ADR 0084).
+// after the analysis: MainViewModel starts it once the other tabs are filled (ADR 0051), once
+// per image, since the images are the whole image whatever the area (R-188, ADR 0118).
 
 using System;
 using System.Collections.Generic;
@@ -77,9 +77,9 @@ namespace AstroPhotoAnalyzer.Wpf
 
     /// <summary>
     /// The Culori pentru hartie tab (R-178): filled after an analysis by the computation
-    /// MainViewModel starts, recomputed when its area allows finer previews, with the gallery of
-    /// the three variants, browsed with Next and Previous and each saveable as a new FITS or
-    /// TIFF, and the original they are compared with.
+    /// MainViewModel starts, with the gallery of the three variants, browsed with Next and
+    /// Previous and each saveable as a new FITS or TIFF, and the original they are compared
+    /// with, all of them the whole image (R-188).
     /// </summary>
     public sealed class GamutFitTabViewModel : ResultTabViewModel
     {
@@ -96,16 +96,13 @@ namespace AstroPhotoAnalyzer.Wpf
         GamutFitSet _set;
         IReadOnlyList<GamutFitGalleryItem> _items = Array.Empty<GamutFitGalleryItem>();
         GamutFitGalleryItem _before;
-        int _index, _width = Thresholds.CurvePreviewDefaultWidth, _height = Thresholds.CurvePreviewDefaultHeight;
-
-        // The size the last computation was asked for; 0 before any.
-        int _askedWidth, _askedHeight;
+        int _index;
 
         // Each computation started has its number; one that ends after another image was opened,
         // or after another was started, touches nothing any more.
         int _run;
         // The box starts on: the owner looks for the colours the paper cannot hold first (R-178).
-        bool _busy, _isProblem, _showOutside = true, _previewCapped;
+        bool _busy, _isProblem, _showOutside = true, _reduced;
         string _message, _saveMessage, _saveError;
 
         /// <summary>Makes the three commands; the tab starts empty and disabled.</summary>
@@ -126,8 +123,8 @@ namespace AstroPhotoAnalyzer.Wpf
         public bool IsBusy { get => _busy; private set => Set(ref _busy, value); }
 
         /// <summary>
-        /// The last computation started, by MainViewModel, by the tests or by a larger area, for
-        /// whoever must wait; completed before the first.
+        /// The last computation started, by MainViewModel or by the tests, for whoever must
+        /// wait; completed before the first.
         /// </summary>
         internal Task Computation { get; private set; } = Task.CompletedTask;
 
@@ -152,7 +149,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public GamutFitGalleryItem Current => _items.Count == 0 ? null : _items[_index];
 
         /// <summary>
-        /// The original at the previews' size, with its own red layer: the left side of the
+        /// The original at the variants' size, with its own red layer: the left side of the
         /// comparison, the same whatever variant is shown (R-179); null without a gallery.
         /// </summary>
         public GamutFitGalleryItem Before { get => _before; private set => Set(ref _before, value); }
@@ -161,16 +158,23 @@ namespace AstroPhotoAnalyzer.Wpf
         /// The sentence under the image: which side of the line is which, and how to zoom and
         /// move, the maximum being the viewer's own (R-179).
         /// </summary>
-        public string ViewerHelp
+        public string ViewerHelp => ViewerHelpFor(_reduced);
+
+        /// <summary>
+        /// The sentence under the image for a whole image or for a reduced copy of one over the
+        /// core's limit (R-188): the zoom enlarges a pixel of the one or of the other.
+        /// </summary>
+        /// <param name="reduced">Whether the images shown are a reduced copy.</param>
+        /// <returns>The sentence, in the interface language.</returns>
+        internal static string ViewerHelpFor(bool reduced)
         {
-            get
-            {
-                string max = Fmt.F0(ZoomPanViewer.MaxScale);
-                return Tr.Pick(
-                    $"Left of the line is the image as it is (Before), right of it the fitted one (After); drag the line to move it. The mouse wheel zooms around the cursor, up to {max}:1 (one pixel of the copy becomes a square of {max} x {max} screen pixels, with Windows display scaling at 100 %); hold the left button and drag to move the image; a double click fits it again.",
-                    $"In stanga liniei e imaginea asa cum este (Inainte), in dreapta cea potrivita (Dupa); tragi de linie ca sa o muti. Rotita mouse-ului mareste in jurul cursorului, pana la {max}:1 (un pixel al copiei devine un patrat de {max} x {max} pixeli pe ecran, cu scalarea Windows la 100 %); tii apasat butonul stang si tragi ca sa muti imaginea; dublu-clic o potriveste din nou.");
-            }
+            string max = Fmt.F0(ZoomPanViewer.MaxScale);
+            string ofEn = reduced ? "copy" : "image", ofRo = reduced ? "copiei" : "imaginii";
+            return Tr.Pick(
+                $"Left of the line is the image as it is (Before), right of it the fitted one (After); drag the line to move it. The mouse wheel zooms around the cursor, up to {max}:1 (one pixel of the {ofEn} becomes a square of {max} x {max} screen pixels, with Windows display scaling at 100 %); hold the left button and drag to move the image; a double click fits it again.",
+                $"In stanga liniei e imaginea asa cum este (Inainte), in dreapta cea potrivita (Dupa); tragi de linie ca sa o muti. Rotita mouse-ului mareste in jurul cursorului, pana la {max}:1 (un pixel al {ofRo} devine un patrat de {max} x {max} pixeli pe ecran, cu scalarea Windows la 100 %); tii apasat butonul stang si tragi ca sa muti imaginea; dublu-clic o potriveste din nou.");
         }
+
         public string Position => _items.Count == 0 ? "" : $"{_index + 1} / {_items.Count}";
 
         /// <summary>Why there is nothing to show, or the computation's error; null when the gallery exists.</summary>
@@ -179,40 +183,29 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>The message is a reason of the core's (no profile, an unusable one): shown in red.</summary>
         public bool IsProblem { get => _isProblem; private set => Set(ref _isProblem, value); }
 
-        /// <summary>The note under the gallery, the core's sentence.</summary>
-        public string Note => GamutFitTexts.Note;
+        /// <summary>The note under the gallery, the core's sentence for a whole image or for a reduced copy.</summary>
+        public string Note => GamutFitTexts.Note(_reduced);
 
         /// <summary>
-        /// The previews are held under the core's cap and smaller than the area: the view may
-        /// enlarge them, the one case it does (ADR 0084).
+        /// The images shown are a reduced copy: the image is over the core's limit for the
+        /// whole image (R-188). False for the whole image, and without a gallery.
         /// </summary>
-        public bool PreviewCapped { get => _previewCapped; private set => Set(ref _previewCapped, value); }
+        public bool IsReducedCopy
+        {
+            get => _reduced;
+            private set
+            {
+                if (!Set(ref _reduced, value)) return;
+                Raise(nameof(Note));
+                Raise(nameof(ViewerHelp));
+            }
+        }
 
         public string SaveMessage { get => _saveMessage; private set => Set(ref _saveMessage, value); }
         public string SaveError { get => _saveError; private set => Set(ref _saveError, value); }
 
         /// <summary>The image's folder, where the save dialog starts; null without a file on disk.</summary>
         public string InputFolder => _result?.FullPath == null || !File.Exists(_result.FullPath) ? null : Path.GetDirectoryName(_result.FullPath);
-
-        /// <summary>
-        /// The size of the gallery area, in pixels: the view sets it at every layout pass. When
-        /// it allows a finer preview than the gallery shown, or than the computation running, was
-        /// made with, the gallery is computed again by itself (ADR 0084); a size that allows no
-        /// finer one starts nothing.
-        /// </summary>
-        /// <param name="width">The width in device pixels; 0 or less leaves the size as it was.</param>
-        /// <param name="height">The height in device pixels; 0 or less leaves the size as it was.</param>
-        internal void SetGallerySize(int width, int height)
-        {
-            if (width <= 0 || height <= 0) return;
-            _width = width; _height = height;
-            if (_result == null || _askedWidth == 0) return;
-            if (CurveRun.PreviewStride(_result.Raster, width, height) < CurveRun.PreviewStride(_result.Raster, _askedWidth, _askedHeight))
-            {
-                Log.Debug("the gallery area " + LogText.Int(width) + "x" + LogText.Int(height) + " allows a finer preview than " + LogText.Int(_askedWidth) + "x" + LogText.Int(_askedHeight) + ": computing again");
-                ComputeAsync();
-            }
-        }
 
         /// <summary>Whether there is a variant shown: what SaveAs needs.</summary>
         /// <returns>True with a gallery; false with none.</returns>
@@ -245,48 +238,67 @@ namespace AstroPhotoAnalyzer.Wpf
         void Reset()
         {
             _run++;
-            _askedWidth = _askedHeight = 0;
             _set = null;
             _index = 0;
             Before = null;
             Items = Array.Empty<GamutFitGalleryItem>();
-            Message = null; IsProblem = false; SaveMessage = null; SaveError = null; PreviewCapped = false;
+            Message = null; IsProblem = false; SaveMessage = null; SaveError = null; IsReducedCopy = false;
             if (Set(ref _showOutside, true, nameof(ShowOutside))) Log.Debug("show outside=True (reset)");
             IsBusy = false;
             RaiseGallery();
         }
 
-        /// <summary>The computation, synchronously (the tests): the fit, at the given size of the gallery.</summary>
-        /// <param name="width">The gallery's width in pixels; 0 or less keeps the current size.</param>
-        /// <param name="height">The gallery's height in pixels; 0 or less keeps the current size.</param>
-        internal void Compute(int width, int height)
+        /// <summary>The computation, synchronously (the tests): the fit and its bitmaps.</summary>
+        internal void Compute()
         {
-            if (width > 0 && height > 0) { _width = width; _height = height; }
             _run++;
-            _askedWidth = _width; _askedHeight = _height;
-            Show(GamutFitRun.Execute(_result, _width, _height));
+            Show(Prepare(GamutFitRun.Execute(_result)));
         }
 
         /// <summary>
-        /// Runs the core on a pool thread at the gallery's size, with "computing" shown meanwhile
-        /// (the gallery already shown stays); the outcome is applied only if no Reset or newer
-        /// computation came in between.
+        /// Runs the core and makes the bitmaps on a pool thread, with "computing" shown
+        /// meanwhile; the outcome is applied only if no Reset or newer computation came in
+        /// between.
         /// </summary>
-        internal Task ComputeAsync() => Computation = ComputeCore();
+        internal Task ComputeAsync() => Computation = ComputeCore(null);
 
-        /// <summary>The body of <see cref="ComputeAsync"/>.</summary>
-        async Task ComputeCore()
+        /// <summary>
+        /// As <see cref="ComputeAsync"/>, started only when <paramref name="before"/> has ended,
+        /// with "computing" shown from now: MainViewModel hands it the soft proof's computation,
+        /// since the two started together take every core from each other (on 22.6 MP the proof
+        /// was shown after 9.5 to 14.5 s for 3.2 s, the fit after 18 s for 15 s; ADR 0118).
+        /// Another image opened meanwhile abandons the wait, and the core is not started.
+        /// </summary>
+        /// <param name="before">The computation to wait for; not null. However it ends, the fit follows.</param>
+        /// <returns>The task of the wait and the computation, which is also <see cref="Computation"/>.</returns>
+        internal Task ComputeAfterAsync(Task before) => Computation = ComputeCore(before);
+
+        /// <summary>The body of <see cref="ComputeAsync"/> and <see cref="ComputeAfterAsync"/>.</summary>
+        /// <param name="before">A computation to wait for first; null to start at once.</param>
+        async Task ComputeCore(Task before)
         {
             AnalysisResult result = _result;
-            int w = _width, h = _height, run = ++_run;
-            _askedWidth = w; _askedHeight = h;
+            int run = ++_run;
             IsBusy = true;
             IsProblem = false;
             Message = GamutFitTexts.Computing;
             try
             {
-                GamutFitSet set = await Task.Run(() => GamutFitRun.Execute(result, w, h));
-                if (run == _run) Show(set);
+                if (before != null)
+                {
+                    // The other computation reports its own failure; here only its end matters.
+                    try { await before; }
+                    catch (Exception e) { Log.Debug(e, "the computation waited for failed; the fit starts all the same"); }
+                    if (run != _run)
+                    {
+                        Log.Debug("computation " + LogText.Int(run) + " was abandoned while it waited; the core is not started");
+                        return;
+                    }
+                }
+                // The bitmaps are made there too: whole-image ones would hold the window's thread
+                // for most of a second (0.9 s measured on 22.6 MP, ADR 0118).
+                Gallery gallery = await Task.Run(() => Prepare(GamutFitRun.Execute(result)));
+                if (run == _run) Show(gallery);
                 else Log.Debug("computation " + LogText.Int(run) + " ended after a newer one started; nothing is shown");
             }
             catch (Exception e)
@@ -306,20 +318,44 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Takes a set: the bitmaps and the layers made once, the previews dropped, the position
-        /// in the gallery kept; a set with a problem empties the gallery and shows the problem in
-        /// red.
+        /// What a computation hands to the window's thread: the core's set without its
+        /// rasters, and the frozen images made from them.
+        /// </summary>
+        /// <param name="Set">The set, its previews and masks dropped; with a Problem, the rest is empty.</param>
+        /// <param name="Before">The original's item; null with a Problem.</param>
+        /// <param name="Items">One item per variant, in the set's order; empty with a Problem.</param>
+        sealed record Gallery(GamutFitSet Set, GamutFitGalleryItem Before, IReadOnlyList<GamutFitGalleryItem> Items);
+
+        /// <summary>
+        /// Makes the bitmaps and the red layers of a set, once, on whichever thread, and drops
+        /// its rasters: the items and the set keep the variants without them, the table and the
+        /// knees staying for the save. The original is the other side of the comparison, the
+        /// same for every variant, and no position of the gallery (R-179).
         /// </summary>
         /// <param name="set">The core's set; not null.</param>
-        void Show(GamutFitSet set)
+        /// <returns>The gallery; without items when the set has a Problem.</returns>
+        static Gallery Prepare(GamutFitSet set)
         {
+            if (set.Problem != null) return new Gallery(set, null, Array.Empty<GamutFitGalleryItem>());
+            GamutFitVariant[] stripped = set.Variants.Select(v => v with { Preview = null, Outside = null }).ToArray();
+            GamutFitGalleryItem before = Item(CurveTexts.Original, set.OriginalPreview, set.OriginalOutside, null, set.Recipe);
+            var items = new List<GamutFitGalleryItem>();
+            for (int i = 0; i < set.Variants.Count; i++) items.Add(Item(stripped[i].Name, set.Variants[i].Preview, set.Variants[i].Outside, stripped[i], set.Recipe));
+            return new Gallery(set with { OriginalPreview = null, OriginalOutside = null, Variants = stripped }, before, items);
+        }
+
+        /// <summary>
+        /// Takes a computation's gallery; a set with a problem empties the gallery and shows the
+        /// problem in red.
+        /// </summary>
+        /// <param name="gallery">What <see cref="Prepare"/> made; not null.</param>
+        void Show(Gallery gallery)
+        {
+            GamutFitSet set = gallery.Set;
             SaveMessage = null; SaveError = null;
-            PreviewCapped = set.Problem == null && set.PreviewCapped;
+            IsReducedCopy = set.Problem == null && set.Stride > 1;
             if (set.Problem != null)
             {
-                // No gallery to refine: a larger area must not run this again (the reason does
-                // not depend on the size), so the asked size goes back to "nothing to redo".
-                _askedWidth = _askedHeight = 0;
                 _set = null;
                 _index = 0;
                 Before = null;
@@ -329,23 +365,14 @@ namespace AstroPhotoAnalyzer.Wpf
                 RaiseGallery();
                 return;
             }
-            // The previews' rasters are no longer needed once the bitmaps exist: the items and
-            // the set keep the variants without them. The table and the knees stay, for the save.
-            GamutFitVariant[] stripped = set.Variants.Select(v => v with { Preview = null, Outside = null }).ToArray();
-            // The original is the other side of the comparison, the same for every variant, and
-            // no position of the gallery (R-179).
-            GamutFitGalleryItem before = Item(CurveTexts.Original, set.OriginalPreview, set.OriginalOutside, null, set.Recipe);
-            var items = new List<GamutFitGalleryItem>();
-            for (int i = 0; i < set.Variants.Count; i++) items.Add(Item(stripped[i].Name, set.Variants[i].Preview, set.Variants[i].Outside, stripped[i], set.Recipe));
-            _set = set with { OriginalPreview = null, OriginalOutside = null, Variants = stripped };
+            _set = set;
             Message = null;
-            before.ShowOutside = _showOutside;
-            foreach (GamutFitGalleryItem i in items) i.ShowOutside = _showOutside;
-            // A recompute of the same image (a larger area) keeps the variant looked at; a new
-            // image starts at the first, since Reset put the position there.
-            _index = Math.Clamp(_index, 0, Math.Max(0, items.Count - 1));
-            Before = before;
-            Items = items;
+            gallery.Before.ShowOutside = _showOutside;
+            foreach (GamutFitGalleryItem i in gallery.Items) i.ShowOutside = _showOutside;
+            // A new image starts at the first variant, since Reset put the position there.
+            _index = Math.Clamp(_index, 0, Math.Max(0, gallery.Items.Count - 1));
+            Before = gallery.Before;
+            Items = gallery.Items;
             RaiseGallery();
         }
 
@@ -354,7 +381,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// formatted by the core.
         /// </summary>
         /// <param name="name">The item's name, as the gallery shows it.</param>
-        /// <param name="preview">The preview raster, at the gallery's size.</param>
+        /// <param name="preview">The image's raster, at the set's step.</param>
         /// <param name="outside">Per preview pixel, whether the paper cannot hold it; may be null.</param>
         /// <param name="v">The variant, without its preview; null for the original, which carries no evidence.</param>
         /// <param name="recipe">The recipe, for a variant's evidence.</param>

@@ -492,7 +492,7 @@ public class GamutFitTests
         Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(icc, out string error) ?? throw new Exception(error);
         AnalysisResult analysis = AnalysisRun.Execute(input, p);
 
-        GamutFitSet set = GamutFitRun.Execute(analysis, 200, 150);
+        GamutFitSet set = GamutFitRun.Execute(analysis);
 
         Assert.Null(set.Problem);
         Assert.Equal(Thresholds.GamutFitTargetDeltaE, set.Table.Limit);
@@ -628,7 +628,7 @@ public class GamutFitTests
             bitpix: -32, extraCards: new[] { FitsTestData.StringCard("OBJECT", "M8") }));
         Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(icc, out string error) ?? throw new Exception(error);
         AnalysisResult a = AnalysisRun.Execute(input, p);
-        GamutFitSet set = GamutFitRun.Execute(a, 200, 150);
+        GamutFitSet set = GamutFitRun.Execute(a);
         Assert.Null(set.Problem);
         Assert.Equal(new[] { "Exacta", "Lina", "Foarte lina" }, set.Variants.Select(v => v.Name).ToArray());
         GamutFitVariant v = set.Variants[0];
@@ -663,6 +663,35 @@ public class GamutFitTests
         // The proposed name carries the input's kind.
         Assert.Equal("nebuloasa_Exacta.fit", GamutFitTexts.ProposedFileName(input, v.Name));
         Assert.Equal("poza_Lina.tif", GamutFitTexts.ProposedFileName(@"C:\x\poza.tif", "Lina"));
+    }
+
+    [Fact]
+    public void R188_TheFitsImagesAreTheWholeImageAndTheNoteCallsItACopyOnlyWhenReduced()
+    {
+        using var ws = new TempWorkspace();
+        string icc = ws.WriteFile("hartie.icc", IccPrinterTestData.V2Lut16("Hartie de test", 20));
+        string input = ws.WriteFile("nebuloasa.fit", FitsTestData.Build(96, 64, 3, (x, y, c) => x < 48 ? (c == 0 ? 0.6 : 0.2) : 0.3, bitpix: -32));
+        Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(icc, out string error) ?? throw new Exception(error);
+
+        // No area is asked: the images are the image's own size.
+        GamutFitSet set = GamutFitRun.Execute(AnalysisRun.Execute(input, p));
+
+        Assert.Null(set.Problem);
+        Assert.Equal(1, set.Stride);
+        Assert.Equal(96, set.OriginalPreview.W);
+        Assert.Equal(64, set.OriginalPreview.H);
+        Assert.Equal(96 * 64, set.OriginalOutside.Length);
+        Assert.All(set.Variants, v =>
+        {
+            Assert.Equal(96, v.Preview.W);
+            Assert.Equal(64, v.Preview.H);
+            Assert.Equal(96 * 64, v.Outside.Length);
+        });
+
+        // The note under the gallery: a whole image is not called a copy.
+        Assert.EndsWith("(tabul Tonuri). Programul presupune ca pixelii sunt sRGB.", GamutFitTexts.Note(reduced: false));
+        Assert.DoesNotContain("copie", GamutFitTexts.Note(reduced: false));
+        Assert.EndsWith("Imaginea de aici e o copie micsorata; programul presupune ca pixelii sunt sRGB.", GamutFitTexts.Note(reduced: true));
     }
 
     static Dictionary<ushort, (ushort Type, uint Count, uint Value, int Offset)> ReadTags(byte[] b)

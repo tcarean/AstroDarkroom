@@ -55,17 +55,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </TextBlock>
     </DockPanel>
 
-    <Border Grid.Row="1" x:Name="GalleryArea" Background="{StaticResource PanelBg2}" CornerRadius="4" SizeChanged="GallerySizeChanged">
+    <Border Grid.Row="1" x:Name="GalleryArea" Background="{StaticResource PanelBg2}" CornerRadius="4">
       <!-- The original left of the line and the variant shown right of it, each under its red
-           layer of what the paper cannot hold, zoomed and panned together (R-179). The preview
-           is at least the size the view fits it at, so the fit only shrinks it; it may enlarge
-           only when the core says the preview was held under its cap, on a very large area
-           (ADR 0084). An image smaller than the area is fitted at its own size. -->
+           layer of what the paper cannot hold, zoomed and panned together (R-179). The images
+           are the whole image (R-188, ADR 0118), so the fit only shrinks them; one smaller
+           than the area is fitted at its own size, and nothing is ever enlarged to fill it. -->
       <local:BeforeAfterViewer Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}"
                                Before="{Binding Before.Image}" BeforeOverlay="{Binding Before.Overlay}"
                                After="{Binding Current.Image}" AfterOverlay="{Binding Current.Overlay}"
                                ContentWidth="{Binding Current.Width}" ContentHeight="{Binding Current.Height}"
-                               FitEnlarges="{Binding PreviewCapped}"
+                               FitEnlarges="False"
                                BeforeText="{local:T En='Before', Ro='Inainte'}" AfterText="{local:T En='After', Ro='Dupa'}" />
     </Border>
 

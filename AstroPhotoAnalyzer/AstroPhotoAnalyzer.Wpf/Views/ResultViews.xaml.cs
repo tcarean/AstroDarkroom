@@ -117,26 +117,13 @@ namespace AstroPhotoAnalyzer.Wpf
     }
 
     /// <summary>
-    /// The Culori pentru hartie tab's view (R-178): the XAML, plus the gallery's size for the
-    /// view-model, as the Editare Curbe tab's.
+    /// The Culori pentru hartie tab's view (R-178): the XAML alone. The images are the whole
+    /// image whatever the gallery's area (R-188), so the view reports no size.
     /// </summary>
     public partial class GamutFitView : UserControl
     {
         /// <summary>Loads the XAML.</summary>
         public GamutFitView() => InitializeComponent();
-
-        /// <summary>
-        /// The previews are asked for at the size of the gallery area, in pixels of the screen
-        /// (R-146's rule): this handler puts it in the view-model at every layout pass.
-        /// </summary>
-        /// <param name="sender">The gallery area; not read.</param>
-        /// <param name="e">The new size, in device-independent units, scaled here by the DPI.</param>
-        void GallerySizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (DataContext is not GamutFitTabViewModel vm) return;
-            DpiScale dpi = VisualTreeHelper.GetDpi(this);
-            vm.SetGallerySize((int)(e.NewSize.Width * dpi.DpiScaleX), (int)(e.NewSize.Height * dpi.DpiScaleY));
-        }
     }
 
     /// <summary>

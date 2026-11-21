@@ -19,8 +19,8 @@
 // three variants, for the Culori pentru hartie tab (R-175 to R-178, ADR 0083), and the save of
 // one variant as a new FITS or 16-bit TIFF. Called by the window alone, never by the console,
 // like CurveRun and ProofRun. The figures of the evidence are measured on the tonal subsample
-// (Thresholds.TonalStride), as the curves' are; the previews and their masks on the reduction
-// that fits the gallery.
+// (Thresholds.TonalStride), as the curves' are; the previews and their masks on the whole image,
+// or on its reduction when it is over Thresholds.WholeImageMaxPixels (R-188, ADR 0118).
 
 using System;
 using System.Collections.Generic;
@@ -60,7 +60,7 @@ namespace AstroPhotoAnalyzer
         internal string Name { get; init; }
         internal double Knee { get; init; }
 
-        /// <summary>The fitted preview, at the gallery's size; dropped by the window once drawn.</summary>
+        /// <summary>The fitted image, at the set's step; dropped by the window once drawn.</summary>
         internal Raster Preview { get; init; }
 
         /// <summary>Per preview pixel, whether the paper still cannot hold it.</summary>
@@ -81,7 +81,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>The table, kept for the save of the whole image.</summary>
         internal GamutFitTable Table { get; init; }
 
-        /// <summary>The reduced image as it is, the gallery's first item.</summary>
+        /// <summary>The image as it is, at the set's step (the analysed raster itself at 1): the other side of the comparison.</summary>
         internal Raster OriginalPreview { get; init; }
 
         /// <summary>Per preview pixel, whether the paper cannot hold the original's colour (the warning of R-161).</summary>
@@ -93,10 +93,10 @@ namespace AstroPhotoAnalyzer
         internal GamutFitRecipe Recipe { get; init; }
 
         /// <summary>
-        /// Whether the previews are smaller than the view shows them, held under the cap of
-        /// Thresholds.CurvePreviewMaxPixels, so the view must enlarge them (ADR 0084).
+        /// The step the previews were taken at: 1 for the whole image, more for a reduced copy
+        /// of an image over Thresholds.WholeImageMaxPixels (R-188, ADR 0118).
         /// </summary>
-        internal bool PreviewCapped { get; init; }
+        internal int Stride { get; init; }
     }
 
     /// <summary>Computes the paper fit of an analysed image, after the analysis (ADR 0083, ADR 0051).</summary>
@@ -113,20 +113,20 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The fit of the analysed image <paramref name="a"/> through the profile its Dmax came
-        /// from, in the three variants, with previews at least as large as the view shows them
-        /// in the given area (<see cref="CurveRun.PreviewStride"/>).
+        /// from, in the three variants, with previews of the whole image, or of its reduction
+        /// when it is over Thresholds.WholeImageMaxPixels (<see cref="RasterOps.WholeImageStride"/>,
+        /// R-188): whatever the area they are shown in.
         /// </summary>
         /// <param name="a">The analysis, with its raster and parameters.</param>
-        /// <param name="maxWidth">The gallery area's width, in screen pixels.</param>
-        /// <param name="maxHeight">The gallery area's height, in screen pixels.</param>
         /// <param name="progress">Told each stage as it starts; null for none.</param>
         /// <returns>The set; with Problem set and nothing else when there is no profile or it cannot be used.</returns>
-        internal static GamutFitSet Execute(AnalysisResult a, int maxWidth, int maxHeight, IProgress<string> progress = null)
+        internal static GamutFitSet Execute(AnalysisResult a, IProgress<string> progress = null)
         {
             Parameters prm = a.Parameters;
+            int stride = RasterOps.WholeImageStride(a.Raster.W, a.Raster.H);
             string path = prm.DmaxProfile != null && prm.DmaxOverride.HasValue ? prm.DmaxProfilePath : null;
             using RunClock clock = RunClock.Start(Log, "gamutfit", "path=" + LogText.Str(a.Path) + " profile=" + LogText.Str(path)
-                + " preview=" + LogText.Int(maxWidth) + "x" + LogText.Int(maxHeight));
+                + " stride=" + LogText.Int(stride));
             if (path == null)
             {
                 clock.Done("refused: " + ProofTexts.NoProfile);
@@ -172,7 +172,7 @@ namespace AstroPhotoAnalyzer
             }
 
             Raster r = a.Raster;
-            Raster original = RasterOps.Subsample(r, CurveRun.PreviewStride(r, maxWidth, maxHeight));
+            Raster original = RasterOps.Subsample(r, stride);
             Raster sub = RasterOps.Subsample(r, Thresholds.TonalStride);
             var variants = new List<GamutFitVariant>();
             bool[] originalOutside = null;
@@ -204,7 +204,7 @@ namespace AstroPhotoAnalyzer
                 OriginalOutside = originalOutside,
                 Variants = variants,
                 Recipe = recipe,
-                PreviewCapped = CurveRun.PreviewCapped(r, maxWidth, maxHeight),
+                Stride = stride,
             };
         }
     }

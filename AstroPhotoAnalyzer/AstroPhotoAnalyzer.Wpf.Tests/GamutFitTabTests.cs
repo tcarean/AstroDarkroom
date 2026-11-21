@@ -74,7 +74,7 @@ public class GamutFitTabTests
         tab.Populate(Result(ws, withProfile: true));
         Assert.False(tab.HasGallery);   // filled by the computation MainViewModel starts, not by Populate
 
-        tab.Compute(400, 300);
+        tab.Compute();
         Assert.True(tab.HasGallery, tab.Message);
         // The original is no position of the gallery: it is the other side of the comparison.
         Assert.Equal(new[] { "Exacta", "Lina", "Foarte lina" }, tab.Items.Select(i => i.Name).ToArray());
@@ -139,7 +139,7 @@ public class GamutFitTabTests
         // The new image starts at the first variant, wherever the last one was left (Lina),
         // and a gallery made with the box off is made with no layer shown.
         tab.ShowOutside = false;
-        tab.Compute(400, 300);
+        tab.Compute();
         Assert.Equal("Exacta", tab.Current!.Name);
         Assert.Equal("1 / 3", tab.Position);
         Assert.Null(tab.Before!.Overlay);
@@ -147,37 +147,70 @@ public class GamutFitTabTests
     }
 
     [Fact]
-    public async Task R178_ALargerAreaRecomputesTheGalleryByItselfAndTheImageCoversIt()
+    public async Task R188_TheGalleryIsTheWholeImageAndItsSentencesSaySo()
     {
         using var ws = new TempWorkspace();
         var tab = new GamutFitTabViewModel();
         AnalysisResult result = Result(ws, withProfile: true);
         int w = result.Raster.W, h = result.Raster.H;
         tab.Populate(result);
-        tab.Compute(w / 4, h / 4);
+        // The computation MainViewModel starts: no area is asked, and none can be reported.
+        await tab.ComputeAsync();
+        Assert.False(tab.IsBusy);
         Assert.True(tab.HasGallery, tab.Message);
-        Assert.True(tab.Current!.Width >= w / 4 && tab.Current.Height >= h / 4);
-        int before = tab.Current.Width;
+        Assert.False(tab.IsReducedCopy);
+        foreach (GamutFitGalleryItem i in tab.Items.Append(tab.Before!))
+        {
+            Assert.Equal(w, i.Width);
+            Assert.Equal(h, i.Height);
+            Assert.Equal(w, i.Image.PixelWidth);
+            Assert.Equal(h, i.Image.PixelHeight);
+            Assert.True(i.Image.IsFrozen);   // made on the computation's thread, shown on the window's
+        }
+        Assert.Equal(w, tab.Before!.Overlay!.PixelWidth);
+        Assert.True(tab.Before.Overlay.IsFrozen);
 
-        tab.SetGallerySize(w / 4, h / 4);
-        tab.SetGallerySize(w / 6, h / 6);
-        Assert.False(tab.IsBusy);
-        Assert.Equal(before, tab.Current.Width);
+        // A whole image is not called a copy, under the gallery or where the zoom is explained.
+        Assert.Equal(GamutFitTexts.Note(reduced: false), tab.Note);
+        Assert.Contains("un pixel al imaginii devine", tab.ViewerHelp);
+        Assert.DoesNotContain("copie", tab.Note + tab.ViewerHelp);
+        // An image over WholeImageMaxPixels is a reduced copy, and both sentences say it.
+        Assert.Contains("un pixel al copiei devine", GamutFitTabViewModel.ViewerHelpFor(reduced: true));
+        Assert.Equal(tab.ViewerHelp, GamutFitTabViewModel.ViewerHelpFor(reduced: false));
+    }
 
-        tab.ShowOutside = true;
-        tab.Next.Execute(null);
-        Assert.Equal("Lina", tab.Current.Name);
-        tab.SetGallerySize(w, h);
-        Assert.True(tab.IsBusy);
-        Assert.True(tab.HasGallery);
-        await tab.Computation;
+    [Fact]
+    public async Task R188_TheFitStartsOnlyWhenTheComputationBeforeItHasEnded()
+    {
+        using var ws = new TempWorkspace();
+        using LogCapture capture = LogCapture.Start();
+        var tab = new GamutFitTabViewModel();
+        tab.Populate(Result(ws, withProfile: true));
+        // The soft proof's computation, still running: MainViewModel hands it over (ADR 0118).
+        var proof = new TaskCompletionSource();
+        Task fit = tab.ComputeAfterAsync(proof.Task);
+        Assert.Same(fit, tab.Computation);
+        Assert.True(tab.IsBusy);   // "computing" from the start, not an empty tab
+        Assert.Equal(GamutFitTexts.Computing, tab.Message);
+        Assert.False(tab.HasGallery);
+        Assert.DoesNotContain(capture.Messages, m => m.StartsWith("gamutfit start"));
+
+        proof.SetResult();
+        await fit;
+        Assert.Single(capture.Messages, m => m.StartsWith("gamutfit start"));
+        Assert.True(tab.HasGallery, tab.Message);
         Assert.False(tab.IsBusy);
-        Assert.Equal(w, tab.Current!.Width);
-        Assert.Equal("Lina", tab.Current.Name);        // the recompute keeps the variant looked at
-        Assert.Equal("2 / 3", tab.Position);
-        Assert.True(tab.ShowOutside);                 // the box survives the recompute
-        Assert.Equal(w, tab.Before!.Width);            // the original is recomputed with the variants
-        Assert.NotNull(tab.Before.Overlay);            // and its layer is on the new original
+
+        // Another image opened while the one before still runs: the wait is nobody's any more,
+        // and the core is never started for it.
+        var late = new TaskCompletionSource();
+        Task abandoned = tab.ComputeAfterAsync(late.Task);
+        tab.Populate(Result(ws, withProfile: true));
+        late.SetResult();
+        await abandoned;
+        Assert.Single(capture.Messages, m => m.StartsWith("gamutfit start"));
+        Assert.False(tab.HasGallery);
+        Assert.False(tab.IsBusy);
     }
 
     [Fact]
@@ -186,7 +219,7 @@ public class GamutFitTabTests
         using var ws = new TempWorkspace();
         var tab = new GamutFitTabViewModel();
         tab.Populate(Result(ws, withProfile: true, inputName: "calea-lactee.tif"));
-        tab.Compute(400, 300);
+        tab.Compute();
         Assert.True(tab.HasGallery, tab.Message);
         Assert.Equal(ws.Dir, tab.InputFolder);
 
@@ -223,20 +256,11 @@ public class GamutFitTabTests
         using var ws = new TempWorkspace();
         var tab = new GamutFitTabViewModel();
         tab.Populate(Result(ws, withProfile: false));
-        tab.Compute(400, 300);
+        tab.Compute();
         Assert.False(tab.HasGallery);
         Assert.True(tab.IsProblem);
         Assert.Equal(ProofTexts.NoProfile, tab.Message);
         Assert.Contains("Din profil ICC...", tab.Message);
-
-        // A larger area does not run the computation again: nothing to refine (ADR 0084). The
-        // refusal is computed at a size whose step is 4 on the 256 px frame, and the area then
-        // allows a step of 1: without the rule a computation would start here.
-        tab.Compute(64, 48);
-        Assert.True(tab.IsProblem);
-        tab.SetGallerySize(256, 192);
-        Assert.False(tab.IsBusy);
-        Assert.True(tab.IsProblem);
     }
 
     [Fact]
@@ -246,7 +270,7 @@ public class GamutFitTabTests
             using var ws = new TempWorkspace();
             var tab = new GamutFitTabViewModel();
             tab.Populate(Result(ws, withProfile: false));
-            tab.Compute(400, 300);
+            tab.Compute();
             Assert.True(tab.IsProblem);
 
             // The tab's width in the window at its default size: the sentence ends inside it.
@@ -268,7 +292,7 @@ public class GamutFitTabTests
             using var errors = new WindowSmokeTests.BindingErrors();
             var tab = new GamutFitTabViewModel();
             tab.Populate(Result(ws, withProfile: true));
-            tab.Compute(400, 300);
+            tab.Compute();
             tab.ShowOutside = true;
             var view = new GamutFitView { DataContext = tab };
             WindowSmokeTests.Render(view, name: "tab-culori-hartie");
@@ -286,12 +310,12 @@ public class GamutFitTabTests
             Assert.Null(tab.Current.Overlay);
             Assert.Null(comparison.AfterOverlay);
             Assert.Equal("Current.Overlay", System.Windows.Data.BindingOperations.GetBinding(comparison, BeforeAfterViewer.AfterOverlayProperty)?.Path.Path);
-            Assert.Equal("PreviewCapped", System.Windows.Data.BindingOperations.GetBinding(comparison, BeforeAfterViewer.FitEnlargesProperty)?.Path.Path);
             Assert.Equal(tab.Current.Width, comparison.ContentWidth);
             Assert.Equal(tab.Current.Height, comparison.ContentHeight);
             Assert.Equal("Inainte", comparison.BeforeText);
             Assert.Equal("Dupa", comparison.AfterText);
-            Assert.False(tab.PreviewCapped);
+            // Nothing is ever enlarged to fill the area (R-188): the view says so itself, bound to nothing.
+            Assert.Null(System.Windows.Data.BindingOperations.GetBinding(comparison, BeforeAfterViewer.FitEnlargesProperty));
             Assert.False(comparison.FitEnlarges);
             Assert.Equal(1, comparison.Viewer.Scale, 9);
 
@@ -312,7 +336,7 @@ public class GamutFitTabTests
             Assert.Null(comparison.After);
             Assert.Null(comparison.Before);
             Assert.Equal(0.5, comparison.DividerPosition);
-            tab.Compute(400, 300);
+            tab.Compute();
             view.UpdateLayout();
             Assert.Same(tab.Current!.Image, comparison.After);
             Assert.Equal(1, comparison.Viewer.Zoom);
