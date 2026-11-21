@@ -171,6 +171,23 @@ public class SeriesAnalyzerTests
     }
 
     /// <summary>
+    /// A trail a third of a degree under the horizontal reads `0` degrees in its reason, not
+    /// `-0` (R-092): the angle is written by the reports' formatter.
+    /// </summary>
+    [Fact]
+    public void R092_ATrailAngleThatRoundsToZeroHasNoMinus()
+    {
+        (AnalyzedFrame[] frames, DitherAnalysis d, Cadence c) = ShortAndTrailed();
+        frames[1] = frames[1] with { Measurement = frames[1].Measurement! with { AngleDeg = -0.3 } };
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+
+        FrameFlag flag = Assert.Single(s.Flags[1]);
+        Assert.Equal(FlagKind.Trailed, flag.Kind);
+        Assert.Equal("0", flag.Detail);
+    }
+
+    /// <summary>
     /// A frame too short to stack casts no vote for the RA axis, trailed or not (R-085, R-025,
     /// ADR 0061, CR-012): the fixture's one trailed 120 s frame is a single voter, under the two
     /// the axis needs, where the trailed 0.2 s frame used to be the second. The short frame keeps

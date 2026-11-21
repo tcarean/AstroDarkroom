@@ -176,13 +176,15 @@ public class SeriesTests
         PlainWords.AssertPlain(reason, "the reason of a tail");
 
         IReadOnlyList<ReportRow> rows = SeriesReport.TrailRows(r);
-        Assert.Equal(4, rows.Count);
-        Assert.Equal(english ? "tail or double" : "dara sau dublura", rows[2].Label);
-        Assert.Equal(english ? "14 (the star's core is sharp; a stack with rejection repairs most of them)" : "14 (miezul stelei e bun; stiva cu respingere le repara pe cele mai multe)", rows[2].Value);
+        Assert.Equal(5, rows.Count);
+        ReportRow tail = rows[3];   // after the two marginal rows (R-094)
+        Assert.Equal(english ? "tail or double" : "dara sau dublura", tail.Label);
+        Assert.Equal(english ? "14 (the star's core is sharp; a stack with rejection repairs most of them)" : "14 (miezul stelei e bun; stiva cu respingere le repara pe cele mai multe)", tail.Value);
         Assert.DoesNotContain("14", rows[0].Value, StringComparison.Ordinal);
         // The frame reads past the marginal row's upper bound and has its own row: not listed twice.
-        Assert.Equal("3, 4, 5", rows[1].Value);
-        PlainWords.AssertPlain(rows[2].Label + " " + rows[2].Value, "the tail row of TRAILED FRAMES");
+        Assert.DoesNotContain("14", rows[1].Value, StringComparison.Ordinal);
+        Assert.DoesNotContain("14", rows[2].Value, StringComparison.Ordinal);
+        PlainWords.AssertPlain(tail.Label + " " + tail.Value, "the tail row of TRAILED FRAMES");
 
         IReadOnlyList<ReportParagraph> why = SeriesReport.RejectedExplanation;
         Assert.Equal(6, why.Count);
@@ -190,7 +192,69 @@ public class SeriesTests
         Assert.EndsWith(english ? "These frames are on the 'tail or double' row of TRAILED FRAMES." : "Aceste cadre sunt pe randul 'dara sau dublura' din CADRE MISCATE.", why[2].Text, StringComparison.Ordinal);
         using StringWriter sw = new();
         SeriesReport.Write(r, sw);
-        Assert.Contains(rows[2].Value, sw.ToString(), StringComparison.Ordinal);
+        Assert.Contains(tail.Value, sw.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// TRAILED FRAMES lists the marginal frames by what makes them marginal (R-094, ADR 0068,
+    /// CR-020): on the classes session frame 3, marginal by its elongation, is on the row whose
+    /// label names the elongation bounds, and frames 4 (wide stars, elongation 1.01) and 5 (too
+    /// few stars) on the row under it; the explanation of the Rejected tab points at both.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R094_TheMarginalFramesAreListedByWhatMakesThemMarginal(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        Assert.Equal(FlagKind.MarginalTrail, Assert.Single(r.Series.Flags[2]).Kind);
+        Assert.Equal(FlagKind.Soft, Assert.Single(r.Series.Flags[3]).Kind);
+        Assert.Equal(FlagKind.Clouds, Assert.Single(r.Series.Flags[4]).Kind);
+
+        IReadOnlyList<ReportRow> rows = SeriesReport.TrailRows(r);
+
+        Assert.Equal(english ? "marginal (elongation between 1.45 and 1.73)" : "la limita (alungire intre 1.45 si 1.73)", rows[1].Label);
+        Assert.Equal("3", rows[1].Value);
+        Assert.Equal(english ? "marginal for another reason" : "la limita din alt motiv", rows[2].Label);
+        Assert.Equal(english ? "4, 5 (wide stars or too few stars)" : "4, 5 (stele late sau prea putine stele)", rows[2].Value);
+        PlainWords.AssertPlain(rows[2].Label + " " + rows[2].Value, "the row of the frames marginal for another reason");
+
+        string second = SeriesReport.RejectedExplanation[1].Text;
+        Assert.Equal(
+            english
+                ? "Between 1.45 and 1.73 the frame is marginal and stays in the stack unless you decide otherwise. These frames are on the 'marginal' row of TRAILED FRAMES, on the Summary tab; a frame that is marginal for wide stars or too few stars is on the row under it, 'marginal for another reason'. On the Frames tab every marginal frame has a yellow class."
+                : "Intre 1.45 si 1.73 cadrul e la limita si ramane in stiva, daca nu hotarasti altfel. Aceste cadre sunt pe randul 'la limita' din CADRE MISCATE, pe tabul Rezumat; un cadru la limita din cauza stelelor late sau a stelelor prea putine e pe randul de sub el, 'la limita din alt motiv'. Pe tabul Cadre, orice cadru la limita are clasa galbena.",
+            second);
+        PlainWords.AssertPlain(second, "the second paragraph of the Rejected explanation");
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        Assert.Contains($"    {rows[2].Label,-19}: {rows[2].Value}", sw.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A session whose marginal frames are all marginal by their elongation, or that has none,
+    /// has no row for another reason (R-094): the pattern session, and the four frames of the
+    /// short-exposure fixture, whose marginally trailed short frame is bad by its exposure and
+    /// whose first frame is made marginally trailed with too few stars as well: a frame with
+    /// both flags is on the elongation row alone.
+    /// </summary>
+    [Fact]
+    public void R094_WithoutAFrameMarginalForAnotherReasonThereIsNoSuchRow()
+    {
+        SeriesResult pattern = RunPattern();
+        Assert.DoesNotContain(SeriesReport.TrailRows(pattern), x => x.Label == "la limita din alt motiv");
+
+        (AnalyzedFrame[] frames, DitherAnalysis d, Cadence c) = SeriesAnalyzerTests.ShortAndTrailed();
+        frames[0] = frames[0] with { Measurement = frames[0].Measurement! with { ElongationMedian = 1.5, CoreElongationMedian = 1.5, Detected = 100 } };
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+        Assert.Equal(FrameClass.Marginal, s.Classes[0]);
+        Assert.Equal([FlagKind.MarginalTrail, FlagKind.Clouds], s.Flags[0].Select(f => f.Kind));
+        IReadOnlyList<ReportRow> rows = SeriesReport.TrailRows(pattern with { Frames = frames, Cadence = c, Dither = d, Series = s });
+
+        Assert.Equal(3, rows.Count);
+        Assert.Equal("1", rows[1].Value);
     }
 
     /// <summary>The pattern session, none of whose frames has a tail, keeps the three rows (R-090).</summary>
@@ -306,6 +370,150 @@ public class SeriesTests
         Assert.Equal(1, s.UnknownCount);
     }
 
+    /// <summary>
+    /// No line of the series report carries a minus on a figure that rounds to zero (R-092): the
+    /// classes session, whose change of the stars' width, halo, drift on Y and several table
+    /// cells are a hair under zero, in both languages.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R092_NoLineOfTheSeriesReportCarriesAMinusOnAZero(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        File.WriteAllBytes(Path.Combine(f.LightsDir, "DSC_0009.fit"), new byte[100]);   // the session of the golden series-classes.txt
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        string text = sw.ToString();
+
+        // A minus, a zero, any further zeros after a point, and then no other digit.
+        Assert.DoesNotMatch(@"-0(?:\.0+)?(?![\d.])", text);
+        Assert.Contains(english ? "3.22 px at the end (+0 %): the focus held" : "3.22 px la sfarsit (+0 %): focusul a tinut", text, StringComparison.Ordinal);
+        Assert.Contains(": 0.000 / 0.000; ", text, StringComparison.Ordinal);
+        Assert.Contains("Y +0.00 px/min = +1.8 / +0.0 \"/min", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// SUMMARY's row of the classes agrees its Romanian words with their counts, singular for
+    /// one and with `de` from 20 (R-093, R-082); the English words have no plural.
+    /// </summary>
+    [Fact]
+    public void R093_TheSummaryRowOfTheClassesCountsOneFrameInTheSingular()
+    {
+        SeriesResult pattern = RunPattern();
+        SeriesResult one = pattern with { Series = pattern.Series with { BadCount = 1, MarginalCount = 3, GoodCount = 1, UnknownCount = 1 } };
+        SeriesResult many = pattern with { Series = pattern.Series with { BadCount = 2, MarginalCount = 1, GoodCount = 22, UnknownCount = 2 } };
+        static string Row(SeriesResult r) => SeriesReport.SummaryRows(r)[3].Value;
+
+        Assert.StartsWith("1 slab, 3 la limita, 1 bun, 1 necitit (din 8); ", Row(one), StringComparison.Ordinal);
+        Assert.StartsWith("2 slabe, 1 la limita, 22 de bune, 2 necitite (din 8); ", Row(many), StringComparison.Ordinal);
+        using IDisposable _ = Ui.Use(UiLanguage.English);
+        Assert.StartsWith("1 bad, 3 marginal, 1 good, 1 unread (of 8); ", Row(one), StringComparison.Ordinal);
+        Assert.StartsWith("2 bad, 1 marginal, 22 good, 2 unread (of 8); ", Row(many), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The second row of FOCUS is labelled by how many good frames each end compares: singular
+    /// for one, no count when fewer than two good frames leave nothing to compare (R-093).
+    /// </summary>
+    [Theory]
+    [InlineData(10, true, "first / last 10 good frames")]
+    [InlineData(10, false, "primele / ultimele 10 cadre bune")]
+    [InlineData(20, false, "primele / ultimele 20 de cadre bune")]
+    [InlineData(1, true, "first / last good frame")]
+    [InlineData(1, false, "primul / ultimul cadru bun")]
+    [InlineData(0, true, "first / last good frames")]
+    [InlineData(0, false, "primele / ultimele cadre bune")]
+    public void R093_TheFocusRowNamesOneGoodFrameInTheSingular(int count, bool english, string label)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        SeriesResult pattern = RunPattern();
+        SeriesResult r = pattern with { Series = pattern.Series with { Fwhm = pattern.Series.Fwhm with { Count = count } } };
+
+        Assert.Equal(label, SeriesReport.FocusRows(r)[1].Label);
+    }
+
+    /// <summary>The `fixed pattern` row counts one dark in the singular, in both languages (R-093).</summary>
+    [Theory]
+    [InlineData(1, true, "1 dark in darks\\, with which Siril takes the pattern out")]
+    [InlineData(1, false, "1 dark in darks\\, cu care Siril scoate pattern-ul")]
+    [InlineData(3, true, "3 darks in darks\\, with which Siril takes the pattern out")]
+    [InlineData(3, false, "3 dark-uri in darks\\, cu care Siril scoate pattern-ul")]
+    public void R093_TheFixedPatternRowCountsOneDarkInTheSingular(int darks, bool english, string ending)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(3).ToList(), darks: darks);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        Assert.Equal(darks, r.Session.Darks.Count);
+
+        string value = Assert.Single(SeriesReport.DitherRows(r), x => x.Label == (english ? "fixed pattern" : "pattern fix")).Value;
+
+        Assert.EndsWith("; " + ending, value, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// `--frame N` past the end of the session says how many frames it has, one frame in the
+    /// singular (R-093).
+    /// </summary>
+    [Theory]
+    [InlineData(1, true, "frame 5 does not exist: the session has 1 frame in ")]
+    [InlineData(1, false, "cadrul 5 nu exista: sesiunea are 1 cadru in ")]
+    [InlineData(2, true, "frame 5 does not exist: the session has 2 frames in ")]
+    [InlineData(2, false, "cadrul 5 nu exista: sesiunea are 2 cadre in ")]
+    public void R093_AFrameIndexPastTheSessionSaysOneFrameInTheSingular(int lights, bool english, string start)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture f = new SessionFixture().WithLights(lights);
+
+        InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => FrameRun.Run(f.Root, 5));
+
+        Assert.StartsWith(start, e.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The frame table of the series report sits under its header in both languages (R-095,
+    /// CR-018): the classes session, whose Romanian `la limita` is wider than the class column,
+    /// with a wait of 1500 s before one frame and a `same spot` cell of a run that began at
+    /// frame 1000, both wider than their columns' least widths in either language.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R095_TheFrameTableSitsUnderItsHeader(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        File.WriteAllBytes(Path.Combine(f.LightsDir, "DSC_0009.fit"), new byte[100]);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        double?[] pauses = [.. r.Cadence.PauseSeconds];
+        pauses[5] = 1500;
+        SpotRun?[] runs = [.. r.Dither.SpotRun];
+        runs[7] = new SpotRun(10, 10, 1000);
+        r = r with { Cadence = r.Cadence with { PauseSeconds = pauses }, Dither = r.Dither with { SpotRun = runs } };
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        string[] lines = sw.ToString().Split(Environment.NewLine);
+        int title = Array.IndexOf(lines, english ? "  FRAME BY FRAME" : "  TABEL PE CADRE");
+        string[] table = lines[(title + 1)..].Where(l => l.Length > 0).ToArray();
+
+        Assert.Equal(1 + 14, table.Length);
+        Assert.Contains(table, l => l.Contains(" 1500 s ", StringComparison.Ordinal));
+        Assert.Contains(table, l => l.Contains(english ? "  10/10 from 1000  " : "  10/10 de la 1000  ", StringComparison.Ordinal));
+        if (english)
+        {
+            TextTableTests.AssertUnderHeader(table, ("no", true), ("file", false), ("time", false), ("exposure", true), ("class", false), ("elong", true), ("FWHM", true), ("stars", true),
+                ("bg", true), ("pause", true), ("step", true), ("dX", true), ("dY", true), ("dithering", false), ("same spot", false), ("reasons", false));
+        }
+        else
+        {
+            Assert.Contains(table, l => l.Contains("  la limita  ", StringComparison.Ordinal));
+            TextTableTests.AssertUnderHeader(table, ("nr", true), ("fisier", false), ("ora", false), ("expunere", true), ("clasa", false), ("alung", true), ("FWHM", true), ("stele", true),
+                ("fond", true), ("pauza", true), ("pas", true), ("dX", true), ("dY", true), ("dithering", false), ("acelasi loc", false), ("motive", false));
+        }
+    }
+
     private static SeriesResult RunPattern(int biases = 0)
     {
         using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: biases);
@@ -391,7 +599,7 @@ public class SeriesTests
 
         Assert.Equal("2, 3", rows[0].Value);
         Assert.Equal("niciunul", rows[1].Value);
-        Assert.StartsWith("3 slabe, 0 la limita, 1 bune (din 4)", Assert.Single(SeriesReport.SummaryRows(r), x => x.Label == "cadre miscate").Value, StringComparison.Ordinal);
+        Assert.StartsWith("3 slabe, 0 la limita, 1 bun (din 4)", Assert.Single(SeriesReport.SummaryRows(r), x => x.Label == "cadre miscate").Value, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -755,6 +963,60 @@ public class SeriesTests
         Assert.InRange(Math.Abs(s.RotationTotalDeg!.Value), 0, 0.05);
         Assert.Equal(Axis.Y, s.RaAxis);   // the trailed frames trail vertically
         Assert.Contains("darelor", s.AxisSource, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The exposure verdict of SUMMARY is taken on the ratio as the row shows it, with one
+    /// decimal, so the word never stands against its figure (R-024, ADR 0067, CR-017): a
+    /// measured 9.96 reads `10.0 (good from 10)` and GOOD, 9.94 reads `9.9` and MARGINAL. The
+    /// row gives what the read noise adds with one decimal. The pattern session's result with
+    /// a noise sample of one frame whose blue channel carries the ratio.
+    /// </summary>
+    [Theory]
+    [InlineData(9.96, "10.0", true, true)]
+    [InlineData(9.96, "10.0", true, false)]
+    [InlineData(9.94, "9.9", false, true)]
+    [InlineData(9.94, "9.9", false, false)]
+    [InlineData(10.04, "10.0", true, true)]
+    public void R024_TheExposureVerdictIsTakenOnTheRatioAsItIsShown(double ratio, string shown, bool good, bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        SeriesResult pattern = RunPattern();
+        static ChannelNoise Channel(string name, double r) => new(name, 2000, 40, 38, 1.4, r, 100 * (Math.Sqrt(1 + 1 / r) - 1));
+        IReadOnlyList<IReadOnlyList<ChannelNoise>> sample = [[Channel("R", 14.2), Channel("G1", 31.0), Channel("G2", 30.5), Channel("B", ratio)]];
+        SeriesResult r = pattern with { Series = pattern.Series with { Swamping = sample, SwampingFrames = [1] } };
+
+        ReportRow row = Assert.Single(SeriesReport.SummaryRows(r), x => x.Label == (english ? "exposure" : "expunere"));
+
+        Assert.Equal(good ? (english ? "GOOD" : "BUNA") : (english ? "MARGINAL" : "LA LIMITA"), row.Verdict);
+        Assert.EndsWith(
+            english
+                ? $"; the weakest is channel B: shot/read {shown} (good from 10), the read noise adds 4.9 %"
+                : $"; cel mai slab e canalul B: shot/citire {shown} (bine e de la 10), zgomotul de citire adauga 4.9 %",
+            row.Value, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The `what it means` row says what the read noise adds from the threshold up as the first
+    /// whole percent above what it adds at the threshold (R-024). This pins the text and the
+    /// constant at today's values, a threshold of 10 and `under 5 %`: it fails on any change of
+    /// `Th.SwampingRatioOk`, and cannot tell a figure worked out in the code from one typed
+    /// there.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R024_TheWhatItMeansRowTakesItsPercentFromTheThreshold(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        double atThreshold = NoiseAnalyzer.PenaltyPct(Th.SwampingRatioOk);
+        Assert.InRange(atThreshold, 4.85, 4.9);
+        string percent = (Math.Floor(atThreshold) + 1).ToString(CultureInfo.InvariantCulture);
+
+        string value = Assert.Single(SeriesReport.NoiseRows(RunPattern(biases: 2)), x => x.Label == (english ? "what it means" : "ce inseamna")).Value;
+
+        Assert.Equal("5", percent);
+        Assert.Contains(english ? $", which adds under {percent} %; under 10: " : $", care adauga sub {percent} %; sub 10: ", value, StringComparison.Ordinal);
     }
 
     [Fact]

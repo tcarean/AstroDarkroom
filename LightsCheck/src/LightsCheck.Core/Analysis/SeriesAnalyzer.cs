@@ -516,7 +516,8 @@ internal static class SeriesAnalyzer
             }
 
             double el = m.ElongationMedian ?? 1;
-            string? angle = m.AngleDeg is double a ? a.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) : null;
+            // Written by the reports' formatter, so an angle a hair under the horizontal reads 0 (R-092).
+            string? angle = m.AngleDeg is double a ? RunReport.F(a, 0) : null;
             // A tail or a second copy beside a sharp core (R-090): the whole star reads well
             // more elongated than its core, and the core alone would not make the frame bad. A
             // stack with rejection removes it, so the frame is marginal whatever it reads. A

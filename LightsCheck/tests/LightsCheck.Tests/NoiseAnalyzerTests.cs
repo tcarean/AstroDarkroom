@@ -62,6 +62,18 @@ public class NoiseAnalyzerTests
         Assert.Equal(100 * (Math.Sqrt(1 + 1 / 5.25) - 1), c.PenaltyPct, 1e-9);
     }
 
+    /// <summary>
+    /// What the read noise adds to the shot noise at a shot/read ratio, in percent: 4.88 % at
+    /// 10, 15.5 % at 3, less the higher the ratio (R-024).
+    /// </summary>
+    [Fact]
+    public void R024_ThePenaltyIsWhatTheReadNoiseAddsToTheShotNoise()
+    {
+        Assert.Equal(4.8809, NoiseAnalyzer.PenaltyPct(10), 4);
+        Assert.Equal(100 * (Math.Sqrt(4.0 / 3) - 1), NoiseAnalyzer.PenaltyPct(3), 9);
+        Assert.True(NoiseAnalyzer.PenaltyPct(46.1) < NoiseAnalyzer.PenaltyPct(9.4));
+    }
+
     [Fact]
     public void R024_ClippedStdIgnoresOutliers()
     {

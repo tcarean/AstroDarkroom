@@ -311,4 +311,17 @@ public class WindowSmokeTests
             Render(new SeriesChart(), 600, 200);
             Render(new DitherMap(), 400, 400);
         });
+
+    /// <summary>
+    /// A chart's tick a hair under zero is labelled as zero, without a minus, like every other
+    /// figure the user reads (R-092); a tick that keeps a digit keeps its sign.
+    /// </summary>
+    [Theory]
+    [InlineData(-0.04, 0.5, "0.0")]
+    [InlineData(-0.4, 5, "0")]
+    [InlineData(-0.004, 0.05, "0.00")]
+    [InlineData(-0.06, 0.5, "-0.1")]
+    [InlineData(1.62, 0.16, "1.6")]
+    public void R092_AChartTickThatRoundsToZeroHasNoMinus(double value, double step, string expected)
+        => Assert.Equal(expected, ChartElement.Num(value, step));
 }

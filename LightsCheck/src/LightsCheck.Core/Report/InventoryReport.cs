@@ -82,13 +82,15 @@ internal static class InventoryReport
             int n = inv.Lights.Count(f => f.Error is not null);
             w.WriteLine(T(
                 $"    WARNING            : {n} {(n == 1 ? "frame could not be read" : "frames could not be read")} (see the list of frames)",
-                $"    ATENTIE            : {n} {(n == 1 ? "cadru nu s-a putut citi" : "cadre nu s-au putut citi")} (vezi lista cadrelor)"));
+                $"    ATENTIE            : {RoCount(n)}{(n == 1 ? "cadru nu s-a putut citi" : "cadre nu s-au putut citi")} (vezi lista cadrelor)"));
         }
     }
 
     /// <summary>
     /// Writes one row per light: the metadata and the pause before it; a light that could not
-    /// be read gets its error instead. File names are cut to 20 characters.
+    /// be read gets its error instead, after its number and name. File names are cut to 20
+    /// characters. The header and the rows share their column widths, in both languages
+    /// (R-095).
     /// </summary>
     /// <param name="inv">The inventory of the session; not null.</param>
     /// <param name="w">Where the lines go; not null.</param>
@@ -98,23 +100,24 @@ internal static class InventoryReport
         ArgumentNullException.ThrowIfNull(w);
         w.WriteLine();
         w.WriteLine(T("  FRAMES", "  CADRE"));
-        w.WriteLine(T(
-            $"    {"no",3}  {"file",-20}  {"time",-8}  {"exposure",8}  {"ISO",5}  {"f/",4}  {"focal",7}  {"pause",6}",
-            "     nr  fisier                ora       expunere   ISO    f/   focala   pauza"));
+        TextTable table = new(
+            new(T("no", "nr"), true, 3), new(T("file", "fisier"), false, 20), new(T("time", "ora"), false, 8), new(T("exposure", "expunere"), true, 8),
+            new("ISO", true, 5), new("f/", true, 4), new(T("focal", "focala"), true, 7), new(T("pause", "pauza"), true, 6));
         for (int i = 0; i < inv.Lights.Count; i++)
         {
             FrameInfo f = inv.Lights[i];
-            string name = f.FileName.Length > 20 ? f.FileName[..20] : f.FileName;
+            string index = f.Index.ToString(CultureInfo.InvariantCulture), name = f.FileName.Length > 20 ? f.FileName[..20] : f.FileName;
             if (f.Error is not null)
             {
-                w.WriteLine($"    {f.Index,3}  {name,-20}  {T("error", "eroare")}: {f.Error}");
+                table.AddSpanning($"{T("error", "eroare")}: {f.Error}", index, name);
                 continue;
             }
 
             double? pause = inv.Cadence.PauseSeconds[i];
-            w.WriteLine(
-                $"    {f.Index,3}  {name,-20}  {Time(f.Timestamp),-8}  {Opt(f.ExposureSeconds, 1),8}  {Opt(f.Iso, 0),5}  {Opt(f.FNumber, 1),4}  {Opt(f.FocalMm, 0),4} mm  {(pause is double p ? RunReport.F(p, 0) + " s" : "-"),6}");
+            table.Add(index, name, Time(f.Timestamp), Opt(f.ExposureSeconds, 1), Opt(f.Iso, 0), Opt(f.FNumber, 1), Opt(f.FocalMm, 0) + " mm", pause is double p ? RunReport.F(p, 0) + " s" : "-");
         }
+
+        table.Write(w, "    ");
     }
 
     /// <summary>

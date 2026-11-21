@@ -122,14 +122,20 @@ internal static class SeriesReport
 
         w.WriteLine();
         w.WriteLine(T("  FRAME BY FRAME", "  TABEL PE CADRE"));
-        w.WriteLine(T(
-            $"    {"no",3}  {"file",-20}  {"time",-8}  {"exposure",8}  {"class",-8}  {"elong",5}  {"FWHM",5}  {"stars",6}  {"bg",5}  {"pause",5}  {"step",5}  {"dX",6}  {"dY",6}  {"dithering",-42}  {"same spot",-14}  reasons",
-            $"     nr  fisier                ora       expunere  clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  {"dithering",-42}  acelasi loc     motive"));
+        // One writer pads the header and the rows, so a title sits over its cells in both
+        // languages and a long cell widens its column (R-095); the widths are the least ones.
+        TextTable table = new(
+            new(T("no", "nr"), true, 3), new(T("file", "fisier"), false, 20), new(T("time", "ora"), false, 8), new(T("exposure", "expunere"), true, 8),
+            new(T("class", "clasa"), false, 8), new(T("elong", "alung"), true, 5), new("FWHM", true, 5), new(T("stars", "stele"), true, 6),
+            new(T("bg", "fond"), true, 5), new(T("pause", "pauza"), true, 5), new(T("step", "pas"), true, 5), new("dX", true, 6), new("dY", true, 6),
+            new("dithering", false, 42), new(T("same spot", "acelasi loc"), false, 14), new(T("reasons", "motive"), false, 0));
         foreach (FrameTableRow f in FrameRows(r))
         {
             string name = f.FileName.Length > 20 ? f.FileName[..20] : f.FileName;
-            w.WriteLine($"    {f.Index.ToString(Inv),3}  {name,-20}  {f.Time,-8}  {f.Exposure,8}  {f.Class,-8}  {f.Elongation,5}  {f.Fwhm,5}  {f.Stars,6}  {f.Background,5}  {f.Pause,5}  {f.Step,5}  {f.Dx,6}  {f.Dy,6}  {f.Move,-42}  {f.Spot,-14}  {f.Reasons}");
+            table.Add(f.Index.ToString(Inv), name, f.Time, f.Exposure, f.Class, f.Elongation, f.Fwhm, f.Stars, f.Background, f.Pause, f.Step, f.Dx, f.Dy, f.Move, f.Spot, f.Reasons);
         }
+
+        table.Write(w, "    ");
     }
 
     /// <summary>
@@ -269,7 +275,7 @@ internal static class SeriesReport
     ?
     [
         new($"Alungirea spune de cate ori sunt stelele unui cadru mai lungi decat late, in medie (1 = rotunde). De la {RunReport.F(Th.ElongationBad, 2)} cadrul e slab si iese din stiva.", false),
-        new($"Intre {RunReport.F(Th.ElongationMarginal, 2)} si {RunReport.F(Th.ElongationBad, 2)} cadrul e la limita si ramane in stiva, daca nu hotarasti altfel. Cadrele la limita sunt pe randul 'la limita' din CADRE MISCATE, pe tabul Rezumat, iar pe tabul Cadre au clasa galbena.", false),
+        new($"Intre {RunReport.F(Th.ElongationMarginal, 2)} si {RunReport.F(Th.ElongationBad, 2)} cadrul e la limita si ramane in stiva, daca nu hotarasti altfel. Aceste cadre sunt pe randul 'la limita' din CADRE MISCATE, pe tabul Rezumat; un cadru la limita din cauza stelelor late sau a stelelor prea putine e pe randul de sub el, 'la limita din alt motiv'. Pe tabul Cadre, orice cadru la limita are clasa galbena.", false),
         new("Un cadru in care stelele au o dara sau o a doua copie langa un miez bun e la limita, oricat de mare i-ar fi alungirea: doar o parte mica din lumina fiecarei stele e in afara locului ei, iar la stivuire respingerea (rejection) o scoate la cele mai multe stele. Cand cadrul vine imediat dupa o miscare a monturii, motivul o spune: montura probabil inca se aseza cand a inceput expunerea, iar o pauza mai lunga dupa dithering evita dara. Aceste cadre sunt pe randul 'dara sau dublura' din CADRE MISCATE.", false),
         new("Dara e directia in care s-au intins stelele in timpul expunerii, data ca unghi fata de orizontala imaginii. Cand se stie care axa a imaginii e RA si stelele cadrului s-au intins toate cam in aceeasi directie, motivul spune si pe ce axa a monturii cade dara.", false),
         new("O dara pe RA vine de la urmarire: eroarea periodica a monturii, o viteza de urmarire gresita sau jocul din angrenaje (backlash) pe RA. O dara pe DEC vine de la alinierea polara, de la vant sau de la o atingere a monturii. Una oblica vine de la amandoua sau de la o lovitura.", true),
@@ -278,7 +284,7 @@ internal static class SeriesReport
     :
     [
         new($"The elongation says how many times longer than wide the stars of a frame are, on average (1 = round). From {RunReport.F(Th.ElongationBad, 2)} the frame is bad and leaves the stack.", false),
-        new($"Between {RunReport.F(Th.ElongationMarginal, 2)} and {RunReport.F(Th.ElongationBad, 2)} the frame is marginal and stays in the stack unless you decide otherwise. The marginal frames are on the 'marginal' row of TRAILED FRAMES, on the Summary tab, and on the Frames tab their class is yellow.", false),
+        new($"Between {RunReport.F(Th.ElongationMarginal, 2)} and {RunReport.F(Th.ElongationBad, 2)} the frame is marginal and stays in the stack unless you decide otherwise. These frames are on the 'marginal' row of TRAILED FRAMES, on the Summary tab; a frame that is marginal for wide stars or too few stars is on the row under it, 'marginal for another reason'. On the Frames tab every marginal frame has a yellow class.", false),
         new("A frame whose stars have a tail or a second copy beside a sharp core is marginal whatever its elongation: only a small part of each star's light is out of place, and stacking with rejection removes it on most stars. When the frame comes right after a move of the mount, the reason says so: the mount was probably still settling when the exposure began, and a longer wait after dithering avoids the tail. These frames are on the 'tail or double' row of TRAILED FRAMES.", false),
         new("The trail is the direction the stars were stretched in during the exposure, given as an angle to the image's horizontal. When it is known which image axis is RA and the frame's stars were all stretched about the same way, the reason also says which mount axis the trail falls on.", false),
         new("A trail on RA comes from the tracking: the mount's periodic error, a wrong tracking rate or the play in the gears (backlash) on RA. A trail on DEC comes from the polar alignment, the wind or a touch on the mount. An oblique one comes from both, or from a knock.", true),
@@ -371,12 +377,41 @@ internal static class SeriesReport
             new(T("dew", "roua"), dt, dv),
             new(T("trailed frames", "cadre miscate"), T(
                 $"{s.BadCount.ToString(Inv)} bad, {s.MarginalCount.ToString(Inv)} marginal, {s.GoodCount.ToString(Inv)} good{(s.UnknownCount > 0 ? ", " + s.UnknownCount.ToString(Inv) + " unread" : "")} (of {r.Frames.Count.ToString(Inv)}); {AxisLine(s)}",
-                $"{RoCount(s.BadCount)}slabe, {s.MarginalCount.ToString(Inv)} la limita, {RoCount(s.GoodCount)}bune{(s.UnknownCount > 0 ? ", " + RoCount(s.UnknownCount) + "necitite" : "")} (din {r.Frames.Count.ToString(Inv)}); {AxisLine(s)}")),
+                $"{RoAgreed(s.BadCount, "slab", "slabe")}, {s.MarginalCount.ToString(Inv)} la limita, {RoAgreed(s.GoodCount, "bun", "bune")}{(s.UnknownCount > 0 ? ", " + RoAgreed(s.UnknownCount, "necitit", "necitite") : "")} (din {r.Frames.Count.ToString(Inv)}); {AxisLine(s)}")),
             new("dithering", ditherText, dither),
             new(T("polar alignment", "aliniere polara"), polarText, polarVerdict),
             new(T("leave out of stack", "de scos din stiva"), Keep(r)),
         ];
     }
+
+    /// <summary>
+    /// A Romanian count with a word that agrees with it, for the class words of SUMMARY, which
+    /// stand without the noun they describe (R-093).
+    /// </summary>
+    /// <param name="n">The count; 0 or more.</param>
+    /// <param name="one">The word for a count of one: `slab`.</param>
+    /// <param name="many">The word for any other count: `slabe`.</param>
+    /// <returns>`1 slab`, `2 slabe`, `22 de slabe` (the count as <see cref="Ui.RoCount(long)"/> writes it).</returns>
+    private static string RoAgreed(int n, string one, string many) => RoCount(n) + (n == 1 ? one : many);
+
+    /// <summary>
+    /// The label of the second row of FOCUS (R-093): how many good frames each end of the
+    /// session compares, singular for one, and no count when there is nothing to compare.
+    /// </summary>
+    /// <param name="count">
+    /// The good frames at each end, <see cref="Trend.Count"/>; 0 with fewer than two good frames.
+    /// </param>
+    /// <returns>
+    /// `first / last 10 good frames`, `first / last good frame`, or `first / last good frames`
+    /// for 0 (`primele / ultimele 10 cadre bune`, `primul / ultimul cadru bun`, `primele /
+    /// ultimele cadre bune`).
+    /// </returns>
+    private static string FirstLastLabel(int count) => count switch
+    {
+        0 => T("first / last good frames", "primele / ultimele cadre bune"),
+        1 => T("first / last good frame", "primul / ultimul cadru bun"),
+        _ => T($"first / last {count.ToString(Inv)} good frames", $"primele / ultimele {RoCount(count)}cadre bune"),
+    };
 
     /// <summary>
     /// The FOCUS section, in plain words (R-078): the stars' width on the good frames, the first
@@ -395,7 +430,7 @@ internal static class SeriesReport
         return
         [
             new(T("the stars' width (FWHM)", "latimea stelelor (FWHM)"), $"{Px(s.SessionFwhm, r)} {average}"),
-            new(T($"first / last {s.Fwhm.Count.ToString(Inv)} good frames", $"primele / ultimele {RoCount(s.Fwhm.Count)}cadre bune"), $"{Opt(s.Fwhm.First, 2)} px / {Opt(s.Fwhm.Last, 2)} px{ChangeWord(s.Fwhm)}: {held}"),
+            new(FirstLastLabel(s.Fwhm.Count), $"{Opt(s.Fwhm.First, 2)} px / {Opt(s.Fwhm.Last, 2)} px{ChangeWord(s.Fwhm)}: {held}"),
             new(T("in the centre / in the middle / at the edge", "in centru / la mijloc / la margine"), T($"the stars' width {ZoneMedians(r)} {average}", $"latimea stelelor {ZoneMedians(r)} {average}")),
             new("verdict", ft, fv),
         ];
@@ -479,10 +514,11 @@ internal static class SeriesReport
             }))));
         }
 
-        string ok = RunReport.F(Th.SwampingRatioOk, 0);
+        // What the read noise adds at the threshold, 4.88 % at 10, said as the first whole percent above it.
+        string ok = RunReport.F(Th.SwampingRatioOk, 0), under = RunReport.F(Math.Floor(NoiseAnalyzer.PenaltyPct(Th.SwampingRatioOk)) + 1, 0);
         rows.Add(new(T("what it means", "ce inseamna"), T(
-            $"shot/read from {ok} up: the sky covers the read noise, which adds under 5 %; under {ok}: the channel suffers from the read noise, and longer exposures would help",
-            $"shot/citire de la {ok} in sus: cerul acopera zgomotul de citire, care adauga sub 5 %; sub {ok}: canalul sufera de zgomotul de citire, iar expuneri mai lungi ar ajuta")));
+            $"shot/read from {ok} up: the sky covers the read noise, which adds under {under} %; under {ok}: the channel suffers from the read noise, and longer exposures would help",
+            $"shot/citire de la {ok} in sus: cerul acopera zgomotul de citire, care adauga sub {under} %; sub {ok}: canalul sufera de zgomotul de citire, iar expuneri mai lungi ar ajuta")));
         return rows;
     }
 
@@ -510,16 +546,18 @@ internal static class SeriesReport
 
     /// <summary>
     /// The TRAILED FRAMES section, in plain words (R-078): the trailed frames (bad by their
-    /// elongation; a frame bad for its exposure alone is not listed, R-085), the marginal frames
-    /// (each row naming its elongation bounds, <see cref="Th.ElongationBad"/> and
-    /// <see cref="Th.ElongationMarginal"/>), and the direction of the trails with the mount axis it
-    /// falls on; without a direction the row says that only bad frames long enough to stack give
-    /// one (R-085, ADR 0065).
+    /// elongation; a frame bad for its exposure alone is not listed, R-085), the frames marginal
+    /// by their elongation (these two rows naming their elongation bounds,
+    /// <see cref="Th.ElongationBad"/> and <see cref="Th.ElongationMarginal"/>), the frames
+    /// marginal for another reason (R-094), and the direction of the trails with the mount axis
+    /// it falls on; without a direction the row says that only bad frames long enough to stack
+    /// give one (R-085, ADR 0065).
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
-    /// The three rows, four when a frame has a tail or a second copy beside a sharp core (R-090),
-    /// in the console's order.
+    /// The three rows, with one more after `marginal` when a frame is marginal for wide stars
+    /// or too few stars (R-094), and one more after it when a frame has a tail or a second copy
+    /// beside a sharp core (R-090), in the console's order.
     /// </returns>
     internal static IReadOnlyList<ReportRow> TrailRows(SeriesResult r)
     {
@@ -534,8 +572,18 @@ internal static class SeriesReport
         List<ReportRow> rows =
         [
             new(T($"bad (elongation of at least {bad})", $"slabe (alungire de cel putin {bad})"), List(r, FlagKind.Trailed)),
-            new(T($"marginal (elongation between {marginal} and {bad})", $"la limita (alungire intre {marginal} si {bad})"), MarginalWithoutTail(r)),
+            new(T($"marginal (elongation between {marginal} and {bad})", $"la limita (alungire intre {marginal} si {bad})"), Indices(MarginalFrames(r, byElongation: true), r)),
         ];
+        // A frame marginal for wide stars or too few stars (R-022) is not between the bounds the
+        // row above names: it has the row under it, when there is one (R-094, ADR 0068).
+        List<int> otherwise = MarginalFrames(r, byElongation: false).ToList();
+        if (otherwise.Count > 0)
+        {
+            rows.Add(new(T("marginal for another reason", "la limita din alt motiv"), Indices(otherwise, r) + T(
+                " (wide stars or too few stars)",
+                " (stele late sau prea putine stele)")));
+        }
+
         // The frames whose elongation is a tail or a second copy beside a sharp core (R-090):
         // marginal whatever they read, so they get a row of their own, which says why, and
         // stay off the row above, whose bounds some of them pass.
@@ -1002,7 +1050,7 @@ internal static class SeriesReport
         SensorPattern p = r.Pattern;
         string darks = r.Session.DarksDir is null
             ? T("no darks in the session, the pattern stays in the frames", "fara dark-uri in sesiune, pattern-ul ramane in cadre")
-            : T($"{r.Session.Darks.Count.ToString(Inv)} darks in {SessionFolder.DarksName}\\, with which Siril takes the pattern out", $"{RoCount(r.Session.Darks.Count)}dark-uri in {SessionFolder.DarksName}\\, cu care Siril scoate pattern-ul");
+            : Count(r.Session.Darks.Count, ("dark", "dark"), ("darks", "dark-uri")) + T($" in {SessionFolder.DarksName}\\, with which Siril takes the pattern out", $" in {SessionFolder.DarksName}\\, cu care Siril scoate pattern-ul");
         string value = p.Status switch
         {
             PatternStatus.Measured => MeasuredPattern(p),
@@ -1489,9 +1537,11 @@ internal static class SeriesReport
     /// <param name="s">The series analysis.</param>
     /// <param name="r">The result of the series run (not read).</param>
     /// <returns>
-    /// GOOD (BUNA) when that ratio reaches <see cref="Th.SwampingRatioOk"/>, MARGINAL (LA LIMITA)
-    /// under it, NOT MEASURED (NEMASURAT) without biases or without a finite ratio; the text opens
-    /// with the sky on green of the first and last good frames in ADU.
+    /// GOOD (BUNA) when that ratio, as the text shows it with one decimal, reaches
+    /// <see cref="Th.SwampingRatioOk"/>, MARGINAL (LA LIMITA) under it (ADR 0067), NOT MEASURED
+    /// (NEMASURAT) without biases or without a finite ratio; the text opens with the sky on
+    /// green of the first and last good frames in ADU and ends with what the read noise adds,
+    /// in percent with one decimal.
     /// </returns>
     private static (string Verdict, string Text) Exposure(SeriesAnalysis s, SeriesResult r)
     {
@@ -1509,8 +1559,9 @@ internal static class SeriesReport
             return (T("NOT MEASURED", "NEMASURAT"), bg + T("; the shot/read ratio could not be measured (the measured area is too small)", "; raportul shot/citire nu s-a putut masura (zona masurata e prea mica)"));
         }
 
-        string ratio = RunReport.F(worst.SwampingRatio, 1), extra = RunReport.F(worst.PenaltyPct, 0), ok = RunReport.F(Th.SwampingRatioOk, 0);
-        return (worst.SwampingRatio >= Th.SwampingRatioOk ? T("GOOD", "BUNA") : T("MARGINAL", "LA LIMITA"), T(
+        string ratio = RunReport.F(worst.SwampingRatio, 1), extra = RunReport.F(worst.PenaltyPct, 1), ok = RunReport.F(Th.SwampingRatioOk, 0);
+        // Judged on the ratio as written, so `10.0 (good from 10)` never stands under MARGINAL.
+        return (RunReport.Shown(worst.SwampingRatio, 1) >= Th.SwampingRatioOk ? T("GOOD", "BUNA") : T("MARGINAL", "LA LIMITA"), T(
             $"{bg}; the weakest is channel {worst.Name}: shot/read {ratio} (good from {ok}), the read noise adds {extra} %",
             $"{bg}; cel mai slab e canalul {worst.Name}: shot/citire {ratio} (bine e de la {ok}), zgomotul de citire adauga {extra} %"));
     }
@@ -1763,16 +1814,23 @@ internal static class SeriesReport
         => Indices(Enumerable.Range(0, r.Frames.Count).Where(i => r.Series.Flags[i].Any(f => f.Kind == k)), r);
 
     /// <summary>
-    /// The indices of the marginal frames for the `marginal` row of TRAILED FRAMES, which the
-    /// R-081 explanation points at: every marginal frame but those with a tail, which have a
-    /// row of their own (R-090).
+    /// The marginal frames of one of the two `marginal` rows of TRAILED FRAMES (R-094), which the
+    /// R-081 explanation points at: those marginal by their elongation, or those marginal for
+    /// another reason (wide stars, too few stars). A frame with a tail is in neither: it has a
+    /// row of its own (R-090).
     /// </summary>
     /// <param name="r">The result of the series run.</param>
-    /// <returns>The indices joined by ", ", or `none`.</returns>
-    private static string MarginalWithoutTail(SeriesResult r)
-        => Indices(Enumerable.Range(0, r.Frames.Count).Where(i => r.Series.Classes[i] == FrameClass.Marginal && !r.Series.Flags[i].Any(f => f.Kind == FlagKind.Tail)), r);
+    /// <param name="byElongation">
+    /// True for the frames flagged <see cref="FlagKind.MarginalTrail"/>, false for the marginal
+    /// frames without that flag.
+    /// </param>
+    /// <returns>The 0-based positions of those frames, in series order.</returns>
+    private static IEnumerable<int> MarginalFrames(SeriesResult r, bool byElongation)
+        => Enumerable.Range(0, r.Frames.Count).Where(i => r.Series.Classes[i] == FrameClass.Marginal
+            && !r.Series.Flags[i].Any(f => f.Kind == FlagKind.Tail)
+            && r.Series.Flags[i].Any(f => f.Kind == FlagKind.MarginalTrail) == byElongation);
 
-    /// <summary>The frames' indices in words, for the two listers above.</summary>
+    /// <summary>The frames' indices in words, for the rows of TRAILED FRAMES.</summary>
     /// <param name="positions">The 0-based positions of the frames to list, in series order.</param>
     /// <param name="r">The result of the series run.</param>
     /// <returns>The indices joined by ", ", or `none`.</returns>
@@ -1837,7 +1895,8 @@ internal static class SeriesReport
     /// <param name="v">The figure; null when unknown.</param>
     /// <param name="decimals">How many decimals to write.</param>
     /// <returns>
-    /// "+1.25" or "-1.25" ("+" also for zero), or "-" when <paramref name="v"/> is null.
+    /// "+1.25" or "-1.25", "+0.00" for a figure that rounds to zero whichever its sign was
+    /// (R-092), or "-" when <paramref name="v"/> is null.
     /// </returns>
-    private static string Signed(double? v, int decimals) => v is double d ? (d >= 0 ? "+" : "") + RunReport.F(d, decimals) : "-";
+    private static string Signed(double? v, int decimals) => v is double d ? RunReport.Signed(d, decimals) : "-";
 }

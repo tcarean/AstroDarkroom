@@ -55,7 +55,10 @@ internal static class FrameRun
         clock.Lap("open");
         if (frameIndex < 1 || frameIndex > session.Lights.Count)
         {
-            throw new InvalidOperationException(T($"frame {frameIndex} does not exist: the session has {session.Lights.Count} frames in {session.LightsDir}", $"cadrul {frameIndex} nu exista: sesiunea are {RoCount(session.Lights.Count)}cadre in {session.LightsDir}"));
+            int n = session.Lights.Count;
+            throw new InvalidOperationException(T(
+                $"frame {frameIndex} does not exist: the session has {n} {(n == 1 ? "frame" : "frames")} in {session.LightsDir}",
+                $"cadrul {frameIndex} nu exista: sesiunea are {RoCount(n)}{(n == 1 ? "cadru" : "cadre")} in {session.LightsDir}"));
         }
 
         string path = session.Lights[frameIndex - 1];

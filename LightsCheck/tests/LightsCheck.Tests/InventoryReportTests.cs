@@ -178,6 +178,73 @@ public class InventoryReportTests
         }
     }
 
+    /// <summary>
+    /// The warning of unread lights counts them as Romanian counts are written, with `de` from
+    /// 20 (R-082), and one in the singular in both languages (R-093).
+    /// </summary>
+    [Theory]
+    [InlineData(1, true, "    WARNING            : 1 frame could not be read (see the list of frames)")]
+    [InlineData(1, false, "    ATENTIE            : 1 cadru nu s-a putut citi (vezi lista cadrelor)")]
+    [InlineData(19, false, "    ATENTIE            : 19 cadre nu s-au putut citi (vezi lista cadrelor)")]
+    [InlineData(20, true, "    WARNING            : 20 frames could not be read (see the list of frames)")]
+    [InlineData(20, false, "    ATENTIE            : 20 de cadre nu s-au putut citi (vezi lista cadrelor)")]
+    public void R093_TheWarningOfUnreadLightsCountsThemAsRomanianDoes(int unread, bool english, string line)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        List<FrameInfo> frames = Shots(Enumerable.Repeat(120.0, unread + 1).ToArray());
+        for (int i = 0; i < unread; i++)
+        {
+            frames[i] = frames[i] with { Error = "x" };
+        }
+
+        using SessionFixture s = new SessionFixture().WithLights(1);
+        var inv = new Inventory(SessionFolder.Open(s.Root), frames, CadenceAnalyzer.Analyze(frames));
+        using var w = new StringWriter();
+        InventoryReport.WriteHeader(inv, w);
+
+        Assert.Contains(line + Environment.NewLine, w.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The table of the lights sits under its header in both languages (R-095, CR-018): four
+    /// frames, one taken after a wait of a day (a pause wider than its column's least width)
+    /// and one that could not be read, whose error follows its number and name.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void R095_TheTableOfTheLightsSitsUnderItsHeader(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        List<FrameInfo> frames = Shots(120.2, 120.2, 120.2, 120.2);
+        frames[2] = frames[2] with { Timestamp = frames[2].Timestamp!.Value.AddDays(1) };
+        frames[3] = frames[3] with { Error = "x", Timestamp = null, ExposureSeconds = null };
+        using SessionFixture s = new SessionFixture().WithLights(1);
+        var inv = new Inventory(SessionFolder.Open(s.Root), frames, CadenceAnalyzer.Analyze(frames));
+        using var w = new StringWriter();
+        InventoryReport.WriteTable(inv, w);
+        string[] lines = w.ToString().Split(Environment.NewLine);
+        int title = Array.IndexOf(lines, english ? "  FRAMES" : "  CADRE");
+        string[] table = lines[(title + 1)..].Where(l => l.Length > 0).ToArray();
+        string error = english ? "  error: x" : "  eroare: x";
+
+        Assert.Equal(1 + 4, table.Length);
+        Assert.Contains(table, l => l.EndsWith("  86430 s", StringComparison.Ordinal));
+        Assert.EndsWith(error, table[4], StringComparison.Ordinal);
+        string[] full = table.Where(l => !l.EndsWith(error, StringComparison.Ordinal)).ToArray();
+        if (english)
+        {
+            TextTableTests.AssertUnderHeader(full, ("no", true), ("file", false), ("time", false), ("exposure", true), ("ISO", true), ("f/", true), ("focal", true), ("pause", true));
+        }
+        else
+        {
+            TextTableTests.AssertUnderHeader(full, ("nr", true), ("fisier", false), ("ora", false), ("expunere", true), ("ISO", true), ("f/", true), ("focala", true), ("pauza", true));
+        }
+
+        // The unread light keeps its number and its name in their columns.
+        Assert.Equal(table[1].IndexOf("x.raw", StringComparison.Ordinal), table[4].IndexOf("x.raw", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void R086_WithoutAFrameWithATimeAndAnExposure_TheTotalIsUnknown()
     {

@@ -69,11 +69,46 @@ internal static class RunReport
             "the LICENSE file, or at <" + LicenseUrl + ">.",
         ];
 
-    /// <summary>A number with the invariant culture and a fixed number of decimals.</summary>
+    /// <summary>
+    /// A number with the invariant culture and a fixed number of decimals, the one formatter of
+    /// the figures the user reads; a number that rounds to zero at those decimals has no minus
+    /// (R-092).
+    /// </summary>
     /// <param name="v">The number.</param>
     /// <param name="decimals">How many decimals to write; 0 or more.</param>
-    /// <returns>The number with a point as the decimal separator and no group separator.</returns>
-    internal static string F(double v, int decimals) => v.ToString("F" + decimals.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+    /// <returns>
+    /// The number with a point as the decimal separator and no group separator: `-0.1`, and
+    /// `0.0` for -0.04.
+    /// </returns>
+    internal static string F(double v, int decimals)
+    {
+        string text = v.ToString("F" + decimals.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+        // .NET keeps the minus of a negative number whose every written digit is 0. The sign is
+        // dropped by the digits as written, so it cannot disagree with them (ADR 0066).
+        return text.StartsWith('-') && text.AsSpan(1).IndexOfAnyExcept('0', '.') < 0 ? text[1..] : text;
+    }
+
+    /// <summary>
+    /// A number with its sign always written, as <see cref="F"/> formats it; one that rounds to
+    /// zero reads `+0`, whichever its sign was (R-092).
+    /// </summary>
+    /// <param name="v">The number.</param>
+    /// <param name="decimals">How many decimals to write; 0 or more.</param>
+    /// <returns>`+1.25`, `-1.25`, `+0.00`; NaN is written as it is, without a sign.</returns>
+    internal static string Signed(double v, int decimals)
+    {
+        string text = F(v, decimals);
+        return text.StartsWith('-') || double.IsNaN(v) ? text : "+" + text;
+    }
+
+    /// <summary>
+    /// A figure as the user reads it: the digits <see cref="F"/> writes, read back. A word
+    /// decided on it, a verdict beside the figure, cannot stand against those digits (ADR 0067).
+    /// </summary>
+    /// <param name="v">The figure as measured; a number.</param>
+    /// <param name="decimals">How many decimals the text shows; 0 or more.</param>
+    /// <returns>The value of the written text: 10.0 for 9.96 at one decimal.</returns>
+    internal static double Shown(double v, int decimals) => double.Parse(F(v, decimals), NumberStyles.Float, CultureInfo.InvariantCulture);
 
     /// <summary>A duration as "3 h 22 min", "54 min" or "48 s".</summary>
     /// <param name="seconds">The duration in seconds; rounded to the whole second first.</param>

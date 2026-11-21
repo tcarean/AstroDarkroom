@@ -93,11 +93,11 @@ rule "Golden files").
 | CR-014 | 2 | slip | confirmed | The report files can be written into `lights/` or `biases/` | fixed 08b016ba |
 | CR-015 | 2 | rare | confirmed | One late failure loses the whole run, after every frame was measured | fixed d57b73d2 |
 | CR-016 | 3 | common | confirmed | A wrong pixel size is not marked in the window | fixed ffc7cd0b |
-| CR-017 | 3 | common | confirmed | The exposure verdict and the figure printed beside it disagree at the limit | open |
-| CR-018 | 3 | common | confirmed | The Romanian tables do not sit under their headers | open |
-| CR-019 | 3 | common | confirmed | A count of one gets a plural word | open |
-| CR-020 | 3 | common | owner | The `marginal (elongation between ...)` row lists frames that are not | open |
-| CR-021 | 3 | common | owner | A small negative figure prints as a negative zero | open |
+| CR-017 | 3 | common | confirmed | The exposure verdict and the figure printed beside it disagree at the limit | fixed b10fb82d |
+| CR-018 | 3 | common | confirmed | The Romanian tables do not sit under their headers | fixed 0fc75ab2 |
+| CR-019 | 3 | common | confirmed | A count of one gets a plural word | fixed d32b8e2f |
+| CR-020 | 3 | common | owner | The `marginal (elongation between ...)` row lists frames that are not | fixed dd8e29b3 |
+| CR-021 | 3 | common | owner | A small negative figure prints as a negative zero | fixed d3230f6f |
 | CR-022 | 3 | common | confirmed | Stop shows nothing until the frames in flight finish | open |
 | CR-023 | 3 | common | owner | Changing an input after a result changes nothing on screen | open |
 | CR-024 | 3 | common | to measure | The Frames tab cuts the `same spot` cell | open |
@@ -139,6 +139,8 @@ rule "Golden files").
 | CR-060 | 4 | - | confirmed | Window tests that cannot fail or do not check what their name says | open |
 | CR-061 | 4 | - | confirmed | Design notes and comments that describe other code | open |
 | CR-062 | 4 | - | confirmed | The fixtures' star grid repeats, so frames with no shift register one column over | open |
+| CR-063 | 3 | some setups | confirmed | A long file name pushes its reasons out of line in the REJECTED block | open |
+| CR-064 | 3 | common | confirmed | The Romanian tip of the thread field has two spaces before `nuclee` | open |
 
 After the entries: the six findings in the files copied from FlatCheck (CP-1 to CP-6), fixed
 there first, and the cleanup list, which holds what is not a defect.
@@ -468,7 +470,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Should: a figure that does not contradict its verdict.
 - Test: the two goldens pin both lines.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed b10fb82d (the verdict is taken on the ratio as the row shows it, with one decimal, the owner's answer of 2026-11-20: ADR 0067, R-024; the row gives what the read noise adds with one decimal, `adds 4.9 %`, and the `5` of `adds under 5 %` is worked out from `Th.SwampingRatioOk`; the other figures written beside a limit stay with CR-040, for which `RunReport.Shown` is there)
 
 ### CR-018 The Romanian tables do not sit under their headers
 
@@ -488,7 +490,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Test: `SeriesTests.cs:614` and `:722` pin the Romanian header's own literal, never the header
   against a row.
 - Evidence: confirmed (counted on the goldens).
-- Status: open
+- Status: fixed 0fc75ab2 (both tables are written by one writer, `TextTable`, which pads the header and the rows alike in both languages and makes a column as wide as its widest cell, never narrower than before: R-095; the English tables are byte for byte as they were where no cell is longer than its column; the window's own columns, CR-024 and CR-025, are not touched)
 
 ### CR-019 A count of one gets a plural word
 
@@ -507,7 +509,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Should: the singular for one, and `de` from twenty.
 - Test: `SeriesTests.cs:179` pins `1 bune`.
 - Evidence: confirmed.
-- Status: open
+- Status: fixed d32b8e2f (the texts the entry lists take the singular for one, and the Romanian warning of unread frames its `de`: R-093; the label of FOCUS's second row has no count when fewer than two good frames leave nothing to compare; more counts written with a plural word only were found by a search and by the two reviews of the branch, and left for the owner as texts not yet shown: in `--frame`, the Romanian `1 detectate, 1 luminoase, 1 saturate; 1 masurate` and `1 stars kept` (`1 stele retinute`); and an angle that rounds to one degree, in five places: a frame's reason, `trail at 1 degrees` (`dara la 1 grade`) and `trail on RA (1 degrees)` (`dara pe RA (1 grade)`), the `trail direction` row, `1 degrees from the horizontal` (`1 grade fata de orizontala`), the caption of a cut-out and the elongation line of `--frame`, `angle 1 degrees` (`unghi 1 grade`))
 
 ### CR-020 The `marginal (elongation between ...)` row lists frames that are not
 
@@ -521,7 +523,7 @@ there first, and the cleanup list, which holds what is not a defect.
 - Should: the owner's call: the label, or the list.
 - Test: the golden pins it.
 - Evidence: owner.
-- Status: open
+- Status: fixed dd8e29b3 (two rows, the owner's answer of 2026-11-20: ADR 0068, R-094; the row with the elongation bounds lists the frames marginal by their elongation, and `marginal for another reason`, there only when it has a frame, lists those marginal for wide stars or too few stars; the Rejected tab's explanation points at both)
 
 ### CR-021 A small negative figure prints as a negative zero
 
@@ -536,7 +538,7 @@ there first, and the cleanup list, which holds what is not a defect.
   `SeriesTests.cs:356` and `:639` assert it; FlatCheck settled the same question for itself in
   its ADR 0092.
 - Evidence: owner.
-- Status: open
+- Status: fixed d3230f6f (a figure that rounds to zero is written without a minus, and as `+0` where the sign is always written, FlatCheck's rule, the owner's answer of 2026-11-20: ADR 0066, R-092; the trail's angle and the labels of the charts' value axis go through the same formatter; the CSV keeps its numbers as they are)
 
 ### CR-022 Stop shows nothing until the frames in flight finish
 
@@ -1014,7 +1016,8 @@ there first, and the cleanup list, which holds what is not a defect.
   - `src/LightsCheck.Core/Report/FrameReport.cs:74-75`: `ring 5-10 px / core 3 px`, beside a 40
     that is read from `Th`. (Settled on 2026-11-15 by the change of ADR 0059: the line reads its
     rings, now in star widths, from `Th`. The other items stay open.)
-  - `src/LightsCheck.Core/Report/SeriesReport.cs:481-482`: `adds under 5 %` (CR-017); `:817`:
+  - `src/LightsCheck.Core/Report/SeriesReport.cs:481-482`: `adds under 5 %` (CR-017; settled
+    on 2026-11-20 by its fix, which works the figure out from `Th.SwampingRatioOk`); `:817`:
     `never 2 frames`.
   - `src/LightsCheck.Core/Session/SessionFolder.cs:114`: `.fit, .fits, .fts`, beside
     `FitsReader.FitsExtensions`.
@@ -1221,6 +1224,44 @@ In `tests/LightsCheck.Wpf.Tests/`:
 - Evidence: confirmed on the fixtures (a console run and a test's own output, 2026-11-13). No
   defect on a sky, which does not repeat: the recorded sessions align every frame on 62 % of
   the stars or more.
+- Status: open
+
+### CR-063 A long file name pushes its reasons out of line in the REJECTED block
+
+- Added 2026-11-20 by the task that fixed CR-017 to CR-021, from the review of its branch (ADR
+  0046, point 7); not one of the 61 entries of the review. Severity 3, reach `some setups`: it
+  stands here, at the end, as a new entry does, and is taken in the table's order.
+- Where: `src/LightsCheck.Core/Report/SeriesReport.cs` (`Write`, the loop over `RejectedRows`).
+- What happens: each row of the block is written as the frame's number in 3 columns, its file
+  name padded to 20 and its reasons. The name is not cut, as it is in the two tables, and the
+  widths are fixed. The same text is the window's Report tab and the file
+  `lightscheck-report.txt`.
+- Case: lights named as a capture program names them, `Light_Veil_120.0s_Bin1_0001.fit` (31
+  letters): every row's reasons start 11 columns further right than under a 20-letter name,
+  and at a different column for each name's length. A session of 1000 frames or more shifts
+  the rows of frames 1000 and up by one column.
+- Should: the reasons in one column, as the two tables are written since CR-018 (`TextTable`,
+  R-095), with the name whole, since it is what the user needs in Siril. The window's Rejected
+  tab is another matter: its columns are fixed, so its reasons are in line, and what happens to
+  a long name there is CR-055's.
+- Test: none; no test light has a name over 20 letters.
+- Evidence: confirmed (by reading; not run).
+- Status: open
+
+### CR-064 The Romanian tip of the thread field has two spaces before `nuclee`
+
+- Added 2026-11-21 by the same task, from the second review of its branch (ADR 0046, point 7);
+  not one of the 61 entries of the review. Severity 3, reach `common` in Romanian.
+- Where: `src/LightsCheck.Wpf/ViewModels/WindowTexts.cs` (`ThreadsTip`).
+- What happens: the Romanian sentence is `jumatate din cele {RoCount(cores)} nuclee`, and
+  `Ui.RoCount` already ends with a space (it is written to stand right before the word it
+  counts).
+- Case: a computer with 8 cores, `--lang ro`: the tip of the thread field reads `Gol: 4,
+  jumatate din cele 8  nuclee ale acestui calculator.`, with two spaces. With 20 cores or more
+  it reads `cele 20 de  nuclee`. R-083 quotes the sentence with one.
+- Should: one space.
+- Test: none holds the Romanian sentence.
+- Evidence: confirmed (by reading; not run).
 - Status: open
 
 ## The files copied from FlatCheck

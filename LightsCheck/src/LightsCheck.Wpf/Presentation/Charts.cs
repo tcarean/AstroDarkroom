@@ -20,6 +20,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using LightsCheck.Core;
 
 namespace LightsCheck.Wpf;
 
@@ -112,13 +113,14 @@ public abstract class ChartElement : FrameworkElement
     /// <param name="v">The tick's value.</param>
     /// <param name="step">The distance between two ticks, in the same unit.</param>
     /// <returns>
-    /// The value with 0 decimals for a step of 1 or more, 1 from 0.1, 2 from 0.01, else 3;
-    /// invariant culture.
+    /// The value with 0 decimals for a step of 1 or more, 1 from 0.1, 2 from 0.01, else 3, as
+    /// the reports write a figure: invariant culture, and no minus on a value that rounds to
+    /// zero (R-092).
     /// </returns>
-    protected static string Num(double v, double step)
+    protected internal static string Num(double v, double step)
     {
         int decimals = step >= 1 ? 0 : step >= 0.1 ? 1 : step >= 0.01 ? 2 : 3;
-        return v.ToString("F" + decimals.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+        return RunReport.F(v, decimals);
     }
 }
 

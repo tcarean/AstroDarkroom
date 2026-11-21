@@ -1,6 +1,6 @@
 # The session, the inventory and the console
 
-**Covers:** `src/LightsCheck.Core/Session/SessionFolder.cs`, `src/LightsCheck.Core/Session/FrameInfo.cs`, `src/LightsCheck.Core/Analysis/CadenceAnalyzer.cs`, `src/LightsCheck.Core/Runs/InventoryRun.cs`, `src/LightsCheck.Core/Report/InventoryReport.cs`, `src/LightsCheck.Core/Report/RunReport.cs`, `src/LightsCheck.Cli/Options.cs`, `src/LightsCheck.Cli/Program.cs`.
+**Covers:** `src/LightsCheck.Core/Session/SessionFolder.cs`, `src/LightsCheck.Core/Session/FrameInfo.cs`, `src/LightsCheck.Core/Analysis/CadenceAnalyzer.cs`, `src/LightsCheck.Core/Runs/InventoryRun.cs`, `src/LightsCheck.Core/Report/InventoryReport.cs`, `src/LightsCheck.Core/Report/RunReport.cs`, `src/LightsCheck.Core/Report/TextTable.cs`, `src/LightsCheck.Cli/Options.cs`, `src/LightsCheck.Cli/Program.cs`.
 
 The part every run goes through before a pixel is decoded: finding the frames, reading what
 their files say about the shot, the rhythm of the night, and the console that dispatches the
@@ -88,13 +88,37 @@ the `WARNING` of the frames that could not be read, which comes after it. The ta
 `-` for a missing field and `error: <message>` in place of the fields for a frame that
 could not be read. File names are cut at 20 characters.
 
+## The console's tables (`TextTable`)
+
+The table of the lights and the frame table of the series report are written by one small
+class. It is given the columns (a title, already in the run's language, the side its cells
+are set to, and a least width), then the rows as plain cells, and only when it is written
+does it fix each column's width: the widest of the least width, the title and the cells. The
+header and every row are then padded with those widths, so a title cannot stand apart from
+its cells in either language, and a cell longer than the least width (the Romanian `la
+limita`, a pause of 1000 s) widens its column for all rows (R-095). The least widths are the
+ones the tables had when their rows were format strings, which keeps the English output as it
+was wherever no cell is longer. A last column of words is not padded. `AddSpanning` is for
+the inventory's unreadable light: its number and name in their columns, then the error as
+one text over the rest. The sections are rows of a label and a value
+(`SeriesReport.Section`). The REJECTED block of the series report is not written through this
+class: it pads its number and its file name with a format string of its own and does not cut
+the name (CR-063 of the review list).
+
 ## The lines every run shares (`RunReport`)
 
 `WriteBanner` prints the two lines of R-001 from `VersionInfo` (`Version.cs`: the version
 and the copyright of `Directory.Build.props`, read from the core assembly's attributes),
 before the arguments are parsed. `WarrantyLines` is the GPLv3 disclaimer `--help` prints, with the
 licence URL. `F(value, decimals)` is the one number formatter of the reports (invariant
-culture, fixed decimals) and `Duration(seconds)` prints `48 s`, `54 min` or `3 h 22 min`;
+culture, fixed decimals); it formats first and then drops the minus when no digit other than 0
+follows it, so a figure that rounds to zero reads `0.0` (R-092), and `Signed(value, decimals)`
+puts a `+` before whatever `F` wrote without a minus, `+0.00` for such a figure. The angle of a
+trail in a frame's flag (`SeriesAnalyzer`) and the labels along the value axis of the window's
+charts (`ChartElement.Num`) are written by `F` too. `Shown(value, decimals)` is the figure as the
+user reads it, the text of `F` read back, for a word that is decided beside its figure (ADR
+0067). `Duration(seconds)` prints `48 s`, `54 min` or
+`3 h 22 min`;
 `DurationToTheSecond(seconds)` rounds the same way and keeps the seconds: `38 s`, `45 min 12 s`,
 `2 h 54 min 30 s`. Every report in `Report/` uses them, so no text is formatted by a view-model
 or the console.

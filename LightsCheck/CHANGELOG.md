@@ -329,6 +329,36 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - In the window, the progress reports of a run that was stopped or replaced could still land
   after the next run had started and show the old run's counts on the bar and the wait line;
   a report of a run that is no longer the current one is now dropped (R-029).
+- A small negative figure was written as a zero with a minus: `halo : -0.000`, `(-0 %): the
+  focus held`, `Y -0.00 px/min`, a cell `-0.0` in the frame table, `-0` on a chart's axis. A
+  figure that rounds to zero now has no minus (`0.000`, `0.0`), and reads `+0 %`, `+0.00` where
+  the sign is always written (R-092, ADR 0066; CR-021 of the review of 2026-11-13).
+- The `exposure` row of SUMMARY could give a verdict against its own figure: a shot/read ratio
+  of 9.96 read `MARGINAL - ... shot/read 10.0 (good from 10)`. The verdict is now taken on the
+  ratio as it is shown, so that session reads `GOOD`. The row also said `the read noise adds
+  5 %` at a ratio of 10.0, beside `adds under 5 %` in EXPOSURE AND NOISE; it now gives the
+  figure with one decimal, `adds 4.9 %` (R-024, ADR 0067; CR-017 of the review of 2026-11-13).
+- A count of one was written with a plural word in a few places: `1 slabe`, `1 bune`,
+  `1 necitite` in the Romanian SUMMARY, `first / last 1 good frames` in FOCUS (`first / last 0
+  good frames` with under two good frames), `1 darks in darks\`, and `the session has 1 frames`
+  after `--frame` past the end. They now read `1 slab`, `1 bun`, `1 necitit`, `first / last good
+  frame` (`first / last good frames` when nothing is compared), `1 dark` and `1 frame`; and the
+  Romanian warning of 20 or more unread frames takes its `de`, `20 de cadre nu s-au putut citi`
+  (R-093; CR-019 of the review of 2026-11-13).
+- The row `marginal (elongation between 1.45 and 1.73)` of TRAILED FRAMES listed every marginal
+  frame, also those marginal for wide stars or too few stars, whose elongation is nowhere near
+  those bounds. It now lists the frames marginal by their elongation, and the others have a row
+  under it, shown only when there are any: `marginal for another reason: 4, 5 (wide stars or too
+  few stars)`. The Rejected tab's explanation points at both rows (R-094, ADR 0068; CR-020 of
+  the review of 2026-11-13).
+- The console's Romanian tables did not sit under their headers: in the frame table `FWHM`,
+  `stele`, `fond`, `pauza` and `pas` ended a column before their figures and the titles from
+  `dX` on stood two columns off, and in the table of `--inventory` `ISO`, `f/`, `focala` and
+  `pauza` ended a column early. A row with a long cell was pushed to
+  the right in both languages: the Romanian class `la limita`, a pause of 1000 s or more, a
+  cell such as `10/10 de la 100`. The headers are now built with the rows' widths in both
+  languages, and a long cell widens its column for every row (R-095; CR-018 of the review of
+  2026-11-13).
 
 ### Internal
 

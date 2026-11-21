@@ -13,7 +13,7 @@ Copyright (C) 2026 Tudor Carean
     ATENTIE            : 1 cadru nu s-a putut citi (vezi lista cadrelor)
 
   CADRE
-     nr  fisier                ora       expunere   ISO    f/   focala   pauza
+     nr  fisier                ora       expunere    ISO    f/   focala   pauza
       1  DSC_0001.fit          20:35:03     120.2   1600     -   135 mm       -
       2  DSC_0002.fit          20:37:24     120.2   1600     -   135 mm    21 s
       3  DSC_0003.fit          20:39:45     120.2   1600     -   135 mm    21 s

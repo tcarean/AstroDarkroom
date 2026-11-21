@@ -254,10 +254,18 @@ internal static class NoiseAnalyzer
             double total = c.HighPassSigma * correction;
             double shotVar = total * total - rn.PairSigma * rn.PairSigma;
             double ratio = shotVar / (rn.PairSigma * rn.PairSigma);
-            double penalty = shotVar > 0 ? 100 * (Math.Sqrt(1 + 1 / ratio) - 1) : double.NaN;
+            double penalty = shotVar > 0 ? PenaltyPct(ratio) : double.NaN;
             result.Add(new ChannelNoise(c.Name, c.Median, total, shotVar > 0 ? Math.Sqrt(shotVar) : 0, shotVar > 0 ? c.Median / shotVar : null, ratio, penalty));
         }
 
         return result;
     }
+
+    /// <summary>
+    /// How much the read noise adds to the shot noise at a shot-to-read ratio (R-024): the
+    /// total noise over the shot noise alone, less one.
+    /// </summary>
+    /// <param name="ratio">The shot variance over the read variance; above 0.</param>
+    /// <returns>The added noise in percent, 100 (sqrt(1 + 1 / ratio) - 1): 4.88 at a ratio of 10.</returns>
+    internal static double PenaltyPct(double ratio) => 100 * (Math.Sqrt(1 + 1 / ratio) - 1);
 }

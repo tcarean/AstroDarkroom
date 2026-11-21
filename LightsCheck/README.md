@@ -128,7 +128,9 @@ minutes. The report's sections:
 - **DEW**: the light around the bright stars (the halo) and the star count at the start and at the
   end, and the verdict.
 - **TRAILED FRAMES**: the bad frames (an elongation of 1.73 or more) and the marginal ones (1.45
-  to 1.73), the direction of the trails and which image axis is RA. A frame whose stars have a
+  to 1.73), the direction of the trails and which image axis is RA. A frame that is marginal
+  for wide stars or too few stars, not for its elongation, is on a row of its own,
+  `marginal for another reason`. A frame whose stars have a
   tail or a second copy beside a sharp core is marginal whatever its elongation, on a
   `tail or double` row of its own: a stack with rejection repairs most such stars, and when the
   frame comes right after a move of the mount its reason says the mount was probably still

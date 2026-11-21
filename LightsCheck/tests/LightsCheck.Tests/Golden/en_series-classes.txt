@@ -14,9 +14,9 @@ Copyright (C) 2026 Tudor Carean
     scale              : 1 px = 5.99" on the sky; the pixel is 3.92 um (written in the file (XPIXSZ)); the frames are aligned on frame 1
 
   SUMMARY
-    focus              : GOOD - the stars' width (FWHM) is on average 3.22 px = 19.3" on the good frames; 3.22 px at the start and 3.22 px at the end (-0 %): the focus held the whole session
-    exposure           : GOOD - the sky on green: 2000 -> 2001 ADU; the weakest is channel B: shot/read 10.0 (good from 10), the read noise adds 5 %
-    dew                : NO - the stars' width -0 %, the light around the stars (halo) +0.000
+    focus              : GOOD - the stars' width (FWHM) is on average 3.22 px = 19.3" on the good frames; 3.22 px at the start and 3.22 px at the end (+0 %): the focus held the whole session
+    exposure           : GOOD - the sky on green: 2000 -> 2001 ADU; the weakest is channel B: shot/read 10.0 (good from 10), the read noise adds 4.9 %
+    dew                : NO - the stars' width +0 %, the light around the stars (halo) +0.000
     trailed frames     : 2 bad, 4 marginal, 7 good, 1 unread (of 14); it is not known which axis is RA
     dithering          : NO walking noise, OK for hot pixels - walking-noise streaks of at most 1.2 px (under 3 px they do not show): the drift is 0.62 px over one exposure; frames 11-13, 3 frames in a row in the same spot, within 10 px; the pattern adds up in place: 17.2 % of one frame's pattern stays in the stack (ideal 7.7 %, fine up to 11.5 %); 5 moves over 13 frames, 6 different spots (within 10 px), 1 frame alone, 0 moves on both axes
     polar alignment    : - (it is not known which axis is RA)
@@ -24,9 +24,9 @@ Copyright (C) 2026 Tudor Carean
 
   FOCUS
     the stars' width (FWHM): 3.22 px = 19.3" (on average, on the good frames)
-    first / last 3 good frames: 3.22 px / 3.22 px (-0 %): the focus held
+    first / last 3 good frames: 3.22 px / 3.22 px (+0 %): the focus held
     in the centre / in the middle / at the edge: the stars' width 3.22 / 3.22 / 3.22 px (on average, on the good frames)
-    verdict            : GOOD - the stars' width (FWHM) is on average 3.22 px = 19.3" on the good frames; 3.22 px at the start and 3.22 px at the end (-0 %): the focus held the whole session
+    verdict            : GOOD - the stars' width (FWHM) is on average 3.22 px = 19.3" on the good frames; 3.22 px at the start and 3.22 px at the end (+0 %): the focus held the whole session
 
   EXPOSURE AND NOISE
     sky background (good frames, first -> last): 2000 -> 2001 ADU on green, above the black level (+0 %)
@@ -37,17 +37,18 @@ Copyright (C) 2026 Tudor Carean
     what it means      : shot/read from 10 up: the sky covers the read noise, which adds under 5 %; under 10: the channel suffers from the read noise, and longer exposures would help
 
   DEW
-    halo (the light around the stars), first / last: -0.000 / -0.000; stars found 40 -> 36 (-10 %); the stars' width 3.22 / 3.22 px (-0 %)
-    verdict            : NO - the stars' width -0 %, the light around the stars (halo) +0.000
+    halo (the light around the stars), first / last: 0.000 / 0.000; stars found 40 -> 36 (-10 %); the stars' width 3.22 / 3.22 px (+0 %)
+    verdict            : NO - the stars' width +0 %, the light around the stars (halo) +0.000
 
   TRAILED FRAMES
     bad (elongation of at least 1.73): 7
-    marginal (elongation between 1.45 and 1.73): 3, 4, 5
+    marginal (elongation between 1.45 and 1.73): 3
+    marginal for another reason: 4, 5 (wide stars or too few stars)
     tail or double     : 14 (the star's core is sharp; a stack with rejection repairs most of them)
     trail direction    : not known (too few bad frames, long enough to stack, with trails in the same direction); it is not known which axis is RA
 
   DRIFT AND ROTATION
-    drift between frames in a row, without dithering: X +0.31 px/min, Y -0.00 px/min = +1.8 / -0.0 "/min (from 5 pairs of frames without a pause between them)
+    drift between frames in a row, without dithering: X +0.31 px/min, Y +0.00 px/min = +1.8 / +0.0 "/min (from 5 pairs of frames without a pause between them)
     drift over one exposure: 0.62 px = 3.7" in 120 s, along X; walking-noise streaks of up to 1.2 px (frames 11-13, 3 frames in a row in the same spot, within 10 px)
     field rotation     : the image turned by 0.0' in all, 0.0' an hour; because of this, a star in the corner moves 0.00 px over one exposure
     polar alignment    : - (it is not known which axis is RA)
@@ -77,7 +78,7 @@ Copyright (C) 2026 Tudor Carean
      no  file                  time      exposure  class     elong   FWHM   stars     bg  pause   step      dX      dY  dithering                                   same spot       reasons
       1  DSC_0001.fit          20:35:03   120.0 s  good       1.01   3.22      40   2000      -      -     0.0     0.0  -                                           -               
       2  DSC_0002.fit          20:37:04   120.0 s  good       1.01   3.22      40   2000    1 s    0.5     0.5     0.2  -                                           -               
-      3  DSC_0003.fit          20:39:34   120.0 s  marginal   1.52   4.17      40   2000   30 s   11.5    12.0    -0.0  -                                           -               elongation 1.52 (from 1.45 the frame is marginal), trail at 90 degrees
+      3  DSC_0003.fit          20:39:34   120.0 s  marginal   1.52   4.17      40   2000   30 s   11.5    12.0     0.0  -                                           -               elongation 1.52 (from 1.45 the frame is marginal), trail at 90 degrees
       4  DSC_0004.fit          20:41:35   120.0 s  marginal   1.01   4.75      40   2000    1 s    0.6    12.5     0.3  -                                           -               wide stars: width (FWHM) 4.75 px, over 4.19, that is 1.3 times the session's average width
       5  DSC_0005.fit          20:44:05   120.0 s  marginal   1.01   3.22      20   2000   30 s   15.3    12.0   -15.0  -                                           -               too few stars: 20, under 24 (60 % of a frame's average count): clouds or haze
       6  DSC_0006.fit          20:46:06   120.0 s  good       1.01   3.22      40   2600    1 s    0.5    12.5   -15.0  -                                           -               the sky background jumps by +30 % against the neighbouring frames (flagged from 8 %)

@@ -240,7 +240,10 @@ was probably still settling (R-090, ADR 0057). A frame without a cores' figure, 
 measurement, is read as stretched, and a frame too short to stack is never a tail: it is bad
 by its exposure, and the tail's reason would say it stays. `Tail` takes the trail's axis as the two trailing flags do,
 and `SeriesReport.Reason` words it; `TrailRows` adds its row only when a frame has the flag,
-and keeps those frames off the `marginal` row (`MarginalWithoutTail`).
+and keeps those frames off the two `marginal` rows. `MarginalFrames` gives both of those: the
+marginal frames flagged `MarginalTrail` for the row that names the elongation bounds, and the
+marginal frames with neither that flag nor a tail (`Soft`, `Clouds`) for the row `marginal for
+another reason`, which is added only when it has a frame (R-094, ADR 0068).
 
 Two passes: the classes that need no session figure (trailing, as above)
 and the session medians (FWHM over the good frames, stars over all), then the flags against
@@ -311,8 +314,11 @@ cancels); the lights' total noise per position is the clipped standard deviation
 pixel minus its 5 x 5 median in the same window, which overestimates sigma by a few percent,
 so it is corrected by the ratio of the pair sigma to the same estimator on the bias. The shot
 variance is total minus read; the swamping ratio shot over read variance; the penalty
-`sqrt(1 + 1/ratio) - 1`. On Veil: 9 to 11 in red, 40 to 60 in green and blue, as the hand
-report found. `SeriesAnalyzer` takes the sample: the first, the middle and the last of the
+`sqrt(1 + 1/ratio) - 1` (`PenaltyPct`, in percent). On Veil: 9 to 11 in red, 40 to 60 in green
+and blue, as the hand report found. The report's `Exposure` takes its verdict on the lowest
+ratio as the row writes it (`RunReport.Shown`, the written digits read back), so the word
+cannot stand against the figure beside it, and `NoiseRows` works the `5` of `adds under 5 %`
+out of `PenaltyPct(Th.SwampingRatioOk)`, the first whole percent above it (ADR 0067). `SeriesAnalyzer` takes the sample: the first, the middle and the last of the
 measured frames, those flagged `ShortExposure` left out (unless every measured frame is,
 when they are sampled all the same), since a frame with almost no sky
 reads a ratio near zero that the summary's verdict, the weakest channel of the sample, would
@@ -325,10 +331,15 @@ Each section is a list of `ReportRow(Label, Value, Verdict)` built by a producer
 `RejectedRows`); `Write` prints every row as the label in a 19-column field, a colon, then the
 verdict word and the value, and the window binds the same rows (ADR 0008). A section's text
 therefore has one label column; a label longer than the field pushes its colon right.
-`FrameRows` formats the table's cells once for the console and the window (`SpotCell` the
+`FrameRows` formats the table's cells once for the console and the window; the console's
+`Write` hands them to `TextTable` (the note of the console), the window has its own columns (`SpotCell` the
 `k/n from f` cell of a run, `-` outside one), `RejectedRows` and `RejectedHeading` the
 REJECTED block (the heading counts the bad and the unread frames through `Count`, singular for
-one, R-081), `CropCaption` the caption of a star cut-out (`StarCrops` cuts, this file
+one, R-081). A count is written with its word wherever one follows it (R-093): `Count` for a
+noun in both languages (the darks of the `fixed pattern` row too), `RoAgreed` for the Romanian
+class words of SUMMARY, which stand without their noun (`1 slab`, `2 slabe`), and
+`FirstLastLabel` for the label of FOCUS's second row, which drops the count when no frames are
+compared. `CropCaption` is the caption of a star cut-out (`StarCrops` cuts, this file
 words). `Reason` words a flag in plain words (R-079), a trailing one as `elongation v (from t
 the frame is bad)`, or `is marginal`, plus `TrailSuffix`: `, trail on RA (a degrees)` when the
 flag has an axis (`AxisWord`), `, trail at a degrees` when it has only the angle; the satellite
