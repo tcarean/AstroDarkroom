@@ -86,11 +86,11 @@ numbers are those of 2026-11-13; a task finds its lines again by the names the e
 | CR-010 | 2 | some setups | to measure | A three-plane FITS not in the file cache is read with a seek per plane per row | fixed 54f7807a, a8f45631; measured, severity 4 |
 | CR-011 | 3 | common | confirmed | At fit, a rounding residue shows a scrollbar and the minimap's rectangle | fixed 71e02ddd, a8f45631 |
 | CR-012 | 3 | common | owner | The bottom-left corner of the image is always under the minimap at 100 % and above | fixed fb42836a, a8f45631 |
-| CR-013 | 3 | some setups | to measure | On a narrow window the status bar cuts B's read-out before the pair line | open |
-| CR-014 | 3 | slip | to measure | Up or Down on the surface moves the keyboard focus to the toolbar | open |
-| CR-015 | 3 | slip | to measure | A right click on a scrollbar thumb opens WPF's own menu: light, English, a page of one pixel | open |
-| CR-016 | 3 | some setups | to measure | The theme has no focus visual: a black dotted line on dark buttons and over the image | open |
-| CR-017 | 3 | rare | confirmed | The canvas is the probes' and is never checked against what was decoded | open |
+| CR-013 | 3 | some setups | to measure | On a narrow window the status bar cuts B's read-out before the pair line | fixed 432bcb1a |
+| CR-014 | 3 | slip | to measure | Up or Down on the surface moves the keyboard focus to the toolbar | fixed 7bce108b |
+| CR-015 | 3 | slip | to measure | A right click on a scrollbar thumb opens WPF's own menu: light, English, a page of one pixel | fixed 0f23b15f |
+| CR-016 | 3 | some setups | to measure | The theme has no focus visual: a black dotted line on dark buttons and over the image | fixed 54f50342 |
+| CR-017 | 3 | rare | confirmed | The canvas is the probes' and is never checked against what was decoded | fixed 1c167267 |
 | CR-018 | 3 | rare | confirmed | A long message gets the system's light scrollbar in the dark dialog | open |
 | CR-019 | 3 | some files | owner | The Romanian status text of a padded pair does not say it was padded | open |
 | CR-020 | 4 | common | confirmed | A divider drag jumps the line to the pointer on the first move | open |
@@ -102,10 +102,12 @@ numbers are those of 2026-11-13; a task finds its lines again by the names the e
 | CR-026 | 4 | crafted | confirmed | A canvas so long that its minimap has no height: a click jumps to the top-left | open |
 | CR-027 | 4 | crafted | to measure | `MaxWidth` lets through seven widths whose row is larger than .NET's largest array | open |
 | CR-028 | 4 | - | confirmed | Notes, requirements and comments that describe code that is gone | open |
+| CR-029 | 3 | some setups | confirmed | On a narrow window the toolbar cuts `Change B…` away | open |
 
 9 entries of severity 1, 1 of severity 2, 9 of severity 3 and 9 of severity 4; 9 are
 `confirmed`, 14 `to measure` and 5 `owner`. The cleanup list after the entries holds what is not
-a defect: dead code, duplicates, small inaccuracies.
+a defect: dead code, duplicates, small inaccuracies. CR-029 is not in these counts: it was added
+on 2026-11-21 by the task that fixed CR-013 to CR-017, which saw it in a render.
 
 ## Severity 1: the comparison lies
 
@@ -498,7 +500,24 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-013. On a narrow window the status bar cuts B's read-out before the pair line
 
-- **Severity 3, some setups, to measure.** Status: open.
+- **Severity 3, some setups, to measure.** Status: fixed 432bcb1a, by the owner's choice of
+  2026-11-21, of two (shorten the pair line; put the values first): the order stays, and on a
+  narrow window the hint goes first, then the memory, then the pair line is trimmed with an
+  ellipsis; the coordinates and the two values stay whole (R-054, ADR 0060). Measured that day
+  on the real window, never shown, laid out at a client width, the read-outs at their longest,
+  and it was wider than the estimate: with a padded pair B's value had no pixel on screen at a
+  client of 1008 (a window 1024 wide) and of 944 (960), where A's had 54 of its 128; a pair of
+  one size lost B at 784 (800). After the fix the three are whole at all three widths, and the
+  padded pair line has 242, 183 and 20 of its 419. It is layout only: the pair line and the
+  read-outs are in a `DockPanel` of their own in `MainWindow.xaml`, the read-outs docked right
+  and written first. Run with the real window off the desktop, 960 wide, on the real padded
+  pair: the bar read `5938 × 3888 padded  ·  A 5938 × 38…`, then `1838, 1321`,
+  `A  57  47  45`, `B  60  45  41` and the version, all whole, in the render. The cost: the
+  read-outs keep their fixed boxes, so a pair of one size at a client of 944 has its pair line
+  trimmed by 32 where before only blank of B's box was cut. Not done: the application on
+  screen (the owner was at the PC); the wiki manual's line on the bar, which waits for the
+  owner's word. Still the owner's, from CR-012: the hint has no room at all from a client of
+  1264 down with a padded pair, `M minimap` with it.
 - **Where:** `src/ImageVisualCompare.Wpf/MainWindow.xaml:82-105`;
   `src/ImageVisualCompare.Wpf/Theme.xaml:36-48`.
 - **What happens.** The `DockPanel` gives the legal text, docked right, its full width first.
@@ -517,7 +536,16 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-014. Up or Down on the surface moves the keyboard focus to the toolbar
 
-- **Severity 3, slip, to measure.** Status: open.
+- **Severity 3, slip, to measure.** Status: fixed 7bce108b; measured on 2026-11-21 and as
+  described. A key-down of Up or Down on the surface came back unhandled, and on the real
+  window with a handle, off the desktop and never activated, `PredictFocus`, the search an
+  arrow key's navigation runs, answered `Change A…` for both from the surface (from `+`: `−`
+  for Left, `Fit` for Right). `CompareView.OnKeyDown` now takes the two keys and does nothing
+  with them, Tab is still WPF's, and the surface takes the focus in
+  `OnPreviewMouseLeftButtonDown`, before the minimap or a scrollbar's thumb handles the press
+  (R-063). Not done: the keys pressed in a live window, which would have taken the keyboard
+  from the owner; the tests raise them, and a press on the image, the minimap and each thumb,
+  on a window never shown.
 - **Where:** `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs:400-442` (`OnKeyDown`
   leaves Up and Down unhandled); `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml.cs:110-118`
   (the press is handled, so the surface's `Focus()` does not run).
@@ -532,7 +560,15 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-015. A right click on a scrollbar thumb opens WPF's own menu: light, English, a page of one pixel
 
-- **Severity 3, slip, to measure.** Status: open.
+- **Severity 3, slip, to measure.** Status: fixed 0f23b15f, by the owner's choice of 2026-11-21,
+  of two (no menu; a dark menu worded by `UiText`): a right click on a bar opens nothing
+  (R-043, ADR 0061). Measured that day and as described: with the menu's opening raised on it,
+  each bar held WPF's menu of seven items, `Scroll Here`, `Top`, `Bottom`, `Page Up`,
+  `Page Down`, `Scroll Up`, `Scroll Down` on the vertical one, its background `#F5F5F5`, and
+  the bars had a `SmallChange` of 0.1 and a `LargeChange` of 1 on a range of 0 to 2959 image
+  pixels. The two thin styles set `ContextMenu` to null. The bars' steps are left as they are:
+  nothing reaches them now. The summary of `OnScrollBarMoved`, a line of CR-028, went with it.
+  Not done: a real right click on screen.
 - **Where:** `src/ImageVisualCompare.Wpf/Theme.xaml:187-217` (the two thin styles set no
   `ContextMenu`); `src/ImageVisualCompare.Core/ScrollBarState.cs:29-33` and
   `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs:705-712` (`Apply` sets the range, the
@@ -549,7 +585,18 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-016. The theme has no focus visual: a black dotted line on dark buttons and over the image
 
-- **Severity 3, some setups (keyboard use), to measure.** Status: open.
+- **Severity 3, some setups (keyboard use), to measure.** Status: fixed 54f50342: the button
+  that has the keyboard focus has the accent border, a dialog's default button has it only
+  while Enter answers with it (`IsDefaulted`, not `IsDefault`), a link of About with the focus
+  is underlined, and WPF's dotted rectangle is drawn nowhere, neither on a button nor over the
+  surface (R-068, ADR 0062). Read on 2026-11-21 from the elements' properties, as described:
+  every button had WPF's focus visual, a rectangle stroked `#000000`, 1 thick, dashes `1 2`,
+  the surface WPF's default one, and no template had a trigger on a focus property. Not seen:
+  the rectangle itself, and the two cases of the entry run in a live dialog, since a focus
+  visual is drawn only in the active window after a key; the tests set WPF's read-only
+  `IsKeyboardFocused` and `IsDefaulted` through their keys and read the border back. That a
+  dialog opens with the focus on the window, so its default button is lit, is from WPF's
+  source. One change beside the fix: a dialog that is not the active window lights no button.
 - **Where:** `src/ImageVisualCompare.Wpf/Theme.xaml:58-94`, `:99-138`, `:163-173` (no
   `FocusVisualStyle` and no keyboard-focus trigger anywhere in `src/`; `DialogButton` lights
   `IsDefault`, which does not move with the focus);
@@ -565,7 +612,17 @@ a defect: dead code, duplicates, small inaccuracies.
 
 ### CR-017. The canvas is the probes' and is never checked against what was decoded
 
-- **Severity 3, rare, confirmed.** Status: open.
+- **Severity 3, rare, confirmed.** Status: fixed 1c167267, by the owner's choice of 2026-11-21,
+  of two (refuse with a message; settle the canvas again and ask again): after each decode
+  `ImagePairLoader.EnsureSize` compares the decoded size with the one the canvas was settled
+  from, the probed header or, for the kept image decoded again, the image on screen, and on a
+  difference the load fails as a file that cannot be read does, with a second line of its own:
+  `The file has changed on disk: it was 5938 × 3888, it is now 4000 × 3000. Open the pair
+  again.` (R-005, R-009, ADR 0063). After an open the dialogs ask again; after a change or a
+  mode switch the pair on screen stays. Run with the real codec: a 64 × 48 PNG saved again as
+  50 × 40 while the padding question was open gave `Could not read a.png.` and that line, and
+  one `ERROR` line in the log. Only the size is compared. The image decoded before the refusal
+  is dropped as after any failed load (CR-022).
 - **Where:** `src/ImageVisualCompare.Wpf/Imaging/ImagePairLoader.cs:163`, `:190` (`LoadAsync`);
   `:263-265`, `:281-292` (`ReplaceAsync`); the effect in
   `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs:159-167`.
@@ -749,7 +806,8 @@ a defect: dead code, duplicates, small inaccuracies.
   never reads `_lookups`.
 - `UiText.cs:96`: "shortest first to go when trimmed" describes nothing the code or R-054 does.
 - `CompareView.xaml.cs:319-320`: "without first having to aim at a mode button"; there is no
-  such button. `:515-518`: "clicking it"; the thin bars have no track to click.
+  such button. `:515-518`: "clicking it"; the thin bars have no track to click. (This one done
+  with CR-015, 0f23b15f.)
   `:688-703`: `UpdateScrollBars` says setting a bar raises no `Scroll` event, and guards against
   one with `_updatingScrollBars`; one of the two is not needed.
 - `WicImageLoader.cs:395-401`: "for one read from start to end", while `LoadFloat` passes over
@@ -764,6 +822,29 @@ a defect: dead code, duplicates, small inaccuracies.
 - `FileDialogService.cs:24`: the interface "asks for the two files of a pair"; it also asks for
   one. `ImagePairValidator.cs:61`: the summary of `Inspect` tells history ("not a refusal any
   more"). `DividerModel.cs:35-36`: `LineGrabTolerance` gives no unit.
+
+### CR-029. On a narrow window the toolbar cuts `Change B…` away
+
+- **Severity 3, some setups, confirmed.** Status: open. Added on 2026-11-21 by the task that
+  fixed CR-013 to CR-017: seen in the render of the real window 960 wide, not found by the
+  review.
+- **Where:** `src/ImageVisualCompare.Wpf/MainWindow.xaml` (the toolbar's two columns: the pair
+  label in `*`, clipped, the tools in `Auto`); `src/ImageVisualCompare.Core/PairLabelLayout.cs`
+  (`MinName`, 48 DIPs).
+- **What happens.** The tools on the right take the width they ask for, 717 DIPs in English,
+  and the pair label what is left. The label trims the two names down to 48 each and no
+  further (ADR 0048); what still does not fit is cut at the column's edge, and the last thing
+  in the label is `Change B…`.
+- **The case, measured.** A window 960 wide, half of a 1920 screen: a client of 944, of which
+  the label gets 203. `Change B…` had 0 of its 101 DIPs on screen and B's name 14 of its 43;
+  in the render the name runs into `Navigation`. With the names at the widths they had there,
+  the label ends 342 from its start, so by these widths the button begins to be cut below a
+  client of about 1083. `Ctrl+O` still opens a pair; nothing else changes B alone.
+- **Should:** both buttons reachable at any width the window can have, or a smallest width for
+  the window.
+- **Direction:** a `MinWidth` for the window from the toolbar's needs, as the suite's other
+  tools have; or let the tools give room (the `Navigation` word first).
+- **Test:** `PairLabelPanelTests` cover the label inside the room it is given, not the room.
 
 ## Cleanup
 
