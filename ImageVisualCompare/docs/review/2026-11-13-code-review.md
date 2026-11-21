@@ -86,11 +86,11 @@ numbers are those of 2026-11-13; a task finds its lines again by the names the e
 | CR-010 | 2 | some setups | to measure | A three-plane FITS not in the file cache is read with a seek per plane per row | fixed 54f7807a, a8f45631; measured, severity 4 |
 | CR-011 | 3 | common | confirmed | At fit, a rounding residue shows a scrollbar and the minimap's rectangle | fixed 71e02ddd, a8f45631 |
 | CR-012 | 3 | common | owner | The bottom-left corner of the image is always under the minimap at 100 % and above | fixed fb42836a, a8f45631 |
-| CR-013 | 3 | some setups | to measure | On a narrow window the status bar cuts B's read-out before the pair line | fixed 432bcb1a |
+| CR-013 | 3 | some setups | to measure | On a narrow window the status bar cuts B's read-out before the pair line | fixed 432bcb1a, 08fda5b1 |
 | CR-014 | 3 | slip | to measure | Up or Down on the surface moves the keyboard focus to the toolbar | fixed 7bce108b |
 | CR-015 | 3 | slip | to measure | A right click on a scrollbar thumb opens WPF's own menu: light, English, a page of one pixel | fixed 0f23b15f |
-| CR-016 | 3 | some setups | to measure | The theme has no focus visual: a black dotted line on dark buttons and over the image | fixed 54f50342 |
-| CR-017 | 3 | rare | confirmed | The canvas is the probes' and is never checked against what was decoded | fixed 1c167267 |
+| CR-016 | 3 | some setups | to measure | The theme has no focus visual: a black dotted line on dark buttons and over the image | fixed 54f50342, 08fda5b1 |
+| CR-017 | 3 | rare | confirmed | The canvas is the probes' and is never checked against what was decoded | fixed 1c167267, 08fda5b1 |
 | CR-018 | 3 | rare | confirmed | A long message gets the system's light scrollbar in the dark dialog | open |
 | CR-019 | 3 | some files | owner | The Romanian status text of a padded pair does not say it was padded | open |
 | CR-020 | 4 | common | confirmed | A divider drag jumps the line to the pointer on the first move | open |
@@ -517,7 +517,10 @@ on 2026-11-21 by the task that fixed CR-013 to CR-017, which saw it in a render.
   trimmed by 32 where before only blank of B's box was cut. Not done: the application on
   screen (the owner was at the PC); the wiki manual's line on the bar, which waits for the
   owner's word. Still the owner's, from CR-012: the hint has no room at all from a client of
-  1264 down with a padded pair, `M minimap` with it.
+  1264 down with a padded pair, `M minimap` with it. After the branch's review, 08fda5b1: the
+  CHANGELOG and ADR 0060 said A's value read `A 255 2` at 960, a guess; the 54 DIPs hold nine
+  characters, `A 255 255`, by the text's measured width. A comment of the wide-window test
+  said every item is whole, where the hint may be trimmed there and the test cannot tell.
 - **Where:** `src/ImageVisualCompare.Wpf/MainWindow.xaml:82-105`;
   `src/ImageVisualCompare.Wpf/Theme.xaml:36-48`.
 - **What happens.** The `DockPanel` gives the legal text, docked right, its full width first.
@@ -597,6 +600,12 @@ on 2026-11-21 by the task that fixed CR-013 to CR-017, which saw it in a render.
   `IsKeyboardFocused` and `IsDefaulted` through their keys and read the border back. That a
   dialog opens with the focus on the window, so its default button is lit, is from WPF's
   source. One change beside the fix: a dialog that is not the active window lights no button.
+  After the branch's review, 08fda5b1: every tab stop of the three windows was read, and one
+  still had WPF's rectangle, About's list of components, an `ItemsControl`; it is no longer
+  focusable, and a test walks the three windows for any other (the dialog's message area, a
+  `ScrollViewer`, which the review named too, is no tab stop). R-068, the theme's comment and
+  the note now say the one case where the lit button is not Enter's: a link of About with the
+  focus takes Enter itself while `Close` stays lit.
 - **Where:** `src/ImageVisualCompare.Wpf/Theme.xaml:58-94`, `:99-138`, `:163-173` (no
   `FocusVisualStyle` and no keyboard-focus trigger anywhere in `src/`; `DialogButton` lights
   `IsDefault`, which does not move with the focus);
@@ -622,7 +631,9 @@ on 2026-11-21 by the task that fixed CR-013 to CR-017, which saw it in a render.
   mode switch the pair on screen stays. Run with the real codec: a 64 × 48 PNG saved again as
   50 × 40 while the padding question was open gave `Could not read a.png.` and that line, and
   one `ERROR` line in the log. Only the size is compared. The image decoded before the refusal
-  is dropped as after any failed load (CR-022).
+  is dropped as after any failed load (CR-022). After the branch's review, 08fda5b1: R-005 said
+  the second file is not decoded, which holds when the changed one is A; and the README says
+  that a pair on screen stays, where it read as if the open dialogs came back.
 - **Where:** `src/ImageVisualCompare.Wpf/Imaging/ImagePairLoader.cs:163`, `:190` (`LoadAsync`);
   `:263-265`, `:281-292` (`ReplaceAsync`); the effect in
   `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs:159-167`.
