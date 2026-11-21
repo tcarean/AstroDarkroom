@@ -165,16 +165,20 @@ public class ThemeFocusTests
     }
 
     /// <summary>
-    /// Everything Tab can reach in the three windows, read from each window's own tree: a tab
-    /// stop that kept a <c>FocusVisualStyle</c> would get WPF's dotted rectangle. The review of
-    /// this fix found one the fix had missed, the list of components in About, an
-    /// <c>ItemsControl</c>, which WPF makes a tab stop though nothing in it is its own to focus.
+    /// Everything that can take the keyboard focus in the three windows, as far as each window's
+    /// own tree goes, the parts the controls' templates add left out: whatever kept a
+    /// <c>FocusVisualStyle</c> would get WPF's dotted rectangle. Not only what Tab stops at: the
+    /// surface is no tab stop and had the rectangle after a click. The two reviews of this fix
+    /// found two elements it had missed: the list of components in About, an
+    /// <c>ItemsControl</c>, which WPF makes a tab stop; and the message area of the dialog, a
+    /// <c>ScrollViewer</c>, no tab stop, which takes the focus at a click on the message.
     /// </summary>
     [Fact]
-    public async Task R068_NoTabStopOfAnyWindow_KeepsWpfsDottedRectangle()
+    public async Task R068_NothingThatCanTakeTheFocus_KeepsWpfsDottedRectangle()
     {
         var dotted = new List<string>();
         var stops = new List<string>();
+        var focusable = new List<string>();
 
         await WpfThread.RunAsync(() =>
         {
@@ -189,20 +193,35 @@ public class ThemeFocusTests
             {
                 foreach (DependencyObject node in LogicalTree(window))
                 {
-                    (bool stop, Style? visual, string what) = node switch
+                    // The window itself is left out: it is focusable, and has the focus when it
+                    // opens, but a focus mark is drawn on the adorner layer above an element,
+                    // and the layer is inside the window, so the window never gets one.
+                    if (ReferenceEquals(node, window))
                     {
-                        FrameworkElement e => (e.Focusable && KeyboardNavigation.GetIsTabStop(e), e.FocusVisualStyle, e.Name.Length > 0 ? e.Name : e.GetType().Name),
-                        FrameworkContentElement c => (c.Focusable, c.FocusVisualStyle, c.GetType().Name),
-                        _ => (false, null, string.Empty),
+                        continue;
+                    }
+
+                    (bool takesFocus, bool stop, Style? visual, string what) = node switch
+                    {
+                        FrameworkElement e => (e.Focusable, KeyboardNavigation.GetIsTabStop(e), e.FocusVisualStyle, e.Name.Length > 0 ? e.Name : e.GetType().Name),
+                        FrameworkContentElement c => (c.Focusable, true, c.FocusVisualStyle, c.GetType().Name),
+                        _ => (false, false, null, string.Empty),
                     };
 
+                    if (!takesFocus)
+                    {
+                        continue;
+                    }
+
+                    focusable.Add($"{name}.{what}");
                     if (stop)
                     {
                         stops.Add($"{name}.{what}");
-                        if (visual is not null)
-                        {
-                            dotted.Add($"{name}.{what}");
-                        }
+                    }
+
+                    if (visual is not null)
+                    {
+                        dotted.Add($"{name}.{what}");
                     }
                 }
             }
@@ -214,6 +233,12 @@ public class ThemeFocusTests
         Assert.Contains("MessageDialog.SecondaryButton", stops);
         Assert.Contains("AboutWindow.CloseButton", stops);
         Assert.Contains("AboutWindow.Hyperlink", stops);
+
+        // And what takes the focus without being one: the surface, the dialog's message area.
+        Assert.Contains("MainWindow.Compare", focusable);
+        Assert.DoesNotContain("MainWindow.Compare", stops);
+        Assert.Contains("MessageDialog.ScrollViewer", focusable);
+        Assert.DoesNotContain("MessageDialog.ScrollViewer", stops);
         Assert.Empty(dotted);
     }
 

@@ -16,7 +16,11 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ScrollViewer Grid.Row="0" MaxHeight="440" VerticalScrollBarVisibility="Auto">
+        <!-- No focus visual: a ScrollViewer is no tab stop, but it takes the keyboard focus at a
+             click on the message, and would then get WPF's dotted rectangle (R-068). It stays
+             focusable, so a long message can be scrolled with the keys after a click; the
+             default button is still lit then, and Enter still answers with it. -->
+        <ScrollViewer Grid.Row="0" MaxHeight="440" VerticalScrollBarVisibility="Auto" FocusVisualStyle="{x:Null}">
             <TextBlock x:Name="MessageText"
                        TextWrapping="Wrap"
                        Foreground="{StaticResource TextBrush}"

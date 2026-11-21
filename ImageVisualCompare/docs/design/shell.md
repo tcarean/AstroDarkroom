@@ -165,10 +165,13 @@ Enter itself and `Close` stays lit, a link not being something WPF knows to take
 `Hyperlink` style underlines a link on `IsKeyboardFocused` as on `IsMouseOver`, and
 `CompareView.xaml` sets `FocusVisualStyle` to null on the surface, which is focusable for its
 shortcuts. About's `ComponentList` is not focusable: WPF makes an `ItemsControl` a tab stop,
-and it was the one stop left with WPF's rectangle. `ThemeFocusTests` set the two read-only
+and it had WPF's rectangle. The `ScrollViewer` around the dialog's message is no tab stop, but
+a click on the message gives it the focus, so `MessageDialog.xaml` sets its `FocusVisualStyle`
+to null and leaves it focusable, for the keys to scroll a long message. `ThemeFocusTests` set the two read-only
 properties through their keys, since no window of a test has the keyboard, and read the border
-and the decoration back; one of them walks the three windows' own trees and finds no tab stop
-that kept a `FocusVisualStyle`.
+and the decoration back; one of them walks the three windows' own trees, without the parts
+the controls' templates add, and finds nothing focusable but the window itself that kept a
+`FocusVisualStyle`.
 
 ## In the diagnostic log
 

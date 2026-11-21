@@ -518,8 +518,9 @@ on 2026-11-21 by the task that fixed CR-013 to CR-017, which saw it in a render.
   screen (the owner was at the PC); the wiki manual's line on the bar, which waits for the
   owner's word. Still the owner's, from CR-012: the hint has no room at all from a client of
   1264 down with a padded pair, `M minimap` with it. After the branch's review, 08fda5b1: the
-  CHANGELOG and ADR 0060 said A's value read `A 255 2` at 960, a guess; the 54 DIPs hold nine
-  characters, `A 255 255`, by the text's measured width. A comment of the wide-window test
+  CHANGELOG and ADR 0060 said A's value read `A 255 2` at 960, a guess; nine characters,
+  `A 255 255`, are 54.4 wide by the text's measured width, so the 54 DIPs show them, the last
+  cut by a hair. A comment of the wide-window test
   said every item is whole, where the hint may be trimmed there and the test cannot tell.
 - **Where:** `src/ImageVisualCompare.Wpf/MainWindow.xaml:82-105`;
   `src/ImageVisualCompare.Wpf/Theme.xaml:36-48`.
@@ -602,8 +603,11 @@ on 2026-11-21 by the task that fixed CR-013 to CR-017, which saw it in a render.
   source. One change beside the fix: a dialog that is not the active window lights no button.
   After the branch's review, 08fda5b1: every tab stop of the three windows was read, and one
   still had WPF's rectangle, About's list of components, an `ItemsControl`; it is no longer
-  focusable, and a test walks the three windows for any other (the dialog's message area, a
-  `ScrollViewer`, which the review named too, is no tab stop). R-068, the theme's comment and
+  focusable. The dialog's message area, a `ScrollViewer`, which that review named too, was
+  dismissed there for being no tab stop; the second review showed that a click on the message
+  gives it the focus, as a click gives it to the surface, and its commit takes the rectangle
+  off it and has the test walk the three windows' own trees for everything focusable, tab
+  stop or not (the parts the controls' templates add are not walked). R-068, the theme's comment and
   the note now say the one case where the lit button is not Enter's: a link of About with the
   focus takes Enter itself while `Close` stays lit.
 - **Where:** `src/ImageVisualCompare.Wpf/Theme.xaml:58-94`, `:99-138`, `:163-173` (no
