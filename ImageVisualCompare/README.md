@@ -280,7 +280,9 @@ canvas alone would be half the truth, since one of the images does not have that
 read every 2 seconds. After them comes a hint,
 `wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open · H histogram · F false colours · M minimap · F1 help`, cut short
 when the window narrows; on the right, always, the version and the copyright (there is no
-`--version` option). `About` opens a window with the version, the licence notice and the
+`--version` option). On a window too narrow for the whole bar the hint goes first, then the
+memory, then the pair's line is shortened with `…`; the coordinates and the two values stay
+whole. `About` opens a window with the version, the licence notice and the
 components written by others.
 
 In the Romanian interface the same bar reads `A RGB pe 16 biți` (or `gri float pe 32 de biți`,

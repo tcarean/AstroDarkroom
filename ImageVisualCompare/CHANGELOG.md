@@ -87,6 +87,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- On a narrow window the status bar keeps the coordinates and the two pixel values whole and
+  shortens the pair's line with `…` instead. The bar was cut from the right: on a window 960
+  wide with a padded pair, B's value was not shown at all and A's read `A 255 2`
+  (R-054, ADR 0060).
 - At `Fit`, on some window sizes, a scrollbar with a thumb as long as its track and the minimap's
   rectangle around the whole thumbnail were shown, though the whole image was on screen: a
   rounding residue of a millionth of a millionth of a pixel counted as an image larger than the

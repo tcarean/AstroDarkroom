@@ -137,6 +137,144 @@ public class MainWindowTests
         Assert.Equal((false, false), after);
     }
 
+    // CR-013 of the review of 2026-11-13: the left of the status bar was a panel that never
+    // shrinks, so on a window too narrow for it the bar was cut from the right: the memory, then
+    // B's value, then A's, while the pair line, the one item that loses little by being
+    // shortened, stayed whole. Measured on 2026-11-21: at a client width of 944, a window 960
+    // wide, with a padded pair, B's value had no pixel on screen and A's had 54 of its 128.
+    [Theory]
+    [InlineData(1008)]
+    [InlineData(944)]
+    [InlineData(784)]
+    public async Task R054_OnANarrowWindow_ThePairLineIsShortened_AndTheValuesStayWhole(double clientWidth)
+    {
+        StatusBarLayout wide = default!;
+        StatusBarLayout narrow = default!;
+
+        await WpfThread.RunAsync(() =>
+        {
+            wide = LayOutTheStatusBar(1920);
+            narrow = LayOutTheStatusBar(clientWidth);
+        });
+
+        // The three read-outs are as wide as on a wide window, and no pixel of them is cut.
+        Assert.Equal(wide.Cursor.Full, narrow.Cursor.Full, 3);
+        Assert.Equal(wide.Before.Full, narrow.Before.Full, 3);
+        Assert.Equal(wide.After.Full, narrow.After.Full, 3);
+        Assert.Equal(narrow.Cursor.Full, narrow.Cursor.Visible, 3);
+        Assert.Equal(narrow.Before.Full, narrow.Before.Visible, 3);
+        Assert.Equal(narrow.After.Full, narrow.After.Visible, 3);
+
+        // The pair line is what gave: narrower than its text, trimmed and not cut, still there.
+        Assert.InRange(narrow.Pair.Full, 1, wide.Pair.Full - 1);
+        Assert.Equal(narrow.Pair.Full, narrow.Pair.Visible, 3);
+
+        // The version and the copyright are never trimmed.
+        Assert.Equal(wide.Legal.Full, narrow.Legal.Full, 3);
+        Assert.Equal(narrow.Legal.Full, narrow.Legal.Visible, 3);
+
+        // The order on screen is the wide window's.
+        Assert.True(narrow.Pair.Left < narrow.Cursor.Left);
+        Assert.True(narrow.Cursor.Left < narrow.Before.Left);
+        Assert.True(narrow.Before.Left < narrow.After.Left);
+        Assert.True(narrow.After.Left < narrow.Legal.Left);
+    }
+
+    [Fact]
+    public async Task R054_OnAWideWindow_TheBarIsLaidOutAsBefore()
+    {
+        StatusBarLayout bar = default!;
+
+        await WpfThread.RunAsync(() => bar = LayOutTheStatusBar(1920));
+
+        // Every item whole, from the left: the pair line, the coordinates, A, B, the memory and
+        // the hint, each starting 16 after the end of the one before it, the margin of the
+        // status bar's texts; the version and the copyright at the right edge.
+        StatusItem[] items = [bar.Pair, bar.Cursor, bar.Before, bar.After, bar.Memory, bar.Hint, bar.Legal];
+        Assert.All(items, item => Assert.Equal(item.Full, item.Visible, 3));
+        Assert.All(items, item => Assert.True(item.Full > 0));
+        for (int i = 1; i < 6; i++)
+        {
+            Assert.Equal(items[i - 1].Left + items[i - 1].Full + 16, items[i].Left, 3);
+        }
+
+        // The bar's padding is 12.
+        Assert.Equal(12, bar.Pair.Left, 3);
+        Assert.Equal(1920 - 12, bar.Legal.Left + bar.Legal.Full, 3);
+    }
+
+    /// <summary>One text of the status bar after a layout: where it starts, in device-independent
+    /// pixels from the window's left edge, how wide it was laid out, and how much of that width
+    /// no layout clip cuts.</summary>
+    private sealed record StatusItem(double Left, double Full, double Visible);
+
+    /// <summary>The status bar's seven texts after a layout.</summary>
+    private sealed record StatusBarLayout(
+        StatusItem Pair, StatusItem Cursor, StatusItem Before, StatusItem After, StatusItem Memory, StatusItem Hint, StatusItem Legal);
+
+    /// <summary>
+    /// Builds the window, never shown, fills its status bar as a padded pair with the pointer on
+    /// its last pixel does (the pair line of R-050's example, the read-outs at their longest), and
+    /// lays the window out at a client width. Call it on the WPF test thread.
+    /// </summary>
+    private static StatusBarLayout LayOutTheStatusBar(double clientWidth)
+    {
+        var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
+        window.StatusPair.Text = "5938 × 3888 padded  ·  A 5938 × 3888  ·  B 5554 × 3888  ·  A 16-bit RGB  ·  B 8-bit RGB";
+        window.StatusCursor.Text = "5937, 3887";
+        window.StatusBefore.Text = "A 255 255 255";
+        window.StatusAfter.Text = "B 255 255 255";
+        window.StatusMemory.Text = "managed 2 MB, process 560 MB";
+
+        var root = (Grid)window.Content;
+        root.Measure(new Size(clientWidth, 528));
+        root.Arrange(new Rect(0, 0, clientWidth, 528));
+        root.UpdateLayout();
+
+        StatusItem Item(FrameworkElement text) =>
+            new(text.TranslatePoint(new Point(0, 0), root).X, text.ActualWidth, VisibleWidth(text, root));
+
+        return new StatusBarLayout(
+            Item(window.StatusPair), Item(window.StatusCursor), Item(window.StatusBefore), Item(window.StatusAfter),
+            Item(window.StatusMemory), Item(window.HintText), Item(window.StatusLegal));
+    }
+
+    /// <summary>
+    /// How much of an element's width is on screen: its box cut by the layout clip of the element
+    /// and of each of its ancestors up to <paramref name="root"/>, and by the root's own box. WPF
+    /// lays an element that got less room than it needs out at the size it needs and clips it,
+    /// so its <c>ActualWidth</c> alone does not say what is seen.
+    /// </summary>
+    private static double VisibleWidth(FrameworkElement element, FrameworkElement root)
+    {
+        var box = new Rect(0, 0, element.ActualWidth, element.ActualHeight);
+        Visual current = element;
+        while (true)
+        {
+            if (current is FrameworkElement framework && LayoutInformation.GetLayoutClip(framework) is { } clip)
+            {
+                box.Intersect(clip.Bounds);
+            }
+
+            if (box.IsEmpty)
+            {
+                return 0;
+            }
+
+            if (ReferenceEquals(current, root))
+            {
+                break;
+            }
+
+            var parent = (Visual)VisualTreeHelper.GetParent(current);
+            box = current.TransformToAncestor(parent).TransformBounds(box);
+            current = parent;
+        }
+
+        box.Intersect(new Rect(0, 0, root.ActualWidth, root.ActualHeight));
+        return box.IsEmpty ? 0 : box.Width;
+    }
+
     [Fact]
     public async Task R006_ASecondOpenWhileAPairLoads_AsksForNothing()
     {

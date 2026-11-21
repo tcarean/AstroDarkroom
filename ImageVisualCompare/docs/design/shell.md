@@ -10,6 +10,7 @@
 > `src/ImageVisualCompare.Wpf/ImageVisualCompare.Wpf.csproj`,
 > `src/ImageVisualCompare.Wpf/Interop/DarkTitleBar.cs`,
 > `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`,
+> `src/ImageVisualCompare.Wpf/MainWindow.xaml` (the status bar's layout),
 > `src/ImageVisualCompare.Wpf/Controls/PairLabelPanel.cs`,
 > `src/ImageVisualCompare.Core/PairLabelLayout.cs`,
 > `src/ImageVisualCompare.Core/Manual.cs`,
@@ -119,6 +120,22 @@ changed with its last constraint, and asks the panel only when the child's desir
 so a name last measured at its own width could never grow, and the names, empty when the
 toolbar is first laid out, stayed invisible (`PairLabelPanelTests` sets the text after the
 first layout). The buttons leave the clip only at the floor, where both names are at 48 DIPs.
+
+## The status bar on a narrow window
+
+`BottomBar` holds a `DockPanel` whose children get their room in the order they are written:
+`StatusLegal`, docked right, first, so the version and the copyright are never trimmed; then an
+inner `DockPanel`, docked left, with the pair line and the three read-outs; then `StatusMemory`,
+docked left; and `HintText` last, which fills what is left and trims itself. Inside the inner
+panel the order of writing is the order of keeping: `StatusAfter`, `StatusBefore` and
+`StatusCursor`, each docked right, then `StatusPair`, which fills and trims with an ellipsis.
+Docked right in that order, the three stand as coordinates, A, B from the left, after the pair
+line, so the order on screen is the one a row would give; and since the inner panel asks only
+for the width of its four texts, on a window wide enough nothing differs from a row. On a
+narrow one the hint is the first to lose its room, then the memory, then the pair line, and
+only then the coordinates, A and B (R-054, ADR 0060, where the widths measured are).
+`MainWindowTests` lays the window out, never shown, at four client widths and reads each
+text's place, its width and how much of it the layout clips leave.
 
 ## The focus after a toolbar click
 
