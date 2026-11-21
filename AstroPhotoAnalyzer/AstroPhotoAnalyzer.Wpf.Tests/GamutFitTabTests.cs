@@ -181,10 +181,16 @@ public class GamutFitTabTests
         // The same frame with the cap lowered under its 49 152 pixels: a step of 2, 128 x 96,
         // and the tab says it shows a reduced copy.
         var small = new GamutFitTabViewModel { MaxPixels = 20_000 };
+        var raised = new List<string>();
+        small.PropertyChanged += (_, e) => raised.Add(e.PropertyName ?? "");
         small.Populate(result);
-        small.Compute();
+        await small.ComputeAsync();   // the window's path, which hands the cap to the core too
         Assert.True(small.HasGallery, small.Message);
         Assert.True(small.IsReducedCopy);
+        // The view hears of it: the two sentences bound to it are announced with the flag.
+        Assert.Contains(nameof(GamutFitTabViewModel.IsReducedCopy), raised);
+        Assert.Contains(nameof(GamutFitTabViewModel.Note), raised);
+        Assert.Contains(nameof(GamutFitTabViewModel.ViewerHelp), raised);
         foreach (GamutFitGalleryItem i in small.Items.Append(small.Before!))
         {
             Assert.Equal(w / 2, i.Width);
@@ -194,10 +200,15 @@ public class GamutFitTabTests
         Assert.Equal(w / 2, small.Before!.Overlay!.PixelWidth);
         Assert.Equal(GamutFitTexts.Note(reduced: true), small.Note);
         Assert.Equal(GamutFitTabViewModel.ViewerHelpFor(reduced: true), small.ViewerHelp);
-        // Another image leaves the copy's wording behind until its own gallery says otherwise.
+        // Another image leaves the copy's wording behind until its own gallery says otherwise,
+        // and the view hears of that too.
+        raised.Clear();
         small.Populate(result);
         Assert.False(small.IsReducedCopy);
         Assert.Equal(GamutFitTexts.Note(reduced: false), small.Note);
+        Assert.Contains(nameof(GamutFitTabViewModel.IsReducedCopy), raised);
+        Assert.Contains(nameof(GamutFitTabViewModel.Note), raised);
+        Assert.Contains(nameof(GamutFitTabViewModel.ViewerHelp), raised);
     }
 
     [Fact]

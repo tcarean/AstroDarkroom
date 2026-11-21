@@ -281,7 +281,7 @@ item per variant: the bitmap (`RasterBitmaps.Region`) and the red layer (`Raster
 over the set's mask, the soft proof's half-transparent red; null when nothing is outside), and,
 for a variant, the evidence rows from `GamutFitTexts.EvidenceRows`, with the variant kept
 without its preview, so the rasters are dropped once drawn; `Show`, on the window's thread,
-only takes that `Gallery`; `Prepare` ends with a Debug line, "gallery prepared", whose thread
+only takes that `Gallery`; for a set without a problem `Prepare` ends with a Debug line, "gallery prepared", whose thread
 is the one that made the bitmaps. `IsReducedCopy` (the set's `Stride` over 1) words the core's
 note and the tab's `ViewerHelp`. `MaxPixels`, the cap the tab hands the run, is
 `WholeImageMaxPixels` unless a test lowers it. The original is no position of the

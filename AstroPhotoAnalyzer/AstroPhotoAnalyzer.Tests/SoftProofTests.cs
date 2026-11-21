@@ -219,9 +219,11 @@ public class SoftProofTests
         using var ws = new TempWorkspace();
         Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(Profile(ws), out string error) ?? throw new Exception(error);
         // The cap lowered so that a small frame is over it: 2401 x 64 is 153 664 pixels, and a
-        // step of 2 leaves 1201 x 32. The left half is saturated, which this paper cannot hold.
+        // step of 2 leaves 1201 x 32. The left part is saturated, which this paper cannot hold;
+        // its edge is at an odd column and moves by 20 every second row, so a reduction taken
+        // one pixel off, or with its rows mixed, gives another mask.
         const int cap = 100_000;
-        Raster wide = SyntheticRasters.From(64, 2401, 3, (x, y, c) => x < 1200 ? (c == 0 ? 0.6f : 0.2f) : 0.3f);
+        Raster wide = SyntheticRasters.From(64, 2401, 3, (x, y, c) => x < 1201 + 20 * (y / 2 % 2) ? (c == 0 ? 0.6f : 0.2f) : 0.3f);
         AnalysisResult analysis = AnalysisRun.Execute(wide, "memorie", p);
         ProofSet whole = ProofRun.Prepare(analysis);
         ProofSet set = ProofRun.Prepare(analysis, cap);
@@ -238,7 +240,10 @@ public class SoftProofTests
         for (int y = 0; y < 32; y++)
             for (int x = 0; x < 1201; x++)
                 Assert.True(whole.PaperOutside[2 * y * 2401 + 2 * x] == set.PaperOutside[y * 1201 + x], $"the mask at ({x}, {y}) of the reduction");
-        Assert.InRange(set.PctPaper, 49.9, 50.0);   // 600 of 1201 columns
+        // The share is the reduction's own: 601 columns of its even rows and 611 of its odd
+        // ones, 50.4579 %, where the whole image has 50.4373 %.
+        Assert.Equal(100.0 * (16 * 601 + 16 * 611) / (1201 * 32), set.PctPaper, 9);
+        Assert.Equal(100.0 * (32 * 1201 + 32 * 1221) / (2401 * 64), whole.PctPaper, 9);
         SoftProofResult proof = ProofRun.Render(set, ProofIntent.Perceptual, simulate: true);
         Assert.Equal(1201, proof.Image.W);
         Assert.Equal(32, proof.Image.H);

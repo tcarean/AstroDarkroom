@@ -702,7 +702,9 @@ public class GamutFitTests
         Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(icc, out string error) ?? throw new Exception(error);
         // 3200 pixels wide: until R-188 the gallery's area (1600 x 900 before the tab is shown)
         // had this frame taken at every second pixel, 1600 wide.
-        Raster wide = SyntheticRasters.From(64, 3200, 3, (x, y, c) => x < 1600 ? (c == 0 ? 0.6f : 0.2f) : 0.3f);
+        // The saturated part's edge is at an odd column and moves by 20 every second row, so a
+        // reduction taken one pixel off, or with its rows mixed, gives another mask and image.
+        Raster wide = SyntheticRasters.From(64, 3200, 3, (x, y, c) => x < 1601 + 20 * (y / 2 % 2) ? (c == 0 ? 0.6f : 0.2f) : 0.3f);
         AnalysisResult a = AnalysisRun.Execute(wide, "memorie", p);
 
         GamutFitSet whole = GamutFitRun.Execute(a);

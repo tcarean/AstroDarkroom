@@ -73,7 +73,7 @@ public class SoftProofTabTests
     }
 
     [Fact]
-    public void R188_TheProofShownIsTheWholeImageAndItsSentencesSaySo()
+    public async Task R188_TheProofShownIsTheWholeImageAndItsSentencesSaySo()
     {
         using var ws = new TempWorkspace();
         Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(Profile(ws), out string error) ?? throw new Exception(error);
@@ -107,20 +107,31 @@ public class SoftProofTabTests
         // The same image with the cap lowered under its 153 664 pixels: a step of 2, 1201 x 32,
         // and the tab says it shows a reduced copy.
         var small = new SoftProofTabViewModel { MaxPixels = 100_000 };
+        var raised = new List<string>();
+        small.PropertyChanged += (_, e) => raised.Add(e.PropertyName ?? "");
         small.Populate(AnalysisRun.Execute(SyntheticRasters.Flat(64, 2401, 0.3f), "memorie", p));
-        small.Compute();
+        raised.Clear();
+        await small.ComputeAsync();   // the window's path, which hands the cap to the core too
         Assert.True(small.HasProof, small.Message);
         Assert.True(small.IsReducedCopy);
+        // The views hear of it: the flag and the two sentences bound to it are announced.
+        Assert.Contains(nameof(SoftProofTabViewModel.IsReducedCopy), raised);
+        Assert.Contains(nameof(SoftProofTabViewModel.ViewerHelp), raised);
+        Assert.Contains(nameof(SoftProofTabViewModel.WindowHelp), raised);
         Assert.Equal(1201, small.Width);
         Assert.Equal(32, small.Height);
         Assert.Equal(1201, small.Image.PixelWidth);
         Assert.Equal(1201, small.PaperLayer.PixelWidth);
         Assert.Equal(SoftProofTabViewModel.ViewerHelpFor(reduced: true), small.ViewerHelp);
         Assert.Equal(SoftProofTabViewModel.WindowHelpFor(reduced: true), small.WindowHelp);
-        // Emptied, the tab no longer speaks of a copy.
+        // Emptied, the tab no longer speaks of a copy, and the views hear of that too.
+        raised.Clear();
         small.Clear();
         Assert.False(small.IsReducedCopy);
         Assert.Equal(SoftProofTabViewModel.ViewerHelpFor(reduced: false), small.ViewerHelp);
+        Assert.Contains(nameof(SoftProofTabViewModel.IsReducedCopy), raised);
+        Assert.Contains(nameof(SoftProofTabViewModel.ViewerHelp), raised);
+        Assert.Contains(nameof(SoftProofTabViewModel.WindowHelp), raised);
     }
 
     [Fact]

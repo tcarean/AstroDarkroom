@@ -104,7 +104,7 @@ Consequences), and the owner chose the whole image, with the two choices below.
   still complete, in the same times, peaking at 2.6 to 2.7 GB: about 115 MB for each megapixel
   are needed while the runs last, the rest of the peak being memory not yet collected. An
   image at the cap, 64 MP, would therefore need about 7 GB while the runs last and hold about
-  2.6 GB afterwards (about 1.9 GB as built, the last point below).
+  2.6 GB afterwards (about 1.9 GB as built, the point on the code as built below).
 - The fit is shown about 14 s later than before (15.5 to 16.3 s after the analysis, where
   it took 1.9 s), in the background; a tab opened sooner shows "computing".
 - How smoothly the window zooms and pans bitmaps of 22.6 MP was not measured: it shows only in

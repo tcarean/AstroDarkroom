@@ -86,8 +86,8 @@ namespace AstroPhotoAnalyzer.Wpf
     {
         /// <summary>
         /// The diagnostic log: a computation that failed, was superseded or was abandoned while
-        /// it waited; "gallery prepared", with the images' number, size and time; the box when it
-        /// changes; a save that failed. The core's GamutFitRun writes each computation's start
+        /// it waited; "gallery prepared", with the images' number, size and time, for each
+        /// gallery made (none for a set with a problem); the box when it changes; a save that failed. The core's GamutFitRun writes each computation's start
         /// and outcome (R-171, ADR 0069).
         /// </summary>
         static readonly Logger Log = LogManager.GetLogger(Loggers.GamutFit);
@@ -354,7 +354,7 @@ namespace AstroPhotoAnalyzer.Wpf
             var items = new List<GamutFitGalleryItem>();
             for (int i = 0; i < set.Variants.Count; i++) items.Add(Item(stripped[i].Name, set.Variants[i].Preview, set.Variants[i].Outside, stripped[i], set.Recipe));
             // The line's thread is the one that made the bitmaps: a pool thread when the window
-            // computes (ComputeAsync), the caller's own in the tests' synchronous Compute.
+            // computes (ComputeAfterAsync, ComputeAsync), the caller's own in the tests' synchronous Compute.
             Log.Debug("gallery prepared: " + LogText.Int(items.Count + 1) + " images of " + LogText.Int(before.Width) + "x" + LogText.Int(before.Height) + " in " + LogText.Ms(clock.ElapsedMilliseconds));
             return new Gallery(set with { OriginalPreview = null, OriginalOutside = null, Variants = stripped }, before, items);
         }

@@ -186,7 +186,9 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// The paper fit's computation the last run started (R-178), which waits for the soft
-        /// proof's and then runs (R-188); completed before the first run and after one that failed.
+        /// proof's and then runs (R-188); completed before the first run. A run that fails or is
+        /// refused starts none: this stays the task of the run before it, which ends by itself,
+        /// its wait abandoned or its result dropped.
         /// </summary>
         internal Task GamutFitComputation { get; private set; } = Task.CompletedTask;
 
