@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -104,6 +105,12 @@ namespace AstroPhotoAnalyzer.Wpf
         // The box starts on: the owner looks for the colours the paper cannot hold first (R-178).
         bool _busy, _isProblem, _showOutside = true, _reduced;
         string _message, _saveMessage, _saveError;
+
+        /// <summary>
+        /// The most pixels of an image the core takes whole, handed to GamutFitRun: the core's
+        /// own limit (R-188) unless a test lowers it to reach a reduced copy with a small frame.
+        /// </summary>
+        internal int MaxPixels { get; init; } = Thresholds.WholeImageMaxPixels;
 
         /// <summary>Makes the three commands; the tab starts empty and disabled.</summary>
         public GamutFitTabViewModel()
@@ -252,7 +259,9 @@ namespace AstroPhotoAnalyzer.Wpf
         internal void Compute()
         {
             _run++;
-            Show(Prepare(GamutFitRun.Execute(_result)));
+            // A computation in flight, or one still waiting, is superseded: its finally will not touch this.
+            IsBusy = false;
+            Show(Prepare(GamutFitRun.Execute(_result, maxPixels: MaxPixels)));
         }
 
         /// <summary>
@@ -297,7 +306,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 }
                 // The bitmaps are made there too: whole-image ones would hold the window's thread
                 // for most of a second (0.9 s measured on 22.6 MP, ADR 0118).
-                Gallery gallery = await Task.Run(() => Prepare(GamutFitRun.Execute(result)));
+                Gallery gallery = await Task.Run(() => Prepare(GamutFitRun.Execute(result, maxPixels: MaxPixels)));
                 if (run == _run) Show(gallery);
                 else Log.Debug("computation " + LogText.Int(run) + " ended after a newer one started; nothing is shown");
             }
@@ -337,10 +346,13 @@ namespace AstroPhotoAnalyzer.Wpf
         static Gallery Prepare(GamutFitSet set)
         {
             if (set.Problem != null) return new Gallery(set, null, Array.Empty<GamutFitGalleryItem>());
+            var clock = Stopwatch.StartNew();
             GamutFitVariant[] stripped = set.Variants.Select(v => v with { Preview = null, Outside = null }).ToArray();
             GamutFitGalleryItem before = Item(CurveTexts.Original, set.OriginalPreview, set.OriginalOutside, null, set.Recipe);
             var items = new List<GamutFitGalleryItem>();
             for (int i = 0; i < set.Variants.Count; i++) items.Add(Item(stripped[i].Name, set.Variants[i].Preview, set.Variants[i].Outside, stripped[i], set.Recipe));
+            // The line's thread is the one that made the bitmaps: the computation's, never the window's.
+            Log.Debug("gallery prepared: " + LogText.Int(items.Count + 1) + " images of " + LogText.Int(before.Width) + "x" + LogText.Int(before.Height) + " in " + LogText.Ms(clock.ElapsedMilliseconds));
             return new Gallery(set with { OriginalPreview = null, OriginalOutside = null, Variants = stripped }, before, items);
         }
 

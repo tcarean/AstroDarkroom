@@ -103,6 +103,24 @@ public class SoftProofTabTests
         Assert.Contains("un pixel al copiei devine", SoftProofTabViewModel.ViewerHelpFor(reduced: true));
         Assert.Contains("un pixel al copiei devine", SoftProofTabViewModel.WindowHelpFor(reduced: true));
         Assert.EndsWith("E o copie micsorata; programul presupune ca pixelii si ecranul sunt sRGB.", SoftProofTabViewModel.WindowHelpFor(reduced: true));
+
+        // The same image with the cap lowered under its 153 664 pixels: a step of 2, 1201 x 32,
+        // and the tab says it shows a reduced copy.
+        var small = new SoftProofTabViewModel { MaxPixels = 100_000 };
+        small.Populate(AnalysisRun.Execute(SyntheticRasters.Flat(64, 2401, 0.3f), "memorie", p));
+        small.Compute();
+        Assert.True(small.HasProof, small.Message);
+        Assert.True(small.IsReducedCopy);
+        Assert.Equal(1201, small.Width);
+        Assert.Equal(32, small.Height);
+        Assert.Equal(1201, small.Image.PixelWidth);
+        Assert.Equal(1201, small.PaperLayer.PixelWidth);
+        Assert.Equal(SoftProofTabViewModel.ViewerHelpFor(reduced: true), small.ViewerHelp);
+        Assert.Equal(SoftProofTabViewModel.WindowHelpFor(reduced: true), small.WindowHelp);
+        // Emptied, the tab no longer speaks of a copy.
+        small.Clear();
+        Assert.False(small.IsReducedCopy);
+        Assert.Equal(SoftProofTabViewModel.ViewerHelpFor(reduced: false), small.ViewerHelp);
     }
 
     [Fact]

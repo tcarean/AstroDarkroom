@@ -357,7 +357,7 @@ namespace AstroPhotoAnalyzer
             "profilul nu arata corect cat de negru tipareste hartia (tabela A2B1 nu da un negru intre 0 si albul hartiei); profilul e probabil stricat");
     }
 
-    /// <summary>The proof of a reduced image: the proofed image, and how it was made.</summary>
+    /// <summary>The proof of an image: the proofed image, and how it was made.</summary>
     internal sealed record SoftProofResult
     {
         /// <summary>The proofed image, three planes, encoded sRGB 0..1.</summary>
@@ -404,7 +404,7 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         /// <param name="p">The profile the table belongs to.</param>
         /// <param name="t">The table of the intent; one with a Problem is refused.</param>
-        /// <param name="img">The image, 0..1, already reduced.</param>
+        /// <param name="img">The image, 0..1: whole, or already reduced when it is over the limit of R-188.</param>
         /// <param name="simulate">Whether the paper's white and black are shown as they are.</param>
         /// <returns>The proofed image.</returns>
         internal static SoftProofResult Render(ProofProfile p, ProofTable t, Raster img, bool simulate)

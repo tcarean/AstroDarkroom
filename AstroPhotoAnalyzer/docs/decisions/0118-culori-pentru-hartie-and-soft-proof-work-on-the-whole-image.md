@@ -25,8 +25,10 @@ Consequences), and the owner chose the whole image, with the two choices below.
    12 s on the reference FITS, with "computing" shown meanwhile, and no recompute for a larger
    area. Its bitmaps and red layers are made on the computation's thread, since on the window's
    they would hold it for 0.9 s.
-3. Nothing is enlarged to fill the area: an image smaller than it stays at its own size, and
-   one reduced past the cap still has at least 16 MP.
+3. In Culori pentru hartie nothing is enlarged to fill the area: an image smaller than it
+   stays at its own size, and one reduced past the cap still has at least 16 MP. Soft proof
+   keeps its own rule, which this decision does not touch: its image is fitted to the area,
+   enlarged too when it is smaller (R-163).
 4. Editare Curbe and Crop with aspect ratio keep their reduced copies and ADR 0084's rules:
    the owner asked about the two tabs where colour is judged pixel by pixel.
 5. The fit's computation starts when the soft proof's has ended, not beside it as ADR 0051 had
@@ -64,9 +66,13 @@ Consequences), and the owner chose the whole image, with the two choices below.
   `GamutFitTests`, `GamutFitTabTests` and `SoftProofTabTests` that the images shown have the
   image's size and that the sentences call it a copy only when it is reduced; `GamutFitTabTests`
   also that the fit waits for the task it is handed and is abandoned while it waits, and, through
-  `MainViewModel`, that the fit's run starts after the proof was rendered (decision 5). The
-  reduced path itself is checked only by its step and its sentences: no test builds an image
-  over 64 MP.
+  `MainViewModel`, that the fit's run starts after the proof was rendered (decision 5), and, on
+  the window's own thread, that the gallery's bitmaps are made on another (the thread of the
+  tab's "gallery prepared" log line). No test builds an image over 64 MP: the runs and the two
+  tabs take the cap as an argument (`maxPixels`, `MaxPixels`), `WholeImageMaxPixels` by
+  default, and the tests lower it, so a small frame is proofed and fitted as a reduced copy,
+  with its mask, its bitmaps and its sentences; a fit test on a frame 3200 pixels wide tells the
+  whole image from the step the 1600 x 900 area gave it before.
 - Measured 2026-11-21 on the plate-solved FITS (5837 x 3867, 22.6 MP) through the lab's baryta
   profile (`Hahnemuhle PRBaryta.icm`), a scratchpad program over the branch's core and window
   assemblies, 8 logical cores, one run each; the memory is the process's private bytes after a

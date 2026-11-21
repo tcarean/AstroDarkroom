@@ -694,6 +694,46 @@ public class GamutFitTests
         Assert.EndsWith("Imaginea de aici e o copie micsorata; programul presupune ca pixelii sunt sRGB.", GamutFitTexts.Note(reduced: true));
     }
 
+    [Fact]
+    public void R188_AFrameWiderThanAnyAreaIsFittedWholeAndOverTheCapOnItsReduction()
+    {
+        using var ws = new TempWorkspace();
+        string icc = ws.WriteFile("hartie.icc", IccPrinterTestData.V2Lut16("Hartie de test", 20));
+        Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(icc, out string error) ?? throw new Exception(error);
+        // 3200 pixels wide: until R-188 the gallery's area (1600 x 900 before the tab is shown)
+        // had this frame taken at every second pixel, 1600 wide.
+        Raster wide = SyntheticRasters.From(64, 3200, 3, (x, y, c) => x < 1600 ? (c == 0 ? 0.6f : 0.2f) : 0.3f);
+        AnalysisResult a = AnalysisRun.Execute(wide, "memorie", p);
+
+        GamutFitSet whole = GamutFitRun.Execute(a);
+        Assert.Null(whole.Problem);
+        Assert.Equal(1, whole.Stride);
+        Assert.Equal(3200, whole.OriginalPreview.W);
+        Assert.Equal(64, whole.OriginalPreview.H);
+        Assert.All(whole.Variants, v => Assert.Equal(3200, v.Preview.W));
+        // The saturated half is outside on the original, and its mask is the image's own.
+        Assert.Equal(3200 * 64, whole.OriginalOutside.Length);
+        Assert.True(whole.OriginalOutside[10]);
+        Assert.False(whole.OriginalOutside[3190]);
+
+        // The cap lowered so that this frame is over it: 204 800 pixels, a step of 2 leaves
+        // 1600 x 32, and the previews and the masks are the reduction's.
+        GamutFitSet reduced = GamutFitRun.Execute(a, maxPixels: 100_000);
+        Assert.Null(reduced.Problem);
+        Assert.Equal(2, reduced.Stride);
+        Assert.Equal(1600, reduced.OriginalPreview.W);
+        Assert.Equal(32, reduced.OriginalPreview.H);
+        Assert.Equal(1600 * 32, reduced.OriginalOutside.Length);
+        Assert.All(reduced.Variants, v =>
+        {
+            Assert.Equal(1600, v.Preview.W);
+            Assert.Equal(32, v.Preview.H);
+            Assert.Equal(1600 * 32, v.Outside.Length);
+        });
+        // The evidence is measured on the tonal subsample either way: the step does not move it.
+        Assert.Equal(whole.Variants[0].Evidence.PctOutsideBefore, reduced.Variants[0].Evidence.PctOutsideBefore);
+    }
+
     static Dictionary<ushort, (ushort Type, uint Count, uint Value, int Offset)> ReadTags(byte[] b)
     {
         int ifd = BitConverter.ToInt32(b, 4);

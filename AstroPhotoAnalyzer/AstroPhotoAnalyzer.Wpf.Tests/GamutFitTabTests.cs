@@ -177,7 +177,48 @@ public class GamutFitTabTests
         // An image over WholeImageMaxPixels is a reduced copy, and both sentences say it.
         Assert.Contains("un pixel al copiei devine", GamutFitTabViewModel.ViewerHelpFor(reduced: true));
         Assert.Equal(tab.ViewerHelp, GamutFitTabViewModel.ViewerHelpFor(reduced: false));
+
+        // The same frame with the cap lowered under its 49 152 pixels: a step of 2, 128 x 96,
+        // and the tab says it shows a reduced copy.
+        var small = new GamutFitTabViewModel { MaxPixels = 20_000 };
+        small.Populate(result);
+        small.Compute();
+        Assert.True(small.HasGallery, small.Message);
+        Assert.True(small.IsReducedCopy);
+        foreach (GamutFitGalleryItem i in small.Items.Append(small.Before!))
+        {
+            Assert.Equal(w / 2, i.Width);
+            Assert.Equal(h / 2, i.Height);
+            Assert.Equal(w / 2, i.Image.PixelWidth);
+        }
+        Assert.Equal(w / 2, small.Before!.Overlay!.PixelWidth);
+        Assert.Equal(GamutFitTexts.Note(reduced: true), small.Note);
+        Assert.Equal(GamutFitTabViewModel.ViewerHelpFor(reduced: true), small.ViewerHelp);
+        // Another image leaves the copy's wording behind until its own gallery says otherwise.
+        small.Populate(result);
+        Assert.False(small.IsReducedCopy);
+        Assert.Equal(GamutFitTexts.Note(reduced: false), small.Note);
     }
+
+    [Fact]
+    public Task R188_TheGallerysBitmapsAreMadeOffTheWindowsThread()
+        => _sta.InvokeAsync(async () =>
+        {
+            using var ws = new TempWorkspace();
+            using LogCapture capture = LogCapture.Start();
+            int window = Environment.CurrentManagedThreadId;
+            var tab = new GamutFitTabViewModel();
+            tab.Populate(Result(ws, withProfile: true));
+            await tab.ComputeAsync();
+            // The gallery was taken here, on the window's thread, where the await came back ...
+            Assert.Equal(window, Environment.CurrentManagedThreadId);
+            Assert.True(tab.HasGallery, tab.Message);
+            // ... and its bitmaps were made on another: the thread of the line that says so,
+            // which the log's layout writes as [process:thread].
+            LogCapture.Captured prepared = Assert.Single(capture.Events, e => e.Logger == "Window.GamutFit" && e.Message.StartsWith("gallery prepared: 4 images of 256x192 in "));
+            Assert.Matches(@"\[\d+:\d+\]", prepared.Line);
+            Assert.DoesNotContain($":{window}]", prepared.Line);
+        });
 
     [Fact]
     public async Task R188_TheFitStartsOnlyWhenTheComputationBeforeItHasEnded()
@@ -211,6 +252,18 @@ public class GamutFitTabTests
         Assert.Single(capture.Messages, m => m.StartsWith("gamutfit start"));
         Assert.False(tab.HasGallery);
         Assert.False(tab.IsBusy);
+
+        // The synchronous computation supersedes a wait too, and leaves the tab not busy.
+        var pending = new TaskCompletionSource();
+        Task waiting = tab.ComputeAfterAsync(pending.Task);
+        Assert.True(tab.IsBusy);
+        tab.Compute();
+        Assert.False(tab.IsBusy);
+        Assert.True(tab.HasGallery, tab.Message);
+        pending.SetResult();
+        await waiting;
+        Assert.False(tab.IsBusy);
+        Assert.True(tab.HasGallery);
     }
 
     [Fact]

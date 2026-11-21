@@ -118,6 +118,12 @@ namespace AstroPhotoAnalyzer.Wpf
         // start a render of its own, which would supersede it; the comparison renders it after.
         bool _comparePending;
 
+        /// <summary>
+        /// The most pixels of an image the core takes whole, handed to ProofRun: the core's own
+        /// limit (R-188) unless a test lowers it to reach a reduced copy with a small frame.
+        /// </summary>
+        internal int MaxPixels { get; init; } = Thresholds.WholeImageMaxPixels;
+
         ProofIntent _intent = ProofIntent.Perceptual;
         bool _showPaper, _showOriginal;
         ProofMarginChoice _margin = ProofMarginChoice.PaperWhite;
@@ -445,7 +451,7 @@ namespace AstroPhotoAnalyzer.Wpf
             _run++;
             // A computation in flight is superseded: its finally will not touch these.
             IsBusy = false; Message = null; IsProblem = false;
-            Show(Prepare(_result, _intent, _otherPath));
+            Show(Prepare(_result, _intent, _otherPath, MaxPixels));
         }
 
         /// <summary>
@@ -467,7 +473,7 @@ namespace AstroPhotoAnalyzer.Wpf
             IsBusy = true; IsProblem = false; Message = ProofTexts.Computing;
             try
             {
-                Outcome outcome = await Task.Run(() => Prepare(result, intent, otherPath));
+                Outcome outcome = await Task.Run(() => Prepare(result, intent, otherPath, MaxPixels));
                 if (run != _run)
                 {
                     Log.Debug("computation " + LogText.Int(run) + " ended after a newer one started; nothing is shown");
@@ -558,10 +564,11 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <param name="result">The analysis.</param>
         /// <param name="intent">The intent to render.</param>
         /// <param name="otherPath">The file of the comparison to proof again; null without one.</param>
+        /// <param name="maxPixels">The most pixels the core takes whole (<see cref="MaxPixels"/>).</param>
         /// <returns>The outcome; without a proof and bitmaps when the set has a problem, and then without the other image.</returns>
-        static Outcome Prepare(AnalysisResult result, ProofIntent intent, string otherPath)
+        static Outcome Prepare(AnalysisResult result, ProofIntent intent, string otherPath, int maxPixels)
         {
-            ProofSet set = ProofRun.Prepare(result);
+            ProofSet set = ProofRun.Prepare(result, maxPixels);
             if (set.Problem != null) return new Outcome(new Side(set, null, null, null, null), null);
             return new Outcome(Render(set, intent, null, null), otherPath == null ? null : PrepareOther(set, otherPath, intent));
         }

@@ -213,6 +213,35 @@ public class SoftProofTests
         Assert.Equal(2401, ProofRun.Render(set, ProofIntent.Perceptual, simulate: true).Image.W);
     }
 
+    [Fact]
+    public void R188_AnImageOverTheCapIsProofedOnItsReductionAndSoIsTheOneItIsComparedWith()
+    {
+        using var ws = new TempWorkspace();
+        Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(Profile(ws), out string error) ?? throw new Exception(error);
+        // The cap lowered so that a small frame is over it: 2401 x 64 is 153 664 pixels, and a
+        // step of 2 leaves 1201 x 32.
+        const int cap = 100_000;
+        Raster wide = SyntheticRasters.Flat(64, 2401, 0.3f);
+        ProofSet set = ProofRun.Prepare(AnalysisRun.Execute(wide, "memorie", p), cap);
+        Assert.Null(set.Problem);
+        Assert.Equal(2, set.Stride);
+        Assert.Equal(1201, set.Reduced.W);
+        Assert.Equal(32, set.Reduced.H);
+        Assert.Equal(1201 * 32, set.PaperOutside.Length);   // the mask is the reduction's
+        Assert.Equal(2401, set.SourceW);                    // and the image's own size is kept
+        Assert.Equal(64, set.SourceH);
+        SoftProofResult proof = ProofRun.Render(set, ProofIntent.Perceptual, simulate: true);
+        Assert.Equal(1201, proof.Image.W);
+        Assert.Equal(32, proof.Image.H);
+
+        // The other image of a comparison is taken at the first one's step, so the sides line up.
+        ProofSet other = ProofRun.PrepareOther(set, SyntheticRasters.Flat(64, 2401, 0.5f), "alta");
+        Assert.Null(other.Problem);
+        Assert.Equal(2, other.Stride);
+        Assert.Equal(1201, other.Reduced.W);
+        Assert.Equal(1201 * 32, other.PaperOutside.Length);
+    }
+
     [Theory]
     [InlineData(5837, 3867, 1)]     // the plate-solved FITS, 22.6 MP
     [InlineData(8000, 8000, 1)]     // exactly WholeImageMaxPixels

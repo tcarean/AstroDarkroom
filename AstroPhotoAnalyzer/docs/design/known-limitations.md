@@ -229,12 +229,16 @@
   proof is shown about 3 s after the analysis and the fit, which waits for it, about 16 s after
   (the tab shows "computing" until then); the two tabs then hold some 30 MB for each megapixel,
   and while the runs last about 115 MB for each are needed, 2.6 GB on that image and about
-  7 GB on one at the limit; a comparison in Soft proof holds the second image too. An image
+  7 GB on one at the limit. Those are that image's figures through the baryta profile, where
+  the fit leaves nothing outside: a variant with pixels still outside holds a red layer of its
+  own, 4 bytes a pixel, and the fit's table keeps what it learnt of the colours near the
+  paper's edge for the save. The proof's red layer is made even when nothing is outside. A
+  comparison in Soft proof holds the second image too. An image
   over `WholeImageMaxPixels` (64 MP) is still shown as a reduced copy, and the texts under it
   say so. How smoothly the window zooms and pans bitmaps of that size was not measured.
 - A fit's computation that another analysis overtakes (Analyse pressed again, another image
-  opened while it runs) is not stopped: its result is dropped when it ends, but until then it
-  runs beside the new one, each with its own rasters (ADR 0084 chose not to cancel; on the
+  opened while it runs) is not stopped, and neither is the proof's: its result is dropped when
+  it ends, but until then it runs beside the new one, each with its own rasters (ADR 0084 chose not to cancel; on the
   whole image that is about 12 s and 0.9 GB, where it was 2 s and 0.1 GB). One still waiting
   for the proof is abandoned before it starts.
 - The paper fit never moves a tone: a pixel whose tone itself is out of the paper's reach (its

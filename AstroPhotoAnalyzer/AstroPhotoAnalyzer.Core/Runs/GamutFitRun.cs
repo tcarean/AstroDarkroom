@@ -119,11 +119,15 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         /// <param name="a">The analysis, with its raster and parameters.</param>
         /// <param name="progress">Told each stage as it starts; null for none.</param>
+        /// <param name="maxPixels">
+        /// The most pixels of an image taken whole (<see cref="RasterOps.WholeImageStride"/>):
+        /// the window leaves the default; the tests lower it to reach a reduced copy.
+        /// </param>
         /// <returns>The set; with Problem set and nothing else when there is no profile or it cannot be used.</returns>
-        internal static GamutFitSet Execute(AnalysisResult a, IProgress<string> progress = null)
+        internal static GamutFitSet Execute(AnalysisResult a, IProgress<string> progress = null, int maxPixels = Thresholds.WholeImageMaxPixels)
         {
             Parameters prm = a.Parameters;
-            int stride = RasterOps.WholeImageStride(a.Raster.W, a.Raster.H);
+            int stride = RasterOps.WholeImageStride(a.Raster.W, a.Raster.H, maxPixels);
             string path = prm.DmaxProfile != null && prm.DmaxOverride.HasValue ? prm.DmaxProfilePath : null;
             using RunClock clock = RunClock.Start(Log, "gamutfit", "path=" + LogText.Str(a.Path) + " profile=" + LogText.Str(path)
                 + " stride=" + LogText.Int(stride));
