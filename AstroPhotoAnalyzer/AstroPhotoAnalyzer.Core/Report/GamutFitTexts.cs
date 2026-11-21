@@ -142,9 +142,17 @@ namespace AstroPhotoAnalyzer
         internal static string Description(GamutFitVariant v, string profile)
             => Tr.Pick($"{VersionInfo.Banner}: colours fitted to the paper ({v.Name}, {profile})", $"{VersionInfo.Banner}: culori potrivite pentru hartie ({v.Name}, {profile})");
 
-        /// <summary>The note under the gallery: what the fit does and does not do.</summary>
-        internal static string Note => Tr.Pick(
-            "The fit lowers the saturation of the colours the paper cannot reproduce, each along its own hue and at its own tone; it never changes a tone or a hue. A tone too dark for the paper stays dark: lift the background when you redo the stretch (the Tones tab). The image here is a reduced copy; the program assumes the pixels are sRGB.",
-            "Potrivirea scade saturatia culorilor pe care hartia nu le poate reda, fiecare pe nuanta ei si la tonul ei; nu schimba niciodata un ton sau o nuanta. Un ton prea inchis pentru hartie ramane inchis: ridica fundalul cand refaci stretch-ul (tabul Tonuri). Imaginea de aici e o copie micsorata; programul presupune ca pixelii sunt sRGB.");
+        /// <summary>
+        /// The note under the gallery: what the fit does and does not do, and, for an image over
+        /// Thresholds.WholeImageMaxPixels alone, that the one shown is a reduced copy (R-188).
+        /// </summary>
+        /// <param name="reduced">Whether the gallery shows a reduced copy and not the whole image.</param>
+        /// <returns>The note, in the interface language.</returns>
+        internal static string Note(bool reduced) => Tr.Pick(
+            "The fit lowers the saturation of the colours the paper cannot reproduce, each along its own hue and at its own tone; it never changes a tone or a hue. A tone too dark for the paper stays dark: lift the background when you redo the stretch (the Tones tab). ",
+            "Potrivirea scade saturatia culorilor pe care hartia nu le poate reda, fiecare pe nuanta ei si la tonul ei; nu schimba niciodata un ton sau o nuanta. Un ton prea inchis pentru hartie ramane inchis: ridica fundalul cand refaci stretch-ul (tabul Tonuri). ")
+            + (reduced
+                ? Tr.Pick("The image here is a reduced copy; the program assumes the pixels are sRGB.", "Imaginea de aici e o copie micsorata; programul presupune ca pixelii sunt sRGB.")
+                : Tr.Pick("The program assumes the pixels are sRGB.", "Programul presupune ca pixelii sunt sRGB."));
     }
 }

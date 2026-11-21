@@ -101,8 +101,9 @@ caller (`paper-fit.md`). The run is timed by a `RunClock`
 `ProofRun.Prepare(AnalysisResult)` and `ProofRun.Render(set, intent, simulate)` are the soft
 proof's run, started by the window beside the curves' once the tabs are filled and again on a
 change of intent or of the simulation; the console never calls it. Prepare opens the profile the
-Dmax came from, reduces the image to `ProofMaxSide` and marks the pixels outside the paper's
-gamut once (the rule of R-144); Render proofs the reduction through the intent's table, built on
+Dmax came from, takes the image whole (reduced only over `WholeImageMaxPixels`, R-188) and
+marks the pixels outside the paper's gamut once (the rule of R-144); Render proofs that image
+through the intent's table, built on
 its first use and kept on the profile. The chain itself is in `soft-proof.md`. Prepare is timed
 by a `RunClock` (`profile`, `gamut`, `mask`), Render writes one Debug line per render.
 
@@ -115,12 +116,11 @@ exports; the console never calls them. Described in `crop.md`.
 
 ### The fourth run (`Runs/GamutFitRun.cs`, ADR 0083)
 
-`GamutFitRun.Execute(AnalysisResult, maxWidth, maxHeight)` is the paper fit's run, started by the
-window beside the other two once the tabs are filled and again when the tab's area allows a
-finer preview (ADR 0084); the console
+`GamutFitRun.Execute(AnalysisResult)` is the paper fit's run, started by the
+window once the tabs are filled, after the soft proof's has ended, once per image (ADR 0118); the console
 never calls it. It builds the gamut table of the profile the Dmax came from, the fit's table of
-the largest chroma over L\* and hue from it, then the three variants on the gallery's reduction
-(their previews and masks) and on the tonal subsample (their evidence), and the recipe. The save
+the largest chroma over L\* and hue from it, then the three variants on the whole image
+(their previews and masks; on its reduction only over `WholeImageMaxPixels`, R-188) and on the tonal subsample (their evidence), and the recipe. The save
 of a variant, `GamutFitExport.Save`, fits the whole image and writes a FITS or a 16-bit TIFF
 under `CurveExport.Guarded`. The chain itself is in `paper-fit.md`. The run is timed by a
 `RunClock` (`profile`, `table`, each variant, `recipe`).

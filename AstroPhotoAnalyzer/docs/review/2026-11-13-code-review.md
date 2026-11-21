@@ -1228,6 +1228,9 @@ today; each goes wrong the day its constant or its rule moves, and no test would
 - Should: a cap of one screen pixel per image pixel, or the same caveat.
 - Test: the tab tests run at 96 dpi.
 - Evidence: confirmed (arithmetic; a run at 150 % with a small image shows it).
+- Since R-188 (ADR 0118, 2026-11-21) the paper fit's view reports no area (its
+  `GallerySizeChanged` is gone) and its sentence carries the caveat about display scaling;
+  the entry stands for Editare Curbe and for `FitScaleFor`.
 - Status: open
 
 ### CR-058 The curve window opens taller than the screen at 150 % and on a 768-line laptop
@@ -1284,6 +1287,8 @@ today; each goes wrong the day its constant or its rule moves, and no test would
   in a null `Current`.
 - Should: R-146, "the one on screen staying until the new one is there".
 - Evidence: confirmed (what the catch does; that a recompute fails on real images is not shown).
+- Since R-188 (ADR 0118, 2026-11-21) the paper fit computes once per image and never again
+  for a larger area, so its half of the case is gone; the entry stands for Editare Curbe.
 - Status: open
 
 ### CR-062 A relative path on the window's command line stays relative

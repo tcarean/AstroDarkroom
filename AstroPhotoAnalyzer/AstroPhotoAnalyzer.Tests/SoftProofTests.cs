@@ -199,14 +199,80 @@ public class SoftProofTests
     }
 
     [Fact]
-    public void R160_TheProofIsMadeOnAReductionWithinProofMaxSide()
+    public void R188_TheProofIsMadeOnTheWholeImage()
     {
         using var ws = new TempWorkspace();
         Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(Profile(ws), out string error) ?? throw new Exception(error);
-        Raster wide = SyntheticRasters.Flat(64, Thresholds.ProofMaxSide + 1, 0.3f);
+        // One pixel wider than the 2400 the proof was reduced to until R-188.
+        Raster wide = SyntheticRasters.Flat(64, 2401, 0.3f);
         ProofSet set = ProofRun.Prepare(AnalysisRun.Execute(wide, "memorie", p));
-        Assert.Equal((Thresholds.ProofMaxSide + 1) / 2 + 1, set.Reduced.W);   // stride 2
+        Assert.Equal(1, set.Stride);
+        Assert.Equal(2401, set.Reduced.W);
+        Assert.Equal(64, set.Reduced.H);
+        Assert.Equal(2401 * 64, set.PaperOutside.Length);
+        Assert.Equal(2401, ProofRun.Render(set, ProofIntent.Perceptual, simulate: true).Image.W);
+    }
+
+    [Fact]
+    public void R188_AnImageOverTheCapIsProofedOnItsReductionAndSoIsTheOneItIsComparedWith()
+    {
+        using var ws = new TempWorkspace();
+        Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(Profile(ws), out string error) ?? throw new Exception(error);
+        // The cap lowered so that a small frame is over it: 2401 x 64 is 153 664 pixels, and a
+        // step of 2 leaves 1201 x 32. The left part is saturated, which this paper cannot hold;
+        // its edge is at an odd column and moves by 20 every second row, so a reduction taken
+        // one pixel off, or with its rows mixed, gives another mask.
+        const int cap = 100_000;
+        Raster wide = SyntheticRasters.From(64, 2401, 3, (x, y, c) => x < 1201 + 20 * (y / 2 % 2) ? (c == 0 ? 0.6f : 0.2f) : 0.3f);
+        AnalysisResult analysis = AnalysisRun.Execute(wide, "memorie", p);
+        ProofSet whole = ProofRun.Prepare(analysis);
+        ProofSet set = ProofRun.Prepare(analysis, cap);
+        Assert.Null(set.Problem);
+        Assert.Equal(2, set.Stride);
+        Assert.Equal(1201, set.Reduced.W);
         Assert.Equal(32, set.Reduced.H);
+        Assert.Equal(1201 * 32, set.PaperOutside.Length);   // the mask is the reduction's
+        Assert.Equal(2401, set.SourceW);                    // and the image's own size is kept
+        Assert.Equal(64, set.SourceH);
+        // Pixel for pixel the mask is the whole image's at every second pixel, both kinds in it.
+        Assert.Contains(true, set.PaperOutside);
+        Assert.Contains(false, set.PaperOutside);
+        for (int y = 0; y < 32; y++)
+            for (int x = 0; x < 1201; x++)
+                Assert.True(whole.PaperOutside[2 * y * 2401 + 2 * x] == set.PaperOutside[y * 1201 + x], $"the mask at ({x}, {y}) of the reduction");
+        // The share is the reduction's own: 601 columns of its even rows and 611 of its odd
+        // ones, 50.4579 %, where the whole image has 50.4373 %.
+        Assert.Equal(100.0 * (16 * 601 + 16 * 611) / (1201 * 32), set.PctPaper, 9);
+        Assert.Equal(100.0 * (32 * 1201 + 32 * 1221) / (2401 * 64), whole.PctPaper, 9);
+        SoftProofResult proof = ProofRun.Render(set, ProofIntent.Perceptual, simulate: true);
+        Assert.Equal(1201, proof.Image.W);
+        Assert.Equal(32, proof.Image.H);
+
+        // The other image of a comparison is taken at the first one's step, so the sides line up.
+        // Saturated on the right this time: its mask is its own, not the first image's.
+        Raster mirrored = SyntheticRasters.From(64, 2401, 3, (x, y, c) => x >= 1200 ? (c == 0 ? 0.6f : 0.2f) : 0.3f);
+        ProofSet other = ProofRun.PrepareOther(set, mirrored, "alta");
+        Assert.Null(other.Problem);
+        Assert.Equal(2, other.Stride);
+        Assert.Equal(1201, other.Reduced.W);
+        Assert.Equal(1201 * 32, other.PaperOutside.Length);
+        Assert.False(other.PaperOutside[10]);     // source column 20, grey
+        Assert.True(other.PaperOutside[1190]);    // source column 2380, saturated
+
+        // A cap under one pixel is refused: no step would ever fit.
+        Assert.Throws<ArgumentOutOfRangeException>(() => RasterOps.WholeImageStride(10, 10, 0));
+    }
+
+    [Theory]
+    [InlineData(5837, 3867, 1)]     // the plate-solved FITS, 22.6 MP
+    [InlineData(8000, 8000, 1)]     // exactly WholeImageMaxPixels
+    [InlineData(8001, 8000, 2)]     // one column more
+    [InlineData(10000, 8000, 2)]    // 80 MP: shown at 5000 x 4000
+    [InlineData(20000, 16000, 3)]   // 320 MP: a step of 2 would leave 80 MP
+    public void R188_AnImageOverTheCapIsReducedByTheSmallestWholeStep(int w, int h, int stride)
+    {
+        Assert.Equal(64_000_000, Thresholds.WholeImageMaxPixels);
+        Assert.Equal(stride, RasterOps.WholeImageStride(w, h));
     }
 
     [Fact]

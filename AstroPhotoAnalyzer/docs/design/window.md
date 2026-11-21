@@ -82,7 +82,7 @@ set and readable, no text comparison left: the setter keeps the two in step.
 | `ResolutionTabViewModel` | `Rows` (count, FWHM, effective detail, the five regions as "Latimea stelelor (FWHM) in <region>", corner/centre; each with a `Description` - what it measures, thresholds interpolated from `Thresholds` - except the four corner rows, which the centre row's description covers), `SizeRows` (mono strings from `ReportWriter.SizeTableRow`/`SizeTableFooter`: "*" on the recommended row, or the note on why there is none); a static note under the table states the star rule and the pixel-grid rule (180 dpi in bold); `DpiRows` (mono strings, the dpi - distance reference scale from `DpiLadder`, window only) |
 | `BackgroundTabViewModel` (the Culoare tab) | `Rows` (the background colour per channel, cast metrics; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `RegionRows` (mono strings as in the report, a region measured on every pixel carrying `EdgeRegion.PixelsNote`, except that a flagged region ends in "! colorat" or "! neutru" - "!" alone on mono), `Guide` (`GuideParagraph`s under the table: the zones, the difference from the sky, the "!" mark, coloured vs neutral with the reference image's two corners, black and white) |
 | `SoftProofTabViewModel` (the Soft proof tab, R-163; its full-screen window, R-164) | the intent, the two boxes, the margin, the proof and its warning layer, the core's lines and legend, `FullScreen` (raises `ProofRequested` with the same view-model), the other image of a comparison with its own layer, name and legend (`CompareAsync`, `StopComparing`; R-166); filled by the third run `MainViewModel` starts beside the curves' (`ProofComputation`); the whole area in `soft-proof.md` |
-| `GamutFitTabViewModel` (the Culori pentru hartie tab, R-178, R-179) | the gallery of the three variants of the paper fit (`GamutFitGalleryItem`: the bitmap, the red layer of what is still outside, the evidence rows) and `Before`, the original they are compared with, `ShowOutside` (the box, pushed to every item and to `Before`), `Next`/`Previous`/`SaveAs`, the core's sentences and `ViewerHelp`; filled by the fourth run `MainViewModel` starts beside the curves' and the proof's (`GamutFitComputation`); the whole area in `paper-fit.md` |
+| `GamutFitTabViewModel` (the Culori pentru hartie tab, R-178, R-179) | the gallery of the three variants of the paper fit (`GamutFitGalleryItem`: the bitmap, the red layer of what is still outside, the evidence rows) and `Before`, the original they are compared with, `ShowOutside` (the box, pushed to every item and to `Before`), `Next`/`Previous`/`SaveAs`, the core's sentences and `ViewerHelp`; filled by the fourth run, which `MainViewModel` starts when the proof's has ended (`GamutFitComputation`, ADR 0118); the whole area in `paper-fit.md` |
 
 Tables are pre-aligned mono strings, the same the report writes, rendered with
 `MonoRowTemplate`; the alternative was a template per table for the same text.
@@ -171,10 +171,11 @@ the view shows them, the image's aspect fitted into the area (`CurveRun.PreviewS
 largest step that still covers the fitted size, never over `CurvePreviewMaxPixels`, ADR 0084),
 and the view shrinks them to fit, with the bitmaps scaled at high quality, so the image fills
 the area; only when the core says the preview was held under the cap (`CurveSet.PreviewCapped`,
-`GamutFitSet.PreviewCapped`, the tab's `PreviewCapped`) may the view enlarge it, so an image
+the tab's `PreviewCapped`) may the view enlarge it, so an image
 smaller than the area stays at its own size: in `CurvesView` a `Viewbox` that is `DownOnly`
-unless a style trigger says otherwise, in `GamutFitView` the comparison's `FitEnlarges`
-(`paper-fit.md`). `SetGallerySize`, called at
+unless a style trigger says otherwise. The Culori pentru hartie tab followed the same rule
+until ADR 0118; it now shows the whole image and reports no size (`paper-fit.md`).
+`SetGallerySize`, called at
 every layout pass, compares the step the new size allows with the step the last computation was
 asked for (`_askedWidth` x `_askedHeight`) and runs `ComputeAsync` again by itself when the new
 one is finer (`Computation` holds it for the tests); the gallery shown stays until the new one

@@ -1,7 +1,7 @@
 # 0066. The soft proof is the paper's colour through the profile, on a grid of 65, shown as the paper beside a white
 
 Date: 2026-10-30
-Status: accepted 2026-10-30
+Status: accepted 2026-10-30; the proof made on a reduction to `ProofMaxSide` superseded by 0118
 
 ## Context
 

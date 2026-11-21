@@ -64,6 +64,29 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
+        /// The step at which the Culori pentru hartie and Soft proof tabs take an image of
+        /// <paramref name="w"/> x <paramref name="h"/> pixels (R-188, ADR 0118): 1, the image
+        /// itself, while it has at most <paramref name="maxPixels"/>; over that, the smallest
+        /// whole step whose <see cref="Subsample"/> is within it.
+        /// </summary>
+        /// <param name="w">The image's width, in pixels, 1 or more.</param>
+        /// <param name="h">The image's height, in pixels, 1 or more.</param>
+        /// <param name="maxPixels">
+        /// The most pixels taken whole, 1 or more: <see cref="Thresholds.WholeImageMaxPixels"/>
+        /// for the window; the tests lower it to reach a reduced copy with a small frame.
+        /// </param>
+        /// <returns>The step, 1 or more.</returns>
+        internal static int WholeImageStride(int w, int h, int maxPixels = Thresholds.WholeImageMaxPixels)
+        {
+            // Under 1 no step would ever fit, and the search below would not end.
+            if (maxPixels < 1) throw new ArgumentOutOfRangeException(nameof(maxPixels), maxPixels, "the cap is 1 pixel or more");
+            int stride = 1;
+            // The subsample's own size, rounded up as Subsample rounds it.
+            while ((long)((w + stride - 1) / stride) * ((h + stride - 1) / stride) > maxPixels) stride++;
+            return stride;
+        }
+
+        /// <summary>
         /// The rectangle of a raster as a new raster, its samples copied as they are (R-181).
         /// </summary>
         /// <param name="r">The raster.</param>

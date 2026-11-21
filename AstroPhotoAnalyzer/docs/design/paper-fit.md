@@ -220,19 +220,22 @@ where the rows above it count by the warning.
 
 ## The run (`Runs/GamutFitRun.cs`)
 
-The fourth run after `AnalysisRun`, started by the window beside the curves' and the proof's
-(ADR 0051), never by the console. `Execute(a, maxWidth, maxHeight)`: no profile behind the Dmax
+The fourth run after `AnalysisRun`, started by the window after the analysis without a press
+(ADR 0051), once the proof's has ended (ADR 0118), never by the console. `Execute(a)`: no profile behind the Dmax
 gives `ProofTexts.NoProfile` as the set's `Problem`; `GamutAnalyzer.Build` (the run's own table;
 its `Problem` is the set's); the fit's table from its `ExactLab`, built at the target, with the
-two pairs of judges of the section above; the original reduced to the
-gallery's size (`CurveRun.PreviewStride`) and the tonal subsample (`TonalStride`); for each knee
+two pairs of judges of the section above; the original itself, the set's `Stride` 1, or over
+`WholeImageMaxPixels` its subsample at the smallest step that brings it within
+(`RasterOps.WholeImageStride`, R-188, ADR 0118: whatever area the tab has), and the tonal
+subsample (`TonalStride`); for each knee
 of `Knees` (`GamutFitKneeExact`, `GamutFitKneeSoft`, `GamutFitKneeSofter`) the fit of the
 preview with facts (its image and mask are the gallery's) and of the subsample with facts (its
 figures are the evidence, `GamutFitEvidence.Of`); the recipe on the subsample. Timed by a
 `RunClock` named `gamutfit` (`profile`, `table`, each variant's name, `recipe`),
 each variant's figures at Debug, the done line with the share outside, the fit's target, the
 recipe and the profile's name. The set keeps the table and the variants' knees for the save; the window drops
-the previews once drawn.
+the previews once drawn. On the whole 22.6 MP reference image the run with the tab's bitmaps
+takes about 12 s and holds 0.9 GB while it lasts (ADR 0118).
 
 `GamutFitExport.Save(a, set, v, target)` runs under `CurveExport.Guarded`, the guards of R-145
 lifted out of `CurveExport.Save` so both exports share them (the input gone, the same path, the
@@ -266,16 +269,22 @@ own: nothing copied from anyone's file.
 ## The tab (`ViewModels/GamutFitTab.cs`, `Views/GamutFitView.xaml`)
 
 `GamutFitTabViewModel` is the `CurvesTabViewModel` pattern (`window.md`): `Populate` keeps the
-result, `MainViewModel` starts `ComputeAsync` beside the other two once every tab is filled,
-the tab runs it again by itself when its area allows a finer preview, as the curves tab does
-(ADR 0084; `Compute(w, h)` for the tests, `Computation` to await); the run number
-`_run` makes a late result nobody's, and a recompute keeps the position in the gallery (`Show`
-clamps `_index`, which only `Reset` and a problem put back at the first), so the variant looked
-at stays when a larger area brings finer previews. `Show` makes, once per set, the original's item and one
+result, `MainViewModel` starts `ComputeAfterAsync` once every tab is filled, handing it the soft
+proof's computation: the fit shows "computing" at once and starts the core when the proof has
+ended, since started together the two take every core from each other (ADR 0118: the proof
+shown after 9.5 to 14.5 s for 3.2 s, the fit after 18 s for 15 s); another image opened while
+it waits abandons it before the core starts. Once per image: the images are the whole image whatever the tab's area, so the view reports no
+size and nothing is computed again (R-188, ADR 0118; `Compute()` for the tests, `Computation`
+to await); the run number `_run` makes a late result nobody's. `Prepare` makes, once per set and
+on the computation's thread (0.9 s on the window's would hold it), the original's item and one
 item per variant: the bitmap (`RasterBitmaps.Region`) and the red layer (`RasterBitmaps.Overlay`
 over the set's mask, the soft proof's half-transparent red; null when nothing is outside), and,
 for a variant, the evidence rows from `GamutFitTexts.EvidenceRows`, with the variant kept
-without its preview, so the rasters are dropped once drawn. The original is no position of the
+without its preview, so the rasters are dropped once drawn; `Show`, on the window's thread,
+only takes that `Gallery`; for a set without a problem `Prepare` ends with a Debug line, "gallery prepared", whose thread
+is the one that made the bitmaps. `IsReducedCopy` (the set's `Stride` over 1) words the core's
+note and the tab's `ViewerHelp`. `MaxPixels`, the cap the tab hands the run, is
+`WholeImageMaxPixels` unless a test lowers it. The original is no position of the
 gallery (ADR 0090): `Items` holds the three variants and `Before` the original, the same object
 whatever variant is shown, with no evidence of its own, since every variant's rows hold its
 share. The box `ShowOutside`, on by default and back on at `Reset` (ADR 0084), is pushed to
@@ -331,7 +340,6 @@ progress, puts the line back in the middle and the viewer back at the fit (by it
 resets only for a child of another size, so two images of the same size would share a zoom); another variant replaces `After` without passing through null and
 keeps it.
 
-`FitEnlarges` is bound to `PreviewCapped`: false keeps an image smaller than the area at its own
-size, the rule the `Viewbox`'s `DownOnly` held before the comparison (ADR 0084). A recompute for
-a larger area changes the child's size, so the viewer goes back to the fit (R-163); the line
-stays where it was put.
+`FitEnlarges` is false in `GamutFitView`: an image smaller than the area stays at its own size
+and nothing is enlarged to fill it (R-188; until ADR 0118 it followed a preview held under its
+cap).

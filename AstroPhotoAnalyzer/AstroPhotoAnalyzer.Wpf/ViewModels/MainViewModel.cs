@@ -185,8 +185,10 @@ namespace AstroPhotoAnalyzer.Wpf
         internal Task ProofComputation { get; private set; } = Task.CompletedTask;
 
         /// <summary>
-        /// The paper fit's computation the last run started (R-178), started beside the other
-        /// two; completed before the first run and after one that failed.
+        /// The paper fit's computation the last run started (R-178), which waits for the soft
+        /// proof's and then runs (R-188); completed before the first run. A run that fails or is
+        /// refused starts none: this stays the task of the run before it, which ends by itself,
+        /// its wait abandoned or its result dropped.
         /// </summary>
         internal Task GamutFitComputation { get; private set; } = Task.CompletedTask;
 
@@ -348,8 +350,10 @@ namespace AstroPhotoAnalyzer.Wpf
                 CurvesComputation = Curves.ComputeAsync();
                 // The soft proof too (R-163, ADR 0066): its own run, independent of the curves'.
                 ProofComputation = SoftProof.ComputeAsync();
-                // And the paper fit (R-178, ADR 0083): its own run as well.
-                GamutFitComputation = GamutFit.ComputeAsync();
+                // And the paper fit (R-178, ADR 0083): its own run as well, started when the
+                // proof is shown and not beside it, since both work on the whole image and each
+                // wants every core (R-188, ADR 0118).
+                GamutFitComputation = GamutFit.ComputeAfterAsync(ProofComputation);
             }
             catch (RefusedImageException e)
             {

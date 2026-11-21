@@ -492,7 +492,7 @@ public class GamutFitTests
         Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(icc, out string error) ?? throw new Exception(error);
         AnalysisResult analysis = AnalysisRun.Execute(input, p);
 
-        GamutFitSet set = GamutFitRun.Execute(analysis, 200, 150);
+        GamutFitSet set = GamutFitRun.Execute(analysis);
 
         Assert.Null(set.Problem);
         Assert.Equal(Thresholds.GamutFitTargetDeltaE, set.Table.Limit);
@@ -628,7 +628,7 @@ public class GamutFitTests
             bitpix: -32, extraCards: new[] { FitsTestData.StringCard("OBJECT", "M8") }));
         Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(icc, out string error) ?? throw new Exception(error);
         AnalysisResult a = AnalysisRun.Execute(input, p);
-        GamutFitSet set = GamutFitRun.Execute(a, 200, 150);
+        GamutFitSet set = GamutFitRun.Execute(a);
         Assert.Null(set.Problem);
         Assert.Equal(new[] { "Exacta", "Lina", "Foarte lina" }, set.Variants.Select(v => v.Name).ToArray());
         GamutFitVariant v = set.Variants[0];
@@ -663,6 +663,86 @@ public class GamutFitTests
         // The proposed name carries the input's kind.
         Assert.Equal("nebuloasa_Exacta.fit", GamutFitTexts.ProposedFileName(input, v.Name));
         Assert.Equal("poza_Lina.tif", GamutFitTexts.ProposedFileName(@"C:\x\poza.tif", "Lina"));
+    }
+
+    [Fact]
+    public void R188_TheFitsImagesAreTheWholeImageAndTheNoteCallsItACopyOnlyWhenReduced()
+    {
+        using var ws = new TempWorkspace();
+        string icc = ws.WriteFile("hartie.icc", IccPrinterTestData.V2Lut16("Hartie de test", 20));
+        string input = ws.WriteFile("nebuloasa.fit", FitsTestData.Build(96, 64, 3, (x, y, c) => x < 48 ? (c == 0 ? 0.6 : 0.2) : 0.3, bitpix: -32));
+        Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(icc, out string error) ?? throw new Exception(error);
+
+        // No area is asked: the images are the image's own size.
+        GamutFitSet set = GamutFitRun.Execute(AnalysisRun.Execute(input, p));
+
+        Assert.Null(set.Problem);
+        Assert.Equal(1, set.Stride);
+        Assert.Equal(96, set.OriginalPreview.W);
+        Assert.Equal(64, set.OriginalPreview.H);
+        Assert.Equal(96 * 64, set.OriginalOutside.Length);
+        Assert.All(set.Variants, v =>
+        {
+            Assert.Equal(96, v.Preview.W);
+            Assert.Equal(64, v.Preview.H);
+            Assert.Equal(96 * 64, v.Outside.Length);
+        });
+
+        // The note under the gallery: a whole image is not called a copy.
+        Assert.EndsWith("(tabul Tonuri). Programul presupune ca pixelii sunt sRGB.", GamutFitTexts.Note(reduced: false));
+        Assert.DoesNotContain("copie", GamutFitTexts.Note(reduced: false));
+        Assert.EndsWith("Imaginea de aici e o copie micsorata; programul presupune ca pixelii sunt sRGB.", GamutFitTexts.Note(reduced: true));
+    }
+
+    [Fact]
+    public void R188_AFrameWiderThanAnyAreaIsFittedWholeAndOverTheCapOnItsReduction()
+    {
+        using var ws = new TempWorkspace();
+        string icc = ws.WriteFile("hartie.icc", IccPrinterTestData.V2Lut16("Hartie de test", 20));
+        Parameters p = Scenes.OnBuiltForPaper().WithDmaxFromProfile(icc, out string error) ?? throw new Exception(error);
+        // 3200 pixels wide: until R-188 the gallery's area (1600 x 900 before the tab is shown)
+        // had this frame taken at every second pixel, 1600 wide.
+        // The saturated part's edge is at an odd column and moves by 20 every second row, so a
+        // reduction taken one pixel off, or with its rows mixed, gives another mask and image.
+        Raster wide = SyntheticRasters.From(64, 3200, 3, (x, y, c) => x < 1601 + 20 * (y / 2 % 2) ? (c == 0 ? 0.6f : 0.2f) : 0.3f);
+        AnalysisResult a = AnalysisRun.Execute(wide, "memorie", p);
+
+        GamutFitSet whole = GamutFitRun.Execute(a);
+        Assert.Null(whole.Problem);
+        Assert.Equal(1, whole.Stride);
+        Assert.Equal(3200, whole.OriginalPreview.W);
+        Assert.Equal(64, whole.OriginalPreview.H);
+        Assert.All(whole.Variants, v => Assert.Equal(3200, v.Preview.W));
+        // The saturated half is outside on the original, and its mask is the image's own.
+        Assert.Equal(3200 * 64, whole.OriginalOutside.Length);
+        Assert.True(whole.OriginalOutside[10]);
+        Assert.False(whole.OriginalOutside[3190]);
+
+        // The cap lowered so that this frame is over it: 204 800 pixels, a step of 2 leaves
+        // 1600 x 32, and the previews and the masks are the reduction's.
+        GamutFitSet reduced = GamutFitRun.Execute(a, maxPixels: 100_000);
+        Assert.Null(reduced.Problem);
+        Assert.Equal(2, reduced.Stride);
+        Assert.Equal(1600, reduced.OriginalPreview.W);
+        Assert.Equal(32, reduced.OriginalPreview.H);
+        Assert.Equal(1600 * 32, reduced.OriginalOutside.Length);
+        Assert.All(reduced.Variants, v =>
+        {
+            Assert.Equal(1600, v.Preview.W);
+            Assert.Equal(32, v.Preview.H);
+            Assert.Equal(1600 * 32, v.Outside.Length);
+        });
+        // Pixel for pixel the reduction's mask and its fitted image are the whole image's at
+        // every second pixel.
+        Raster wholeFit = whole.Variants[0].Preview, reducedFit = reduced.Variants[0].Preview;
+        for (int y = 0; y < 32; y++)
+            for (int x = 0; x < 1600; x++)
+            {
+                Assert.True(whole.OriginalOutside[2 * y * 3200 + 2 * x] == reduced.OriginalOutside[y * 1600 + x], $"the mask at ({x}, {y}) of the reduction");
+                Assert.True(wholeFit.Planes[0][2 * y * 3200 + 2 * x] == reducedFit.Planes[0][y * 1600 + x], $"the fitted red at ({x}, {y}) of the reduction");
+            }
+        Assert.True(reduced.OriginalOutside[10]);      // source column 20, saturated
+        Assert.False(reduced.OriginalOutside[1590]);   // source column 3180, grey
     }
 
     static Dictionary<ushort, (ushort Type, uint Count, uint Value, int Offset)> ReadTags(byte[] b)

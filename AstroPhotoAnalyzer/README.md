@@ -207,17 +207,18 @@ proof** tab paints in red, the colours the paper cannot reproduce, and lowers th
 each along its own hue and at its own tone, to the most the paper holds there: the tone and the
 hue of every pixel stay what they were. The fit stops a little inside the paper's limit, so the
 colours just under the limit are eased too: that way the gamut warning of other programs,
-Lightroom's for one, has almost nothing left to mark in the saved file. It is computed right
-after the analysis, like the curves.
+Lightroom's for one, has almost nothing left to mark in the saved file. It is computed after
+the analysis without a press, once the soft proof is ready.
 
 - The image is a comparison: left of a vertical line is the image as it is, labelled
   **Before**, right of it the fitted one, labelled **After**. Drag the line, or the handle in
   its middle, to move it across the image; at the left edge only the fitted image is left, at
   the right edge only the original.
-- The mouse wheel zooms around the cursor, up to 8:1 on the reduced copy the tab shows; hold the
-  left button and drag to move the image; a double click fits it again. The two sides zoom and
-  move together, and the line stays where you put it. When the window grows enough for a finer
-  copy, the gallery is made again and the image is shown whole once more.
+- The mouse wheel zooms around the cursor, up to 8:1 on the image itself, so you see its real
+  pixels; hold the left button and drag to move the image; a double click fits it again. The two
+  sides zoom and move together, and the line stays where you put it. The tab works on the whole
+  image, which takes some seconds after the analysis (about 16 on a 23 MP image, the tab saying
+  so meanwhile); only an image over 64 MP is shown as a reduced copy.
 - There are three variants: **Exact** changes only the colours the paper cannot hold, or holds
   just barely, each losing just enough saturation to sit a little inside the paper's limit;
   **Soft** and **Softer** ease the colours near the
@@ -283,8 +284,9 @@ nothing is edited, nothing is written. The proof is computed right after the ana
 
 Under the image: the profile's name, its paper white in L\*a\*b\* (what the image's white
 becomes), its paper black in L\* and Dmax, and the warning's share.
-The pixels and the screen are assumed sRGB, as everywhere in the tool; the proof is a reduced
-copy. The controls keep their state from one image to the next and start afresh with the window.
+The pixels and the screen are assumed sRGB, as everywhere in the tool; the proof is made on
+the whole image, so a zoom shows its real pixels (only an image over 64 MP is shown as a reduced
+copy). The controls keep their state from one image to the next and start afresh with the window.
 
 ### Crop for a frame
 
