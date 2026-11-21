@@ -87,9 +87,9 @@ numbers are those of 2026-11-13; a task finds its lines again by the names the e
 | CR-011 | 3 | common | confirmed | At fit, a rounding residue shows a scrollbar and the minimap's rectangle | fixed 71e02ddd, a8f45631 |
 | CR-012 | 3 | common | owner | The bottom-left corner of the image is always under the minimap at 100 % and above | fixed fb42836a, a8f45631 |
 | CR-013 | 3 | some setups | to measure | On a narrow window the status bar cuts B's read-out before the pair line | fixed 432bcb1a, 08fda5b1 |
-| CR-014 | 3 | slip | to measure | Up or Down on the surface moves the keyboard focus to the toolbar | fixed 7bce108b |
-| CR-015 | 3 | slip | to measure | A right click on a scrollbar thumb opens WPF's own menu: light, English, a page of one pixel | fixed 0f23b15f |
-| CR-016 | 3 | some setups | to measure | The theme has no focus visual: a black dotted line on dark buttons and over the image | fixed 54f50342, 08fda5b1 |
+| CR-014 | 3 | slip | to measure | Up or Down on the surface moves the keyboard focus to the toolbar | fixed 7bce108b, 08fda5b1 |
+| CR-015 | 3 | slip | to measure | A right click on a scrollbar thumb opens WPF's own menu: light, English, a page of one pixel | fixed 0f23b15f, 08fda5b1 |
+| CR-016 | 3 | some setups | to measure | The theme has no focus visual: a black dotted line on dark buttons and over the image | fixed 54f50342, 08fda5b1, 3843ee8f |
 | CR-017 | 3 | rare | confirmed | The canvas is the probes' and is never checked against what was decoded | fixed 1c167267, 08fda5b1 |
 | CR-018 | 3 | rare | confirmed | A long message gets the system's light scrollbar in the dark dialog | open |
 | CR-019 | 3 | some files | owner | The Romanian status text of a padded pair does not say it was padded | open |
@@ -549,7 +549,8 @@ on 2026-11-21 by the task that fixed CR-013 to CR-017, which saw it in a render.
   `OnPreviewMouseLeftButtonDown`, before the minimap or a scrollbar's thumb handles the press
   (R-063). Not done: the keys pressed in a live window, which would have taken the keyboard
   from the owner; the tests raise them, and a press on the image, the minimap and each thumb,
-  on a window never shown.
+  on a window never shown. After the branch's review, 08fda5b1: a comment of the press test
+  says the image is its control case, which passed before the fix too.
 - **Where:** `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs:400-442` (`OnKeyDown`
   leaves Up and Down unhandled); `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml.cs:110-118`
   (the press is handled, so the surface's `Focus()` does not run).
@@ -572,7 +573,9 @@ on 2026-11-21 by the task that fixed CR-013 to CR-017, which saw it in a render.
   the bars had a `SmallChange` of 0.1 and a `LargeChange` of 1 on a range of 0 to 2959 image
   pixels. The two thin styles set `ContextMenu` to null. The bars' steps are left as they are:
   nothing reaches them now. The summary of `OnScrollBarMoved`, a line of CR-028, went with it.
-  Not done: a real right click on screen.
+  Not done: a real right click on screen. After the branch's review, 08fda5b1:
+  `docs/design/rendering.md`, which gained the paragraph on the two styles, names `Theme.xaml`
+  among the files it covers.
 - **Where:** `src/ImageVisualCompare.Wpf/Theme.xaml:187-217` (the two thin styles set no
   `ContextMenu`); `src/ImageVisualCompare.Core/ScrollBarState.cs:29-33` and
   `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs:705-712` (`Apply` sets the range, the
@@ -605,7 +608,7 @@ on 2026-11-21 by the task that fixed CR-013 to CR-017, which saw it in a render.
   still had WPF's rectangle, About's list of components, an `ItemsControl`; it is no longer
   focusable. The dialog's message area, a `ScrollViewer`, which that review named too, was
   dismissed there for being no tab stop; the second review showed that a click on the message
-  gives it the focus, as a click gives it to the surface, and its commit takes the rectangle
+  gives it the focus, as a click gives it to the surface, and its commit, 3843ee8f, takes the rectangle
   off it and has the test walk the three windows' own trees for everything focusable, tab
   stop or not (the parts the controls' templates add are not walked). R-068, the theme's comment and
   the note now say the one case where the lit button is not Enter's: a link of About with the
